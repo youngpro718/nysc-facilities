@@ -57,15 +57,33 @@ export default function UserDashboard() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // Data hooks
+  // Performance tracking
+  const [dashboardLoadStart] = useState(() => performance.now());
+  
+  // Data hooks - with performance logging
   const { notifications = [], isLoading: notificationsLoading, markAsRead, markAllAsRead, clearNotification, clearAllNotifications, refetch: refetchNotifications } = useNotifications(user?.id);
-  const { data: supplyRequests = [], refetch: refetchSupplyRequests } = useSupplyRequests(user?.id);
-  const { data: keyRequests = [], refetch: refetchKeyRequests } = useKeyRequests(user?.id);
-  const { userIssues = [], refetchIssues } = useUserIssues(user?.id);
-  const { data: personnelInfo } = useUserPersonnelInfo(user?.id);
+  const { data: supplyRequests = [], refetch: refetchSupplyRequests, isLoading: supplyLoading } = useSupplyRequests(user?.id);
+  const { data: keyRequests = [], refetch: refetchKeyRequests, isLoading: keyLoading } = useKeyRequests(user?.id);
+  const { userIssues = [], refetchIssues, isLoading: issuesLoading } = useUserIssues(user?.id);
+  const { data: personnelInfo, isLoading: personnelLoading } = useUserPersonnelInfo(user?.id);
 
   const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
   const [avatarPromptDismissed, setAvatarPromptDismissed] = useState(false);
+
+  // Performance logging - log when all data is loaded
+  useEffect(() => {
+    if (!isLoading && !notificationsLoading && !supplyLoading && !keyLoading && !issuesLoading && !personnelLoading) {
+      const totalLoadTime = performance.now() - dashboardLoadStart;
+      console.log(`📊 Dashboard fully loaded in ${totalLoadTime.toFixed(2)}ms`);
+      console.log('Data summary:', {
+        notifications: notifications.length,
+        supplyRequests: supplyRequests.length,
+        keyRequests: keyRequests.length,
+        issues: userIssues.length,
+        hasPersonnelInfo: !!personnelInfo
+      });
+    }
+  }, [isLoading, notificationsLoading, supplyLoading, keyLoading, issuesLoading, personnelLoading, dashboardLoadStart, notifications, supplyRequests, keyRequests, userIssues, personnelInfo]);
 
   // Add debug logging for auth state
   console.log("UserDashboard: Auth state", { isLoading, isAuthenticated, isAdmin, userId: user?.id });

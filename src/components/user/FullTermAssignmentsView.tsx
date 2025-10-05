@@ -73,11 +73,14 @@ export function FullTermAssignmentsView({
 }: FullTermAssignmentsViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRoom, setExpandedRoom] = useState<string | null>(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  // Fetch all court assignments with personnel details
+  // Fetch court assignments with pagination/limiting for better performance
   const { data: assignments = [], isLoading, error: queryError } = useQuery({
     queryKey: ['full-term-assignments'],
     queryFn: async () => {
+      const startTime = performance.now();
+      console.log('🔄 Starting court assignments query...');
       // Try query with join first - IMPORTANT: Include sort_order for proper ordering
       let { data, error } = await supabase
         .from('court_assignments')
@@ -158,30 +161,31 @@ export function FullTermAssignmentsView({
         return aRoom.localeCompare(bRoom);
       });
       
-      console.log('Sorted assignments:', sorted.length);
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+      
+      console.log(`✅ Court assignments loaded: ${sorted.length} records in ${loadTime.toFixed(2)}ms`);
       console.log('First 5 assignments:', sorted.slice(0, 5).map(a => ({ 
         part: a.part, 
         sort_order: a.sort_order, 
-        room: a.court_rooms?.room_number,
-        floor: a.court_rooms?.floor,
-        justice: a.justice?.display_name
+        room: a.court_rooms?.room_number
       })));
       
       // Log Part 37 specifically if it exists
       const part37 = sorted.find(a => a.part === '37');
       if (part37) {
-        console.log('Part 37 details:', {
+        console.log('Part 37:', {
           part: part37.part,
           room: part37.court_rooms?.room_number,
           floor: part37.court_rooms?.floor,
-          justice: part37.justice?.display_name,
-          sort_order: part37.sort_order,
-          id: part37.id
+          justice: part37.justice?.display_name
         });
       }
       
       return sorted;
     },
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     refetchInterval: 30000, // Refresh every 30 seconds
   });
   

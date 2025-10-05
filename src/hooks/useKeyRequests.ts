@@ -35,11 +35,13 @@ export const useKeyRequests = (userId?: string) => {
         .from('key_requests')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false});
 
       if (error) throw error;
       return data || [];
     },
     enabled: !!userId,
+    staleTime: 3 * 60 * 1000, // Cache for 3 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   });
 };

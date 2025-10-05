@@ -73,6 +73,8 @@ export const useNotifications = (userId?: string) => {
       }));
     },
     enabled: !!userId,
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
   const markAsRead = async (notificationId: string) => {
