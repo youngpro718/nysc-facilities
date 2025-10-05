@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Key, AlertTriangle, Wrench, Package, AlertCircle } from "lucide-react";
+import { Bell, Key, AlertTriangle, Wrench, Package, AlertCircle, Gavel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +27,7 @@ const notificationIcons = {
   role_assigned: AlertCircle,
   role_removed: AlertCircle,
   new_user_pending: AlertCircle,
+  court_assignment_change: Gavel,
 };
 
 export const NotificationBox = () => {
@@ -141,6 +142,9 @@ export const NotificationBox = () => {
       case 'role_removed':
         navigate('/admin');
         break;
+      case 'court_assignment_change':
+        navigate('/court-operations');
+        break;
       default:
         navigate('/admin');
     }
@@ -174,6 +178,8 @@ export const NotificationBox = () => {
       case 'new_issue':
       case 'issue_status_change':
         return 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
+      case 'court_assignment_change':
+        return 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400';
       default:
         return 'bg-gray-100 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400';
     }

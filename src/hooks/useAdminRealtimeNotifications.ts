@@ -489,13 +489,92 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
       .subscribe();
     channels.push(profilesChannel);
 
+    // Subscribe to court assignment changes (INSERT, UPDATE, DELETE)
+    const courtAssignmentsChannel = supabase
+      .channel('admin-court-assignments-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'court_assignments' },
+        (payload) => {
+          console.log('Court assignment created for admin:', payload);
+          const assignment = payload.new as any;
+          toast.info('⚖️ New Court Assignment', {
+            description: `Assignment created for ${assignment?.room_number || 'courtroom'}`,
+            duration: 6000,
+            action: { label: 'View', onClick: () => (window.location.href = '/court-operations') },
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
+          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'court_assignments' },
+        (payload) => {
+          console.log('Court assignment updated for admin:', payload);
+          const oldAssignment = payload.old as any;
+          const newAssignment = payload.new as any;
+          
+          // Determine what changed
+          let changeType = 'Assignment';
+          let changeMessage = 'updated';
+          let toastFn = toast.info;
+          
+          if (oldAssignment?.justice !== newAssignment?.justice) {
+            changeType = 'Judge';
+            changeMessage = `changed: ${oldAssignment?.justice || 'None'} → ${newAssignment?.justice || 'None'}`;
+            toastFn = toast.warning; // Judge changes are important!
+          } else if (oldAssignment?.clerks !== newAssignment?.clerks) {
+            changeType = 'Clerks';
+            changeMessage = 'changed';
+          } else if (oldAssignment?.sergeant !== newAssignment?.sergeant) {
+            changeType = 'Sergeant';
+            changeMessage = `changed: ${oldAssignment?.sergeant || 'None'} → ${newAssignment?.sergeant || 'None'}`;
+          } else if (oldAssignment?.part !== newAssignment?.part) {
+            changeType = 'Part';
+            changeMessage = `changed: ${oldAssignment?.part || 'None'} → ${newAssignment?.part || 'None'}`;
+          }
+          
+          toastFn(`⚖️ ${changeType} ${changeMessage}`, {
+            description: `Room: ${newAssignment?.room_number || 'Unknown'}`,
+            duration: 8000,
+            action: { label: 'View', onClick: () => (window.location.href = '/court-operations') },
+          });
+          
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
+          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+          queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
+          queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'court_assignments' },
+        (payload) => {
+          console.log('Court assignment deleted for admin:', payload);
+          const assignment = payload.old as any;
+          toast.warning('⚖️ Court Assignment Removed', {
+            description: `Assignment deleted for ${assignment?.room_number || 'courtroom'}`,
+            duration: 6000,
+            action: { label: 'View', onClick: () => (window.location.href = '/court-operations') },
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
+          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+        }
+      )
+      .subscribe();
+    channels.push(courtAssignmentsChannel);
+
     return () => {
       console.log('Cleaning up admin realtime subscriptions');
       channels.forEach((ch) => {
         try { supabase.removeChannel(ch); } catch (_) {}
       });
     };
-  }, [user?.id, isAdmin]);
+  }, [user?.id, isAdmin, queryClient]);
 
   return {
     isConnected,
