@@ -1,54 +1,22 @@
-import { ChevronLeft, QrCode, Download, Copy, Check } from "lucide-react";
-import { RateLimitManager } from "@/components/admin/RateLimitManager";
+import { ChevronLeft, QrCode, Download, Copy, Check, Users, Shield, Settings as SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
-import { DynamicAdminDashboard } from "@/components/profile/admin/DynamicAdminDashboard";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
-import { useState, useEffect } from "react";
-import { useRolePermissions, CourtRole } from "@/hooks/useRolePermissions";
-import { Badge } from "@/components/ui/badge";
-import { AdminSystemSettings } from "@/components/profile/AdminSystemSettings";
-import { DatabaseSection } from "@/components/profile/DatabaseSection";
-import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
+import { useState } from "react";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-// Admin sections kept inline
 import { AdminManagementTab } from "@/components/profile/reorganized/AdminManagementTab";
-
-// Role preview control removed per request
+import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
-  const [isMobile, setIsMobile] = useState(false);
-  const { isAdmin, userRole, refetch } = useRolePermissions();
+  const { isAdmin, userRole } = useRolePermissions();
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const appUrl = window.location.origin;
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Clear any legacy preview role to avoid masking admin sections
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const hadPreview = localStorage.getItem('preview_role');
-        if (hadPreview) {
-          localStorage.removeItem('preview_role');
-          refetch?.();
-        }
-      }
-    } catch {
-      // no-op
-    }
-  }, [refetch]);
 
   const copyToClipboard = async () => {
     try {
@@ -91,80 +59,26 @@ export default function AdminProfile() {
     img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
 
-  if (isMobile) {
-    return (
-      <div className="space-y-4 pb-nav-safe">
-        <div className="flex items-center gap-3">
+  return (
+    <div className="space-y-4 pb-20 px-3 sm:px-0">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 pt-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="h-9 w-9"
+            className="h-9 w-9 flex-shrink-0"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-semibold">Admin Profile</h1>
-        </div>
-
-        <MobileProfileHeader />
-        {isAdmin ? (
-          <div className="space-y-6">
-            <DynamicAdminDashboard />
-
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Manage users, roles, permissions, and access</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AdminManagementTab />
-              </CardContent>
-            </Card>
-
-            <SecurityAuditPanel />
-
-            <RateLimitManager />
-
-            <AdminSystemSettings />
-
-            <DatabaseSection />
-          </div>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Admin Sections Hidden</CardTitle>
-              <CardDescription>
-                You are previewing as "{userRole}". Admin-only sections are hidden on this page.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              Use the role selector to switch back to Admin.
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4 sm:space-y-6 pb-nav-safe">
-      <div className="flex items-center justify-between gap-3 sm:gap-4">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-9 w-9 sm:h-10 sm:w-10"
-          >
-            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
-          <h1 className="text-2xl sm:text-3xl font-semibold">Admin Profile</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold truncate">Admin Profile</h1>
         </div>
         <Button
           onClick={() => setShowQR(!showQR)}
           variant="outline"
           size="sm"
-          className="gap-2"
+          className="gap-2 flex-shrink-0"
         >
           <QrCode className="h-4 w-4" />
           <span className="hidden sm:inline">Install App</span>
@@ -174,55 +88,53 @@ export default function AdminProfile() {
       {/* Install App QR Code Card */}
       {showQR && (
         <Card className="bg-primary/5 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <QrCode className="h-5 w-5" />
               Install App on Phones
             </CardTitle>
-            <CardDescription>
-              Share this QR code or link with staff to install the app on their phones
+            <CardDescription className="text-xs sm:text-sm">
+              Share this QR code or link with staff to install the app
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-4 items-center">
               {/* QR Code */}
-              <div className="bg-white p-4 rounded-lg shadow-sm">
+              <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
                 <QRCodeSVG
                   id="admin-qr-code"
                   value={appUrl}
-                  size={200}
+                  size={180}
                   level="H"
                   includeMargin={true}
                 />
               </div>
 
               {/* Actions */}
-              <div className="flex-1 space-y-3 w-full">
+              <div className="flex-1 space-y-2 w-full">
                 <div>
-                  <p className="text-sm font-medium mb-2">App Link:</p>
+                  <p className="text-xs sm:text-sm font-medium mb-2">App Link:</p>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={appUrl}
                       readOnly
-                      className="flex-1 px-3 py-2 text-sm border rounded-md bg-background"
+                      className="flex-1 px-2 sm:px-3 py-2 text-xs sm:text-sm border rounded-md bg-background"
                     />
-                    <Button onClick={copyToClipboard} variant="outline" size="sm">
+                    <Button onClick={copyToClipboard} variant="outline" size="sm" className="flex-shrink-0">
                       {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button onClick={downloadQR} variant="default" size="sm" className="flex-1">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download QR Code
-                  </Button>
-                </div>
+                <Button onClick={downloadQR} variant="default" size="sm" className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download QR Code
+                </Button>
 
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p><strong>iPhone:</strong> Open in Safari → Share → Add to Home Screen</p>
-                  <p><strong>Android:</strong> Open in Chrome → Menu → Add to Home screen</p>
+                <div className="text-xs text-muted-foreground space-y-1 pt-2">
+                  <p><strong>iPhone:</strong> Safari → Share → Add to Home Screen</p>
+                  <p><strong>Android:</strong> Chrome → Menu → Add to Home screen</p>
                 </div>
               </div>
             </div>
@@ -230,56 +142,90 @@ export default function AdminProfile() {
         </Card>
       )}
 
+      {/* Profile Header */}
       <MobileProfileHeader />
 
-      <div className="space-y-6">
-        {isAdmin ? (
-          <Tabs defaultValue="users" className="w-full">
-            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4">
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="security">Security</TabsTrigger>
-              <TabsTrigger value="system">System</TabsTrigger>
-              <TabsTrigger value="database">Database</TabsTrigger>
-            </TabsList>
+      {/* Main Content */}
+      {isAdmin ? (
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="profile" className="text-xs sm:text-sm">
+              <SettingsIcon className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Profile</span>
+              <span className="sm:hidden">Info</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm">
+              <Users className="h-4 w-4 mr-1 sm:mr-2" />
+              Users
+            </TabsTrigger>
+            <TabsTrigger value="security" className="text-xs sm:text-sm">
+              <Shield className="h-4 w-4 mr-1 sm:mr-2" />
+              Security
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="users">
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Management</CardTitle>
-                  <CardDescription>Manage users, roles, permissions, and access</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <AdminManagementTab />
-                </CardContent>
-              </Card>
-            </TabsContent>
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg sm:text-xl">Profile Settings</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  Manage your admin profile and preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground mb-2">
+                      Your profile information is displayed in the card above. 
+                      To update your avatar, name, or other details, use the profile header.
+                    </p>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <h3 className="font-semibold mb-2">Admin Capabilities</h3>
+                    <ul className="space-y-2 text-xs sm:text-sm text-muted-foreground">
+                      <li>• Manage all users and permissions</li>
+                      <li>• View security audit logs</li>
+                      <li>• Access all system modules</li>
+                      <li>• Configure facility settings</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <TabsContent value="security">
-              <SecurityAuditPanel />
-            </TabsContent>
+          {/* Users Tab */}
+          <TabsContent value="users" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg sm:text-xl">User Management</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  Manage users, roles, permissions, and access
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AdminManagementTab />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <TabsContent value="system">
-              <AdminSystemSettings />
-            </TabsContent>
-
-            <TabsContent value="database">
-              <DatabaseSection />
-            </TabsContent>
-          </Tabs>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Admin Sections Hidden</CardTitle>
-              <CardDescription>
-                You are previewing as "{userRole}". Admin-only sections are hidden on this page.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              Use the role selector above to switch back to Admin.
-            </CardContent>
-          </Card>
-        )}
-      </div>
+          {/* Security Tab */}
+          <TabsContent value="security" className="mt-4">
+            <SecurityAuditPanel />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Admin Access Required</CardTitle>
+            <CardDescription>
+              You are viewing as "{userRole}". Admin-only sections are hidden.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
     </div>
   );
 }
