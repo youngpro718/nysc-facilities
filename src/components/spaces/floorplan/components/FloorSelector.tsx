@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Building2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Floor {
   id: string;
@@ -30,6 +31,12 @@ export function FloorSelector({
   onFloorSelect,
   currentFloor 
 }: FloorSelectorProps) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return null;
+  }
+
   if (!floors || floors.length === 0) {
     return (
       <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
