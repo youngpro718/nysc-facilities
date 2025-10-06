@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 import { occupantSchema, type OccupantFormData } from "./schemas/occupantSchema";
 import { PersonalInfoFields } from "./form-sections/PersonalInfoFields";
 import { WorkInfoFields } from "./form-sections/WorkInfoFields";
@@ -32,6 +33,8 @@ export function OccupantForm({
       phone: initialData?.phone || null,
       department: initialData?.department || null,
       title: initialData?.title || null,
+      role: initialData?.role || null,
+      court_position: initialData?.court_position || null,
       status: initialData?.status || "active",
       rooms: initialData?.rooms || [],
       keys: initialData?.keys || [],
@@ -47,10 +50,26 @@ export function OccupantForm({
 
   const handleFormSubmit = async (data: OccupantFormData) => {
     try {
-      console.log("Form submitting with data:", data);
+      console.log("=== FORM SUBMIT ===");
+      console.log("Form data being submitted:", data);
+      console.log("Form state:", form.formState);
+      console.log("Form errors:", form.formState.errors);
+      console.log("Is form valid:", form.formState.isValid);
+      console.log("Is form submitting:", form.formState.isSubmitting);
+      
+      // Check for validation errors
+      if (Object.keys(form.formState.errors).length > 0) {
+        console.error("=== VALIDATION ERRORS ===", form.formState.errors);
+        toast.error("Please fix validation errors before submitting");
+        return;
+      }
+      
       await onSubmit(data);
+      
+      console.log("Form submission completed successfully");
     } catch (error) {
-      console.error("Form submission error:", error);
+      console.error("=== FORM SUBMISSION ERROR ===", error);
+      toast.error("Failed to submit form");
     }
   };
 

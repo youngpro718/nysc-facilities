@@ -39,12 +39,17 @@ export function EditOccupantDialog({
   const { data: currentAssignments, isLoading } = useOccupantAssignments(occupant?.id);
 
   const handleUpdate = async (formData: any) => {
-    setIsSubmitting(true);
     try {
-      console.log("Starting update with form data:", formData);
-      console.log("Current assignments:", currentAssignments);
+      console.log("=== EDIT OCCUPANT DEBUG ===");
+      console.log("1. Form data received:", formData);
+      console.log("2. Occupant ID:", occupant.id);
+      console.log("3. Current assignments:", currentAssignments);
+      console.log("4. Selected rooms from form:", formData.rooms);
+      console.log("5. Selected keys from form:", formData.keys);
       
-      await handleOccupantUpdate({
+      setIsSubmitting(true);
+      
+      const updateParams = {
         occupantId: occupant.id,
         formData: {
           ...formData,
@@ -54,15 +59,26 @@ export function EditOccupantDialog({
         selectedRooms: formData.rooms || [],
         selectedKeys: formData.keys || [],
         currentAssignments,
-      });
+      };
+      
+      console.log("6. Update params being sent:", updateParams);
+      
+      const result = await handleOccupantUpdate(updateParams);
+      
+      console.log("7. Update result:", result);
 
       toast.success("Occupant updated successfully");
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      console.error("Update error:", error);
+      console.error("=== UPDATE ERROR ===", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       toast.error(error.message || "Failed to update occupant");
-      throw error; // Re-throw so the form knows submission failed
     } finally {
       setIsSubmitting(false);
     }
@@ -88,6 +104,14 @@ export function EditOccupantDialog({
     return "active";
   };
 
+  // Validate and transform the role to ensure it matches our schema
+  const validateRole = (role?: string | null): "judge" | "court_aide" | "clerk" | "sergeant" | "court_officer" | "bailiff" | "court_reporter" | "administrative_assistant" | "facilities_manager" | "admin" | null => {
+    if (role && ["judge", "court_aide", "clerk", "sergeant", "court_officer", "bailiff", "court_reporter", "administrative_assistant", "facilities_manager", "admin"].includes(role)) {
+      return role as "judge" | "court_aide" | "clerk" | "sergeant" | "court_officer" | "bailiff" | "court_reporter" | "administrative_assistant" | "facilities_manager" | "admin";
+    }
+    return null;
+  };
+
   const initialData = {
     first_name: occupant.first_name,
     last_name: occupant.last_name,
@@ -95,6 +119,8 @@ export function EditOccupantDialog({
     phone: occupant.phone,
     department: occupant.department,
     title: occupant.title,
+    role: validateRole(occupant.role),
+    court_position: occupant.court_position || null,
     status: validateStatus(occupant.status),
     employment_type: occupant.employment_type || null,
     supervisor_id: occupant.supervisor_id || null,

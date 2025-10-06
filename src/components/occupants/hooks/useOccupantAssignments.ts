@@ -22,9 +22,9 @@ export function useOccupantAssignments(occupantId: string | undefined) {
               name,
               room_number,
               floor_id,
-              floors (
+              floors!rooms_floor_id_fkey (
                 name,
-                buildings (
+                buildings!floors_building_id_fkey (
                   name
                 )
               )

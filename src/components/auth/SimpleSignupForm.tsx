@@ -22,6 +22,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    title: "",
     email: "",
     password: "",
     requestedAccessLevel: "standard"
@@ -62,6 +63,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
       const userData = {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
+        title: formData.title.trim() || null,
         requested_access_level: formData.requestedAccessLevel
       };
 
@@ -152,6 +154,24 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="title">
+              Job Title
+              <span className="text-xs text-muted-foreground ml-2">(Optional - determines access)</span>
+            </Label>
+            <Input
+              id="title"
+              type="text"
+              value={formData.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              placeholder="e.g., Supply Clerk, Facilities Manager"
+              disabled={isLoading || isProcessing}
+            />
+            <p className="text-xs text-muted-foreground">
+              Your title will determine what features you can access
+            </p>
           </div>
 
           <div className="space-y-2">

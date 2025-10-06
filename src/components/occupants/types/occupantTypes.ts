@@ -9,6 +9,7 @@ export type Occupant = {
   department: string | null;
   title: string | null;
   role: string | null;
+  court_position?: string | null;
   status: string;
   employment_type?: string | null;
   supervisor_id?: string | null;

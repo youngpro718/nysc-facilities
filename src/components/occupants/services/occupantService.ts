@@ -18,6 +18,9 @@ export const handleOccupantUpdate = async ({
   selectedKeys,
   currentAssignments,
 }: UpdateOccupantParams) => {
+  console.log("=== OCCUPANT SERVICE UPDATE ===");
+  console.log("Service received params:", { occupantId, formData, selectedRooms, selectedKeys, currentAssignments });
+  
   if (!occupantId) {
     throw new Error("Occupant ID is required");
   }
@@ -41,24 +44,38 @@ export const handleOccupantUpdate = async ({
     updated_at: new Date().toISOString(),
   };
 
+  console.log("Prepared update data:", updateData);
+
   try {
     // Update occupant data
-    const { error: updateError } = await supabase
+    console.log("Updating occupant with ID:", occupantId);
+    const { data: updateResult, error: updateError } = await supabase
       .from('occupants')
       .update(updateData)
-      .eq('id', occupantId);
+      .eq('id', occupantId)
+      .select();
 
-    if (updateError) throw updateError;
+    console.log("Occupant update result:", updateResult);
+    if (updateError) {
+      console.error("Occupant update error:", updateError);
+      throw updateError;
+    }
 
     // Handle room assignments
-    if (selectedRooms) {
+    console.log("Handling room assignments. Selected rooms:", selectedRooms);
+    if (selectedRooms !== undefined) {
       // Remove existing room assignments
+      console.log("Deleting existing room assignments for occupant:", occupantId);
       const { error: deleteRoomsError } = await supabase
         .from('occupant_room_assignments')
         .delete()
         .eq('occupant_id', occupantId);
 
-      if (deleteRoomsError) throw deleteRoomsError;
+      if (deleteRoomsError) {
+        console.error("Error deleting room assignments:", deleteRoomsError);
+        throw deleteRoomsError;
+      }
+      console.log("Successfully deleted existing room assignments");
 
       // Add new room assignments
       if (selectedRooms.length > 0) {
@@ -68,23 +85,37 @@ export const handleOccupantUpdate = async ({
           assigned_at: new Date().toISOString(),
         }));
 
-        const { error: insertRoomsError } = await supabase
+        console.log("Inserting new room assignments:", roomAssignments);
+        const { data: insertResult, error: insertRoomsError } = await supabase
           .from('occupant_room_assignments')
-          .insert(roomAssignments);
+          .insert(roomAssignments)
+          .select();
 
-        if (insertRoomsError) throw insertRoomsError;
+        if (insertRoomsError) {
+          console.error("Error inserting room assignments:", insertRoomsError);
+          throw insertRoomsError;
+        }
+        console.log("Successfully inserted room assignments:", insertResult);
+      } else {
+        console.log("No rooms to assign");
       }
     }
 
     // Handle key assignments
-    if (selectedKeys) {
+    console.log("Handling key assignments. Selected keys:", selectedKeys);
+    if (selectedKeys !== undefined) {
       // Remove existing key assignments
+      console.log("Deleting existing key assignments for occupant:", occupantId);
       const { error: deleteKeysError } = await supabase
         .from('key_assignments')
         .delete()
         .eq('occupant_id', occupantId);
 
-      if (deleteKeysError) throw deleteKeysError;
+      if (deleteKeysError) {
+        console.error("Error deleting key assignments:", deleteKeysError);
+        throw deleteKeysError;
+      }
+      console.log("Successfully deleted existing key assignments");
 
       // Add new key assignments
       if (selectedKeys.length > 0) {
@@ -94,17 +125,26 @@ export const handleOccupantUpdate = async ({
           assigned_at: new Date().toISOString(),
         }));
 
-        const { error: insertKeysError } = await supabase
+        console.log("Inserting new key assignments:", keyAssignments);
+        const { data: insertResult, error: insertKeysError } = await supabase
           .from('key_assignments')
-          .insert(keyAssignments);
+          .insert(keyAssignments)
+          .select();
 
-        if (insertKeysError) throw insertKeysError;
+        if (insertKeysError) {
+          console.error("Error inserting key assignments:", insertKeysError);
+          throw insertKeysError;
+        }
+        console.log("Successfully inserted key assignments:", insertResult);
+      } else {
+        console.log("No keys to assign");
       }
     }
 
+    console.log("=== UPDATE COMPLETE ===");
     return { success: true };
   } catch (error) {
-    console.error('Error updating occupant:', error);
+    console.error('=== SERVICE ERROR ===', error);
     throw error;
   }
 };
