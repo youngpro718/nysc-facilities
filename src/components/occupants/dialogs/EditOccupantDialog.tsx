@@ -39,11 +39,11 @@ export function EditOccupantDialog({
   const { data: currentAssignments, isLoading } = useOccupantAssignments(occupant?.id);
 
   const handleUpdate = async (formData: any) => {
+    setIsSubmitting(true);
     try {
       console.log("Starting update with form data:", formData);
       console.log("Current assignments:", currentAssignments);
       
-      setIsSubmitting(true);
       await handleOccupantUpdate({
         occupantId: occupant.id,
         formData: {
@@ -62,6 +62,7 @@ export function EditOccupantDialog({
     } catch (error: any) {
       console.error("Update error:", error);
       toast.error(error.message || "Failed to update occupant");
+      throw error; // Re-throw so the form knows submission failed
     } finally {
       setIsSubmitting(false);
     }
