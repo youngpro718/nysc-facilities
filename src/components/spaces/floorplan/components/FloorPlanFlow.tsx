@@ -4,6 +4,7 @@ import { panelStyle } from '../styles/flowStyles';
 import { useState, useCallback } from 'react';
 import { Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FloorPlanFlowProps {
   nodes: Node[];
@@ -26,6 +27,7 @@ export function FloorPlanFlow({
   nodeTypes,
   zoom = 1,
 }: FloorPlanFlowProps) {
+  const isMobile = useIsMobile();
   const [isPanning, setIsPanning] = useState(false);
   const defaultViewport = { x: 0, y: 0, zoom };
 
@@ -102,34 +104,38 @@ export function FloorPlanFlow({
         }]);
       }}
     >
-      <Panel position="top-left" className="space-y-2">
-        <div style={panelStyle} className="text-gray-700">
+      <Panel position={isMobile ? "bottom-left" : "top-left"} className="space-y-2">
+        <div style={panelStyle} className="text-gray-700 text-sm">
           Objects: {nodes.length}
         </div>
         <Button
           variant={isPanning ? "secondary" : "outline"}
           size="sm"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 touch-target"
           onClick={() => setIsPanning(!isPanning)}
+          aria-label={isPanning ? "Disable pan mode" : "Enable pan mode"}
         >
           <Move className="h-4 w-4" />
-          <span>Move</span>
+          <span className="text-xs sm:text-sm">Move</span>
         </Button>
       </Panel>
       <Controls showInteractive={true} />
-      <MiniMap 
-        nodeColor={(node) => {
-          switch (node.type) {
-            case 'door':
-              return '#94a3b8';
-            case 'hallway':
-              return '#cbd5e1';
-            default:
-              return '#e2e8f0';
-          }
-        }}
-        maskColor="#ffffff50"
-      />
+      {/* Hide MiniMap on mobile to save screen space */}
+      {!isMobile && (
+        <MiniMap 
+          nodeColor={(node) => {
+            switch (node.type) {
+              case 'door':
+                return '#94a3b8';
+              case 'hallway':
+                return '#cbd5e1';
+              default:
+                return '#e2e8f0';
+            }
+          }}
+          maskColor="#ffffff50"
+        />
+      )}
       <Background gap={20} size={1} />
     </ReactFlow>
   );

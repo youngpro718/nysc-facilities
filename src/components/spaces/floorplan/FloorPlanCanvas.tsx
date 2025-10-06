@@ -274,16 +274,26 @@ function FloorPlanCanvasInner({
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* Topology tools bar */}
-      <div className="absolute top-2 left-2 z-10 flex flex-wrap items-center gap-1 bg-white/90 dark:bg-slate-800/90 rounded-md px-2 py-1 border border-slate-200 dark:border-slate-700 shadow-sm max-w-[calc(100vw-1rem)] md:max-w-none">
-        <Button size="sm" variant={attachMode ? 'default' : 'outline'} onClick={() => setAttachMode(v => !v)} className="touch-target text-xs">
-          {attachMode ? 'Attach On' : 'Attach Off'}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="touch-target text-xs"
-          onClick={async () => {
+      {/* Topology tools bar - Compact mobile design */}
+      <div className="absolute top-2 left-2 right-2 md:right-auto z-10 bg-white/90 dark:bg-slate-800/90 rounded-md px-2 py-1.5 border border-slate-200 dark:border-slate-700 shadow-sm max-w-full">
+        <div className="flex flex-col gap-1.5">
+          {/* Main toolbar row */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Button 
+              size="sm" 
+              variant={attachMode ? 'default' : 'outline'} 
+              onClick={() => setAttachMode(v => !v)} 
+              className="h-8 px-2 text-xs whitespace-nowrap"
+              aria-label={attachMode ? 'Disable attach mode' : 'Enable attach mode'}
+            >
+              {attachMode ? 'Attach On' : 'Attach Off'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 px-2 text-xs whitespace-nowrap"
+              aria-label="Add default hallways to floor"
+              onClick={async () => {
             if (!floorId) {
               toast.error('Select a floor first');
               return;
@@ -341,33 +351,72 @@ function FloorPlanCanvasInner({
               toast.error(`Failed: ${e?.message || 'Unknown error'}`);
             }
           }}
-        >
-          Add Hallways
-        </Button>
-        {attachMode && (
-          <>
-            <span className="text-xs text-slate-600 dark:text-slate-300 hidden sm:inline">Side:</span>
-            <Button size="sm" variant={attachSide==='north'?'default':'outline'} onClick={() => setAttachSide('north')} className="touch-target text-xs px-2">N</Button>
-            <Button size="sm" variant={attachSide==='south'?'default':'outline'} onClick={() => setAttachSide('south')} className="touch-target text-xs px-2">S</Button>
-            <Button size="sm" variant={attachSide==='east'?'default':'outline'} onClick={() => setAttachSide('east')} className="touch-target text-xs px-2">E</Button>
-            <Button size="sm" variant={attachSide==='west'?'default':'outline'} onClick={() => setAttachSide('west')} className="touch-target text-xs px-2">W</Button>
-            {selectedHallwayId && (
-              <div className="flex items-center gap-1 w-full sm:w-auto mt-1 sm:mt-0 sm:ml-2">
-                <span className="text-xs text-slate-600 dark:text-slate-300">Offset</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={offsetPercent}
-                  onChange={(e) => setOffsetPercent(parseInt(e.target.value))}
-                  className="flex-1 sm:flex-initial"
-                />
-                <span className="text-xs w-8 text-right">{offsetPercent}%</span>
+          >
+            Add Hallways
+          </Button>
+          </div>
+          
+          {/* Attach mode controls - Separate row */}
+          {attachMode && (
+            <>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs text-slate-600 dark:text-slate-300">Side:</span>
+                <Button 
+                  size="sm" 
+                  variant={attachSide==='north'?'default':'outline'} 
+                  onClick={() => setAttachSide('north')} 
+                  className="h-7 w-7 p-0 text-xs"
+                  aria-label="Attach to north side"
+                >
+                  N
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={attachSide==='south'?'default':'outline'} 
+                  onClick={() => setAttachSide('south')} 
+                  className="h-7 w-7 p-0 text-xs"
+                  aria-label="Attach to south side"
+                >
+                  S
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={attachSide==='east'?'default':'outline'} 
+                  onClick={() => setAttachSide('east')} 
+                  className="h-7 w-7 p-0 text-xs"
+                  aria-label="Attach to east side"
+                >
+                  E
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={attachSide==='west'?'default':'outline'} 
+                  onClick={() => setAttachSide('west')} 
+                  className="h-7 w-7 p-0 text-xs"
+                  aria-label="Attach to west side"
+                >
+                  W
+                </Button>
               </div>
-            )}
-          </>
-        )}
+              {selectedHallwayId && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">Offset:</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={offsetPercent}
+                    onChange={(e) => setOffsetPercent(parseInt(e.target.value))}
+                    className="flex-1 min-w-[80px]"
+                    aria-label="Adjust attachment offset"
+                  />
+                  <span className="text-xs w-8 text-right">{offsetPercent}%</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
       <FloorPlanFlow
         nodes={nodes}

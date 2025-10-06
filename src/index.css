@@ -265,6 +265,25 @@
     @apply min-h-[44px] min-w-[44px];
   }
   
+  /* Larger touch targets for mobile */
+  @media (max-width: 768px) {
+    .touch-target {
+      @apply min-h-[48px] min-w-[48px];
+    }
+  }
+  
+  /* Prevent text selection during touch interactions */
+  .floor-plan-canvas {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Smooth touch scrolling */
+  .floor-plan-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+  
   /* Hide scrollbar but allow scrolling */
   .scrollbar-hide {
     -ms-overflow-style: none;
