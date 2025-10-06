@@ -17,7 +17,7 @@ export function useOccupantAssignments(occupantId: string | undefined) {
             assignment_type,
             is_primary,
             schedule,
-            rooms (
+            rooms!occupant_room_assignments_room_id_fkey (
               id,
               name,
               room_number,
