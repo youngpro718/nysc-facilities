@@ -12,24 +12,35 @@ export function useRoomAssignment(onSuccess: () => void) {
     assignmentType: string,
     isPrimaryAssignment: boolean
   ) => {
+    console.log('[useRoomAssignment] Function called with:', {
+      selectedRoom,
+      selectedOccupants,
+      assignmentType,
+      isPrimaryAssignment
+    });
+
     const uuidRe =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!selectedRoom) {
+      console.log('[useRoomAssignment] No room selected');
       toast.error("Please select a room to assign");
-      return;
+      return false;
     }
     if (!uuidRe.test(selectedRoom)) {
+      console.log('[useRoomAssignment] Invalid room UUID');
       toast.error("Invalid room id format");
-      return;
+      return false;
     }
     if (!selectedOccupants?.length) {
+      console.log('[useRoomAssignment] No occupants provided');
       toast.error("No occupants selected");
-      return;
+      return false;
     }
     const invalidOcc = selectedOccupants.filter((id) => !uuidRe.test(id));
     if (invalidOcc.length) {
+      console.log('[useRoomAssignment] Invalid occupant UUIDs:', invalidOcc);
       toast.error(`Invalid occupant id(s): ${invalidOcc.join(", ")}`);
-      return;
+      return false;
     }
 
     try {

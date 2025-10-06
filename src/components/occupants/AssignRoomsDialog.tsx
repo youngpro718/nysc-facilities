@@ -76,18 +76,35 @@ export function AssignRoomsDialog({
   }, [open]);
 
   const handleAssign = async () => {
-    if (!selectedRoom) return;
+    console.log('[AssignRoomsDialog] handleAssign called', {
+      selectedRoom,
+      selectedOccupants,
+      assignmentType,
+      isPrimaryAssignment,
+      hasSession
+    });
+
+    if (!selectedRoom) {
+      console.log('[AssignRoomsDialog] No room selected');
+      return;
+    }
 
     const selectedRoomDetails = availableRooms?.find(r => r.id === selectedRoom);
+    console.log('[AssignRoomsDialog] Room details:', selectedRoomDetails);
     
     if (selectedRoomDetails?.capacity && 
         selectedRoomDetails.current_occupancy + selectedOccupants.length > selectedRoomDetails.capacity) {
+      console.log('[AssignRoomsDialog] Capacity exceeded');
       toast.error("This assignment would exceed the room's capacity");
       return;
     }
 
+    console.log('[AssignRoomsDialog] Calling handleAssignRoom');
     const success = await handleAssignRoom(selectedRoom, selectedOccupants, assignmentType, isPrimaryAssignment);
+    console.log('[AssignRoomsDialog] Assignment result:', success);
+    
     if (success) {
+      console.log('[AssignRoomsDialog] Closing dialog');
       onOpenChange(false);
     }
   };
