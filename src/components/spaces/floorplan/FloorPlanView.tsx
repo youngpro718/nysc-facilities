@@ -58,13 +58,14 @@ export function FloorPlanView() {
   // Handle object selection
   const handleObjectSelect = useCallback((object: any) => {
     console.log('Selected object:', object);
-    setSelectedObject(object);
-    // Reset preview data when selecting a new object
-    setPreviewData(null);
-    // On mobile, open properties panel when object is selected
-    if (isMobile && object) {
-      setShowPropertiesPanel(true);
+    // On mobile, don't show any dialog - just log for now
+    if (isMobile) {
+      // TODO: Implement alternative mobile interaction (e.g., toast, highlight, etc.)
+      return;
     }
+    // Desktop behavior
+    setSelectedObject(object);
+    setPreviewData(null);
   }, [isMobile]);
 
   // Reset selected object when floor changes
@@ -256,29 +257,8 @@ export function FloorPlanView() {
         )}
       </div>
 
-      {/* Mobile Properties Panel as Bottom Sheet */}
-      {isMobile && (
-        <ResponsiveDialog
-          open={showPropertiesPanel && !!selectedObject}
-          onOpenChange={(open) => {
-            setShowPropertiesPanel(open);
-            if (!open) {
-              setSelectedObject(null);
-            }
-          }}
-          title="Object Properties"
-        >
-          <PropertiesPanel 
-            selectedObject={selectedObject}
-            onUpdate={() => {
-              if (selectedObject) {
-                openDialog('propertyEdit', selectedObject);
-              }
-            }}
-            onPreviewChange={handlePropertyUpdate}
-          />
-        </ResponsiveDialog>
-      )}
+      {/* Mobile Properties Panel - Removed per user request */}
+      {/* TODO: Implement alternative mobile interaction for room selection */}
 
       {dialogState.isOpen && dialogState.type === 'propertyEdit' && (
         <EditPropertiesPanel
