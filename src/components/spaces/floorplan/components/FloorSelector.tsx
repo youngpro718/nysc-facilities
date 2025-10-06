@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -9,6 +9,9 @@ import {
 } from '@/components/ui/select';
 import { Building2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Floor {
   id: string;
@@ -30,6 +33,9 @@ export function FloorSelector({
   onFloorSelect,
   currentFloor 
 }: FloorSelectorProps) {
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState(false);
+
   if (!floors || floors.length === 0) {
     return (
       <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
@@ -41,6 +47,54 @@ export function FloorSelector({
           <div className="text-xs text-slate-500 dark:text-slate-400">Please add floors to view floor plans</div>
         </div>
       </div>
+    );
+  }
+
+  // Mobile compact version
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsOpen(true)}
+          className="h-9 px-3 gap-2"
+        >
+          <Building2 className="h-4 w-4" />
+          <span className="text-xs font-medium">
+            {currentFloor?.floor_number || '?'}
+          </span>
+        </Button>
+
+        <ResponsiveDialog
+          open={isOpen}
+          onOpenChange={setIsOpen}
+          title="Select Floor"
+          description="Choose a floor to view its plan"
+        >
+          <div className="space-y-2">
+            {floors.map((floor) => (
+              <Button
+                key={floor.id}
+                variant={selectedFloorId === floor.id ? "secondary" : "outline"}
+                className="w-full justify-start h-auto py-3"
+                onClick={() => {
+                  onFloorSelect(floor.id);
+                  setIsOpen(false);
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <div className="text-left">
+                    <div className="font-medium">{floor.buildings.name}</div>
+                    <div className="text-xs text-muted-foreground">{floor.name}</div>
+                  </div>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </ResponsiveDialog>
+      </>
     );
   }
 
