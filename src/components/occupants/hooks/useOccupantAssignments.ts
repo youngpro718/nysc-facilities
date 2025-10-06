@@ -9,7 +9,7 @@ export function useOccupantAssignments(occupantId: string | undefined) {
     queryFn: async () => {
       if (!occupantId) return { rooms: [], keys: [] };
 
-      const [roomAssignments, keyAssignments] = await Promise.all([
+        const [roomAssignments, keyAssignments] = await Promise.all([
         supabase
           .from("occupant_room_assignments")
           .select(`
@@ -17,7 +17,7 @@ export function useOccupantAssignments(occupantId: string | undefined) {
             assignment_type,
             is_primary,
             schedule,
-            unified_spaces (
+            rooms (
               id,
               name,
               room_number,
@@ -47,10 +47,12 @@ export function useOccupantAssignments(occupantId: string | undefined) {
 
       if (roomAssignments.error) {
         console.error("Error fetching room assignments:", roomAssignments.error);
+        throw roomAssignments.error;
       }
 
       if (keyAssignments.error) {
         console.error("Error fetching key assignments:", keyAssignments.error);
+        throw keyAssignments.error;
       }
 
       return {
