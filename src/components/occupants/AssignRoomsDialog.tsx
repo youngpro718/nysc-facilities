@@ -81,31 +81,57 @@ export function AssignRoomsDialog({
       selectedOccupants,
       assignmentType,
       isPrimaryAssignment,
-      hasSession
+      hasSession,
+      availableRooms: availableRooms?.length
     });
 
+    // Validate occupants are selected
+    if (!selectedOccupants || selectedOccupants.length === 0) {
+      console.error('[AssignRoomsDialog] No occupants selected');
+      toast.error("Please select at least one occupant first");
+      return;
+    }
+
+    // Validate room is selected
     if (!selectedRoom) {
-      console.log('[AssignRoomsDialog] No room selected');
+      console.error('[AssignRoomsDialog] No room selected');
+      toast.error("Please select a room to assign");
+      return;
+    }
+
+    // Validate session
+    if (!hasSession) {
+      console.error('[AssignRoomsDialog] No valid session');
+      toast.error("You must be signed in to assign rooms");
       return;
     }
 
     const selectedRoomDetails = availableRooms?.find(r => r.id === selectedRoom);
     console.log('[AssignRoomsDialog] Room details:', selectedRoomDetails);
     
+    // Check capacity
     if (selectedRoomDetails?.capacity && 
         selectedRoomDetails.current_occupancy + selectedOccupants.length > selectedRoomDetails.capacity) {
-      console.log('[AssignRoomsDialog] Capacity exceeded');
-      toast.error("This assignment would exceed the room's capacity");
+      console.error('[AssignRoomsDialog] Capacity exceeded');
+      toast.error(`This assignment would exceed the room's capacity (${selectedRoomDetails.capacity})`);
       return;
     }
 
-    console.log('[AssignRoomsDialog] Calling handleAssignRoom');
+    console.log('[AssignRoomsDialog] Calling handleAssignRoom with:', {
+      roomId: selectedRoom,
+      occupantIds: selectedOccupants,
+      type: assignmentType,
+      isPrimary: isPrimaryAssignment
+    });
+
     const success = await handleAssignRoom(selectedRoom, selectedOccupants, assignmentType, isPrimaryAssignment);
     console.log('[AssignRoomsDialog] Assignment result:', success);
     
     if (success) {
-      console.log('[AssignRoomsDialog] Closing dialog');
+      console.log('[AssignRoomsDialog] Success - closing dialog');
       onOpenChange(false);
+    } else {
+      console.error('[AssignRoomsDialog] Assignment failed');
     }
   };
 
