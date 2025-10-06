@@ -104,21 +104,24 @@ export function FloorPlanFlow({
         }]);
       }}
     >
-      <Panel position={isMobile ? "bottom-left" : "top-left"} className="space-y-2">
-        <div style={panelStyle} className="text-gray-700 text-sm">
-          Objects: {nodes.length}
-        </div>
-        <Button
-          variant={isPanning ? "secondary" : "outline"}
-          size="sm"
-          className="flex items-center gap-2 touch-target"
-          onClick={() => setIsPanning(!isPanning)}
-          aria-label={isPanning ? "Disable pan mode" : "Enable pan mode"}
-        >
-          <Move className="h-4 w-4" />
-          <span className="text-xs sm:text-sm">Move</span>
-        </Button>
-      </Panel>
+      {/* Hide panel on mobile - not needed */}
+      {!isMobile && (
+        <Panel position="top-left" className="space-y-2">
+          <div style={panelStyle} className="text-gray-700 text-sm">
+            Objects: {nodes.length}
+          </div>
+          <Button
+            variant={isPanning ? "secondary" : "outline"}
+            size="sm"
+            className="flex items-center gap-2 touch-target"
+            onClick={() => setIsPanning(!isPanning)}
+            aria-label={isPanning ? "Disable pan mode" : "Enable pan mode"}
+          >
+            <Move className="h-4 w-4" />
+            <span className="text-xs sm:text-sm">Move</span>
+          </Button>
+        </Panel>
+      )}
       <Controls showInteractive={true} />
       {/* Hide MiniMap on mobile to save screen space */}
       {!isMobile && (

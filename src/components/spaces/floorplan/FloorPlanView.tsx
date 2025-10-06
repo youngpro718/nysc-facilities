@@ -163,93 +163,12 @@ export function FloorPlanView() {
       {/* Top Bar with Controls */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
         {isMobile ? (
-          /* Mobile Header */
-          <div className="flex flex-col">
-            <div className="flex items-center justify-between px-3 h-14">
-              <MobileFloorSelector
-                selectedFloorId={selectedFloor}
-                onFloorSelect={setSelectedFloor}
-              />
-              
-              <div className="flex items-center gap-1">
-                {/* View Mode Toggle */}
-                <Button
-                  variant={viewMode === '2d' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('2d')}
-                  className="h-10 w-10 p-0 touch-target"
-                  title="2D View"
-                  aria-label="Switch to 2D view"
-                >
-                  <Layers className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant={viewMode === '3d' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('3d')}
-                  className="h-10 w-10 p-0 touch-target"
-                  title="3D View"
-                  aria-label="Switch to 3D view"
-                >
-                  <Box className="h-5 w-5" />
-                </Button>
-                
-                <div className="h-6 w-px bg-border mx-1" />
-                
-                {/* Refresh */}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleRefresh}
-                  className="h-10 w-10 p-0 touch-target"
-                  title="Refresh"
-                  aria-label="Refresh floor plan"
-                >
-                  <RefreshCw className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-            
-            {/* Mobile Zoom Controls - Only show in 2D mode */}
-            {viewMode === '2d' && (
-              <div className="flex items-center justify-center px-3 py-2 border-t bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleZoomOut} 
-                    disabled={zoom <= 0.5}
-                    className="h-10 w-10 p-0 touch-target"
-                    aria-label="Zoom out"
-                  >
-                    <ZoomOut className="h-5 w-5" />
-                  </Button>
-                  <span className="text-sm font-medium px-3 min-w-[4rem] text-center">
-                    {(zoom * 100).toFixed(0)}%
-                  </span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleZoomIn} 
-                    disabled={zoom >= 2}
-                    className="h-10 w-10 p-0 touch-target"
-                    aria-label="Zoom in"
-                  >
-                    <ZoomIn className="h-5 w-5" />
-                  </Button>
-                  <div className="h-6 w-px bg-border mx-1" />
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleZoomReset}
-                    className="h-10 px-3 touch-target"
-                    aria-label="Reset zoom"
-                  >
-                    <Maximize className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-            )}
+          /* Mobile Header - Simple floor selector only */
+          <div className="flex items-center justify-center px-3 h-12">
+            <MobileFloorSelector
+              selectedFloorId={selectedFloor}
+              onFloorSelect={setSelectedFloor}
+            />
           </div>
         ) : (
           /* Desktop Header */

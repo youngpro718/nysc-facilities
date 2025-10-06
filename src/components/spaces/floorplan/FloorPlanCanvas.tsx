@@ -23,6 +23,7 @@ import { HallwayNode } from './nodes/HallwayNode';
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { FloorPlanNode } from './types/floorPlanTypes';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
@@ -43,6 +44,7 @@ function FloorPlanCanvasInner({
   onObjectSelect,
   previewData
 }: FloorPlanCanvasProps) {
+  const isMobile = useIsMobile();
   const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -274,20 +276,21 @@ function FloorPlanCanvasInner({
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* Topology tools bar - Compact mobile design */}
-      <div className="absolute top-2 left-2 right-2 md:right-auto z-10 bg-white/90 dark:bg-slate-800/90 rounded-md px-2 py-1.5 border border-slate-200 dark:border-slate-700 shadow-sm max-w-full">
-        <div className="flex flex-col gap-1.5">
-          {/* Main toolbar row */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Button 
-              size="sm" 
-              variant={attachMode ? 'default' : 'outline'} 
-              onClick={() => setAttachMode(v => !v)} 
-              className="h-8 px-2 text-xs whitespace-nowrap"
-              aria-label={attachMode ? 'Disable attach mode' : 'Enable attach mode'}
-            >
-              {attachMode ? 'Attach On' : 'Attach Off'}
-            </Button>
+      {/* Topology tools bar - Desktop only */}
+      {!isMobile && (
+        <div className="absolute top-2 left-2 z-10 bg-white/90 dark:bg-slate-800/90 rounded-md px-2 py-1.5 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="flex flex-col gap-1.5">
+            {/* Main toolbar row */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Button 
+                size="sm" 
+                variant={attachMode ? 'default' : 'outline'} 
+                onClick={() => setAttachMode(v => !v)} 
+                className="h-8 px-2 text-xs whitespace-nowrap"
+                aria-label={attachMode ? 'Disable attach mode' : 'Enable attach mode'}
+              >
+                {attachMode ? 'Attach On' : 'Attach Off'}
+              </Button>
             <Button
               size="sm"
               variant="outline"
@@ -416,8 +419,9 @@ function FloorPlanCanvasInner({
               )}
             </>
           )}
+          </div>
         </div>
-      </div>
+      )}
       <FloorPlanFlow
         nodes={nodes}
         edges={edges}
