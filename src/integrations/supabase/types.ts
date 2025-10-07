@@ -627,6 +627,7 @@ export type Database = {
       court_attendance: {
         Row: {
           clerks_present_count: number
+          clerks_present_names: string[] | null
           judge_present: boolean
           last_update_by: string | null
           room_id: string
@@ -634,6 +635,7 @@ export type Database = {
         }
         Insert: {
           clerks_present_count?: number
+          clerks_present_names?: string[] | null
           judge_present?: boolean
           last_update_by?: string | null
           room_id: string
@@ -641,6 +643,7 @@ export type Database = {
         }
         Update: {
           clerks_present_count?: number
+          clerks_present_names?: string[] | null
           judge_present?: boolean
           last_update_by?: string | null
           room_id?: string
@@ -2599,7 +2602,7 @@ export type Database = {
             columns: ["assignment_id"]
             isOneToOne: false
             referencedRelation: "key_assignments_view"
-            referencedColumns: ["assignment_id"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "key_audit_logs_key_id_fkey"
@@ -7364,6 +7367,7 @@ export type Database = {
       supply_requests: {
         Row: {
           approval_notes: string | null
+          approval_requested_at: string | null
           approved_at: string | null
           approved_by: string | null
           assigned_fulfiller_id: string | null
@@ -7387,9 +7391,11 @@ export type Database = {
           priority: string
           ready_for_delivery_at: string | null
           recipient_confirmation: string | null
+          rejection_reason: string | null
           requested_delivery_date: string | null
           requester_id: string
           status: string
+          supervisor_id: string | null
           title: string
           updated_at: string
           work_completed_at: string | null
@@ -7398,6 +7404,7 @@ export type Database = {
         }
         Insert: {
           approval_notes?: string | null
+          approval_requested_at?: string | null
           approved_at?: string | null
           approved_by?: string | null
           assigned_fulfiller_id?: string | null
@@ -7421,9 +7428,11 @@ export type Database = {
           priority?: string
           ready_for_delivery_at?: string | null
           recipient_confirmation?: string | null
+          rejection_reason?: string | null
           requested_delivery_date?: string | null
           requester_id: string
           status?: string
+          supervisor_id?: string | null
           title: string
           updated_at?: string
           work_completed_at?: string | null
@@ -7432,6 +7441,7 @@ export type Database = {
         }
         Update: {
           approval_notes?: string | null
+          approval_requested_at?: string | null
           approved_at?: string | null
           approved_by?: string | null
           assigned_fulfiller_id?: string | null
@@ -7455,9 +7465,11 @@ export type Database = {
           priority?: string
           ready_for_delivery_at?: string | null
           recipient_confirmation?: string | null
+          rejection_reason?: string | null
           requested_delivery_date?: string | null
           requester_id?: string
           status?: string
+          supervisor_id?: string | null
           title?: string
           updated_at?: string
           work_completed_at?: string | null
@@ -7475,6 +7487,13 @@ export type Database = {
           {
             foreignKeyName: "supply_requests_assigned_fulfiller_id_fkey"
             columns: ["assigned_fulfiller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_supervisor_id_fkey"
+            columns: ["supervisor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -8078,7 +8097,7 @@ export type Database = {
         Row: {
           assigned_at: string | null
           assignment_id: string | null
-          days_since_signed: number | null
+          days_since_assigned: number | null
           department: string | null
           email: string | null
           first_name: string | null
@@ -8086,11 +8105,9 @@ export type Database = {
           is_spare: boolean | null
           key_id: string | null
           key_name: string | null
+          key_scope: string | null
           last_name: string | null
           occupant_id: string | null
-          recipient_email: string | null
-          recipient_name: string | null
-          recipient_type: string | null
           return_reason: string | null
           returned_at: string | null
           spare_key_reason: string | null
@@ -8146,27 +8163,26 @@ export type Database = {
       key_assignments_view: {
         Row: {
           assigned_at: string | null
-          assignment_id: string | null
-          days_since_assigned: number | null
+          assignment_status: string | null
+          available_quantity: number | null
+          created_at: string | null
           department: string | null
           email: string | null
           first_name: string | null
-          is_elevator_card: boolean | null
-          is_overdue: boolean | null
-          is_passkey: boolean | null
+          id: string | null
           is_spare: boolean | null
           key_id: string | null
           key_name: string | null
+          key_scope: string | null
+          key_status: Database["public"]["Enums"]["key_status_enum"] | null
           key_type: Database["public"]["Enums"]["key_type_enum"] | null
           last_name: string | null
           occupant_id: string | null
-          recipient_email: string | null
-          recipient_name: string | null
-          recipient_type: string | null
           return_reason: string | null
           returned_at: string | null
           spare_key_reason: string | null
-          status: string | null
+          total_quantity: number | null
+          updated_at: string | null
         }
         Relationships: [
           {
@@ -8208,18 +8224,24 @@ export type Database = {
       }
       key_inventory_view: {
         Row: {
+          active_assignments: number | null
           available_quantity: number | null
+          captain_office_assigned_date: string | null
+          captain_office_copy: boolean | null
+          captain_office_notes: string | null
           created_at: string | null
           current_assignments: number | null
           id: string | null
-          is_elevator_card: boolean | null
           is_passkey: boolean | null
-          key_type: Database["public"]["Enums"]["key_type_enum"] | null
-          location: string | null
+          key_scope: string | null
+          location_data: Json | null
+          lost_count: number | null
           name: string | null
+          properties: Json | null
           status: Database["public"]["Enums"]["key_status_enum"] | null
-          total_historical_assignments: number | null
+          total_assignment_history: number | null
           total_quantity: number | null
+          type: Database["public"]["Enums"]["key_type_enum"] | null
           updated_at: string | null
         }
         Relationships: []
@@ -8439,20 +8461,26 @@ export type Database = {
       }
       spaces: {
         Row: {
+          building_address: string | null
+          building_id: string | null
           building_name: string | null
+          capacity: number | null
           created_at: string | null
+          current_function: string | null
+          current_occupancy: number | null
+          description: string | null
           floor_id: string | null
           floor_name: string | null
           floor_number: number | null
           id: string | null
-          identifier: string | null
+          is_storage: boolean | null
           name: string | null
-          position: Json | null
-          rotation: number | null
-          size: Json | null
-          status: Database["public"]["Enums"]["status_enum"] | null
-          subtype: string | null
-          type: string | null
+          phone_number: string | null
+          room_number: string | null
+          room_type: string | null
+          space_type: string | null
+          status: string | null
+          storage_type: string | null
           updated_at: string | null
         }
         Relationships: []
@@ -8585,6 +8613,13 @@ export type Database = {
       add_admin_user: {
         Args: { email_to_promote: string }
         Returns: undefined
+      }
+      admin_update_user_role: {
+        Args: {
+          new_role: Database["public"]["Enums"]["user_role"]
+          target_user_id: string
+        }
+        Returns: Json
       }
       advance_fulfillment_stage: {
         Args: {
@@ -8795,6 +8830,18 @@ export type Database = {
           key_name: string
           occupant_name: string
         }[]
+      }
+      emit_admin_notification: {
+        Args: {
+          p_message: string
+          p_metadata?: Json
+          p_related_id?: string
+          p_related_table?: string
+          p_title: string
+          p_type: string
+          p_urgency?: string
+        }
+        Returns: string
       }
       enhanced_check_rate_limit: {
         Args: {
@@ -9257,6 +9304,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_clerk_presence: {
+        Args: {
+          p_actor: string
+          p_clerk_name: string
+          p_present: boolean
+          p_room_id: string
+        }
+        Returns: undefined
+      }
       mark_presence: {
         Args: {
           p_actor: string
@@ -9273,9 +9329,10 @@ export type Database = {
       move_judge: {
         Args: {
           p_actor: string
-          p_from_room: string
+          p_from_room_id: string
+          p_is_covering?: boolean
           p_judge_name: string
-          p_to_room: string
+          p_to_room_id: string
         }
         Returns: undefined
       }
@@ -9643,7 +9700,19 @@ export type Database = {
         | "WINDOW"
       status_enum: "active" | "inactive" | "under_maintenance"
       term_status_enum: "active" | "upcoming" | "expired"
-      user_role: "admin" | "standard"
+      user_role:
+        | "admin"
+        | "standard"
+        | "judge"
+        | "court_aide"
+        | "clerk"
+        | "sergeant"
+        | "court_officer"
+        | "bailiff"
+        | "court_reporter"
+        | "administrative_assistant"
+        | "facilities_manager"
+        | "supply_room_staff"
       verification_status_enum: "pending" | "verified" | "rejected"
       zone_type_enum: "general" | "emergency" | "restricted"
     }
@@ -9997,7 +10066,20 @@ export const Constants = {
       ],
       status_enum: ["active", "inactive", "under_maintenance"],
       term_status_enum: ["active", "upcoming", "expired"],
-      user_role: ["admin", "standard"],
+      user_role: [
+        "admin",
+        "standard",
+        "judge",
+        "court_aide",
+        "clerk",
+        "sergeant",
+        "court_officer",
+        "bailiff",
+        "court_reporter",
+        "administrative_assistant",
+        "facilities_manager",
+        "supply_room_staff",
+      ],
       verification_status_enum: ["pending", "verified", "rejected"],
       zone_type_enum: ["general", "emergency", "restricted"],
     },
