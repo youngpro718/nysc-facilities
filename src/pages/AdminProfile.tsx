@@ -10,6 +10,8 @@ import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminManagementTab } from "@/components/profile/reorganized/AdminManagementTab";
 import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
+import { UserManagementTab } from "@/components/admin/UserManagementTab";
+import { TitleAccessManager } from "@/components/admin/TitleAccessManager";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
@@ -147,20 +149,27 @@ export default function AdminProfile() {
 
       {/* Main Content */}
       {isAdmin ? (
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="profile" className="text-xs sm:text-sm">
-              <SettingsIcon className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Profile</span>
-              <span className="sm:hidden">Info</span>
-            </TabsTrigger>
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="users" className="text-xs sm:text-sm">
               <Users className="h-4 w-4 mr-1 sm:mr-2" />
-              Users
+              <span className="hidden sm:inline">Users</span>
+              <span className="sm:hidden">👥</span>
+            </TabsTrigger>
+            <TabsTrigger value="access" className="text-xs sm:text-sm">
+              <Shield className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Access</span>
+              <span className="sm:hidden">🔐</span>
             </TabsTrigger>
             <TabsTrigger value="security" className="text-xs sm:text-sm">
               <Shield className="h-4 w-4 mr-1 sm:mr-2" />
-              Security
+              <span className="hidden sm:inline">Security</span>
+              <span className="sm:hidden">🛡️</span>
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="text-xs sm:text-sm">
+              <SettingsIcon className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Profile</span>
+              <span className="sm:hidden">⚙️</span>
             </TabsTrigger>
           </TabsList>
 
@@ -198,17 +207,12 @@ export default function AdminProfile() {
 
           {/* Users Tab */}
           <TabsContent value="users" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">User Management</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
-                  Manage users, roles, permissions, and access
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AdminManagementTab />
-              </CardContent>
-            </Card>
+            <UserManagementTab />
+          </TabsContent>
+
+          {/* Title Access Manager Tab */}
+          <TabsContent value="access" className="mt-4">
+            <TitleAccessManager />
           </TabsContent>
 
           {/* Security Tab */}

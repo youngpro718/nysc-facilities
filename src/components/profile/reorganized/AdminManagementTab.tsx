@@ -322,13 +322,13 @@ export function AdminManagementTab() {
         .maybeSingle();
 
       if (existingRole) {
-        // Update existing role
+        // Update existing role using the primary key (id)
         const { error } = await supabase
           .from('user_roles')
           .update({
             role: role
           })
-          .eq('user_id', userId);
+          .eq('id', existingRole.id);
 
         if (error) throw error;
       } else {

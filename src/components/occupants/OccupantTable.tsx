@@ -39,38 +39,38 @@ export function OccupantTable({
 }: OccupantTableProps) {
   return (
     <div className="rounded-md border">
-      <ScrollArea className="w-full">
+      <ScrollArea className="w-full h-[calc(100vh-300px)]">
         <div className="min-w-[800px]">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]">
+                <TableHead className="w-[50px] sticky left-0 bg-background z-10">
                   <Checkbox
                     checked={selectedOccupants.length === occupants?.length}
                     onCheckedChange={onSelectAll}
                   />
                 </TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-                <TableHead className="min-w-[180px]">Name</TableHead>
+                <TableHead className="w-[50px] sticky left-[50px] bg-background z-10"></TableHead>
+                <TableHead className="min-w-[180px] sticky left-[100px] bg-background z-10">Name</TableHead>
                 <TableHead className="hidden sm:table-cell">Department</TableHead>
                 <TableHead className="hidden md:table-cell">Title</TableHead>
                 <TableHead className="hidden lg:table-cell">Role</TableHead>
                 <TableHead className="min-w-[250px]">Room Assignments</TableHead>
                 <TableHead className="min-w-[120px]">Status</TableHead>
                 <TableHead className="text-center hidden sm:table-cell">Keys</TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
+                <TableHead className="w-[120px] text-right sticky right-0 bg-background z-10 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {occupants?.map((occupant) => [
                 <TableRow key={`${occupant.id}-main`}>
-                  <TableCell>
+                  <TableCell className="sticky left-0 bg-background z-10">
                     <Checkbox
                       checked={selectedOccupants.includes(occupant.id)}
                       onCheckedChange={() => onToggleSelect(occupant.id)}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="sticky left-[50px] bg-background z-10">
                     <Button 
                       variant="ghost" 
                       size="icon"
@@ -84,7 +84,7 @@ export function OccupantTable({
                       )}
                     </Button>
                   </TableCell>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium sticky left-[100px] bg-background z-10">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1">
                       <span>{occupant.first_name} {occupant.last_name}</span>
                       <div className="sm:hidden flex items-center gap-2">
@@ -143,12 +143,13 @@ export function OccupantTable({
                       <span className="text-sm font-medium">{occupant.key_count || 0}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right sticky right-0 bg-background z-10 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => onEdit(occupant)}
+                        title="Edit occupant"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -156,6 +157,7 @@ export function OccupantTable({
                         variant="ghost"
                         size="icon"
                         onClick={() => onDelete(occupant.id)}
+                        title="Delete occupant"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

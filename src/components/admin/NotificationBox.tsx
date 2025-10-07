@@ -25,6 +25,7 @@ const notificationIcons = {
   user_approved: AlertCircle,
   user_rejected: AlertCircle,
   role_assigned: AlertCircle,
+  role_changed: AlertCircle,
   role_removed: AlertCircle,
   new_user_pending: AlertCircle,
   court_assignment_change: Gavel,
@@ -139,6 +140,7 @@ export const NotificationBox = () => {
       case 'user_approved':
       case 'user_rejected':
       case 'role_assigned':
+      case 'role_changed':
       case 'role_removed':
         navigate('/admin');
         break;

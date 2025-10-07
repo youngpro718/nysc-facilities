@@ -1,11 +1,12 @@
 /**
  * Title-Based Role Mapping System
  * 
- * This system automatically assigns user roles and permissions based on their job title
- * during the onboarding process. This ensures proper access control from the start.
+ * SIMPLIFIED VERSION: Admin defines exact title matches in the database.
+ * This system checks user's title against admin-defined rules.
  */
 
 import { CourtRole } from "@/hooks/useRolePermissions";
+import { supabase } from "@/lib/supabase";
 
 export interface TitleRoleMapping {
   keywords: string[];
@@ -13,6 +14,11 @@ export interface TitleRoleMapping {
   description: string;
   accessDescription: string;
 }
+
+// Simple in-memory cache for title rules
+let titleRulesCache: Array<{ title: string; role: CourtRole }> | null = null;
+let lastFetch = 0;
+const CACHE_DURATION = 60000; // 1 minute
 
 /**
  * Comprehensive title-to-role mapping
@@ -169,9 +175,77 @@ export const TITLE_ROLE_MAPPINGS: TitleRoleMapping[] = [
 ];
 
 /**
+ * Fetch title rules from database (with caching)
+ */
+async function fetchTitleRules(): Promise<Array<{ title: string; role: CourtRole }>> {
+  const now = Date.now();
+  
+  // Return cached rules if still valid
+  if (titleRulesCache && (now - lastFetch) < CACHE_DURATION) {
+    return titleRulesCache;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("title_access_rules")
+      .select("title, role");
+
+    if (error) {
+      console.warn("[Title Mapping] Could not fetch rules from database:", error);
+      return [];
+    }
+
+    titleRulesCache = data || [];
+    lastFetch = now;
+    return titleRulesCache;
+  } catch (err) {
+    console.warn("[Title Mapping] Error fetching title rules:", err);
+    return [];
+  }
+}
+
+/**
  * Determines the appropriate role based on job title
+ * SIMPLIFIED: Checks exact matches against admin-defined rules
  * @param title - The user's job title
  * @returns The matched role or 'standard' as default
+ */
+export async function getRoleFromTitleAsync(title: string | null | undefined): Promise<CourtRole> {
+  if (!title || title.trim() === "") {
+    return "standard";
+  }
+
+  const normalizedTitle = title.toLowerCase().trim();
+
+  // Fetch rules from database
+  const rules = await fetchTitleRules();
+
+  // Check for exact match (case-insensitive)
+  for (const rule of rules) {
+    if (rule.title.toLowerCase() === normalizedTitle) {
+      console.log(`[Title Mapping] Matched "${title}" to role "${rule.role}"`);
+      return rule.role;
+    }
+  }
+
+  // Fallback to keyword matching from predefined mappings
+  for (const mapping of TITLE_ROLE_MAPPINGS) {
+    for (const keyword of mapping.keywords) {
+      if (normalizedTitle.includes(keyword.toLowerCase())) {
+        console.log(`[Title Mapping] Matched "${title}" to role "${mapping.role}" via keyword "${keyword}"`);
+        return mapping.role;
+      }
+    }
+  }
+
+  // Default to standard if no match found
+  console.log(`[Title Mapping] No match found for "${title}", defaulting to "standard"`);
+  return "standard";
+}
+
+/**
+ * Synchronous version for backward compatibility
+ * Uses keyword matching only (no database lookup)
  */
 export function getRoleFromTitle(title: string | null | undefined): CourtRole {
   if (!title || title.trim() === "") {
@@ -179,6 +253,15 @@ export function getRoleFromTitle(title: string | null | undefined): CourtRole {
   }
 
   const normalizedTitle = title.toLowerCase().trim();
+
+  // Check cached rules first
+  if (titleRulesCache) {
+    for (const rule of titleRulesCache) {
+      if (rule.title.toLowerCase() === normalizedTitle) {
+        return rule.role;
+      }
+    }
+  }
 
   // Find the first matching role based on keywords
   for (const mapping of TITLE_ROLE_MAPPINGS) {
