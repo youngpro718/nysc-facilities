@@ -98,7 +98,7 @@ export function OccupantCard({
           </div>
 
           {/* Access Information */}
-          <div className="flex justify-between items-center border-t pt-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-t pt-4 gap-3">
             <div className="flex gap-4">
               <div className="flex items-center gap-1">
                 <Key className="h-4 w-4 text-muted-foreground" />
@@ -111,7 +111,7 @@ export function OccupantCard({
                 <span className="text-xs text-muted-foreground">rooms</span>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 flex-wrap">
               {/* Detailed Assignments Dialog */}
               <Dialog>
                 <DialogTrigger asChild>
