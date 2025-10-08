@@ -8614,6 +8614,23 @@ export type Database = {
         Args: { email_to_promote: string }
         Returns: undefined
       }
+      adjust_inventory_quantity: {
+        Args:
+          | {
+              item_id: string
+              notes?: string
+              quantity_change: number
+              reference_id?: string
+              transaction_type: string
+            }
+          | {
+              p_item_id: string
+              p_notes?: string
+              p_quantity_change: number
+              p_transaction_type: string
+            }
+        Returns: undefined
+      }
       admin_update_user_role: {
         Args: {
           new_role: Database["public"]["Enums"]["user_role"]

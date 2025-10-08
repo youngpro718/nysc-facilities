@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
   const queryClient = useQueryClient();
 
   // Initialize quantities when dialog opens
-  useState(() => {
+  useEffect(() => {
     if (request && open) {
       const initialQuantities: Record<string, number> = {};
       request.supply_request_items?.forEach((item: any) => {
@@ -30,14 +30,17 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
       });
       setFulfilledQuantities(initialQuantities);
     }
-  });
+  }, [request, open]);
 
   const completeMutation = useMutation({
     mutationFn: async () => {
+      console.log('Starting order completion...', { requestId: request.id, fulfilledQuantities });
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       // Update request status
+      console.log('Updating request status to completed...');
       const { error: requestError } = await supabase
         .from('supply_requests')
         .update({
@@ -48,11 +51,15 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
         })
         .eq('id', request.id);
 
-      if (requestError) throw requestError;
+      if (requestError) {
+        console.error('Request update error:', requestError);
+        throw requestError;
+      }
 
-      // Update item quantities
+      // Update item quantities and deduct from inventory
       for (const item of request.supply_request_items || []) {
         const fulfilledQty = fulfilledQuantities[item.item_id] || 0;
+        console.log('Processing item:', { itemId: item.item_id, fulfilledQty });
         
         // Update supply request item
         const { error: itemError } = await supabase
@@ -60,18 +67,31 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
           .update({ quantity_fulfilled: fulfilledQty })
           .eq('id', item.id);
 
-        if (itemError) throw itemError;
+        if (itemError) {
+          console.error('Item update error:', itemError);
+          throw itemError;
+        }
 
-        // Deduct from inventory
-        const { error: invError } = await supabase.rpc('adjust_inventory_quantity', {
-          p_item_id: item.item_id,
-          p_quantity_change: -fulfilledQty,
-          p_transaction_type: 'remove',
-          p_notes: `Fulfilled supply request: ${request.title}`
-        });
+        // Deduct from inventory using the updated function
+        if (fulfilledQty > 0) {
+          console.log('Deducting from inventory:', { itemId: item.item_id, qty: -fulfilledQty });
+          const { error: invError } = await supabase.rpc('adjust_inventory_quantity', {
+            item_id: item.item_id,
+            quantity_change: -fulfilledQty,
+            transaction_type: 'fulfilled',
+            reference_id: request.id,
+            notes: `Fulfilled supply request: ${request.title}`
+          });
 
-        if (invError) throw invError;
+          if (invError) {
+            console.error('Inventory adjustment error:', invError);
+            throw invError;
+          }
+          console.log('Inventory adjusted successfully');
+        }
       }
+      
+      console.log('Order completion successful');
     },
     onSuccess: () => {
       toast({
@@ -82,10 +102,12 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       onOpenChange(false);
       setNotes('');
+      setFulfilledQuantities({});
     },
     onError: (error) => {
+      console.error('Completion mutation error:', error);
       toast({
-        title: "Error",
+        title: "Error Completing Order",
         description: error.message,
         variant: "destructive",
       });
