@@ -35,12 +35,12 @@ import { format } from 'date-fns';
 interface InventoryItem {
   id: string;
   name: string;
+  sku?: string;
   category: string;
   description?: string;
   current_stock: number;
   minimum_threshold: number;
   maximum_stock: number;
-  unit_cost: number;
   supplier?: string;
   storage_location: string;
   last_restocked: string;
@@ -261,7 +261,7 @@ export function InventoryManagement() {
   return (
     <div className="space-y-6">
       {/* Header with Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Items</CardTitle>
@@ -294,17 +294,6 @@ export function InventoryManagement() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${inventory.reduce((sum, item) => sum + (item.current_stock * item.unit_cost), 0).toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Tabs defaultValue="inventory" className="space-y-4">
@@ -351,13 +340,13 @@ export function InventoryManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>SKU</TableHead>
                   <TableHead>Item</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Stock Level</TableHead>
                   <TableHead>Current Stock</TableHead>
                   <TableHead>Monthly Usage</TableHead>
-                  <TableHead>Unit Cost</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -368,6 +357,13 @@ export function InventoryManagement() {
                   
                   return (
                     <TableRow key={item.id}>
+                      <TableCell>
+                        {item.sku ? (
+                          <Badge variant="outline" className="font-mono">{item.sku}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{item.name}</div>
@@ -402,7 +398,6 @@ export function InventoryManagement() {
                         </div>
                       </TableCell>
                       <TableCell>{item.monthly_usage}</TableCell>
-                      <TableCell>${item.unit_cost.toFixed(2)}</TableCell>
                       <TableCell>
                         <div className="flex space-x-1">
                           <Button 

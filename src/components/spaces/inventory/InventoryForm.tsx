@@ -11,6 +11,7 @@ import { InventoryFormInputs } from "./types/inventoryTypes";
 
 const inventoryFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  sku: z.string().optional(),
   quantity: z.number().min(0, "Quantity must be 0 or greater"),
   category_id: z.string().min(1, "Category is required"),
   description: z.string().optional(),
@@ -54,6 +55,20 @@ export function InventoryForm({ onSubmit, defaultValues, isSubmitting }: Invento
               <FormLabel>Name</FormLabel>
               <FormControl>
                 <Input placeholder="Item name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="sku"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>SKU # (Stock Keeping Unit)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., ABC-123 or leave blank" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

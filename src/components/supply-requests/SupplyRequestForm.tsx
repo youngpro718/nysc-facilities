@@ -93,7 +93,8 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
     
     const matchesSearch = !searchTerm || 
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.sku?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = !selectedCategory || selectedCategory === "all" || 
       item.inventory_categories?.name === selectedCategory;
@@ -329,6 +330,11 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
                             >
                               <div className="flex-1">
                                  <div className="flex items-center gap-2">
+                                   {item.sku && (
+                                     <Badge variant="outline" className="font-mono text-xs">
+                                       {item.sku}
+                                     </Badge>
+                                   )}
                                    <h4 className="font-medium">{item.name || 'Unknown Item'}</h4>
                                    {item.inventory_categories?.name && (
                                      <Badge 
@@ -369,7 +375,17 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
                   {fields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-4 p-4 border rounded-lg">
                       <div className="flex-1">
-                        <h4 className="font-medium">{getItemName(field.item_id)}</h4>
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const item = (inventoryItems as any[]).find(i => i.id === field.item_id);
+                            return item?.sku ? (
+                              <Badge variant="outline" className="font-mono text-xs">
+                                {item.sku}
+                              </Badge>
+                            ) : null;
+                          })()}
+                          <h4 className="font-medium">{getItemName(field.item_id)}</h4>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <FormField

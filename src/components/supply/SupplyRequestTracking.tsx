@@ -63,6 +63,7 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
             *,
             inventory_items (
               name,
+              sku,
               unit
             )
           )
@@ -193,10 +194,17 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
 
                         <div className="text-sm">
                           <span className="font-medium">Items:</span>
-                          <ul className="mt-1 ml-4 list-disc">
+                          <ul className="mt-1 ml-4 space-y-1">
                             {request.supply_request_items?.slice(0, 3).map((item: any, idx: number) => (
-                              <li key={idx}>
-                                {item.inventory_items?.name}: {item.quantity_requested} {item.inventory_items?.unit}
+                              <li key={idx} className="flex items-center gap-2">
+                                {item.inventory_items?.sku && (
+                                  <Badge variant="outline" className="font-mono text-xs">
+                                    {item.inventory_items.sku}
+                                  </Badge>
+                                )}
+                                <span>
+                                  {item.inventory_items?.name}: {item.quantity_requested} {item.inventory_items?.unit || 'units'}
+                                </span>
                               </li>
                             ))}
                             {(request.supply_request_items?.length || 0) > 3 && (

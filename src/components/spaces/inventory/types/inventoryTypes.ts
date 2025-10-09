@@ -47,6 +47,7 @@ export interface InventoryTransaction {
 
 export interface InventoryFormInputs {
   name: string;
+  sku?: string;
   description?: string;
   quantity: number;
   minimum_quantity?: number;

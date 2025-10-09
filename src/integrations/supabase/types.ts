@@ -2086,6 +2086,7 @@ export type Database = {
           preferred_vendor: string | null
           quantity: number
           reorder_point: number | null
+          sku: string | null
           status: string | null
           storage_room_id: string | null
           unit: string | null
@@ -2105,6 +2106,7 @@ export type Database = {
           preferred_vendor?: string | null
           quantity?: number
           reorder_point?: number | null
+          sku?: string | null
           status?: string | null
           storage_room_id?: string | null
           unit?: string | null
@@ -2124,6 +2126,7 @@ export type Database = {
           preferred_vendor?: string | null
           quantity?: number
           reorder_point?: number | null
+          sku?: string | null
           status?: string | null
           storage_room_id?: string | null
           unit?: string | null
