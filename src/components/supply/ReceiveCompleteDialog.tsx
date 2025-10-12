@@ -9,6 +9,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useGenerateReceipt } from '@/hooks/useSupplyReceipts';
+import { createReceiptData } from '@/lib/receiptUtils';
 
 interface ReceiveCompleteDialogProps {
   request: any;
@@ -20,6 +22,7 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
   const [fulfilledQuantities, setFulfilledQuantities] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState('');
   const queryClient = useQueryClient();
+  const { mutateAsync: generateReceipt } = useGenerateReceipt();
 
   // Initialize quantities when dialog opens
   useEffect(() => {
@@ -88,6 +91,42 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
             throw invError;
           }
           console.log('Inventory adjusted successfully');
+        }
+      }
+      
+      // Fetch updated request data for receipt
+      const { data: updatedRequest } = await supabase
+        .from('supply_requests')
+        .select(`
+          *,
+          profiles!requester_id (
+            first_name,
+            last_name,
+            email,
+            department
+          ),
+          supply_request_items (
+            *,
+            inventory_items (
+              name,
+              unit
+            )
+          )
+        `)
+        .eq('id', request.id)
+        .single();
+
+      // Generate final receipt
+      if (updatedRequest) {
+        try {
+          const receiptData = createReceiptData(updatedRequest, 'final', '');
+          await generateReceipt({
+            requestId: request.id,
+            receiptType: 'final',
+            receiptData,
+          });
+        } catch (receiptError) {
+          console.error('Failed to generate final receipt:', receiptError);
         }
       }
       

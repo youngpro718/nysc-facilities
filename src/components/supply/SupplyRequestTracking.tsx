@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Package, CheckCircle2, XCircle, AlertCircle, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ReceiveCompleteDialog } from './ReceiveCompleteDialog';
+import { MarkReadyButton } from './MarkReadyButton';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -221,9 +222,16 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
                       </div>
 
                       {isSupplyStaff && (
-                        <Button onClick={() => handleReceive(request)}>
-                          Receive & Complete
-                        </Button>
+                        <div className="flex gap-2">
+                          {request.status === 'pending' && (
+                            <MarkReadyButton requestId={request.id} />
+                          )}
+                          {(request.status === 'pending' || request.status === 'ready') && (
+                            <Button onClick={() => handleReceive(request)}>
+                              Complete Order
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
