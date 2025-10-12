@@ -2455,6 +2455,52 @@ export type Database = {
           },
         ]
       }
+      item_request_frequency: {
+        Row: {
+          avg_quantity: number | null
+          item_id: string
+          last_requested: string | null
+          request_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_quantity?: number | null
+          item_id: string
+          last_requested?: string | null
+          request_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_quantity?: number | null
+          item_id?: string
+          last_requested?: string | null
+          request_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_request_frequency_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_request_frequency_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "low_stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_request_frequency_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["item_id"]
+          },
+        ]
+      }
       key_assignments: {
         Row: {
           assigned_at: string
@@ -7935,6 +7981,49 @@ export type Database = {
           },
         ]
       }
+      user_favorite_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorite_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_favorite_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_favorite_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["item_id"]
+          },
+        ]
+      }
       user_notifications: {
         Row: {
           action_url: string | null
@@ -8727,15 +8816,7 @@ export type Database = {
       }
       check_admin_status: {
         Args: { user_email?: string } | { user_id: string }
-        Returns: {
-          access_level_text: string
-          email: string
-          is_admin: boolean
-          is_approved: boolean
-          profile_exists: boolean
-          role_in_user_roles: string
-          user_id: string
-        }[]
+        Returns: boolean
       }
       check_production_security: {
         Args: Record<PropertyKey, never>

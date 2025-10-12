@@ -1,20 +1,29 @@
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Package } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useInventoryItems } from '@/hooks/useInventoryItems';
-import { ItemCard } from './ItemCard';
+import { useFavoriteItems } from '@/hooks/useFavoriteItems';
+import { CompactItemList } from './CompactItemList';
+import { ItemDetailPanel } from './ItemDetailPanel';
+import { FavoritesTab } from './FavoritesTab';
 import { OrderCart } from './OrderCart';
 import { useOrderCart } from '@/hooks/useOrderCart';
-import { CardGrid } from '@/components/data-display/CardGrid';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 
 const ALLOWED_CATEGORIES = ['Office Supplies', 'Furniture'];
 
 export function QuickOrderGrid() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('all');
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  const isMobile = useIsMobile();
   const { data: inventoryItems = [], isLoading } = useInventoryItems();
+  const { favorites, isFavorite, toggleFavorite } = useFavoriteItems();
   
   const {
     cartItems,
@@ -45,120 +54,188 @@ export function QuickOrderGrid() {
     });
   }, [inventoryItems, searchTerm, selectedCategory]);
 
-  const getCartQuantity = (itemId: string) => {
-    return cartItems.find(i => i.item_id === itemId)?.quantity || 0;
+  const selectedItem = selectedItemId 
+    ? inventoryItems.find((item: any) => item.id === selectedItemId)
+    : null;
+
+  const handleSelectItem = (itemId: string) => {
+    setSelectedItemId(itemId);
+    if (isMobile) {
+      setShowDetailModal(true);
+    }
   };
 
-  const handleAddItem = (item: any) => {
+  const handleAddItem = (item: any, quantity: number = 1) => {
     addItem({
       id: item.id,
       name: item.name,
       unit: item.unit,
       sku: item.sku,
-    });
+    }, quantity);
   };
 
   const handleIncrement = (item: any) => {
-    const currentQty = getCartQuantity(item.id);
-    updateQuantity(item.id, currentQty + 1);
-  };
-
-  const handleDecrement = (item: any) => {
-    const currentQty = getCartQuantity(item.id);
-    if (currentQty === 1) {
-      removeItem(item.id);
+    const currentQty = cartItems.find((i: any) => i.item_id === item.id)?.quantity || 0;
+    if (currentQty > 0) {
+      updateQuantity(item.id, currentQty + 1);
     } else {
-      updateQuantity(item.id, currentQty - 1);
+      handleAddItem(item, 1);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
-          <p className="text-muted-foreground">Loading supplies...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleDecrement = (item: any) => {
+    const currentQty = cartItems.find((i: any) => i.item_id === item.id)?.quantity || 0;
+    if (currentQty > 1) {
+      updateQuantity(item.id, currentQty - 1);
+    } else {
+      removeItem(item.id);
+    }
+  };
+
+  const handleToggleFavorite = async (itemId: string) => {
+    await toggleFavorite(itemId);
+  };
 
   return (
     <div className="space-y-4">
-      {/* Search and Filter Bar */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search supplies by name, SKU, or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Badge variant="outline" className="px-3 py-2">
-            <Filter className="h-4 w-4 mr-2" />
-            {filteredItems.length}
-          </Badge>
-        </div>
-
-        {/* Category Tabs */}
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-          <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="all" className="flex-1 sm:flex-none">
-              All Items
-            </TabsTrigger>
-            {ALLOWED_CATEGORIES.map(category => (
-              <TabsTrigger 
-                key={category} 
-                value={category}
-                className="flex-1 sm:flex-none whitespace-nowrap"
-              >
-                {category}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search items by name or SKU..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
-      {/* Items Grid */}
-      {filteredItems.length === 0 ? (
-        <div className="text-center py-12">
-          <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No supplies found</h3>
-          <p className="text-sm text-muted-foreground">
-            {searchTerm 
-              ? 'Try adjusting your search or filters'
-              : 'No supplies available at the moment'
-            }
-          </p>
-        </div>
-      ) : (
-        <CardGrid
-          columns={{ default: 1, sm: 2, lg: 3, xl: 4 }}
-          gap="medium"
-        >
-          {filteredItems.map((item: any) => (
-            <ItemCard
-              key={item.id}
-              id={item.id}
-              name={item.name}
-              sku={item.sku}
-              description={item.description}
-              quantity={item.quantity || 0}
-              unit={item.unit}
-              category={item.inventory_categories?.name}
-              cartQuantity={getCartQuantity(item.id)}
-              onAdd={() => handleAddItem(item)}
-              onIncrement={() => handleIncrement(item)}
-              onDecrement={() => handleDecrement(item)}
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="all">All Items</TabsTrigger>
+          <TabsTrigger value="favorites">⭐ Favorites</TabsTrigger>
+        </TabsList>
+
+        {/* All Items Tab */}
+        <TabsContent value="all" className="mt-4">
+          {/* Category Filters */}
+          <div className="mb-4">
+            <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                {ALLOWED_CATEGORIES.map(category => (
+                  <TabsTrigger key={category} value={category}>
+                    {category.replace(' Supplies', '')}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Desktop: Split Layout */}
+          {!isMobile ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <CompactItemList
+                  items={filteredItems}
+                  cartItems={cartItems}
+                  selectedItemId={selectedItemId}
+                  isLoading={isLoading}
+                  onSelectItem={handleSelectItem}
+                  onAddItem={handleAddItem}
+                  onIncrement={handleIncrement}
+                  onDecrement={handleDecrement}
+                />
+              </div>
+              <div className="sticky top-4 h-fit border rounded-lg p-4 bg-card">
+                <ItemDetailPanel
+                  item={selectedItem}
+                  cartQuantity={selectedItem ? cartItems.find((i: any) => i.item_id === selectedItem.id)?.quantity || 0 : 0}
+                  isFavorite={selectedItem ? isFavorite(selectedItem.id) : false}
+                  onToggleFavorite={() => selectedItem && handleToggleFavorite(selectedItem.id)}
+                  onAddToCart={(qty) => selectedItem && handleAddItem(selectedItem, qty)}
+                />
+              </div>
+            </div>
+          ) : (
+            /* Mobile: List Only */
+            <CompactItemList
+              items={filteredItems}
+              cartItems={cartItems}
+              selectedItemId={selectedItemId}
+              isLoading={isLoading}
+              onSelectItem={handleSelectItem}
+              onAddItem={handleAddItem}
+              onIncrement={handleIncrement}
+              onDecrement={handleDecrement}
             />
-          ))}
-        </CardGrid>
+          )}
+        </TabsContent>
+
+        {/* Favorites Tab */}
+        <TabsContent value="favorites" className="mt-4">
+          {!isMobile ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <FavoritesTab
+                  cartItems={cartItems}
+                  selectedItemId={selectedItemId}
+                  onSelectItem={handleSelectItem}
+                  onAddItem={handleAddItem}
+                  onIncrement={handleIncrement}
+                  onDecrement={handleDecrement}
+                />
+              </div>
+              <div className="sticky top-4 h-fit border rounded-lg p-4 bg-card">
+                <ItemDetailPanel
+                  item={selectedItem}
+                  cartQuantity={selectedItem ? cartItems.find((i: any) => i.item_id === selectedItem.id)?.quantity || 0 : 0}
+                  isFavorite={selectedItem ? isFavorite(selectedItem.id) : false}
+                  onToggleFavorite={() => selectedItem && handleToggleFavorite(selectedItem.id)}
+                  onAddToCart={(qty) => selectedItem && handleAddItem(selectedItem, qty)}
+                />
+              </div>
+            </div>
+          ) : (
+            <FavoritesTab
+              cartItems={cartItems}
+              selectedItemId={selectedItemId}
+              onSelectItem={handleSelectItem}
+              onAddItem={handleAddItem}
+              onIncrement={handleIncrement}
+              onDecrement={handleDecrement}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Mobile Detail Modal */}
+      {isMobile && (
+        <ResponsiveDialog
+          open={showDetailModal}
+          onOpenChange={setShowDetailModal}
+          title="Item Details"
+        >
+          <ItemDetailPanel
+            item={selectedItem}
+            cartQuantity={selectedItem ? cartItems.find((i: any) => i.item_id === selectedItem.id)?.quantity || 0 : 0}
+            isFavorite={selectedItem ? isFavorite(selectedItem.id) : false}
+            onToggleFavorite={() => {
+              if (selectedItem) {
+                handleToggleFavorite(selectedItem.id);
+              }
+            }}
+            onAddToCart={(qty) => {
+              if (selectedItem) {
+                handleAddItem(selectedItem, qty);
+                setShowDetailModal(false);
+              }
+            }}
+          />
+        </ResponsiveDialog>
       )}
 
-      {/* Floating Cart Button */}
+      {/* Order Cart */}
       <OrderCart
         items={cartItems}
         totalItems={totalItems}
