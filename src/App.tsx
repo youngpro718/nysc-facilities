@@ -159,6 +159,7 @@ function AppContent() {
           </ProtectedRoute>
         } />
         {/* Supply Requests now handled by Operations page */}
+        <Route path="supply-requests" element={<Navigate to="/supply-room" replace />} />
         <Route path="supply-room" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Room">
