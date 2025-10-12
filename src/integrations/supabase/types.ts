@@ -7413,6 +7413,50 @@ export type Database = {
           },
         ]
       }
+      supply_request_receipts: {
+        Row: {
+          created_at: string
+          generated_at: string
+          generated_by: string | null
+          id: string
+          metadata: Json | null
+          pdf_data: Json | null
+          receipt_number: string
+          receipt_type: string
+          request_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          metadata?: Json | null
+          pdf_data?: Json | null
+          receipt_number: string
+          receipt_type: string
+          request_id: string
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          metadata?: Json | null
+          pdf_data?: Json | null
+          receipt_number?: string
+          receipt_type?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_request_receipts_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "supply_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supply_requests: {
         Row: {
           approval_notes: string | null
@@ -9002,6 +9046,10 @@ export type Database = {
       }
       generate_issue_number: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_receipt_number: {
+        Args: { p_type: string }
         Returns: string
       }
       generate_security_alert: {

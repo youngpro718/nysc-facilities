@@ -52,8 +52,38 @@ export const submitSupplyRequest = async (requestData: any) => {
   return data;
 };
 
-export const getSupplyRequests = async () => {
-  const { data, error } = await supabase.from('supply_requests').select('*').order('created_at', { ascending: false });
+export const getSupplyRequests = async (userId?: string) => {
+  let query = supabase
+    .from('supply_requests')
+    .select(`
+      *,
+      profiles!requester_id (
+        first_name,
+        last_name,
+        email,
+        department
+      ),
+      supply_request_items (
+        *,
+        inventory_items (
+          name,
+          unit,
+          quantity,
+          category_id,
+          inventory_categories (
+            name,
+            color
+          )
+        )
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (userId) {
+    query = query.eq('requester_id', userId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 };
