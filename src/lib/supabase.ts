@@ -92,7 +92,10 @@ export const getFulfillmentLog = async (requestId: string) => {
 };
 
 export const getInventoryItems = async () => {
-  const { data, error } = await supabase.from('inventory_items').select('*').order('name');
+  const { data, error } = await supabase
+    .from('inventory_items')
+    .select('*, inventory_categories(id, name)')
+    .order('name');
   if (error) throw error;
   return data;
 };
