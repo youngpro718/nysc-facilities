@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { submitSupplyOrder } from '@/services/supplyOrdersService';
 import { useToast } from '@/hooks/use-toast';
+import { useGenerateReceipt } from '@/hooks/useSupplyReceipts';
+import { createReceiptData } from '@/lib/receiptUtils';
 
 export interface CartItem {
   item_id: string;
@@ -16,6 +18,7 @@ export function useOrderCart() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { mutateAsync: generateReceipt } = useGenerateReceipt();
 
   const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string }, quantity: number = 1) => {
     setCartItems(prev => {
@@ -92,11 +95,26 @@ export function useOrderCart() {
 
       const result = await submitSupplyOrder(payload);
       
+      // Generate confirmation receipt
+      if (result?.request) {
+        try {
+          const receiptData = createReceiptData(result.request, 'confirmation', '');
+          await generateReceipt({
+            requestId: result.request.id,
+            receiptType: 'confirmation',
+            receiptData,
+          });
+        } catch (receiptError) {
+          console.error('Failed to generate receipt:', receiptError);
+          // Don't fail the order if receipt generation fails
+        }
+      }
+      
       toast({
         title: 'Order submitted',
         description: result?.approval_required
-          ? 'Your order requires manager approval.'
-          : 'Your order was submitted successfully.',
+          ? 'Your order requires manager approval. A confirmation receipt has been generated.'
+          : 'Your order was submitted successfully. Check your receipt for details.',
       });
 
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });

@@ -14,11 +14,15 @@ import {
   ChevronDown,
   ChevronUp,
   Plus,
-  ShoppingCart
+  ShoppingCart,
+  Receipt
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { QuickOrderGrid } from '@/components/supply/QuickOrderGrid';
+import { ReceiptDialog } from '@/components/supply/ReceiptDialog';
+import { useSupplyReceipts } from '@/hooks/useSupplyReceipts';
+import { createReceiptData } from '@/lib/receiptUtils';
 
 interface SupplyRequest {
   id: string;
@@ -91,6 +95,8 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
     requests.length > 0 ? requests[0].id : null
   );
   const [showNewRequestForm, setShowNewRequestForm] = useState(false);
+  const [selectedReceiptRequestId, setSelectedReceiptRequestId] = useState<string | null>(null);
+  const { data: receipts } = useSupplyReceipts(selectedReceiptRequestId || undefined);
 
   const activeRequests = requests.filter(r => 
     !['fulfilled', 'rejected', 'cancelled'].includes(r.status)
@@ -330,9 +336,19 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
 
                   {request.status === 'fulfilled' && (
                     <div className="bg-success/10 border border-success/30 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-success-foreground">
-                        <CheckCircle className="h-5 w-5" />
-                        <div className="font-semibold">Request Completed</div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-success-foreground">
+                          <CheckCircle className="h-5 w-5" />
+                          <div className="font-semibold">Request Completed</div>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedReceiptRequestId(request.id)}
+                        >
+                          <Receipt className="h-4 w-4 mr-2" />
+                          View Receipt
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -342,6 +358,15 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
           );
         })}
       </CardContent>
+
+      {/* Receipt Dialog */}
+      {selectedReceiptRequestId && receipts && receipts.length > 0 && (
+        <ReceiptDialog
+          open={!!selectedReceiptRequestId}
+          onOpenChange={(open) => !open && setSelectedReceiptRequestId(null)}
+          receiptData={receipts[0].pdf_data as any}
+        />
+      )}
     </Card>
   );
 }
