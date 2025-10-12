@@ -13,11 +13,12 @@ import {
   Box,
   ChevronDown,
   ChevronUp,
-  Plus
+  Plus,
+  ShoppingCart
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { SupplyRequestForm } from '@/components/supply-requests/SupplyRequestForm';
+import { QuickOrderGrid } from '@/components/supply/QuickOrderGrid';
 
 interface SupplyRequest {
   id: string;
@@ -108,18 +109,18 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
               <Package className="h-5 w-5 text-primary" />
               <span>My Supply Requests</span>
             </div>
-            <Dialog open={showNewRequestForm} onOpenChange={setShowNewRequestForm}>
+          <Dialog open={showNewRequestForm} onOpenChange={setShowNewRequestForm}>
               <DialogTrigger asChild>
                 <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Request
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Quick Order
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Submit Supply Request</DialogTitle>
+                  <DialogTitle>Quick Order Supplies</DialogTitle>
                 </DialogHeader>
-                <SupplyRequestForm onSuccess={() => setShowNewRequestForm(false)} />
+                <QuickOrderGrid />
               </DialogContent>
             </Dialog>
           </CardTitle>
@@ -159,15 +160,15 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
           <Dialog open={showNewRequestForm} onOpenChange={setShowNewRequestForm}>
             <DialogTrigger asChild>
               <Button size="sm" className="flex-shrink-0 touch-manipulation">
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">New</span>
+                <ShoppingCart className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Quick Order</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Submit Supply Request</DialogTitle>
+                <DialogTitle>Quick Order Supplies</DialogTitle>
               </DialogHeader>
-              <SupplyRequestForm onSuccess={() => setShowNewRequestForm(false)} />
+              <QuickOrderGrid />
             </DialogContent>
           </Dialog>
         </CardTitle>
