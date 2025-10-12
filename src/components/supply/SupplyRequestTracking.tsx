@@ -50,6 +50,15 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
     try {
       setLoading(true);
       
+      if (!user?.id) {
+        console.warn('No user ID available for fetching supply requests');
+        setRequests([]);
+        setLoading(false);
+        return;
+      }
+
+      console.log('Fetching supply requests for:', { userId: user.id, userRole });
+      
       let query = supabase
         .from('supply_requests')
         .select(`
@@ -73,22 +82,27 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
 
       // Filter based on user role
       if (userRole === 'requester') {
-        query = query.eq('requester_id', user?.id);
+        query = query.eq('requester_id', user.id);
       }
 
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching requests:', error);
+        throw error;
+      }
       
+      console.log('Fetched supply requests:', { count: data?.length, data });
       setRequests(data || []);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching requests:', error);
       toast({
-        title: "Error",
-        description: "Failed to load supply requests",
+        title: "Error Loading Requests",
+        description: error?.message || "Failed to load supply requests. Please try again.",
         variant: "destructive",
       });
+      setRequests([]);
     } finally {
       setLoading(false);
     }

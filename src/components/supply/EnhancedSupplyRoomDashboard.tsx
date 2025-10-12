@@ -12,8 +12,8 @@ import { InventoryManagement } from './InventoryManagement';
 import { SupplyRequestTracking } from './SupplyRequestTracking';
 
 export function EnhancedSupplyRoomDashboard() {
-  const { user } = useAuth();
-  const { userRole, permissions } = useRolePermissions();
+  const { user, profile, isLoading } = useAuth();
+  const { userRole, permissions, loading: permissionsLoading } = useRolePermissions();
   const [activeTab, setActiveTab] = useState('requests');
 
   // Determine user role for component props
@@ -24,11 +24,35 @@ export function EnhancedSupplyRoomDashboard() {
     if (userRole === 'supply_room_staff' || permissions?.supply_requests === 'write') {
       return 'supply_staff';
     }
+    // Check if user is in Supply Department
+    if ((profile as any)?.department === 'Supply Department') {
+      return 'supply_staff';
+    }
     return 'requester';
   };
 
   const role = getSupplyRole();
   const isSupplyStaff = role === 'supply_staff' || role === 'supply_manager';
+
+  console.log('EnhancedSupplyRoomDashboard:', {
+    user: user?.id,
+    userRole,
+    permissions,
+    department: (profile as any)?.department,
+    calculatedRole: role,
+    isSupplyStaff,
+    isLoading,
+    permissionsLoading
+  });
+
+  // Show loading state
+  if (isLoading || permissionsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
