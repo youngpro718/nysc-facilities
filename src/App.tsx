@@ -101,7 +101,7 @@ function AppContent() {
           </ProtectedRoute>
         } />
         <Route path="inventory" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="inventory" moduleName="Inventory Management">
               <InventoryDashboard />
             </ModuleProtectedRoute>

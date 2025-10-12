@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 
 export default function SupplyRoom() {
-  const { user, profile } = useAuth();
-  const { hasPermission } = useRolePermissions();
+  const { user, profile, isLoading } = useAuth();
+  const { hasPermission, loading: permissionsLoading } = useRolePermissions();
 
   // Check if user has supply room permissions
   const canManageSupplyRequests = hasPermission('supply_requests', 'admin') || hasPermission('supply_requests', 'write');
@@ -18,12 +18,29 @@ export default function SupplyRoom() {
   
   // Debug logging
   console.log('SupplyRoom Debug:', {
+    isLoading,
+    permissionsLoading,
     canManageSupplyRequests,
     canManageInventory,
     isSupplyDepartmentUser,
     department: (profile as any)?.department,
     profile
   });
+
+  // Show loading state while checking permissions
+  if (isLoading || permissionsLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-pulse text-muted-foreground">Loading permissions...</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!canManageSupplyRequests && !canManageInventory && !isSupplyDepartmentUser) {
     return (
