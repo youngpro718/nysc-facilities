@@ -325,53 +325,63 @@ export function FullTermAssignmentsView({
                     }
                   `}
                 >
-                  {/* Courtroom Header - Mobile Optimized */}
+                  {/* Courtroom Header - Ultra Mobile Optimized for At-A-Glance Viewing */}
                   <div
-                    className="p-2 sm:p-3 cursor-pointer active:bg-accent/70 transition-colors"
+                    className="p-3 cursor-pointer active:bg-accent/50 transition-colors touch-manipulation"
                     onClick={() => toggleExpand(assignment.room_id)}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
-                          <h3 className="font-semibold text-sm sm:text-base">
-                            {assignment.part ? `Part ${assignment.part}` : 'Unassigned'} - {assignment.court_rooms?.floor && assignment.court_rooms.floor !== 'Unknown' ? `Floor ${assignment.court_rooms.floor}, ` : ''}Room {assignment.court_rooms?.room_number || 'Unknown'}
-                          </h3>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        {/* Part Number - LARGE and PROMINENT */}
+                        <div className="flex items-center gap-2 flex-wrap">
                           {isMyAssignment && (
-                            <Badge className="bg-primary/20 text-primary border-primary text-xs flex-shrink-0">
-                              <Star className="h-3 w-3 mr-1 fill-current" />
-                              Yours
+                            <Star className="h-5 w-5 text-amber-500 fill-amber-500 flex-shrink-0" />
+                          )}
+                          <h3 className="text-xl sm:text-2xl font-bold">
+                            Part {assignment.part || '?'}
+                          </h3>
+                          <Badge variant="outline" className="text-xs">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {assignment.court_rooms?.room_number || 'TBD'}
+                          </Badge>
+                        </div>
+
+                        {/* Justice Name - CLEAR and READABLE */}
+                        <div className="flex items-center gap-2">
+                          <Gavel className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-base sm:text-lg font-semibold truncate">
+                            {assignment.justice?.display_name || 'Unassigned'}
+                          </span>
+                        </div>
+
+                        {/* Quick Info Pills - SCANNABLE */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {assignment.clerk && (
+                            <Badge variant="secondary" className="text-xs py-1">
+                              <User className="h-3 w-3 mr-1" />
+                              Clerk
+                            </Badge>
+                          )}
+                          {assignment.sergeant && (
+                            <Badge variant="secondary" className="text-xs py-1">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Sergeant
+                            </Badge>
+                          )}
+                          {assignment.tel && (
+                            <Badge variant="outline" className="text-xs py-1">
+                              <Phone className="h-3 w-3 mr-1" />
+                              {assignment.tel}
                             </Badge>
                           )}
                         </div>
-
-                        {/* Quick Personnel Summary - Mobile Optimized */}
-                        <div className="grid grid-cols-1 gap-0.5 text-xs">
-                          <div className="flex items-center gap-1.5">
-                            <Gavel className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                            <span className="truncate">
-                              {assignment.justice?.display_name || 'Unassigned'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                            <span className="truncate">
-                              {assignment.clerk?.display_name || 'Unassigned'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Shield className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                            <span className="truncate">
-                              {assignment.sergeant?.display_name || 'Unassigned'}
-                            </span>
-                          </div>
-                        </div>
                       </div>
 
-                      <Button variant="ghost" size="sm" className="flex-shrink-0 p-1 sm:p-2 touch-manipulation">
+                      <Button variant="ghost" size="icon" className="flex-shrink-0 h-9 w-9 touch-manipulation">
                         {isExpanded ? (
-                          <ChevronUp className="h-4 w-4" />
+                          <ChevronUp className="h-5 w-5" />
                         ) : (
-                          <ChevronDown className="h-4 w-4" />
+                          <ChevronDown className="h-5 w-5" />
                         )}
                       </Button>
                     </div>
