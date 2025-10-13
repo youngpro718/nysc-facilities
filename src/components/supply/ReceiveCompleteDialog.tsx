@@ -79,11 +79,11 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange, userId }: R
         if (fulfilledQty > 0) {
           console.log('Deducting from inventory:', { itemId: item.item_id, qty: -fulfilledQty });
           const { error: invError } = await supabase.rpc('adjust_inventory_quantity', {
-            item_id: item.item_id,
-            quantity_change: -fulfilledQty,
-            transaction_type: 'fulfilled',
-            reference_id: request.id,
-            notes: `Fulfilled supply request: ${request.title}`
+            p_item_id: item.item_id,
+            p_quantity_change: -fulfilledQty,
+            p_transaction_type: 'fulfilled',
+            p_reference_id: request.id,
+            p_notes: `Fulfilled supply request: ${request.title}`
           });
 
           if (invError) {
