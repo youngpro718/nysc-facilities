@@ -97,7 +97,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-nav-safe">
+    <div className="space-y-6 sm:space-y-8 pb-20 md:pb-8">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
