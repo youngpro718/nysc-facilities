@@ -16,9 +16,10 @@ interface ReceiveCompleteDialogProps {
   request: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userId: string;
 }
 
-export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCompleteDialogProps) {
+export function ReceiveCompleteDialog({ request, open, onOpenChange, userId }: ReceiveCompleteDialogProps) {
   const [fulfilledQuantities, setFulfilledQuantities] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState('');
   const queryClient = useQueryClient();
@@ -39,8 +40,7 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
     mutationFn: async () => {
       console.log('Starting order completion...', { requestId: request.id, fulfilledQuantities });
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!userId) throw new Error('Not authenticated');
 
       // Update request status
       console.log('Updating request status to completed...');
@@ -48,7 +48,7 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
         .from('supply_requests')
         .update({
           status: 'completed',
-          fulfilled_by: user.id,
+          fulfilled_by: userId,
           fulfilled_at: new Date().toISOString(),
           fulfillment_notes: notes
         })

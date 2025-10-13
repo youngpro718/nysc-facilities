@@ -74,9 +74,15 @@ export function MarkReadyButton({ requestId, disabled }: MarkReadyButtonProps) {
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
     },
     onError: (error: any) => {
+      const isAuthError = error.message?.includes('authenticated') || 
+                          error.message?.includes('session') ||
+                          error.message?.includes('JWT');
+      
       toast({
         title: 'Error',
-        description: error.message || 'Failed to mark order as ready',
+        description: isAuthError 
+          ? 'Session expired. Please refresh the page and try again.'
+          : error.message || 'Failed to mark order as ready',
         variant: 'destructive',
       });
     },

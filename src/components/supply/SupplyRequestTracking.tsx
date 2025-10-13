@@ -329,6 +329,7 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
         request={selectedRequest}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        userId={user?.id || ''}
       />
     </>
   );

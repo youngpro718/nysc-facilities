@@ -4,6 +4,7 @@ import { submitSupplyOrder } from '@/services/supplyOrdersService';
 import { useToast } from '@/hooks/use-toast';
 import { useGenerateReceipt } from '@/hooks/useSupplyReceipts';
 import { createReceiptData } from '@/lib/receiptUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface CartItem {
   item_id: string;
@@ -19,6 +20,7 @@ export function useOrderCart() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { mutateAsync: generateReceipt } = useGenerateReceipt();
+  const { user } = useAuth();
 
   const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string }, quantity: number = 1) => {
     setCartItems(prev => {
@@ -68,6 +70,15 @@ export function useOrderCart() {
       toast({
         title: 'Cart is empty',
         description: 'Please add items to your cart before submitting.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: 'Not authenticated',
+        description: 'Please log in to submit orders.',
         variant: 'destructive',
       });
       return;
@@ -130,7 +141,7 @@ export function useOrderCart() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [cartItems, toast, queryClient, clearCart]);
+  }, [cartItems, toast, queryClient, clearCart, user]);
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 

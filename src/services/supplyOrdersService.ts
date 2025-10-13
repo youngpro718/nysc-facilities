@@ -18,6 +18,12 @@ export interface SubmitOrderPayload {
 }
 
 export async function submitSupplyOrder(payload: SubmitOrderPayload) {
+  // Verify authentication
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error('Authentication required. Please refresh and try again.');
+  }
+
   // Fetch minimal inventory details to evaluate approval policy
   const itemIds = Array.from(new Set(payload.items.map(i => i.item_id)));
   const { data: inv, error: invErr } = await supabase
