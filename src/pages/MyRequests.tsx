@@ -165,7 +165,7 @@ export default function MyRequests() {
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
       <PageContainer>
       <PageHeader 
-        title="My Requests" 
+        title="My Key Requests" 
         description="Track and manage your key requests"
       >
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">

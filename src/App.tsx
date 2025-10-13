@@ -14,6 +14,7 @@ import Lighting from "@/pages/Lighting";
 import UserDashboard from "@/pages/UserDashboard";
 import MyRequests from "@/pages/MyRequests";
 import MyIssues from "@/pages/MyIssues";
+import MySupplyRequests from "@/pages/MySupplyRequests";
 import AdminProfile from "@/pages/AdminProfile";
 import SystemSettings from "@/pages/SystemSettings";
 import VerificationPending from "@/pages/VerificationPending";
@@ -158,8 +159,13 @@ function AppContent() {
             <Notifications />
           </ProtectedRoute>
         } />
-        {/* Supply Requests now handled by Operations page */}
-        <Route path="supply-requests" element={<Navigate to="/supply-room" replace />} />
+        {/* Supply Requests - User facing route */}
+        <Route path="supply-requests" element={<Navigate to="/my-supply-requests" replace />} />
+        <Route path="my-supply-requests" element={
+          <ProtectedRoute>
+            <MySupplyRequests />
+          </ProtectedRoute>
+        } />
         <Route path="supply-room" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Room">
