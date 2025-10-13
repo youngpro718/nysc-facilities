@@ -123,7 +123,7 @@
     "vite-plugin-pwa": "^1.0.3"
   },
   "overrides": {
-    "esbuild": "^0.24.2",
+    "esbuild": "^0.25.10",
     "inquirer": "^9.3.8",
     "external-editor": "^3.1.0",
     "tmp": "^0.2.4"
