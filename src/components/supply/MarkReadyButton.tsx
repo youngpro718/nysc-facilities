@@ -22,7 +22,7 @@ export function MarkReadyButton({ requestId, disabled }: MarkReadyButtonProps) {
         .from('supply_requests')
         .update({ 
           status: 'ready',
-          ready_at: new Date().toISOString()
+          ready_for_delivery_at: new Date().toISOString()
         })
         .eq('id', requestId);
 
