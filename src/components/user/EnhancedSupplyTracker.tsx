@@ -165,7 +165,10 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
           </div>
           <Dialog open={showNewRequestForm} onOpenChange={setShowNewRequestForm}>
             <DialogTrigger asChild>
-              <Button size="sm" className="flex-shrink-0 touch-manipulation">
+              <Button 
+                size="sm" 
+                className="flex-shrink-0 touch-manipulation min-h-[44px] active:scale-95 transition-transform"
+              >
                 <ShoppingCart className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Quick Order</span>
               </Button>
@@ -194,9 +197,9 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                 isActive ? 'border-primary/30 bg-primary/5' : 'border-border'
               }`}
             >
-              {/* Header - Mobile Optimized */}
+              {/* Header - Mobile Optimized with touch feedback */}
               <div
-                className="p-2 sm:p-3 cursor-pointer active:bg-accent/70 transition-colors"
+                className="p-2 sm:p-3 cursor-pointer active:bg-accent/70 transition-all duration-150 active:scale-[0.99] touch-manipulation"
                 onClick={() => toggleExpand(request.id)}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -235,7 +238,11 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                     </div>
                   </div>
 
-                  <Button variant="ghost" size="sm" className="flex-shrink-0 p-1 sm:p-2 touch-manipulation">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="flex-shrink-0 p-1 sm:p-2 touch-manipulation min-h-[44px] min-w-[44px] active:scale-95 transition-transform"
+                  >
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4" />
                     ) : (

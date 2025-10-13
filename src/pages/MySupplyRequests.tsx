@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, Filter, RefreshCw } from "lucide-react";
+import { Package, Plus, Filter, RefreshCw, AlertCircle, WifiOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupplyRequests } from "@/hooks/useSupplyRequests";
 import { Button } from "@/components/ui/button";
@@ -13,18 +13,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { QuickOrderGrid } from "@/components/supply/QuickOrderGrid";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { SupplyRequestErrorBoundary } from "@/components/supply/SupplyRequestErrorBoundary";
+import { toast } from "sonner";
 
 export default function MySupplyRequests() {
   const [showNewRequestForm, setShowNewRequestForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const isMobile = useIsMobile();
   const { user } = useAuth();
-  const { data: requests = [], isLoading, refetch, isFetching } = useSupplyRequests(user?.id);
+  const { data: requests = [], isLoading, refetch, isFetching, error, isError } = useSupplyRequests(user?.id);
 
-  // Handle refresh for pull-to-refresh
+  // Handle refresh for pull-to-refresh with error handling
   const handleRefresh = async () => {
-    await refetch();
+    try {
+      await refetch();
+      toast.success("Refreshed successfully");
+    } catch (err) {
+      toast.error("Failed to refresh. Please try again.");
+      console.error("Refresh error:", err);
+    }
+  };
+
+  // Handle manual retry
+  const handleRetry = async () => {
+    try {
+      await refetch();
+    } catch (err) {
+      console.error("Retry error:", err);
+    }
   };
 
   // Filter requests based on status
@@ -41,7 +57,34 @@ export default function MySupplyRequests() {
     );
   }
 
+  // Error state with retry
+  if (isError) {
+    return (
+      <PageContainer>
+        <PageHeader title="My Supply Requests" description="Track your supply requests" />
+        <Card className="border-destructive/50">
+          <CardContent className="flex flex-col items-center text-center py-12 px-4">
+            <WifiOff className="h-12 w-12 text-destructive mb-4" />
+            <h3 className="text-base sm:text-lg font-medium mb-2">
+              Unable to load requests
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+              {error instanceof Error 
+                ? error.message 
+                : "There was a problem loading your supply requests. Please check your connection and try again."}
+            </p>
+            <Button onClick={handleRetry} disabled={isFetching} className="touch-target">
+              <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </PageContainer>
+    );
+  }
+
   return (
+    <SupplyRequestErrorBoundary onReset={handleRetry}>
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
       <PageContainer>
         <PageHeader 
@@ -73,7 +116,7 @@ export default function MySupplyRequests() {
               size="sm" 
               onClick={() => refetch()}
               disabled={isFetching}
-              className="w-full sm:w-auto touch-target"
+              className="w-full sm:w-auto touch-target min-h-[44px] active:scale-95 transition-transform"
             >
               <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline ml-2">Refresh</span>
@@ -81,7 +124,7 @@ export default function MySupplyRequests() {
 
             <Dialog open={showNewRequestForm} onOpenChange={setShowNewRequestForm}>
               <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto touch-target">
+                <Button className="w-full sm:w-auto touch-target min-h-[44px] active:scale-95 transition-transform">
                   <Plus className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">New Request</span>
                   <span className="sm:hidden">New</span>
@@ -110,7 +153,10 @@ export default function MySupplyRequests() {
                   : `You don't have any ${statusFilter} supply requests at the moment.`}
               </p>
               {statusFilter === "all" && (
-                <Button onClick={() => setShowNewRequestForm(true)} className="touch-target">
+                <Button 
+                  onClick={() => setShowNewRequestForm(true)} 
+                  className="touch-target min-h-[44px] active:scale-95 transition-transform"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create First Request
                 </Button>
@@ -125,5 +171,6 @@ export default function MySupplyRequests() {
         )}
       </PageContainer>
     </PullToRefresh>
+    </SupplyRequestErrorBoundary>
   );
 }
