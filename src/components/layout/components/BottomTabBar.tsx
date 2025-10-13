@@ -82,7 +82,7 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     Lighting: "/lighting",
     Maintenance: "/maintenance",
     "Court Operations": "/court-operations",
-    "My Requests": "/my-requests",
+    "My Requests": "/dashboard",
     "My Issues": "/my-issues",
     "Admin Profile": "/admin-profile",
     Profile: "/profile",
