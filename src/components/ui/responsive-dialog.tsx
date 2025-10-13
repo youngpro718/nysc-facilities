@@ -39,14 +39,14 @@ export function ResponsiveDialog({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className={cn("max-h-[96vh] pb-safe flex flex-col", className)}>
+        <DrawerContent className={cn("max-h-[92vh] flex flex-col", className)}>
           {(title || description) && (
-            <DrawerHeader className="pb-3 flex-shrink-0 sticky top-0 bg-background z-10 border-b">
-              {title && <DrawerTitle className="text-center">{title}</DrawerTitle>}
-              {description && <DrawerDescription className="text-center">{description}</DrawerDescription>}
+            <DrawerHeader className="pb-3 flex-shrink-0 sticky top-0 bg-background z-10 border-b safe-area-top">
+              {title && <DrawerTitle className="text-center text-base">{title}</DrawerTitle>}
+              {description && <DrawerDescription className="text-center text-sm">{description}</DrawerDescription>}
             </DrawerHeader>
           )}
-          <div className="px-4 overflow-y-auto flex-1 min-h-0">
+          <div className="px-3 py-2 overflow-y-auto flex-1 min-h-0 pb-safe">
             {children}
           </div>
         </DrawerContent>
@@ -56,14 +56,14 @@ export function ResponsiveDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("max-w-4xl max-h-[90vh] overflow-y-auto", className)}>
+      <DialogContent className={cn("max-w-4xl max-h-[88vh] flex flex-col", className)}>
         {(title || description) && (
-          <DialogHeader>
+          <DialogHeader className="flex-shrink-0">
             {title && <DialogTitle>{title}</DialogTitle>}
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
         )}
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto flex-1 min-h-0">
           {children}
         </div>
       </DialogContent>

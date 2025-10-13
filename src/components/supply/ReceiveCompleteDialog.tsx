@@ -227,69 +227,71 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
     <ResponsiveDialog 
       open={open} 
       onOpenChange={onOpenChange}
-      title={`Complete Order: ${request.title}`}
+      title={`Complete: ${request.title}`}
       className="max-w-2xl"
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Request Info */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-semibold">Requester:</Label>
-            <span className="text-sm">
+        <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-semibold text-muted-foreground">Requester</Label>
+            <span className="text-sm font-medium">
               {request.profiles?.first_name} {request.profiles?.last_name}
-              {request.profiles?.department && ` (${request.profiles.department})`}
+              {request.profiles?.department && ` • ${request.profiles.department}`}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-sm font-semibold">Priority:</Label>
-            <Badge variant={request.priority === 'urgent' ? 'destructive' : 'secondary'}>
+            <Label className="text-xs font-semibold text-muted-foreground">Priority:</Label>
+            <Badge variant={request.priority === 'urgent' ? 'destructive' : 'secondary'} className="text-xs">
               {request.priority}
             </Badge>
           </div>
         </div>
 
         {/* Items to Fulfill */}
-        <div className="space-y-3">
-          <Label className="text-base font-semibold">Items to Fulfill:</Label>
-          {request.supply_request_items?.map((item: any) => (
-            <div key={item.id} className="border rounded-lg p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{item.inventory_items?.name}</span>
-                <span className="text-sm text-muted-foreground">
-                  Requested: {item.quantity_requested} {item.inventory_items?.unit}
-                </span>
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold">Items to Fulfill</Label>
+          <div className="space-y-2">
+            {request.supply_request_items?.map((item: any) => (
+              <div key={item.id} className="border rounded-lg p-2.5 space-y-2 bg-card">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-sm line-clamp-1">{item.inventory_items?.name}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    Req: {item.quantity_requested} {item.inventory_items?.unit}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={`qty-${item.id}`} className="text-xs whitespace-nowrap">Fulfilled:</Label>
+                  <Input
+                    id={`qty-${item.id}`}
+                    type="number"
+                    min="0"
+                    value={fulfilledQuantities[item.item_id] || 0}
+                    onChange={(e) => handleQuantityChange(item.item_id, e.target.value)}
+                    className="w-20 h-10 text-sm"
+                  />
+                  <span className="text-xs text-muted-foreground">{item.inventory_items?.unit}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor={`qty-${item.id}`} className="text-sm">Fulfilled:</Label>
-                <Input
-                  id={`qty-${item.id}`}
-                  type="number"
-                  min="0"
-                  value={fulfilledQuantities[item.item_id] || 0}
-                  onChange={(e) => handleQuantityChange(item.item_id, e.target.value)}
-                  className="w-24 min-h-11"
-                />
-                <span className="text-sm text-muted-foreground">{item.inventory_items?.unit}</span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Notes */}
         <div className="space-y-2">
-          <Label htmlFor="notes">Notes (optional):</Label>
+          <Label htmlFor="notes" className="text-sm">Notes (optional)</Label>
           <Textarea
             id="notes"
             placeholder="E.g., Only had 8 pens, provided those"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            className="min-h-20"
+            rows={2}
+            className="text-sm resize-none"
           />
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t sticky bottom-0 bg-background">
+      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t mobile-sticky-footer">
         <Button
           type="button"
           variant="outline"
@@ -299,7 +301,8 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
             onOpenChange(false);
           }}
           disabled={isProcessing}
-          className="flex-1 min-w-24 min-h-12"
+          className="min-h-11"
+          size="sm"
         >
           Cancel
         </Button>
@@ -312,10 +315,10 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
             handleReject();
           }}
           disabled={isProcessing}
-          className="flex-1 min-w-24 min-h-12"
+          className="min-h-11"
+          size="sm"
         >
-          {rejectMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Reject
+          {rejectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reject'}
         </Button>
         <Button
           type="button"
@@ -326,10 +329,10 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
             requestApprovalMutation.mutate();
           }}
           disabled={isProcessing}
-          className="flex-1 min-w-32 min-h-12"
+          className="min-h-11"
+          size="sm"
         >
-          {requestApprovalMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Request Approval
+          {requestApprovalMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Need Approval'}
         </Button>
         <Button
           type="button"
@@ -339,10 +342,10 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
             completeMutation.mutate();
           }}
           disabled={isProcessing}
-          className="flex-1 min-w-32 min-h-12"
+          className="min-h-11"
+          size="sm"
         >
-          {completeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Complete Order
+          {completeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Complete'}
         </Button>
       </div>
     </ResponsiveDialog>
