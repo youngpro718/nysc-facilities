@@ -236,12 +236,21 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
                       </div>
 
                       {isSupplyStaff && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-3 flex-wrap">
                           {request.status === 'pending' && (
                             <MarkReadyButton requestId={request.id} />
                           )}
                           {(request.status === 'pending' || request.status === 'ready') && (
-                            <Button onClick={() => handleReceive(request)}>
+                            <Button 
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleReceive(request);
+                              }}
+                              size="lg"
+                              className="min-h-12 min-w-36"
+                            >
                               Complete Order
                             </Button>
                           )}

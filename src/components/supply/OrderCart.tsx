@@ -138,26 +138,42 @@ export function OrderCart({
             {!showOptions ? (
               <div className="space-y-2">
                 <Button
-                  onClick={() => setShowOptions(true)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowOptions(true);
+                  }}
                   variant="outline"
-                  className="w-full"
+                  className="w-full min-h-12"
+                  size="lg"
                 >
                   Add Details (Optional)
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
                 <Button
-                  onClick={handleSubmit}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSubmit();
+                  }}
                   disabled={isSubmitting}
-                  className="w-full touch-manipulation"
+                  className="w-full min-h-12"
                   size="lg"
                 >
                   <Send className="h-4 w-4 mr-2" />
                   {isSubmitting ? 'Submitting...' : 'Submit Order'}
                 </Button>
                 <Button
-                  onClick={onClear}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClear();
+                  }}
                   variant="ghost"
-                  className="w-full"
+                  className="w-full min-h-12"
                 >
                   Clear Cart
                 </Button>
@@ -230,18 +246,30 @@ export function OrderCart({
                   />
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Button
-                    onClick={() => setShowOptions(false)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowOptions(false);
+                    }}
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 min-h-12"
+                    size="lg"
                   >
                     Back
                   </Button>
                   <Button
-                    onClick={handleSubmit}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSubmit();
+                    }}
                     disabled={isSubmitting}
-                    className="flex-1 touch-manipulation"
+                    className="flex-1 min-h-12"
+                    size="lg"
                   >
                     <Send className="h-4 w-4 mr-2" />
                     {isSubmitting ? 'Submitting...' : 'Submit'}

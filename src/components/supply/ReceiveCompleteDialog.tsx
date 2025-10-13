@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -224,103 +224,127 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange }: ReceiveCo
   const isProcessing = completeMutation.isPending || rejectMutation.isPending || requestApprovalMutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Complete Order: {request.title}</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          {/* Request Info */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-semibold">Requester:</Label>
-              <span className="text-sm">
-                {request.profiles?.first_name} {request.profiles?.last_name}
-                {request.profiles?.department && ` (${request.profiles.department})`}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-semibold">Priority:</Label>
-              <Badge variant={request.priority === 'urgent' ? 'destructive' : 'secondary'}>
-                {request.priority}
-              </Badge>
-            </div>
+    <ResponsiveDialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+      title={`Complete Order: ${request.title}`}
+      className="max-w-2xl"
+    >
+      <div className="space-y-4">
+        {/* Request Info */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-semibold">Requester:</Label>
+            <span className="text-sm">
+              {request.profiles?.first_name} {request.profiles?.last_name}
+              {request.profiles?.department && ` (${request.profiles.department})`}
+            </span>
           </div>
-
-          {/* Items to Fulfill */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">Items to Fulfill:</Label>
-            {request.supply_request_items?.map((item: any) => (
-              <div key={item.id} className="border rounded-lg p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{item.inventory_items?.name}</span>
-                  <span className="text-sm text-muted-foreground">
-                    Requested: {item.quantity_requested} {item.inventory_items?.unit}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor={`qty-${item.id}`} className="text-sm">Fulfilled:</Label>
-                  <Input
-                    id={`qty-${item.id}`}
-                    type="number"
-                    min="0"
-                    value={fulfilledQuantities[item.item_id] || 0}
-                    onChange={(e) => handleQuantityChange(item.item_id, e.target.value)}
-                    className="w-24"
-                  />
-                  <span className="text-sm text-muted-foreground">{item.inventory_items?.unit}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional):</Label>
-            <Textarea
-              id="notes"
-              placeholder="E.g., Only had 8 pens, provided those"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-            />
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-semibold">Priority:</Label>
+            <Badge variant={request.priority === 'urgent' ? 'destructive' : 'secondary'}>
+              {request.priority}
+            </Badge>
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isProcessing}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleReject}
-            disabled={isProcessing}
-          >
-            {rejectMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Reject
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => requestApprovalMutation.mutate()}
-            disabled={isProcessing}
-          >
-            {requestApprovalMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Request Approval
-          </Button>
-          <Button
-            onClick={() => completeMutation.mutate()}
-            disabled={isProcessing}
-          >
-            {completeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Complete Order
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {/* Items to Fulfill */}
+        <div className="space-y-3">
+          <Label className="text-base font-semibold">Items to Fulfill:</Label>
+          {request.supply_request_items?.map((item: any) => (
+            <div key={item.id} className="border rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{item.inventory_items?.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  Requested: {item.quantity_requested} {item.inventory_items?.unit}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor={`qty-${item.id}`} className="text-sm">Fulfilled:</Label>
+                <Input
+                  id={`qty-${item.id}`}
+                  type="number"
+                  min="0"
+                  value={fulfilledQuantities[item.item_id] || 0}
+                  onChange={(e) => handleQuantityChange(item.item_id, e.target.value)}
+                  className="w-24 min-h-11"
+                />
+                <span className="text-sm text-muted-foreground">{item.inventory_items?.unit}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Notes */}
+        <div className="space-y-2">
+          <Label htmlFor="notes">Notes (optional):</Label>
+          <Textarea
+            id="notes"
+            placeholder="E.g., Only had 8 pens, provided those"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            className="min-h-20"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t sticky bottom-0 bg-background">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onOpenChange(false);
+          }}
+          disabled={isProcessing}
+          className="flex-1 min-w-24 min-h-12"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleReject();
+          }}
+          disabled={isProcessing}
+          className="flex-1 min-w-24 min-h-12"
+        >
+          {rejectMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Reject
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            requestApprovalMutation.mutate();
+          }}
+          disabled={isProcessing}
+          className="flex-1 min-w-32 min-h-12"
+        >
+          {requestApprovalMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Request Approval
+        </Button>
+        <Button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            completeMutation.mutate();
+          }}
+          disabled={isProcessing}
+          className="flex-1 min-w-32 min-h-12"
+        >
+          {completeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Complete Order
+        </Button>
+      </div>
+    </ResponsiveDialog>
   );
 }

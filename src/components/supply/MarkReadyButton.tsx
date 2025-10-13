@@ -84,9 +84,15 @@ export function MarkReadyButton({ requestId, disabled }: MarkReadyButtonProps) {
 
   return (
     <Button
-      size="sm"
-      onClick={() => markReadyMutation.mutate()}
+      type="button"
+      size="lg"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        markReadyMutation.mutate();
+      }}
       disabled={disabled || markReadyMutation.isPending}
+      className="min-h-12 min-w-32"
     >
       {markReadyMutation.isPending ? (
         <>

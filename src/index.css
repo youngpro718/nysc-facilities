@@ -5,6 +5,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import './styles/mobile-buttons.css';
  
 @layer base {
   :root {
