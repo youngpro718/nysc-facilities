@@ -15,8 +15,20 @@ export function useOnboarding() {
       return;
     }
 
+    // Admins bypass verification - they get immediate access
+    if (profile?.access_level === 'admin') {
+      console.log('[useOnboarding] Admin user detected, bypassing verification');
+      setShowOnboarding(false);
+      return;
+    }
+
     // Do not show onboarding until the user's email/account is verified
     if (profile?.verification_status !== 'verified') {
+      console.log('[useOnboarding] User not verified, blocking onboarding:', {
+        verification_status: profile?.verification_status,
+        is_approved: profile?.is_approved,
+        access_level: profile?.access_level
+      });
       setShowOnboarding(false);
       return;
     }

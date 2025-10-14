@@ -8753,11 +8753,11 @@ export type Database = {
       adjust_inventory_quantity: {
         Args:
           | {
-              item_id: string
-              notes?: string
-              quantity_change: number
-              reference_id?: string
-              transaction_type: string
+              p_item_id: string
+              p_notes?: string
+              p_quantity_change: number
+              p_reference_id?: string
+              p_transaction_type: string
             }
           | {
               p_item_id: string
@@ -8772,6 +8772,10 @@ export type Database = {
           new_role: Database["public"]["Enums"]["user_role"]
           target_user_id: string
         }
+        Returns: Json
+      }
+      admin_verify_and_approve: {
+        Args: { target_user_id: string }
         Returns: Json
       }
       advance_fulfillment_stage: {
@@ -9496,6 +9500,10 @@ export type Database = {
           p_quantity_received: number
         }
         Returns: undefined
+      }
+      promote_to_admin: {
+        Args: { target_user_id: string }
+        Returns: Json
       }
       promote_user_to_admin: {
         Args: { target_user_id: string }

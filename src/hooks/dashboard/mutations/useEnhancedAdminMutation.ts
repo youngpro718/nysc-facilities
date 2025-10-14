@@ -16,36 +16,29 @@ export function useEnhancedAdminMutation(refetchUsers: () => void) {
   };
 
   const promoteToAdmin = async (userId: string, userName: string): Promise<void> => {
+    console.log('[useEnhancedAdminMutation] Promoting user to admin:', { userId, userName });
+    
     try {
-      // Check if user already has admin role
-      const { data: existingRole, error: checkError } = await supabase
-        .from('user_roles')
-        .select()
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
+      // Use unified RPC function
+      const { data, error } = await supabase
+        .rpc('promote_to_admin', { target_user_id: userId });
 
-      if (checkError) throw checkError;
-
-      if (existingRole) {
-        toast.error('User already has admin privileges');
-        return;
+      if (error) {
+        console.error('[useEnhancedAdminMutation] RPC error:', error);
+        throw error;
       }
 
-      // Add admin role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: 'admin'
-        });
+      if (!data?.success) {
+        const errorMsg = data?.message || 'Failed to promote user';
+        console.error('[useEnhancedAdminMutation] RPC returned error:', errorMsg);
+        throw new Error(errorMsg);
+      }
 
-      if (roleError) throw roleError;
-
+      console.log('[useEnhancedAdminMutation] Successfully promoted user:', data);
       toast.success(`${userName} has been promoted to admin`);
       refetchUsers();
     } catch (error) {
-      console.error('Error promoting user to admin:', error);
+      console.error('[useEnhancedAdminMutation] Error promoting user to admin:', error);
       toast.error('Failed to promote user to admin');
       throw error;
     }

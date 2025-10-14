@@ -71,18 +71,17 @@ export function useUserManagement() {
   // Get admin users specifically
   const adminUsers = users.filter(u => u.access_level === 'admin');
 
-  // Promote user to admin
+  // Promote user to admin using unified RPC function
   const promoteToAdmin = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          access_level: 'admin',
-          is_approved: true 
-        })
-        .eq('id', userId);
+      const { data, error } = await supabase
+        .rpc('promote_to_admin', { target_user_id: userId });
 
       if (error) throw error;
+      if (!data?.success) {
+        throw new Error(data?.message || 'Failed to promote user');
+      }
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });

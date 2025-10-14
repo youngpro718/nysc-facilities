@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserCheck, UserX, Mail, Clock, AlertCircle } from "lucide-react";
+import { UserCheck, UserX, Mail, Clock, AlertCircle, ShieldCheck } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 import type { User } from "../EnhancedUserManagementModal";
 
 interface PendingUsersSectionProps {
@@ -17,6 +19,33 @@ export function PendingUsersSection({
   onVerify, 
   onReject 
 }: PendingUsersSectionProps) {
+  const handleQuickApprove = async (userId: string, userName: string) => {
+    console.log('[PendingUsersSection] Quick approving user:', { userId, userName });
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('admin_verify_and_approve', { target_user_id: userId });
+
+      if (error) {
+        console.error('[PendingUsersSection] RPC error:', error);
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.message || 'Failed to approve user');
+      }
+
+      console.log('[PendingUsersSection] Successfully approved user:', data);
+      toast.success(`${userName} has been verified and approved`);
+      
+      // Trigger parent component refresh
+      onVerify(userId);
+    } catch (error) {
+      console.error('[PendingUsersSection] Error approving user:', error);
+      toast.error('Failed to verify and approve user');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-8">
@@ -67,6 +96,14 @@ export function PendingUsersSection({
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleQuickApprove(user.id, `${user.first_name} ${user.last_name}`)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <ShieldCheck className="h-4 w-4 mr-2" />
+                    Quick Approve
+                  </Button>
                   <Button
                     size="sm"
                     onClick={() => onVerify(user.id)}

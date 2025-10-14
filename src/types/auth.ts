@@ -5,6 +5,8 @@ export interface UserProfile {
   first_name: string;
   last_name: string;
   verification_status: 'pending' | 'verified' | 'rejected';
+  is_approved?: boolean;
+  access_level?: 'none' | 'read' | 'write' | 'admin';
   avatar_url?: string;
   department_id?: string;
   title?: string;

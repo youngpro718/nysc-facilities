@@ -41,8 +41,20 @@ export function ProtectedRoute({
     );
   }
 
+  // Admins bypass verification checks
+  if (profile?.access_level === 'admin') {
+    console.log('[ProtectedRoute] Admin user detected, granting access');
+    return <>{children}</>;
+  }
+
   // Don't render if verification is required but user is pending
   if (requireVerified && profile?.verification_status === 'pending') {
+    console.log('[ProtectedRoute] Blocking route - verification required:', {
+      verification_status: profile?.verification_status,
+      is_approved: profile?.is_approved,
+      access_level: profile?.access_level,
+      requireVerified
+    });
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
