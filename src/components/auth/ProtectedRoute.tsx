@@ -2,6 +2,7 @@
 import { ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -23,11 +24,11 @@ export function ProtectedRoute({
 
   // SECURITY: Authentication guard removed - no bypasses allowed in production
 
-  // Show loading while auth state is being determined
+  // OPTIMIZATION: Show skeleton instead of spinner for better UX
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="container mx-auto p-6">
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -35,8 +36,8 @@ export function ProtectedRoute({
   // Don't render anything if not authenticated - auth provider handles redirects
   if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="container mx-auto p-6">
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -56,8 +57,8 @@ export function ProtectedRoute({
       requireVerified
     });
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="container mx-auto p-6">
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -72,8 +73,8 @@ export function ProtectedRoute({
     
     if (!hasDepartmentAccess && !hasRoomAccess) {
       return (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="container mx-auto p-6">
+          <DashboardSkeleton />
         </div>
       );
     }

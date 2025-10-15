@@ -163,62 +163,61 @@ export const authService = {
     return data;
   },
   fetchUserProfile: async (userId: string) => {
-    // Get user roles to determine admin status
-    const { data: userRoles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
+    const startTime = Date.now();
+    console.log('[authService.fetchUserProfile] Starting parallel fetch for user:', userId);
+    
+    // OPTIMIZATION: Fetch user roles and profile in parallel instead of sequentially
+    const [rolesResult, profileResult] = await Promise.all([
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('profiles')
+        .select(`
+          *,
+          departments(name)
+        `)
+        .eq('id', userId)
+        .maybeSingle()
+    ]);
 
-    if (rolesError) {
-      console.error('Error fetching user roles:', rolesError);
-      return { isAdmin: false, profile: null };
+    if (rolesResult.error) {
+      console.error('[authService.fetchUserProfile] Error fetching user roles:', rolesResult.error);
     }
 
-    const isAdmin = userRoles?.some(role => role.role === 'admin') || false;
+    if (profileResult.error) {
+      console.error('[authService.fetchUserProfile] Error fetching profile:', profileResult.error);
+    }
 
-    // Get user profile if exists
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    const isAdmin = rolesResult.data?.role === 'admin' || false;
+    const profile = profileResult.data || null;
+
+    const elapsed = Date.now() - startTime;
+    console.log(`[authService.fetchUserProfile] Completed in ${elapsed}ms - isAdmin: ${isAdmin}, profile: ${!!profile}`);
 
     return { isAdmin, profile };
   },
   updateSessionTracking: async (userId: string, deviceInfo: any) => {
-    // Align with schema: use last_active_at instead of last_activity
+    // OPTIMIZATION: Use upsert for single round-trip instead of select-then-update/insert
     try {
-      // Try update existing row
-      const { data: existing, error: fetchErr } = await supabase
+      const { error } = await supabase
         .from('user_sessions')
-        .select('id')
-        .eq('user_id', userId)
-        .limit(1)
-        .maybeSingle();
-
-      if (fetchErr) throw fetchErr;
-
-      if (existing?.id) {
-        const { error: upErr } = await supabase
-          .from('user_sessions')
-          .update({
-            device_info: deviceInfo,
-            last_active_at: new Date().toISOString()
-          })
-          .eq('id', existing.id);
-        if (upErr) throw upErr;
-      } else {
-        const { error: insErr } = await supabase
-          .from('user_sessions')
-          .insert({
-            user_id: userId,
-            device_info: deviceInfo,
-            last_active_at: new Date().toISOString()
-          });
-        if (insErr) throw insErr;
+        .upsert({
+          user_id: userId,
+          device_info: deviceInfo,
+          last_active_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false
+        });
+      
+      if (error) {
+        console.error('[authService.updateSessionTracking] Error:', error);
       }
     } catch (error) {
-      console.error('Session tracking error:', error);
+      console.error('[authService.updateSessionTracking] Exception:', error);
     }
   },
   deleteUserSession: async (userId: string) => {

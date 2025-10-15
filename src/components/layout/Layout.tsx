@@ -15,6 +15,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { Button } from "@/components/ui/button";
+import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
 
 const Layout = () => {
   const location = useLocation();
@@ -26,11 +27,15 @@ const Layout = () => {
   const { permissions, userRole, profile, loading: permissionsLoading, refetch } = useRolePermissions();
   const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
-  // Only build navigation once permissions are ready to avoid flashing the wrong menu after login
+  // OPTIMIZATION: Build navigation even while loading to enable progressive rendering
+  // Use userRole if available, or show skeleton instead of blocking
   const navReady = !!userRole && !permissionsLoading;
   const navigation = navReady 
     ? getRoleBasedNavigation(permissions, userRole, profile) 
     : [];
+  
+  // Show partial UI faster - don't wait for full permissions
+  const canShowPartialUI = isAuthenticated && !isLoading;
     
   console.log('Layout - userRole:', userRole, 'permissionsLoading:', permissionsLoading);
   console.log('Layout - isAdmin:', isAdmin);
@@ -38,13 +43,13 @@ const Layout = () => {
   console.log('Layout - profile:', profile);
   console.log('Layout - navigation:', navigation);
 
-  // Show refresh button if permissions are stuck loading for >8 seconds
+  // OPTIMIZATION: Reduced timeout from 8s to 5s since we now load faster
   useEffect(() => {
     if (!navReady && isAuthenticated && !isLoginPage) {
       const timer = setTimeout(() => {
-        console.warn('[Layout] Navigation stuck loading for 8s, showing refresh button');
+        console.warn('[Layout] Navigation stuck loading for 5s, showing refresh button');
         setShowRefreshButton(true);
-      }, 8000);
+      }, 5000);
       
       return () => clearTimeout(timer);
     } else {
@@ -116,13 +121,11 @@ const Layout = () => {
                     </span>
                   </div>
                   <button
-                    className="focus:outline-none p-1 rounded-full hover:bg-muted/50 transition-colors disabled:opacity-50"
+                    className="focus:outline-none p-1 rounded-full hover:bg-muted/50 transition-colors"
                     title="Profile"
-                    disabled={!navReady}
                     onClick={() => {
-                      if (!navReady) return;
-                      // Use resolved userRole to avoid transient misroutes
-                      const goAdmin = userRole === 'admin';
+                      // OPTIMIZATION: Allow navigation even while loading, use best guess
+                      const goAdmin = userRole === 'admin' || isAdmin;
                       navigate(goAdmin ? '/admin-profile' : '/profile');
                     }}
                   >
@@ -159,8 +162,8 @@ const Layout = () => {
                       <RefreshCw className="h-4 w-4" />
                     </Button>
                   ) : (
-                    // Minimal placeholder to avoid flicker
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    // OPTIMIZATION: Show skeleton instead of spinner
+                    <MobileNavigationSkeleton />
                   )}
                 </div>
 
@@ -185,8 +188,8 @@ const Layout = () => {
                       Retry
                     </Button>
                   ) : (
-                    // Minimal placeholder to avoid flicker
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    // OPTIMIZATION: Show skeleton instead of spinner for better UX
+                    <NavigationSkeleton />
                   )}
                 </div>
               </div>

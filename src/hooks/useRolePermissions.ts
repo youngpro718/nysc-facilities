@@ -51,6 +51,9 @@ export function useRolePermissions() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
+  // OPTIMIZATION: Track if we've loaded from cache to show UI faster
+  const [loadedFromCache, setLoadedFromCache] = useState(false);
+  
   // Define role permissions mapping based on court roles
   const rolePermissionsMap: Record<CourtRole, RolePermissions> = {
     judge: {
@@ -211,7 +214,7 @@ export function useRolePermissions() {
     },
   };
 
-  const fetchUserRoleAndPermissions = async () => {
+  const fetchUserRoleAndPermissions = async (skipCache = false) => {
     const startTime = Date.now();
     console.log('[useRolePermissions] Fetch started at:', new Date().toISOString());
     
@@ -223,19 +226,56 @@ export function useRolePermissions() {
       }
 
       console.log('[useRolePermissions] User found:', user.id);
+      
+      // OPTIMIZATION: Check cache first for instant load
+      if (!skipCache) {
+        try {
+          const cached = localStorage.getItem(`permissions_cache_${user.id}`);
+          if (cached) {
+            const { role, profile: cachedProfile, permissions: cachedPerms, timestamp } = JSON.parse(cached);
+            const age = Date.now() - timestamp;
+            
+            // Use cached data if less than 2 minutes old
+            if (age < 120000) {
+              console.log(`[useRolePermissions] Using cached permissions (${Math.round(age/1000)}s old)`);
+              setUserRole(role);
+              setProfile(cachedProfile);
+              setPermissions(cachedPerms);
+              setLoadedFromCache(true);
+              setLoading(false);
+              
+              // Continue fetching in background to update cache
+              console.log('[useRolePermissions] Fetching fresh data in background...');
+            }
+          }
+        } catch (e) {
+          console.warn('[useRolePermissions] Cache read error:', e);
+        }
+      }
 
-      // Get user role with fallback to secure function
-      const roleQuery = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // OPTIMIZATION: Fetch role and profile in parallel
+      const [roleQuery, profileQuery] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('profiles')
+          .select(`
+            *,
+            departments(name)
+          `)
+          .eq('id', user.id)
+          .maybeSingle()
+      ]);
 
       if (roleQuery.error) {
         console.error('[useRolePermissions] Error fetching user role (RLS likely):', roleQuery.error);
       }
 
       let role = (roleQuery.data?.role as CourtRole | null) || null;
+      const profileData = profileQuery.data;
 
       if (!role) {
         // Fallback to secure RPC that bypasses RLS
@@ -260,17 +300,6 @@ export function useRolePermissions() {
       }
 
       console.log('[useRolePermissions] Final role from role lookup layer:', role);
-      
-      // Check if user is assigned to Supply Department and override role if needed
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          departments(name)
-        `)
-        .eq('id', user.id)
-        .single();
-      
       console.log('useRolePermissions - Profile data:', profileData);
       console.log('useRolePermissions - Department name:', profileData?.departments?.name);
       
@@ -332,6 +361,22 @@ export function useRolePermissions() {
       
       setUserRole(effectiveRole);
       setPermissions(finalPermissions);
+      setProfile(profileData);
+      
+      // OPTIMIZATION: Cache the results for faster subsequent loads
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          localStorage.setItem(`permissions_cache_${currentUser.id}`, JSON.stringify({
+            role: effectiveRole,
+            profile: profileData,
+            permissions: finalPermissions,
+            timestamp: Date.now()
+          }));
+        }
+      } catch (e) {
+        console.warn('[useRolePermissions] Cache write error:', e);
+      }
       
       const elapsed = Date.now() - startTime;
       console.log(`[useRolePermissions] Fetch completed in ${elapsed}ms`);
@@ -380,13 +425,12 @@ export function useRolePermissions() {
   useEffect(() => {
     console.log('[useRolePermissions] Initial mount - fetching permissions');
     
-    // Set timeout to force loading=false if fetch takes too long
+    // OPTIMIZATION: Reduced timeout from 5s to 3s since we now have cache
     const timeout = setTimeout(() => {
-      console.warn('[useRolePermissions] Timeout: forcing loading=false after 5 seconds');
-      setLoading(false);
-      
-      // Set fallback permissions if still loading
-      if (loading) {
+      if (loading && !loadedFromCache) {
+        console.warn('[useRolePermissions] Timeout: forcing loading=false after 3 seconds');
+        setLoading(false);
+        
         setUserRole('standard');
         setPermissions(rolePermissionsMap.standard);
         toast({
@@ -395,7 +439,7 @@ export function useRolePermissions() {
           variant: "destructive",
         });
       }
-    }, 5000);
+    }, 3000);
     
     fetchUserRoleAndPermissions().finally(() => {
       clearTimeout(timeout);

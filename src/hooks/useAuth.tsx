@@ -273,24 +273,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(currentSession.user);
           
           // Fetch user profile and role - critical for consistent admin status
-          const userData = await authService.fetchUserProfile(currentSession.user.id);
-          
-          if (!mounted) return;
-          
-          setIsAdmin(userData.isAdmin);
-          setProfile(userData.profile);
-          
-          // Update session tracking
-          try {
-            const deviceInfo = {
-              name: navigator.userAgent.split('/')[0],
-              platform: navigator.platform,
-              language: navigator.language,
-            };
-            await authService.updateSessionTracking(currentSession.user.id, deviceInfo);
-          } catch (error) {
-            console.error('Session tracking error:', error);
-          }
+      const userData = await authService.fetchUserProfile(currentSession.user.id);
+      
+      if (!mounted) return;
+      
+      setIsAdmin(userData.isAdmin);
+      setProfile(userData.profile);
+      
+      // OPTIMIZATION: Update session tracking in background without blocking
+      // Don't await this - let it complete asynchronously
+      const deviceInfo = {
+        name: navigator.userAgent.split('/')[0],
+        platform: navigator.platform,
+        language: navigator.language,
+      };
+      authService.updateSessionTracking(currentSession.user.id, deviceInfo).catch(error => {
+        console.error('[useAuth] Background session tracking error:', error);
+      });
           
           // Handle redirects based on current page and user role (initial load)
           handleRedirect(userData, false);
@@ -336,8 +335,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(newSession);
           setUser(newSession.user);
           
-          // Defer user data fetching to avoid blocking auth state change
-          setTimeout(async () => {
+          // OPTIMIZATION: Defer user data fetching to avoid blocking auth state change
+          // Fetch immediately without setTimeout for faster response
+          (async () => {
             if (!mounted) return;
             
             try {
@@ -356,7 +356,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } catch (error) {
               console.error('useAuth: Error fetching user data after sign in:', error);
             }
-          }, 0);
+          })();
           
         } else if (event === 'SIGNED_OUT') {
           setSession(null);
