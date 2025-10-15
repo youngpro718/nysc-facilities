@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useContext, createContext, ReactNode, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +5,7 @@ import { toast } from 'sonner';
 import { authService } from '@/lib/supabase';
 import { UserProfile, UserSignupData } from '@/types/auth';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 // Define the shape of our auth context
 export interface AuthContextType {
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return userData;
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      logger.error('Error fetching user data', error);
       return { isAdmin: false, profile: null };
     }
   }, []);
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void authService.updateSessionTracking(currentSession.user.id, deviceInfo);
 
     } catch (error) {
-      console.error('Session refresh error:', error);
+      logger.error('Session refresh error', error);
       setSession(null);
       setUser(null);
       setProfile(null);
@@ -97,15 +97,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign in function
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('useAuth: Starting sign in process');
+      logger.debug('Starting sign in process');
       await authService.signInWithEmail(email, password);
 
       toast.success('Welcome back!', {
         description: "You've successfully signed in."
       });
-      console.log('useAuth: Sign in successful');
+      logger.debug('Sign in successful');
     } catch (error: any) {
-      console.error('useAuth: Sign in error:', error);
+      logger.error('Sign in error', error);
       
       // Handle specific error types
       if (error.message?.includes('Invalid login credentials')) {
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign up function
   const signUp = async (email: string, password: string, userData: UserSignupData) => {
     try {
-      console.log('useAuth: Starting sign up process');
+      logger.debug('Starting sign up process');
       await authService.signUpWithEmail(email, password, userData);
       
       // Set onboarding flags to trigger onboarding after verification for this user only
@@ -143,13 +143,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Please check your email for verification instructions."
       });
       
-      console.log('useAuth: Sign up successful, navigating to verification');
+      logger.debug('Sign up successful, navigating to verification');
       // Navigate to verification pending page
       setTimeout(() => {
         navigate('/verification-pending');
       }, 0);
     } catch (error: any) {
-      console.error('useAuth: Sign up error:', error);
+      logger.error('Sign up error', error);
       
       // Handle specific error types
       if (error.message?.includes("User already registered")) {
@@ -177,36 +177,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign out function
   const signOut = async () => {
     try {
-      console.log('Starting sign out process...');
+      logger.debug('Starting sign out process');
       setIsLoading(true);
       
       // Delete user session from database if it exists
       if (user) {
-        console.log('Deleting user session for user:', user.id);
+        logger.debug('Deleting user session');
         await authService.deleteUserSession(user.id);
       }
 
       // Clear storage and sign out
-      console.log('Clearing storage...');
+      logger.debug('Clearing storage');
       localStorage.removeItem('app-auth');
       sessionStorage.clear();
       
-      console.log('Calling authSignOut...');
+      logger.debug('Calling authSignOut');
       await authService.signOut();
       
       // Clear state
-      console.log('Clearing auth state...');
+      logger.debug('Clearing auth state');
       setSession(null);
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
       
-      console.log('Sign out complete, navigating to login...');
+      logger.debug('Sign out complete, navigating to login');
       // Navigate to login page
       navigate('/login', { replace: true });
       toast.success('Successfully signed out!');
     } catch (error: any) {
-      console.error('Sign out error:', error);
+      logger.error('Sign out error', error);
       toast.error(error.message || 'Error signing out');
     } finally {
       setIsLoading(false);
@@ -223,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const currentPath = window.location.pathname;
 
-      console.log('handleRedirect: Current path:', currentPath, 'isAdmin:', userData.isAdmin, 'isExplicitSignIn:', isExplicitSignIn);
+      logger.debug('handleRedirect: evaluating redirect logic');
 
       // Always enforce verification flow ON INITIAL LOAD or EXPLICIT SIGN IN ONLY
       // Do NOT redirect during background token refreshes
@@ -235,7 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 1. This is an explicit sign in event, OR
         // 2. This is initial page load AND we're not already on an allowed page
         if (isExplicitSignIn || (!hasCompletedInitialAuth.current && !allowlist.has(currentPath))) {
-          console.log('handleRedirect: Redirecting to verification pending (explicit sign in or initial load)');
+          logger.debug('Redirecting to verification pending');
           navigate('/verification-pending', { replace: true });
         }
         return;
@@ -244,33 +244,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Relaxed redirects to prevent bouncing:
       // - Admins: only redirect from login to admin home
       // - Regular users: only redirect from login to user dashboard
-      if (userData.isAdmin) {
-        if (currentPath === '/login') {
-          console.log('handleRedirect: Admin coming from login, redirecting to home');
-          navigate('/', { replace: true });
+        if (userData.isAdmin) {
+          if (currentPath === '/login') {
+            logger.debug('Admin coming from login, redirecting to home');
+            navigate('/', { replace: true });
+          }
+          return;
         }
-        return;
-      }
 
-      if (currentPath === '/login') {
-        console.log('handleRedirect: Regular user coming from login, redirecting to dashboard');
-        navigate('/dashboard', { replace: true });
-      }
+        if (currentPath === '/login') {
+          logger.debug('Regular user coming from login, redirecting to dashboard');
+          navigate('/dashboard', { replace: true });
+        }
     };
 
     // Initialize auth state
     const initializeAuth = async () => {
-      try {
-        console.log('useAuth: Initializing authentication...');
-        setIsLoading(true);
-        const currentSession = await authService.getSession();
-        
-        if (!mounted) return;
+        try {
+          logger.debug('Initializing authentication');
+          setIsLoading(true);
+          const currentSession = await authService.getSession();
+          
+          if (!mounted) return;
 
-        if (currentSession) {
-          console.log('useAuth: Session found, fetching user data...');
-          setSession(currentSession);
-          setUser(currentSession.user);
+          if (currentSession) {
+            logger.debug('Session found, fetching user data');
+            setSession(currentSession);
+            setUser(currentSession.user);
           
           // Fetch user profile and role - critical for consistent admin status
       const userData = await authService.fetchUserProfile(currentSession.user.id);
@@ -287,21 +287,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         platform: navigator.platform,
         language: navigator.language,
       };
-      authService.updateSessionTracking(currentSession.user.id, deviceInfo).catch(error => {
-        console.error('[useAuth] Background session tracking error:', error);
-      });
-          
-          // Handle redirects based on current page and user role (initial load)
-          handleRedirect(userData, false);
-        } else {
-          console.log('useAuth: No session found');
-          const currentPath = window.location.pathname;
-          if (currentPath !== '/login' && currentPath !== '/verification-pending') {
-            navigate('/login', { replace: true });
+            authService.updateSessionTracking(currentSession.user.id, deviceInfo).catch(error => {
+              logger.error('Background session tracking error', error);
+            });
+            
+            // Handle redirects based on current page and user role (initial load)
+            handleRedirect(userData, false);
+          } else {
+            logger.debug('No session found');
+            const currentPath = window.location.pathname;
+            if (currentPath !== '/login' && currentPath !== '/verification-pending') {
+              navigate('/login', { replace: true });
+            }
           }
-        }
-      } catch (error: any) {
-        console.error('useAuth: Auth initialization failed:', error);
+        } catch (error: any) {
+          logger.error('Auth initialization failed', error);
         
         if (mounted) {
           setSession(null);
@@ -324,39 +324,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        if (!mounted) return;
-        
-        console.log('useAuth: Auth state changed:', event);
-
-        if (event === 'SIGNED_IN' && newSession) {
-          setSession(newSession);
-          setUser(newSession.user);
+      // Set up auth state change listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, newSession) => {
+          if (!mounted) return;
           
-          // OPTIMIZATION: Defer user data fetching to avoid blocking auth state change
-          // Fetch immediately without setTimeout for faster response
-          (async () => {
-            if (!mounted) return;
+          logger.debug('Auth state changed', { event });
+
+          if (event === 'SIGNED_IN' && newSession) {
+            setSession(newSession);
+            setUser(newSession.user);
             
-            try {
-              const userData = await authService.fetchUserProfile(newSession.user.id);
-              
+            // OPTIMIZATION: Defer user data fetching to avoid blocking auth state change
+            // Fetch immediately without setTimeout for faster response
+            (async () => {
               if (!mounted) return;
               
-              setIsAdmin(userData.isAdmin);
-              setProfile(userData.profile);
-              
-              // Only redirect after explicit sign in (hasCompletedInitialAuth.current = true means this is NOT initial load)
-              // Pass true to indicate this is an explicit sign in event
-              if (hasCompletedInitialAuth.current) {
-                handleRedirect(userData, true);
+              try {
+                const userData = await authService.fetchUserProfile(newSession.user.id);
+                
+                if (!mounted) return;
+                
+                setIsAdmin(userData.isAdmin);
+                setProfile(userData.profile);
+                
+                // Only redirect after explicit sign in (hasCompletedInitialAuth.current = true means this is NOT initial load)
+                // Pass true to indicate this is an explicit sign in event
+                if (hasCompletedInitialAuth.current) {
+                  handleRedirect(userData, true);
+                }
+              } catch (error) {
+                logger.error('Error fetching user data after sign in', error);
               }
-            } catch (error) {
-              console.error('useAuth: Error fetching user data after sign in:', error);
-            }
-          })();
+            })();
           
         } else if (event === 'SIGNED_OUT') {
           setSession(null);

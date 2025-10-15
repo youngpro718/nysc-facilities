@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 export type CourtRole = 
   | 'judge'
@@ -216,18 +217,19 @@ export function useRolePermissions() {
 
   const fetchUserRoleAndPermissions = async (skipCache = false) => {
     const startTime = Date.now();
-    console.log('[useRolePermissions] Fetch started at:', new Date().toISOString());
+    logger.debug('[useRolePermissions] Fetch started');
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('[useRolePermissions] No user found, finishing');
+        logger.debug('[useRolePermissions] No user found');
         return;
       }
 
-      console.log('[useRolePermissions] User found:', user.id);
+      logger.debug('[useRolePermissions] User authenticated');
       
-      // OPTIMIZATION: Check cache first for instant load
+      // SECURITY FIX: Never cache admin permissions to prevent tampering
+      // Reduce cache TTL from 2 minutes to 30 seconds for non-admin roles
       if (!skipCache) {
         try {
           const cached = localStorage.getItem(`permissions_cache_${user.id}`);
@@ -235,21 +237,24 @@ export function useRolePermissions() {
             const { role, profile: cachedProfile, permissions: cachedPerms, timestamp } = JSON.parse(cached);
             const age = Date.now() - timestamp;
             
-            // Use cached data if less than 2 minutes old
-            if (age < 120000) {
-              console.log(`[useRolePermissions] Using cached permissions (${Math.round(age/1000)}s old)`);
+            // Never use cached admin permissions - always fetch fresh
+            if (role === 'admin') {
+              logger.info('[useRolePermissions] Admin role detected - skipping cache');
+              localStorage.removeItem(`permissions_cache_${user.id}`);
+            } else if (age < 30000) {
+              // Reduced TTL from 120s to 30s for non-admin roles
+              logger.debug('[useRolePermissions] Using cached permissions');
               setUserRole(role);
               setProfile(cachedProfile);
               setPermissions(cachedPerms);
               setLoadedFromCache(true);
               setLoading(false);
               
-              // Continue fetching in background to update cache
-              console.log('[useRolePermissions] Fetching fresh data in background...');
+              logger.debug('[useRolePermissions] Fetching fresh data in background');
             }
           }
         } catch (e) {
-          console.warn('[useRolePermissions] Cache read error:', e);
+          logger.error('[useRolePermissions] Cache read error', e);
         }
       }
 
@@ -271,7 +276,7 @@ export function useRolePermissions() {
       ]);
 
       if (roleQuery.error) {
-        console.error('[useRolePermissions] Error fetching user role (RLS likely):', roleQuery.error);
+        logger.error('[useRolePermissions] Error fetching user role (RLS likely)', roleQuery.error);
       }
 
       let role = (roleQuery.data?.role as CourtRole | null) || null;
@@ -280,38 +285,36 @@ export function useRolePermissions() {
       if (!role) {
         // Fallback to secure RPC that bypasses RLS
         try {
-          console.log('[useRolePermissions] Attempting RPC fallback...');
+          logger.debug('[useRolePermissions] Attempting RPC fallback');
           const { data: secureRole, error: rpcError } = await supabase.rpc('get_current_user_role');
           if (rpcError) {
-            console.error('[useRolePermissions] Error in get_current_user_role RPC:', rpcError);
+            logger.error('[useRolePermissions] Error in get_current_user_role RPC', rpcError);
           } else if (secureRole) {
             role = secureRole as CourtRole;
-            console.log('[useRolePermissions] Role from secure RPC:', role);
+            logger.debug('[useRolePermissions] Role from secure RPC');
           }
         } catch (e) {
-          console.error('[useRolePermissions] Exception calling get_current_user_role:', e);
+          logger.error('[useRolePermissions] Exception calling get_current_user_role', e);
         }
       }
 
       // Default to standard if still unknown
       if (!role) {
-        console.log('[useRolePermissions] No role found, defaulting to standard');
+        logger.debug('[useRolePermissions] No role found, defaulting to standard');
         role = 'standard';
       }
 
-      console.log('[useRolePermissions] Final role from role lookup layer:', role);
-      console.log('useRolePermissions - Profile data:', profileData);
-      console.log('useRolePermissions - Department name:', profileData?.departments?.name);
+      logger.debug('[useRolePermissions] Final role from role lookup layer');
       
       // If user is in Supply Department and NOT admin, treat them as supply_room_staff
       if (profileData?.departments?.name === 'Supply Department' && role !== 'admin') {
-        console.log('useRolePermissions - Overriding role to supply_room_staff');
+        logger.debug('[useRolePermissions] Overriding role to supply_room_staff');
         role = 'supply_room_staff';
       } else if (role === 'admin') {
-        console.log('useRolePermissions - Keeping admin role, not overriding for department');
+        logger.debug('[useRolePermissions] Keeping admin role');
       }
       
-      console.log('useRolePermissions - Final role before preview:', role);
+      logger.debug('[useRolePermissions] Final role before preview');
       setProfile(profileData);
 
       // rolePermissionsMap moved above
@@ -323,10 +326,10 @@ export function useRolePermissions() {
         const validRoles: CourtRole[] = ['judge','court_aide','clerk','sergeant','court_officer','bailiff','court_reporter','administrative_assistant','facilities_manager','supply_room_staff','admin','standard'];
         const onAdminProfile = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin-profile');
         if (role === 'admin' && preview && validRoles.includes(preview) && onAdminProfile) {
-          console.log('useRolePermissions - Applying preview role override:', preview);
+          logger.info('[useRolePermissions] Applying preview role override');
           effectiveRole = preview;
         } else if (role === 'admin' && preview && !onAdminProfile) {
-          console.info('useRolePermissions - Ignoring preview role outside Admin Profile');
+          logger.info('[useRolePermissions] Ignoring preview role outside Admin Profile');
         }
       } catch (e) {
         // ignore preview errors
@@ -356,32 +359,35 @@ export function useRolePermissions() {
           inventory: 'admin',
           supply_requests: 'admin',
         };
-        console.log('Enhanced permissions for Supply Department user:', finalPermissions);
+        logger.debug('[useRolePermissions] Enhanced permissions for Supply Department user');
       }
       
       setUserRole(effectiveRole);
       setPermissions(finalPermissions);
       setProfile(profileData);
       
-      // OPTIMIZATION: Cache the results for faster subsequent loads
+      // SECURITY FIX: Never cache admin permissions
       try {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser) {
+        if (currentUser && effectiveRole !== 'admin') {
           localStorage.setItem(`permissions_cache_${currentUser.id}`, JSON.stringify({
             role: effectiveRole,
             profile: profileData,
             permissions: finalPermissions,
             timestamp: Date.now()
           }));
+        } else if (effectiveRole === 'admin') {
+          // Clear any cached admin permissions
+          localStorage.removeItem(`permissions_cache_${currentUser?.id}`);
         }
       } catch (e) {
-        console.warn('[useRolePermissions] Cache write error:', e);
+        logger.error('[useRolePermissions] Cache write error', e);
       }
       
       const elapsed = Date.now() - startTime;
-      console.log(`[useRolePermissions] Fetch completed in ${elapsed}ms`);
+      logger.debug(`[useRolePermissions] Fetch completed in ${elapsed}ms`);
     } catch (error) {
-      console.error('[useRolePermissions] Error in fetchUserRoleAndPermissions:', error);
+      logger.error('[useRolePermissions] Error in fetchUserRoleAndPermissions', error);
       
       // Set fallback to standard user on error
       setUserRole('standard');
@@ -394,7 +400,7 @@ export function useRolePermissions() {
       });
     } finally {
       const elapsed = Date.now() - startTime;
-      console.log(`[useRolePermissions] Loading state set to false after ${elapsed}ms`);
+      logger.debug(`[useRolePermissions] Loading complete (${elapsed}ms)`);
       setLoading(false);
     }
   };
@@ -423,12 +429,12 @@ export function useRolePermissions() {
   const isJudge = userRole === 'judge';
 
   useEffect(() => {
-    console.log('[useRolePermissions] Initial mount - fetching permissions');
+    logger.debug('[useRolePermissions] Initial mount - fetching permissions');
     
     // OPTIMIZATION: Reduced timeout from 5s to 3s since we now have cache
     const timeout = setTimeout(() => {
       if (loading && !loadedFromCache) {
-        console.warn('[useRolePermissions] Timeout: forcing loading=false after 3 seconds');
+        logger.warn('[useRolePermissions] Timeout: forcing loading=false after 3 seconds');
         setLoading(false);
         
         setUserRole('standard');
