@@ -187,8 +187,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Clear storage and sign out
-      logger.debug('Clearing storage');
+      logger.debug('Clearing storage and permissions cache');
       localStorage.removeItem('app-auth');
+      
+      // Clear all permissions caches and preview role
+      if (user) {
+        localStorage.removeItem(`permissions_cache_${user.id}`);
+      }
+      localStorage.removeItem('preview_role');
+      
+      // Clear all cached permissions (in case there are orphaned entries)
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('permissions_cache_')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
       sessionStorage.clear();
       
       logger.debug('Calling authSignOut');

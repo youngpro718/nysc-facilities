@@ -431,6 +431,40 @@ export function useRolePermissions() {
   useEffect(() => {
     logger.debug('[useRolePermissions] Initial mount - fetching permissions');
     
+    // Listen for auth state changes to reset permissions on sign out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        logger.debug('[useRolePermissions] Sign out detected - resetting state');
+        setUserRole(null);
+        setProfile(null);
+        setPermissions({
+          spaces: null,
+          issues: null,
+          occupants: null,
+          inventory: null,
+          supply_requests: null,
+          keys: null,
+          lighting: null,
+          maintenance: null,
+          court_operations: null,
+          operations: null,
+          dashboard: null,
+        });
+        setLoadedFromCache(false);
+        
+        // Clear all permissions caches
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('permissions_cache_')) {
+            localStorage.removeItem(key);
+          }
+        });
+        localStorage.removeItem('preview_role');
+      } else if (event === 'SIGNED_IN' && session) {
+        logger.debug('[useRolePermissions] Sign in detected - fetching fresh permissions');
+        fetchUserRoleAndPermissions(true); // Skip cache on new sign in
+      }
+    });
+    
     // OPTIMIZATION: Reduced timeout from 5s to 3s since we now have cache
     const timeout = setTimeout(() => {
       if (loading && !loadedFromCache) {
@@ -451,7 +485,10 @@ export function useRolePermissions() {
       clearTimeout(timeout);
     });
     
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Listen for preview role changes and storage updates to refresh permissions across the app

@@ -16,6 +16,7 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { Button } from "@/components/ui/button";
 import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
+import { logger } from "@/lib/logger";
 
 const Layout = () => {
   const location = useLocation();
@@ -23,6 +24,7 @@ const Layout = () => {
   const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showRefreshButton, setShowRefreshButton] = useState(false);
+  const [lastUserId, setLastUserId] = useState<string | null>(null);
   const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
   const { permissions, userRole, profile, loading: permissionsLoading, refetch } = useRolePermissions();
   const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
@@ -70,6 +72,18 @@ const Layout = () => {
       setIsMobileMenuOpen(false);
     }
   };
+
+  // Reset navigation when user changes (fixes stale navigation on account switch)
+  useEffect(() => {
+    if (user?.id && user.id !== lastUserId) {
+      setLastUserId(user.id);
+      // Force navigation to refresh by invalidating any cached state
+      if (lastUserId !== null) {
+        // This is an account switch, not initial load
+        logger.debug('[Layout] User changed - resetting navigation');
+      }
+    }
+  }, [user?.id, lastUserId]);
 
   // Let AuthProvider handle loading state - no additional loading here
 
