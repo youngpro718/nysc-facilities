@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Shield, Users, UserCheck, Clock } from "lucide-react";
+import { Search, Shield, Users, UserCheck, Clock, RefreshCw } from "lucide-react";
 import { PendingUsersSection } from "./user-management/PendingUsersSection";
 import { VerifiedUsersSection } from "./user-management/VerifiedUsersSection";
 import { AdminUsersSection } from "./user-management/AdminUsersSection";
@@ -40,6 +41,7 @@ export interface User {
 export function EnhancedUserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -82,9 +84,13 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
     setCurrentUserId(user?.id || null);
   };
 
-  const loadUsers = async () => {
+  const loadUsers = async (showRefreshIndicator = false) => {
     try {
-      setLoading(true);
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       
       // Get profiles with admin status
       const { data: profiles, error: profilesError } = await supabase
@@ -119,7 +125,16 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleManualRefresh = () => {
+    loadUsers(true);
+    toast({
+      title: "Refreshing",
+      description: "Loading latest user data..."
+    });
   };
 
   const handleVerifyUser = async (userId: string) => {
@@ -355,10 +370,22 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              User Management Dashboard
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                User Management Dashboard
+              </DialogTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManualRefresh}
+                disabled={refreshing}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="space-y-4">

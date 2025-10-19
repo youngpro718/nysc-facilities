@@ -1,0 +1,199 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { UserCheck, UserX, Mail, Clock, AlertCircle, ShieldCheck, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+
+export interface User {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  verification_status: string;
+  is_approved: boolean;
+  created_at: string;
+  department: string;
+  title: string;
+  is_admin?: boolean;
+  metadata?: any;
+  access_level?: 'none' | 'read' | 'write' | 'admin';
+  is_suspended?: boolean;
+  suspension_reason?: string;
+  suspended_at?: string;
+}
+
+interface PendingUsersSectionProps {
+  users: User[];
+  loading: boolean;
+  onVerify: (userId: string) => void;
+  onReject: (userId: string) => void;
+}
+
+export function PendingUsersSection({ 
+  users, 
+  loading, 
+  onVerify, 
+  onReject 
+}: PendingUsersSectionProps) {
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+
+  const handleQuickApprove = async (userId: string, userName: string) => {
+    console.log('[PendingUsersSection] Quick approving user:', { userId, userName });
+    
+    setProcessingIds(prev => new Set(prev).add(userId));
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('admin_verify_and_approve', { target_user_id: userId });
+
+      if (error) {
+        console.error('[PendingUsersSection] RPC error:', error);
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.message || 'Failed to approve user');
+      }
+
+      console.log('[PendingUsersSection] Successfully approved user:', data);
+      toast.success(`${userName} has been verified and approved successfully`);
+      
+      // Trigger parent component refresh
+      onVerify(userId);
+    } catch (error) {
+      console.error('[PendingUsersSection] Error approving user:', error);
+      toast.error('Failed to verify and approve user');
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (users.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-8">
+          <UserCheck className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground text-center">
+            No pending verification requests
+          </p>
+          <p className="text-sm text-muted-foreground text-center mt-2">
+            All users have been processed
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm text-slate-700">
+        <AlertCircle className="h-4 w-4" />
+        {users.length} user{users.length !== 1 ? 's' : ''} waiting for verification
+      </div>
+      
+      <div className="grid gap-4">
+        {users.map((user) => (
+          <Card key={user.id} className="border-l-4 border-l-yellow-500">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {user.first_name} {user.last_name}
+                    <Badge variant="outline" className="text-yellow-700 border-yellow-500">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Pending
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    {user.email}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleQuickApprove(user.id, `${user.first_name} ${user.last_name}`)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={processingIds.has(user.id)}
+                  >
+                    {processingIds.has(user.id) ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="h-4 w-4 mr-2" />
+                    )}
+                    Quick Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => onVerify(user.id)}
+                    className="bg-green-600 hover:bg-green-700"
+                    disabled={processingIds.has(user.id)}
+                  >
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Verify
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onReject(user.id)}
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                    disabled={processingIds.has(user.id)}
+                  >
+                    <UserX className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Department:</span>
+                  <span className="ml-2 text-muted-foreground">
+                    {user.department || 'Not specified'}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium">Title:</span>
+                  <span className="ml-2 text-muted-foreground">
+                    {user.title || 'Not specified'}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium">Requested Access:</span>
+                  <span className="ml-2 text-slate-800">
+                    {(() => {
+                      const raw = (user as any)?.metadata?.requested_access_level as string | undefined;
+                      if (!raw) return 'Not specified';
+                      return (raw === 'administrative' || raw === 'admin') ? 'Administrative' : 'Standard';
+                    })()}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium">Requested At:</span>
+                  <span className="ml-2 text-muted-foreground">
+                    {new Date(user.created_at).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
