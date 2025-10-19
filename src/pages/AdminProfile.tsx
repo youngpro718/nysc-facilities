@@ -13,6 +13,8 @@ import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { TitleAccessManager } from "@/components/admin/TitleAccessManager";
 import { EnhancedUserManagementModal } from "@/components/profile/modals/EnhancedUserManagementModal";
+import { FeatureDiscoveryCard } from "@/components/settings/FeatureDiscoveryCard";
+import { SettingsNavigation } from "@/components/settings/SettingsNavigation";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
@@ -88,6 +90,8 @@ export default function AdminProfile() {
           <span className="hidden sm:inline">Install App</span>
         </Button>
       </div>
+      
+      <SettingsNavigation />
 
       {/* Install App QR Code Card */}
       {showQR && (
@@ -210,10 +214,12 @@ export default function AdminProfile() {
           {/* Users Tab */}
           <TabsContent value="users" className="mt-4">
             <div className="space-y-4">
+              <FeatureDiscoveryCard />
+              
               <div className="flex justify-end">
-                <Button onClick={() => setEnhancedUserManagementOpen(true)} className="gap-2">
-                  <Users className="h-4 w-4" />
-                  Enhanced User Controls
+                <Button onClick={() => setEnhancedUserManagementOpen(true)} className="gap-2" size="lg">
+                  <Users className="h-5 w-5" />
+                  Open Enhanced User Controls
                 </Button>
               </div>
               <UserManagementTab />

@@ -1,10 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Settings } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EnhancedUserSettings } from '@/components/profile/EnhancedUserSettings';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
-import { Card, CardContent } from '@/components/ui/card';
+import { AdminQuickActions } from '@/components/settings/AdminQuickActions';
+import { SettingsNavigation } from '@/components/settings/SettingsNavigation';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -29,28 +30,16 @@ export default function SettingsPage() {
       
       <div className="p-4">
         <div className="space-y-6">
+          <SettingsNavigation />
+          
           {userRole === 'admin' && (
-            <Card className="border-primary/30">
-              <CardContent className="py-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Settings className="h-5 w-5 text-primary" />
-                    <div>
-                      <div className="font-medium">You are an administrator</div>
-                      <p className="text-sm text-muted-foreground">Manage system-wide settings, roles, modules and policies.</p>
-                    </div>
-                  </div>
-                  <Button onClick={() => navigate('/system-settings')}>
-                    Open Admin Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <AdminQuickActions />
           )}
+          
           <div>
-            <h2 className="text-2xl font-semibold">Settings</h2>
+            <h2 className="text-2xl font-semibold">Personal Settings</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Complete settings management for notifications, display, security, and accessibility
+              Customize your experience, notifications, display, security, and accessibility
             </p>
           </div>
           <EnhancedUserSettings />
