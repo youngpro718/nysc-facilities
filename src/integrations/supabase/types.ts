@@ -8806,6 +8806,10 @@ export type Database = {
             }
         Returns: undefined
       }
+      admin_bulk_update_roles: {
+        Args: { updates: Json[] }
+        Returns: Json
+      }
       admin_fix_user_account: {
         Args: { target_user_id: string }
         Returns: Json
@@ -8849,10 +8853,12 @@ export type Database = {
         Returns: Json
       }
       admin_update_user_role: {
-        Args: {
-          new_role: Database["public"]["Enums"]["user_role"]
-          target_user_id: string
-        }
+        Args:
+          | {
+              new_role: Database["public"]["Enums"]["user_role"]
+              target_user_id: string
+            }
+          | { new_role: string; target_user_id: string }
         Returns: Json
       }
       admin_verify_and_approve: {

@@ -10,7 +10,7 @@ import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminManagementTab } from "@/components/profile/reorganized/AdminManagementTab";
 import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
-import { UserManagementTab } from "@/components/admin/UserManagementTab";
+
 import { TitleAccessManager } from "@/components/admin/TitleAccessManager";
 import { EnhancedUserManagementModal } from "@/components/profile/modals/EnhancedUserManagementModal";
 import { FeatureDiscoveryCard } from "@/components/settings/FeatureDiscoveryCard";
@@ -219,10 +219,9 @@ export default function AdminProfile() {
               <div className="flex justify-end">
                 <Button onClick={() => setEnhancedUserManagementOpen(true)} className="gap-2" size="lg">
                   <Users className="h-5 w-5" />
-                  Open Enhanced User Controls
+                  Open User Management
                 </Button>
               </div>
-              <UserManagementTab />
             </div>
           </TabsContent>
 

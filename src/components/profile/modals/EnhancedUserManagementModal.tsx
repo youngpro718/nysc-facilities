@@ -9,6 +9,7 @@ import { Search, Shield, Users, UserCheck, Clock, RefreshCw } from "lucide-react
 import { PendingUsersSection } from "./user-management/PendingUsersSection";
 import { VerifiedUsersSection } from "./user-management/VerifiedUsersSection";
 import { AdminUsersSection } from "./user-management/AdminUsersSection";
+import { AllUsersSection } from "./user-management/AllUsersSection";
 import { AdminConfirmationDialog } from "./user-management/AdminConfirmationDialog";
 import { useEnhancedAdminControls } from "@/hooks/admin/useEnhancedAdminControls";
 import { EditUserDialog } from "./user-management/EditUserDialog";
@@ -399,14 +400,18 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
               />
             </div>
 
-            <Tabs defaultValue="pending" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="all" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  All ({users.length})
+                </TabsTrigger>
                 <TabsTrigger value="pending" className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   Pending ({pendingUsers.length})
                 </TabsTrigger>
                 <TabsTrigger value="verified" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
+                  <UserCheck className="h-4 w-4" />
                   Verified ({verifiedUsers.length})
                 </TabsTrigger>
                 <TabsTrigger value="admins" className="flex items-center gap-2">
@@ -414,6 +419,22 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
                   Admins ({adminUsers.length})
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="all" className="mt-4">
+                <AllUsersSection
+                  users={filteredUsers}
+                  loading={loading}
+                  currentUserId={currentUserId}
+                  onPromoteToAdmin={(user) => initiateAdminChange(user, 'promote')}
+                  onDemoteFromAdmin={(user) => initiateAdminChange(user, 'demote')}
+                  onFixAccount={handleFixAccount}
+                  onSuspend={handleSuspend}
+                  onUnsuspend={handleUnsuspend}
+                  onEditProfile={handleEditProfile}
+                  onResetPassword={handleResetPassword}
+                  onOverrideVerification={handleOverrideVerification}
+                />
+              </TabsContent>
 
               <TabsContent value="pending" className="mt-4">
                 <PendingUsersSection
