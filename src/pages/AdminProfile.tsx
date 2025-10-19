@@ -12,12 +12,14 @@ import { AdminManagementTab } from "@/components/profile/reorganized/AdminManage
 import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { TitleAccessManager } from "@/components/admin/TitleAccessManager";
+import { EnhancedUserManagementModal } from "@/components/profile/modals/EnhancedUserManagementModal";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
   const { isAdmin, userRole } = useRolePermissions();
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [enhancedUserManagementOpen, setEnhancedUserManagementOpen] = useState(false);
   const appUrl = window.location.origin;
 
   const copyToClipboard = async () => {
@@ -207,7 +209,15 @@ export default function AdminProfile() {
 
           {/* Users Tab */}
           <TabsContent value="users" className="mt-4">
-            <UserManagementTab />
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button onClick={() => setEnhancedUserManagementOpen(true)} className="gap-2">
+                  <Users className="h-4 w-4" />
+                  Enhanced User Controls
+                </Button>
+              </div>
+              <UserManagementTab />
+            </div>
           </TabsContent>
 
           {/* Title Access Manager Tab */}
@@ -230,6 +240,12 @@ export default function AdminProfile() {
           </CardHeader>
         </Card>
       )}
+
+      {/* Enhanced User Management Modal */}
+      <EnhancedUserManagementModal 
+        open={enhancedUserManagementOpen} 
+        onOpenChange={setEnhancedUserManagementOpen} 
+      />
     </div>
   );
 }
