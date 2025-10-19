@@ -62,6 +62,33 @@ export type Database = {
           },
         ]
       }
+      admin_actions_log: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_notifications: {
         Row: {
           created_at: string
@@ -4955,6 +4982,7 @@ export type Database = {
           id: string
           interface_preferences: Json | null
           is_approved: boolean | null
+          is_suspended: boolean | null
           job_title_validated: boolean | null
           language: string | null
           last_login: string | null
@@ -4964,6 +4992,9 @@ export type Database = {
           notification_preferences: Json | null
           phone: string | null
           security_settings: Json | null
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
           system_preferences: Json | null
           theme: string | null
           time_zone: string | null
@@ -4991,6 +5022,7 @@ export type Database = {
           id: string
           interface_preferences?: Json | null
           is_approved?: boolean | null
+          is_suspended?: boolean | null
           job_title_validated?: boolean | null
           language?: string | null
           last_login?: string | null
@@ -5000,6 +5032,9 @@ export type Database = {
           notification_preferences?: Json | null
           phone?: string | null
           security_settings?: Json | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           system_preferences?: Json | null
           theme?: string | null
           time_zone?: string | null
@@ -5027,6 +5062,7 @@ export type Database = {
           id?: string
           interface_preferences?: Json | null
           is_approved?: boolean | null
+          is_suspended?: boolean | null
           job_title_validated?: boolean | null
           language?: string | null
           last_login?: string | null
@@ -5036,6 +5072,9 @@ export type Database = {
           notification_preferences?: Json | null
           phone?: string | null
           security_settings?: Json | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           system_preferences?: Json | null
           theme?: string | null
           time_zone?: string | null
@@ -8767,6 +8806,48 @@ export type Database = {
             }
         Returns: undefined
       }
+      admin_fix_user_account: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
+      admin_override_verification: {
+        Args: {
+          p_access_level?: string
+          p_is_approved?: boolean
+          p_verification_status: string
+          target_user_id: string
+        }
+        Returns: Json
+      }
+      admin_setup_user_profile: {
+        Args: {
+          new_access_level: Database["public"]["Enums"]["access_level_enum"]
+          new_is_approved: boolean
+          new_verification_status: Database["public"]["Enums"]["verification_status_enum"]
+          target_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_suspend_user: {
+        Args: { p_reason?: string; target_user_id: string }
+        Returns: Json
+      }
+      admin_unsuspend_user: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
+      admin_update_user_profile: {
+        Args: {
+          p_access_level?: string
+          p_department_id?: string
+          p_email?: string
+          p_first_name?: string
+          p_last_name?: string
+          p_title?: string
+          target_user_id: string
+        }
+        Returns: Json
+      }
       admin_update_user_role: {
         Args: {
           new_role: Database["public"]["Enums"]["user_role"]
@@ -8990,7 +9071,7 @@ export type Database = {
           p_type: string
           p_urgency?: string
         }
-        Returns: string
+        Returns: undefined
       }
       enhanced_check_rate_limit: {
         Args: {
@@ -9395,6 +9476,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_facilities_or_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       list_occupants_minimal: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -9444,6 +9529,12 @@ export type Database = {
               p_resource_id?: string
               p_resource_type: string
               p_user_agent?: string
+            }
+          | {
+              p_details?: string
+              p_event_type: string
+              p_target_id: string
+              p_target_table: string
             }
         Returns: undefined
       }

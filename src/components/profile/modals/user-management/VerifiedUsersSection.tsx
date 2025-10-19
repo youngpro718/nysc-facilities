@@ -1,19 +1,32 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Mail, Users, ArrowUp } from "lucide-react";
+import { Shield, Mail, Users, ArrowUp, Ban, CheckCircle } from "lucide-react";
 import type { User } from "../EnhancedUserManagementModal";
+import { UserActionsMenu } from "./UserActionsMenu";
 
 interface VerifiedUsersSectionProps {
   users: User[];
   loading: boolean;
   onPromoteToAdmin: (user: User) => void;
+  onFixAccount?: (userId: string) => void;
+  onSuspend?: (userId: string) => void;
+  onUnsuspend?: (userId: string) => void;
+  onEditProfile?: (user: User) => void;
+  onResetPassword?: (email: string) => void;
+  onOverrideVerification?: (userId: string) => void;
 }
 
 export function VerifiedUsersSection({ 
   users, 
   loading, 
-  onPromoteToAdmin 
+  onPromoteToAdmin,
+  onFixAccount,
+  onSuspend,
+  onUnsuspend,
+  onEditProfile,
+  onResetPassword,
+  onOverrideVerification
 }: VerifiedUsersSectionProps) {
   if (loading) {
     return (
@@ -47,33 +60,58 @@ export function VerifiedUsersSection({
       </div>
       
       <div className="grid gap-4">
-        {users.map((user) => (
-          <Card key={user.id} className="border-l-4 border-l-green-500">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    {user.first_name} {user.last_name}
-                    <Badge className="bg-green-100 text-green-800">
-                      Verified
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    {user.email}
-                  </CardDescription>
+        {users.map((user) => {
+          const isSuspended = (user as any).is_suspended;
+          return (
+            <Card key={user.id} className={`border-l-4 ${isSuspended ? 'border-l-red-500 opacity-60' : 'border-l-green-500'}`}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {user.first_name} {user.last_name}
+                      {isSuspended ? (
+                        <Badge variant="destructive">
+                          <Ban className="h-3 w-3 mr-1" />
+                          Suspended
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-green-100 text-green-800">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      {user.email}
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    {onFixAccount && onSuspend && onUnsuspend && onEditProfile && onResetPassword && onOverrideVerification && (
+                      <UserActionsMenu
+                        user={user}
+                        onFixAccount={onFixAccount}
+                        onSuspend={onSuspend}
+                        onUnsuspend={onUnsuspend}
+                        onEditProfile={onEditProfile}
+                        onResetPassword={onResetPassword}
+                        onOverrideVerification={onOverrideVerification}
+                        onPromoteAdmin={onPromoteToAdmin}
+                      />
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onPromoteToAdmin(user)}
+                      className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                      disabled={isSuspended}
+                    >
+                      <ArrowUp className="h-4 w-4 mr-2" />
+                      Promote to Admin
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onPromoteToAdmin(user)}
-                  className="border-blue-300 text-blue-600 hover:bg-blue-50"
-                >
-                  <ArrowUp className="h-4 w-4 mr-2" />
-                  Promote to Admin
-                </Button>
-              </div>
-            </CardHeader>
+              </CardHeader>
             <CardContent className="pt-0">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -97,7 +135,8 @@ export function VerifiedUsersSection({
               </div>
             </CardContent>
           </Card>
-        ))}
+        );
+        })}
       </div>
     </div>
   );

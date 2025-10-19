@@ -1,21 +1,34 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Mail, Crown, ArrowDown, Lock } from "lucide-react";
+import { Shield, Mail, Crown, ArrowDown, Lock, Ban } from "lucide-react";
 import type { User } from "../EnhancedUserManagementModal";
+import { UserActionsMenu } from "./UserActionsMenu";
 
 interface AdminUsersSectionProps {
   users: User[];
   loading: boolean;
   currentUserId: string | null;
   onDemoteFromAdmin: (user: User) => void;
+  onFixAccount?: (userId: string) => void;
+  onSuspend?: (userId: string) => void;
+  onUnsuspend?: (userId: string) => void;
+  onEditProfile?: (user: User) => void;
+  onResetPassword?: (email: string) => void;
+  onOverrideVerification?: (userId: string) => void;
 }
 
 export function AdminUsersSection({ 
   users, 
   loading, 
   currentUserId,
-  onDemoteFromAdmin 
+  onDemoteFromAdmin,
+  onFixAccount,
+  onSuspend,
+  onUnsuspend,
+  onEditProfile,
+  onResetPassword,
+  onOverrideVerification
 }: AdminUsersSectionProps) {
   if (loading) {
     return (
@@ -54,9 +67,10 @@ export function AdminUsersSection({
         {users.map((user) => {
           const isCurrentUser = user.id === currentUserId;
           const canDemote = !isCurrentUser && !isLastAdmin;
+          const isSuspended = (user as any).is_suspended;
           
           return (
-            <Card key={user.id} className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-transparent">
+            <Card key={user.id} className={`border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-transparent ${isSuspended ? 'opacity-60' : ''}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -71,6 +85,12 @@ export function AdminUsersSection({
                           You
                         </Badge>
                       )}
+                      {isSuspended && (
+                        <Badge variant="destructive">
+                          <Ban className="h-3 w-3 mr-1" />
+                          Suspended
+                        </Badge>
+                      )}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2">
                       <Mail className="h-4 w-4" />
@@ -78,6 +98,18 @@ export function AdminUsersSection({
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
+                    {onFixAccount && onSuspend && onUnsuspend && onEditProfile && onResetPassword && onOverrideVerification && (
+                      <UserActionsMenu
+                        user={user}
+                        onFixAccount={onFixAccount}
+                        onSuspend={onSuspend}
+                        onUnsuspend={onUnsuspend}
+                        onEditProfile={onEditProfile}
+                        onResetPassword={onResetPassword}
+                        onOverrideVerification={onOverrideVerification}
+                        onDemoteAdmin={canDemote ? onDemoteFromAdmin : undefined}
+                      />
+                    )}
                     {canDemote ? (
                       <Button
                         size="sm"

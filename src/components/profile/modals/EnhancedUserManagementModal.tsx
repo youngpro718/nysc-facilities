@@ -9,6 +9,10 @@ import { PendingUsersSection } from "./user-management/PendingUsersSection";
 import { VerifiedUsersSection } from "./user-management/VerifiedUsersSection";
 import { AdminUsersSection } from "./user-management/AdminUsersSection";
 import { AdminConfirmationDialog } from "./user-management/AdminConfirmationDialog";
+import { useEnhancedAdminControls } from "@/hooks/admin/useEnhancedAdminControls";
+import { EditUserDialog } from "./user-management/EditUserDialog";
+import { SuspendUserDialog } from "./user-management/SuspendUserDialog";
+import { VerificationOverrideDialog } from "./user-management/VerificationOverrideDialog";
 
 interface UserManagementModalProps {
   open: boolean;
@@ -28,6 +32,9 @@ export interface User {
   is_admin?: boolean;
   metadata?: any;
   access_level?: 'none' | 'read' | 'write' | 'admin';
+  is_suspended?: boolean;
+  suspension_reason?: string;
+  suspended_at?: string;
 }
 
 export function EnhancedUserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
@@ -38,7 +45,12 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [confirmationType, setConfirmationType] = useState<'promote' | 'demote'>('promote');
   const [pendingActionUser, setPendingActionUser] = useState<User | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+  const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
+  const adminControls = useEnhancedAdminControls();
 
   useEffect(() => {
     if (open) {
@@ -259,6 +271,73 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
     }
   };
 
+  // Enhanced admin control handlers
+  const handleFixAccount = async (userId: string) => {
+    const result = await adminControls.fixUserAccount(userId);
+    if (result.success) {
+      loadUsers();
+    }
+  };
+
+  const handleSuspend = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    setSelectedUser(user || null);
+    setSuspendDialogOpen(true);
+  };
+
+  const handleSuspendConfirm = async (userId: string, reason: string) => {
+    const result = await adminControls.suspendUser(userId, reason);
+    if (result.success) {
+      loadUsers();
+    }
+  };
+
+  const handleUnsuspend = async (userId: string) => {
+    const result = await adminControls.unsuspendUser(userId);
+    if (result.success) {
+      loadUsers();
+    }
+  };
+
+  const handleEditProfile = (user: User) => {
+    setSelectedUser(user);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateProfile = async (userId: string, updates: any) => {
+    const result = await adminControls.updateUserProfile(userId, updates);
+    if (result.success) {
+      loadUsers();
+    }
+  };
+
+  const handleResetPassword = async (email: string) => {
+    await adminControls.sendPasswordReset(email);
+  };
+
+  const handleOverrideVerification = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    setSelectedUser(user || null);
+    setVerificationDialogOpen(true);
+  };
+
+  const handleOverrideConfirm = async (
+    userId: string,
+    status: string,
+    approved: boolean,
+    accessLevel: string
+  ) => {
+    const result = await adminControls.overrideVerification(
+      userId,
+      status as 'pending' | 'verified' | 'rejected',
+      approved,
+      accessLevel
+    );
+    if (result.success) {
+      loadUsers();
+    }
+  };
+
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -323,6 +402,12 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
                   users={verifiedUsers}
                   loading={loading}
                   onPromoteToAdmin={(user) => initiateAdminChange(user, 'promote')}
+                  onFixAccount={handleFixAccount}
+                  onSuspend={handleSuspend}
+                  onUnsuspend={handleUnsuspend}
+                  onEditProfile={handleEditProfile}
+                  onResetPassword={handleResetPassword}
+                  onOverrideVerification={handleOverrideVerification}
                 />
               </TabsContent>
 
@@ -332,6 +417,12 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
                   loading={loading}
                   currentUserId={currentUserId}
                   onDemoteFromAdmin={(user) => initiateAdminChange(user, 'demote')}
+                  onFixAccount={handleFixAccount}
+                  onSuspend={handleSuspend}
+                  onUnsuspend={handleUnsuspend}
+                  onEditProfile={handleEditProfile}
+                  onResetPassword={handleResetPassword}
+                  onOverrideVerification={handleOverrideVerification}
                 />
               </TabsContent>
             </Tabs>
@@ -345,6 +436,27 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
         user={pendingActionUser}
         action={confirmationType}
         onConfirm={executeAdminChange}
+      />
+
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        user={selectedUser}
+        onSave={handleUpdateProfile}
+      />
+
+      <SuspendUserDialog
+        open={suspendDialogOpen}
+        onOpenChange={setSuspendDialogOpen}
+        user={selectedUser}
+        onConfirm={handleSuspendConfirm}
+      />
+
+      <VerificationOverrideDialog
+        open={verificationDialogOpen}
+        onOpenChange={setVerificationDialogOpen}
+        user={selectedUser}
+        onConfirm={handleOverrideConfirm}
       />
     </>
   );
