@@ -80,47 +80,12 @@ export function useOccupantList() {
       console.log('Starting occupants query...');
 
       try {
-        // First, try a simple query without joins to isolate the issue
-        console.log('Attempting simple occupants query...');
-        const { data: simpleData, error: simpleError } = await supabase
-          .from('occupants')
-          .select('id, first_name, last_name, email, phone, department, title, role, status')
-          .limit(5);
-        
-        if (simpleError) {
-          console.error('Simple query failed:', simpleError);
-          console.error('Error details:', JSON.stringify(simpleError, null, 2));
-          throw simpleError;
-        }
-        
-        console.log('Simple query succeeded, fetching full data...');
+        // Simplified query - just get basic occupant data without joins
+        console.log('Fetching occupants with simplified query...');
         
         let query = supabase
           .from('occupants')
-          .select(`
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            department,
-            title,
-            role,
-            status,
-            key_assignments(id, returned_at),
-            occupant_room_assignments!fk_occupant(
-              id,
-              rooms!occupant_room_assignments_room_id_fkey(
-                id,
-                name,
-                room_number,
-                floors(
-                  name,
-                  buildings!floors_building_id_fkey(name)
-                )
-              )
-            )
-          `);
+          .select('id, first_name, last_name, email, phone, department, title, role, status');
 
         if (searchQuery) {
           query = query.or(
@@ -136,24 +101,38 @@ export function useOccupantList() {
           query = query.eq('status', statusFilter);
         }
 
-        const { data: rawData, error } = await query
-          .order('last_name');
+        const { data: rawData, error } = await query.order('last_name');
         
         if (error) {
-          console.error('Full query error:', error);
-          console.error('Error details:', JSON.stringify(error, null, 2));
+          console.error('Occupants query error:', error);
+          console.error('Error message:', error.message);
+          console.error('Error code:', error.code);
+          console.error('Error details:', error.details);
+          console.error('Error hint:', error.hint);
           throw error;
         }
 
-        console.log('Raw data from Supabase:', rawData);
-        const transformedData = (rawData || []).map(transformOccupantData);
-        console.log('Final transformed data:', transformedData);
+        console.log('Successfully fetched occupants:', rawData?.length || 0);
+        
+        // Transform to expected format with empty arrays for relationships
+        const transformedData = (rawData || []).map(occupant => ({
+          id: occupant.id,
+          first_name: occupant.first_name || '',
+          last_name: occupant.last_name || '',
+          email: occupant.email,
+          phone: occupant.phone,
+          department: occupant.department,
+          title: occupant.title,
+          role: occupant.role,
+          status: occupant.status || 'inactive',
+          key_count: 0, // Will need separate query
+          room_count: 0, // Will need separate query
+          rooms: []
+        }));
         
         return transformedData;
       } catch (err) {
-        console.error('Error fetching occupants:', err);
-        console.error('Error type:', typeof err);
-        console.error('Error keys:', Object.keys(err as object));
+        console.error('Fatal error fetching occupants:', err);
         throw err;
       }
     },
