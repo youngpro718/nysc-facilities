@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, Check, Clock, Key, XCircle, CheckCircle, Trash2, MoreVertical } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import {
