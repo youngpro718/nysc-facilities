@@ -23,7 +23,15 @@ export const TermSheetBoard: React.FC = () => {
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ['term-sheet-board'],
     queryFn: async () => {
-      // Get court rooms with their assignments
+      // Get all court assignments ordered by sort_order (same as Manage Assignments)
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from("court_assignments")
+        .select("*")
+        .order("sort_order");
+
+      if (assignmentsError) throw assignmentsError;
+
+      // Get court rooms data
       const { data: roomsData, error: roomsError } = await supabase
         .from("court_rooms")
         .select(`
@@ -32,31 +40,22 @@ export const TermSheetBoard: React.FC = () => {
           room_number,
           courtroom_number,
           is_active
-        `)
-        .order("room_number");
+        `);
 
       if (roomsError) throw roomsError;
 
-      // Get all court assignments
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from("court_assignments")
-        .select("*")
-        .order("sort_order");
-
-      if (assignmentsError) throw assignmentsError;
-
-      // Create a map of assignments by room_id
-      const assignmentMap = new Map();
-      (assignmentsData || []).forEach((assignment: any) => {
-        if (assignment.room_id) {
-          assignmentMap.set(assignment.room_id, assignment);
-        }
+      // Create a map of rooms by room_id for quick lookup
+      const roomMap = new Map();
+      (roomsData || []).forEach((room: any) => {
+        roomMap.set(room.room_id, room);
       });
 
-      // Combine rooms with their assignments
-      const combined = (roomsData || [])
-        .map((room: any) => {
-          const assignment = assignmentMap.get(room.room_id);
+      // Map assignments to include room data, maintaining sort_order
+      const combined = (assignmentsData || [])
+        .map((assignment: any) => {
+          const room = roomMap.get(assignment.room_id);
+          if (!room) return null;
+          
           return {
             room_number: room.room_number || room.courtroom_number || '—',
             part: assignment?.part || '—',
@@ -67,10 +66,10 @@ export const TermSheetBoard: React.FC = () => {
             clerks: assignment?.clerks || ['—'],
             calendar_day: assignment?.calendar_day || '—',
             is_active: room.is_active,
-            has_assignment: !!assignment
+            sort_order: assignment.sort_order
           };
         })
-        .filter((row: any) => row.has_assignment && row.is_active); // Only show assigned, active rooms
+        .filter((row: any) => row !== null && row.is_active); // Only show active rooms with assignments
 
       return combined.map((row: any): TermAssignment => ({
         part: row.part,
