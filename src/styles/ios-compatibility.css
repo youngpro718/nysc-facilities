@@ -313,3 +313,63 @@ img {
     padding-top: max(env(titlebar-area-height), var(--safe-area-inset-top));
   }
 }
+
+/* iOS 26 Enhanced Features */
+@supports (padding-top: env(safe-area-inset-top)) {
+  /* Improved Dynamic Island handling for iOS 26 */
+  .header-with-island {
+    padding-top: max(
+      env(safe-area-inset-top),
+      env(titlebar-area-height, 0px),
+      20px
+    );
+  }
+  
+  /* Enhanced bottom safe area for home indicator */
+  .bottom-nav-enhanced {
+    padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  }
+}
+
+/* iOS 26 Improved Haptic Feedback (visual) */
+@media (hover: none) and (pointer: coarse) {
+  button:active:not(:disabled),
+  .btn:active:not(:disabled) {
+    transform: scale(0.97);
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Enhanced touch feedback for interactive elements */
+  [role="button"]:active:not([aria-disabled="true"]),
+  a:active {
+    transform: scale(0.98);
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* iOS 26 Enhanced Scroll Performance */
+@supports (-webkit-overflow-scrolling: touch) {
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Prevent scroll chaining on iOS 26 */
+  .scroll-container {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* iOS 26 Focus Visible Enhancement */
+@supports selector(:focus-visible) {
+  *:focus-visible {
+    outline: 2px solid #007aff;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+}

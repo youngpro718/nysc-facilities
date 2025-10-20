@@ -17,6 +17,9 @@ export interface UserProfile {
     relationship?: string;
   };
   metadata?: Record<string, any>;
+  onboarding_completed?: boolean;
+  onboarding_skipped?: boolean;
+  onboarding_completed_at?: string;
 }
 
 export interface UserSignupData {

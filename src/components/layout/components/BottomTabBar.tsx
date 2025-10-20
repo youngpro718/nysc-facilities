@@ -26,9 +26,12 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 md:hidden safe-area-bottom"
       role="navigation"
       aria-label="Mobile primary navigation"
+      style={{
+        paddingBottom: 'max(env(safe-area-inset-bottom), 0px)',
+      }}
     >
       <div className="mx-auto max-w-7xl px-2">
         <div className={cn("grid", hasMore ? "grid-cols-5" : "grid-cols-4")}>
@@ -41,7 +44,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                 key={item.title}
                 onClick={() => handleNav(item.title)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2 h-[58px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  "flex flex-col items-center justify-center gap-1 py-2.5 min-h-[58px] touch-target focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
                 aria-current={isActive ? "page" : undefined}
@@ -55,7 +58,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
           {hasMore && (
             <button
               onClick={onOpenMobileMenu}
-              className="flex flex-col items-center justify-center gap-1 py-2 h-[58px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="flex flex-col items-center justify-center gap-1 py-2.5 min-h-[58px] touch-target text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               aria-label="More"
             >
               <MoreHorizontal className="h-5 w-5" aria-hidden="true" />

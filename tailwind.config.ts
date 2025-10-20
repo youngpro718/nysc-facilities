@@ -18,6 +18,15 @@ export default {
       },
     },
     extend: {
+      screens: {
+        'xs': '480px',      // Extra small devices (large phones)
+        'sm': '640px',      // Small devices (default)
+        'md': '768px',      // Medium devices (tablets, default)
+        'lg': '1024px',     // Large devices (laptops, default)
+        'xl': '1280px',     // Extra large devices (desktops, default)
+        '2xl': '1536px',    // 2X large devices (large desktops, default)
+        '3xl': '1920px',    // 3X large devices (ultra-wide monitors)
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
