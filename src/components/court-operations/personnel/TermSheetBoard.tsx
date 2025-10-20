@@ -18,7 +18,6 @@ interface TermAssignment {
 
 export const TermSheetBoard: React.FC = () => {
   const [isDense, setIsDense] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
 
   // Fetch term assignments (using same query structure as EnhancedCourtAssignmentTable)
   const { data: assignments = [], isLoading } = useQuery({
@@ -87,31 +86,6 @@ export const TermSheetBoard: React.FC = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Scale board to fit screen width
-  useEffect(() => {
-    const fitBoard = () => {
-      if (!wrapRef.current) return;
-      const designWidth = 1024; // Fixed design width
-      const vw = document.documentElement.clientWidth - 24; // Account for padding
-      const scale = Math.min(vw / designWidth, 1); // Never scale up, only down
-      wrapRef.current.style.transform = `scale(${scale})`;
-      
-      // Adjust container height to match scaled content
-      const scaledHeight = wrapRef.current.scrollHeight * scale;
-      if (wrapRef.current.parentElement) {
-        wrapRef.current.parentElement.style.height = `${scaledHeight}px`;
-      }
-    };
-
-    fitBoard();
-    window.addEventListener('resize', fitBoard);
-    window.addEventListener('orientationchange', fitBoard);
-
-    return () => {
-      window.removeEventListener('resize', fitBoard);
-      window.removeEventListener('orientationchange', fitBoard);
-    };
-  }, [assignments, isDense]);
 
   if (isLoading) {
     return (
@@ -124,13 +98,13 @@ export const TermSheetBoard: React.FC = () => {
   }
 
   return (
-    <div className="bg-neutral-900 text-neutral-100 min-h-screen p-3">
+    <div className="bg-neutral-900 text-neutral-100 p-3 pb-safe">
       {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-blue-400" />
-          <h2 className="text-sm font-semibold">Criminal Term – Board</h2>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <FileText className="h-5 w-5 text-blue-400 flex-shrink-0" />
+          <h2 className="text-sm font-semibold truncate">Criminal Term – Board</h2>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 flex-shrink-0">
             {assignments.length} Parts
           </Badge>
         </div>
@@ -138,7 +112,7 @@ export const TermSheetBoard: React.FC = () => {
           onClick={() => setIsDense(!isDense)}
           variant="outline"
           size="sm"
-          className="text-xs px-2 py-1 h-7 bg-neutral-800 border-neutral-700 hover:bg-neutral-700"
+          className="text-xs px-2 py-1 h-7 bg-neutral-800 border-neutral-700 hover:bg-neutral-700 flex-shrink-0"
         >
           {isDense ? <ZoomOut className="h-3 w-3 mr-1" /> : <ZoomIn className="h-3 w-3 mr-1" />}
           {isDense ? 'Normal' : 'Dense'}
@@ -149,47 +123,39 @@ export const TermSheetBoard: React.FC = () => {
       <div className="mb-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 text-xs text-blue-300">
         <p className="flex items-center gap-1">
           <span className="font-semibold">📱 Tip:</span>
-          <span>Pinch to zoom • Scroll to see all rows • Toggle density for smaller text</span>
+          <span>Scroll horizontally to see all columns • Toggle density for smaller text</span>
         </p>
       </div>
 
-      {/* Scaled Board Container */}
-      <div style={{ overflow: 'visible', position: 'relative', touchAction: 'pan-x pan-y pinch-zoom' }}>
-        <div
-          ref={wrapRef}
-          className="origin-top-left"
-          style={{ 
-            width: '1024px', 
-            transformOrigin: 'top left',
-            touchAction: 'pan-x pan-y pinch-zoom'
-          }}
-        >
-          <div className="rounded-lg border border-neutral-800 bg-neutral-950 shadow-2xl overflow-hidden" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
-            <table className={`w-full table-fixed ${isDense ? 'text-[11px] leading-[1.05]' : 'text-[12px] leading-[1.15]'}`}>
+      {/* Scrollable Table Container */}
+      <div className="w-full overflow-x-auto -mx-3 px-3 scrollbar-hide">
+        <div className="min-w-max">
+          <div className="rounded-lg border border-neutral-800 bg-neutral-950 shadow-2xl overflow-hidden">
+            <table className={`w-full ${isDense ? 'text-[11px] leading-[1.05]' : 'text-xs leading-tight'}`}>
               <colgroup>
-                <col style={{ width: '90px' }} />   {/* Part */}
-                <col style={{ width: '140px' }} />  {/* Justice */}
-                <col style={{ width: '70px' }} />   {/* Room */}
-                <col style={{ width: '100px' }} />  {/* Fax */}
-                <col style={{ width: '90px' }} />   {/* Tel */}
-                <col style={{ width: '120px' }} />  {/* Sergeant */}
-                <col style={{ width: '414px' }} />  {/* Clerks */}
+                <col style={{ minWidth: '80px' }} />   {/* Part */}
+                <col style={{ minWidth: '150px' }} />  {/* Justice */}
+                <col style={{ minWidth: '70px' }} />   {/* Room */}
+                <col style={{ minWidth: '100px' }} />  {/* Fax */}
+                <col style={{ minWidth: '100px' }} />  {/* Tel */}
+                <col style={{ minWidth: '130px' }} />  {/* Sergeant */}
+                <col style={{ minWidth: '200px' }} />  {/* Clerks */}
               </colgroup>
-              <thead className="bg-neutral-800/70 text-neutral-300 sticky top-0 z-10">
+              <thead className="bg-neutral-800/70 text-neutral-300">
                 <tr>
-                  <th className="px-2 py-1.5 text-left font-semibold border-r border-neutral-700/50">PART</th>
-                  <th className="px-2 py-1.5 text-left font-semibold border-r border-neutral-700/50">JUSTICE</th>
-                  <th className="px-2 py-1.5 text-left font-semibold border-r border-neutral-700/50">ROOM</th>
-                  <th className="px-2 py-1.5 text-left font-semibold border-r border-neutral-700/50">FAX</th>
-                  <th className="px-2 py-1.5 text-left font-semibold border-r border-neutral-700/50">TEL</th>
-                  <th className="px-2 py-1.5 text-left font-semibold border-r border-neutral-700/50">SGT.</th>
-                  <th className="px-2 py-1.5 text-left font-semibold">CLERKS</th>
+                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">PART</th>
+                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">JUSTICE</th>
+                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">ROOM</th>
+                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">FAX</th>
+                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">TEL</th>
+                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">SGT.</th>
+                  <th className="px-3 py-2 text-left font-semibold whitespace-nowrap">CLERKS</th>
                 </tr>
               </thead>
               <tbody>
                 {assignments.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-2 py-8 text-center text-neutral-400">
+                    <td colSpan={7} className="px-3 py-8 text-center text-neutral-400">
                       No term assignments available
                     </td>
                   </tr>
@@ -201,25 +167,25 @@ export const TermSheetBoard: React.FC = () => {
                         index % 2 === 0 ? 'bg-neutral-900/50' : 'bg-neutral-900/30'
                       }`}
                     >
-                      <td className="px-2 py-1.5 font-semibold text-blue-300 border-r border-neutral-800/50">
+                      <td className="px-3 py-2 font-semibold text-blue-300 border-r border-neutral-800/50 whitespace-nowrap">
                         {assignment.part}
                       </td>
-                      <td className="px-2 py-1.5 text-neutral-200 border-r border-neutral-800/50 truncate">
+                      <td className="px-3 py-2 text-neutral-200 border-r border-neutral-800/50">
                         {assignment.justice}
                       </td>
-                      <td className="px-2 py-1.5 text-neutral-300 border-r border-neutral-800/50 text-center">
+                      <td className="px-3 py-2 text-neutral-300 border-r border-neutral-800/50 text-center whitespace-nowrap">
                         {assignment.room}
                       </td>
-                      <td className="px-2 py-1.5 text-neutral-300 border-r border-neutral-800/50 tabular-nums">
+                      <td className="px-3 py-2 text-neutral-300 border-r border-neutral-800/50 tabular-nums whitespace-nowrap">
                         {assignment.fax}
                       </td>
-                      <td className="px-2 py-1.5 text-neutral-300 border-r border-neutral-800/50 tabular-nums">
+                      <td className="px-3 py-2 text-neutral-300 border-r border-neutral-800/50 tabular-nums whitespace-nowrap">
                         {assignment.tel}
                       </td>
-                      <td className="px-2 py-1.5 text-neutral-200 border-r border-neutral-800/50 truncate">
+                      <td className="px-3 py-2 text-neutral-200 border-r border-neutral-800/50">
                         {assignment.sergeant}
                       </td>
-                      <td className="px-2 py-1.5 text-neutral-300">
+                      <td className="px-3 py-2 text-neutral-300">
                         {assignment.clerks.join(' • ')}
                       </td>
                     </tr>
@@ -230,7 +196,7 @@ export const TermSheetBoard: React.FC = () => {
           </div>
 
           {/* Footer Info */}
-          <div className="mt-2 px-2 text-[10px] text-neutral-500 flex items-center justify-between">
+          <div className="mt-2 text-[10px] text-neutral-500 flex items-center justify-between">
             <span>Criminal Term Sheet • All Columns Visible</span>
             <span>{new Date().toLocaleDateString()}</span>
           </div>
