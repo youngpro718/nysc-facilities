@@ -59,7 +59,7 @@ const transformOccupantData = (occupant: any): OccupantQueryResponse => {
     phone: occupant.phone,
     department: occupant.department,
     title: occupant.title,
-    role: occupant.role,
+    role: null, // occupants table doesn't have a role column
     status: occupant.status || 'inactive',
     key_count: activeKeyAssignments.length,
     room_count: Array.isArray(roomAssignments) ? roomAssignments.length : 0,
@@ -85,7 +85,7 @@ export function useOccupantList() {
         
         let query = supabase
           .from('occupants')
-          .select('id, first_name, last_name, email, phone, department, title, role, status');
+          .select('id, first_name, last_name, email, phone, department, title, status');
 
         if (searchQuery) {
           query = query.or(
@@ -123,7 +123,7 @@ export function useOccupantList() {
           phone: occupant.phone,
           department: occupant.department,
           title: occupant.title,
-          role: occupant.role,
+          role: null, // occupants table doesn't have a role column
           status: occupant.status || 'inactive',
           key_count: 0, // Will need separate query
           room_count: 0, // Will need separate query
