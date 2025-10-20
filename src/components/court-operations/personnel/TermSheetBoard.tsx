@@ -20,45 +20,69 @@ export const TermSheetBoard: React.FC = () => {
   const [isDense, setIsDense] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  // Fetch term assignments
+  // Fetch term assignments (using same query structure as EnhancedCourtAssignmentTable)
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ['term-sheet-board'],
     queryFn: async () => {
-      // Fetch court assignments with all related data
-      const { data, error } = await supabase
-        .from('court_assignments')
+      // Get court rooms with their assignments
+      const { data: roomsData, error: roomsError } = await supabase
+        .from("court_rooms")
         .select(`
-          *,
-          court_rooms (
-            room_number,
-            building:buildings (name)
-          ),
-          justice:term_personnel!court_assignments_justice_id_fkey (name, phone, fax),
-          sergeant:term_personnel!court_assignments_sergeant_id_fkey (name, phone, extension),
-          clerk1:term_personnel!court_assignments_clerk1_id_fkey (name),
-          clerk2:term_personnel!court_assignments_clerk2_id_fkey (name)
+          id,
+          room_id,
+          room_number,
+          courtroom_number,
+          is_active
         `)
-        .order('part_name');
+        .order("room_number");
 
-      if (error) throw error;
+      if (roomsError) throw roomsError;
 
-      return (data || []).map((assignment: any): TermAssignment => {
-        const clerks = [
-          assignment.clerk1?.name,
-          assignment.clerk2?.name
-        ].filter(Boolean);
+      // Get all court assignments
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from("court_assignments")
+        .select("*")
+        .order("sort_order");
 
-        return {
-          part: assignment.part_name || '—',
-          justice: assignment.justice?.name || '—',
-          room: assignment.court_rooms?.room_number || '—',
-          fax: assignment.justice?.fax || '—',
-          tel: assignment.justice?.phone || '—',
-          sergeant: assignment.sergeant?.name || '—',
-          clerks: clerks.length > 0 ? clerks : ['—'],
-          building: assignment.court_rooms?.building?.name || undefined
-        };
+      if (assignmentsError) throw assignmentsError;
+
+      // Create a map of assignments by room_id
+      const assignmentMap = new Map();
+      (assignmentsData || []).forEach((assignment: any) => {
+        if (assignment.room_id) {
+          assignmentMap.set(assignment.room_id, assignment);
+        }
       });
+
+      // Combine rooms with their assignments
+      const combined = (roomsData || [])
+        .map((room: any) => {
+          const assignment = assignmentMap.get(room.room_id);
+          return {
+            room_number: room.room_number || room.courtroom_number || '—',
+            part: assignment?.part || '—',
+            justice: assignment?.justice || '—',
+            tel: assignment?.tel || '—',
+            fax: assignment?.fax || '—',
+            sergeant: assignment?.sergeant || '—',
+            clerks: assignment?.clerks || ['—'],
+            calendar_day: assignment?.calendar_day || '—',
+            is_active: room.is_active,
+            has_assignment: !!assignment
+          };
+        })
+        .filter((row: any) => row.has_assignment && row.is_active); // Only show assigned, active rooms
+
+      return combined.map((row: any): TermAssignment => ({
+        part: row.part,
+        justice: row.justice,
+        room: row.room_number,
+        fax: row.fax,
+        tel: row.tel,
+        sergeant: row.sergeant,
+        clerks: Array.isArray(row.clerks) ? row.clerks : [row.clerks || '—'],
+        building: undefined // Building info not in current schema
+      }));
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
