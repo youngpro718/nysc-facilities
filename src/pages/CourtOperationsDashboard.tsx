@@ -3,7 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InteractiveOperationsDashboard } from "@/components/court/InteractiveOperationsDashboard";
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
-import { MapPin, Users } from "lucide-react";
+import { TermSheetBoard } from "@/components/court-operations/personnel/TermSheetBoard";
+import { MapPin, Users, FileText } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
@@ -60,7 +61,7 @@ export const CourtOperationsDashboard = () => {
         }
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="operations" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             Operations Overview
@@ -75,6 +76,10 @@ export const CourtOperationsDashboard = () => {
             <Users className="h-4 w-4" />
             Manage Assignments
           </TabsTrigger>
+          <TabsTrigger value="term-sheet" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Term Sheet
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="operations">
@@ -83,6 +88,10 @@ export const CourtOperationsDashboard = () => {
 
         <TabsContent value="assignments">
           <AssignmentManagementPanel />
+        </TabsContent>
+
+        <TabsContent value="term-sheet">
+          <TermSheetBoard />
         </TabsContent>
       </Tabs>
 
