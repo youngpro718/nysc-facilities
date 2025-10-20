@@ -61,9 +61,9 @@ export const CourtOperationsDashboard = () => {
         }
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="flex w-full">
           <TabsTrigger value="operations" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
+            <MapPin className="h-4 w-4 flex-shrink-0" />
             Operations Overview
           </TabsTrigger>
           <TabsTrigger
@@ -73,11 +73,11 @@ export const CourtOperationsDashboard = () => {
             {showAssignmentsGlow && (
               <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
             )}
-            <Users className="h-4 w-4" />
+            <Users className="h-4 w-4 flex-shrink-0" />
             Manage Assignments
           </TabsTrigger>
           <TabsTrigger value="term-sheet" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
+            <FileText className="h-4 w-4 flex-shrink-0" />
             Term Sheet
           </TabsTrigger>
         </TabsList>
