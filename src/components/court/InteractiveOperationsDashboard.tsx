@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Building2, Users, Wrench, AlertTriangle, MapPin, Phone, Calendar, Power, PowerOff } from 'lucide-react';
-import { QuickActionsPanel } from './QuickActionsPanel';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useCourtIssuesIntegration } from '@/hooks/useCourtIssuesIntegration';
@@ -354,10 +353,6 @@ export function InteractiveOperationsDashboard() {
               </Button>
             ))}
           </div>
-        </div>
-        
-        <div className="space-y-6">
-          <QuickActionsPanel />
         </div>
       </div>
 
