@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Calendar, MapPin, Clock, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 
 type ActionType = 'shutdown_ending' | 'no_assignment' | 'maintenance_soon' | 'temp_location';
@@ -41,7 +40,6 @@ type ActionItem =
   | (ActionItemBase & { type: 'temp_location'; details?: TempLocationDetails });
 
 export function QuickActionsPanel() {
-  const [searchTerm, setSearchTerm] = useState('');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -168,10 +166,6 @@ export function QuickActionsPanel() {
     );
   }
 
-  const filteredItems = actionItems?.filter(item => 
-    item.room_number.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
-
   const getActionIcon = (type: string) => {
     switch (type) {
       case 'shutdown_ending': return <AlertTriangle className="h-4 w-4" />;
@@ -201,20 +195,13 @@ export function QuickActionsPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Input
-            placeholder="Search rooms..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-4"
-          />
-          
           <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-            {filteredItems.length === 0 ? (
+            {(actionItems?.length || 0) === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 No items need attention
               </p>
             ) : (
-              filteredItems.map((item) => (
+              actionItems.map((item) => (
                 <div key={`${item.type}-${item.room_id}`} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors duration-200">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex-shrink-0 p-2 rounded-full bg-primary/10 text-primary">
