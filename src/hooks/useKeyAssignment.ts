@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -15,6 +15,8 @@ export function useKeyAssignment(
   const [currentSpareCount, setCurrentSpareCount] = useState(0);
   const [showCreateOrderPrompt, setShowCreateOrderPrompt] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const { data: availableKeys, isLoading } = useQuery({
     queryKey: ["available-keys"],
@@ -61,6 +63,16 @@ export function useKeyAssignment(
         throw error;
       }
 
+      // Invalidate all key-related queries to refresh UI
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["keys-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["active-key-assignments"] }),
+        queryClient.invalidateQueries({ queryKey: ["keys-inventory"] }),
+        queryClient.invalidateQueries({ queryKey: ["available-keys"] }),
+        queryClient.invalidateQueries({ queryKey: ["keys"] }),
+        queryClient.invalidateQueries({ queryKey: ["occupant-keys"] }),
+      ]);
+
       toast.success(`Successfully assigned keys to ${selectedOccupants.length} occupants`);
       onSuccess();
       setShowSpareKeyPrompt(false);
@@ -100,6 +112,15 @@ export function useKeyAssignment(
       });
 
       if (error) throw error;
+
+      // Invalidate all key-related queries to refresh UI
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["keys-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["active-key-assignments"] }),
+        queryClient.invalidateQueries({ queryKey: ["keys-inventory"] }),
+        queryClient.invalidateQueries({ queryKey: ["available-keys"] }),
+        queryClient.invalidateQueries({ queryKey: ["keys"] }),
+      ]);
 
       toast.success(`Successfully created order for ${quantity} keys`);
       onSuccess();
