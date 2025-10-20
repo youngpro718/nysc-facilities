@@ -72,25 +72,60 @@ export const PersonnelProfilesTab: React.FC = () => {
     queryKey: ['personnel-profiles'],
     queryFn: async () => {
       try {
-        // Primary: RPC to avoid RLS/PostgREST issues
-        const { data, error } = await supabase.rpc('list_personnel_profiles_minimal');
-        if (error) throw error;
-        const rows = (data || []).map((r: any) => ({
-          id: r.id,
-          display_name: r.display_name || r.full_name || '',
-          first_name: null,
-          last_name: null,
-          primary_role: r.primary_role || 'clerk',
-          title: r.title || '',
-          department: r.department || '',
-          phone: '',
+        // Try to fetch from personnel_profiles table first
+        const { data: personnelData, error: personnelError } = await supabase
+          .from('personnel_profiles')
+          .select('*');
+        
+        if (!personnelError && personnelData && personnelData.length > 0) {
+          const rows = personnelData.map((r: any) => ({
+            id: r.id,
+            display_name: r.display_name || r.full_name || `${r.first_name || ''} ${r.last_name || ''}`.trim(),
+            first_name: r.first_name || null,
+            last_name: r.last_name || null,
+            primary_role: r.primary_role || 'clerk',
+            title: r.title || '',
+            department: r.department || '',
+            phone: r.phone || '',
+            extension: r.extension || '',
+            fax: r.fax || '',
+            email: r.email || '',
+            room_number: r.room_number || '',
+            floor: r.floor || '',
+            building: r.building || '',
+            is_active: r.is_active ?? true,
+            is_available_for_assignment: r.is_available_for_assignment ?? true,
+            notes: r.notes || '',
+            specializations: r.specializations || [],
+            created_at: r.created_at || new Date().toISOString(),
+            updated_at: r.updated_at || new Date().toISOString(),
+          })) as PersonnelProfile[];
+          return rows;
+        }
+        
+        // Fallback: fetch from occupants table
+        const { data: occupantsData, error: occupantsError } = await supabase
+          .from('occupants')
+          .select('id, first_name, last_name, title, department, email, phone, status');
+        
+        if (occupantsError) throw occupantsError;
+        
+        const rows = (occupantsData || []).map((o: any) => ({
+          id: o.id,
+          display_name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
+          first_name: o.first_name || null,
+          last_name: o.last_name || null,
+          primary_role: 'clerk' as any,
+          title: o.title || '',
+          department: o.department || '',
+          phone: o.phone || '',
           extension: '',
           fax: '',
-          email: '',
+          email: o.email || '',
           room_number: '',
           floor: '',
           building: '',
-          is_active: r.is_active ?? true,
+          is_active: o.status === 'active',
           is_available_for_assignment: true,
           notes: '',
           specializations: [],
@@ -98,37 +133,9 @@ export const PersonnelProfilesTab: React.FC = () => {
           updated_at: new Date().toISOString(),
         })) as PersonnelProfile[];
         return rows;
-      } catch (e1) {
-        try {
-          // Fallback: minimal occupants via RPC
-          const { data: occ, error: occErr } = await supabase.rpc('list_occupants_minimal');
-          if (occErr) throw occErr;
-          const rows4 = (occ || []).map((o: any) => ({
-            id: o.id,
-            display_name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
-            first_name: o.first_name || null,
-            last_name: o.last_name || null,
-            primary_role: 'clerk' as any,
-            title: o.title || '',
-            department: o.department || '',
-            phone: '',
-            extension: '',
-            fax: '',
-            email: '',
-            room_number: '',
-            floor: '',
-            building: '',
-            is_active: true,
-            is_available_for_assignment: true,
-            notes: '',
-            specializations: [],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })) as PersonnelProfile[];
-          return rows4;
-        } catch {
-          return [] as PersonnelProfile[];
-        }
+      } catch (error) {
+        console.error('Error fetching personnel profiles:', error);
+        return [] as PersonnelProfile[];
       }
     },
   });

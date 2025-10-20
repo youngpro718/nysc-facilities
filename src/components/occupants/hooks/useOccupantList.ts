@@ -79,52 +79,65 @@ export function useOccupantList() {
     queryFn: async (): Promise<OccupantQueryResponse[]> => {
       console.log('Starting occupants query...');
 
-      let query = supabase
-        .from('occupants')
-        .select(`
-          *,
-          key_assignments(id, returned_at),
-          occupant_room_assignments!fk_occupant(
+      try {
+        let query = supabase
+          .from('occupants')
+          .select(`
             id,
-            rooms!occupant_room_assignments_room_id_fkey(
+            first_name,
+            last_name,
+            email,
+            phone,
+            department,
+            title,
+            role,
+            status,
+            key_assignments(id, returned_at),
+            occupant_room_assignments!fk_occupant(
               id,
-              name,
-              room_number,
-              floors(
+              rooms!occupant_room_assignments_room_id_fkey(
+                id,
                 name,
-                buildings!floors_building_id_fkey(name)
+                room_number,
+                floors(
+                  name,
+                  buildings!floors_building_id_fkey(name)
+                )
               )
             )
-          )
-        `);
+          `);
 
-      if (searchQuery) {
-        query = query.or(
-          `first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`
-        );
+        if (searchQuery) {
+          query = query.or(
+            `first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`
+          );
+        }
+
+        if (departmentFilter !== 'all') {
+          query = query.eq('department', departmentFilter);
+        }
+
+        if (statusFilter !== 'all') {
+          query = query.eq('status', statusFilter);
+        }
+
+        const { data: rawData, error } = await query
+          .order('last_name');
+        
+        if (error) {
+          console.error('Supabase query error:', error);
+          throw error;
+        }
+
+        console.log('Raw data from Supabase:', rawData);
+        const transformedData = (rawData || []).map(transformOccupantData);
+        console.log('Final transformed data:', transformedData);
+        
+        return transformedData;
+      } catch (err) {
+        console.error('Error fetching occupants:', err);
+        throw err;
       }
-
-      if (departmentFilter !== 'all') {
-        query = query.eq('department', departmentFilter);
-      }
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data: rawData, error } = await query
-        .order('last_name');
-      
-      if (error) {
-        console.error('Supabase query error:', error);
-        throw error;
-      }
-
-      console.log('Raw data from Supabase:', rawData);
-      const transformedData = (rawData || []).map(transformOccupantData);
-      console.log('Final transformed data:', transformedData);
-      
-      return transformedData;
     },
   });
 
