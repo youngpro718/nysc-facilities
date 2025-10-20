@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Phone, Printer, Calendar, Shield, Building2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Phone, Printer, Calendar, Shield, Building2, MapPin, User } from 'lucide-react';
 
 interface SergeantData {
   id: string;
@@ -20,6 +21,7 @@ interface SergeantData {
 
 export const SergeantsCompactTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSergeant, setSelectedSergeant] = useState<SergeantData | null>(null);
 
   // Fetch sergeants from term_personnel table
   const { data: sergeants = [], isLoading } = useQuery({
@@ -63,16 +65,25 @@ export const SergeantsCompactTable: React.FC = () => {
     );
   }, [sergeants, searchTerm]);
 
-  const getStatusBadge = (status: SergeantData['status']) => {
+  const getStatusColor = (status: SergeantData['status']) => {
     switch (status) {
       case 'assigned':
-        return <span className="inline-block rounded-full bg-emerald-500/20 text-emerald-300 px-2 py-0.5 text-[11px] font-medium">A</span>;
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
       case 'available':
-        return <span className="inline-block rounded-full bg-blue-500/20 text-blue-300 px-2 py-0.5 text-[11px] font-medium">Av</span>;
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
       case 'unavailable':
-        return <span className="inline-block rounded-full bg-neutral-500/20 text-neutral-400 px-2 py-0.5 text-[11px] font-medium">—</span>;
+        return 'bg-neutral-500/20 text-neutral-400 border-neutral-500/30';
       default:
-        return <span className="text-neutral-400">—</span>;
+        return 'bg-neutral-500/20 text-neutral-400 border-neutral-500/30';
+    }
+  };
+
+  const getStatusLabel = (status: SergeantData['status']) => {
+    switch (status) {
+      case 'assigned': return 'Assigned';
+      case 'available': return 'Available';
+      case 'unavailable': return 'Unavailable';
+      default: return 'Unknown';
     }
   };
 
@@ -91,8 +102,8 @@ export const SergeantsCompactTable: React.FC = () => {
       {/* Header */}
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-emerald-400" />
-          <h2 className="text-sm font-semibold">Sergeants</h2>
+          <Shield className="h-5 w-5 text-emerald-400" />
+          <h2 className="text-base font-semibold">Sergeants</h2>
           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
             {filteredSergeants.length}
           </Badge>
@@ -101,128 +112,178 @@ export const SergeantsCompactTable: React.FC = () => {
           placeholder="Search…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="text-xs px-2 py-1 h-7 rounded bg-neutral-800 border border-neutral-700 w-32 sm:w-40"
+          className="text-sm px-3 py-2 h-9 rounded bg-neutral-800 border border-neutral-700 w-40"
         />
       </div>
 
-      {/* Compact Table */}
-      <div className="overflow-x-auto rounded border border-neutral-800 bg-neutral-900/50">
-        <table className="min-w-full text-[12px] leading-tight">
-          <thead className="bg-neutral-800/60 text-neutral-300">
-            <tr>
-              <th 
-                className="sticky left-0 z-10 bg-neutral-800/90 backdrop-blur-sm px-2 py-2 text-left font-medium w-32 sm:w-40"
-                title="Sergeant Name"
-              >
-                <div className="flex items-center gap-1">
-                  <Shield className="h-3 w-3" />
-                  <span className="hidden sm:inline">Sgt</span>
-                </div>
-              </th>
-              <th className="px-2 py-2 font-medium text-center" title="Phone Extension">
-                <Phone className="h-3.5 w-3.5 mx-auto" />
-              </th>
-              <th className="px-2 py-2 font-medium text-center" title="Fax">
-                <Printer className="h-3.5 w-3.5 mx-auto" />
-              </th>
-              <th className="px-2 py-2 font-medium text-center" title="Calendar Day">
-                <Calendar className="h-3.5 w-3.5 mx-auto" />
-              </th>
-              <th className="px-2 py-2 font-medium text-center" title="Building">
-                <Building2 className="h-3.5 w-3.5 mx-auto" />
-              </th>
-              <th className="px-2 py-2 font-medium text-center" title="Status">
-                ⚡
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredSergeants.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-2 py-8 text-center text-neutral-400 text-xs">
-                  {searchTerm ? 'No sergeants found matching your search' : 'No sergeants available'}
-                </td>
-              </tr>
-            ) : (
-              filteredSergeants.map((sgt, index) => (
-                <tr 
-                  key={sgt.id}
-                  className={`border-t border-neutral-800 hover:bg-neutral-800/30 transition-colors ${
-                    index % 2 === 0 ? 'bg-neutral-900' : 'bg-neutral-900/70'
-                  }`}
-                >
-                  <td className="sticky left-0 z-10 bg-inherit px-2 py-2 font-semibold truncate">
-                    {sgt.name}
-                  </td>
-                  <td className="px-2 py-2 text-center tabular-nums text-neutral-200">
-                    {sgt.extension || sgt.phone || <span className="text-neutral-500">—</span>}
-                  </td>
-                  <td className="px-2 py-2 text-center tabular-nums text-neutral-200">
-                    {sgt.fax || <span className="text-neutral-500">—</span>}
-                  </td>
-                  <td className="px-2 py-2 text-center text-neutral-300">
-                    {sgt.calendar_day || <span className="text-neutral-500">—</span>}
-                  </td>
-                  <td className="px-2 py-2 text-center text-neutral-300 truncate max-w-[80px]">
-                    {sgt.building ? (
-                      <span className="text-[11px]">{sgt.building.replace('Centre Street Supreme Court', 'CS')}</span>
-                    ) : (
-                      <span className="text-neutral-500">—</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    {getStatusBadge(sgt.status)}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Legend */}
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-400">
-        <div className="flex items-center gap-1">
-          <Phone className="h-3 w-3" />
-          <span>Phone</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Printer className="h-3 w-3" />
-          <span>Fax</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Calendar className="h-3 w-3" />
-          <span>Calendar</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Building2 className="h-3 w-3" />
-          <span>Building</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span>⚡</span>
-          <span>Status: A=Assigned, Av=Available</span>
-        </div>
-      </div>
-
       {/* Summary Stats */}
-      <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
-        <div className="bg-neutral-800/40 rounded p-2 border border-neutral-700/50">
-          <div className="text-neutral-400">Total</div>
-          <div className="text-lg font-bold text-neutral-100">{sergeants.length}</div>
+      <div className="mb-4 grid grid-cols-3 gap-2 text-[11px]">
+        <div className="bg-neutral-800/40 rounded-lg p-2.5 border border-neutral-700/50">
+          <div className="text-neutral-400 text-[10px] uppercase tracking-wide">Total</div>
+          <div className="text-xl font-bold text-neutral-100 mt-0.5">{sergeants.length}</div>
         </div>
-        <div className="bg-emerald-500/10 rounded p-2 border border-emerald-500/20">
-          <div className="text-emerald-400">Assigned</div>
-          <div className="text-lg font-bold text-emerald-300">
+        <div className="bg-emerald-500/10 rounded-lg p-2.5 border border-emerald-500/20">
+          <div className="text-emerald-400 text-[10px] uppercase tracking-wide">Assigned</div>
+          <div className="text-xl font-bold text-emerald-300 mt-0.5">
             {sergeants.filter(s => s.status === 'assigned').length}
           </div>
         </div>
-        <div className="bg-blue-500/10 rounded p-2 border border-blue-500/20">
-          <div className="text-blue-400">Available</div>
-          <div className="text-lg font-bold text-blue-300">
+        <div className="bg-blue-500/10 rounded-lg p-2.5 border border-blue-500/20">
+          <div className="text-blue-400 text-[10px] uppercase tracking-wide">Available</div>
+          <div className="text-xl font-bold text-blue-300 mt-0.5">
             {sergeants.filter(s => s.status === 'available').length}
           </div>
         </div>
       </div>
+
+      {/* Sergeant Cards */}
+      <div className="space-y-2">
+        {filteredSergeants.length === 0 ? (
+          <div className="text-center py-12 text-neutral-400 text-sm">
+            {searchTerm ? 'No sergeants found matching your search' : 'No sergeants available'}
+          </div>
+        ) : (
+          filteredSergeants.map((sgt) => (
+            <div
+              key={sgt.id}
+              onClick={() => setSelectedSergeant(sgt)}
+              className="bg-neutral-800/50 border border-neutral-700/50 rounded-lg p-3 hover:bg-neutral-800/70 hover:border-neutral-600 transition-all cursor-pointer active:scale-[0.98]"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                  <h3 className="font-semibold text-sm text-neutral-100">{sgt.name}</h3>
+                </div>
+                <Badge className={`text-[10px] px-2 py-0.5 border ${getStatusColor(sgt.status)}`}>
+                  {getStatusLabel(sgt.status)}
+                </Badge>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                <div className="flex items-center gap-1.5 text-neutral-300">
+                  <Phone className="h-3.5 w-3.5 text-neutral-500" />
+                  <span>{sgt.extension || sgt.phone || '—'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-neutral-300">
+                  <Printer className="h-3.5 w-3.5 text-neutral-500" />
+                  <span>{sgt.fax || '—'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-neutral-300">
+                  <Calendar className="h-3.5 w-3.5 text-neutral-500" />
+                  <span>{sgt.calendar_day || '—'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-neutral-300">
+                  <Building2 className="h-3.5 w-3.5 text-neutral-500" />
+                  <span className="truncate">{sgt.building?.replace(' Centre Street Supreme Court', '') || '—'}</span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Detail Modal */}
+      <Dialog open={!!selectedSergeant} onOpenChange={() => setSelectedSergeant(null)}>
+        <DialogContent className="bg-neutral-900 border-neutral-700 text-neutral-100 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Shield className="h-5 w-5 text-emerald-400" />
+              Sergeant Details
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedSergeant && (
+            <div className="space-y-4 pt-2">
+              {/* Name & Status */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <User className="h-4 w-4 text-neutral-500" />
+                    <span className="text-xs text-neutral-400 uppercase tracking-wide">Name</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-neutral-100">{selectedSergeant.name}</h3>
+                </div>
+                <Badge className={`text-xs px-3 py-1 border ${getStatusColor(selectedSergeant.status)}`}>
+                  {getStatusLabel(selectedSergeant.status)}
+                </Badge>
+              </div>
+
+              <div className="h-px bg-neutral-700/50" />
+
+              {/* Contact Information */}
+              <div className="space-y-3">
+                <h4 className="text-xs text-neutral-400 uppercase tracking-wide font-medium">Contact Information</h4>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between bg-neutral-800/50 rounded-lg p-3 border border-neutral-700/30">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-emerald-400" />
+                      <span className="text-sm text-neutral-300">Phone</span>
+                    </div>
+                    <span className="text-sm font-semibold text-neutral-100 tabular-nums">
+                      {selectedSergeant.extension || selectedSergeant.phone || '—'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-neutral-800/50 rounded-lg p-3 border border-neutral-700/30">
+                    <div className="flex items-center gap-2">
+                      <Printer className="h-4 w-4 text-blue-400" />
+                      <span className="text-sm text-neutral-300">Fax</span>
+                    </div>
+                    <span className="text-sm font-semibold text-neutral-100 tabular-nums">
+                      {selectedSergeant.fax || '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-px bg-neutral-700/50" />
+
+              {/* Schedule & Location */}
+              <div className="space-y-3">
+                <h4 className="text-xs text-neutral-400 uppercase tracking-wide font-medium">Schedule & Location</h4>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between bg-neutral-800/50 rounded-lg p-3 border border-neutral-700/30">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-purple-400" />
+                      <span className="text-sm text-neutral-300">Calendar Day</span>
+                    </div>
+                    <span className="text-sm font-semibold text-neutral-100">
+                      {selectedSergeant.calendar_day || 'Not assigned'}
+                    </span>
+                  </div>
+
+                  <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin className="h-4 w-4 text-orange-400" />
+                      <span className="text-sm text-neutral-300">Location</span>
+                    </div>
+                    <div className="ml-6 space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-neutral-400">Building:</span>
+                        <span className="text-neutral-100 font-medium">{selectedSergeant.building || '—'}</span>
+                      </div>
+                      {selectedSergeant.floor && (
+                        <div className="flex justify-between">
+                          <span className="text-neutral-400">Floor:</span>
+                          <span className="text-neutral-100 font-medium">{selectedSergeant.floor}</span>
+                        </div>
+                      )}
+                      {selectedSergeant.room && (
+                        <div className="flex justify-between">
+                          <span className="text-neutral-400">Room:</span>
+                          <span className="text-neutral-100 font-medium">{selectedSergeant.room}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
