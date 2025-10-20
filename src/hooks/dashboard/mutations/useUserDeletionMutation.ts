@@ -35,17 +35,7 @@ export function useUserDeletionMutation(refetchUsers: () => void) {
         console.error('Error deleting verification request:', verificationError);
       }
 
-      // Delete user metadata
-      const { error: metadataError } = await supabase
-        .from('users_metadata')
-        .delete()
-        .eq('id', userId);
-
-      if (metadataError) {
-        console.error('Error deleting metadata:', metadataError);
-      }
-
-      // Finally delete the profile (this should cascade to auth.users)
+      // Delete the profile (this should cascade to auth.users)
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()

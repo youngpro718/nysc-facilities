@@ -68,14 +68,7 @@ export function useVerificationMutations(
         
         toast.success('User approved successfully');
       } else {
-        // Delete from both profiles and users_metadata tables
-        const { error: metadataError } = await supabase
-          .from('users_metadata')
-          .delete()
-          .eq('id', userId);
-
-        if (metadataError) throw metadataError;
-
+        // Delete user profile
         const { error: profileError } = await supabase
           .from('profiles')
           .delete()
@@ -107,16 +100,9 @@ export function useVerificationMutations(
         }
         toast.success(`${selectedUsers.length} users approved successfully`);
       } else {
-        // Delete from both profiles and users_metadata tables
+        // Delete user profiles
         const userIds = selectedUsers.map(user => user.userId);
         
-        const { error: metadataError } = await supabase
-          .from('users_metadata')
-          .delete()
-          .in('id', userIds);
-
-        if (metadataError) throw metadataError;
-
         const { error: profileError } = await supabase
           .from('profiles')
           .delete()
@@ -208,17 +194,7 @@ export function useVerificationMutations(
         console.error('Error deleting verification request:', verificationError);
       }
 
-      // Delete user metadata
-      const { error: metadataError } = await supabase
-        .from('users_metadata')
-        .delete()
-        .eq('id', userId);
-
-      if (metadataError) {
-        console.error('Error deleting metadata:', metadataError);
-      }
-
-      // Finally delete the profile (this should cascade to auth.users)
+      // Delete the profile (this should cascade to auth.users)
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()

@@ -61,13 +61,6 @@ export function useVerificationMutation(
         
         toast.success('User approved successfully');
       } else {
-        const { error: metadataError } = await supabase
-          .from('users_metadata')
-          .delete()
-          .eq('id', userId);
-
-        if (metadataError) throw metadataError;
-
         const { error: profileError } = await supabase
           .from('profiles')
           .delete()
@@ -101,13 +94,6 @@ export function useVerificationMutation(
       } else {
         const userIds = selectedUsers.map(user => user.userId);
         
-        const { error: metadataError } = await supabase
-          .from('users_metadata')
-          .delete()
-          .in('id', userIds);
-
-        if (metadataError) throw metadataError;
-
         const { error: profileError } = await supabase
           .from('profiles')
           .delete()
