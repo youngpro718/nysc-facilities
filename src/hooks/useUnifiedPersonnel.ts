@@ -53,7 +53,7 @@ export const useUnifiedPersonnel = () => {
         // 1. Fetch occupants
         const { data: occupants, error: occupantsError } = await supabase
           .from('occupants')
-          .select('*')
+          .select('id, first_name, last_name, email, phone, department, title, status, access_level, room_id, created_at, updated_at, hire_date, start_date, end_date, employment_type, supervisor_id')
           .neq('status', 'terminated'); // Only active occupants
 
         if (occupantsError) throw occupantsError;

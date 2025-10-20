@@ -128,7 +128,7 @@ export function useEnhancedPersonnelManagement() {
       // 3. Fetch occupants
       const { data: occupants, error: occupantsError } = await supabase
         .from('occupants')
-        .select('*');
+        .select('id, first_name, last_name, email, phone, department, title, status, created_at');
 
       if (occupantsError) throw occupantsError;
 
