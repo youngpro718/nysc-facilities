@@ -154,13 +154,17 @@ export const TermSheetBoard: React.FC = () => {
       </div>
 
       {/* Scaled Board Container */}
-      <div style={{ overflow: 'visible', position: 'relative' }}>
+      <div style={{ overflow: 'visible', position: 'relative', touchAction: 'pan-x pan-y pinch-zoom' }}>
         <div
           ref={wrapRef}
           className="origin-top-left"
-          style={{ width: '1024px', transformOrigin: 'top left' }}
+          style={{ 
+            width: '1024px', 
+            transformOrigin: 'top left',
+            touchAction: 'pan-x pan-y pinch-zoom'
+          }}
         >
-          <div className="rounded-lg border border-neutral-800 bg-neutral-950 shadow-2xl overflow-hidden">
+          <div className="rounded-lg border border-neutral-800 bg-neutral-950 shadow-2xl overflow-hidden" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
             <table className={`w-full table-fixed ${isDense ? 'text-[11px] leading-[1.05]' : 'text-[12px] leading-[1.15]'}`}>
               <colgroup>
                 <col style={{ width: '90px' }} />   {/* Part */}
