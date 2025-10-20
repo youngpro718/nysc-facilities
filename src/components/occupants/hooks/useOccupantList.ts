@@ -80,6 +80,21 @@ export function useOccupantList() {
       console.log('Starting occupants query...');
 
       try {
+        // First, try a simple query without joins to isolate the issue
+        console.log('Attempting simple occupants query...');
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('occupants')
+          .select('id, first_name, last_name, email, phone, department, title, role, status')
+          .limit(5);
+        
+        if (simpleError) {
+          console.error('Simple query failed:', simpleError);
+          console.error('Error details:', JSON.stringify(simpleError, null, 2));
+          throw simpleError;
+        }
+        
+        console.log('Simple query succeeded, fetching full data...');
+        
         let query = supabase
           .from('occupants')
           .select(`
@@ -125,7 +140,8 @@ export function useOccupantList() {
           .order('last_name');
         
         if (error) {
-          console.error('Supabase query error:', error);
+          console.error('Full query error:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
           throw error;
         }
 
@@ -136,6 +152,8 @@ export function useOccupantList() {
         return transformedData;
       } catch (err) {
         console.error('Error fetching occupants:', err);
+        console.error('Error type:', typeof err);
+        console.error('Error keys:', Object.keys(err as object));
         throw err;
       }
     },
