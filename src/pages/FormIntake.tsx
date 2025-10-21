@@ -155,11 +155,17 @@ export default function FormIntake() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Form Intake System</h1>
-        <p className="text-muted-foreground">
-          Upload completed PDF forms for automatic processing
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Form Intake System</h1>
+          <p className="text-muted-foreground">
+            Upload completed PDF forms for automatic processing
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => window.location.href = '/form-templates'}>
+          <FileText className="w-4 h-4 mr-2" />
+          View Form Templates
+        </Button>
       </div>
 
       {/* Upload Area */}

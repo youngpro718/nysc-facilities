@@ -46,6 +46,7 @@ import Notifications from "@/pages/Notifications";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import InstallApp from "@/pages/InstallApp";
 import FormIntake from "@/pages/FormIntake";
+import FormTemplates from "@/pages/FormTemplates";
 import RoutingRules from "@/pages/admin/RoutingRules";
 
 
@@ -159,6 +160,11 @@ function AppContent() {
         <Route path="notifications" element={
           <ProtectedRoute requireAdmin>
             <Notifications />
+          </ProtectedRoute>
+        } />
+        <Route path="form-templates" element={
+          <ProtectedRoute>
+            <FormTemplates />
           </ProtectedRoute>
         } />
         <Route path="form-intake" element={

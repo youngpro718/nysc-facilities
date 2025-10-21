@@ -59,10 +59,24 @@ export const navigationItems: NavigationItem[] = [
 // Secondary navigation items (for submenu/more section)
 export const secondaryNavigationItems: NavigationItem[] = [
   {
+    title: 'Form Templates',
+    href: '/form-templates',
+    icon: FileText,
+    adminOnly: false,
+    moduleKey: undefined,
+  },
+  {
     title: 'Form Intake',
     href: '/form-intake',
     icon: Upload,
     adminOnly: false,
+    moduleKey: undefined,
+  },
+  {
+    title: 'Routing Rules',
+    href: '/admin/routing-rules',
+    icon: GitFork,
+    adminOnly: true,
     moduleKey: undefined,
   },
   {
