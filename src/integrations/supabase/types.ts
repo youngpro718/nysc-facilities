@@ -1593,6 +1593,57 @@ export type Database = {
           },
         ]
       }
+      form_submissions: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          error_message: string | null
+          extracted_data: Json
+          form_type: string
+          id: string
+          linked_request_id: string | null
+          linked_request_type: string | null
+          pdf_file_path: string
+          processed_at: string | null
+          processing_status: string
+          reviewer_notes: string | null
+          updated_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          extracted_data?: Json
+          form_type: string
+          id?: string
+          linked_request_id?: string | null
+          linked_request_type?: string | null
+          pdf_file_path: string
+          processed_at?: string | null
+          processing_status?: string
+          reviewer_notes?: string | null
+          updated_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          extracted_data?: Json
+          form_type?: string
+          id?: string
+          linked_request_id?: string | null
+          linked_request_type?: string | null
+          pdf_file_path?: string
+          processed_at?: string | null
+          processing_status?: string
+          reviewer_notes?: string | null
+          updated_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       hallway_analytics: {
         Row: {
           busy_periods: Json | null
@@ -4990,6 +5041,9 @@ export type Database = {
           last_name: string | null
           metadata: Json | null
           notification_preferences: Json | null
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          onboarding_skipped: boolean | null
           phone: string | null
           security_settings: Json | null
           suspended_at: string | null
@@ -5030,6 +5084,9 @@ export type Database = {
           last_name?: string | null
           metadata?: Json | null
           notification_preferences?: Json | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_skipped?: boolean | null
           phone?: string | null
           security_settings?: Json | null
           suspended_at?: string | null
@@ -5070,6 +5127,9 @@ export type Database = {
           last_name?: string | null
           metadata?: Json | null
           notification_preferences?: Json | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_skipped?: boolean | null
           phone?: string | null
           security_settings?: Json | null
           suspended_at?: string | null
@@ -7260,33 +7320,65 @@ export type Database = {
       }
       staff_absences: {
         Row: {
+          absence_reason: string | null
+          affected_room_id: string | null
+          coverage_assigned: boolean | null
+          covering_staff_id: string | null
           created_at: string | null
           created_by: string | null
           ends_on: string
           id: string
           kind: Database["public"]["Enums"]["absence_kind"]
+          notes: string | null
+          notification_sent: boolean | null
           staff_id: string
           starts_on: string
         }
         Insert: {
+          absence_reason?: string | null
+          affected_room_id?: string | null
+          coverage_assigned?: boolean | null
+          covering_staff_id?: string | null
           created_at?: string | null
           created_by?: string | null
           ends_on: string
           id?: string
           kind: Database["public"]["Enums"]["absence_kind"]
+          notes?: string | null
+          notification_sent?: boolean | null
           staff_id: string
           starts_on: string
         }
         Update: {
+          absence_reason?: string | null
+          affected_room_id?: string | null
+          coverage_assigned?: boolean | null
+          covering_staff_id?: string | null
           created_at?: string | null
           created_by?: string | null
           ends_on?: string
           id?: string
           kind?: Database["public"]["Enums"]["absence_kind"]
+          notes?: string | null
+          notification_sent?: boolean | null
           staff_id?: string
           starts_on?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "staff_absences_covering_staff_id_fkey"
+            columns: ["covering_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_absences_covering_staff_id_fkey"
+            columns: ["covering_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_out_today"
+            referencedColumns: ["staff_id"]
+          },
           {
             foreignKeyName: "staff_absences_staff_id_fkey"
             columns: ["staff_id"]
@@ -7909,6 +8001,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      title_access_rules: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          role: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          role: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          role?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       unified_spaces: {
         Row: {
@@ -8882,6 +9001,14 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      assign_absence_coverage: {
+        Args: {
+          p_absence_id: string
+          p_actor_id: string
+          p_covering_staff_id: string
+        }
+        Returns: undefined
+      }
       assign_key_if_available: {
         Args:
           | { is_spare?: boolean; key_id: string; occupant_id: string }
@@ -9606,6 +9733,18 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: undefined
       }
+      record_staff_absence: {
+        Args: {
+          p_absence_reason: string
+          p_affected_room_id?: string
+          p_end_date: string
+          p_notes?: string
+          p_role: string
+          p_staff_id: string
+          p_start_date: string
+        }
+        Returns: string
+      }
       refresh_all_materialized_views: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -9702,6 +9841,10 @@ export type Database = {
       }
       start_supply_request_work: {
         Args: { p_request_id: string }
+        Returns: undefined
+      }
+      swap_courtrooms: {
+        Args: { p_actor: string; p_room_a_id: string; p_room_b_id: string }
         Returns: undefined
       }
       update_door_properties: {

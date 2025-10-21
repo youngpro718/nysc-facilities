@@ -19,6 +19,7 @@ import {
   User,
   FileText,
   MessageSquare,
+  Upload,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
 import { RolePermissions, CourtRole } from '@/hooks/useRolePermissions';
@@ -57,6 +58,13 @@ export const navigationItems: NavigationItem[] = [
 
 // Secondary navigation items (for submenu/more section)
 export const secondaryNavigationItems: NavigationItem[] = [
+  {
+    title: 'Form Intake',
+    href: '/form-intake',
+    icon: Upload,
+    adminOnly: false,
+    moduleKey: undefined,
+  },
   {
     title: 'People',
     href: '/people',
