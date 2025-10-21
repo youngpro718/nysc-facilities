@@ -46,6 +46,7 @@ import Notifications from "@/pages/Notifications";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import InstallApp from "@/pages/InstallApp";
 import FormIntake from "@/pages/FormIntake";
+import RoutingRules from "@/pages/admin/RoutingRules";
 
 
 // Create a client
@@ -163,6 +164,11 @@ function AppContent() {
         <Route path="form-intake" element={
           <ProtectedRoute>
             <FormIntake />
+          </ProtectedRoute>
+        } />
+        <Route path="admin/routing-rules" element={
+          <ProtectedRoute requireAdmin>
+            <RoutingRules />
           </ProtectedRoute>
         } />
         {/* Supply Requests - User facing route */}

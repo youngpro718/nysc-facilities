@@ -1593,10 +1593,105 @@ export type Database = {
           },
         ]
       }
+      form_routing_history: {
+        Row: {
+          assigned_to: string | null
+          id: string
+          reason: string | null
+          routed_at: string | null
+          rule_id: string | null
+          submission_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          id?: string
+          reason?: string | null
+          routed_at?: string | null
+          rule_id?: string | null
+          submission_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          id?: string
+          reason?: string | null
+          routed_at?: string | null
+          rule_id?: string | null
+          submission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_routing_history_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "form_routing_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_routing_history_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_routing_rules: {
+        Row: {
+          assign_to_role: string | null
+          assign_to_user_id: string | null
+          auto_approve: boolean | null
+          conditions: Json
+          created_at: string | null
+          created_by: string | null
+          escalation_time_hours: number | null
+          form_type: string | null
+          id: string
+          is_active: boolean | null
+          notification_template: string | null
+          priority: number | null
+          rule_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          assign_to_role?: string | null
+          assign_to_user_id?: string | null
+          auto_approve?: boolean | null
+          conditions: Json
+          created_at?: string | null
+          created_by?: string | null
+          escalation_time_hours?: number | null
+          form_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          notification_template?: string | null
+          priority?: number | null
+          rule_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          assign_to_role?: string | null
+          assign_to_user_id?: string | null
+          auto_approve?: boolean | null
+          conditions?: Json
+          created_at?: string | null
+          created_by?: string | null
+          escalation_time_hours?: number | null
+          form_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          notification_template?: string | null
+          priority?: number | null
+          rule_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       form_submissions: {
         Row: {
+          assigned_to: string | null
           confidence_score: number | null
           created_at: string | null
+          email_subject: string | null
           error_message: string | null
           extracted_data: Json
           form_type: string
@@ -1607,12 +1702,17 @@ export type Database = {
           processed_at: string | null
           processing_status: string
           reviewer_notes: string | null
+          routed_at: string | null
+          sender_email: string | null
+          submission_method: string | null
           updated_at: string | null
           uploaded_by: string
         }
         Insert: {
+          assigned_to?: string | null
           confidence_score?: number | null
           created_at?: string | null
+          email_subject?: string | null
           error_message?: string | null
           extracted_data?: Json
           form_type: string
@@ -1623,12 +1723,17 @@ export type Database = {
           processed_at?: string | null
           processing_status?: string
           reviewer_notes?: string | null
+          routed_at?: string | null
+          sender_email?: string | null
+          submission_method?: string | null
           updated_at?: string | null
           uploaded_by: string
         }
         Update: {
+          assigned_to?: string | null
           confidence_score?: number | null
           created_at?: string | null
+          email_subject?: string | null
           error_message?: string | null
           extracted_data?: Json
           form_type?: string
@@ -1639,6 +1744,9 @@ export type Database = {
           processed_at?: string | null
           processing_status?: string
           reviewer_notes?: string | null
+          routed_at?: string | null
+          sender_email?: string | null
+          submission_method?: string | null
           updated_at?: string | null
           uploaded_by?: string
         }

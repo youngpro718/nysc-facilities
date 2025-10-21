@@ -87,3 +87,6 @@ verify_jwt = true
 
 [functions.parse-form-pdf]
 verify_jwt = true
+
+[functions.route-form-submission]
+verify_jwt = false

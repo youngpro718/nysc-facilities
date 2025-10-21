@@ -36,7 +36,15 @@ export default function FormIntake() {
       return;
     }
 
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
     setUploading(true);
+    toast.info('Uploading form...');
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -56,29 +64,54 @@ export default function FormIntake() {
           pdf_file_path: fileName,
           form_type: 'unknown',
           uploaded_by: user.id,
-          processing_status: 'pending',
+          processing_status: 'processing',
         })
         .select()
         .single();
 
       if (submissionError) throw submissionError;
 
-      toast.success('Form uploaded! Processing...');
+      toast.success('Form uploaded successfully');
 
       // Call edge function to parse
       const { data: parseResult, error: parseError } = await supabase.functions.invoke('parse-form-pdf', {
-        body: {
-          filePath: fileName,
-          submissionId: submission.id,
-        },
+        body: { filePath: fileName },
       });
 
       if (parseError) {
-        toast.error('Failed to parse form: ' + parseError.message);
-      } else {
-        toast.success(`Form identified as: ${parseResult.formType}`);
-        queryClient.invalidateQueries({ queryKey: ['form-submissions'] });
+        console.error('Parse error:', parseError);
+        await supabase
+          .from('form_submissions')
+          .update({ processing_status: 'failed' })
+          .eq('id', submission.id);
+        toast.error('Failed to parse form');
+      } else if (parseResult?.success) {
+        // Update submission with parsed data
+        await supabase
+          .from('form_submissions')
+          .update({
+            form_type: parseResult.formType,
+            extracted_data: parseResult.extractedData,
+            processing_status: 'completed',
+          })
+          .eq('id', submission.id);
+
+        // Trigger routing
+        await supabase.functions.invoke('route-form-submission', {
+          body: {
+            submissionId: submission.id,
+            formData: {
+              form_type: parseResult.formType,
+              ...parseResult.extractedData,
+            },
+          },
+        });
+
+        toast.success('Form processed and routed successfully');
       }
+
+      // Refresh the list
+      queryClient.invalidateQueries({ queryKey: ['form-submissions'] });
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || 'Failed to upload form');
