@@ -73,7 +73,13 @@ export class ConflictDetectionService {
   private static async detectDoubleBookedJudges(): Promise<Conflict[]> {
     const { data: assignments, error } = await supabase
       .from("court_assignments")
-      .select("id, room_id, justice, part")
+      .select(`
+        id, 
+        room_id,
+        justice, 
+        part,
+        rooms!inner(room_number)
+      `)
       .not("justice", "is", null);
 
     if (error || !assignments) return [];
@@ -98,7 +104,7 @@ export class ConflictDetectionService {
           severity: "critical",
           title: `Judge ${judge} is double-booked`,
           description: `${judge} is assigned to ${rooms.length} courtrooms simultaneously`,
-          affectedRooms: rooms.map(r => r.room_id),
+          affectedRooms: rooms.map(r => (r as any).rooms?.room_number || r.room_id),
           affectedPersonnel: [judge],
           suggestedAction: `Remove ${judge} from all but one courtroom or verify if this is intentional (e.g., covering multiple parts)`,
         });
@@ -114,7 +120,13 @@ export class ConflictDetectionService {
   private static async detectDuplicateParts(): Promise<Conflict[]> {
     const { data: assignments, error } = await supabase
       .from("court_assignments")
-      .select("id, room_id, part, justice")
+      .select(`
+        id, 
+        room_id, 
+        part, 
+        justice,
+        rooms!inner(room_number)
+      `)
       .not("part", "is", null);
 
     if (error || !assignments) return [];
@@ -139,7 +151,7 @@ export class ConflictDetectionService {
           severity: "high",
           title: `Part ${part} is assigned to multiple rooms`,
           description: `Part number ${part} appears in ${rooms.length} different courtroom assignments`,
-          affectedRooms: rooms.map(r => r.room_id),
+          affectedRooms: rooms.map(r => (r as any).rooms?.room_number || r.room_id),
           affectedPersonnel: rooms.map(r => r.justice).filter(Boolean),
           suggestedAction: `Ensure each part number is unique. Update one of the assignments to use a different part number.`,
         });
@@ -155,7 +167,15 @@ export class ConflictDetectionService {
   private static async detectMissingRequiredStaff(): Promise<Conflict[]> {
     const { data: assignments, error } = await supabase
       .from("court_assignments")
-      .select("id, room_id, justice, clerks, sergeant, part");
+      .select(`
+        id, 
+        room_id, 
+        justice, 
+        clerks, 
+        sergeant, 
+        part,
+        rooms!inner(room_number)
+      `);
 
     if (error || !assignments) return [];
 
@@ -163,6 +183,7 @@ export class ConflictDetectionService {
 
     assignments.forEach(assignment => {
       const missing: string[] = [];
+      const roomNumber = (assignment as any).rooms?.room_number || assignment.room_id;
 
       // Check for missing judge
       if (!assignment.justice || assignment.justice.trim() === "") {
@@ -184,9 +205,9 @@ export class ConflictDetectionService {
           id: `missing-staff-${assignment.room_id}`,
           type: "missing_required_staff",
           severity: "high",
-          title: `Room ${assignment.room_id} missing required staff`,
+          title: `Room ${roomNumber} missing required staff`,
           description: `Missing: ${missing.join(", ")}`,
-          affectedRooms: [assignment.room_id],
+          affectedRooms: [roomNumber],
           affectedPersonnel: [],
           suggestedAction: `Assign ${missing.join(", ")} to complete this courtroom assignment`,
         });
@@ -202,7 +223,15 @@ export class ConflictDetectionService {
   private static async detectIncompleteAssignments(): Promise<Warning[]> {
     const { data: assignments, error } = await supabase
       .from("court_assignments")
-      .select("id, room_id, justice, part, fax, tel");
+      .select(`
+        id, 
+        room_id, 
+        justice, 
+        part, 
+        fax, 
+        tel,
+        rooms!inner(room_number)
+      `);
 
     if (error || !assignments) return [];
 
@@ -210,6 +239,7 @@ export class ConflictDetectionService {
 
     assignments.forEach(assignment => {
       const issues: string[] = [];
+      const roomNumber = (assignment as any).rooms?.room_number || assignment.room_id;
 
       // Check for missing part number
       if (!assignment.part || assignment.part.trim() === "") {
@@ -229,9 +259,9 @@ export class ConflictDetectionService {
         warnings.push({
           id: `incomplete-${assignment.room_id}`,
           type: "incomplete_assignment",
-          title: `Incomplete assignment for room ${assignment.room_id}`,
+          title: `Incomplete assignment for room ${roomNumber}`,
           description: `Missing: ${issues.join(", ")}`,
-          affectedRooms: [assignment.room_id],
+          affectedRooms: [roomNumber],
         });
       }
     });
