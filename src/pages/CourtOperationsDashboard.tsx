@@ -4,7 +4,9 @@ import { InteractiveOperationsDashboard } from "@/components/court/InteractiveOp
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
 import { TermSheetBoard } from "@/components/court-operations/personnel/TermSheetBoard";
-import { MapPin, Users, FileText } from "lucide-react";
+import { StaffAbsenceManager } from "@/components/court-operations/StaffAbsenceManager";
+import { ConflictDetectionPanel } from "@/components/court-operations/ConflictDetectionPanel";
+import { MapPin, Users, FileText, UserX, AlertTriangle } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
@@ -76,6 +78,14 @@ export const CourtOperationsDashboard = () => {
             <Users className="h-4 w-4 flex-shrink-0" />
             Manage Assignments
           </TabsTrigger>
+          <TabsTrigger value="absences" className="flex items-center gap-2">
+            <UserX className="h-4 w-4 flex-shrink-0" />
+            Staff Absences
+          </TabsTrigger>
+          <TabsTrigger value="conflicts" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            Conflict Detection
+          </TabsTrigger>
           <TabsTrigger value="term-sheet" className="flex items-center gap-2">
             <FileText className="h-4 w-4 flex-shrink-0" />
             Term Sheet
@@ -88,6 +98,14 @@ export const CourtOperationsDashboard = () => {
 
         <TabsContent value="assignments">
           <AssignmentManagementPanel />
+        </TabsContent>
+
+        <TabsContent value="absences">
+          <StaffAbsenceManager />
+        </TabsContent>
+
+        <TabsContent value="conflicts">
+          <ConflictDetectionPanel />
         </TabsContent>
 
         <TabsContent value="term-sheet">

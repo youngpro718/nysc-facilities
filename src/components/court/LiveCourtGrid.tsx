@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
-import { useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { ArrowRightLeft, AlertTriangle, CheckCircle2, XCircle, Users, Search, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 function PresenceDot({ present }: { present: boolean }) {
   return (
@@ -102,6 +104,147 @@ export function LiveCourtGrid() {
   );
 }
 
+// Record Absence Dialog Component
+function RecordAbsenceDialog({ open, onOpenChange, judgeName, roomNumber, actorId }: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  judgeName: string | null;
+  roomNumber: string;
+  actorId: string;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [absenceReason, setAbsenceReason] = useState("sick");
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState("");
+
+  const recordAbsenceMutation = useMutation({
+    mutationFn: async () => {
+      if (!judgeName) throw new Error("No judge name provided");
+
+      // Find the staff member by display_name
+      const { data: staffData, error: staffError } = await supabase
+        .from("staff")
+        .select("id, role")
+        .eq("display_name", judgeName)
+        .eq("role", "judge")
+        .single();
+
+      if (staffError || !staffData) {
+        throw new Error(`Judge "${judgeName}" not found in staff table`);
+      }
+
+      // Record the absence
+      const { error } = await supabase.rpc("record_staff_absence", {
+        p_staff_id: staffData.id,
+        p_role: staffData.role,
+        p_absence_reason: absenceReason,
+        p_start_date: new Date(startDate).toISOString(),
+        p_end_date: new Date(endDate).toISOString(),
+        p_notes: notes || null,
+        p_affected_room_id: null,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-absences"] });
+      queryClient.invalidateQueries({ queryKey: ["court", "staffOutToday"] });
+      queryClient.invalidateQueries({ queryKey: ["court", "rooms"] });
+      
+      toast({
+        title: "✅ Absence recorded",
+        description: `${judgeName} marked absent (${absenceReason}) - ${startDate} to ${endDate}`,
+      });
+      
+      onOpenChange(false);
+      setNotes("");
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to record absence",
+        description: error.message,
+      });
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Record Judge Absence</DialogTitle>
+          <DialogDescription>
+            Record absence for {judgeName || "Unknown Judge"} in {roomNumber}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <Label>Absence Reason</Label>
+            <Select value={absenceReason} onValueChange={setAbsenceReason}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sick">Sick Leave</SelectItem>
+                <SelectItem value="vacation">Vacation</SelectItem>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="training">Training</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Start Date</Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>End Date</Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Notes (Optional)</Label>
+            <Input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Additional details..."
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => recordAbsenceMutation.mutate()}
+            disabled={!judgeName || recordAbsenceMutation.isPending}
+          >
+            {recordAbsenceMutation.isPending && (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            )}
+            Record Absence
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMarkClerkPresence }: {
   room: any;
   actorId: string;
@@ -120,6 +263,7 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
   const statusText = isMaintenance ? 'maintenance' : (room.is_active ? 'open' : 'closed');
 
   const [moveOpen, setMoveOpen] = useState(false);
+  const [absenceDialogOpen, setAbsenceDialogOpen] = useState(false);
   const [pending, setPending] = useState(false);
 
   const handleMarkPresent = async () => {
@@ -144,24 +288,8 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
   };
 
   const handleMarkAbsent = async () => {
-    setPending(true);
-    console.log('Marking absent:', { court_room_id: room.id, room_id: room.room_id, judge: room.assigned_judge, actorId });
-    try {
-      await onMarkAbsent(room.id, 'judge', actorId); // Use room.id (court_rooms.id) not room.room_id
-      toast({
-        title: "Judge marked absent",
-        description: `${room.assigned_judge || 'Judge'} marked absent from room ${room.room_number}`,
-      });
-    } catch (error: any) {
-      console.error('Mark absent error:', error);
-      toast({
-        title: "Failed to mark judge absent",
-        description: error?.message || String(error) || "An error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setPending(false);
-    }
+    // Open dialog to record absence details instead of just marking absent
+    setAbsenceDialogOpen(true);
   };
 
   return (
@@ -265,6 +393,13 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
           </Button>
 
           <MoveJudgeDialog open={moveOpen} onOpenChange={setMoveOpen} currentRoomId={room.room_id} currentJudge={room.assigned_judge} actorId={actorId} onMoveJudge={onMoveJudge} />
+          <RecordAbsenceDialog 
+            open={absenceDialogOpen} 
+            onOpenChange={setAbsenceDialogOpen}
+            judgeName={room.assigned_judge}
+            roomNumber={room.room_number}
+            actorId={actorId}
+          />
         </div>
       </TableCell>
     </TableRow>
@@ -280,10 +415,12 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
   onMoveJudge: (fromRoomId: string | null, toRoomId: string, judgeName: string, actorId: string, isCovering?: boolean) => Promise<void>;
 }) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: rooms } = useCourtRooms();
   const [judgeName, setJudgeName] = useState(currentJudge || "");
   const [toRoom, setToRoom] = useState<string>("");
   const [isCovering, setIsCovering] = useState(false);
+  const [isSwap, setIsSwap] = useState(false);
   const [saving, setSaving] = useState(false);
   
   // Update judge name when dialog opens with current judge
@@ -295,11 +432,13 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
 
   const handleMoveJudge = async () => {
     setSaving(true);
-    console.log('Move Judge clicked:', { 
+    console.log('🔄 Move/Swap Judge clicked:', { 
       currentRoomId, 
       toRoom, 
       judgeName, 
       actorId,
+      isSwap,
+      isCovering,
       hasJudgeName: !!judgeName,
       hasToRoom: !!toRoom
     });
@@ -308,32 +447,63 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
       const fromRoom = rooms?.find(r => r.room_id === currentRoomId);
       const toRoomData = rooms?.find(r => r.room_id === toRoom);
       
-      console.log('Calling onMoveJudge with:', {
-        from: currentRoomId,
-        to: toRoom,
-        judge: judgeName,
-        actor: actorId,
-        isCovering
-      });
+      if (isSwap) {
+        // Use swap_courtrooms RPC function
+        console.log('🔀 Calling swap_courtrooms with:', {
+          room_a: currentRoomId,
+          room_b: toRoom,
+          actor: actorId
+        });
+        
+        const { supabase } = await import('@/lib/supabase');
+        const { error } = await supabase.rpc('swap_courtrooms', {
+          p_room_a_id: currentRoomId,
+          p_room_b_id: toRoom,
+          p_actor: actorId
+        });
+        
+        if (error) throw error;
+        
+        // Invalidate all court-related queries
+        queryClient.invalidateQueries({ queryKey: ["court", "rooms"] });
+        queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
+        queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
+        queryClient.invalidateQueries({ queryKey: ["court", "attendance"] });
+        
+        toast({
+          title: "✅ Courtrooms swapped successfully",
+          description: `${fromRoom?.room_number} ↔ ${toRoomData?.room_number}`,
+        });
+      } else {
+        // Use existing move_judge function
+        console.log('➡️ Calling onMoveJudge with:', {
+          from: currentRoomId,
+          to: toRoom,
+          judge: judgeName,
+          actor: actorId,
+          isCovering
+        });
+        
+        await onMoveJudge(currentRoomId, toRoom, judgeName, actorId, isCovering);
+        
+        const moveType = isCovering ? 'covering' : 'moving entire part to';
+        toast({
+          title: "✅ Judge moved successfully",
+          description: `${judgeName} ${moveType} room ${toRoomData?.room_number}`,
+        });
+      }
       
-      await onMoveJudge(currentRoomId, toRoom, judgeName, actorId, isCovering);
-      
-      console.log('Move judge successful!');
-      
-      const moveType = isCovering ? 'covering' : 'moving entire part to';
-      toast({
-        title: "Judge moved successfully",
-        description: `${judgeName} ${moveType} room ${toRoomData?.room_number}`,
-      });
+      console.log('✅ Operation successful!');
       
       onOpenChange(false);
       setJudgeName("");
       setToRoom("");
+      setIsSwap(false);
     } catch (error: any) {
-      console.error('Move judge error:', error);
+      console.error('❌ Move/Swap error:', error);
       toast({
-        title: "Failed to move judge",
-        description: error?.message || String(error) || "An error occurred while moving the judge",
+        title: "Failed to " + (isSwap ? "swap courtrooms" : "move judge"),
+        description: error?.message || String(error) || "An error occurred",
         variant: "destructive",
       });
     } finally {
@@ -365,37 +535,53 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
               <SelectContent>
                 {(rooms || [])
                   .filter((r: any) => {
-                    // Only show active rooms that are EMPTY (no judge assigned)
-                    if (r.room_id === currentRoomId) return false; // Compare room_id
-                    if (!r.is_active) return false;
-                    if (r.assigned_judge && r.assigned_judge.trim()) return false; // Has a judge, exclude it
-                    return true; // Empty room, show it
+                    if (r.room_id === currentRoomId) return false; // Exclude current room
+                    if (!r.is_active) return false; // Only active rooms
+                    
+                    if (isSwap) {
+                      // Swap mode: Show ALL active rooms (empty or occupied)
+                      return true;
+                    } else {
+                      // Move mode: Only show EMPTY rooms
+                      if (r.assigned_judge && r.assigned_judge.trim()) return false;
+                      return true;
+                    }
                   })
-                  .map((r: any) => (
-                    <SelectItem key={r.room_id} value={r.room_id}>
-                      {r.room_number}
-                      {r.courtroom_number ? ` · Court ${r.courtroom_number}` : ""}
-                      {' (Available)'}
-                    </SelectItem>
-                  ))}
+                  .map((r: any) => {
+                    const hasJudge = r.assigned_judge && r.assigned_judge.trim();
+                    const label = hasJudge 
+                      ? `${r.room_number} · ${r.assigned_judge} (Part ${r.assigned_part || '?'})`
+                      : `${r.room_number}${r.courtroom_number ? ` · Court ${r.courtroom_number}` : ''} (Available)`;
+                    
+                    return (
+                      <SelectItem key={r.room_id} value={r.room_id}>
+                        {label}
+                      </SelectItem>
+                    );
+                  })}
               </SelectContent>
             </Select>
+            {isSwap && (
+              <p className="text-xs text-muted-foreground mt-1">
+                💡 Swap mode: Both occupied and empty rooms are shown
+              </p>
+            )}
           </div>
           
           <div className="space-y-2 p-3 bg-muted/50 rounded-md">
-            <label className="block text-sm font-medium">Move Type</label>
+            <label className="block text-sm font-medium">Operation Type</label>
             <div className="space-y-2">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input 
                   type="radio" 
-                  checked={!isCovering} 
-                  onChange={() => setIsCovering(false)}
+                  checked={!isSwap && !isCovering} 
+                  onChange={() => { setIsSwap(false); setIsCovering(false); }}
                   className="mt-1"
                 />
                 <div>
-                  <div className="font-medium text-sm">Move Entire Part</div>
+                  <div className="font-medium text-sm">➡️ Move Entire Part</div>
                   <div className="text-xs text-muted-foreground">
-                    Moves judge, clerks, part number, and all courtroom details to the new room
+                    Moves judge, clerks, part number, and all courtroom details to an empty room
                   </div>
                 </div>
               </label>
@@ -403,14 +589,29 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
               <label className="flex items-start gap-3 cursor-pointer">
                 <input 
                   type="radio" 
-                  checked={isCovering} 
-                  onChange={() => setIsCovering(true)}
+                  checked={!isSwap && isCovering} 
+                  onChange={() => { setIsSwap(false); setIsCovering(true); }}
                   className="mt-1"
                 />
                 <div>
-                  <div className="font-medium text-sm">Covering Another Part</div>
+                  <div className="font-medium text-sm">🔄 Covering Another Part</div>
                   <div className="text-xs text-muted-foreground">
                     Judge temporarily covers destination room, keeps their original part number
+                  </div>
+                </div>
+              </label>
+              
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input 
+                  type="radio" 
+                  checked={isSwap} 
+                  onChange={() => { setIsSwap(true); setIsCovering(false); }}
+                  className="mt-1"
+                />
+                <div>
+                  <div className="font-medium text-sm">🔀 Swap Courtrooms</div>
+                  <div className="text-xs text-muted-foreground">
+                    Completely exchanges all assignments between two courtrooms (judges, clerks, parts, etc.)
                   </div>
                 </div>
               </label>
@@ -421,9 +622,9 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button type="button" disabled={!judgeName || !toRoom || saving} onClick={handleMoveJudge}>
+            <Button type="button" disabled={!toRoom || (!isSwap && !judgeName) || saving} onClick={handleMoveJudge}>
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-              Confirm Move
+              {isSwap ? '🔀 Confirm Swap' : '➡️ Confirm Move'}
             </Button>
           </div>
         </div>

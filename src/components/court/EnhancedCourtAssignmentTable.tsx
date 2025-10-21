@@ -502,9 +502,10 @@ export const EnhancedCourtAssignmentTable = () => {
   );
   const updateAssignmentMutation = useMutation({
     mutationFn: async ({ roomId, field, value }: { roomId: string; field: string; value: string | string[] }) => {
-      console.log(' Saving assignment:', { roomId, field, value });
+      console.log('💾 Saving assignment:', { roomId, field, value });
       const existingAssignment = assignments?.find(row => row.room_id === roomId);
-      console.log(' Existing assignment:', existingAssignment);
+      console.log('📋 Existing assignment:', existingAssignment);
+      
       // Normalize calendar_day for storage
       let normalizedValue: any;
       if (field === 'calendar_day') {
@@ -519,10 +520,21 @@ export const EnhancedCourtAssignmentTable = () => {
         normalizedValue = value;
       }
       
+      // Validation: Warn if creating incomplete assignment
+      if (!existingAssignment?.assignment_id) {
+        // Creating new assignment - check if we have minimum required fields
+        const isCreatingPart = field === 'part' && normalizedValue;
+        const isCreatingJustice = field === 'justice' && normalizedValue;
+        
+        if (!isCreatingPart && !isCreatingJustice) {
+          console.warn('⚠️ Creating assignment without Part or Justice - may be incomplete');
+        }
+      }
+      
       if (existingAssignment?.assignment_id) {
         // Update existing assignment
         const updateData: any = { [field]: normalizedValue };
-        console.log(' Updating existing assignment:', updateData);
+        console.log('✏️ Updating existing assignment:', updateData);
         const { error } = await supabase
           .from("court_assignments")
           .update(updateData)
@@ -542,7 +554,7 @@ export const EnhancedCourtAssignmentTable = () => {
           [field]: normalizedValue,
           sort_order: maxSort + 1
         };
-        console.log(' Creating new assignment:', insertData);
+        console.log('➕ Creating new assignment:', insertData);
         const { error } = await supabase
           .from("court_assignments")
           .insert(insertData);
@@ -700,9 +712,7 @@ export const EnhancedCourtAssignmentTable = () => {
           assignment_id: assignment?.id || null,
           part: assignment?.part || null,
           justice: assignment?.justice || null,
-          clerks: assignment?.clerks ? assignment.clerks.filter((clerk: string) => 
-            clerk !== 'CHRISTOPHER DISANTO ESQ' && clerk !== 'LISABETTA GARCIA'
-          ) : null,
+          clerks: assignment?.clerks || null,
           sergeant: assignment?.sergeant || null,
           tel: assignment?.tel || null,
           fax: assignment?.fax || null,

@@ -3,7 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, ZoomIn, ZoomOut } from 'lucide-react';
+import { FileText, ZoomIn, ZoomOut, Download, FileSpreadsheet, Printer } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface TermAssignment {
   part: string;
@@ -18,6 +25,55 @@ interface TermAssignment {
 
 export const TermSheetBoard: React.FC = () => {
   const [isDense, setIsDense] = useState(false);
+  const { toast } = useToast();
+
+  // Export to CSV/Excel
+  const exportToCSV = () => {
+    if (!assignments || assignments.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "No data to export",
+        description: "There are no term assignments to export.",
+      });
+      return;
+    }
+
+    const headers = ['PART', 'JUSTICE', 'ROOM', 'FAX', 'TEL', 'SGT.', 'CLERKS'];
+    const rows = assignments.map(a => [
+      a.part,
+      a.justice,
+      a.room,
+      a.fax,
+      a.tel,
+      a.sergeant,
+      a.clerks.join(' • ')
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `criminal-term-sheet-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "✅ Export successful",
+      description: `Exported ${assignments.length} assignments to CSV`,
+    });
+  };
+
+  // Print term sheet
+  const printTermSheet = () => {
+    window.print();
+  };
 
   // Fetch term assignments (using same query structure as EnhancedCourtAssignmentTable)
   const { data: assignments = [], isLoading } = useQuery({
@@ -107,15 +163,39 @@ export const TermSheetBoard: React.FC = () => {
             {assignments.length} Parts
           </Badge>
         </div>
-        <Button
-          onClick={() => setIsDense(!isDense)}
-          variant="outline"
-          size="sm"
-          className="text-xs px-2 py-1 h-7 bg-neutral-800 border-neutral-700 hover:bg-neutral-700 flex-shrink-0"
-        >
-          {isDense ? <ZoomOut className="h-3 w-3 mr-1" /> : <ZoomIn className="h-3 w-3 mr-1" />}
-          {isDense ? 'Normal' : 'Dense'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs px-2 py-1 h-7 bg-neutral-800 border-neutral-700 hover:bg-neutral-700 flex-shrink-0"
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-neutral-900 border-neutral-700">
+              <DropdownMenuItem onClick={exportToCSV} className="text-neutral-100 hover:bg-neutral-800">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export to CSV/Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={printTermSheet} className="text-neutral-100 hover:bg-neutral-800">
+                <Printer className="h-4 w-4 mr-2" />
+                Print Term Sheet
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            onClick={() => setIsDense(!isDense)}
+            variant="outline"
+            size="sm"
+            className="text-xs px-2 py-1 h-7 bg-neutral-800 border-neutral-700 hover:bg-neutral-700 flex-shrink-0"
+          >
+            {isDense ? <ZoomOut className="h-3 w-3 mr-1" /> : <ZoomIn className="h-3 w-3 mr-1" />}
+            {isDense ? 'Normal' : 'Dense'}
+          </Button>
+        </div>
       </div>
 
       {/* Info Banner */}
@@ -132,13 +212,13 @@ export const TermSheetBoard: React.FC = () => {
           <div className="rounded-lg border border-neutral-800 bg-neutral-950 shadow-2xl overflow-hidden">
             <table className={`w-full ${isDense ? 'text-[11px] leading-[1.05]' : 'text-xs leading-tight'}`}>
               <colgroup>
-                <col style={{ minWidth: '80px' }} />   {/* Part */}
-                <col style={{ minWidth: '150px' }} />  {/* Justice */}
-                <col style={{ minWidth: '70px' }} />   {/* Room */}
-                <col style={{ minWidth: '100px' }} />  {/* Fax */}
-                <col style={{ minWidth: '100px' }} />  {/* Tel */}
-                <col style={{ minWidth: '130px' }} />  {/* Sergeant */}
-                <col style={{ minWidth: '200px' }} />  {/* Clerks */}
+                <col style={{ minWidth: '80px' }} />
+                <col style={{ minWidth: '150px' }} />
+                <col style={{ minWidth: '70px' }} />
+                <col style={{ minWidth: '100px' }} />
+                <col style={{ minWidth: '100px' }} />
+                <col style={{ minWidth: '130px' }} />
+                <col style={{ minWidth: '200px' }} />
               </colgroup>
               <thead className="bg-neutral-800/70 text-neutral-300">
                 <tr>
