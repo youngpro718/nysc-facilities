@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { FormPreviewDialog } from '@/components/forms/FormPreviewDialog';
 import { PDFGenerationService } from '@/services/forms/pdfGenerationService';
+import { useFacilityEmail } from '@/hooks/useFacilityEmail';
 
 const formTemplates = [
   {
@@ -40,6 +41,7 @@ const formTemplates = [
 
 export default function PublicForms() {
   const [previewFormType, setPreviewFormType] = useState<'key-request' | 'supply-request' | 'maintenance-request' | 'issue-report' | null>(null);
+  const { email: facilityEmail } = useFacilityEmail();
 
   const handleDownload = (templateId: string, templateTitle: string) => {
     try {
@@ -152,7 +154,7 @@ export default function PublicForms() {
                   Email your completed form to:
                 </p>
                 <div className="bg-muted p-3 rounded-lg">
-                  <p className="font-mono text-sm font-semibold">facilities@nysc.gov</p>
+                  <p className="font-mono text-sm font-semibold">{facilityEmail}</p>
                 </div>
                 <Button
                   variant="outline"
@@ -162,7 +164,7 @@ export default function PublicForms() {
                     const body = encodeURIComponent(
                       'Hello,\n\nPlease find my completed form attached.\n\nThis submission should be tracked in the NYSC Facilities system.\n\nThank you!'
                     );
-                    window.location.href = `mailto:facilities@nysc.gov?subject=${subject}&body=${body}`;
+                    window.location.href = `mailto:${facilityEmail}?subject=${subject}&body=${body}`;
                   }}
                 >
                   <Mail className="w-4 h-4 mr-2" />

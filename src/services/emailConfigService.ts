@@ -1,0 +1,47 @@
+import { supabase } from '@/integrations/supabase/client';
+
+const DEFAULT_EMAIL = 'facilities@example.com';
+const DEFAULT_PHONE = '(555) 123-4567';
+
+let cachedEmail: string | null = null;
+
+export async function getFacilityEmail(): Promise<string> {
+  // Return cached value if available
+  if (cachedEmail) {
+    return cachedEmail;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('admin_email')
+      .single();
+
+    if (error) {
+      console.error('Error fetching facility email:', error);
+      return DEFAULT_EMAIL;
+    }
+
+    cachedEmail = data?.admin_email || DEFAULT_EMAIL;
+    return cachedEmail;
+  } catch (error) {
+    console.error('Error in getFacilityEmail:', error);
+    return DEFAULT_EMAIL;
+  }
+}
+
+export function getFacilityPhone(): string {
+  return DEFAULT_PHONE;
+}
+
+export function getFacilityContactInfo() {
+  return {
+    email: getFacilityEmail(),
+    phone: getFacilityPhone(),
+  };
+}
+
+// Clear cache when email is updated
+export function clearEmailCache() {
+  cachedEmail = null;
+}

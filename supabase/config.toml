@@ -84,9 +84,3 @@ gcp_jwt_path = "supabase/gcloud.json"
 
 [functions.parse-term-sheet]
 verify_jwt = true
-
-[functions.parse-form-pdf]
-verify_jwt = true
-
-[functions.route-form-submission]
-verify_jwt = false

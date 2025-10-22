@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Mail, Send } from 'lucide-react';
 import { PDFGenerationService } from '@/services/forms/pdfGenerationService';
+import { getFacilityEmail } from '@/services/emailConfigService';
 
 interface EmailFormDialogProps {
   open: boolean;

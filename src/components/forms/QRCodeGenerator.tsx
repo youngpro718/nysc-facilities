@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { QRCodeSVG } from 'qrcode.react';
+import { useFacilityEmail } from '@/hooks/useFacilityEmail';
 import { Download, Printer, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -13,6 +14,7 @@ interface QRCodeGeneratorProps {
 
 export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
   const publicFormsUrl = `${window.location.origin}/public-forms`;
+  const { email: facilityEmail } = useFacilityEmail();
 
   const downloadQR = () => {
     const svg = document.getElementById('public-forms-qr');
@@ -131,7 +133,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
                 <div className="border-t-2 border-gray-300 pt-6 space-y-2">
                   <p className="text-lg font-semibold">Or visit:</p>
                   <p className="text-xl font-mono text-blue-600">{publicFormsUrl}</p>
-                  <p className="text-base text-gray-600 mt-4">Email: facilities@nysc.gov | Phone: (555) 123-4567</p>
+                  <p className="text-base text-gray-600 mt-4">Email: {facilityEmail} | Phone: (555) 123-4567</p>
                 </div>
               </div>
             </div>
@@ -175,7 +177,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
                   <div className="border-t-2 border-gray-300 pt-6 space-y-2">
                     <p className="text-lg font-semibold">Or visit:</p>
                     <p className="text-xl font-mono text-blue-600">{publicFormsUrl}</p>
-                    <p className="text-base text-gray-600 mt-4">Email: facilities@nysc.gov | Phone: (555) 123-4567</p>
+                    <p className="text-base text-gray-600 mt-4">Email: {facilityEmail} | Phone: (555) 123-4567</p>
                   </div>
                 </div>
               </div>

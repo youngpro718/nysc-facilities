@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import { FormPreviewDialog } from '@/components/forms/FormPreviewDialog';
 import { PDFGenerationService } from '@/services/forms/pdfGenerationService';
+import { useFacilityEmail } from '@/hooks/useFacilityEmail';
 import { EmailFormDialog } from '@/components/forms/EmailFormDialog';
 import { QRCodeGenerator } from '@/components/forms/QRCodeGenerator';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
@@ -78,6 +79,7 @@ export default function FormTemplates() {
   const [previewFormType, setPreviewFormType] = useState<'key-request' | 'supply-request' | 'maintenance-request' | 'issue-report' | 'major-work-request' | 'facility-change-log' | 'external-request' | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const { email: facilityEmail } = useFacilityEmail();
 
   const handleDownload = (templateId: string, templateTitle: string) => {
     try {
@@ -210,7 +212,7 @@ export default function FormTemplates() {
                       const body = encodeURIComponent(
                         `Hello,\n\nPlease find my completed ${template.title} attached.\n\nThis submission should be tracked in the NYSC Facilities system.\n\nThank you!`
                       );
-                      window.location.href = `mailto:facilities@nysc.gov?subject=${subject}&body=${body}`;
+                      window.location.href = `mailto:${facilityEmail}?subject=${subject}&body=${body}`;
                     }}
                   >
                     <Mail className="w-4 h-4 mr-2" />

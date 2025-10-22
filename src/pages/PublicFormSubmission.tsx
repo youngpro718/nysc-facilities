@@ -7,12 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { useFacilityEmail } from '@/hooks/useFacilityEmail';
 
 export default function PublicFormSubmission() {
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [trackingCode, setTrackingCode] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const { email: facilityEmail } = useFacilityEmail();
   
   const [contactInfo, setContactInfo] = useState({
     name: '',
@@ -104,7 +106,7 @@ export default function PublicFormSubmission() {
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error('Failed to submit form', {
-        description: error.message || 'Please try again or email the form to facilities@nysc.gov',
+        description: error.message || `Please try again or email the form to ${facilityEmail}`,
       });
     } finally {
       setUploading(false);
@@ -145,7 +147,7 @@ export default function PublicFormSubmission() {
 
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
               <p className="text-sm text-blue-900 dark:text-blue-100">
-                <strong>Need help?</strong> Contact us at facilities@nysc.gov or call (555) 123-4567
+                <strong>Need help?</strong> Contact us at {facilityEmail} or call (555) 123-4567
               </p>
             </div>
 
@@ -322,8 +324,8 @@ export default function PublicFormSubmission() {
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">
                 <strong>Need help?</strong> If you're having trouble uploading, you can also email your completed form to{' '}
-                <a href="mailto:facilities@nysc.gov" className="text-primary hover:underline">
-                  facilities@nysc.gov
+                <a href={`mailto:${facilityEmail}`} className="text-primary hover:underline">
+                  {facilityEmail}
                 </a>
               </p>
             </CardContent>

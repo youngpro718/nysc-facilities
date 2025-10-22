@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { getFacilityEmail } from '@/services/emailConfigService';
 
 export class PDFGenerationService {
   private static addHeader(doc: jsPDF, title: string) {
@@ -19,11 +20,11 @@ export class PDFGenerationService {
     doc.line(20, 50, 190, 50);
   }
 
-  private static addFooter(doc: jsPDF) {
+  private static addFooter(doc: jsPDF, facilityEmail: string = 'facilities@example.com') {
     const pageHeight = doc.internal.pageSize.height;
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text('Submit completed form via email to facilities@nysc.gov or upload at Form Intake', 105, pageHeight - 15, { align: 'center' });
+    doc.text(`Submit completed form via email to ${facilityEmail} or upload at Form Intake`, 105, pageHeight - 15, { align: 'center' });
     doc.text('All submissions are tracked in the NYSC Facilities system', 105, pageHeight - 10, { align: 'center' });
   }
 
@@ -60,33 +61,81 @@ export class PDFGenerationService {
     // Instructions
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text('Complete all required fields (*). This form will be tracked in the system.', 20, yPos);
+    doc.text('Complete all required fields (*). ONE FORM PER PERSON - Submit separate forms for multiple people.', 20, yPos);
     yPos += 15;
 
-    // Request Type
+    // SECTION A: KEY REQUEST
+    doc.setFontSize(12);
+    doc.setTextColor(37, 99, 235);
+    doc.text('SECTION A: KEY REQUEST', 20, yPos);
+    yPos += 10;
+
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
     doc.text('Request Type *:', 20, yPos);
     doc.rect(20, yPos + 2, 5, 5);
-    doc.text('Key', 28, yPos + 6);
-    doc.rect(60, yPos + 2, 5, 5);
-    doc.text('Elevator Pass', 68, yPos + 6);
+    doc.text('New Key', 28, yPos + 6);
+    doc.rect(70, yPos + 2, 5, 5);
+    doc.text('Spare Key', 78, yPos + 6);
+    doc.rect(130, yPos + 2, 5, 5);
+    doc.text('Replacement Key', 138, yPos + 6);
     yPos += 15;
 
-    // Fields
-    yPos = this.addField(doc, 'Room Number or Elevator Access', yPos);
-    yPos = this.addTextArea(doc, 'Reason for Access', yPos, 3);
-    yPos = this.addField(doc, 'Quantity', yPos);
-    yPos = this.addField(doc, 'Requestor Name', yPos);
-    yPos = this.addField(doc, 'Email', yPos);
-    yPos = this.addField(doc, 'Phone', yPos);
-    yPos = this.addField(doc, 'Department/Office', yPos, false);
+    yPos = this.addField(doc, 'Room Number(s)', yPos);
+    yPos = this.addField(doc, 'Number of Keys Needed (1-5)', yPos);
+    yPos = this.addTextArea(doc, 'Reason for Key Access', yPos, 3);
+    yPos += 10;
+
+    // SECTION B: ELEVATOR PASS REQUEST
+    doc.setFontSize(12);
+    doc.setTextColor(37, 99, 235);
+    doc.text('SECTION B: ELEVATOR PASS REQUEST', 20, yPos);
+    yPos += 10;
+
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.rect(20, yPos, 5, 5);
+    doc.text('I am requesting an Elevator Pass', 28, yPos + 4);
+    yPos += 12;
+
+    // Warning box
+    doc.setFillColor(255, 243, 205);
+    doc.rect(20, yPos, 170, 12, 'F');
+    doc.setFontSize(10);
+    doc.setTextColor(180, 83, 9);
+    doc.text('⚠️ ONE PASS PER PERSON - Submit separate forms for multiple people', 25, yPos + 8);
+    yPos += 18;
+
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Quantity: 1 (pre-filled)', 20, yPos);
+    yPos += 10;
+
+    yPos = this.addTextArea(doc, 'Reason for Elevator Access', yPos, 3);
+    yPos += 10;
+
+    // REQUESTOR INFORMATION (REQUIRED FOR BOTH)
+    doc.setFontSize(12);
+    doc.setTextColor(37, 99, 235);
+    doc.text('REQUESTOR INFORMATION (Required)', 20, yPos);
+    yPos += 10;
+
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    yPos = this.addField(doc, 'Full Name', yPos);
+    yPos = this.addField(doc, 'Email Address', yPos);
+    yPos = this.addField(doc, 'Phone Number', yPos);
+    yPos = this.addField(doc, 'Department/Office', yPos);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, yPos);
 
     this.addFooter(doc);
     return doc;
   }
 
-  static generateMajorWorkRequestForm(): jsPDF {
+  static generateMajorWorkRequestForm(facilityEmail?: string): jsPDF {
     const doc = new jsPDF();
     this.addHeader(doc, 'Major Work Request Form');
 
@@ -120,11 +169,11 @@ export class PDFGenerationService {
     yPos = this.addField(doc, 'Email', yPos);
     yPos = this.addField(doc, 'Phone', yPos);
 
-    this.addFooter(doc);
+    this.addFooter(doc, facilityEmail);
     return doc;
   }
 
-  static generateFacilityChangeLogForm(): jsPDF {
+  static generateFacilityChangeLogForm(facilityEmail?: string): jsPDF {
     const doc = new jsPDF();
     this.addHeader(doc, 'Facility Change Log Form');
 
@@ -148,11 +197,11 @@ export class PDFGenerationService {
     yPos = this.addField(doc, 'Email', yPos);
     yPos = this.addField(doc, 'Department', yPos);
 
-    this.addFooter(doc);
+    this.addFooter(doc, facilityEmail);
     return doc;
   }
 
-  static generateExternalRequestForm(): jsPDF {
+  static generateExternalRequestForm(facilityEmail?: string): jsPDF {
     const doc = new jsPDF();
     this.addHeader(doc, 'General Request Form');
 
@@ -184,11 +233,12 @@ export class PDFGenerationService {
     yPos = this.addField(doc, 'Phone', yPos);
     yPos = this.addField(doc, 'Preferred Contact Method', yPos, false);
 
-    this.addFooter(doc);
+    this.addFooter(doc, facilityEmail);
     return doc;
   }
 
-  static downloadForm(formType: string) {
+  static async downloadForm(formType: string) {
+    const facilityEmail = await getFacilityEmail();
     let doc: jsPDF;
     let filename: string;
 
@@ -198,15 +248,15 @@ export class PDFGenerationService {
         filename = 'Key_Elevator_Pass_Request.pdf';
         break;
       case 'major-work-request':
-        doc = this.generateMajorWorkRequestForm();
+        doc = this.generateMajorWorkRequestForm(facilityEmail);
         filename = 'Major_Work_Request.pdf';
         break;
       case 'facility-change-log':
-        doc = this.generateFacilityChangeLogForm();
+        doc = this.generateFacilityChangeLogForm(facilityEmail);
         filename = 'Facility_Change_Log.pdf';
         break;
       case 'external-request':
-        doc = this.generateExternalRequestForm();
+        doc = this.generateExternalRequestForm(facilityEmail);
         filename = 'General_Request_Form.pdf';
         break;
       default:
