@@ -48,6 +48,12 @@ import InstallApp from "@/pages/InstallApp";
 import FormIntake from "@/pages/FormIntake";
 import FormTemplates from "@/pages/FormTemplates";
 import RoutingRules from "@/pages/admin/RoutingRules";
+import KeyRequestFormPage from "@/pages/forms/KeyRequestFormPage";
+import SupplyRequestFormPage from "@/pages/forms/SupplyRequestFormPage";
+import MaintenanceRequestFormPage from "@/pages/forms/MaintenanceRequestFormPage";
+import IssueReportFormPage from "@/pages/forms/IssueReportFormPage";
+import PublicForms from "@/pages/PublicForms";
+import PublicFormSubmission from "@/pages/PublicFormSubmission";
 
 
 // Create a client
@@ -63,6 +69,10 @@ const queryClient = new QueryClient({
 function AppContent() {
   return (
     <Routes>
+      {/* Public Routes - No Authentication Required */}
+      <Route path="/public-forms" element={<PublicForms />} />
+      <Route path="/submit-form" element={<PublicFormSubmission />} />
+      
       <Route element={<Layout />}>
         {/* Admin Routes */}
         <Route path="/" element={
@@ -175,6 +185,27 @@ function AppContent() {
         <Route path="admin/routing-rules" element={
           <ProtectedRoute requireAdmin>
             <RoutingRules />
+          </ProtectedRoute>
+        } />
+        {/* Direct Form Submission Pages */}
+        <Route path="forms/key-request" element={
+          <ProtectedRoute>
+            <KeyRequestFormPage />
+          </ProtectedRoute>
+        } />
+        <Route path="forms/supply-request" element={
+          <ProtectedRoute>
+            <SupplyRequestFormPage />
+          </ProtectedRoute>
+        } />
+        <Route path="forms/maintenance-request" element={
+          <ProtectedRoute>
+            <MaintenanceRequestFormPage />
+          </ProtectedRoute>
+        } />
+        <Route path="forms/issue-report" element={
+          <ProtectedRoute>
+            <IssueReportFormPage />
           </ProtectedRoute>
         } />
         {/* Supply Requests - User facing route */}

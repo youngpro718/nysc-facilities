@@ -15,6 +15,7 @@ import { TitleAccessManager } from "@/components/admin/TitleAccessManager";
 import { EnhancedUserManagementModal } from "@/components/profile/modals/EnhancedUserManagementModal";
 import { FeatureDiscoveryCard } from "@/components/settings/FeatureDiscoveryCard";
 import { SettingsNavigation } from "@/components/settings/SettingsNavigation";
+import { AdminQuickActions } from "@/components/settings/AdminQuickActions";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
@@ -152,6 +153,9 @@ export default function AdminProfile() {
 
       {/* Profile Header */}
       <MobileProfileHeader />
+
+      {/* Admin Quick Actions */}
+      {isAdmin && <AdminQuickActions />}
 
       {/* Main Content */}
       {isAdmin ? (

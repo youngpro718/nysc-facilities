@@ -160,6 +160,24 @@ export const userNavigationItems: NavigationItem[] = [
     icon: Settings,
     adminOnly: true,
   },
+  {
+    title: 'Form Templates',
+    href: '/form-templates',
+    icon: FileText,
+    adminOnly: false,
+  },
+  {
+    title: 'Form Intake',
+    href: '/form-intake',
+    icon: Upload,
+    adminOnly: false,
+  },
+  {
+    title: 'Routing Rules',
+    href: '/admin/routing-rules',
+    icon: GitFork,
+    adminOnly: true,
+  },
 ];
 
 // Create filtered navigation based on role permissions

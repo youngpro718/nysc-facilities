@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Settings, Shield, Package } from 'lucide-react';
+import { Users, Settings, Shield, Package, FileText, Upload, GitFork } from 'lucide-react';
 import { useState } from 'react';
 import { EnhancedUserManagementModal } from '@/components/profile/modals/EnhancedUserManagementModal';
 
@@ -47,6 +47,29 @@ export function AdminQuickActions() {
       description: 'Enable/disable system modules and features',
       icon: Package,
       action: () => navigate('/system-settings'),
+      variant: 'outline',
+    },
+    {
+      title: 'Form Templates',
+      description: 'View and manage form templates for requests and reports',
+      icon: FileText,
+      action: () => navigate('/form-templates'),
+      badge: 'New',
+      variant: 'outline',
+    },
+    {
+      title: 'Form Intake',
+      description: 'Upload and process PDF forms with AI extraction',
+      icon: Upload,
+      action: () => navigate('/form-intake'),
+      badge: 'AI',
+      variant: 'outline',
+    },
+    {
+      title: 'Routing Rules',
+      description: 'Configure automatic form routing and processing rules',
+      icon: GitFork,
+      action: () => navigate('/admin/routing-rules'),
       variant: 'outline',
     },
   ];

@@ -32,6 +32,27 @@ export function SettingsNavigation() {
       ];
     }
     
+    if (path === '/form-templates') {
+      return [
+        { label: 'Settings', path: '/settings' },
+        { label: 'Form Templates' }
+      ];
+    }
+    
+    if (path === '/form-intake') {
+      return [
+        { label: 'Settings', path: '/settings' },
+        { label: 'Form Intake' }
+      ];
+    }
+    
+    if (path === '/admin/routing-rules') {
+      return [
+        { label: 'Settings', path: '/settings' },
+        { label: 'Routing Rules' }
+      ];
+    }
+    
     return [{ label: 'Settings' }];
   };
 

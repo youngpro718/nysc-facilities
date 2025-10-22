@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FormReviewDialog } from '@/components/forms/FormReviewDialog';
+import { QuickProcessDialog } from '@/components/forms/QuickProcessDialog';
 
 export default function FormIntake() {
   const [uploading, setUploading] = useState(false);
@@ -50,65 +50,35 @@ export default function FormIntake() {
       if (!user) throw new Error('Not authenticated');
 
       // Upload to storage
-      const fileName = `${user.id}/${Date.now()}_${file.name}`;
+      const fileName = `staff/${user.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('form-pdfs')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
-      // Create submission record
+      // Create submission record - ready for staff to process
       const { data: submission, error: submissionError } = await supabase
         .from('form_submissions')
         .insert({
           pdf_file_path: fileName,
           form_type: 'unknown',
           uploaded_by: user.id,
-          processing_status: 'processing',
+          processing_status: 'pending',
+          extracted_data: {
+            uploaded_by_staff: true,
+            staff_user_id: user.id,
+            uploaded_at: new Date().toISOString(),
+          },
         })
         .select()
         .single();
 
       if (submissionError) throw submissionError;
 
-      toast.success('Form uploaded successfully');
-
-      // Call edge function to parse
-      const { data: parseResult, error: parseError } = await supabase.functions.invoke('parse-form-pdf', {
-        body: { filePath: fileName },
+      toast.success('Form uploaded! Click to process it.', {
+        description: 'Select the form type and enter details to create the request.',
       });
-
-      if (parseError) {
-        console.error('Parse error:', parseError);
-        await supabase
-          .from('form_submissions')
-          .update({ processing_status: 'failed' })
-          .eq('id', submission.id);
-        toast.error('Failed to parse form');
-      } else if (parseResult?.success) {
-        // Update submission with parsed data
-        await supabase
-          .from('form_submissions')
-          .update({
-            form_type: parseResult.formType,
-            extracted_data: parseResult.extractedData,
-            processing_status: 'completed',
-          })
-          .eq('id', submission.id);
-
-        // Trigger routing
-        await supabase.functions.invoke('route-form-submission', {
-          body: {
-            submissionId: submission.id,
-            formData: {
-              form_type: parseResult.formType,
-              ...parseResult.extractedData,
-            },
-          },
-        });
-
-        toast.success('Form processed and routed successfully');
-      }
 
       // Refresh the list
       queryClient.invalidateQueries({ queryKey: ['form-submissions'] });
@@ -129,13 +99,12 @@ export default function FormIntake() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'processed':
       case 'completed':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'failed':
         return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'processing':
-        return <Clock className="h-4 w-4 text-blue-500 animate-pulse" />;
-      case 'needs_review':
+      case 'pending':
         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
       default:
         return <Clock className="h-4 w-4 text-muted-foreground" />;
@@ -144,13 +113,18 @@ export default function FormIntake() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
+      processed: 'default',
       completed: 'default',
       failed: 'destructive',
-      processing: 'secondary',
-      needs_review: 'outline',
-      pending: 'outline',
+      pending: 'secondary',
     };
-    return <Badge variant={variants[status] || 'outline'}>{status}</Badge>;
+    const labels: Record<string, string> = {
+      processed: 'Processed',
+      completed: 'Processed',
+      pending: 'Needs Processing',
+      failed: 'Failed',
+    };
+    return <Badge variant={variants[status] || 'outline'}>{labels[status] || status}</Badge>;
   };
 
   return (
@@ -159,7 +133,7 @@ export default function FormIntake() {
         <div>
           <h1 className="text-3xl font-bold mb-2">Form Intake System</h1>
           <p className="text-muted-foreground">
-            Upload completed PDF forms for automatic processing
+            Upload completed forms - All submissions are tracked in the app system
           </p>
         </div>
         <Button variant="outline" onClick={() => window.location.href = '/form-templates'}>
@@ -192,10 +166,10 @@ export default function FormIntake() {
           ) : (
             <div>
               <p className="text-lg font-medium mb-2">
-                Drag & drop a PDF form here, or click to select
+                Drag & drop a completed PDF form here, or click to select
               </p>
               <p className="text-sm text-muted-foreground">
-                Supports Key Requests, Supply Requests, Maintenance Work Orders, and Issue Reports
+                Accepts: Key/Elevator Pass Requests, Major Work Requests, Facility Change Logs, and External Requests
               </p>
             </div>
           )}
@@ -242,12 +216,12 @@ export default function FormIntake() {
                   </div>
                   <div className="flex items-center gap-2">
                     {getStatusBadge(submission.processing_status)}
-                    {submission.processing_status === 'completed' && !submission.linked_request_id && (
+                    {submission.processing_status === 'pending' && !submission.linked_request_id && (
                       <Button
                         size="sm"
                         onClick={() => setSelectedSubmission(submission)}
                       >
-                        Review & Submit
+                        Process Form
                       </Button>
                     )}
                   </div>
@@ -259,7 +233,7 @@ export default function FormIntake() {
       </div>
 
       {selectedSubmission && (
-        <FormReviewDialog
+        <QuickProcessDialog
           submission={selectedSubmission}
           open={!!selectedSubmission}
           onClose={() => setSelectedSubmission(null)}
