@@ -1,6 +1,5 @@
- 
-import * as XLSX from 'xlsx';
 import { useToast } from "@/hooks/use-toast";
+import { exportToExcel as exportToExcelUtil, sanitizeForExcel, parseExcelFile as parseExcelFileUtil } from "@/utils/excelExport";
 
 export interface InventoryExcelRow {
   name: string;
@@ -14,16 +13,6 @@ export interface InventoryExcelRow {
   status?: string;
   notes?: string;
 }
-
-// Sanitize string values to prevent Excel from interpreting text as formulas
-const sanitizeForExcel = (value: any) => {
-  if (typeof value !== 'string') return value;
-  const trimmed = value.trim();
-  if (/^[=+\-@]/.test(trimmed) || /^[\t\r]/.test(value)) {
-    return "'" + value;
-  }
-  return value;
-};
 
 // Field mapping for flexible import
 const FIELD_MAPPINGS: Record<string, string[]> = {
@@ -53,17 +42,14 @@ const normalizeFieldName = (fieldName: string): string => {
   return normalized;
 };
 
-export const exportToExcel = (data: InventoryExcelRow[], fileName: string) => {
+export const exportToExcel = async (data: InventoryExcelRow[], fileName: string) => {
   try {
     const sanitized = data.map((row: any) =>
       Object.fromEntries(
         Object.entries(row).map(([k, v]) => [k, sanitizeForExcel(v)])
       )
     );
-    const ws = XLSX.utils.json_to_sheet(sanitized);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
-    XLSX.writeFile(wb, `${fileName}.xlsx`);
+    await exportToExcelUtil(sanitized, fileName, 'Inventory');
   } catch (error) {
     console.error('Error exporting to Excel:', error);
     throw new Error('Failed to export to Excel');
@@ -114,74 +100,63 @@ export const generateTemplate = () => {
 };
 
 export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-        
-        if (!jsonData || jsonData.length === 0) {
-          throw new Error('No data found in Excel file');
-        }
-        
-        // Process and validate data with flexible field mapping
-        const processedData = jsonData.map((row: any, index: number) => {
-          const normalizedRow: any = {};
-          
-          // Normalize field names
-          for (const [key, value] of Object.entries(row)) {
-            const normalizedKey = normalizeFieldName(key as string);
-            normalizedRow[normalizedKey] = value;
-          }
-          
-          // Validate required fields
-          if (!normalizedRow.name || typeof normalizedRow.name !== 'string' || !normalizedRow.name.trim()) {
-            throw new Error(`Row ${index + 1}: Name is required and must be a non-empty string`);
-          }
-          
-          if (normalizedRow.quantity === undefined || normalizedRow.quantity === null || normalizedRow.quantity === '') {
-            throw new Error(`Row ${index + 1}: Quantity is required`);
-          }
-          
-          // Convert and validate quantity
-          const quantity = Number(normalizedRow.quantity);
-          if (isNaN(quantity) || quantity < 0) {
-            throw new Error(`Row ${index + 1}: Quantity must be a non-negative number`);
-          }
-          
-          // Convert and validate minimum_quantity if provided
-          let minimumQuantity = null;
-          if (normalizedRow.minimum_quantity !== undefined && normalizedRow.minimum_quantity !== null && normalizedRow.minimum_quantity !== '') {
-            minimumQuantity = Number(normalizedRow.minimum_quantity);
-            if (isNaN(minimumQuantity) || minimumQuantity < 0) {
-              throw new Error(`Row ${index + 1}: Minimum quantity must be a non-negative number`);
-            }
-          }
-          
-          return {
-            name: normalizedRow.name.trim(),
-            quantity: quantity,
-            minimum_quantity: minimumQuantity,
-            category: normalizedRow.category ? normalizedRow.category.trim() : null,
-            description: normalizedRow.description ? normalizedRow.description.trim() : null,
-            unit: normalizedRow.unit ? normalizedRow.unit.trim() : null,
-            location_details: normalizedRow.location_details ? normalizedRow.location_details.trim() : null,
-            preferred_vendor: normalizedRow.preferred_vendor ? normalizedRow.preferred_vendor.trim() : null,
-            status: normalizedRow.status ? normalizedRow.status.trim() : 'active',
-            notes: normalizedRow.notes ? normalizedRow.notes.trim() : null,
-          };
-        });
-        
-        resolve(processedData);
-      } catch (error) {
-        reject(error);
+  try {
+    const jsonData = await parseExcelFileUtil(file);
+    
+    if (!jsonData || jsonData.length === 0) {
+      throw new Error('No data found in Excel file');
+    }
+    
+    // Process and validate data with flexible field mapping
+    const processedData = jsonData.map((row: any, index: number) => {
+      const normalizedRow: any = {};
+      
+      // Normalize field names
+      for (const [key, value] of Object.entries(row)) {
+        const normalizedKey = normalizeFieldName(key as string);
+        normalizedRow[normalizedKey] = value;
       }
-    };
-    reader.onerror = (error) => reject(error);
-    reader.readAsArrayBuffer(file);
-  });
+      
+      // Validate required fields
+      if (!normalizedRow.name || typeof normalizedRow.name !== 'string' || !normalizedRow.name.trim()) {
+        throw new Error(`Row ${index + 1}: Name is required and must be a non-empty string`);
+      }
+      
+      if (normalizedRow.quantity === undefined || normalizedRow.quantity === null || normalizedRow.quantity === '') {
+        throw new Error(`Row ${index + 1}: Quantity is required`);
+      }
+      
+      // Convert and validate quantity
+      const quantity = Number(normalizedRow.quantity);
+      if (isNaN(quantity) || quantity < 0) {
+        throw new Error(`Row ${index + 1}: Quantity must be a non-negative number`);
+      }
+      
+      // Convert and validate minimum_quantity if provided
+      let minimumQuantity = null;
+      if (normalizedRow.minimum_quantity !== undefined && normalizedRow.minimum_quantity !== null && normalizedRow.minimum_quantity !== '') {
+        minimumQuantity = Number(normalizedRow.minimum_quantity);
+        if (isNaN(minimumQuantity) || minimumQuantity < 0) {
+          throw new Error(`Row ${index + 1}: Minimum quantity must be a non-negative number`);
+        }
+      }
+      
+      return {
+        name: normalizedRow.name.trim(),
+        quantity: quantity,
+        minimum_quantity: minimumQuantity,
+        category: normalizedRow.category ? normalizedRow.category.trim() : null,
+        description: normalizedRow.description ? normalizedRow.description.trim() : null,
+        unit: normalizedRow.unit ? normalizedRow.unit.trim() : null,
+        location_details: normalizedRow.location_details ? normalizedRow.location_details.trim() : null,
+        preferred_vendor: normalizedRow.preferred_vendor ? normalizedRow.preferred_vendor.trim() : null,
+        status: normalizedRow.status ? normalizedRow.status.trim() : 'active',
+        notes: normalizedRow.notes ? normalizedRow.notes.trim() : null,
+      };
+    });
+    
+    return processedData;
+  } catch (error) {
+    throw error;
+  }
 };

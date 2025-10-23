@@ -1,27 +1,44 @@
-
-import * as XLSX from 'xlsx';
 import { supabase } from "@/lib/supabase";
 import { ExportableTable } from "../backupUtils";
-// Remove the problematic import for now - we'll handle it without strict typing
-// import type { TablesInsert } from "@/types/supabase";
+import { parseExcelFile } from "@/utils/excelExport";
+import ExcelJS from 'exceljs';
 
 export async function importDatabase(file: File, exportableTables: readonly ExportableTable[]) {
-  const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data, { type: 'array' });
+  const workbook = new ExcelJS.Workbook();
+  const arrayBuffer = await file.arrayBuffer();
+  await workbook.xlsx.load(arrayBuffer);
   
-  for (const sheetName of workbook.SheetNames) {
+  for (const worksheet of workbook.worksheets) {
+    const sheetName = worksheet.name;
+    
     // Verify the sheet name is a valid table name
     if (exportableTables.includes(sheetName as ExportableTable)) {
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const jsonData: any[] = [];
+      const headers: string[] = [];
+      
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) {
+          // First row is headers
+          row.eachCell(cell => {
+            headers.push(cell.value?.toString() || '');
+          });
+        } else {
+          // Data rows
+          const rowData: any = {};
+          row.eachCell((cell, colNumber) => {
+            const header = headers[colNumber - 1];
+            if (header) {
+              rowData[header] = cell.value;
+            }
+          });
+          jsonData.push(rowData);
+        }
+      });
       
       if (jsonData.length > 0) {
-        // Type assertion for the specific table
-        const typedData = jsonData as any[];
-        
         const { error } = await supabase
           .from(sheetName as ExportableTable)
-          .upsert(typedData, {
+          .upsert(jsonData, {
             onConflict: 'id'
           });
           

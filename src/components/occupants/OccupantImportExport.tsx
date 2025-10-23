@@ -18,17 +18,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import * as XLSX from 'xlsx';
-
-// Sanitize string values to prevent Excel from interpreting text as formulas
-const sanitizeForExcel = (value: any) => {
-  if (typeof value !== 'string') return value;
-  const trimmed = value.trim();
-  if (/^[=+\-@]/.test(trimmed) || /^[\t\r]/.test(value)) {
-    return "'" + value;
-  }
-  return value;
-};
+import { exportToExcel, sanitizeForExcel, parseExcelFile } from "@/utils/excelExport";
 
 interface OccupantImportExportProps {
   occupants?: any[];
@@ -77,36 +67,13 @@ export function OccupantImportExport({ occupants = [], onImportSuccess }: Occupa
     created_at: true
   });
 
-  const exportToExcel = (data: any[], filename: string) => {
+  const exportToExcelLocal = async (data: any[], filename: string) => {
     const sanitized = data.map((row: any) =>
       Object.fromEntries(
         Object.entries(row).map(([k, v]) => [k, sanitizeForExcel(v)])
       )
     );
-    const worksheet = XLSX.utils.json_to_sheet(sanitized);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Occupants');
-    XLSX.writeFile(workbook, `${filename}.xlsx`);
-  };
-
-  const parseExcelFile = async (file: File): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
-          resolve(jsonData);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsArrayBuffer(file);
-    });
+    await exportToExcel(sanitized, filename, 'Occupants');
   };
 
   const validateEmail = (email: string): boolean => {
@@ -141,7 +108,7 @@ export function OccupantImportExport({ occupants = [], onImportSuccess }: Occupa
       return row;
     });
 
-    exportToExcel(exportData, `occupants_export_${new Date().toISOString().split('T')[0]}`);
+    await exportToExcelLocal(exportData, `occupants_export_${new Date().toISOString().split('T')[0]}`);
     
     toast({
       title: "Export successful",
@@ -149,7 +116,7 @@ export function OccupantImportExport({ occupants = [], onImportSuccess }: Occupa
     });
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
     const template = [{
       first_name: "John",
       last_name: "Doe",
@@ -164,7 +131,7 @@ export function OccupantImportExport({ occupants = [], onImportSuccess }: Occupa
       status: "active"
     }];
 
-    exportToExcel(template, "occupant_import_template");
+    await exportToExcelLocal(template, "occupant_import_template");
     
     toast({
       title: "Template downloaded",
