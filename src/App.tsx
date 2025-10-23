@@ -55,6 +55,7 @@ import MaintenanceRequestFormPage from "@/pages/forms/MaintenanceRequestFormPage
 import IssueReportFormPage from "@/pages/forms/IssueReportFormPage";
 import PublicForms from "@/pages/PublicForms";
 import PublicFormSubmission from "@/pages/PublicFormSubmission";
+import TermSheet from "@/pages/TermSheet";
 
 
 // Create a client
@@ -268,6 +269,11 @@ function AppContent() {
         <Route path="profile" element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="term-sheet" element={
+          <ProtectedRoute>
+            <TermSheet />
           </ProtectedRoute>
         } />
 

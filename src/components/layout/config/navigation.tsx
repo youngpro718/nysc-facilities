@@ -59,6 +59,13 @@ export const navigationItems: NavigationItem[] = [
 // Secondary navigation items (for submenu/more section)
 export const secondaryNavigationItems: NavigationItem[] = [
   {
+    title: 'Term Sheet',
+    href: '/term-sheet',
+    icon: FileText,
+    adminOnly: false,
+    moduleKey: undefined,
+  },
+  {
     title: 'Form Templates',
     href: '/form-templates',
     icon: FileText,
