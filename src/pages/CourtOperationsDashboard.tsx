@@ -6,7 +6,8 @@ import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocat
 import { TermSheetBoard } from "@/components/court-operations/personnel/TermSheetBoard";
 import { StaffAbsenceManager } from "@/components/court-operations/StaffAbsenceManager";
 import { ConflictDetectionPanel } from "@/components/court-operations/ConflictDetectionPanel";
-import { MapPin, Users, FileText, UserX, AlertTriangle } from "lucide-react";
+import { DailySessionsPanel } from "@/components/court-operations/DailySessionsPanel";
+import { MapPin, Users, FileText, UserX, AlertTriangle, CalendarCheck } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
@@ -90,6 +91,10 @@ export const CourtOperationsDashboard = () => {
             <FileText className="h-4 w-4 flex-shrink-0" />
             Term Sheet
           </TabsTrigger>
+          <TabsTrigger value="daily-sessions" className="flex items-center gap-2">
+            <CalendarCheck className="h-4 w-4 flex-shrink-0" />
+            Daily Sessions
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="operations">
@@ -110,6 +115,10 @@ export const CourtOperationsDashboard = () => {
 
         <TabsContent value="term-sheet">
           <TermSheetBoard />
+        </TabsContent>
+
+        <TabsContent value="daily-sessions">
+          <DailySessionsPanel />
         </TabsContent>
       </Tabs>
 

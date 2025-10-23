@@ -92,6 +92,23 @@ export function useCourtOperationsRealtime() {
           queryClient.invalidateQueries({ queryKey: K.status });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "court_sessions" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["court-sessions"] });
+          queryClient.invalidateQueries({ queryKey: ["conflict-detection"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "coverage_assignments" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["coverage-assignments"] });
+          queryClient.invalidateQueries({ queryKey: ["court-sessions"] });
+          queryClient.invalidateQueries({ queryKey: ["conflict-detection"] });
+        }
+      )
       .subscribe();
 
     return () => {

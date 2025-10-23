@@ -1,0 +1,173 @@
+import { useState } from 'react';
+import { format, subDays } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Calendar, Copy, RefreshCw, Users, CalendarCheck } from 'lucide-react';
+import { SessionsTable } from './SessionsTable';
+import { CoveragePanel } from './CoveragePanel';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCourtSessions, useCopyYesterdaySessions } from '@/hooks/useCourtSessions';
+import { useCoverageAssignments } from '@/hooks/useCoverageAssignments';
+import { SessionPeriod, BuildingCode } from '@/types/courtSessions';
+import { BUILDING_CODES, SESSION_PERIODS } from '@/constants/sessionStatuses';
+
+export function DailySessionsPanel() {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedPeriod, setSelectedPeriod] = useState<SessionPeriod>('AM');
+  const [selectedBuilding, setSelectedBuilding] = useState<BuildingCode>('100');
+  const [showCoveragePanel, setShowCoveragePanel] = useState(false);
+
+  const { data: sessions, isLoading: sessionsLoading } = useCourtSessions(
+    selectedDate,
+    selectedPeriod,
+    selectedBuilding
+  );
+
+  const { data: coverages, isLoading: coveragesLoading } = useCoverageAssignments(
+    selectedDate,
+    selectedPeriod,
+    selectedBuilding
+  );
+
+  const copyYesterday = useCopyYesterdaySessions();
+
+  const handleCopyYesterday = () => {
+    const yesterday = subDays(selectedDate, 1);
+    copyYesterday.mutate({
+      fromDate: format(yesterday, 'yyyy-MM-dd'),
+      toDate: format(selectedDate, 'yyyy-MM-dd'),
+      period: selectedPeriod,
+      buildingCode: selectedBuilding,
+    });
+  };
+
+  const handleToday = () => {
+    setSelectedDate(new Date());
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Filter Bar */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarCheck className="h-5 w-5" />
+            Daily Sessions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            {/* Date Picker */}
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <DatePicker
+                value={selectedDate}
+                onChange={(date) => date && setSelectedDate(date)}
+              />
+            </div>
+
+            {/* Period Selector */}
+            <div className="space-y-2">
+              <Label>Period</Label>
+              <RadioGroup
+                value={selectedPeriod}
+                onValueChange={(value) => setSelectedPeriod(value as SessionPeriod)}
+                className="flex gap-2"
+              >
+                {SESSION_PERIODS.map((period) => (
+                  <div key={period.value} className="flex items-center space-x-2">
+                    <RadioGroupItem value={period.value} id={`period-${period.value}`} />
+                    <Label htmlFor={`period-${period.value}`} className="cursor-pointer">
+                      {period.label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+
+            {/* Building Filter */}
+            <div className="space-y-2">
+              <Label>Building</Label>
+              <Select
+                value={selectedBuilding}
+                onValueChange={(value) => setSelectedBuilding(value as BuildingCode)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BUILDING_CODES.map((building) => (
+                    <SelectItem key={building.value} value={building.value}>
+                      {building.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="space-y-2">
+              <Label>Quick Actions</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToday}
+                  className="flex-1"
+                >
+                  <Calendar className="h-4 w-4 mr-1" />
+                  Today
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyYesterday}
+              disabled={copyYesterday.isPending}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Yesterday
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCoveragePanel(!showCoveragePanel)}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              {showCoveragePanel ? 'Hide' : 'Show'} Coverage
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Coverage Panel */}
+      {showCoveragePanel && (
+        <CoveragePanel
+          date={selectedDate}
+          period={selectedPeriod}
+          buildingCode={selectedBuilding}
+          coverages={coverages || []}
+          isLoading={coveragesLoading}
+        />
+      )}
+
+      {/* Sessions Table */}
+      <SessionsTable
+        date={selectedDate}
+        period={selectedPeriod}
+        buildingCode={selectedBuilding}
+        sessions={sessions || []}
+        coverages={coverages || []}
+        isLoading={sessionsLoading}
+      />
+    </div>
+  );
+}

@@ -24,7 +24,7 @@ export interface Conflict {
 
 export interface Warning {
   id: string;
-  type: "incomplete_assignment" | "missing_contact_info" | "no_coverage";
+  type: "incomplete_assignment" | "missing_contact_info" | "no_coverage" | "session_conflict";
   title: string;
   description: string;
   affectedRooms: string[];
@@ -324,6 +324,67 @@ export class ConflictDetectionService {
       errors.push("Sergeant is required");
     }
 
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  /**
+   * Validate session assignment before saving
+   */
+  static async validateSessionAssignment(session: {
+    judge_name: string;
+    part_number: string;
+    court_room_id: string;
+    session_date: string;
+    period: string;
+    building_code: string;
+  }): Promise<{ isValid: boolean; errors: string[] }> {
+    const errors: string[] = [];
+    
+    // 1. Check judge not double-booked same date/period
+    const { data: existingSessions } = await supabase
+      .from('court_sessions')
+      .select('court_rooms(room_number)')
+      .eq('session_date', session.session_date)
+      .eq('period', session.period)
+      .eq('building_code', session.building_code)
+      .eq('judge_name', session.judge_name)
+      .neq('court_room_id', session.court_room_id);
+    
+    if (existingSessions && existingSessions.length > 0) {
+      errors.push(`Judge ${session.judge_name} already assigned to room ${(existingSessions[0] as any).court_rooms.room_number} for this period`);
+    }
+    
+    // 2. Check part number unique (if provided)
+    if (session.part_number) {
+      const { data: existingParts } = await supabase
+        .from('court_sessions')
+        .select('court_rooms(room_number)')
+        .eq('session_date', session.session_date)
+        .eq('period', session.period)
+        .eq('building_code', session.building_code)
+        .eq('part_number', session.part_number)
+        .neq('court_room_id', session.court_room_id);
+      
+      if (existingParts && existingParts.length > 0) {
+        errors.push(`Part ${session.part_number} already assigned to room ${(existingParts[0] as any).court_rooms.room_number}`);
+      }
+    }
+    
+    // 3. Check if room is shutdown/maintenance
+    const { data: shutdown } = await supabase
+      .from('room_shutdowns')
+      .select('*')
+      .eq('room_id', session.court_room_id)
+      .in('status', ['in_progress', 'scheduled'])
+      .maybeSingle();
+    
+    if (shutdown) {
+      errors.push('Room is under maintenance and cannot be scheduled');
+    }
+    
     return {
       isValid: errors.length === 0,
       errors,
