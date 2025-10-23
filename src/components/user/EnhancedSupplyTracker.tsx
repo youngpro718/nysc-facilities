@@ -197,78 +197,80 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                 isActive ? 'border-primary/30 bg-primary/5' : 'border-border'
               }`}
             >
-              {/* Header - Mobile Optimized with touch feedback */}
+              {/* Header - iPhone Optimized with larger touch targets */}
               <div
-                className="p-2 sm:p-3 cursor-pointer active:bg-accent/70 transition-all duration-150 active:scale-[0.99] touch-manipulation"
+                className="p-4 cursor-pointer active:bg-accent/70 transition-all duration-150 touch-manipulation"
                 onClick={() => toggleExpand(request.id)}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1 sm:gap-2 mb-1">
-                      <h3 className="font-semibold text-sm sm:text-base truncate flex-1">{request.title}</h3>
-                      {isActive && (
-                        <Badge variant="outline" className="bg-success/10 text-success-foreground border-success/30 text-xs flex-shrink-0">
-                          Active
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs text-muted-foreground mb-1 sm:mb-2">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}</span>
-                      </span>
-                      <span className="hidden sm:inline">•</span>
-                      <span>{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
-                      <span className="hidden sm:inline">•</span>
-                      <Badge variant="outline" className={`${getPriorityColor(request.priority)} text-xs flex-shrink-0`}>
-                        {request.priority}
-                      </Badge>
-                    </div>
-
-                    {/* Progress Bar - Mobile Optimized */}
-                    <div className="space-y-0.5 sm:space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-medium truncate flex-1">
-                          {SUPPLY_STAGES[currentStageIndex]?.label || 'Unknown'}
-                        </span>
-                        <span className="text-muted-foreground ml-2 flex-shrink-0">{Math.round(progress)}%</span>
+                <div className="space-y-3">
+                  {/* Title Row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base leading-tight mb-1">{request.title}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4 flex-shrink-0" />
+                        <span>{formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}</span>
                       </div>
-                      <Progress value={progress} className={`h-2 sm:h-1.5 ${getStatusColor(request.status)}`} />
                     </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="flex-shrink-0 touch-manipulation h-10 w-10"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </Button>
                   </div>
 
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="flex-shrink-0 p-1 sm:p-2 touch-manipulation min-h-[44px] min-w-[44px] active:scale-95 transition-transform"
-                  >
-                    {isExpanded ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
+                  {/* Status and Info Row */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className={`${getPriorityColor(request.priority)} text-xs px-2 py-1`}>
+                      {request.priority}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs px-2 py-1">
+                      {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                    </Badge>
+                    {isActive && (
+                      <Badge variant="outline" className="bg-success/10 text-success-foreground border-success/30 text-xs px-2 py-1">
+                        Active
+                      </Badge>
                     )}
-                  </Button>
+                  </div>
+
+                  {/* Large Status Display */}
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">
+                        {SUPPLY_STAGES[currentStageIndex]?.label || 'Unknown'}
+                      </span>
+                      <span className="text-sm text-muted-foreground">{Math.round(progress)}%</span>
+                    </div>
+                    <Progress value={progress} className={`h-2 ${getStatusColor(request.status)}`} />
+                  </div>
                 </div>
               </div>
 
               {/* Expanded Details */}
               {isExpanded && (
                 <div className="border-t px-4 py-4 space-y-4 bg-muted/30">
-                  {/* Stage Timeline */}
+                  {/* Vertical Timeline - iPhone Optimized */}
                   <div>
-                    <h4 className="font-medium mb-3 text-sm">Request Progress</h4>
-                    <div className="flex items-center justify-between">
+                    <h4 className="font-medium mb-4 text-sm">Request Progress</h4>
+                    <div className="space-y-3">
                       {SUPPLY_STAGES.map((stage, index) => {
                         const StageIcon = stage.icon;
                         const isCompleted = index <= currentStageIndex;
                         const isCurrent = index === currentStageIndex;
 
                         return (
-                          <div key={stage.key} className="flex flex-col items-center flex-1">
+                          <div key={stage.key} className="flex items-center gap-3">
+                            {/* Icon */}
                             <div
                               className={`
-                                w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all
+                                w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all
                                 ${isCompleted 
                                   ? 'bg-primary text-primary-foreground' 
                                   : 'bg-muted text-muted-foreground'
@@ -278,17 +280,20 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                             >
                               <StageIcon className="h-5 w-5" />
                             </div>
-                            <span className={`text-xs text-center ${isCurrent ? 'font-semibold' : ''}`}>
-                              {stage.label}
-                            </span>
-                            {index < SUPPLY_STAGES.length - 1 && (
-                              <div className="hidden sm:block absolute h-0.5 w-full top-5 left-1/2 -z-10">
-                                <div
-                                  className={`h-full ${
-                                    isCompleted ? 'bg-primary' : 'bg-muted'
-                                  }`}
-                                />
+                            
+                            {/* Label */}
+                            <div className="flex-1">
+                              <div className={`text-sm ${isCurrent ? 'font-semibold' : 'text-muted-foreground'}`}>
+                                {stage.label}
                               </div>
+                              {isCurrent && (
+                                <div className="text-xs text-primary mt-0.5">Current Status</div>
+                              )}
+                            </div>
+                            
+                            {/* Checkmark for completed */}
+                            {isCompleted && !isCurrent && (
+                              <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
                             )}
                           </div>
                         );
