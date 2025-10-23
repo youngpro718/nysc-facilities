@@ -152,15 +152,12 @@ export function RoutingRuleDialog({ open, onOpenChange, editingRule }: RoutingRu
 
           <div>
             <Label htmlFor="form_type">Form Type (optional)</Label>
-            <Select
-              value={formData.form_type}
-              onValueChange={(value) => setFormData({ ...formData, form_type: value })}
-            >
+            <Select value={formData.form_type || "all"} onValueChange={(val) => setFormData({ ...formData, form_type: val === "all" ? "" : val })}>
               <SelectTrigger>
                 <SelectValue placeholder="All form types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All form types</SelectItem>
+                <SelectItem value="all">All form types</SelectItem>
                 <SelectItem value="key_request">Key Request</SelectItem>
                 <SelectItem value="supply_request">Supply Request</SelectItem>
                 <SelectItem value="maintenance_request">Maintenance Request</SelectItem>

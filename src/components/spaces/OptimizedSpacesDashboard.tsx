@@ -204,12 +204,12 @@ export function OptimizedSpacesDashboard({ className }: OptimizedSpacesDashboard
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Building</label>
-              <Select value={selectedBuilding} onValueChange={setSelectedBuilding}>
-                <SelectTrigger>
+              <Select value={selectedBuilding || "all"} onValueChange={(val) => setSelectedBuilding(val === "all" ? "" : val)}>
+                <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="All buildings" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All buildings</SelectItem>
+                  <SelectItem value="all">All buildings</SelectItem>
                   {buildings.map(building => (
                     <SelectItem key={building.id} value={building.id}>
                       {building.name}
@@ -221,16 +221,12 @@ export function OptimizedSpacesDashboard({ className }: OptimizedSpacesDashboard
 
             <div>
               <label className="text-sm font-medium mb-2 block">Floor</label>
-              <Select 
-                value={selectedFloor} 
-                onValueChange={setSelectedFloor}
-                disabled={!selectedBuilding}
-              >
-                <SelectTrigger>
+              <Select value={selectedFloor || "all"} onValueChange={(val) => setSelectedFloor(val === "all" ? "" : val)} disabled={!selectedBuilding}>
+                <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="All floors" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All floors</SelectItem>
+                  <SelectItem value="all">All floors</SelectItem>
                   {availableFloors.map(floor => (
                     <SelectItem key={floor.floor_id} value={floor.floor_id}>
                       {floor.floor_name} (Floor {floor.floor_number})
@@ -242,12 +238,12 @@ export function OptimizedSpacesDashboard({ className }: OptimizedSpacesDashboard
 
             <div>
               <label className="text-sm font-medium mb-2 block">Space Type</label>
-              <Select value={spaceTypeFilter} onValueChange={(value: any) => setSpaceTypeFilter(value)}>
-                <SelectTrigger>
+              <Select value={spaceTypeFilter || "all"} onValueChange={(value: any) => setSpaceTypeFilter(value === "all" ? "" : value)}>
+                <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="room">Rooms</SelectItem>
                   <SelectItem value="hallway">Hallways</SelectItem>
                   <SelectItem value="door">Doors</SelectItem>
