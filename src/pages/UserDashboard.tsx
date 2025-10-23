@@ -42,7 +42,7 @@ import { useUserIssues } from "@/hooks/dashboard/useUserIssues";
 import { NotificationCard } from "@/components/dashboard/NotificationCard";
 import { KeyAssignmentCard } from "@/components/dashboard/KeyAssignmentCard";
 import { EnhancedSupplyTracker } from "@/components/user/EnhancedSupplyTracker";
-import { FullTermAssignmentsView } from "@/components/user/FullTermAssignmentsView";
+import { TermSheetBoard } from "@/components/court-operations/personnel/TermSheetBoard";
 import { QuickIssueReportButton } from "@/components/user/QuickIssueReportButton";
 import { NotificationDropdown } from "@/components/user/NotificationDropdown";
 import { useUserPersonnelInfo } from "@/hooks/user/useUserPersonnelInfo";
@@ -194,12 +194,8 @@ export default function UserDashboard() {
           featured={false}
         />
 
-        {/* PRIORITY 2: Court Assignments - Mobile Optimized */}
-        <FullTermAssignmentsView 
-          userId={user.id}
-          userRole={personnelInfo?.role}
-          userPersonnelId={personnelInfo?.personnelId || undefined}
-        />
+        {/* PRIORITY 2: Court Assignments - Using Court Operations Design */}
+        <TermSheetBoard />
 
         {/* Key Assignments - Mobile Optimized */}
         <KeyAssignmentCard userId={user.id} />
