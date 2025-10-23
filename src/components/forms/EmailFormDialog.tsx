@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Mail, Send } from 'lucide-react';
-import { PDFGenerationService } from '@/services/forms/pdfGenerationService';
 import { getFacilityEmail } from '@/services/emailConfigService';
 
 interface EmailFormDialogProps {
@@ -16,10 +15,10 @@ interface EmailFormDialogProps {
 }
 
 const formTypes = [
-  { id: 'key-request', name: 'Key & Elevator Pass Request' },
-  { id: 'major-work-request', name: 'Major Work Request' },
-  { id: 'facility-change-log', name: 'Facility Change Log' },
-  { id: 'external-request', name: 'General Request Form' },
+  { id: 'key-request', name: 'Key & Elevator Pass Request', path: '/forms/key-request' },
+  { id: 'issue-report', name: 'Issue Report', path: '/forms/issue-report' },
+  { id: 'maintenance-request', name: 'Maintenance Request', path: '/forms/maintenance-request' },
+  { id: 'supply-request', name: 'Supply Request', path: '/forms/supply-request' },
 ];
 
 export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
@@ -38,27 +37,31 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
     setSending(true);
 
     try {
-      // Generate PDF
       const selectedForm = formTypes.find(f => f.id === formType);
       if (!selectedForm) throw new Error('Invalid form type');
 
-      // Generate the PDF
-      PDFGenerationService.downloadForm(formType);
+      // Get facility email
+      const facilityEmail = await getFacilityEmail();
 
-      // Compose email
-      const subject = encodeURIComponent(`NYSC Facilities Form: ${selectedForm.name}`);
+      // Create the form link
+      const formLink = `${window.location.origin}${selectedForm.path}`;
+
+      // Compose email with link to interactive form
+      const subject = encodeURIComponent(`NYSC Facilities: ${selectedForm.name}`);
       const greeting = recipientName ? `Hello ${recipientName},\n\n` : 'Hello,\n\n';
       const customPart = customMessage ? `${customMessage}\n\n` : '';
       const body = encodeURIComponent(
-        `${greeting}${customPart}Please find attached the ${selectedForm.name} for NYSC Facilities.\n\n` +
-        `Instructions:\n` +
-        `1. Fill out all required fields in the PDF\n` +
-        `2. Submit your completed form by:\n` +
-        `   - Replying to this email with the completed PDF attached, OR\n` +
-        `   - Uploading at: ${window.location.origin}/submit-form\n` +
-        `   - Emailing to: facilities@nysc.gov\n\n` +
-        `Your submission will be tracked in the NYSC Facilities system and you'll receive updates.\n\n` +
-        `Need help? Contact us at facilities@nysc.gov or call (555) 123-4567\n\n` +
+        `${greeting}${customPart}You've been sent a form to complete for NYSC Facilities.\n\n` +
+        `📋 Form: ${selectedForm.name}\n\n` +
+        `🔗 Click here to fill out the form online:\n${formLink}\n\n` +
+        `✨ Benefits of the online form:\n` +
+        `• No download required - fill it out directly in your browser\n` +
+        `• Mobile-friendly and easy to use\n` +
+        `• Instant submission - no need to email back\n` +
+        `• Automatic tracking in our system\n` +
+        `• You'll receive email updates on your request\n\n` +
+        `The form takes just a few minutes to complete and will be immediately processed by our team.\n\n` +
+        `Need help? Contact us at ${facilityEmail} or call (555) 123-4567\n\n` +
         `Best regards,\n` +
         `NYSC Facilities Team`
       );
@@ -67,7 +70,7 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
       window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
 
       toast.success('Email composed!', {
-        description: 'Please attach the downloaded PDF and send the email.',
+        description: 'Send the email to share the interactive form link.',
       });
 
       // Reset form
@@ -77,7 +80,7 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
       setCustomMessage('');
       onClose();
     } catch (error) {
-      console.error('Error sending form:', error);
+      console.error('Error composing email:', error);
       toast.error('Failed to compose email');
     } finally {
       setSending(false);
@@ -90,10 +93,10 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-5 h-5" />
-            Email Form to Someone
+            Email Interactive Form Link
           </DialogTitle>
           <DialogDescription>
-            Send a form to someone who doesn't have app access
+            Send a link to an online form that can be filled out and submitted instantly
           </DialogDescription>
         </DialogHeader>
 
@@ -160,8 +163,9 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
               <p className="text-sm font-semibold">Email Preview:</p>
               <div className="text-xs space-y-1">
                 <p><strong>To:</strong> {recipientEmail}</p>
-                <p><strong>Subject:</strong> NYSC Facilities Form: {formTypes.find(f => f.id === formType)?.name}</p>
-                <p><strong>Attachment:</strong> {formTypes.find(f => f.id === formType)?.name}.pdf</p>
+                <p><strong>Subject:</strong> NYSC Facilities: {formTypes.find(f => f.id === formType)?.name}</p>
+                <p><strong>Contains:</strong> Interactive form link - {window.location.origin}{formTypes.find(f => f.id === formType)?.path}</p>
+                <p className="text-muted-foreground italic">Recipient can fill out and submit the form online instantly</p>
               </div>
             </div>
           )}

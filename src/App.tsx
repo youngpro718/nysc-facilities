@@ -48,6 +48,7 @@ import InstallApp from "@/pages/InstallApp";
 import FormIntake from "@/pages/FormIntake";
 import FormTemplates from "@/pages/FormTemplates";
 import RoutingRules from "@/pages/admin/RoutingRules";
+import FormTemplatesAdmin from "@/pages/admin/FormTemplatesAdmin";
 import KeyRequestFormPage from "@/pages/forms/KeyRequestFormPage";
 import SupplyRequestFormPage from "@/pages/forms/SupplyRequestFormPage";
 import MaintenanceRequestFormPage from "@/pages/forms/MaintenanceRequestFormPage";
@@ -72,6 +73,12 @@ function AppContent() {
       {/* Public Routes - No Authentication Required */}
       <Route path="/public-forms" element={<PublicForms />} />
       <Route path="/submit-form" element={<PublicFormSubmission />} />
+      
+      {/* Public Interactive Form Pages - No Layout, No Auth */}
+      <Route path="/forms/key-request" element={<KeyRequestFormPage />} />
+      <Route path="/forms/supply-request" element={<SupplyRequestFormPage />} />
+      <Route path="/forms/maintenance-request" element={<MaintenanceRequestFormPage />} />
+      <Route path="/forms/issue-report" element={<IssueReportFormPage />} />
       
       <Route element={<Layout />}>
         {/* Admin Routes */}
@@ -187,25 +194,9 @@ function AppContent() {
             <RoutingRules />
           </ProtectedRoute>
         } />
-        {/* Direct Form Submission Pages */}
-        <Route path="forms/key-request" element={
-          <ProtectedRoute>
-            <KeyRequestFormPage />
-          </ProtectedRoute>
-        } />
-        <Route path="forms/supply-request" element={
-          <ProtectedRoute>
-            <SupplyRequestFormPage />
-          </ProtectedRoute>
-        } />
-        <Route path="forms/maintenance-request" element={
-          <ProtectedRoute>
-            <MaintenanceRequestFormPage />
-          </ProtectedRoute>
-        } />
-        <Route path="forms/issue-report" element={
-          <ProtectedRoute>
-            <IssueReportFormPage />
+        <Route path="admin/form-templates" element={
+          <ProtectedRoute requireAdmin>
+            <FormTemplatesAdmin />
           </ProtectedRoute>
         } />
         {/* Supply Requests - User facing route */}

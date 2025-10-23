@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, ClipboardList, Send, Plus, X } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Send, Plus, X, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface SupplyItem {
@@ -21,6 +21,7 @@ export default function SupplyRequestFormPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -29,7 +30,7 @@ export default function SupplyRequestFormPage() {
     priority: 'medium',
     department: '',
     requestor_name: '',
-    requestor_email: user?.email || '',
+    requestor_email: '',
   });
 
   const [items, setItems] = useState<SupplyItem[]>([
@@ -57,54 +58,75 @@ export default function SupplyRequestFormPage() {
     setIsSubmitting(true);
 
     try {
-      // Create supply request
-      const { data: request, error: requestError } = await supabase
-        .from('supply_requests')
-        .insert({
-          user_id: user?.id,
-          title: formData.title,
-          description: formData.description,
-          justification: formData.justification,
-          priority: formData.priority,
-          status: 'pending',
-          notes: formData.department ? `Department: ${formData.department}` : null,
-        })
-        .select()
-        .single();
+      if (user?.id) {
+        // Authenticated user submission
+        const { data: request, error: requestError } = await supabase
+          .from('supply_requests')
+          .insert({
+            user_id: user.id,
+            title: formData.title,
+            description: formData.description,
+            justification: formData.justification,
+            priority: formData.priority,
+            status: 'pending',
+            notes: formData.department ? `Department: ${formData.department}` : null,
+          })
+          .select()
+          .single();
 
-      if (requestError) throw requestError;
+        if (requestError) throw requestError;
 
-      // Create supply request items
-      const itemsToInsert = items
-        .filter(item => item.item_name.trim())
-        .map(item => ({
+        // Create supply request items
+        const itemsToInsert = items
+          .filter(item => item.item_name.trim())
+          .map(item => ({
+            request_id: request.id,
+            item_name: item.item_name,
+            quantity_requested: item.quantity,
+            notes: item.notes || null,
+          }));
+
+        if (itemsToInsert.length > 0) {
+          const { error: itemsError } = await supabase
+            .from('supply_request_items')
+            .insert(itemsToInsert);
+
+          if (itemsError) throw itemsError;
+        }
+
+        // Add to status history
+        await supabase.from('supply_request_status_history').insert({
           request_id: request.id,
-          item_name: item.item_name,
-          quantity_requested: item.quantity,
-          notes: item.notes || null,
-        }));
-
-      if (itemsToInsert.length > 0) {
-        const { error: itemsError } = await supabase
-          .from('supply_request_items')
-          .insert(itemsToInsert);
-
-        if (itemsError) throw itemsError;
+          status: 'pending',
+          changed_by: user.id,
+        });
+      } else {
+        // Anonymous user submission
+        const { error } = await supabase
+          .from('form_submissions')
+          .insert({
+            form_type: 'supply-request',
+            processing_status: 'pending',
+            extracted_data: {
+              title: formData.title,
+              description: formData.description,
+              justification: formData.justification,
+              priority: formData.priority,
+              department: formData.department,
+              items: items.filter(item => item.item_name.trim()),
+              requestor_name: formData.requestor_name,
+              requestor_email: formData.requestor_email,
+              public_submission: true,
+            },
+          });
+        
+        if (error) throw error;
       }
 
-      // Add to status history
-      await supabase.from('supply_request_status_history').insert({
-        request_id: request.id,
-        status: 'pending',
-        changed_by: user?.id,
-      });
-
+      setSubmitted(true);
       toast.success('Supply request submitted successfully!', {
         description: 'Your request is being reviewed.',
       });
-
-      // Navigate to My Supply Requests page
-      navigate('/supply-requests');
     } catch (error: any) {
       console.error('Error submitting supply request:', error);
       toast.error('Failed to submit request', {
@@ -115,18 +137,79 @@ export default function SupplyRequestFormPage() {
     }
   };
 
-  return (
-    <div className="container mx-auto py-8 max-w-3xl">
-      <Button
-        variant="ghost"
-        onClick={() => navigate('/form-templates')}
-        className="mb-4"
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Templates
-      </Button>
+  // Success page
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="bg-primary text-primary-foreground py-6">
+          <div className="container mx-auto px-4">
+            <h1 className="text-2xl font-bold">NYSC Facilities Hub</h1>
+          </div>
+        </div>
 
-      <Card>
+        <div className="container mx-auto py-8 px-4 max-w-2xl">
+          <Card>
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+              <CardTitle className="text-2xl">Request Submitted Successfully!</CardTitle>
+              <CardDescription>
+                Your supply request has been received and will be processed shortly
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <h3 className="font-semibold">What Happens Next?</h3>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                  <li>You'll receive an email confirmation at {formData.requestor_email}</li>
+                  <li>Your request will be reviewed by the supply team</li>
+                  <li>You'll receive updates via email as items are processed</li>
+                  <li>Supplies will be ready for pickup or delivery once approved</li>
+                </ol>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => window.location.href = '/public-forms'}
+                >
+                  Submit Another Form
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => window.location.reload()}
+                >
+                  Done
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="bg-primary text-primary-foreground py-6">
+        <div className="container mx-auto px-4">
+          <Button
+            variant="ghost"
+            className="mb-2 text-primary-foreground hover:bg-primary-foreground/20"
+            onClick={() => window.location.href = '/public-forms'}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Forms
+          </Button>
+          <h1 className="text-3xl font-bold">NYSC Facilities Hub</h1>
+          <p className="text-lg opacity-90 mt-1">Supply Request</p>
+        </div>
+      </div>
+
+      <div className="container mx-auto py-8 px-4 max-w-3xl">
+        <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-lg bg-green-500/10">
@@ -300,7 +383,7 @@ export default function SupplyRequestFormPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate('/form-templates')}
+                onClick={() => window.location.href = '/public-forms'}
                 className="flex-1"
               >
                 Cancel
@@ -323,6 +406,7 @@ export default function SupplyRequestFormPage() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

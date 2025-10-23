@@ -178,6 +178,12 @@ export const userNavigationItems: NavigationItem[] = [
     icon: GitFork,
     adminOnly: true,
   },
+  {
+    title: 'Form Builder',
+    href: '/admin/form-templates',
+    icon: FileText,
+    adminOnly: true,
+  },
 ];
 
 // Create filtered navigation based on role permissions

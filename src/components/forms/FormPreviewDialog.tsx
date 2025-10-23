@@ -10,23 +10,83 @@ import { FileText, ClipboardList, Wrench, AlertCircle } from 'lucide-react';
 interface FormPreviewDialogProps {
   open: boolean;
   onClose: () => void;
-  formType: 'key-request' | 'supply-request' | 'maintenance-request' | 'issue-report' | 'major-work-request' | 'facility-change-log' | 'external-request';
+  formType: 'elevator-pass-request' | 'key-request' | 'supply-request' | 'maintenance-request' | 'issue-report' | 'painting-request' | 'flooring-request' | 'lock-doorknob-request' | 'room-modification-request' | 'major-work-request' | 'facility-change-log' | 'external-request';
 }
 
 const formConfigs = {
-  'key-request': {
-    title: 'Key Request Form',
+  'elevator-pass-request': {
+    title: 'Elevator Pass Request',
     icon: FileText,
     color: 'text-blue-500',
     fields: [
-      { name: 'requestType', label: 'Request Type', type: 'select', options: ['New Key', 'Spare Key', 'Replacement Key'] },
+      { name: 'requestorName', label: 'Requestor Name', type: 'text', placeholder: 'Full name' },
+      { name: 'department', label: 'Department', type: 'text', placeholder: 'Your department' },
+    ],
+  },
+  'key-request': {
+    title: 'Key Request',
+    icon: FileText,
+    color: 'text-indigo-500',
+    fields: [
+      { name: 'requestorName', label: 'Requestor Name', type: 'text', placeholder: 'Full name' },
+      { name: 'department', label: 'Department', type: 'text', placeholder: 'Your department' },
       { name: 'roomNumber', label: 'Room Number', type: 'text', placeholder: 'e.g., 1000, 1324A' },
-      { name: 'reason', label: 'Reason for Request', type: 'textarea', placeholder: 'Explain why you need this key...' },
-      { name: 'quantity', label: 'Quantity', type: 'number', placeholder: '1' },
-      { name: 'urgency', label: 'Urgency Level', type: 'select', options: ['Low', 'Medium', 'High', 'Urgent'] },
-      { name: 'requestorName', label: 'Your Name', type: 'text', placeholder: 'Full name' },
-      { name: 'requestorEmail', label: 'Email', type: 'email', placeholder: 'your.email@example.com' },
-      { name: 'requestorPhone', label: 'Phone', type: 'tel', placeholder: '(555) 123-4567' },
+      { name: 'quantity', label: 'Quantity Needed', type: 'number', placeholder: '1' },
+      { name: 'requestType', label: 'Request Type', type: 'select', options: ['Spare', 'Replacement', 'Key Issue'] },
+      { name: 'issueDescription', label: 'Description of Issue (if applicable)', type: 'textarea', placeholder: 'Describe the issue...' },
+    ],
+  },
+  'painting-request': {
+    title: 'Room Painting Request',
+    icon: Wrench,
+    color: 'text-orange-500',
+    fields: [
+      { name: 'requestorName', label: 'Requestor Name', type: 'text', placeholder: 'Full name' },
+      { name: 'department', label: 'Department', type: 'text', placeholder: 'Your department' },
+      { name: 'roomNumber', label: 'Room Number', type: 'text', placeholder: 'e.g., 1000' },
+      { name: 'wallColor', label: 'Wall Color (Benjamin Moore)', type: 'text', placeholder: 'Color name and number' },
+      { name: 'trimColor', label: 'Trim Color (Benjamin Moore)', type: 'text', placeholder: 'Color name and number' },
+      { name: 'notes', label: 'Additional Notes', type: 'textarea', placeholder: 'Any special instructions...' },
+    ],
+  },
+  'flooring-request': {
+    title: 'Flooring Request',
+    icon: ClipboardList,
+    color: 'text-green-500',
+    fields: [
+      { name: 'requestorName', label: 'Requestor Name', type: 'text', placeholder: 'Full name' },
+      { name: 'department', label: 'Department', type: 'text', placeholder: 'Your department' },
+      { name: 'roomNumber', label: 'Room Number', type: 'text', placeholder: 'e.g., 1000' },
+      { name: 'flooringType', label: 'Flooring Type', type: 'select', options: ['Carpet', 'VCT Tiles'] },
+      { name: 'colorStyle', label: 'Color/Style Preference', type: 'text', placeholder: 'Describe your preference' },
+      { name: 'reason', label: 'Reason for Request', type: 'textarea', placeholder: 'Why is this flooring needed?' },
+    ],
+  },
+  'lock-doorknob-request': {
+    title: 'Lock & Doorknob Service',
+    icon: AlertCircle,
+    color: 'text-red-500',
+    fields: [
+      { name: 'requestorName', label: 'Requestor Name', type: 'text', placeholder: 'Full name' },
+      { name: 'department', label: 'Department', type: 'text', placeholder: 'Your department' },
+      { name: 'roomNumber', label: 'Room Number', type: 'text', placeholder: 'e.g., 1000' },
+      { name: 'serviceType', label: 'Service Type', type: 'select', options: ['Lock Change', 'Doorknob Repair', 'Key Change'] },
+      { name: 'issueDescription', label: 'Description of Issue', type: 'textarea', placeholder: 'Describe the problem...' },
+      { name: 'urgency', label: 'Urgency Level', type: 'select', options: ['Low', 'Medium', 'High', 'Emergency'] },
+    ],
+  },
+  'room-modification-request': {
+    title: 'Room Modification Request',
+    icon: Wrench,
+    color: 'text-purple-500',
+    fields: [
+      { name: 'requestorName', label: 'Requestor Name', type: 'text', placeholder: 'Full name' },
+      { name: 'department', label: 'Department', type: 'text', placeholder: 'Your department' },
+      { name: 'roomNumber', label: 'Room Number', type: 'text', placeholder: 'e.g., 1000' },
+      { name: 'modificationType', label: 'Type of Modification', type: 'text', placeholder: 'e.g., Wall removal, outlet installation' },
+      { name: 'description', label: 'Detailed Description', type: 'textarea', placeholder: 'Describe the modification in detail...' },
+      { name: 'reason', label: 'Reason for Change', type: 'textarea', placeholder: 'Why is this modification needed?' },
+      { name: 'timeline', label: 'Expected Timeline', type: 'text', placeholder: 'When do you need this completed?' },
     ],
   },
   'supply-request': {

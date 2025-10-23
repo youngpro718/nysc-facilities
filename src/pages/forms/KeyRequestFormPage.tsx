@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Key, Send } from 'lucide-react';
+import { ArrowLeft, Key, Send, CheckCircle } from 'lucide-react';
 import { submitKeyRequest } from '@/services/supabase/keyRequestService';
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +16,7 @@ export default function KeyRequestFormPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   
   const [formData, setFormData] = useState({
     request_type: 'new',
@@ -24,7 +25,7 @@ export default function KeyRequestFormPage() {
     quantity: 1,
     urgency: 'medium',
     requestor_name: '',
-    requestor_email: user?.email || '',
+    requestor_email: '',
     requestor_phone: '',
   });
 
@@ -47,24 +48,46 @@ export default function KeyRequestFormPage() {
         }
       }
 
-      // Submit key request
-      await submitKeyRequest({
-        reason: formData.reason,
-        user_id: user?.id || '',
-        request_type: formData.request_type as 'new' | 'spare' | 'replacement',
-        room_id: roomId || undefined,
-        room_other: !roomId ? formData.room_number : null,
-        quantity: formData.quantity,
-        emergency_contact: formData.requestor_phone || null,
-        email_notifications_enabled: true,
-      });
+      // Submit key request (works for both authenticated and anonymous users)
+      if (user?.id) {
+        // Authenticated user submission
+        await submitKeyRequest({
+          reason: formData.reason,
+          user_id: user.id,
+          request_type: formData.request_type as 'new' | 'spare' | 'replacement',
+          room_id: roomId || undefined,
+          room_other: !roomId ? formData.room_number : null,
+          quantity: formData.quantity,
+          emergency_contact: formData.requestor_phone || null,
+          email_notifications_enabled: true,
+        });
+      } else {
+        // Anonymous user submission - store in form_submissions table
+        const { error } = await supabase
+          .from('form_submissions')
+          .insert({
+            form_type: 'key-request',
+            processing_status: 'pending',
+            extracted_data: {
+              request_type: formData.request_type,
+              room_number: formData.room_number,
+              reason: formData.reason,
+              quantity: formData.quantity,
+              urgency: formData.urgency,
+              requestor_name: formData.requestor_name,
+              requestor_email: formData.requestor_email,
+              requestor_phone: formData.requestor_phone,
+              public_submission: true,
+            },
+          });
+        
+        if (error) throw error;
+      }
 
-      toast.success('Key request submitted successfully!', {
+      setSubmitted(true);
+      toast.success('Request submitted successfully!', {
         description: 'You will receive updates via email.',
       });
-
-      // Navigate to My Requests page
-      navigate('/my-requests');
     } catch (error: any) {
       console.error('Error submitting key request:', error);
       toast.error('Failed to submit request', {
@@ -75,18 +98,81 @@ export default function KeyRequestFormPage() {
     }
   };
 
-  return (
-    <div className="container mx-auto py-8 max-w-3xl">
-      <Button
-        variant="ghost"
-        onClick={() => navigate('/form-templates')}
-        className="mb-4"
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Templates
-      </Button>
+  // Success page
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="bg-primary text-primary-foreground py-6">
+          <div className="container mx-auto px-4">
+            <h1 className="text-2xl font-bold">NYSC Facilities Hub</h1>
+          </div>
+        </div>
 
-      <Card>
+        <div className="container mx-auto py-8 px-4 max-w-2xl">
+          <Card>
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+              <CardTitle className="text-2xl">Request Submitted Successfully!</CardTitle>
+              <CardDescription>
+                Your key request has been received and will be processed shortly
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <h3 className="font-semibold">What Happens Next?</h3>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                  <li>You'll receive an email confirmation at {formData.requestor_email}</li>
+                  <li>Your request will be reviewed by the facilities team</li>
+                  <li>You'll receive updates via email as your request is processed</li>
+                  <li>Keys will be ready for pickup once approved</li>
+                </ol>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => window.location.href = '/public-forms'}
+                >
+                  Submit Another Form
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => window.location.reload()}
+                >
+                  Done
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Standalone Header */}
+      <div className="bg-primary text-primary-foreground py-6">
+        <div className="container mx-auto px-4">
+          <Button
+            variant="ghost"
+            className="mb-2 text-primary-foreground hover:bg-primary-foreground/20"
+            onClick={() => window.location.href = '/public-forms'}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Forms
+          </Button>
+          <h1 className="text-3xl font-bold">NYSC Facilities Hub</h1>
+          <p className="text-lg opacity-90 mt-1">Key & Elevator Pass Request</p>
+        </div>
+      </div>
+
+      <div className="container mx-auto py-8 px-4 max-w-3xl">
+        <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-lg bg-blue-500/10">
@@ -242,7 +328,7 @@ export default function KeyRequestFormPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate('/form-templates')}
+                onClick={() => window.location.href = '/public-forms'}
                 className="flex-1"
               >
                 Cancel
@@ -265,6 +351,7 @@ export default function KeyRequestFormPage() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

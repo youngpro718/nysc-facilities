@@ -1,4 +1,4 @@
-import { ChevronLeft, QrCode, Download, Copy, Check, Users, Shield, Settings as SettingsIcon } from "lucide-react";
+import { ChevronLeft, QrCode, Download, Copy, Check, Users, Shield, Settings as SettingsIcon, Wrench, Building } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -237,12 +237,12 @@ export default function AdminProfile() {
 
                   <div className="flex items-center justify-between border-t pt-4">
                     <div className="space-y-0.5">
-                      <div className="font-medium">Dashboard Layout</div>
+                      <div className="font-medium">Display Settings</div>
                       <div className="text-xs text-muted-foreground">
-                        Customize your admin dashboard view
+                        Customize theme, appearance, and layout
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/settings?tab=dashboard')}>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/settings?tab=display')}>
                       Customize
                     </Button>
                   </div>
@@ -303,7 +303,7 @@ export default function AdminProfile() {
                       className="justify-start"
                       onClick={() => navigate('/operations')}
                     >
-                      <Shield className="h-4 w-4 mr-2" />
+                      <Wrench className="h-4 w-4 mr-2" />
                       Operations Hub
                     </Button>
                     <Button 
@@ -311,7 +311,7 @@ export default function AdminProfile() {
                       className="justify-start"
                       onClick={() => navigate('/spaces')}
                     >
-                      <Shield className="h-4 w-4 mr-2" />
+                      <Building className="h-4 w-4 mr-2" />
                       Spaces Management
                     </Button>
                   </div>

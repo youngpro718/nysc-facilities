@@ -237,15 +237,203 @@ export class PDFGenerationService {
     return doc;
   }
 
+  static generateElevatorPassForm(facilityEmail: string): jsPDF {
+    const doc = new jsPDF();
+    this.addHeader(doc, 'Elevator Pass Request');
+
+    let yPos = 60;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Simple request - One elevator pass per person.', 20, yPos);
+    yPos += 15;
+
+    yPos = this.addField(doc, 'Requestor Name', yPos);
+    yPos = this.addField(doc, 'Department', yPos);
+
+    this.addFooter(doc, facilityEmail);
+    return doc;
+  }
+
+  static generateKeyRequestForm(facilityEmail: string): jsPDF {
+    const doc = new jsPDF();
+    this.addHeader(doc, 'Key Request');
+
+    let yPos = 60;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Request room keys - Spare, replacement, or key issues.', 20, yPos);
+    yPos += 15;
+
+    yPos = this.addField(doc, 'Requestor Name', yPos);
+    yPos = this.addField(doc, 'Department', yPos);
+    yPos = this.addField(doc, 'Room Number', yPos);
+    yPos = this.addField(doc, 'Quantity Needed', yPos);
+    
+    doc.setFontSize(11);
+    doc.text('Request Type *:', 20, yPos);
+    doc.rect(20, yPos + 2, 5, 5);
+    doc.text('Spare', 28, yPos + 6);
+    doc.rect(70, yPos + 2, 5, 5);
+    doc.text('Replacement', 78, yPos + 6);
+    doc.rect(130, yPos + 2, 5, 5);
+    doc.text('Key Issue', 138, yPos + 6);
+    yPos += 15;
+
+    yPos = this.addTextArea(doc, 'Description of Issue (if applicable)', yPos, 3);
+
+    this.addFooter(doc, facilityEmail);
+    return doc;
+  }
+
+  static generatePaintingRequestForm(facilityEmail: string): jsPDF {
+    const doc = new jsPDF();
+    this.addHeader(doc, 'Room Painting Request');
+
+    let yPos = 60;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Request to have your room painted - Benjamin Moore colors only.', 20, yPos);
+    yPos += 15;
+
+    yPos = this.addField(doc, 'Requestor Name', yPos);
+    yPos = this.addField(doc, 'Department', yPos);
+    yPos = this.addField(doc, 'Room Number', yPos);
+    yPos = this.addField(doc, 'Wall Color (Benjamin Moore - Name & Number)', yPos);
+    yPos = this.addField(doc, 'Trim Color (Benjamin Moore - Name & Number)', yPos);
+    yPos = this.addTextArea(doc, 'Additional Notes', yPos, 3);
+
+    this.addFooter(doc, facilityEmail);
+    return doc;
+  }
+
+  static generateFlooringRequestForm(facilityEmail: string): jsPDF {
+    const doc = new jsPDF();
+    this.addHeader(doc, 'Flooring Request');
+
+    let yPos = 60;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Request carpet or VCT tile flooring installation.', 20, yPos);
+    yPos += 15;
+
+    yPos = this.addField(doc, 'Requestor Name', yPos);
+    yPos = this.addField(doc, 'Department', yPos);
+    yPos = this.addField(doc, 'Room Number', yPos);
+    
+    doc.setFontSize(11);
+    doc.text('Flooring Type *:', 20, yPos);
+    doc.rect(20, yPos + 2, 5, 5);
+    doc.text('Carpet', 28, yPos + 6);
+    doc.rect(80, yPos + 2, 5, 5);
+    doc.text('VCT Tiles', 88, yPos + 6);
+    yPos += 15;
+
+    yPos = this.addField(doc, 'Color/Style Preference', yPos);
+    yPos = this.addTextArea(doc, 'Reason for Request', yPos, 3);
+
+    this.addFooter(doc, facilityEmail);
+    return doc;
+  }
+
+  static generateLockDoorknobRequestForm(facilityEmail: string): jsPDF {
+    const doc = new jsPDF();
+    this.addHeader(doc, 'Lock & Doorknob Service');
+
+    let yPos = 60;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Lock change, doorknob repair, or key change request.', 20, yPos);
+    yPos += 15;
+
+    yPos = this.addField(doc, 'Requestor Name', yPos);
+    yPos = this.addField(doc, 'Department', yPos);
+    yPos = this.addField(doc, 'Room Number', yPos);
+    
+    doc.setFontSize(11);
+    doc.text('Service Type *:', 20, yPos);
+    doc.rect(20, yPos + 2, 5, 5);
+    doc.text('Lock Change', 28, yPos + 6);
+    doc.rect(80, yPos + 2, 5, 5);
+    doc.text('Doorknob Repair', 88, yPos + 6);
+    doc.rect(145, yPos + 2, 5, 5);
+    doc.text('Key Change', 153, yPos + 6);
+    yPos += 15;
+
+    yPos = this.addTextArea(doc, 'Description of Issue', yPos, 3);
+    
+    doc.setFontSize(11);
+    doc.text('Urgency Level *:', 20, yPos);
+    doc.rect(20, yPos + 2, 5, 5);
+    doc.text('Low', 28, yPos + 6);
+    doc.rect(55, yPos + 2, 5, 5);
+    doc.text('Medium', 63, yPos + 6);
+    doc.rect(100, yPos + 2, 5, 5);
+    doc.text('High', 108, yPos + 6);
+    doc.rect(135, yPos + 2, 5, 5);
+    doc.text('Emergency', 143, yPos + 6);
+    yPos += 15;
+
+    this.addFooter(doc, facilityEmail);
+    return doc;
+  }
+
+  static generateRoomModificationRequestForm(facilityEmail: string): jsPDF {
+    const doc = new jsPDF();
+    this.addHeader(doc, 'Room Modification Request');
+
+    let yPos = 60;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Track any physical changes to room structure or features.', 20, yPos);
+    yPos += 15;
+
+    yPos = this.addField(doc, 'Requestor Name', yPos);
+    yPos = this.addField(doc, 'Department', yPos);
+    yPos = this.addField(doc, 'Room Number', yPos);
+    yPos = this.addField(doc, 'Type of Modification', yPos);
+    yPos = this.addTextArea(doc, 'Detailed Description', yPos, 4);
+    yPos = this.addTextArea(doc, 'Reason for Change', yPos, 3);
+    yPos = this.addField(doc, 'Expected Timeline', yPos);
+
+    this.addFooter(doc, facilityEmail);
+    return doc;
+  }
+
   static async downloadForm(formType: string) {
     const facilityEmail = await getFacilityEmail();
     let doc: jsPDF;
     let filename: string;
 
     switch (formType) {
+      case 'elevator-pass-request':
+        doc = this.generateElevatorPassForm(facilityEmail);
+        filename = 'Elevator_Pass_Request.pdf';
+        break;
       case 'key-request':
-        doc = this.generateKeyElevatorPassForm();
-        filename = 'Key_Elevator_Pass_Request.pdf';
+        doc = this.generateKeyRequestForm(facilityEmail);
+        filename = 'Key_Request.pdf';
+        break;
+      case 'painting-request':
+        doc = this.generatePaintingRequestForm(facilityEmail);
+        filename = 'Room_Painting_Request.pdf';
+        break;
+      case 'flooring-request':
+        doc = this.generateFlooringRequestForm(facilityEmail);
+        filename = 'Flooring_Request.pdf';
+        break;
+      case 'lock-doorknob-request':
+        doc = this.generateLockDoorknobRequestForm(facilityEmail);
+        filename = 'Lock_Doorknob_Service.pdf';
+        break;
+      case 'room-modification-request':
+        doc = this.generateRoomModificationRequestForm(facilityEmail);
+        filename = 'Room_Modification_Request.pdf';
         break;
       case 'major-work-request':
         doc = this.generateMajorWorkRequestForm(facilityEmail);

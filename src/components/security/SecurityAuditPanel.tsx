@@ -1,43 +1,32 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Shield, Activity, Users, AlertTriangle, RotateCcw, Clock, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
+import { Shield, Activity, AlertTriangle, RotateCcw, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { RateLimitManager } from '@/components/admin/RateLimitManager';
 
 interface SecurityEvent {
   id: string;
-  user_id: string;
   action: string;
   resource_type: string;
-  resource_id?: string;
-  details: any;
-  ip_address?: string | null;
-  user_agent?: string;
   created_at: string;
 }
 
 interface RateLimit {
   id: number;
   identifier: string;
-  attempt_type: string;
   attempts: number;
-  first_attempt?: string;
-  last_attempt: string;
   blocked_until?: string;
 }
 
 export function SecurityAuditPanel() {
   const { isAdmin } = useAuth();
-  const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
-  const [rateLimits, setRateLimits] = useState<RateLimit[]>([]);
+  const [recentEvents, setRecentEvents] = useState<SecurityEvent[]>([]);
+  const [activeBlocks, setActiveBlocks] = useState<RateLimit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
-  const [showManager, setShowManager] = useState(false);
 
   const fetchSecurityData = async () => {
     if (!isAdmin) return;
@@ -45,33 +34,36 @@ export function SecurityAuditPanel() {
     try {
       setIsLoading(true);
 
-      // Fetch recent security events
+      // Fetch only recent failed/blocked events (last 10)
       const { data: events, error: eventsError } = await supabase
         .from('security_audit_log')
-        .select('*')
+        .select('id, action, resource_type, created_at')
+        .or('action.ilike.%failed%,action.ilike.%blocked%')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(10);
 
-      if (eventsError) throw eventsError;
+      if (eventsError) {
+        console.error('Events error:', eventsError);
+      }
 
-      // Fetch rate limit data (prefer canonical table)
+      // Fetch only currently blocked users
       const { data: limits, error: limitsError } = await supabase
         .from('security_rate_limits')
-        .select('*')
-        .order('last_attempt', { ascending: false })
-        .limit(20);
+        .select('id, identifier, attempts, blocked_until')
+        .not('blocked_until', 'is', null)
+        .gte('blocked_until', new Date().toISOString())
+        .limit(10);
 
-      if (limitsError) throw limitsError;
+      if (limitsError) {
+        console.error('Limits error:', limitsError);
+      }
 
-      setSecurityEvents((events || []).map(event => ({
-        ...event,
-        ip_address: String(event.ip_address || 'unknown')
-      })));
-      setRateLimits(limits || []);
+      setRecentEvents(events || []);
+      setActiveBlocks(limits || []);
       setLastRefreshedAt(new Date());
     } catch (error) {
       console.error('Failed to fetch security data:', error);
-      toast.error('Failed to load security audit data');
+      toast.error('Failed to load security data');
     } finally {
       setIsLoading(false);
     }
@@ -81,30 +73,6 @@ export function SecurityAuditPanel() {
     fetchSecurityData();
   }, [isAdmin]);
 
-  const getActionBadgeVariant = (action: string) => {
-    if (action.includes('failed') || action.includes('blocked')) return 'destructive';
-    if (action.includes('role') || action.includes('admin')) return 'default';
-    return 'secondary';
-  };
-
-  const getAttemptsBadgeVariant = (attempts: number, blockedUntil?: string) => {
-    if (blockedUntil && new Date(blockedUntil) > new Date()) return 'destructive';
-    if (attempts >= 3) return 'destructive';
-    if (attempts >= 2) return 'secondary';
-    return 'default';
-  };
-
-  // Derived summary stats
-  const summary = useMemo(() => {
-    const totalEvents = securityEvents.length;
-    const failedOrBlockedEvents = securityEvents.filter(e =>
-      /failed|blocked/i.test(e.action)
-    ).length;
-    const activeBlocks = rateLimits.filter(r => r.blocked_until && new Date(r.blocked_until) > new Date()).length;
-    const recentWindowMs = 1000 * 60 * 60; // 1 hour
-    const recentEvents = securityEvents.filter(e => new Date(e.created_at).getTime() > Date.now() - recentWindowMs).length;
-    return { totalEvents, failedOrBlockedEvents, activeBlocks, recentEvents };
-  }, [securityEvents, rateLimits]);
 
   if (!isAdmin) {
     return (
@@ -120,161 +88,126 @@ export function SecurityAuditPanel() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
-            <Shield className="h-6 w-6" />
-            Security Audit Panel
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Security Overview
           </h2>
-          <p className="text-muted-foreground">Monitor security events and authentication attempts. Use this panel to understand recent activity and any active rate-limit blocks.</p>
+          <p className="text-sm text-muted-foreground">Monitor failed login attempts and blocked users</p>
         </div>
-        <Button onClick={fetchSecurityData} disabled={isLoading}>
+        <Button onClick={fetchSecurityData} disabled={isLoading} size="sm">
           <RotateCcw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Events (50 latest)</span>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="text-2xl font-semibold mt-1">{summary.totalEvents}</div>
-            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" /> Updated {lastRefreshedAt ? lastRefreshedAt.toLocaleTimeString() : '—'}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Failed/Blocked</div>
-            <div className="text-2xl font-semibold mt-1">{summary.failedOrBlockedEvents}</div>
-            <div className="text-xs text-muted-foreground mt-1">Across recent events</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Active Blocks</div>
-            <div className="text-2xl font-semibold mt-1">{summary.activeBlocks}</div>
-            <div className="text-xs text-muted-foreground mt-1">Users currently blocked</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Events (last hour)</div>
-            <div className="text-2xl font-semibold mt-1">{summary.recentEvents}</div>
-            <div className="text-xs text-muted-foreground mt-1">Spike may indicate abuse</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Security Events */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Recent Security Events
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Recent Failed Attempts
             </CardTitle>
-            <CardDescription>
-              Latest security-related actions and events. Failed or blocked actions are highlighted.
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[400px]">
-              {securityEvents.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No security events found</p>
-              ) : (
-                <div className="space-y-3">
-                  {securityEvents.map((event) => (
-                    <div key={event.id} className="p-3 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant={getActionBadgeVariant(event.action)}>
-                          {event.action}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(event.created_at).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium">{event.resource_type}</p>
-                      {event.details && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {JSON.stringify(event.details, null, 2)}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
+            <div className="text-2xl font-bold">{recentEvents.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Last 10 failed or blocked events
+            </p>
           </CardContent>
         </Card>
 
-        {/* Rate Limiting */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Rate Limit Status
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Currently Blocked Users
             </CardTitle>
-            <CardDescription>
-              Authentication attempt monitoring and rate limiting. Attempts show how many recent actions were recorded; a "Blocked until" value means further attempts are temporarily denied.
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[400px]">
-              {rateLimits.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No rate limit data found</p>
-              ) : (
-                <div className="space-y-3">
-                  {rateLimits.map((limit) => (
-                    <div key={limit.id} className="p-3 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant={getAttemptsBadgeVariant(limit.attempts, limit.blocked_until)}>
-                          {limit.attempts} attempts
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {limit.attempt_type}
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium">{limit.identifier}</p>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        <p>Last: {new Date(limit.last_attempt).toLocaleString()}</p>
-                        {limit.blocked_until && new Date(limit.blocked_until) > new Date() && (
-                          <p className="text-destructive font-medium">
-                            Blocked until: {new Date(limit.blocked_until).toLocaleString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
+            <div className="text-2xl font-bold">{activeBlocks.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Users temporarily blocked from logging in
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Optional management tools */}
-      <div className="border rounded-lg">
-        <button
-          type="button"
-          className="w-full flex items-center justify-between px-4 py-3 text-left"
-          onClick={() => setShowManager(v => !v)}
-        >
-          <span className="font-medium">Manage Rate Limits</span>
-          {showManager ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </button>
-        {showManager && (
-          <div className="p-4">
-            <RateLimitManager />
-          </div>
-        )}
-      </div>
+      {/* Recent Failed Events */}
+      {recentEvents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Recent Failed Events</CardTitle>
+            <CardDescription>Last 10 failed or blocked security events</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {recentEvents.map((event) => (
+                <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{event.action}</p>
+                    <p className="text-xs text-muted-foreground">{event.resource_type}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(event.created_at).toLocaleTimeString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Active Blocks */}
+      {activeBlocks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Blocked Users</CardTitle>
+            <CardDescription>Users currently blocked from authentication</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {activeBlocks.map((limit) => (
+                <div key={limit.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{limit.identifier}</p>
+                    <p className="text-xs text-muted-foreground">{limit.attempts} failed attempts</p>
+                  </div>
+                  <Badge variant="destructive">Blocked</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty State */}
+      {recentEvents.length === 0 && activeBlocks.length === 0 && !isLoading && (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">No security issues detected</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Last updated: {lastRefreshedAt ? lastRefreshedAt.toLocaleTimeString() : 'Never'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Clock className="h-5 w-5 animate-spin" />
+              <p className="text-muted-foreground">Loading security data...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

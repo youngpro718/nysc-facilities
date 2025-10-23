@@ -47,18 +47,20 @@ export function AdminConfirmationDialog({
               </>
             )}
           </AlertDialogTitle>
-          <AlertDialogDescription className="space-y-4">
-            <p>
-              {isPromotion ? (
-                <>
-                  You are about to promote <strong>{user.first_name} {user.last_name}</strong> to administrator.
-                </>
-              ) : (
-                <>
-                  You are about to remove admin privileges from <strong>{user.first_name} {user.last_name}</strong>.
-                </>
-              )}
-            </p>
+          <div className="space-y-4">
+            <AlertDialogDescription asChild>
+              <p>
+                {isPromotion ? (
+                  <>
+                    You are about to promote <strong>{user.first_name} {user.last_name}</strong> to administrator.
+                  </>
+                ) : (
+                  <>
+                    You are about to remove admin privileges from <strong>{user.first_name} {user.last_name}</strong>.
+                  </>
+                )}
+              </p>
+            </AlertDialogDescription>
             
             <div className={`p-4 rounded-lg border ${isPromotion ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
               <div className="flex items-start gap-3">
@@ -94,7 +96,7 @@ export function AdminConfirmationDialog({
                 </p>
               </div>
             )}
-          </AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>

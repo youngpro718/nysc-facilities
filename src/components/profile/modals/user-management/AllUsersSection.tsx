@@ -103,7 +103,7 @@ export function AllUsersSection({
 
     setSaving(true);
     try {
-      // Update title
+      // Update title first (no type conflicts)
       const { error: titleError } = await supabase
         .from('profiles')
         .update({ title: editTitle })
@@ -111,19 +111,43 @@ export function AllUsersSection({
 
       if (titleError) throw titleError;
 
-      // Update role via RPC
-      const { data, error: roleError } = await supabase.rpc('admin_update_user_role', {
-        target_user_id: editingUser.id,
-        new_role: editRole
-      });
-
-      if (roleError) throw roleError;
-      if (!data?.success) throw new Error(data?.message || 'Failed to update role');
+      // Update role separately to avoid function overloading issues
+      // Use RPC function if available, otherwise direct update
+      try {
+        const { error: roleError } = await supabase.rpc('admin_update_user_role', {
+          target_user_id: editingUser.id,
+          new_role: editRole
+        });
+        
+        if (roleError) {
+          // Fallback to direct update if RPC doesn't exist
+          const { error: directError } = await supabase
+            .from('profiles')
+            .update({ role: editRole })
+            .eq('id', editingUser.id);
+          
+          if (directError) throw directError;
+        }
+      } catch (rpcError: any) {
+        // If RPC function doesn't exist, try direct update
+        if (rpcError.code === '42883') { // Function does not exist
+          const { error: directError } = await supabase
+            .from('profiles')
+            .update({ role: editRole })
+            .eq('id', editingUser.id);
+          
+          if (directError) throw directError;
+        } else {
+          throw rpcError;
+        }
+      }
 
       toast.success("User role updated successfully");
       setEditingUser(null);
       setEditRole("");
       setEditTitle("");
+      
+      // Parent component will refresh the users list automatically
     } catch (error: any) {
       console.error('Error updating role:', error);
       toast.error(error.message || "Failed to update role");

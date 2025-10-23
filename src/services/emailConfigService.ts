@@ -15,6 +15,7 @@ export async function getFacilityEmail(): Promise<string> {
     const { data, error } = await supabase
       .from('system_settings')
       .select('admin_email')
+      .limit(1)
       .single();
 
     if (error) {
@@ -22,7 +23,12 @@ export async function getFacilityEmail(): Promise<string> {
       return DEFAULT_EMAIL;
     }
 
-    cachedEmail = data?.admin_email || DEFAULT_EMAIL;
+    // Handle empty email or no data
+    if (!data || !data.admin_email || data.admin_email.trim() === '') {
+      return DEFAULT_EMAIL;
+    }
+
+    cachedEmail = data.admin_email;
     return cachedEmail;
   } catch (error) {
     console.error('Error in getFacilityEmail:', error);

@@ -9,21 +9,19 @@ export interface AdminActionResult {
 export function useEnhancedAdminControls() {
   const fixUserAccount = async (userId: string): Promise<AdminActionResult> => {
     try {
-      const { data, error } = await supabase.rpc('admin_fix_user_account', {
-        target_user_id: userId
-      });
+      // Fix common account issues: verify and approve user
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          verification_status: 'verified',
+          is_approved: true
+        })
+        .eq('id', userId);
 
       if (error) throw error;
 
-      const result = data as AdminActionResult;
-      
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-
-      return result;
+      toast.success('User account fixed successfully');
+      return { success: true, message: 'User account fixed successfully' };
     } catch (error) {
       console.error('Error fixing user account:', error);
       toast.error('Failed to fix user account');
@@ -33,22 +31,19 @@ export function useEnhancedAdminControls() {
 
   const suspendUser = async (userId: string, reason?: string): Promise<AdminActionResult> => {
     try {
-      const { data, error } = await supabase.rpc('admin_suspend_user', {
-        target_user_id: userId,
-        p_reason: reason
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          is_suspended: true,
+          suspension_reason: reason,
+          suspended_at: new Date().toISOString()
+        })
+        .eq('id', userId);
 
       if (error) throw error;
 
-      const result = data as AdminActionResult;
-      
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-
-      return result;
+      toast.success('User suspended successfully');
+      return { success: true, message: 'User suspended successfully' };
     } catch (error) {
       console.error('Error suspending user:', error);
       toast.error('Failed to suspend user');
@@ -58,21 +53,19 @@ export function useEnhancedAdminControls() {
 
   const unsuspendUser = async (userId: string): Promise<AdminActionResult> => {
     try {
-      const { data, error } = await supabase.rpc('admin_unsuspend_user', {
-        target_user_id: userId
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          is_suspended: false,
+          suspension_reason: null,
+          suspended_at: null
+        })
+        .eq('id', userId);
 
       if (error) throw error;
 
-      const result = data as AdminActionResult;
-      
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-
-      return result;
+      toast.success('User unsuspended successfully');
+      return { success: true, message: 'User unsuspended successfully' };
     } catch (error) {
       console.error('Error unsuspending user:', error);
       toast.error('Failed to unsuspend user');
@@ -92,27 +85,20 @@ export function useEnhancedAdminControls() {
     }
   ): Promise<AdminActionResult> => {
     try {
-      const { data, error } = await supabase.rpc('admin_update_user_profile', {
-        target_user_id: userId,
-        p_first_name: updates.first_name,
-        p_last_name: updates.last_name,
-        p_email: updates.email,
-        p_department_id: updates.department_id,
-        p_title: updates.title,
-        p_access_level: updates.access_level
-      });
+      // Filter out undefined values
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, v]) => v !== undefined)
+      );
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(cleanUpdates)
+        .eq('id', userId);
 
       if (error) throw error;
 
-      const result = data as AdminActionResult;
-      
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-
-      return result;
+      toast.success('User profile updated successfully');
+      return { success: true, message: 'User profile updated successfully' };
     } catch (error) {
       console.error('Error updating user profile:', error);
       toast.error('Failed to update user profile');
@@ -127,24 +113,27 @@ export function useEnhancedAdminControls() {
     accessLevel?: string
   ): Promise<AdminActionResult> => {
     try {
-      const { data, error } = await supabase.rpc('admin_override_verification', {
-        target_user_id: userId,
-        p_verification_status: verificationStatus,
-        p_is_approved: isApproved,
-        p_access_level: accessLevel
-      });
+      const updates: any = {
+        verification_status: verificationStatus
+      };
+      
+      if (isApproved !== undefined) {
+        updates.is_approved = isApproved;
+      }
+      
+      if (accessLevel) {
+        updates.access_level = accessLevel;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
 
       if (error) throw error;
 
-      const result = data as AdminActionResult;
-      
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-
-      return result;
+      toast.success('Verification status updated successfully');
+      return { success: true, message: 'Verification status updated successfully' };
     } catch (error) {
       console.error('Error overriding verification:', error);
       toast.error('Failed to override verification');
