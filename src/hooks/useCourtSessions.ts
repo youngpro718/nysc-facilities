@@ -59,7 +59,7 @@ export function useCreateCourtSession() {
           ...input,
           created_by: user?.id,
         })
-        .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, notes, created_by, updated_by, created_at, updated_at')
+        .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, parts_entered_by, defendants, purpose, date_transferred_or_started, top_charge, attorney, notes, created_by, updated_by, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -110,7 +110,7 @@ export function useUpdateCourtSession() {
           updated_by: user?.id,
         })
         .eq('id', id)
-        .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, notes, created_by, updated_by, created_at, updated_at')
+        .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, parts_entered_by, defendants, purpose, date_transferred_or_started, top_charge, attorney, notes, created_by, updated_by, created_at, updated_at')
         .single();
 
       if (error) throw error;
