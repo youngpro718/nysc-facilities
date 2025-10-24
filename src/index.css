@@ -1,12 +1,10 @@
-
 @import "./styles/mobile-safe-area.css";
 @import './styles/design-tokens.css';
 @import './styles/ios-compatibility.css';
+@import './styles/mobile-buttons.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import './styles/mobile-buttons.css';
  
 @layer base {
   :root {

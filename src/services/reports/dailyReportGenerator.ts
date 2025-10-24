@@ -1,13 +1,11 @@
-import * as pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
 import { format } from 'date-fns';
 import { CourtSession, CoverageAssignment, SessionPeriod, BuildingCode } from '@/types/courtSessions';
 
 // Initialize pdfMake with fonts
-if (pdfFonts && (pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
-  (pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
-}
+(pdfMake as any).vfs = pdfFonts;
 
 export interface DailyReportOptions {
   date: Date;

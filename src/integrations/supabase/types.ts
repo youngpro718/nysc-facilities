@@ -814,6 +814,102 @@ export type Database = {
           },
         ]
       }
+      court_sessions: {
+        Row: {
+          assignment_id: string | null
+          attorney: string | null
+          building_code: string
+          clerk_names: string[] | null
+          court_room_id: string
+          created_at: string | null
+          created_by: string | null
+          date_transferred_or_started: string | null
+          defendants: string | null
+          estimated_finish_date: string | null
+          id: string
+          judge_name: string | null
+          notes: string | null
+          part_number: string | null
+          parts_entered_by: string | null
+          period: Database["public"]["Enums"]["session_period"]
+          purpose: string | null
+          sergeant_name: string | null
+          session_date: string
+          status: string
+          status_detail: string | null
+          top_charge: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          attorney?: string | null
+          building_code: string
+          clerk_names?: string[] | null
+          court_room_id: string
+          created_at?: string | null
+          created_by?: string | null
+          date_transferred_or_started?: string | null
+          defendants?: string | null
+          estimated_finish_date?: string | null
+          id?: string
+          judge_name?: string | null
+          notes?: string | null
+          part_number?: string | null
+          parts_entered_by?: string | null
+          period?: Database["public"]["Enums"]["session_period"]
+          purpose?: string | null
+          sergeant_name?: string | null
+          session_date: string
+          status?: string
+          status_detail?: string | null
+          top_charge?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          attorney?: string | null
+          building_code?: string
+          clerk_names?: string[] | null
+          court_room_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          date_transferred_or_started?: string | null
+          defendants?: string | null
+          estimated_finish_date?: string | null
+          id?: string
+          judge_name?: string | null
+          notes?: string | null
+          part_number?: string | null
+          parts_entered_by?: string | null
+          period?: Database["public"]["Enums"]["session_period"]
+          purpose?: string | null
+          sergeant_name?: string | null
+          session_date?: string
+          status?: string
+          status_detail?: string | null
+          top_charge?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_sessions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "court_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "court_sessions_court_room_id_fkey"
+            columns: ["court_room_id"]
+            isOneToOne: false
+            referencedRelation: "court_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       court_terms: {
         Row: {
           courtroom_assignments: Json | null
@@ -874,6 +970,116 @@ export type Database = {
           term_status?: string | null
           updated_at?: string | null
           uploaded_pdf_path?: string | null
+        }
+        Relationships: []
+      }
+      coverage_assignments: {
+        Row: {
+          absence_reason: string | null
+          absent_staff_id: string | null
+          absent_staff_name: string
+          absent_staff_role: string
+          building_code: string
+          court_room_id: string
+          coverage_date: string
+          covering_staff_id: string | null
+          covering_staff_name: string
+          created_at: string | null
+          created_by: string | null
+          end_time: string | null
+          id: string
+          notes: string | null
+          period: Database["public"]["Enums"]["session_period"]
+          start_time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          absence_reason?: string | null
+          absent_staff_id?: string | null
+          absent_staff_name: string
+          absent_staff_role: string
+          building_code: string
+          court_room_id: string
+          coverage_date: string
+          covering_staff_id?: string | null
+          covering_staff_name: string
+          created_at?: string | null
+          created_by?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          period?: Database["public"]["Enums"]["session_period"]
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          absence_reason?: string | null
+          absent_staff_id?: string | null
+          absent_staff_name?: string
+          absent_staff_role?: string
+          building_code?: string
+          court_room_id?: string
+          coverage_date?: string
+          covering_staff_id?: string | null
+          covering_staff_name?: string
+          created_at?: string | null
+          created_by?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          period?: Database["public"]["Enums"]["session_period"]
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_assignments_court_room_id_fkey"
+            columns: ["court_room_id"]
+            isOneToOne: false
+            referencedRelation: "court_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_report_notes: {
+        Row: {
+          available_hrgs: string | null
+          building_code: string
+          coverage_summary: string | null
+          created_at: string | null
+          created_by: string | null
+          general_notes: string | null
+          id: string
+          period: Database["public"]["Enums"]["session_period"]
+          report_date: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          available_hrgs?: string | null
+          building_code?: string
+          coverage_summary?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          general_notes?: string | null
+          id?: string
+          period?: Database["public"]["Enums"]["session_period"]
+          report_date: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          available_hrgs?: string | null
+          building_code?: string
+          coverage_summary?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          general_notes?: string | null
+          id?: string
+          period?: Database["public"]["Enums"]["session_period"]
+          report_date?: string
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -1749,6 +1955,51 @@ export type Database = {
           submission_method?: string | null
           updated_at?: string | null
           uploaded_by?: string
+        }
+        Relationships: []
+      }
+      form_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          fields: Json
+          id: string
+          is_active: boolean | null
+          pdf_config: Json | null
+          sections: Json
+          template_name: string
+          template_type: string
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean | null
+          pdf_config?: Json | null
+          sections?: Json
+          template_name: string
+          template_type: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean | null
+          pdf_config?: Json | null
+          sections?: Json
+          template_name?: string
+          template_type?: string
+          updated_at?: string | null
+          version?: number | null
         }
         Relationships: []
       }
@@ -3645,7 +3896,7 @@ export type Database = {
         Row: {
           assigned_technician: string | null
           created_at: string | null
-          estimated_duration: unknown | null
+          estimated_duration: unknown
           fixture_id: string | null
           id: string
           notes: string | null
@@ -3658,7 +3909,7 @@ export type Database = {
         Insert: {
           assigned_technician?: string | null
           created_at?: string | null
-          estimated_duration?: unknown | null
+          estimated_duration?: unknown
           fixture_id?: string | null
           id?: string
           notes?: string | null
@@ -3671,7 +3922,7 @@ export type Database = {
         Update: {
           assigned_technician?: string | null
           created_at?: string | null
-          estimated_duration?: unknown | null
+          estimated_duration?: unknown
           fixture_id?: string | null
           id?: string
           notes?: string | null
@@ -3719,7 +3970,7 @@ export type Database = {
           completed_date: string | null
           completion_notes: string | null
           created_at: string | null
-          estimated_duration: unknown | null
+          estimated_duration: unknown
           fixture_id: string | null
           id: string
           maintenance_type: string
@@ -3737,7 +3988,7 @@ export type Database = {
           completed_date?: string | null
           completion_notes?: string | null
           created_at?: string | null
-          estimated_duration?: unknown | null
+          estimated_duration?: unknown
           fixture_id?: string | null
           id?: string
           maintenance_type: string
@@ -3755,7 +4006,7 @@ export type Database = {
           completed_date?: string | null
           completion_notes?: string | null
           created_at?: string | null
-          estimated_duration?: unknown | null
+          estimated_duration?: unknown
           fixture_id?: string | null
           id?: string
           maintenance_type?: string
@@ -5366,21 +5617,21 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_id: string | null
         }
         Insert: {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_id?: string | null
         }
         Update: {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_id?: string | null
         }
         Relationships: []
@@ -5391,7 +5642,7 @@ export type Database = {
           attempts: number | null
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_id: string | null
         }
         Insert: {
@@ -5399,7 +5650,7 @@ export type Database = {
           attempts?: number | null
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_id?: string | null
         }
         Update: {
@@ -5407,7 +5658,7 @@ export type Database = {
           attempts?: number | null
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_id?: string | null
         }
         Relationships: []
@@ -5842,7 +6093,7 @@ export type Database = {
       }
       room_health_metrics: {
         Row: {
-          avg_resolution_time: unknown | null
+          avg_resolution_time: unknown
           created_at: string | null
           critical_issues_count: number | null
           health_score: number | null
@@ -5859,7 +6110,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          avg_resolution_time?: unknown | null
+          avg_resolution_time?: unknown
           created_at?: string | null
           critical_issues_count?: number | null
           health_score?: number | null
@@ -5876,7 +6127,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          avg_resolution_time?: unknown | null
+          avg_resolution_time?: unknown
           created_at?: string | null
           critical_issues_count?: number | null
           health_score?: number | null
@@ -6827,7 +7078,7 @@ export type Database = {
           created_at: string | null
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resource_id: string | null
           resource_type: string | null
           timestamp: string | null
@@ -6839,7 +7090,7 @@ export type Database = {
           created_at?: string | null
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string | null
           timestamp?: string | null
@@ -6851,7 +7102,7 @@ export type Database = {
           created_at?: string | null
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string | null
           timestamp?: string | null
@@ -7048,7 +7299,7 @@ export type Database = {
           created_at: string | null
           error_message: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           operation_details: Json | null
           operation_type: string
           success: boolean
@@ -7060,7 +7311,7 @@ export type Database = {
           created_at?: string | null
           error_message?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation_details?: Json | null
           operation_type: string
           success: boolean
@@ -7072,7 +7323,7 @@ export type Database = {
           created_at?: string | null
           error_message?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation_details?: Json | null
           operation_type?: string
           success?: boolean
@@ -9012,31 +9263,28 @@ export type Database = {
       }
     }
     Functions: {
-      add_admin_user: {
-        Args: { email_to_promote: string }
-        Returns: undefined
-      }
-      adjust_inventory_quantity: {
-        Args:
-          | {
+      add_admin_user: { Args: { email_to_promote: string }; Returns: undefined }
+      adjust_inventory_quantity:
+        | {
+            Args: {
+              p_item_id: string
+              p_notes?: string
+              p_quantity_change: number
+              p_transaction_type: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
               p_item_id: string
               p_notes?: string
               p_quantity_change: number
               p_reference_id?: string
               p_transaction_type: string
             }
-          | {
-              p_item_id: string
-              p_notes?: string
-              p_quantity_change: number
-              p_transaction_type: string
-            }
-        Returns: undefined
-      }
-      admin_bulk_update_roles: {
-        Args: { updates: Json[] }
-        Returns: Json
-      }
+            Returns: undefined
+          }
+      admin_bulk_update_roles: { Args: { updates: Json[] }; Returns: Json }
       admin_fix_user_account: {
         Args: { target_user_id: string }
         Returns: Json
@@ -9063,10 +9311,7 @@ export type Database = {
         Args: { p_reason?: string; target_user_id: string }
         Returns: Json
       }
-      admin_unsuspend_user: {
-        Args: { target_user_id: string }
-        Returns: Json
-      }
+      admin_unsuspend_user: { Args: { target_user_id: string }; Returns: Json }
       admin_update_user_profile: {
         Args: {
           p_access_level?: string
@@ -9079,15 +9324,15 @@ export type Database = {
         }
         Returns: Json
       }
-      admin_update_user_role: {
-        Args:
-          | {
+      admin_update_user_role:
+        | {
+            Args: {
               new_role: Database["public"]["Enums"]["user_role"]
               target_user_id: string
             }
-          | { new_role: string; target_user_id: string }
-        Returns: Json
-      }
+            Returns: Json
+          }
+        | { Args: { new_role: string; target_user_id: string }; Returns: Json }
       admin_verify_and_approve: {
         Args: { target_user_id: string }
         Returns: Json
@@ -9105,10 +9350,7 @@ export type Database = {
         Args: { p_fulfilled_by?: string; p_notes?: string; p_order_id: string }
         Returns: undefined
       }
-      approve_user: {
-        Args: { user_id: string }
-        Returns: undefined
-      }
+      approve_user: { Args: { user_id: string }; Returns: undefined }
       assign_absence_coverage: {
         Args: {
           p_absence_id: string
@@ -9117,12 +9359,12 @@ export type Database = {
         }
         Returns: undefined
       }
-      assign_key_if_available: {
-        Args:
-          | { is_spare?: boolean; key_id: string; occupant_id: string }
-          | { key_id: string; occupant_id: string }
-        Returns: Json
-      }
+      assign_key_if_available:
+        | { Args: { key_id: string; occupant_id: string }; Returns: Json }
+        | {
+            Args: { is_spare?: boolean; key_id: string; occupant_id: string }
+            Returns: Json
+          }
       assign_user_role: {
         Args: {
           new_role: Database["public"]["Enums"]["user_role"]
@@ -9131,22 +9373,25 @@ export type Database = {
         }
         Returns: undefined
       }
-      audit_sensitive_access: {
-        Args:
-          | {
-              p_action: string
-              p_context: Json
-              p_target_id_text: string
-              p_target_table: string
-            }
-          | {
+      audit_sensitive_access:
+        | {
+            Args: {
               p_action: string
               p_context?: Json
               p_target_id?: string
               p_target_table: string
             }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_action: string
+              p_context: Json
+              p_target_id_text: string
+              p_target_table: string
+            }
+            Returns: undefined
+          }
       audit_user_action: {
         Args: { action_type: string; details?: Json; target_resource: string }
         Returns: undefined
@@ -9160,10 +9405,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      begin_transaction: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      begin_transaction: { Args: never; Returns: undefined }
       bulk_update_assignment_status: {
         Args: {
           assignment_ids: string[]
@@ -9176,42 +9418,49 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
-      change_user_password: {
-        Args: { new_password: string }
-        Returns: Json
-      }
-      check_admin_privileges: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      check_admin_status: {
-        Args: { user_email?: string } | { user_id: string }
-        Returns: boolean
-      }
-      check_production_security: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      check_rate_limit: {
-        Args:
-          | {
-              action_name: string
-              max_attempts?: number
-              window_minutes?: number
-            }
-          | {
-              action_type: string
-              max_attempts?: number
-              time_window?: unknown
-            }
-          | {
+      change_user_password: { Args: { new_password: string }; Returns: Json }
+      check_admin_privileges: { Args: never; Returns: boolean }
+      check_admin_status:
+        | { Args: { user_id: string }; Returns: boolean }
+        | {
+            Args: { user_email?: string }
+            Returns: {
+              access_level_text: string
+              email: string
+              is_admin: boolean
+              is_approved: boolean
+              profile_exists: boolean
+              role_in_user_roles: string
+              user_id: string
+            }[]
+          }
+      check_production_security: { Args: never; Returns: Json }
+      check_rate_limit:
+        | {
+            Args: {
               p_attempt_type: string
               p_identifier: string
               p_max_attempts?: number
               p_window_minutes?: number
             }
-        Returns: boolean
-      }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              action_type: string
+              max_attempts?: number
+              time_window?: unknown
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              action_name: string
+              max_attempts?: number
+              window_minutes?: number
+            }
+            Returns: boolean
+          }
       check_relocation_conflicts: {
         Args: { p_end_date: string; p_room_id: string; p_start_date: string }
         Returns: {
@@ -9221,26 +9470,11 @@ export type Database = {
           conflicting_relocation_id: string
         }[]
       }
-      check_security_compliance: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_backups: {
-        Args: { policy_id: string }
-        Returns: undefined
-      }
-      cleanup_rate_limits: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      clear_app_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      commit_transaction: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      check_security_compliance: { Args: never; Returns: undefined }
+      cleanup_old_backups: { Args: { policy_id: string }; Returns: undefined }
+      cleanup_rate_limits: { Args: never; Returns: undefined }
+      clear_app_cache: { Args: never; Returns: Json }
+      commit_transaction: { Args: never; Returns: undefined }
       complete_backup_restoration: {
         Args: { error_msg?: string; restoration_id: string; success: boolean }
         Returns: undefined
@@ -9293,7 +9527,7 @@ export type Database = {
         Returns: undefined
       }
       detect_overdue_assignments: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           assigned_at: string
           assignment_id: string
@@ -9323,10 +9557,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      enhanced_security_monitor: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      enhanced_security_monitor: { Args: never; Returns: Json }
       ensure_admin_user: {
         Args: { user_email: string }
         Returns: {
@@ -9370,14 +9601,8 @@ export type Database = {
         Args: { p_fulfillment_notes?: string; p_request_id: string }
         Returns: undefined
       }
-      generate_issue_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_receipt_number: {
-        Args: { p_type: string }
-        Returns: string
-      }
+      generate_issue_number: { Args: never; Returns: string }
+      generate_receipt_number: { Args: { p_type: string }; Returns: string }
       generate_security_alert: {
         Args: {
           alert_type: string
@@ -9390,7 +9615,7 @@ export type Database = {
         Returns: string
       }
       get_building_hierarchy: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_spaces: number
           building_address: string
@@ -9426,7 +9651,7 @@ export type Database = {
         }[]
       }
       get_court_maintenance_info: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           court_id: string
           maintenance_end_date: string
@@ -9442,7 +9667,7 @@ export type Database = {
         }[]
       }
       get_court_personnel: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           access_level: string
           created_at: string
@@ -9456,7 +9681,7 @@ export type Database = {
         }[]
       }
       get_courtroom_availability: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           accessibility_features: Json
           availability_status: string
@@ -9471,11 +9696,11 @@ export type Database = {
         }[]
       }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_dashboard_stats: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           available_rooms: number
           maintenance_rooms: number
@@ -9491,24 +9716,12 @@ export type Database = {
           status: string
         }[]
       }
-      get_door_status: {
-        Args: { door_id: string }
-        Returns: string
-      }
-      get_energy_analytics: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_enhanced_room: {
-        Args: { p_room_id: string }
-        Returns: Json
-      }
-      get_facility_analytics: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_door_status: { Args: { door_id: string }; Returns: string }
+      get_energy_analytics: { Args: never; Returns: Json }
+      get_enhanced_room: { Args: { p_room_id: string }; Returns: Json }
+      get_facility_analytics: { Args: never; Returns: Json }
       get_key_inventory_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           available_quantity: number
           key_id: string
@@ -9543,14 +9756,8 @@ export type Database = {
           last_attempt: string
         }[]
       }
-      get_request_header: {
-        Args: { header_name: string }
-        Returns: string
-      }
-      get_request_headers: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_request_header: { Args: { header_name: string }; Returns: string }
+      get_request_headers: { Args: never; Returns: Json }
       get_room_assignments_with_details: {
         Args: { p_room_id?: string }
         Returns: {
@@ -9593,7 +9800,7 @@ export type Database = {
         Returns: string
       }
       get_security_dashboard: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_critical_incidents: number
           admin_users: number
@@ -9643,16 +9850,13 @@ export type Database = {
           status: string
         }[]
       }
-      get_system_health: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_system_health: { Args: never; Returns: Json }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_user_verification_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           department: string
@@ -9666,7 +9870,7 @@ export type Database = {
         }[]
       }
       get_user_verification_info: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           email: string
@@ -9681,10 +9885,7 @@ export type Database = {
         Args: { check_role: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
       }
-      increment_key_quantity: {
-        Args: { key_id: string }
-        Returns: number
-      }
+      increment_key_quantity: { Args: { key_id: string }; Returns: number }
       initialize_door_properties: {
         Args: {
           p_room_number?: string
@@ -9697,32 +9898,19 @@ export type Database = {
         Args: { target_user_id?: string }
         Returns: undefined
       }
-      is_account_locked: {
-        Args: { user_email: string }
-        Returns: boolean
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never> | { user_id: string }
-        Returns: boolean
-      }
+      is_account_locked: { Args: { user_email: string }; Returns: boolean }
+      is_admin:
+        | { Args: { user_id: string }; Returns: boolean }
+        | { Args: never; Returns: boolean }
       is_admin_or_authorized: {
         Args: { target_user_id: string }
         Returns: boolean
       }
-      is_courtroom: {
-        Args: { room_type: string }
-        Returns: boolean
-      }
-      is_current_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_facilities_or_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_courtroom: { Args: { room_type: string }; Returns: boolean }
+      is_current_user_admin: { Args: never; Returns: boolean }
+      is_facilities_or_admin: { Args: never; Returns: boolean }
       list_occupants_minimal: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           department: string
           first_name: string
@@ -9732,7 +9920,7 @@ export type Database = {
         }[]
       }
       list_personnel_profiles_minimal: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           department: string
           display_name: string
@@ -9747,15 +9935,9 @@ export type Database = {
         Args: { p: Database["public"]["Tables"]["profiles"]["Row"] }
         Returns: boolean
       }
-      log_security_event: {
-        Args:
-          | {
-              action_type: string
-              details?: Json
-              resource_id?: string
-              resource_type?: string
-            }
-          | {
+      log_security_event:
+        | {
+            Args: {
               p_action: string
               p_details?: Json
               p_ip_address?: unknown
@@ -9763,7 +9945,19 @@ export type Database = {
               p_resource_type: string
               p_user_agent?: string
             }
-          | {
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_details?: string
+              p_event_type: string
+              p_target_id: string
+              p_target_table: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
               p_action: string
               p_details?: string
               p_ip_address?: string
@@ -9771,14 +9965,17 @@ export type Database = {
               p_resource_type: string
               p_user_agent?: string
             }
-          | {
-              p_details?: string
-              p_event_type: string
-              p_target_id: string
-              p_target_table: string
+            Returns: undefined
+          }
+        | {
+            Args: {
+              action_type: string
+              details?: Json
+              resource_id?: string
+              resource_type?: string
             }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
       log_security_operation: {
         Args: {
           error_message?: string
@@ -9807,10 +10004,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      migrate_spaces_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      migrate_spaces_data: { Args: never; Returns: undefined }
       move_judge: {
         Args: {
           p_actor: string
@@ -9821,10 +10015,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      normalize_email: {
-        Args: { txt: string }
-        Returns: string
-      }
+      normalize_email: { Args: { txt: string }; Returns: string }
       process_key_order_receipt: {
         Args: {
           p_order_id: string
@@ -9833,10 +10024,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      promote_to_admin: {
-        Args: { target_user_id: string }
-        Returns: Json
-      }
+      promote_to_admin: { Args: { target_user_id: string }; Returns: Json }
       promote_user_to_admin: {
         Args: { target_user_id: string }
         Returns: undefined
@@ -9853,22 +10041,13 @@ export type Database = {
         }
         Returns: string
       }
-      refresh_all_materialized_views: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      refresh_analytics_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      refresh_all_materialized_views: { Args: never; Returns: undefined }
+      refresh_analytics_cache: { Args: never; Returns: undefined }
       refresh_materialized_view: {
         Args: { view_name: string }
         Returns: undefined
       }
-      refresh_spaces_dashboard: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      refresh_spaces_dashboard: { Args: never; Returns: undefined }
       remove_user_role: {
         Args: { reason?: string; target_user_id: string }
         Returns: undefined
@@ -9877,18 +10056,9 @@ export type Database = {
         Args: { p_attempt_type?: string; p_identifier: string }
         Returns: boolean
       }
-      rollback_transaction: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      run_security_health_check: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      safe_current_setting: {
-        Args: { setting_name: string }
-        Returns: string
-      }
+      rollback_transaction: { Args: never; Returns: undefined }
+      run_security_health_check: { Args: never; Returns: Json }
+      safe_current_setting: { Args: { setting_name: string }; Returns: string }
       safely_delete_key: {
         Args: { key_id_to_delete: string }
         Returns: undefined
@@ -9907,10 +10077,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      sanitize_input: {
-        Args: { input_text: string }
-        Returns: string
-      }
+      sanitize_input: { Args: { input_text: string }; Returns: string }
       search_spaces: {
         Args: {
           p_building_id?: string
@@ -9927,26 +10094,14 @@ export type Database = {
           space_type: string
         }[]
       }
-      secure_admin_promotion: {
-        Args: { target_email: string }
-        Returns: Json
-      }
-      secure_promote_to_admin: {
-        Args: { target_email: string }
-        Returns: Json
-      }
+      secure_admin_promotion: { Args: { target_email: string }; Returns: Json }
+      secure_promote_to_admin: { Args: { target_email: string }; Returns: Json }
       secure_role_assignment: {
         Args: { new_role: string; target_user_id: string }
         Returns: boolean
       }
-      security_health_check: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      setup_emergency_admin: {
-        Args: { user_email: string }
-        Returns: Json
-      }
+      security_health_check: { Args: never; Returns: Json }
+      setup_emergency_admin: { Args: { user_email: string }; Returns: Json }
       start_supply_request_work: {
         Args: { p_request_id: string }
         Returns: undefined
@@ -9964,42 +10119,21 @@ export type Database = {
         }
         Returns: undefined
       }
-      validate_email: {
-        Args: { email_to_validate: string }
-        Returns: Json
-      }
-      validate_email_format: {
-        Args: { email: string }
-        Returns: boolean
-      }
+      validate_email: { Args: { email_to_validate: string }; Returns: Json }
+      validate_email_format: { Args: { email: string }; Returns: boolean }
       validate_floor_plan_connection: {
         Args: { source_id: string; target_id: string }
         Returns: boolean
       }
-      validate_nycourt_email: {
-        Args: { email: string }
-        Returns: boolean
-      }
-      validate_password_strength: {
-        Args: { password: string }
-        Returns: Json
-      }
-      validate_session_security: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      validate_simple_password: {
-        Args: { password: string }
-        Returns: Json
-      }
+      validate_nycourt_email: { Args: { email: string }; Returns: boolean }
+      validate_password_strength: { Args: { password: string }; Returns: Json }
+      validate_session_security: { Args: never; Returns: boolean }
+      validate_simple_password: { Args: { password: string }; Returns: Json }
       validate_text_input: {
         Args: { input_text: string; max_length?: number; required?: boolean }
         Returns: boolean
       }
-      validate_user_session: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      validate_user_session: { Args: never; Returns: boolean }
     }
     Enums: {
       absence_kind: "vacation" | "sick" | "personal" | "training" | "other"
@@ -10177,6 +10311,7 @@ export type Database = {
         | "conference"
         | "chamber"
       security_level_enum: "standard" | "restricted" | "high_security"
+      session_period: "AM" | "PM" | "ALL_DAY"
       simplified_storage_type_enum:
         | "files"
         | "supplies"
@@ -10541,6 +10676,7 @@ export const Constants = {
         "chamber",
       ],
       security_level_enum: ["standard", "restricted", "high_security"],
+      session_period: ["AM", "PM", "ALL_DAY"],
       simplified_storage_type_enum: [
         "files",
         "supplies",
