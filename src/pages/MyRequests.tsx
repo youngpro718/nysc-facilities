@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Package, Truck, Key, Eye, Filter } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useKeyRequests } from "@/hooks/useKeyRequests";
 import { useKeyOrders } from "@/hooks/useKeyOrders";
@@ -134,11 +135,9 @@ export default function MyRequests() {
         email_notifications_enabled: data.email_notifications_enabled,
       });
       
-      const { toast } = await import('sonner');
       toast.success('Key request submitted successfully!');
       refetch();
     } catch (error) {
-      const { toast } = await import('sonner');
       toast.error('Failed to submit key request.');
     }
   };

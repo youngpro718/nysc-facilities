@@ -455,7 +455,6 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
           actor: actorId
         });
         
-        const { supabase } = await import('@/lib/supabase');
         const { error } = await supabase.rpc('swap_courtrooms', {
           p_room_a_id: currentRoomId,
           p_room_b_id: toRoom,
