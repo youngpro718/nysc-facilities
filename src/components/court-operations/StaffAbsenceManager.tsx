@@ -394,7 +394,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: any) {
                 <SelectItem value="vacation">Vacation</SelectItem>
                 <SelectItem value="emergency">Emergency</SelectItem>
                 <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="training">Training</SelectItem>
+                <SelectItem value="conference">Conference</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>

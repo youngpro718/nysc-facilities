@@ -2,15 +2,19 @@ import { useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Copy, RefreshCw, Users, CalendarCheck } from 'lucide-react';
+import { Calendar, Copy, RefreshCw, Users, CalendarCheck, FileText } from 'lucide-react';
 import { SessionsTable } from './SessionsTable';
 import { CoveragePanel } from './CoveragePanel';
+import { GenerateReportDialog } from './GenerateReportDialog';
+import { SessionConflictBanner } from './SessionConflictBanner';
+import { CreateSessionDialog } from './CreateSessionDialog';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCourtSessions, useCopyYesterdaySessions } from '@/hooks/useCourtSessions';
 import { useCoverageAssignments } from '@/hooks/useCoverageAssignments';
+import { useSessionConflicts } from '@/hooks/useSessionConflicts';
 import { SessionPeriod, BuildingCode } from '@/types/courtSessions';
 import { BUILDING_CODES, SESSION_PERIODS } from '@/constants/sessionStatuses';
 
@@ -19,6 +23,8 @@ export function DailySessionsPanel() {
   const [selectedPeriod, setSelectedPeriod] = useState<SessionPeriod>('AM');
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingCode>('100');
   const [showCoveragePanel, setShowCoveragePanel] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const { data: sessions, isLoading: sessionsLoading } = useCourtSessions(
     selectedDate,
@@ -27,6 +33,12 @@ export function DailySessionsPanel() {
   );
 
   const { data: coverages, isLoading: coveragesLoading } = useCoverageAssignments(
+    selectedDate,
+    selectedPeriod,
+    selectedBuilding
+  );
+
+  const { data: conflicts } = useSessionConflicts(
     selectedDate,
     selectedPeriod,
     selectedBuilding
@@ -50,6 +62,11 @@ export function DailySessionsPanel() {
 
   return (
     <div className="space-y-6">
+      {/* Conflict Banner */}
+      {conflicts && (
+        <SessionConflictBanner conflicts={conflicts} />
+      )}
+
       {/* Filter Bar */}
       <Card>
         <CardHeader>
@@ -128,6 +145,13 @@ export function DailySessionsPanel() {
           {/* Action Buttons */}
           <div className="flex gap-2 flex-wrap">
             <Button
+              size="sm"
+              onClick={() => setShowCreateDialog(true)}
+            >
+              <CalendarCheck className="h-4 w-4 mr-2" />
+              Add Session
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               onClick={handleCopyYesterday}
@@ -143,6 +167,15 @@ export function DailySessionsPanel() {
             >
               <Users className="h-4 w-4 mr-2" />
               {showCoveragePanel ? 'Hide' : 'Show'} Coverage
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowReportDialog(true)}
+              disabled={!sessions || sessions.length === 0}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Generate Report
             </Button>
           </div>
         </CardContent>
@@ -167,6 +200,28 @@ export function DailySessionsPanel() {
         sessions={sessions || []}
         coverages={coverages || []}
         isLoading={sessionsLoading}
+      />
+
+      {/* Create Session Dialog */}
+      <CreateSessionDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        date={selectedDate}
+        period={selectedPeriod}
+        buildingCode={selectedBuilding}
+      />
+
+      {/* Generate Report Dialog */}
+      <GenerateReportDialog
+        open={showReportDialog}
+        onOpenChange={setShowReportDialog}
+        reportOptions={{
+          date: selectedDate,
+          period: selectedPeriod,
+          buildingCode: selectedBuilding,
+          sessions: sessions || [],
+          coverages: coverages || [],
+        }}
       />
     </div>
   );

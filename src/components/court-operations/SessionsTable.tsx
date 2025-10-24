@@ -8,9 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Save, Trash2, Users, AlertTriangle } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Save, Trash2, Users, AlertTriangle, UserX, Calendar as CalendarIcon } from 'lucide-react';
 import { CourtSession, CoverageAssignment, SessionPeriod, BuildingCode } from '@/types/courtSessions';
 import { useUpdateCourtSession, useDeleteCourtSession } from '@/hooks/useCourtSessions';
+import { useAbsentStaffNames } from '@/hooks/useStaffAbsences';
 import { SESSION_STATUSES } from '@/constants/sessionStatuses';
 import { toast } from 'sonner';
 
@@ -36,6 +40,9 @@ export function SessionsTable({
 
   const updateSession = useUpdateCourtSession();
   const deleteSession = useDeleteCourtSession();
+  
+  // Get absent staff for this date
+  const { absentStaffMap, isLoading: absencesLoading } = useAbsentStaffNames(date);
 
   const handleEdit = (session: CourtSession) => {
     setEditingId(session.id);
@@ -105,13 +112,15 @@ export function SessionsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Room</TableHead>
-                <TableHead>Part</TableHead>
-                <TableHead>Judge</TableHead>
+                <TableHead>Part / Judge</TableHead>
+                <TableHead>Parts Ent By</TableHead>
+                <TableHead>Defendants</TableHead>
+                <TableHead>Purpose</TableHead>
+                <TableHead>Date Tran/Start</TableHead>
+                <TableHead>Top Charge</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Status Detail</TableHead>
-                <TableHead>Est. Finish</TableHead>
-                <TableHead>Notes</TableHead>
+                <TableHead>Attorney</TableHead>
+                <TableHead>Est. Date Fin</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -122,73 +131,209 @@ export function SessionsTable({
 
                 return (
                   <TableRow key={session.id}>
+                    {/* Part / Judge */}
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          {session.court_rooms?.room_number || 'N/A'}
-                        </span>
-                        {coverage && (
-                          <Badge variant="outline" className="text-xs">
-                            <Users className="h-3 w-3 mr-1" />
-                            Coverage
-                          </Badge>
+                      <div className="space-y-1">
+                        {isEditing ? (
+                          <>
+                            <Input
+                              value={editData.part_number || ''}
+                              onChange={(e) => setEditData({ ...editData, part_number: e.target.value })}
+                              placeholder="Part"
+                              className="w-24"
+                            />
+                            <Input
+                              value={editData.judge_name || ''}
+                              onChange={(e) => setEditData({ ...editData, judge_name: e.target.value })}
+                              placeholder="Judge"
+                              className="w-40"
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <div className="font-medium">{session.part_number || '—'}</div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm text-muted-foreground">{session.judge_name || '—'}</div>
+                              {session.judge_name && absentStaffMap.has(session.judge_name.toLowerCase()) && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                                        <UserX className="h-3 w-3" />
+                                        Absent
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <div className="space-y-1">
+                                        <p className="font-semibold">{session.judge_name} is absent</p>
+                                        <p className="text-xs">
+                                          Reason: {absentStaffMap.get(session.judge_name.toLowerCase())?.absence_reason}
+                                        </p>
+                                        <p className="text-xs">
+                                          {format(new Date(absentStaffMap.get(session.judge_name.toLowerCase())!.starts_on), 'MM/dd/yyyy')} - {format(new Date(absentStaffMap.get(session.judge_name.toLowerCase())!.ends_on), 'MM/dd/yyyy')}
+                                        </p>
+                                        {absentStaffMap.get(session.judge_name.toLowerCase())?.notes && (
+                                          <p className="text-xs italic">
+                                            {absentStaffMap.get(session.judge_name.toLowerCase())?.notes}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
                     </TableCell>
+                    
+                    {/* Parts Ent By */}
                     <TableCell>
                       {isEditing ? (
                         <Input
-                          value={editData.part_number || ''}
-                          onChange={(e) => setEditData({ ...editData, part_number: e.target.value })}
-                          className="w-24"
+                          value={editData.parts_entered_by || ''}
+                          onChange={(e) => setEditData({ ...editData, parts_entered_by: e.target.value })}
+                          placeholder="Entered by..."
                         />
                       ) : (
-                        session.part_number || '—'
+                        session.parts_entered_by || '—'
                       )}
                     </TableCell>
+                    
+                    {/* Defendants */}
                     <TableCell>
                       {isEditing ? (
                         <Input
-                          value={editData.judge_name || ''}
-                          onChange={(e) => setEditData({ ...editData, judge_name: e.target.value })}
-                          className="w-40"
+                          value={editData.defendants || ''}
+                          onChange={(e) => setEditData({ ...editData, defendants: e.target.value })}
+                          placeholder="Defendants..."
                         />
                       ) : (
-                        session.judge_name || '—'
+                        session.defendants || '—'
                       )}
                     </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <Select
-                          value={editData.status || session.status}
-                          onValueChange={(value) => setEditData({ ...editData, status: value })}
-                        >
-                          <SelectTrigger className="w-36">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {SESSION_STATUSES.map((status) => (
-                              <SelectItem key={status.value} value={status.value}>
-                                {status.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="secondary">{session.status}</Badge>
-                      )}
-                    </TableCell>
+                    
+                    {/* Purpose */}
                     <TableCell>
                       {isEditing ? (
                         <Input
-                          value={editData.status_detail || ''}
-                          onChange={(e) => setEditData({ ...editData, status_detail: e.target.value })}
-                          placeholder="Additional details..."
+                          value={editData.purpose || ''}
+                          onChange={(e) => setEditData({ ...editData, purpose: e.target.value })}
+                          placeholder="Purpose..."
                         />
                       ) : (
-                        session.status_detail || '—'
+                        session.purpose || '—'
                       )}
                     </TableCell>
+                    
+                    {/* Date Tran/Start */}
+                    <TableCell>
+                      {isEditing ? (
+                        <DatePicker
+                          value={editData.date_transferred_or_started ? new Date(editData.date_transferred_or_started) : undefined}
+                          onChange={(date) => 
+                            setEditData({ 
+                              ...editData, 
+                              date_transferred_or_started: date ? format(date, 'yyyy-MM-dd') : null 
+                            })
+                          }
+                        />
+                      ) : (
+                        session.date_transferred_or_started ? 
+                          format(new Date(session.date_transferred_or_started), 'MM/dd/yyyy') : 
+                          '—'
+                      )}
+                    </TableCell>
+                    
+                    {/* Top Charge */}
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          value={editData.top_charge || ''}
+                          onChange={(e) => setEditData({ ...editData, top_charge: e.target.value })}
+                          placeholder="Top charge..."
+                        />
+                      ) : (
+                        session.top_charge || '—'
+                      )}
+                    </TableCell>
+                    
+                    {/* Status */}
+                    <TableCell>
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <Select
+                            value={editData.status || session.status}
+                            onValueChange={(value) => setEditData({ ...editData, status: value })}
+                          >
+                            <SelectTrigger className="w-36">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SESSION_STATUSES.map((status) => (
+                                <SelectItem key={status.value} value={status.value}>
+                                  {status.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <div className="flex gap-1">
+                            <Input
+                              value={editData.status_detail || ''}
+                              onChange={(e) => setEditData({ ...editData, status_detail: e.target.value })}
+                              placeholder="Detail (e.g., 10/23)"
+                              className="w-32"
+                            />
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm" type="button" className="px-2">
+                                  <CalendarIcon className="h-3 w-3" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="end">
+                                <Calendar
+                                  mode="single"
+                                  selected={undefined}
+                                  onSelect={(selectedDate) => {
+                                    if (selectedDate) {
+                                      const dateStr = format(selectedDate, 'MM/dd');
+                                      setEditData({ 
+                                        ...editData, 
+                                        status_detail: editData.status_detail ? `${editData.status_detail} ${dateStr}` : dateStr 
+                                      });
+                                    }
+                                  }}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <Badge variant="secondary">{session.status}</Badge>
+                          {session.status_detail && (
+                            <div className="text-xs text-muted-foreground">{session.status_detail}</div>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
+                    
+                    {/* Attorney */}
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          value={editData.attorney || ''}
+                          onChange={(e) => setEditData({ ...editData, attorney: e.target.value })}
+                          placeholder="Attorney..."
+                        />
+                      ) : (
+                        session.attorney || '—'
+                      )}
+                    </TableCell>
+                    
+                    {/* Est. Date Fin */}
                     <TableCell>
                       {isEditing ? (
                         <DatePicker
@@ -204,18 +349,6 @@ export function SessionsTable({
                         session.estimated_finish_date ? 
                           format(new Date(session.estimated_finish_date), 'MM/dd/yyyy') : 
                           '—'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <Textarea
-                          value={editData.notes || ''}
-                          onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
-                          className="min-w-[200px]"
-                          rows={2}
-                        />
-                      ) : (
-                        <div className="max-w-[200px] truncate">{session.notes || '—'}</div>
                       )}
                     </TableCell>
                     <TableCell>

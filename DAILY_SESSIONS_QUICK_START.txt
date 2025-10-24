@@ -1,0 +1,252 @@
+=============================================================================
+DAILY SESSIONS MODULE - QUICK START GUIDE
+=============================================================================
+
+## 🚀 GET STARTED IN 3 STEPS
+
+### STEP 1: Apply Database Migration (5 minutes)
+
+1. Open Supabase Dashboard → SQL Editor
+2. Copy contents from DAILY_SESSIONS_MIGRATION.txt
+3. Paste and run the migration
+4. Verify success with:
+   ```sql
+   SELECT COUNT(*) FROM court_sessions;
+   SELECT COUNT(*) FROM coverage_assignments;
+   ```
+
+### STEP 2: Access Daily Sessions (1 minute)
+
+1. Navigate to Court Operations Dashboard
+2. Click "Daily Sessions" tab (6th tab, calendar icon)
+3. You'll see the Daily Sessions interface
+
+### STEP 3: Create Your First Session (2 minutes)
+
+**Option A: Auto-populate from assignments**
+```sql
+SELECT auto_populate_daily_sessions();
+```
+
+**Option B: Manual entry**
+1. Select date, period (AM/PM), building (100/111)
+2. Click in table cells to edit
+3. Enter judge name, part number, status
+4. Press Enter or click away to save
+
+=============================================================================
+## 📋 COMMON TASKS
+=============================================================================
+
+### View Today's Sessions:
+- Date picker defaults to today
+- Select AM or PM period
+- Choose building (100 or 111)
+- Sessions display automatically
+
+### Copy Yesterday's Sessions:
+1. Select tomorrow's date
+2. Click "Copy Yesterday" button
+3. All sessions copied with same details
+4. Edit as needed for new day
+
+### Update Session Status:
+1. Click on status cell
+2. Select from dropdown:
+   - CALENDAR (default)
+   - HRG (hearing)
+   - PC_CONTD (people continued)
+   - JD_CONTD (judge continued)
+   - BT (bench trial)
+   - TR (trial)
+   - ADJ (adjourned)
+   - DARK (court not in session)
+3. Add status detail if needed
+4. Auto-saves on blur
+
+### Assign Coverage:
+1. Click "Show Coverage" button
+2. Click "Add Coverage"
+3. Fill in form:
+   - Absent staff name and role
+   - Covering staff name
+   - Optional time range
+   - Absence reason
+4. Save
+5. Coverage badge appears in sessions table
+
+### Set Estimated Finish Date:
+1. Click on "Est. Finish" cell
+2. Select date from calendar
+3. Useful for trials and continued cases
+4. Auto-saves
+
+=============================================================================
+## 🎯 WORKFLOW EXAMPLES
+=============================================================================
+
+### Daily Morning Routine:
+1. Open Daily Sessions tab
+2. Select today's date, AM period
+3. Review auto-populated sessions
+4. Update statuses as court begins
+5. Add any coverage assignments
+6. Add notes for special situations
+
+### Handling Judge Absence:
+1. Go to Staff Absences tab
+2. Mark judge as absent
+3. Return to Daily Sessions tab
+4. Click "Show Coverage"
+5. Assign covering judge
+6. System validates no double-booking
+
+### Planning Tomorrow:
+1. Select tomorrow's date
+2. Click "Copy Yesterday"
+3. Review and adjust sessions
+4. Update any known changes
+5. Add estimated finish dates for trials
+
+### Weekly Review:
+1. Navigate through dates
+2. Review session statuses
+3. Check coverage assignments
+4. Export data if needed
+5. Plan for upcoming week
+
+=============================================================================
+## ⚠️ VALIDATION & WARNINGS
+=============================================================================
+
+### System Prevents:
+❌ Judge assigned to multiple rooms (same date/period)
+❌ Duplicate part numbers (same date/period/building)
+❌ Sessions in rooms under maintenance
+❌ Sessions with absent judge (no coverage)
+
+### System Warns:
+⚠️ Incomplete assignments
+⚠️ Missing coverage for absent staff
+⚠️ Conflicting schedules
+
+### If Validation Fails:
+1. Error message displays
+2. Save is prevented
+3. Fix the issue
+4. Try saving again
+
+=============================================================================
+## 💡 PRO TIPS
+=============================================================================
+
+### Keyboard Shortcuts:
+- Tab: Move to next cell
+- Shift+Tab: Move to previous cell
+- Enter: Save and move down
+- Esc: Cancel edit
+
+### Best Practices:
+✅ Copy yesterday's sessions each morning
+✅ Update statuses in real-time
+✅ Add coverage immediately when staff absent
+✅ Use status detail for important notes
+✅ Set estimated finish dates for trials
+✅ Review conflict detection regularly
+
+### Performance Tips:
+- Filter by building to reduce data load
+- Use specific date ranges
+- Clear old sessions periodically
+- Let auto-save complete before next edit
+
+=============================================================================
+## 🔧 TROUBLESHOOTING
+=============================================================================
+
+### Sessions Not Appearing?
+1. Check date/period/building filters
+2. Verify database migration applied
+3. Check browser console for errors
+4. Try refreshing the page
+
+### Can't Save Changes?
+1. Check for validation errors
+2. Ensure all required fields filled
+3. Verify no conflicts exist
+4. Check network connection
+
+### Coverage Not Showing?
+1. Verify coverage date matches session date
+2. Check period (AM/PM) matches
+3. Ensure building code matches
+4. Refresh coverage panel
+
+### Real-time Updates Not Working?
+1. Check Supabase realtime enabled
+2. Verify network connection
+3. Check browser console
+4. Try refreshing page
+
+=============================================================================
+## 📞 SUPPORT & RESOURCES
+=============================================================================
+
+### Documentation:
+- IMPLEMENTATION_STATUS.txt - Full technical details
+- DAILY_SESSIONS_MIGRATION.txt - Database schema
+- NYSC_Court_Operations_Complete_Guide.md - Comprehensive guide
+
+### Key Files:
+- /src/components/court-operations/DailySessionsPanel.tsx
+- /src/components/court-operations/SessionsTable.tsx
+- /src/components/court-operations/CoveragePanel.tsx
+- /src/hooks/useCourtSessions.ts
+- /src/hooks/useCoverageAssignments.ts
+
+### Database Tables:
+- court_sessions - Main session data
+- coverage_assignments - Coverage tracking
+- daily_report_notes - Report footer notes
+
+=============================================================================
+## ✅ CHECKLIST FOR FIRST USE
+=============================================================================
+
+Before using Daily Sessions:
+☐ Database migration applied
+☐ Tables created and verified
+☐ Realtime subscriptions enabled
+☐ Court Operations Dashboard accessible
+☐ Daily Sessions tab visible
+
+First session setup:
+☐ Date selected
+☐ Period selected (AM/PM)
+☐ Building selected (100/111)
+☐ Sessions visible or created
+☐ Can edit inline
+☐ Changes save successfully
+
+Coverage setup:
+☐ Coverage panel accessible
+☐ Can add coverage assignment
+☐ Coverage appears in sessions
+☐ Validation working
+
+Testing:
+☐ Copy Yesterday works
+☐ Status dropdown works
+☐ Date picker works
+☐ Validation prevents conflicts
+☐ Real-time updates work
+☐ Toast notifications appear
+
+=============================================================================
+
+🎉 You're ready to use the Daily Sessions module!
+
+For detailed technical information, see IMPLEMENTATION_STATUS.txt
+For complete court operations guide, see NYSC_Court_Operations_Complete_Guide.md
+
+=============================================================================

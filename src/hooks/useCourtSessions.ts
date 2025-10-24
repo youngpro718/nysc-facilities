@@ -18,17 +18,29 @@ export function useCourtSessions(date: Date, period: SessionPeriod, buildingCode
     queryFn: async () => {
       const { data, error } = await supabase
         .from('court_sessions')
-        .select(`
-          *,
-          court_rooms (room_number, courtroom_number, room_id),
-          court_assignments (part, justice, clerks, sergeant)
-        `)
+        .select('*')
         .eq('session_date', dateStr)
         .eq('period', period)
-        .eq('building_code', buildingCode)
-        .order('court_rooms(room_number)');
+        .eq('building_code', buildingCode);
       
       if (error) throw error;
+      
+      // Get court rooms separately to avoid schema cache issues
+      if (data && data.length > 0) {
+        const roomIds = [...new Set(data.map(s => s.court_room_id))];
+        const { data: rooms } = await supabase
+          .from('court_rooms')
+          .select('id, room_number, courtroom_number, room_id')
+          .in('id', roomIds);
+        
+        // Attach room data to sessions
+        const roomsMap = new Map(rooms?.map(r => [r.id, r]) || []);
+        return data.map(session => ({
+          ...session,
+          court_rooms: roomsMap.get(session.court_room_id)
+        })) as CourtSession[];
+      }
+      
       return data as CourtSession[];
     },
   });
@@ -47,10 +59,25 @@ export function useCreateCourtSession() {
           ...input,
           created_by: user?.id,
         })
-        .select()
+        .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, notes, created_by, updated_by, created_at, updated_at')
         .single();
 
       if (error) throw error;
+      
+      // Fetch court room data separately if needed
+      if (data && data.court_room_id) {
+        const { data: room } = await supabase
+          .from('court_rooms')
+          .select('id, room_number, courtroom_number, room_id')
+          .eq('id', data.court_room_id)
+          .single();
+        
+        return {
+          ...data,
+          court_rooms: room
+        } as CourtSession;
+      }
+      
       return data as CourtSession;
     },
     onSuccess: () => {
@@ -73,17 +100,35 @@ export function useUpdateCourtSession() {
       const { data: { user } } = await supabase.auth.getUser();
       const { id, ...updates } = input;
 
+      // Remove court_rooms from updates to avoid schema cache issues
+      const { court_rooms, ...cleanUpdates } = updates as any;
+
       const { data, error } = await supabase
         .from('court_sessions')
         .update({
-          ...updates,
+          ...cleanUpdates,
           updated_by: user?.id,
         })
         .eq('id', id)
-        .select()
+        .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, notes, created_by, updated_by, created_at, updated_at')
         .single();
 
       if (error) throw error;
+      
+      // Fetch court room data separately if needed
+      if (data && data.court_room_id) {
+        const { data: room } = await supabase
+          .from('court_rooms')
+          .select('id, room_number, courtroom_number, room_id')
+          .eq('id', data.court_room_id)
+          .single();
+        
+        return {
+          ...data,
+          court_rooms: room
+        } as CourtSession;
+      }
+      
       return data as CourtSession;
     },
     onSuccess: () => {

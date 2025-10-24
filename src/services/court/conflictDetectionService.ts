@@ -24,10 +24,11 @@ export interface Conflict {
 
 export interface Warning {
   id: string;
-  type: "incomplete_assignment" | "missing_contact_info" | "no_coverage" | "session_conflict";
+  type: "incomplete_assignment" | "missing_contact_info" | "no_coverage" | "session_conflict" | "missing_session_coverage";
   title: string;
   description: string;
   affectedRooms: string[];
+  severity?: "low" | "medium" | "high";
 }
 
 export class ConflictDetectionService {
@@ -388,6 +389,187 @@ export class ConflictDetectionService {
     return {
       isValid: errors.length === 0,
       errors,
+    };
+  }
+
+  /**
+   * Detect missing coverage for sessions with absent judges
+   */
+  static async detectMissingSessionCoverage(
+    date: string,
+    period: string,
+    buildingCode: string
+  ): Promise<Warning[]> {
+    const warnings: Warning[] = [];
+
+    try {
+      // Get all sessions for this date/period/building
+      const { data: sessions } = await supabase
+        .from('court_sessions')
+        .select('id, judge_name, court_room_id, court_rooms(room_number)')
+        .eq('session_date', date)
+        .eq('period', period)
+        .eq('building_code', buildingCode);
+
+      if (!sessions || sessions.length === 0) return warnings;
+
+      // Get all coverage assignments for this date/period/building
+      const { data: coverages } = await supabase
+        .from('coverage_assignments')
+        .select('court_room_id, absent_staff_name')
+        .eq('coverage_date', date)
+        .eq('period', period)
+        .eq('building_code', buildingCode);
+
+      const coveredRooms = new Set(coverages?.map(c => c.court_room_id) || []);
+
+      // Get staff absences for this date
+      const { data: absences } = await supabase
+        .from('staff_absences')
+        .select(`
+          staff_id, 
+          kind, 
+          absence_reason,
+          staff:staff_id (
+            display_name,
+            role
+          )
+        `)
+        .lte('starts_on', date)
+        .gte('ends_on', date);
+
+      // Filter for judges only
+      const absentJudgeNames = new Set(
+        absences
+          ?.filter((a: any) => a.staff?.role === 'judge')
+          .map((a: any) => a.staff?.display_name)
+          .filter(Boolean) || []
+      );
+
+      // Check each session for missing coverage
+      for (const session of sessions) {
+        const isJudgeAbsent = session.judge_name && absentJudgeNames.has(session.judge_name);
+        const hasCoverage = coveredRooms.has(session.court_room_id);
+
+        if (isJudgeAbsent && !hasCoverage) {
+          warnings.push({
+            id: `missing_coverage_${session.id}`,
+            type: 'missing_session_coverage',
+            severity: 'high',
+            title: `Missing Coverage for ${session.judge_name}`,
+            description: `Judge ${session.judge_name} is marked absent but no coverage has been assigned for room ${(session as any).court_rooms?.room_number}`,
+            affectedRooms: [(session as any).court_rooms?.room_number || 'Unknown'],
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting missing session coverage:', error);
+    }
+
+    return warnings;
+  }
+
+  /**
+   * Detect session conflicts (judge double-booking, duplicate parts)
+   */
+  static async detectSessionConflicts(
+    date: string,
+    period: string,
+    buildingCode: string
+  ): Promise<Conflict[]> {
+    const conflicts: Conflict[] = [];
+
+    try {
+      // Get all sessions for this date/period/building
+      const { data: sessions } = await supabase
+        .from('court_sessions')
+        .select('id, judge_name, part_number, court_room_id, court_rooms(room_number)')
+        .eq('session_date', date)
+        .eq('period', period)
+        .eq('building_code', buildingCode);
+
+      if (!sessions || sessions.length === 0) return conflicts;
+
+      // Check for judge double-booking
+      const judgeRooms = new Map<string, any[]>();
+      sessions.forEach(session => {
+        if (session.judge_name) {
+          if (!judgeRooms.has(session.judge_name)) {
+            judgeRooms.set(session.judge_name, []);
+          }
+          judgeRooms.get(session.judge_name)!.push(session);
+        }
+      });
+
+      judgeRooms.forEach((rooms, judge) => {
+        if (rooms.length > 1) {
+          conflicts.push({
+            id: `double_booked_judge_${judge}_${date}_${period}`,
+            type: 'double_booked_judge',
+            severity: 'critical',
+            title: `Judge ${judge} Double-Booked`,
+            description: `Judge ${judge} is assigned to multiple courtrooms for the same period`,
+            affectedRooms: rooms.map(r => (r as any).court_rooms?.room_number || 'Unknown'),
+            affectedPersonnel: [judge],
+            suggestedAction: 'Remove duplicate assignments or assign coverage',
+          });
+        }
+      });
+
+      // Check for duplicate part numbers
+      const partRooms = new Map<string, any[]>();
+      sessions.forEach(session => {
+        if (session.part_number) {
+          if (!partRooms.has(session.part_number)) {
+            partRooms.set(session.part_number, []);
+          }
+          partRooms.get(session.part_number)!.push(session);
+        }
+      });
+
+      partRooms.forEach((rooms, part) => {
+        if (rooms.length > 1) {
+          conflicts.push({
+            id: `duplicate_part_${part}_${date}_${period}`,
+            type: 'duplicate_part',
+            severity: 'high',
+            title: `Duplicate Part Number: ${part}`,
+            description: `Part ${part} is assigned to multiple courtrooms`,
+            affectedRooms: rooms.map(r => (r as any).court_rooms?.room_number || 'Unknown'),
+            affectedPersonnel: [],
+            suggestedAction: 'Assign unique part numbers to each courtroom',
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Error detecting session conflicts:', error);
+    }
+
+    return conflicts;
+  }
+
+  /**
+   * Get all conflicts and warnings for a specific date/period/building
+   */
+  static async detectDailySessionIssues(
+    date: string,
+    period: string,
+    buildingCode: string
+  ): Promise<ConflictDetectionResult> {
+    const [sessionConflicts, coverageWarnings] = await Promise.all([
+      this.detectSessionConflicts(date, period, buildingCode),
+      this.detectMissingSessionCoverage(date, period, buildingCode),
+    ]);
+
+    return {
+      hasConflicts: sessionConflicts.length > 0,
+      conflicts: sessionConflicts,
+      warnings: coverageWarnings,
+      summary: {
+        totalConflicts: sessionConflicts.length,
+        criticalConflicts: sessionConflicts.filter(c => c.severity === 'critical').length,
+        warnings: coverageWarnings.length,
+      },
     };
   }
 }

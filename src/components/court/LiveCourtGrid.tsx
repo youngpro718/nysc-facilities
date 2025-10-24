@@ -191,7 +191,7 @@ function RecordAbsenceDialog({ open, onOpenChange, judgeName, roomNumber, actorI
                 <SelectItem value="sick">Sick Leave</SelectItem>
                 <SelectItem value="vacation">Vacation</SelectItem>
                 <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="training">Training</SelectItem>
+                <SelectItem value="conference">Conference</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
