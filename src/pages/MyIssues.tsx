@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { IssueWizard } from "@/components/issues/wizard/IssueWizard";
 import { MobileIssueCard } from "@/components/issues/mobile/MobileIssueCard";
 import { MobileRequestForm } from "@/components/mobile/MobileRequestForm";
+import { DataState } from "@/ui";
 
 const statusConfig = {
   open: { 
@@ -47,7 +48,7 @@ export default function MyIssues() {
   const [showMobileForm, setShowMobileForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { user } = useAuth();
-  const { userIssues: issues = [], refetchIssues } = useUserIssues(user?.id);
+  const { userIssues: issues = [], isLoading, refetchIssues } = useUserIssues(user?.id);
 
   // Check if device is mobile
   useEffect(() => {
@@ -92,37 +93,38 @@ export default function MyIssues() {
         type="issue_report"
       />
 
-      {issues.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No issues reported</h3>
-            <p className="text-muted-foreground mb-4">
-              You haven't reported any issues yet. Help us maintain the facility by reporting problems when you see them.
-            </p>
-            <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowIssueWizard(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Report Your First Issue
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {isMobile ? (
-            // Mobile view with enhanced cards
-            issues.map((issue) => (
-              <MobileIssueCard
-                key={issue.id}
-                issue={issue}
-                onViewDetails={() => {/* Handle view details */}}
-                onAddComment={() => {/* Handle add comment */}}
-                onFollowUp={() => {/* Handle follow up */}}
-                onEscalate={() => {/* Handle escalate */}}
-              />
-            ))
-          ) : (
-            // Desktop view
-            issues.map((issue) => {
+      <DataState
+        data={issues}
+        isLoading={isLoading}
+        onRetry={refetchIssues}
+        loadingSkeleton={{ type: 'list', count: 5 }}
+        emptyState={{
+          title: 'No issues reported',
+          description: "You haven't reported any issues yet. Help us maintain the facility by reporting problems when you see them.",
+          icon: <AlertCircle className="h-6 w-6 text-muted-foreground" />,
+          action: {
+            label: 'Report Your First Issue',
+            onClick: () => isMobile ? setShowMobileForm(true) : setShowIssueWizard(true),
+          },
+        }}
+      >
+        {(issues) => (
+          <div className="space-y-4">
+            {isMobile ? (
+              // Mobile view with enhanced cards
+              issues.map((issue) => (
+                <MobileIssueCard
+                  key={issue.id}
+                  issue={issue}
+                  onViewDetails={() => {/* Handle view details */}}
+                  onAddComment={() => {/* Handle add comment */}}
+                  onFollowUp={() => {/* Handle follow up */}}
+                  onEscalate={() => {/* Handle escalate */}}
+                />
+              ))
+            ) : (
+              // Desktop view
+              issues.map((issue) => {
             const statusConf = statusConfig[issue.status as keyof typeof statusConfig];
             const priorityConf = priorityConfig[issue.priority as keyof typeof priorityConfig];
             const StatusIcon = statusConf?.icon || AlertCircle;
@@ -174,8 +176,9 @@ export default function MyIssues() {
             );
             })
           )}
-        </div>
-      )}
+          </div>
+        )}
+      </DataState>
     </PageContainer>
   );
 }

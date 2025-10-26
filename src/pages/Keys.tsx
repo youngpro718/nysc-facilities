@@ -6,13 +6,14 @@ import { KeyOrderSection } from "@/components/keys/sections/KeyOrderSection";
 import { ElevatorPassSection } from "@/components/keys/sections/ElevatorPassSection";
 import { KeyStatisticsCards } from "@/components/keys/KeyStatisticsCards";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Users, History, ShoppingCart, KeyRound } from "lucide-react";
+import { Package, Users, History, KeyRound } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyData } from "@/components/keys/types/KeyTypes";
+import { DataState, useDataState } from "@/ui";
 
 export default function Keys() {
-  const { data: keyStats, isLoading } = useQuery({
+  const keyStatsQuery = useQuery({
     queryKey: ["keys-stats"],
     queryFn: async () => {
       // Use the new key statistics view for proper data aggregation
@@ -29,6 +30,8 @@ export default function Keys() {
     },
   });
 
+  const dataStateProps = useDataState(keyStatsQuery);
+
   return (
     <div className="space-y-4 sm:space-y-6 pb-safe">
       <div className="space-y-1">
@@ -38,7 +41,17 @@ export default function Keys() {
         </p>
       </div>
 
-      <KeyStatisticsCards keyStats={keyStats} isLoading={isLoading} />
+      <DataState
+        {...dataStateProps}
+        loadingSkeleton={{ type: 'card', count: 4, height: '120px' }}
+        emptyState={{
+          title: 'No key data available',
+          description: 'Key statistics will appear here once data is available.',
+          icon: <KeyRound className="h-6 w-6 text-muted-foreground" />,
+        }}
+      >
+        {(keyStats) => <KeyStatisticsCards keyStats={keyStats} isLoading={false} />}
+      </DataState>
 
       <Tabs defaultValue="inventory" className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
