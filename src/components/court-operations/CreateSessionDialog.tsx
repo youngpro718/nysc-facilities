@@ -628,7 +628,7 @@ export function CreateSessionDialog({
                       value={partSearch}
                       onValueChange={setPartSearch}
                     />
-                    <CommandList className="max-h-[300px]">
+                    <CommandList className="max-h-[400px] overflow-y-auto">
                       <CommandEmpty>No available rooms found.</CommandEmpty>
                       
                       {/* Empty Rooms Group */}
