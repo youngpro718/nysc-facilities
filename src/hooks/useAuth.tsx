@@ -6,6 +6,9 @@ import { authService } from '@/lib/supabase';
 import { UserProfile, UserSignupData } from '@/types/auth';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+// Import new auth services with email verification enforcement
+import * as authServices from '@/services/auth';
+import { getMyProfile } from '@/services/profile';
 
 // Define the shape of our auth context
 export interface AuthContextType {
@@ -94,25 +97,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [getUserProfile]);
 
-  // Sign in function
+  // Sign in function with email verification enforcement
   const signIn = async (email: string, password: string) => {
     try {
-      logger.debug('Starting sign in process');
-      await authService.signInWithEmail(email, password);
+      logger.debug('Starting sign in process with email verification check');
+      
+      // Use new auth service that enforces email verification
+      const user = await authServices.signIn(email, password);
+      logger.debug('Sign in successful, user verified:', user.id);
 
       toast.success('Welcome back!', {
         description: "You've successfully signed in."
       });
-      logger.debug('Sign in successful');
     } catch (error: any) {
       logger.error('Sign in error', error);
       
-      // Handle specific error types
+      // Handle specific error types with enhanced messaging
       if (error.message?.includes('Invalid login credentials')) {
         toast.error('Invalid email or password', {
           description: 'Please check your credentials and try again.'
         });
+      } else if (error.message?.includes('Email not verified')) {
+        // Enhanced error handling for unverified emails
+        toast.error('Email not verified', {
+          description: 'Please check your email and click the verification link.',
+          action: {
+            label: 'Resend Email',
+            onClick: async () => {
+              try {
+                await authServices.resendVerificationEmail(email);
+                toast.success('Verification email sent!', {
+                  description: 'Please check your inbox.'
+                });
+              } catch (resendError: any) {
+                toast.error('Failed to resend email', {
+                  description: resendError.message
+                });
+              }
+            }
+          }
+        });
       } else if (error.message?.includes('Email not confirmed')) {
+        // Fallback for alternative error message
         toast.error('Email not verified', {
           description: 'Please check your email and verify your account.'
         });
@@ -125,16 +151,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Sign up function
+  // Sign up function with email verification
   const signUp = async (email: string, password: string, userData: UserSignupData) => {
     try {
-      logger.debug('Starting sign up process');
-      await authService.signUpWithEmail(email, password, userData);
+      logger.debug('Starting sign up process with email verification');
+      
+      // Use new auth service that sets up email verification
+      const fullName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim();
+      await authServices.signUp(email, password, fullName || undefined);
       
       // Set onboarding flags to trigger onboarding after verification for this user only
       try {
         localStorage.setItem('ONBOARD_AFTER_SIGNUP', 'true');
         localStorage.setItem('ONBOARD_AFTER_SIGNUP_EMAIL', email);
+        localStorage.setItem('signup_email', email); // For verification pending page
       } catch {
         // no-op
       }
@@ -143,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Please check your email for verification instructions."
       });
       
-      logger.debug('Sign up successful, navigating to verification');
+      logger.debug('Sign up successful, navigating to verification pending page');
       // Navigate to verification pending page
       setTimeout(() => {
         navigate('/verification-pending');
