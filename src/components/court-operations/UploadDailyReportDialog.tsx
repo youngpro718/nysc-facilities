@@ -97,57 +97,48 @@ export function UploadDailyReportDialog({
       console.log('✅ Extraction successful:', parseResult);
 
       // Step 3: Transform extracted court report data to session format
+      // Create ONE session per part, with all cases grouped together
       const extractedData = parseResult.extracted_data;
       console.log('📊 Extracted data entries:', extractedData?.entries);
       const sessions: any[] = [];
 
       if (extractedData?.entries) {
-        console.log(`🔄 Processing ${extractedData.entries.length} entries...`);
+        console.log(`🔄 Processing ${extractedData.entries.length} part entries...`);
         for (const entry of extractedData.entries) {
           console.log(`  Part ${entry.part}: ${entry.cases?.length || 0} cases`);
-          // For each part entry, create sessions from its cases
-          if (entry.cases && entry.cases.length > 0) {
-            for (const courtCase of entry.cases) {
-              sessions.push({
-                part_number: entry.part,
-                judge_name: entry.judge,
-                part_sent_by: entry.judge,
-                defendants: courtCase.defendant || '',
-                clerk_name: '', // Not available in current extraction
-                room_number: '', // Will need to be mapped or manually entered
-                purpose: courtCase.top_charge || '',
-                top_charge: courtCase.top_charge || '',
-                status: [
-                  courtCase.status?.js_date && `JS ${courtCase.status.js_date}`,
-                  courtCase.status?.hrg_date && `HRG ${courtCase.status.hrg_date}`,
-                  courtCase.status?.conf_date && `CONF ${courtCase.status.conf_date}`,
-                  courtCase.status?.calendar_info,
-                  courtCase.status?.adjournment
-                ].filter(Boolean).join(', ') || '',
-                attorney: courtCase.attorneys?.join(', ') || '',
-                extension: '',
-                papers: '',
-                confidence: 0.85 // Default confidence - could be calculated based on field completeness
-              });
-            }
-          } else {
-            // If no cases, create a session for the part itself
-            sessions.push({
-              part_number: entry.part,
-              judge_name: entry.judge,
-              part_sent_by: entry.judge,
-              defendants: '',
-              clerk_name: '',
-              room_number: '',
-              purpose: entry.calendar_type || '',
-              top_charge: '',
-              status: entry.special_notes?.join(', ') || '',
-              attorney: '',
-              extension: '',
-              papers: '',
-              confidence: 0.85
-            });
-          }
+          
+          // Create ONE session per part with aggregated case data
+          const cases = entry.cases || [];
+          const caseCount = cases.length;
+          
+          // Aggregate all defendants, charges, and attorneys from cases
+          const allDefendants = cases.map((c: any) => c.defendant).filter(Boolean);
+          const allCharges = cases.map((c: any) => c.top_charge).filter(Boolean);
+          const allAttorneys = cases.flatMap((c: any) => c.attorneys || []).filter(Boolean);
+          
+          // Calculate confidence based on field completeness
+          let confidence = 0.85;
+          if (entry.judge && entry.part) confidence += 0.05;
+          if (caseCount > 0) confidence += 0.05;
+          
+          sessions.push({
+            part_number: entry.part,
+            judge_name: entry.judge,
+            part_sent_by: entry.judge,
+            clerk_name: '', // Not available in current extraction
+            room_number: '', // Will be auto-populated in review based on part
+            purpose: entry.calendar_type || '',
+            // Store aggregated case data
+            case_count: caseCount,
+            cases: cases, // Store full case details for expandable view
+            defendants: allDefendants.join('; '),
+            top_charge: allCharges.join('; '),
+            attorney: [...new Set(allAttorneys)].join('; '), // Deduplicate attorneys
+            status: entry.special_notes?.join(', ') || '',
+            extension: '',
+            papers: '',
+            confidence: Math.min(confidence, 0.95)
+          });
         }
       }
 
