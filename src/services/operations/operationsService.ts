@@ -185,6 +185,118 @@ export const operationsService = {
   },
 
   /**
+   * Update room status with audit logging
+   * Complete Ops v1 flow: read → update → audit → return
+   * @param roomId - Room ID
+   * @param newStatus - New status
+   * @param notes - Optional notes for audit trail
+   * @param userId - User ID making the change
+   * @returns Promise<any> - Updated room
+   */
+  async updateRoomStatus(
+    roomId: string,
+    newStatus: string,
+    notes?: string,
+    userId?: string
+  ): Promise<any> {
+    try {
+      // Step 1: Read current room state
+      const { data: currentRoom, error: readError } = await db
+        .from('rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+
+      if (readError) handleSupabaseError(readError, 'Failed to read room');
+      if (!currentRoom) throw new Error('Room not found');
+
+      const oldStatus = currentRoom.status;
+
+      // Step 2: Update room status
+      const { data: updatedRoom, error: updateError } = await db
+        .from('rooms')
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString(),
+          updated_by: userId,
+        })
+        .eq('id', roomId)
+        .select(`
+          *,
+          building:buildings(id, name),
+          floor:floors(id, floor_number, name)
+        `)
+        .single();
+
+      if (updateError) {
+        // Check for permission error
+        if (updateError.code === 'PGRST301' || updateError.code === '42501') {
+          throw new Error('Permission denied: You do not have access to update this room');
+        }
+        handleSupabaseError(updateError, 'Failed to update room status');
+      }
+
+      // Step 3: Write audit log
+      const { error: auditError } = await db
+        .from('audit_logs')
+        .insert({
+          table_name: 'rooms',
+          record_id: roomId,
+          operation: 'UPDATE',
+          old_values: { status: oldStatus },
+          new_values: { status: newStatus },
+          changed_fields: ['status'],
+          action_description: notes || `Status changed from ${oldStatus} to ${newStatus}`,
+          user_id: userId,
+          created_at: new Date().toISOString(),
+        });
+
+      if (auditError) {
+        console.error('[operationsService.updateRoomStatus] Audit log failed:', auditError);
+        // Don't fail the operation if audit log fails, but log it
+      }
+
+      // Step 4: Return updated room
+      return validateData(updatedRoom, 'Failed to update room status');
+    } catch (error) {
+      console.error('[operationsService.updateRoomStatus]:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get audit trail for a record
+   * @param tableName - Table name
+   * @param recordId - Record ID
+   * @param limit - Number of entries to fetch
+   * @returns Promise<any[]> - Audit trail entries
+   */
+  async getAuditTrail(
+    tableName: string,
+    recordId: string,
+    limit: number = 20
+  ): Promise<any[]> {
+    try {
+      const { data, error } = await db
+        .from('audit_logs')
+        .select(`
+          *,
+          user:profiles(id, email, first_name, last_name, role)
+        `)
+        .eq('table_name', tableName)
+        .eq('record_id', recordId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) handleSupabaseError(error, 'Failed to fetch audit trail');
+      return data || [];
+    } catch (error) {
+      console.error('[operationsService.getAuditTrail]:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Get key requests with optional filters
    * @param filters - Optional filters
    * @returns Promise<any[]> - Array of key requests
