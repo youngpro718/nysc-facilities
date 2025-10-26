@@ -265,12 +265,87 @@ export function getClerkForRoom(roomNumber: string, cache?: EnrichmentCache): st
 }
 
 /**
+ * Parse the multi-line Part/Judge column from PDF
+ * 
+ * Example input:
+ * "PART 3 - TAPIA\nCal Wk 3\nOUT\n10/21-10/25\n10/24"
+ * 
+ * Returns:
+ * {
+ *   part_number: "3",
+ *   judge_name: "TAPIA",
+ *   calendar_week: "3",
+ *   absence_status: "OUT",
+ *   absence_dates: ["10/21-10/25", "10/24"]
+ * }
+ */
+export function parsePartJudgeColumn(columnText: string): Partial<ExtractedSession> {
+  const lines = columnText.split('\n').map(l => l.trim()).filter(Boolean);
+  const result: Partial<ExtractedSession> = {};
+
+  if (lines.length === 0) return result;
+
+  // Line 1: "PART 3 - TAPIA" or "PART 3 TAPIA"
+  const firstLine = lines[0];
+  const partMatch = firstLine.match(/PART\s*(\d+)/i);
+  if (partMatch) {
+    result.part_number = partMatch[1];
+    
+    // Extract judge name (everything after the part number)
+    const judgeName = firstLine
+      .replace(/PART\s*\d+/i, '')
+      .replace(/^[-\s]+/, '')
+      .trim();
+    if (judgeName) {
+      result.judge_name = judgeName;
+    }
+  }
+
+  // Line 2: "Cal Wk 3" or calendar info
+  if (lines.length > 1) {
+    const calMatch = lines[1].match(/Cal\s*Wk\s*(\d+)/i);
+    if (calMatch) {
+      result.calendar_week = calMatch[1];
+      result.calendar_day = lines[1]; // Keep full text too
+    } else if (lines[1].toLowerCase().includes('calendar')) {
+      result.calendar_day = lines[1];
+    }
+  }
+
+  // Line 3: Absence status ("OUT", "OWN", etc.)
+  if (lines.length > 2) {
+    const statusLine = lines[2].toUpperCase();
+    if (statusLine === 'OUT' || statusLine === 'OWN' || statusLine.length < 10) {
+      result.absence_status = statusLine;
+    }
+  }
+
+  // Remaining lines: Absence dates
+  const absenceDates: string[] = [];
+  for (let i = 3; i < lines.length; i++) {
+    const line = lines[i];
+    // Check if it looks like a date (contains numbers and slashes/dashes)
+    if (/\d+[-\/]\d+/.test(line)) {
+      absenceDates.push(line);
+    }
+  }
+  if (absenceDates.length > 0) {
+    result.absence_dates = absenceDates;
+  }
+
+  return result;
+}
+
+/**
  * Enrich extracted session data with database information
  */
 export interface ExtractedSession {
   part_number: string;
   judge_name: string;
-  calendar_day?: string;
+  calendar_week?: string;      // e.g., "Cal Wk 3" or "3"
+  calendar_day?: string;        // Legacy field, may be same as calendar_week
+  absence_status?: string;      // e.g., "OUT", "OWN"
+  absence_dates?: string[];     // e.g., ["10/21-10/25", "10/24"]
   room_number?: string;
   clerk_name?: string;
   cases?: any[];

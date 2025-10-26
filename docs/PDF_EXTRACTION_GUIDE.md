@@ -6,21 +6,40 @@ The PDF extraction system has been enhanced to automatically fill in court sessi
 ## Column Breakdown & Data Sources
 
 ### 1. **Part/Judge Column**
-**Contains:** Part number, judge name, calendar date, absence dates
+**Contains:** Part number, judge name, calendar week, absence status, absence dates
+
+**Structure in PDF:**
+```
+PART 3 - TAPIA
+Cal Wk 3
+OUT
+10/21-10/25
+10/24
+```
 
 **Data Sources:**
-- **Part Number**: Extracted from PDF
+- **Part Number**: Extracted from PDF (e.g., "3")
 - **Judge Name**: 
-  - Primary: Extracted from PDF
+  - Primary: Extracted from PDF (e.g., "TAPIA")
   - Enhanced: Matched against `personnel_profiles` table (judges/justices)
   - Normalized to use official names from database
-- **Calendar Date**: Extracted from PDF
-- **Absence Dates**: Extracted from PDF
+- **Calendar Week**: Extracted from PDF (e.g., "Cal Wk 3")
+- **Absence Status**: Extracted from PDF (e.g., "OUT", "OWN")
+- **Absence Dates**: Extracted from PDF (e.g., "10/21-10/25", "10/24")
+
+**Parsing Logic:**
+```typescript
+// Parse multi-line first column
+Line 1: "PART 3 - TAPIA" → part_number: "3", judge_name: "TAPIA"
+Line 2: "Cal Wk 3" → calendar_week: "3"
+Line 3: "OUT" → absence_status: "OUT"
+Line 4+: "10/21-10/25" → absence_dates: ["10/21-10/25", "10/24"]
+```
 
 **Enrichment Logic:**
 ```typescript
 // Finds best matching judge from database
-findJudgeName(extractedName) → Official judge name from personnel_profiles
+findJudgeName("TAPIA") → "Hon. Tapia" from personnel_profiles
 ```
 
 ### 2. **Sending Part**

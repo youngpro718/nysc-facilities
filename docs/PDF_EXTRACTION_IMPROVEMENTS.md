@@ -96,8 +96,13 @@ PDF → AI Extraction → Database Enrichment → Review → Save
 
 ### Input (from PDF):
 ```
-Part: 22
-Judge: Statzinger
+Part/Judge Column:
+PART 22 - STATZINGER
+Cal Wk 3
+OUT
+10/21-10/25
+10/24
+
 Cases: 5 cases with full details
 ```
 
@@ -105,6 +110,9 @@ Cases: 5 cases with full details
 ```
 Part: 22
 Judge: Hon. Statzinger          ← Normalized from database
+Calendar Week: 3                 ← Extracted from "Cal Wk 3"
+Absence Status: OUT              ← Extracted from multi-line column
+Absence Dates: 10/21-10/25, 10/24 ← Extracted from multi-line column
 Room: 1417                       ← Auto-filled from part mapping
 Clerk: A. CHAVARRIA              ← Auto-filled from assignment
 Cases: 5 cases with full details ← Preserved

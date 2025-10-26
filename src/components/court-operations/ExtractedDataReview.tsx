@@ -24,7 +24,10 @@ interface CaseDetail {
 interface ExtractedSession {
   part_number: string;
   judge_name: string;
+  calendar_week?: string;
   calendar_day?: string;
+  absence_status?: string;
+  absence_dates?: string[];
   part_sent_by: string;
   clerk_name: string;
   room_number: string;
@@ -178,7 +181,8 @@ export function ExtractedDataReview({
                 <TableHead className="w-16">Conf.</TableHead>
                 <TableHead>Part</TableHead>
                 <TableHead>Judge</TableHead>
-                <TableHead>Cal Day</TableHead>
+                <TableHead>Cal Week</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Room</TableHead>
                 <TableHead className="w-20">Cases</TableHead>
                 <TableHead className="w-24">Actions</TableHead>
@@ -232,12 +236,30 @@ export function ExtractedDataReview({
                     <TableCell>
                       {editingIndex === index ? (
                         <Input
-                          value={editData.calendar_day || ''}
-                          onChange={(e) => setEditData({ ...editData, calendar_day: e.target.value })}
+                          value={editData.calendar_week || editData.calendar_day || ''}
+                          onChange={(e) => setEditData({ ...editData, calendar_week: e.target.value })}
                           className="w-24"
                         />
                       ) : (
-                        <span className="text-xs">{session.calendar_day || 'N/A'}</span>
+                        <span className="text-xs">{session.calendar_week || session.calendar_day || 'N/A'}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingIndex === index ? (
+                        <Input
+                          value={editData.absence_status || ''}
+                          onChange={(e) => setEditData({ ...editData, absence_status: e.target.value })}
+                          className="w-20"
+                          placeholder="OUT/OWN"
+                        />
+                      ) : (
+                        session.absence_status ? (
+                          <Badge variant={session.absence_status === 'OUT' ? 'destructive' : 'secondary'}>
+                            {session.absence_status}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )
                       )}
                     </TableCell>
                     <TableCell>
