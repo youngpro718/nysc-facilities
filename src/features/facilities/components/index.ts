@@ -8,5 +8,6 @@
 
 export { RoomCard } from './RoomCard';
 export { RoomList } from './RoomList';
+export { RoomDetailPanel } from './RoomDetailPanel';
 export { BuildingSelector } from './BuildingSelector';
 export { FloorSelector } from './FloorSelector';

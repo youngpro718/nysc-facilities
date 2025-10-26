@@ -5,21 +5,22 @@
  * read room → update status → write audit_log → refresh view
  */
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { operationsService } from '../operationsService';
 import { db } from '../../core/supabaseClient';
 
 // Mock Supabase client
-jest.mock('../../core/supabaseClient', () => ({
+vi.mock('../../core/supabaseClient', () => ({
   db: {
-    from: jest.fn(),
+    from: vi.fn(),
     auth: {
-      getUser: jest.fn(),
+      getUser: vi.fn(),
     },
   },
-  handleSupabaseError: jest.fn((error, context) => {
+  handleSupabaseError: vi.fn((error, context) => {
     throw new Error(`${context}: ${error.message}`);
   }),
-  validateData: jest.fn((data, context) => {
+  validateData: vi.fn((data, context) => {
     if (!data) throw new Error(context);
     return data;
   }),
@@ -33,7 +34,7 @@ describe('operationsService.updateRoomStatus', () => {
   const notes = 'Scheduled HVAC maintenance';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should complete full flow: read → update → audit → return', async () => {
@@ -58,33 +59,33 @@ describe('operationsService.updateRoomStatus', () => {
     const mockAuditInsert = { data: null, error: null };
 
     // Setup mocks
-    const selectMock = jest.fn()
+    const selectMock = vi.fn()
       .mockReturnValueOnce({
-        eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
             data: mockCurrentRoom,
             error: null,
           }),
         }),
       })
       .mockReturnValueOnce({
-        eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
             data: mockUpdatedRoom,
             error: null,
           }),
         }),
       });
 
-    const updateMock = jest.fn().mockReturnValue({
-      eq: jest.fn().mockReturnValue({
+    const updateMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
         select: selectMock,
       }),
     });
 
-    const insertMock = jest.fn().mockResolvedValue(mockAuditInsert);
+    const insertMock = vi.fn().mockResolvedValue(mockAuditInsert);
 
-    (db.from as jest.Mock)
+    (db.from as any)
       .mockReturnValueOnce({ select: selectMock }) // Read
       .mockReturnValueOnce({ update: updateMock }) // Update
       .mockReturnValueOnce({ insert: insertMock }); // Audit
@@ -127,16 +128,16 @@ describe('operationsService.updateRoomStatus', () => {
   });
 
   it('should throw error if room not found', async () => {
-    const selectMock = jest.fn().mockReturnValue({
-      eq: jest.fn().mockReturnValue({
-        single: jest.fn().mockResolvedValue({
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
           data: null,
           error: null,
         }),
       }),
     });
 
-    (db.from as jest.Mock).mockReturnValue({ select: selectMock });
+    (db.from as any).mockReturnValue({ select: selectMock });
 
     await expect(
       operationsService.updateRoomStatus(mockRoomId, newStatus, notes, mockUserId)
@@ -144,20 +145,20 @@ describe('operationsService.updateRoomStatus', () => {
   });
 
   it('should throw permission error with specific message', async () => {
-    const selectMock = jest.fn().mockReturnValue({
-      eq: jest.fn().mockReturnValue({
-        single: jest.fn().mockResolvedValue({
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
           data: { id: mockRoomId, status: oldStatus },
           error: null,
         }),
       }),
     });
 
-    const updateMock = jest.fn().mockReturnValue({
-      eq: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
+    const updateMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
               data: null,
               error: { code: 'PGRST301', message: 'Permission denied' },
             }),
@@ -166,7 +167,7 @@ describe('operationsService.updateRoomStatus', () => {
       }),
     });
 
-    (db.from as jest.Mock)
+    (db.from as any)
       .mockReturnValueOnce({ select: selectMock })
       .mockReturnValueOnce({ update: updateMock });
 
@@ -179,41 +180,41 @@ describe('operationsService.updateRoomStatus', () => {
     const mockCurrentRoom = { id: mockRoomId, status: oldStatus };
     const mockUpdatedRoom = { id: mockRoomId, status: newStatus };
 
-    const selectMock = jest.fn()
+    const selectMock = vi.fn()
       .mockReturnValueOnce({
-        eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
             data: mockCurrentRoom,
             error: null,
           }),
         }),
       })
       .mockReturnValueOnce({
-        eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
             data: mockUpdatedRoom,
             error: null,
           }),
         }),
       });
 
-    const updateMock = jest.fn().mockReturnValue({
-      eq: jest.fn().mockReturnValue({
+    const updateMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
         select: selectMock,
       }),
     });
 
-    const insertMock = jest.fn().mockResolvedValue({
+    const insertMock = vi.fn().mockResolvedValue({
       data: null,
       error: { message: 'Audit log failed' },
     });
 
-    (db.from as jest.Mock)
+    (db.from as any)
       .mockReturnValueOnce({ select: selectMock })
       .mockReturnValueOnce({ update: updateMock })
       .mockReturnValueOnce({ insert: insertMock });
 
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const result = await operationsService.updateRoomStatus(
       mockRoomId,
@@ -256,11 +257,11 @@ describe('operationsService.getAuditTrail', () => {
       },
     ];
 
-    const selectMock = jest.fn().mockReturnValue({
-      eq: jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          order: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue({
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          order: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue({
               data: mockAuditEntries,
               error: null,
             }),
@@ -269,7 +270,7 @@ describe('operationsService.getAuditTrail', () => {
       }),
     });
 
-    (db.from as jest.Mock).mockReturnValue({ select: selectMock });
+    (db.from as any).mockReturnValue({ select: selectMock });
 
     const result = await operationsService.getAuditTrail('rooms', 'room-123', 20);
 
@@ -278,11 +279,11 @@ describe('operationsService.getAuditTrail', () => {
   });
 
   it('should throw error on fetch failure', async () => {
-    const selectMock = jest.fn().mockReturnValue({
-      eq: jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          order: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue({
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          order: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue({
               data: null,
               error: { message: 'Database error' },
             }),
@@ -291,7 +292,7 @@ describe('operationsService.getAuditTrail', () => {
       }),
     });
 
-    (db.from as jest.Mock).mockReturnValue({ select: selectMock });
+    (db.from as any).mockReturnValue({ select: selectMock });
 
     await expect(
       operationsService.getAuditTrail('rooms', 'room-123')

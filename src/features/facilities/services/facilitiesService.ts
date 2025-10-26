@@ -4,11 +4,21 @@
  * Handles all data operations for facilities (rooms, buildings, floors)
  * This is the ONLY place where Supabase queries for facilities should exist.
  * 
+ * Uses Zod validation at service boundary for predictable types.
+ * 
  * @module features/facilities/services/facilitiesService
  */
 
 import { db, handleSupabaseError, validateData } from '@/services/core/supabaseClient';
 import type { Room, Building, Floor, RoomFilters } from '../model';
+import {
+  validateRooms,
+  validateRoom,
+  validateBuildings,
+  validateFloors,
+  validateCreateRoomInput,
+  validateUpdateRoomInput,
+} from '../schemas';
 
 /**
  * Facilities Service
