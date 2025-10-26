@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/components/theme-provider';
+import { useTheme } from '@/providers/ThemeProvider';
 import { toast } from 'sonner';
 import { Bell, Palette, Save, Moon, Sun } from 'lucide-react';
 import {
@@ -48,8 +48,10 @@ export default function AdminSettingsPanel() {
   };
 
   const handleThemeChange = (newTheme: string) => {
-    setTheme(newTheme as 'light' | 'dark' | 'system');
-    toast.success(`Theme changed to ${newTheme}`);
+    if (newTheme === 'light' || newTheme === 'dark') {
+      setTheme(newTheme);
+      toast.success(`Theme changed to ${newTheme}`);
+    }
   };
 
   return (
@@ -165,12 +167,6 @@ export default function AdminSettingsPanel() {
                   <div className="flex items-center gap-2">
                     <Moon className="h-4 w-4" />
                     Dark
-                  </div>
-                </SelectItem>
-                <SelectItem value="system">
-                  <div className="flex items-center gap-2">
-                    <Palette className="h-4 w-4" />
-                    System
                   </div>
                 </SelectItem>
               </SelectContent>
