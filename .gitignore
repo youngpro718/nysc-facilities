@@ -39,6 +39,8 @@ scripts/
 *.md
 !README.md
 !docs/*.md
+!docs/epics/*.md
+!docs/stories/*.md
 
 # Database and infrastructure assets (exclude from static deploy)
 sql/
