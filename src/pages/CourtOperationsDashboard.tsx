@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InteractiveOperationsDashboard } from "@/components/court/InteractiveOperationsDashboard";
+import { TodaysStatusDashboard } from "@/components/court-operations/TodaysStatusDashboard";
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
-import { TermSheetBoard } from "@/components/court-operations/personnel/TermSheetBoard";
 import { StaffAbsenceManager } from "@/components/court-operations/StaffAbsenceManager";
 import { ConflictDetectionPanel } from "@/components/court-operations/ConflictDetectionPanel";
 import { DailySessionsPanel } from "@/components/court-operations/DailySessionsPanel";
-import { MapPin, Users, FileText, UserX, AlertTriangle, CalendarCheck } from "lucide-react";
+import { LiveCourtGrid } from "@/components/court/LiveCourtGrid";
+import { Activity, Users, CalendarCheck, Wrench } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
@@ -19,7 +19,7 @@ export const CourtOperationsDashboard = () => {
   const [selectedCourtRoom, setSelectedCourtRoom] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const tab = searchParams.get('tab') || 'operations';
+  const tab = searchParams.get('tab') || 'today';
 
   // Determine when to glow/highlight the Manage Assignments tab
   const { getRecentlyAffectedRooms } = useCourtIssuesIntegration();
@@ -64,10 +64,14 @@ export const CourtOperationsDashboard = () => {
         }
         className="w-full"
       >
-        <TabsList className="flex w-full">
-          <TabsTrigger value="operations" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 flex-shrink-0" />
-            Operations Overview
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="today" className="flex items-center gap-2">
+            <Activity className="h-4 w-4 flex-shrink-0" />
+            Today's Status
+          </TabsTrigger>
+          <TabsTrigger value="daily-sessions" className="flex items-center gap-2">
+            <CalendarCheck className="h-4 w-4 flex-shrink-0" />
+            Daily Sessions
           </TabsTrigger>
           <TabsTrigger
             value="assignments"
@@ -77,48 +81,45 @@ export const CourtOperationsDashboard = () => {
               <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
             )}
             <Users className="h-4 w-4 flex-shrink-0" />
-            Manage Assignments
+            Full Assignments
           </TabsTrigger>
-          <TabsTrigger value="absences" className="flex items-center gap-2">
-            <UserX className="h-4 w-4 flex-shrink-0" />
-            Staff Absences
-          </TabsTrigger>
-          <TabsTrigger value="conflicts" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-            Conflict Detection
-          </TabsTrigger>
-          <TabsTrigger value="term-sheet" className="flex items-center gap-2">
-            <FileText className="h-4 w-4 flex-shrink-0" />
-            Term Sheet
-          </TabsTrigger>
-          <TabsTrigger value="daily-sessions" className="flex items-center gap-2">
-            <CalendarCheck className="h-4 w-4 flex-shrink-0" />
-            Daily Sessions
+          <TabsTrigger value="management" className="flex items-center gap-2">
+            <Wrench className="h-4 w-4 flex-shrink-0" />
+            Management Tools
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="operations">
-          <InteractiveOperationsDashboard />
+        <TabsContent value="today">
+          <TodaysStatusDashboard 
+            onNavigateToTab={(tab) => setSearchParams({ tab })}
+          />
+        </TabsContent>
+
+        <TabsContent value="daily-sessions">
+          <DailySessionsPanel />
         </TabsContent>
 
         <TabsContent value="assignments">
           <AssignmentManagementPanel />
         </TabsContent>
 
-        <TabsContent value="absences">
-          <StaffAbsenceManager />
-        </TabsContent>
-
-        <TabsContent value="conflicts">
-          <ConflictDetectionPanel />
-        </TabsContent>
-
-        <TabsContent value="term-sheet">
-          <TermSheetBoard />
-        </TabsContent>
-
-        <TabsContent value="daily-sessions">
-          <DailySessionsPanel />
+        <TabsContent value="management">
+          <Tabs defaultValue="absences" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="absences">Staff Absences</TabsTrigger>
+              <TabsTrigger value="live-grid">Live Grid</TabsTrigger>
+              <TabsTrigger value="conflicts">Conflict Detection</TabsTrigger>
+            </TabsList>
+            <TabsContent value="absences" className="mt-4">
+              <StaffAbsenceManager />
+            </TabsContent>
+            <TabsContent value="live-grid" className="mt-4">
+              <LiveCourtGrid />
+            </TabsContent>
+            <TabsContent value="conflicts" className="mt-4">
+              <ConflictDetectionPanel />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
       </Tabs>
 
