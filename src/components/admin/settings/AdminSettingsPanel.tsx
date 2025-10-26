@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { supabase } from '@/lib/supabase';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 /**
  * AdminSettingsPanel - Consolidated admin personal settings
@@ -24,7 +26,26 @@ import {
  */
 export default function AdminSettingsPanel() {
   const { theme, setTheme } = useTheme();
+  const queryClient = useQueryClient();
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Fetch current user preferences
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['user-preferences'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('notification_preferences, interface_preferences')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   // Local state for settings
   const [settings, setSettings] = useState({
@@ -36,15 +57,65 @@ export default function AdminSettingsPanel() {
     showAvatars: true,
   });
 
+  // Load settings from database
+  useEffect(() => {
+    if (profile) {
+      const notifPrefs = profile.notification_preferences || {};
+      const interfacePrefs = profile.interface_preferences || {};
+      
+      setSettings({
+        emailNotifications: notifPrefs.email ?? true,
+        pushNotifications: notifPrefs.push ?? false,
+        criticalAlerts: notifPrefs.critical ?? true,
+        weeklyReports: notifPrefs.weekly ?? false,
+        compactMode: interfacePrefs.compact ?? false,
+        showAvatars: interfacePrefs.showAvatars ?? true,
+      });
+    }
+  }, [profile]);
+
+  // Mutation to save settings
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          notification_preferences: {
+            email: settings.emailNotifications,
+            push: settings.pushNotifications,
+            critical: settings.criticalAlerts,
+            weekly: settings.weeklyReports,
+          },
+          interface_preferences: {
+            compact: settings.compactMode,
+            showAvatars: settings.showAvatars,
+          },
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
+      toast.success('Settings saved successfully');
+      setHasChanges(false);
+    },
+    onError: (error) => {
+      console.error('Failed to save settings:', error);
+      toast.error('Failed to save settings');
+    },
+  });
+
   const handleChange = (field: string, value: boolean) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
 
   const handleSave = () => {
-    // In production, save to database
-    toast.success('Settings saved successfully');
-    setHasChanges(false);
+    saveMutation.mutate();
   };
 
   const handleThemeChange = (newTheme: string) => {
@@ -53,6 +124,18 @@ export default function AdminSettingsPanel() {
       toast.success(`Theme changed to ${newTheme}`);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-muted-foreground">Loading settings...</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -213,9 +296,9 @@ export default function AdminSettingsPanel() {
       {/* Save Button */}
       {hasChanges && (
         <div className="flex justify-end">
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={saveMutation.isPending}>
             <Save className="h-4 w-4 mr-2" />
-            Save Changes
+            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       )}

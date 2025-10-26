@@ -43,13 +43,6 @@ export function AdminQuickActions() {
       variant: 'outline',
     },
     {
-      title: 'Module Management',
-      description: 'Enable/disable system modules and features',
-      icon: Package,
-      action: () => navigate('/system-settings'),
-      variant: 'outline',
-    },
-    {
       title: 'Form Templates',
       description: 'View and manage form templates for requests and reports',
       icon: FileText,

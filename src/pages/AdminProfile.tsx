@@ -1,11 +1,11 @@
 import { ChevronLeft, QrCode, Download, Copy, Check, Users, Shield, Settings as SettingsIcon, Wrench, Building, Activity } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminManagementTab } from "@/components/profile/reorganized/AdminManagementTab";
@@ -21,11 +21,20 @@ import AdminSettingsPanel from "@/components/admin/settings/AdminSettingsPanel";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAdmin, userRole } = useRolePermissions();
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [enhancedUserManagementOpen, setEnhancedUserManagementOpen] = useState(false);
   const appUrl = window.location.origin;
+  
+  // Get active tab from URL or default to 'users'
+  const activeTab = searchParams.get('tab') || 'users';
+  
+  // Handle tab changes by updating URL
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   const copyToClipboard = async () => {
     try {
@@ -161,7 +170,7 @@ export default function AdminProfile() {
 
       {/* Main Content */}
       {isAdmin ? (
-        <Tabs defaultValue="users" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full grid grid-cols-5">
             <TabsTrigger value="users" className="text-xs sm:text-sm">
               <Users className="h-4 w-4 mr-1 sm:mr-2" />
