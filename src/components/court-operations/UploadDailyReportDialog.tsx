@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, FileText, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UploadDailyReportDialogProps {
   open: boolean;
@@ -26,17 +27,8 @@ export function UploadDailyReportDialog({
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       // Validate file type
-      const validTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'image/png',
-        'image/jpeg',
-        'image/jpg'
-      ];
-      
-      if (!validTypes.includes(selectedFile.type)) {
-        toast.error('Invalid file type. Please upload PDF, Word, or Image files.');
+      if (selectedFile.type !== 'application/pdf') {
+        toast.error('Please upload a PDF file.');
         return;
       }
 
@@ -59,91 +51,109 @@ export function UploadDailyReportDialog({
     setExtractionStatus('uploading');
 
     try {
-      // ============================================================================
-      // TODO: LOVABLE AI INTEGRATION POINT
-      // ============================================================================
-      // 
-      // This is where Lovable's Google AI Cloud integration should be implemented.
-      // 
-      // REQUIRED FUNCTIONALITY:
-      // 1. Convert file to base64 or upload to temporary storage
-      // 2. Send to Google Cloud Vision API or Gemini API
-      // 3. Extract table data from the document
-      // 4. Parse the extracted text into structured format
-      // 
-      // EXPECTED INPUT:
-      // - file: File object (PDF, Word doc, or Image)
-      // 
-      // EXPECTED OUTPUT FORMAT:
-      // Array of objects with these fields:
-      // [
-      //   {
-      //     part_number: string,        // e.g., "TAP A"
-      //     judge_name: string,         // e.g., "M. IREY (J)"
-      //     part_sent_by: string,       // e.g., "M. IREY (J)"
-      //     defendants: string,         // Defendant names
-      //     clerk_name: string,         // e.g., "BRG"
-      //     room_number: string,        // e.g., "1014"
-      //     purpose: string,            // e.g., "ATT", "MURD 2"
-      //     top_charge: string,         // Charge type
-      //     status: string,             // e.g., "HBG CONT'D 10/23", "JUDGE OUT"
-      //     attorney: string,           // Attorney name
-      //     extension: string,          // Phone extension
-      //     papers: string,             // "OWN" or "DWN"
-      //     confidence: number          // 0-1, extraction confidence
-      //   }
-      // ]
-      // 
-      // ERROR HANDLING:
-      // - Throw error with descriptive message if extraction fails
-      // - Include which fields had low confidence
-      // 
-      // IMPLEMENTATION NOTES:
-      // - Use Lovable's built-in Google AI integration
-      // - Handle multi-page documents
-      // - Preserve table structure
-      // - Extract all rows from the daily report
-      // 
-      // EXAMPLE API CALL (pseudo-code):
-      // const result = await lovable.ai.extractTableData(file, {
-      //   provider: 'google-cloud-vision',
-      //   tableFormat: 'daily-court-report',
-      //   columns: ['part', 'judge', 'clerk', 'room', 'status', 'attorney']
-      // });
-      // 
-      // ============================================================================
+      // Step 1: Upload file to Supabase storage
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
 
+      const fileName = `court-reports/${user.id}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('term-pdfs')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      console.log('📄 File uploaded:', fileName);
+
+      // Step 2: Extract data using AI
       setExtractionStatus('extracting');
+      toast.info('Analyzing document with AI...');
 
-      // TEMPORARY: Mock extraction for development
-      // Replace this entire section with actual Lovable AI integration
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      
-      const mockExtractedData = [
-        {
-          part_number: 'TAP A',
-          judge_name: 'M. IREY (J)',
-          part_sent_by: 'M. IREY (J)',
-          defendants: 'Sample Defendant',
-          clerk_name: 'BRG',
-          room_number: '1014',
-          purpose: 'ATT',
-          top_charge: 'MURD 2',
-          status: 'HBG CONT\'D 10/23',
-          attorney: 'M. FUSSMAN',
-          extension: '1829',
-          papers: 'OWN',
-          confidence: 0.95
+      const { data: parseResult, error: parseError } = await supabase.functions.invoke('parse-pdf', {
+        body: { filePath: fileName }
+      });
+
+      if (parseError) {
+        throw new Error(`Extraction failed: ${parseError.message}`);
+      }
+
+      if (!parseResult?.success) {
+        const error = parseResult?.error || 'Failed to extract data from PDF';
+        
+        // Check if it's a configuration error
+        if (error.includes('not configured') || error.includes('LOVABLE_API_KEY')) {
+          throw new Error('AI extraction not configured. Please contact your administrator to enable Lovable AI.');
         }
-      ];
+        
+        throw new Error(error);
+      }
 
-      // END TEMPORARY MOCK DATA
+      console.log('✅ Extraction successful:', parseResult);
+
+      // Step 3: Transform extracted court report data to session format
+      const extractedData = parseResult.extracted_data;
+      const sessions: any[] = [];
+
+      if (extractedData?.entries) {
+        for (const entry of extractedData.entries) {
+          // For each part entry, create sessions from its cases
+          if (entry.cases && entry.cases.length > 0) {
+            for (const courtCase of entry.cases) {
+              sessions.push({
+                part_number: entry.part,
+                judge_name: entry.judge,
+                part_sent_by: entry.judge,
+                defendants: courtCase.defendant || '',
+                clerk_name: '', // Not available in current extraction
+                room_number: '', // Will need to be mapped or manually entered
+                purpose: courtCase.top_charge || '',
+                top_charge: courtCase.top_charge || '',
+                status: [
+                  courtCase.status?.js_date && `JS ${courtCase.status.js_date}`,
+                  courtCase.status?.hrg_date && `HRG ${courtCase.status.hrg_date}`,
+                  courtCase.status?.conf_date && `CONF ${courtCase.status.conf_date}`,
+                  courtCase.status?.calendar_info,
+                  courtCase.status?.adjournment
+                ].filter(Boolean).join(', ') || '',
+                attorney: courtCase.attorneys?.join(', ') || '',
+                extension: '',
+                papers: '',
+                confidence: 0.85 // Default confidence - could be calculated based on field completeness
+              });
+            }
+          } else {
+            // If no cases, create a session for the part itself
+            sessions.push({
+              part_number: entry.part,
+              judge_name: entry.judge,
+              part_sent_by: entry.judge,
+              defendants: '',
+              clerk_name: '',
+              room_number: '',
+              purpose: entry.calendar_type || '',
+              top_charge: '',
+              status: entry.special_notes?.join(', ') || '',
+              attorney: '',
+              extension: '',
+              papers: '',
+              confidence: 0.85
+            });
+          }
+        }
+      }
+
+      if (sessions.length === 0) {
+        throw new Error('No sessions could be extracted from the document. The document may be empty or in an unsupported format.');
+      }
 
       setExtractionStatus('success');
-      toast.success(`Extracted ${mockExtractedData.length} sessions from document`);
+      toast.success(`Extracted ${sessions.length} sessions from document`);
       
       if (onDataExtracted) {
-        onDataExtracted(mockExtractedData);
+        onDataExtracted(sessions);
       }
 
       // Close dialog after short delay
@@ -154,8 +164,9 @@ export function UploadDailyReportDialog({
     } catch (error) {
       console.error('Extraction error:', error);
       setExtractionStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to extract data from document');
-      toast.error('Extraction failed. Please try again or contact support.');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to extract data from document';
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsExtracting(false);
     }
@@ -174,7 +185,7 @@ export function UploadDailyReportDialog({
         <DialogHeader>
           <DialogTitle>Upload Daily Report</DialogTitle>
           <DialogDescription>
-            Upload a Word document, PDF, or image of the daily court report to automatically extract session data.
+            Upload a PDF of the daily court report to automatically extract session data using AI.
           </DialogDescription>
         </DialogHeader>
 
@@ -196,13 +207,13 @@ export function UploadDailyReportDialog({
                 id="file-upload"
                 type="file"
                 className="hidden"
-                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                accept=".pdf"
                 onChange={handleFileChange}
                 disabled={isExtracting}
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Supported formats: PDF, Word (.doc, .docx), Images (.png, .jpg)
+              Supported format: PDF only (max 10MB)
             </p>
           </div>
 
@@ -265,11 +276,14 @@ export function UploadDailyReportDialog({
           <div className="rounded-lg border p-3 bg-muted/50">
             <p className="text-sm font-medium mb-2">How it works:</p>
             <ol className="text-xs space-y-1 list-decimal list-inside text-muted-foreground">
-              <li>Upload your daily report (Word, PDF, or image)</li>
-              <li>AI will extract the table data automatically</li>
-              <li>Review and edit any extracted data</li>
+              <li>Upload your daily report (PDF)</li>
+              <li>AI extracts parts, judges, cases, and defendants automatically</li>
+              <li>Review and edit extracted data as needed</li>
               <li>Approve to add sessions to the system</li>
             </ol>
+            <p className="text-xs text-muted-foreground mt-2">
+              <strong>Note:</strong> Some fields like room numbers and clerk names may need manual entry if not in the report.
+            </p>
           </div>
         </div>
 
