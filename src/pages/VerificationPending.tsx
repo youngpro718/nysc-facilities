@@ -1,16 +1,21 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Loader2, ArrowRight, Building2 } from "lucide-react";
+import { CheckCircle, Loader2, ArrowRight, Building2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { useAuth } from "@/hooks/useAuth";
+import { resendVerificationEmail } from "@/services/auth";
 
 export default function VerificationPending() {
   const navigate = useNavigate();
   const { user, profile, refreshSession, signOut, isLoading } = useAuth();
+  const [isResending, setIsResending] = useState(false);
+  const [userEmail] = useState(() => {
+    return user?.email || localStorage.getItem('signup_email') || localStorage.getItem('ONBOARD_AFTER_SIGNUP_EMAIL') || '';
+  });
 
   useEffect(() => {
     // Don't redirect if loading or if user doesn't exist
@@ -45,6 +50,29 @@ export default function VerificationPending() {
 
   const handleExploreFeatures = () => {
     navigate('/features-preview');
+  };
+
+  const handleResendEmail = async () => {
+    if (!userEmail) {
+      toast.error('Email address not found', {
+        description: 'Please sign in again to resend verification email.'
+      });
+      return;
+    }
+
+    setIsResending(true);
+    try {
+      await resendVerificationEmail(userEmail);
+      toast.success('Verification email sent!', {
+        description: `Check your inbox at ${userEmail}`
+      });
+    } catch (error: any) {
+      toast.error('Failed to resend email', {
+        description: error.message || 'Please try again later.'
+      });
+    } finally {
+      setIsResending(false);
+    }
   };
 
   if (isLoading) {
@@ -84,6 +112,20 @@ export default function VerificationPending() {
             </p>
           </div>
 
+          {userEmail && (
+            <div className="w-full p-4 rounded-lg bg-muted">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <div className="text-left flex-1">
+                  <p className="font-medium text-sm">Verification Email Sent</p>
+                  <p className="text-xs text-muted-foreground break-all">
+                    Check your inbox at {userEmail}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="w-full p-4 rounded-lg bg-muted">
             <div className="flex items-center gap-3">
               <Building2 className="h-5 w-5 text-muted-foreground" />
@@ -100,6 +142,25 @@ export default function VerificationPending() {
             <Button onClick={handleExploreFeatures} className="flex items-center gap-2">
               Explore Features
               <ArrowRight className="h-4 w-4" />
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={handleResendEmail}
+              disabled={isResending}
+              className="flex items-center gap-2"
+            >
+              {isResending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Mail className="h-4 w-4" />
+                  Resend Verification Email
+                </>
+              )}
             </Button>
             
             <Button variant="ghost" onClick={handleCheckStatus}>
