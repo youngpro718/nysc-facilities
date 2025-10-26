@@ -4,105 +4,171 @@
  * Comprehensive facility management (rooms, buildings, floors)
  * Route: /facilities
  * 
+ * ARCHITECTURE: Thin page - uses feature hooks and components only
+ * 
  * @page
  */
 
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
-import { ErrorMessage } from '@/components/common/ErrorMessage';
-import { EmptyState } from '@/components/common/EmptyState';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Plus, Search } from 'lucide-react';
+
+// Import from Facilities feature - single entry point
+import {
+  useRooms,
+  RoomList,
+  BuildingSelector,
+  FloorSelector,
+  type RoomFilters,
+  type Room,
+} from '@/features/facilities';
 
 export default function Facilities() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  
-  // TODO: Implement hooks
-  // const { data: rooms, isLoading, error, refetch } = useRooms(filters);
-  // const { data: buildings } = useBuildings();
-  // const { data: floors } = useFloors(selectedBuilding);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const isLoading = false;
-  const error = null;
-  const rooms = [];
+  // Build filters from URL params
+  const buildingId = searchParams.get('building') || undefined;
+  const floorId = searchParams.get('floor') || undefined;
+  const search = searchParams.get('search') || undefined;
 
-  // Get filters from URL
-  const buildingId = searchParams.get('building');
-  const floorId = searchParams.get('floor');
-  const view = searchParams.get('view') || 'grid';
+  const filters: RoomFilters = {
+    buildingId,
+    floorId,
+    search,
+  };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Facilities</h1>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Facility
-          </Button>
-        </div>
-        <LoadingSkeleton type="grid" count={12} />
-      </div>
-    );
-  }
+  // Use feature hook - all data fetching logic is in the feature
+  const { data: rooms, isLoading, error, refetch } = useRooms(filters);
 
-  if (error) {
-    return <ErrorMessage error={error} onRetry={() => {}} />;
-  }
+  // Handle filter changes - update URL params
+  const handleBuildingChange = (value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value) {
+      newParams.set('building', value);
+      newParams.delete('floor'); // Reset floor when building changes
+    } else {
+      newParams.delete('building');
+      newParams.delete('floor');
+    }
+    setSearchParams(newParams);
+  };
 
-  if (!rooms || rooms.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Facilities</h1>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Facility
-          </Button>
-        </div>
-        <EmptyState
-          title="No facilities found"
-          description="Get started by creating your first facility or adjust your filters"
-          action={{
-            label: 'Create Facility',
-            onClick: () => console.log('Create facility'),
-          }}
-        />
-      </div>
-    );
-  }
+  const handleFloorChange = (value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value) {
+      newParams.set('floor', value);
+    } else {
+      newParams.delete('floor');
+    }
+    setSearchParams(newParams);
+  };
+
+  const handleSearch = () => {
+    const newParams = new URLSearchParams(searchParams);
+    if (searchQuery.trim()) {
+      newParams.set('search', searchQuery.trim());
+    } else {
+      newParams.delete('search');
+    }
+    setSearchParams(newParams);
+  };
+
+  const handleClearFilters = () => {
+    setSearchParams(new URLSearchParams());
+    setSearchQuery('');
+  };
+
+  const handleRoomClick = (room: Room) => {
+    navigate(`/facilities/${room.id}`);
+  };
+
+  const hasActiveFilters = buildingId || floorId || search;
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Facilities</h1>
-        <Button>
+        <div>
+          <h1 className="text-3xl font-bold">Facilities</h1>
+          <p className="text-muted-foreground">
+            Manage buildings, floors, and rooms
+          </p>
+        </div>
+        <Button onClick={() => navigate('/facilities/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          Create Facility
+          Add Room
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4">
-        <div className="border rounded-lg p-4 flex-1">
-          <p className="text-sm text-muted-foreground">Filters will appear here</p>
-        </div>
-      </div>
+      {/* Filters Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Building Selector - from feature */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Building</label>
+              <BuildingSelector
+                value={buildingId}
+                onValueChange={handleBuildingChange}
+              />
+            </div>
 
-      {/* Room Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="border rounded-lg p-4">
-            <h3 className="font-semibold">Room {101 + i}</h3>
-            <p className="text-sm text-muted-foreground mt-2">Office</p>
-            <div className="flex gap-2 mt-4">
-              <Button size="sm" variant="outline">View</Button>
-              <Button size="sm" variant="outline">Edit</Button>
+            {/* Floor Selector - from feature */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Floor</label>
+              <FloorSelector
+                buildingId={buildingId}
+                value={floorId}
+                onValueChange={handleFloorChange}
+              />
+            </div>
+
+            {/* Search */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Search</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Room number or name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+                <Button onClick={handleSearch} size="icon">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <Button variant="outline" onClick={handleClearFilters}>
+              Clear Filters
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Room List - from feature, handles loading/error/empty states */}
+      <RoomList
+        rooms={rooms || []}
+        isLoading={isLoading}
+        error={error}
+        onRoomClick={handleRoomClick}
+        emptyMessage={
+          hasActiveFilters
+            ? 'No rooms match your filters. Try adjusting your search criteria.'
+            : 'No rooms found. Get started by adding your first room.'
+        }
+      />
     </div>
   );
 }
