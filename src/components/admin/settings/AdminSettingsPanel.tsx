@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/providers/ThemeProvider';
 import { toast } from 'sonner';
 import { Bell, Palette, Save, Moon, Sun, Clock, Shield, Globe, Calendar, LayoutDashboard } from 'lucide-react';
@@ -52,7 +53,6 @@ export default function AdminSettingsPanel() {
     emailNotifications: true,
     pushNotifications: false,
     criticalAlerts: true,
-    weeklyReports: false,
     compactMode: false,
     showAvatars: true,
     sessionTimeout: '30',
@@ -72,7 +72,6 @@ export default function AdminSettingsPanel() {
         emailNotifications: notifPrefs.email ?? true,
         pushNotifications: notifPrefs.push ?? false,
         criticalAlerts: notifPrefs.critical ?? true,
-        weeklyReports: notifPrefs.weekly ?? false,
         compactMode: interfacePrefs.compact ?? false,
         showAvatars: interfacePrefs.showAvatars ?? true,
         sessionTimeout: systemPrefs.sessionTimeout ?? '30',
@@ -96,7 +95,6 @@ export default function AdminSettingsPanel() {
             email: settings.emailNotifications,
             push: settings.pushNotifications,
             critical: settings.criticalAlerts,
-            weekly: settings.weeklyReports,
           },
           interface_preferences: {
             compact: settings.compactMode,
@@ -167,38 +165,40 @@ export default function AdminSettingsPanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-notif" className="text-sm font-normal">
-                Email Notifications
-              </Label>
+            <div className="space-y-0.5 flex-1">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="email-notifications" className="text-sm font-normal">
+                  Email Notifications
+                </Label>
+                <Badge variant="outline" className="text-xs">Saves Preference</Badge>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Receive notifications via email
+                Receive updates and alerts via email (requires email service configuration)
               </p>
             </div>
             <Switch
-              id="email-notif"
+              id="email-notifications"
               checked={settings.emailNotifications}
-              onCheckedChange={(checked) =>
-                handleChange('emailNotifications', checked)
-              }
+              onCheckedChange={(checked) => handleChange('emailNotifications', checked)}
             />
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="push-notif" className="text-sm font-normal">
-                Push Notifications
-              </Label>
+            <div className="space-y-0.5 flex-1">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="push-notifications" className="text-sm font-normal">
+                  Push Notifications
+                </Label>
+                <Badge variant="outline" className="text-xs">Saves Preference</Badge>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Receive browser push notifications
+                Get instant notifications on your device (requires push service setup)
               </p>
             </div>
             <Switch
-              id="push-notif"
+              id="push-notifications"
               checked={settings.pushNotifications}
-              onCheckedChange={(checked) =>
-                handleChange('pushNotifications', checked)
-              }
+              onCheckedChange={(checked) => handleChange('pushNotifications', checked)}
             />
           </div>
 
@@ -208,7 +208,7 @@ export default function AdminSettingsPanel() {
                 Critical Alerts
               </Label>
               <p className="text-xs text-muted-foreground">
-                Instant alerts for critical system events
+                Get notified about critical system events (requires notification service)
               </p>
             </div>
             <Switch
@@ -367,16 +367,16 @@ export default function AdminSettingsPanel() {
             </p>
           </div>
 
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div className="space-y-0.5">
-              <Label className="text-sm font-normal">Two-Factor Authentication</Label>
+          <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+            <div className="space-y-0.5 flex-1">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-normal">Two-Factor Authentication</Label>
+                <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Add an extra layer of security to your account
+                Add an extra layer of security to your account with 2FA (feature in development)
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => window.location.href = '/auth/mfa'}>
-              Configure MFA
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -461,12 +461,15 @@ export default function AdminSettingsPanel() {
             Dashboard Preferences
           </CardTitle>
           <CardDescription>
-            Set your default landing page and dashboard view
+            Set your default landing page after login
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="default-dashboard">Default Dashboard</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="default-dashboard">Default Landing Page</Label>
+              <Badge variant="outline" className="text-xs">Saves Preference</Badge>
+            </div>
             <Select 
               value={settings.defaultDashboard} 
               onValueChange={(value) => handleChange('defaultDashboard', value)}
@@ -484,8 +487,34 @@ export default function AdminSettingsPanel() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              This page will load when you first log in
+              This page will load when you first log in (requires login redirect logic)
             </p>
+          </div>
+
+          <div className="border-t pt-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label>Preview Other Role Dashboards</Label>
+                <Badge variant="secondary" className="text-xs">Admin Only</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                View dashboards from different role perspectives without switching accounts
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" onClick={() => window.open('/?role=user', '_blank')}>
+                  View User Dashboard
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => window.open('/?role=cmc', '_blank')}>
+                  View CMC Dashboard
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => window.open('/?role=court_aide', '_blank')}>
+                  View Court Aide
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => window.open('/?role=facilities_manager', '_blank')}>
+                  View Facilities
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
