@@ -22,32 +22,43 @@ OUT
 - `judge_name`: "Judge Lewis" ← From court_assignments based on part
 - `room_number`: "1100" ← From court_rooms based on part
 
-### Column 2: PAPERS IN
+### Column 2: SENDING PART
 ```
 OWN
 ```
+**or**
+```
+22
+```
 
-### Column 3: DISPOSITION
+**Meaning:**
+- **OWN**: Judge's own part (same courtroom)
+- **Number**: Part number sending the case to this courtroom
+
+### Column 3: DEFENDANT (Disposition)
 ```
 M. HREN (J)
 7943-24
 ```
 
-### Column 4: DEMO
+### Column 4: PURPOSE (Demo)
 ```
 BRG
 ```
+**Note:** This is a **code** (e.g., BRG = Bail Review/Grand Jury)
 
-### Column 5: IND
+### Column 5: TRANSFER/START DATE (Ind)
 ```
 1019
 ```
+**Note:** Date format (e.g., 10/19 or 1019)
 
 ### Column 6: TOP CHARGE
 ```
 ATT
 M1-687.1
 ```
+**Note:** These are **codes** for charges (e.g., ATT = Attempt, M1 = Misdemeanor 1st degree)
 
 ### Column 7: STATUS
 ```
@@ -56,18 +67,21 @@ CALENDAR (2):
 CALENDAR 10/23-10
 JUDGE OUT 10/25-10/25
 ```
+**Note:** Copy **as is** - free text status information
 
-### Column 8: ATTORNEYS
+### Column 8: ATTORNEY
 ```
 M. FELDMAN
 ADA BARBOUR
 ```
+**Note:** Defense attorney name(s)
 
-### Column 9: EST. FINAL
+### Column 9: ESTIMATED FINAL DATE
 ```
 10/29
 11
 ```
+**Note:** Expected completion date
 
 ## Parsing Strategy
 
@@ -100,14 +114,22 @@ The first column contains multiple pieces of information stacked vertically:
 
 ### Case Details (Columns 2-9)
 Each row under a part represents a case with:
-- **Sending Part** (Papers In)
-- **Defendant** (Disposition)
-- **Purpose** (Demo)
-- **Transfer Date** (Ind)
-- **Top Charge** (Top Charge)
-- **Status** (Status)
-- **Attorney** (Attorneys)
-- **Estimated Final** (Est. Final)
+
+| Column | Field | Type | Notes |
+|--------|-------|------|-------|
+| 2 | Sending Part | Text/Code | "OWN" or part number |
+| 3 | Defendant | Text | Defendant name |
+| 4 | Purpose | **CODE** | BRG, ATT, etc. |
+| 5 | Transfer Date | Date | Format varies |
+| 6 | Top Charge | **CODE** | ATT, M1-687.1, etc. |
+| 7 | Status | **FREE TEXT** | Copy as is |
+| 8 | Attorney | Text | Defense attorney |
+| 9 | Est. Final | Date | Completion date |
+
+**Important:**
+- **Codes** (Purpose, Top Charge): Need lookup/translation
+- **Free Text** (Status): Copy exactly as appears
+- **OWN** (Sending Part): Means same courtroom
 
 ## Implementation
 
