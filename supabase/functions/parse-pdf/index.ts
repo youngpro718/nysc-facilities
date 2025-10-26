@@ -78,7 +78,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-pro',
         messages: [
           {
             role: 'system',
@@ -114,7 +114,13 @@ IMPORTANT:
             role: 'user',
             content: `Extract all court report data from this PDF document. Return structured JSON with all parts, judges, cases, defendants, charges, and status information.
 
-Parse the entire document and extract every part entry you find. Each part should include the part number, judge name, and all associated case information.`
+CRITICAL: Parse the ENTIRE document from start to finish and extract EVERY part entry you find. Do not stop after a few entries. 
+- Scan through all pages
+- Extract every single part number and its associated data
+- Each part should include the part number, judge name, and all associated case information
+- If a part has no cases, still include it with an empty cases array
+
+Make sure you read through the complete document and don't miss any parts.`
           }
         ],
         tools: [{
