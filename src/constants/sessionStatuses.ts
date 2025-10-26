@@ -1,7 +1,7 @@
 // Session Status Constants
 
 export const SESSION_STATUSES = [
-  { value: 'CALENDAR', label: 'Calendar', description: 'Calendar call' },
+  { value: 'OUT', label: 'Out', description: 'Judge is out/absent' },
   { value: 'HRG', label: 'Hearing', description: 'Hearing in session' },
   { value: 'PC_CONTD', label: 'PC Continued', description: 'People continued' },
   { value: 'JD_CONTD', label: 'JD Continued', description: 'Judge continued' },

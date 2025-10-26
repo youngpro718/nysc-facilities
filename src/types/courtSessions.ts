@@ -17,6 +17,7 @@ export interface CourtSession {
   part_number: string | null;
   clerk_names: string[] | null;
   sergeant_name: string | null;
+  calendar_day: string | null;
   // New calendar fields
   parts_entered_by: string | null;
   defendants: string | null;
@@ -55,6 +56,7 @@ export interface CreateCourtSessionInput {
   part_number?: string | null;
   clerk_names?: string[] | null;
   sergeant_name?: string | null;
+  calendar_day?: string | null;
   // New calendar fields
   parts_entered_by?: string | null;
   defendants?: string | null;

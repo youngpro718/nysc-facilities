@@ -37,7 +37,7 @@ export function CreateSessionDialog({
 }: CreateSessionDialogProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingCode>(initialBuildingCode);
   const [selectedRoomId, setSelectedRoomId] = useState('');
-  const [status, setStatus] = useState('CALENDAR');
+  const [status, setStatus] = useState('OUT');
   const [customStatus, setCustomStatus] = useState('');
   const [statusDetail, setStatusDetail] = useState('');
   const [notes, setNotes] = useState('');
@@ -99,7 +99,7 @@ export function CreateSessionDialog({
       // Get court assignments
       const { data: assignments, error: assignmentsError } = await supabase
         .from('court_assignments')
-        .select('room_id, justice, part, clerks, sergeant')
+        .select('room_id, justice, part, clerks, sergeant, calendar_day')
         .not('justice', 'is', null);
       
       if (assignmentsError) throw assignmentsError;
@@ -128,6 +128,26 @@ export function CreateSessionDialog({
     }
   }, [selectedRoomId, roomsWithAssignments]);
 
+  // Auto-populate status and status detail when judge is absent
+  useEffect(() => {
+    if (selectedAssignment?.justice && absentStaffMap.size > 0) {
+      const judgeKey = selectedAssignment.justice.toLowerCase();
+      const absence = absentStaffMap.get(judgeKey);
+      
+      if (absence) {
+        // Judge is absent - auto-populate OUT status
+        setStatus('OUT');
+        
+        // Auto-fill status detail with absence dates
+        const startDate = format(new Date(absence.starts_on), 'MM/dd');
+        const endDate = format(new Date(absence.ends_on), 'MM/dd');
+        setStatusDetail(`OUT ${startDate}-${endDate}`);
+        
+        console.log('✅ Auto-populated absence for', selectedAssignment.justice, ':', `OUT ${startDate}-${endDate}`);
+      }
+    }
+  }, [selectedAssignment, absentStaffMap]);
+
   // Filter rooms based on search
   const filteredRooms = roomsWithAssignments?.filter(room => {
     if (!roomSearch) return true;
@@ -150,7 +170,7 @@ export function CreateSessionDialog({
     if (open) {
       setSelectedBuilding(initialBuildingCode);
       setSelectedRoomId('');
-      setStatus('CALENDAR');
+      setStatus('OUT');
       setCustomStatus('');
       setStatusDetail('');
       setNotes('');
@@ -186,6 +206,7 @@ export function CreateSessionDialog({
         part_number: selectedAssignment?.part || undefined,
         clerk_names: selectedAssignment?.clerks || undefined,
         sergeant_name: selectedAssignment?.sergeant || undefined,
+        calendar_day: selectedAssignment?.calendar_day || undefined,
         notes: notes || undefined,
         // Calendar fields (now added to database schema)
         parts_entered_by: partsEnteredBy || undefined,
@@ -360,11 +381,24 @@ export function CreateSessionDialog({
                     <div className="text-xs text-muted-foreground mb-1">Court Sergeant</div>
                     <div className="font-medium">{selectedAssignment.sergeant || 'None assigned'}</div>
                   </div>
+                  {selectedAssignment.calendar_day && (
+                    <div className="p-2 bg-background rounded border">
+                      <div className="text-xs text-muted-foreground mb-1">Calendar Day</div>
+                      <div className="font-medium flex items-center gap-2">
+                        <CalendarIcon className="h-3 w-3" />
+                        {selectedAssignment.calendar_day}
+                      </div>
+                    </div>
+                  )}
                   {selectedAssignment.justice && absentStaffMap.has(selectedAssignment.justice.toLowerCase()) ? (
-                    <Alert className="mt-2 border-destructive/30 bg-destructive/5">
-                      <UserX className="h-4 w-4 text-destructive" />
+                    <Alert className="mt-2 border-amber-500/30 bg-amber-500/5">
+                      <UserX className="h-4 w-4 text-amber-600" />
                       <AlertDescription className="text-xs">
-                        <strong>⚠️ Judge Absent:</strong> {selectedAssignment.justice} is marked as absent on this date ({absentStaffMap.get(selectedAssignment.justice.toLowerCase())?.absence_reason}). Consider assigning coverage or selecting a different date.
+                        <strong>✅ Absence Auto-Populated:</strong> {selectedAssignment.justice} is marked as absent on this date ({absentStaffMap.get(selectedAssignment.justice.toLowerCase())?.absence_reason}). The status has been automatically set to "OUT" with absence dates in the status detail field.
+                        <br/>
+                        <span className="text-muted-foreground italic mt-1 block">
+                          You can modify these fields if needed before creating the session.
+                        </span>
                       </AlertDescription>
                     </Alert>
                   ) : (

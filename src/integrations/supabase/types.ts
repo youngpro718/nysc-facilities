@@ -988,6 +988,7 @@ export type Database = {
           assignment_id: string | null
           attorney: string | null
           building_code: string
+          calendar_day: string | null
           clerk_names: string[] | null
           court_room_id: string
           created_at: string | null
@@ -1016,6 +1017,7 @@ export type Database = {
           assignment_id?: string | null
           attorney?: string | null
           building_code: string
+          calendar_day?: string | null
           clerk_names?: string[] | null
           court_room_id: string
           created_at?: string | null
@@ -1044,6 +1046,7 @@ export type Database = {
           assignment_id?: string | null
           attorney?: string | null
           building_code?: string
+          calendar_day?: string | null
           clerk_names?: string[] | null
           court_room_id?: string
           created_at?: string | null
