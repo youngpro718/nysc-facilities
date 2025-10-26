@@ -24,13 +24,15 @@ export type { User };
 interface UserManagementModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: string;
 }
 
-export function EnhancedUserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
+export function EnhancedUserManagementModal({ open, onOpenChange, initialTab = 'all' }: UserManagementModalProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [confirmationType, setConfirmationType] = useState<'promote' | 'demote'>('promote');
@@ -41,6 +43,13 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
   const adminControls = useEnhancedAdminControls();
+
+  // Sync activeTab with initialTab when modal opens
+  useEffect(() => {
+    if (open) {
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
 
   useEffect(() => {
     if (open) {
@@ -387,7 +396,7 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
               />
             </div>
 
-            <Tabs defaultValue="all" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="all" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />

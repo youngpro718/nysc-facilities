@@ -16,6 +16,7 @@ import { EnhancedUserManagementModal } from "@/components/profile/modals/Enhance
 import { AdminQuickActions } from "@/components/settings/AdminQuickActions";
 import SecurityPanel from "@/components/admin/security/SecurityPanel";
 import AdminSettingsPanel from "@/components/admin/settings/AdminSettingsPanel";
+import { useUserStatistics } from "@/hooks/admin/useUserStatistics";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
@@ -24,7 +25,11 @@ export default function AdminProfile() {
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [enhancedUserManagementOpen, setEnhancedUserManagementOpen] = useState(false);
+  const [modalInitialTab, setModalInitialTab] = useState<string>('all');
   const appUrl = window.location.origin;
+  
+  // Fetch real user statistics
+  const { data: stats, isLoading: statsLoading } = useUserStatistics();
   
   // Get active tab from URL or default to 'users'
   const activeTab = searchParams.get('tab') || 'users';
@@ -32,6 +37,12 @@ export default function AdminProfile() {
   // Handle tab changes by updating URL
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
+  };
+
+  // Handle opening modal with specific tab
+  const handleOpenModal = (initialTab: string = 'all') => {
+    setModalInitialTab(initialTab);
+    setEnhancedUserManagementOpen(true);
   };
 
   const copyToClipboard = async () => {
@@ -205,6 +216,7 @@ export default function AdminProfile() {
                 </CardTitle>
                 <CardDescription>
                   Click any statistic to view and manage those users
+                  {statsLoading && <span className="ml-2 text-xs">(Loading...)</span>}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -212,52 +224,64 @@ export default function AdminProfile() {
                   <Button
                     variant="outline"
                     className="h-auto flex-col items-start p-4 hover:bg-primary/5"
-                    onClick={() => setEnhancedUserManagementOpen(true)}
+                    onClick={() => handleOpenModal('all')}
+                    disabled={statsLoading}
                   >
                     <div className="flex items-center gap-2 w-full mb-2">
                       <Users className="h-4 w-4 text-blue-600" />
                       <span className="text-xs font-medium">All Users</span>
                     </div>
-                    <span className="text-3xl font-bold">View All</span>
+                    <span className="text-3xl font-bold">
+                      {statsLoading ? '...' : stats?.totalUsers || 0}
+                    </span>
                     <span className="text-xs text-muted-foreground mt-1">Manage all users</span>
                   </Button>
 
                   <Button
                     variant="outline"
                     className="h-auto flex-col items-start p-4 hover:bg-primary/5"
-                    onClick={() => setEnhancedUserManagementOpen(true)}
+                    onClick={() => handleOpenModal('pending')}
+                    disabled={statsLoading}
                   >
                     <div className="flex items-center gap-2 w-full mb-2">
                       <Shield className="h-4 w-4 text-yellow-600" />
                       <span className="text-xs font-medium">Pending</span>
                     </div>
-                    <span className="text-3xl font-bold">0</span>
+                    <span className="text-3xl font-bold">
+                      {statsLoading ? '...' : stats?.pendingUsers || 0}
+                    </span>
                     <span className="text-xs text-muted-foreground mt-1">Awaiting approval</span>
                   </Button>
 
                   <Button
                     variant="outline"
                     className="h-auto flex-col items-start p-4 hover:bg-primary/5"
-                    onClick={() => setEnhancedUserManagementOpen(true)}
+                    onClick={() => handleOpenModal('suspended')}
+                    disabled={statsLoading}
                   >
                     <div className="flex items-center gap-2 w-full mb-2">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <span className="text-xs font-medium">Suspended</span>
                     </div>
-                    <span className="text-3xl font-bold">0</span>
+                    <span className="text-3xl font-bold">
+                      {statsLoading ? '...' : stats?.suspendedUsers || 0}
+                    </span>
                     <span className="text-xs text-muted-foreground mt-1">Blocked accounts</span>
                   </Button>
 
                   <Button
                     variant="outline"
                     className="h-auto flex-col items-start p-4 hover:bg-primary/5"
-                    onClick={() => setEnhancedUserManagementOpen(true)}
+                    onClick={() => handleOpenModal('issues')}
+                    disabled={statsLoading}
                   >
                     <div className="flex items-center gap-2 w-full mb-2">
                       <Activity className="h-4 w-4 text-orange-600" />
                       <span className="text-xs font-medium">Issues</span>
                     </div>
-                    <span className="text-3xl font-bold">0</span>
+                    <span className="text-3xl font-bold">
+                      {statsLoading ? '...' : stats?.usersWithIssues || 0}
+                    </span>
                     <span className="text-xs text-muted-foreground mt-1">Needs attention</span>
                   </Button>
                 </div>
@@ -305,7 +329,8 @@ export default function AdminProfile() {
       {/* Enhanced User Management Modal */}
       <EnhancedUserManagementModal 
         open={enhancedUserManagementOpen} 
-        onOpenChange={setEnhancedUserManagementOpen} 
+        onOpenChange={setEnhancedUserManagementOpen}
+        initialTab={modalInitialTab}
       />
     </div>
   );
