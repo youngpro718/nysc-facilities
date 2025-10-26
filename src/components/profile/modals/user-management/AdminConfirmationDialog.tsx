@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Shield, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
-import type { User } from "../EnhancedUserManagementModal";
+import type { User } from "./types";
 
 interface AdminConfirmationDialogProps {
   open: boolean;

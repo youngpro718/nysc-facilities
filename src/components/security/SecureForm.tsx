@@ -32,11 +32,12 @@ export function SecureForm({
     checkRateLimit,
     logSecurityEvent
   } = useSecurityValidation();
-  const handleEmailChange = useCallback(async (value: string) => {
-    const sanitized = await sanitizeInput(value);
-    setEmail(sanitized);
+  const handleEmailChange = useCallback((value: string) => {
+    // Set email immediately for responsive typing
+    setEmail(value);
     setErrors([]);
-  }, [sanitizeInput]);
+    // Sanitization will happen on form submit
+  }, []);
   const handlePasswordChange = useCallback(async (value: string) => {
     setPassword(value);
     setErrors([]);
@@ -78,31 +79,36 @@ export function SecureForm({
       setErrors(['Rate limit exceeded. Please try again later.']);
       return;
     }
+    
+    // Sanitize inputs before validation
+    const sanitizedEmail = await sanitizeInput(email);
+    setEmail(sanitizedEmail);
+    
     const validationErrors = await validateForm();
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
       await logSecurityEvent('form_validation_failed', 'authentication', undefined, {
-        email,
+        email: sanitizedEmail,
         errors: validationErrors
       });
       return;
     }
     try {
       await onSubmit({
-        email,
+        email: sanitizedEmail,
         password
       });
       await logSecurityEvent('form_submitted', 'authentication', undefined, {
-        email
+        email: sanitizedEmail
       });
     } catch (error) {
       await logSecurityEvent('form_submission_failed', 'authentication', undefined, {
-        email,
+        email: sanitizedEmail,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       throw error;
     }
-  }, [email, password, validateForm, onSubmit, logSecurityEvent, isRateLimited]);
+  }, [email, password, validateForm, onSubmit, logSecurityEvent, isRateLimited, sanitizeInput]);
   return <div className="max-w-md mx-auto p-0">
       <div className="flex items-center gap-2 mb-4">
         <Shield className="h-5 w-5 text-primary" />

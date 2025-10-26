@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User } from "../EnhancedUserManagementModal";
+import { User } from "./types";
 import {
   Dialog,
   DialogContent,

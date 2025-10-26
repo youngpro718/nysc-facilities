@@ -1,4 +1,4 @@
-import { User } from "../EnhancedUserManagementModal";
+import { User } from "./types";
 import {
   DropdownMenu,
   DropdownMenuContent,

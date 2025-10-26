@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { UserCheck, UserX, Mail, Clock, AlertCircle, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import type { User } from "../EnhancedUserManagementModal";
+import type { User } from "./types";
 
 interface PendingUsersSectionProps {
   users: User[];

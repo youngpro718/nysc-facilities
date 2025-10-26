@@ -1,9 +1,6 @@
-import { KeyAssignment } from "./KeyAssignmentList";
+import type { KeyAssignmentItemProps } from "./types";
 
-interface KeyAssignmentItemProps {
-  assignment: KeyAssignment;
-  onReturnKey: (assignmentId: string) => void;
-}
+// Types moved to types.ts to avoid circular dependency
 
 export function KeyAssignmentItem({ assignment, onReturnKey }: KeyAssignmentItemProps) {
   return (

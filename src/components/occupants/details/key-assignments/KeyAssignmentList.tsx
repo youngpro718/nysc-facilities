@@ -1,25 +1,9 @@
-
 import { KeyAssignmentItem } from "./KeyAssignmentItem";
+import type { KeyAssignment, KeyAssignmentListProps } from "./types";
 
-export interface KeyAssignment {
-  id: string;
-  assigned_at: string;
-  returned_at?: string;
-  is_spare: boolean;
-  return_reason?: string;
-  key: {
-    id: string;
-    name: string;
-    type: string;
-    is_passkey: boolean;
-    key_door_locations?: { door_location: string }[];
-  };
-}
-
-interface KeyAssignmentListProps {
-  assignments: KeyAssignment[];
-  onReturnKey: (assignmentId: string) => void;
-}
+// Types moved to types.ts to avoid circular dependency
+// Re-export for backward compatibility
+export type { KeyAssignment };
 
 export function KeyAssignmentList({ 
   assignments,

@@ -15,28 +15,15 @@ import { useEnhancedAdminControls } from "@/hooks/admin/useEnhancedAdminControls
 import { EditUserDialog } from "./user-management/EditUserDialog";
 import { SuspendUserDialog } from "./user-management/SuspendUserDialog";
 import { VerificationOverrideDialog } from "./user-management/VerificationOverrideDialog";
+import type { User } from "./user-management/types";
+
+// Types moved to user-management/types.ts to avoid circular dependencies
+// Re-export for backward compatibility
+export type { User };
 
 interface UserManagementModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  verification_status: string;
-  is_approved: boolean;
-  created_at: string;
-  department: string;
-  title: string;
-  is_admin?: boolean;
-  metadata?: any;
-  access_level?: 'none' | 'read' | 'write' | 'admin';
-  is_suspended?: boolean;
-  suspension_reason?: string;
-  suspended_at?: string;
 }
 
 export function EnhancedUserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
