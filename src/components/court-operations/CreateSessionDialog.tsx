@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -59,6 +59,9 @@ export function CreateSessionDialog({
 
   const createSession = useCreateCourtSession();
   const dateStr = format(date, 'yyyy-MM-dd');
+  
+  // Ref for auto-focusing the first field after save
+  const defendantsInputRef = useRef<HTMLInputElement>(null);
   
   // Get absent staff for this date
   const { absentStaffMap } = useAbsentStaffNames(date);
@@ -291,7 +294,23 @@ export function CreateSessionDialog({
     }
   }, [open, initialBuildingCode]);
 
-  const handleSubmit = async () => {
+  // Reset only case-specific fields after successful save
+  const resetCaseFields = () => {
+    setPartsEnteredBy('');
+    setDefendants('');
+    setPurpose('');
+    setDateTranStart(undefined);
+    setTopCharge('');
+    setAttorney('');
+    setNotes('');
+    
+    // Auto-focus on defendants field for quick data entry
+    setTimeout(() => {
+      defendantsInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleSubmit = async (keepOpen = false) => {
     if (!selectedRoomId) return;
 
     // Use custom status if "CUSTOM" is selected, otherwise use selected status
@@ -320,7 +339,12 @@ export function CreateSessionDialog({
         attorney: attorney || undefined,
       });
 
-      onOpenChange(false);
+      if (keepOpen) {
+        // Reset only case-specific fields, keep judge/room/status
+        resetCaseFields();
+      } else {
+        onOpenChange(false);
+      }
     } catch (error) {
       console.error('Session creation error:', error);
       // Error toast is already handled in the mutation's onError
@@ -765,6 +789,7 @@ export function CreateSessionDialog({
             <div className="space-y-2">
               <Label htmlFor="defendants">Defendants</Label>
               <Input
+                ref={defendantsInputRef}
                 id="defendants"
                 placeholder="Enter defendants..."
                 value={defendants}
@@ -864,13 +889,23 @@ export function CreateSessionDialog({
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit}
+            onClick={() => handleSubmit(false)}
             disabled={!selectedRoomId || (status === 'CUSTOM' && !customStatus) || createSession.isPending}
           >
             {createSession.isPending && (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             )}
             Create Session
+          </Button>
+          <Button
+            onClick={() => handleSubmit(true)}
+            disabled={!selectedRoomId || (status === 'CUSTOM' && !customStatus) || createSession.isPending}
+            variant="default"
+          >
+            {createSession.isPending && (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            )}
+            Save & Add Another
           </Button>
         </DialogFooter>
       </DialogContent>
