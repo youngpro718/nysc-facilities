@@ -61,9 +61,9 @@ export function CreateSessionDialog({
   // Get absent staff for this date
   const { absentStaffMap } = useAbsentStaffNames(date);
 
-  // Fetch all available parts from court assignments
+  // Fetch all available parts from court assignments (empty rooms + absent judges)
   const { data: allParts, isLoading: partsLoading } = useQuery({
-    queryKey: ['court-assignment-parts'],
+    queryKey: ['court-assignment-parts', dateStr],
     queryFn: async () => {
       const { data: assignments, error } = await supabase
         .from('court_assignments')
@@ -73,9 +73,33 @@ export function CreateSessionDialog({
       
       if (error) throw error;
       
-      // Remove duplicates and sort
-      const uniqueParts = Array.from(new Set(assignments?.map(a => a.part) || []));
-      return uniqueParts.sort((a, b) => {
+      // Separate empty rooms from rooms with judges
+      const emptyParts: string[] = [];
+      const partsWithJudges: Array<{ part: string; justice: string | null }> = [];
+      
+      assignments?.forEach(a => {
+        if (!a.justice || a.justice.trim() === '') {
+          emptyParts.push(a.part);
+        } else {
+          partsWithJudges.push({ part: a.part, justice: a.justice });
+        }
+      });
+      
+      // Check which judges are absent on the selected date
+      const absentParts: string[] = [];
+      for (const { part, justice } of partsWithJudges) {
+        if (justice) {
+          const judgeKey = justice.toLowerCase();
+          if (absentStaffMap.has(judgeKey)) {
+            absentParts.push(part);
+          }
+        }
+      }
+      
+      // Combine: empty rooms first, then absent judge rooms
+      const availableParts = [...new Set([...emptyParts, ...absentParts])];
+      
+      return availableParts.sort((a, b) => {
         // Try to sort numerically if possible
         const numA = parseInt(a);
         const numB = parseInt(b);
@@ -85,6 +109,7 @@ export function CreateSessionDialog({
         return a.localeCompare(b);
       });
     },
+    enabled: absentStaffMap.size >= 0, // Only run when we have absence data
   });
 
   // Fetch court rooms with assignments for selected building
@@ -243,7 +268,7 @@ export function CreateSessionDialog({
         calendar_day: selectedAssignment?.calendar_day || undefined,
         notes: notes || undefined,
         // Calendar fields (now added to database schema)
-        parts_entered_by: partsEnteredBy || undefined,
+        parts_entered_by: partsEnteredBy || 'OWN', // Default to OWN if blank
         defendants: defendants || undefined,
         purpose: purpose || undefined,
         date_transferred_or_started: dateTranStart ? format(dateTranStart, 'yyyy-MM-dd') : undefined,
@@ -536,11 +561,14 @@ export function CreateSessionDialog({
           <div className="grid grid-cols-2 gap-4">
             {/* Sending Part */}
             <div className="space-y-2">
-              <Label htmlFor="parts-entered-by">Sending Part {filteredParts.length > 0 && `(${filteredParts.length} available)`}</Label>
+              <Label htmlFor="parts-entered-by">
+                Sending Part {filteredParts.length > 0 && `(${filteredParts.length} available)`}
+                <span className="text-xs text-muted-foreground ml-2">(Leave blank for OWN)</span>
+              </Label>
               <div className="relative">
                 <Input
                   id="parts-entered-by"
-                  placeholder="Type to search parts..."
+                  placeholder="OWN (or type to search parts...)"
                   value={partSearch || partsEnteredBy}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -559,23 +587,35 @@ export function CreateSessionDialog({
               </div>
               
               {/* Auto-filtered parts dropdown */}
-              {partSearch && filteredParts.length > 0 && (
+              {partSearch && (
                 <div className="border rounded-md max-h-[200px] overflow-y-auto bg-background">
-                  <div className="divide-y">
-                    {filteredParts.map((part) => (
-                      <button
-                        key={part}
-                        type="button"
-                        onClick={() => {
-                          setPartsEnteredBy(part);
-                          setPartSearch('');
-                        }}
-                        className="w-full p-2 text-left hover:bg-muted transition-colors"
-                      >
-                        <div className="font-medium">Part {part}</div>
-                      </button>
-                    ))}
-                  </div>
+                  {filteredParts.length === 0 ? (
+                    <div className="p-3 text-sm text-muted-foreground text-center">
+                      No empty or available parts found.
+                      <div className="text-xs mt-1">
+                        (Showing only empty rooms and parts with absent judges)
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {filteredParts.map((part) => (
+                        <button
+                          key={part}
+                          type="button"
+                          onClick={() => {
+                            setPartsEnteredBy(part);
+                            setPartSearch('');
+                          }}
+                          className="w-full p-2 text-left hover:bg-muted transition-colors"
+                        >
+                          <div className="font-medium">Part {part}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {allParts?.includes(part) ? 'Empty room' : 'Judge absent'}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               
