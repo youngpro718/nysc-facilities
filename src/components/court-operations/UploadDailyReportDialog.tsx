@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, FileText, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UploadDailyReportDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ export function UploadDailyReportDialog({
   onOpenChange,
   onDataExtracted 
 }: UploadDailyReportDialogProps) {
+  const { user } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionStatus, setExtractionStatus] = useState<'idle' | 'uploading' | 'extracting' | 'success' | 'error'>('idle');
@@ -47,17 +49,16 @@ export function UploadDailyReportDialog({
   const handleExtract = async () => {
     if (!file) return;
 
+    // Check authentication using the auth context
+    if (!user) {
+      toast.error('You must be logged in to upload court reports. Please sign in and try again.');
+      return;
+    }
+
     setIsExtracting(true);
     setExtractionStatus('uploading');
 
     try {
-      // Check authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        throw new Error('You must be logged in to upload court reports. Please sign in and try again.');
-      }
-
       // Step 1: Upload file to Supabase storage
       const fileName = `court-reports/${user.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
