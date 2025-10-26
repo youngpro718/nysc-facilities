@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Activity, AlertTriangle, RotateCcw, Clock, Download, Filter, Search, X } from 'lucide-react';
+import { Shield, Activity, AlertTriangle, RotateCcw, Clock, Download, Filter, Search, X, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Select,
@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { RateLimitManager } from '@/components/admin/RateLimitManager';
 
 interface SecurityEvent {
   id: string;
@@ -31,6 +33,7 @@ interface RateLimit {
   identifier: string;
   attempts: number;
   blocked_until?: string;
+  attempt_type?: string;
 }
 
 interface SecurityAuditPanelProps {
@@ -50,6 +53,7 @@ export function SecurityAuditPanel({
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showRateLimitManager, setShowRateLimitManager] = useState(false);
   
   // Filter state
   const [filters, setFilters] = useState({
@@ -58,6 +62,23 @@ export function SecurityAuditPanel({
     dateFrom: '',
     dateTo: '',
   });
+
+  const handleUnblock = async (identifier: string, attemptType?: string) => {
+    try {
+      const { error } = await supabase.rpc('reset_rate_limit', {
+        p_identifier: identifier,
+        p_attempt_type: attemptType || 'login'
+      });
+
+      if (error) throw error;
+
+      toast.success(`Unblocked ${identifier}`);
+      fetchSecurityData(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to unblock user:', error);
+      toast.error('Failed to unblock user');
+    }
+  };
 
   const fetchSecurityData = async () => {
     if (!isAdmin) return;
@@ -102,7 +123,7 @@ export function SecurityAuditPanel({
       // Fetch only currently blocked users
       const { data: limits, error: limitsError } = await supabase
         .from('security_rate_limits')
-        .select('id, identifier, attempts, blocked_until')
+        .select('id, identifier, attempts, blocked_until, attempt_type')
         .not('blocked_until', 'is', null)
         .gte('blocked_until', new Date().toISOString())
         .limit(10);
@@ -360,18 +381,45 @@ export function SecurityAuditPanel({
       {activeBlocks.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Blocked Users</CardTitle>
-            <CardDescription>Users currently blocked from authentication</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Blocked Users</CardTitle>
+                <CardDescription>Users currently blocked from authentication</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRateLimitManager(true)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Advanced
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {activeBlocks.map((limit) => (
-                <div key={limit.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{limit.identifier}</p>
+                <div key={limit.id} className="flex items-center justify-between gap-3 p-3 border rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{limit.identifier}</p>
                     <p className="text-xs text-muted-foreground">{limit.attempts} failed attempts</p>
+                    {limit.blocked_until && (
+                      <p className="text-xs text-muted-foreground">
+                        Until: {new Date(limit.blocked_until).toLocaleString()}
+                      </p>
+                    )}
                   </div>
-                  <Badge variant="destructive">Blocked</Badge>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge variant="destructive">Blocked</Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleUnblock(limit.identifier, limit.attempt_type)}
+                    >
+                      <RotateCcw className="h-3 w-3 mr-1" />
+                      Unblock
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -403,6 +451,19 @@ export function SecurityAuditPanel({
           </CardContent>
         </Card>
       )}
+
+      {/* Rate Limit Manager Dialog */}
+      <Dialog open={showRateLimitManager} onOpenChange={setShowRateLimitManager}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Rate Limit Manager</DialogTitle>
+            <DialogDescription>
+              Advanced tools for checking and resetting rate limits
+            </DialogDescription>
+          </DialogHeader>
+          <RateLimitManager />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
