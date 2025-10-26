@@ -126,12 +126,24 @@ export default function FacilitiesExample() {
       </Card>
 
       {/* Room List - uses feature component */}
-      <RoomList
-        rooms={rooms || []}
-        isLoading={isLoading}
-        error={error}
-        onRoomClick={handleRoomClick}
-      />
+      {isLoading ? (
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-center text-muted-foreground">Loading rooms...</p>
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-center text-destructive">Error loading rooms: {error.message}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <RoomList
+          rooms={rooms || []}
+          onRoomClick={handleRoomClick}
+        />
+      )}
     </div>
   );
 }

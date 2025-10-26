@@ -41,6 +41,7 @@ import { useConditionalNotifications } from "@/hooks/useConditionalNotifications
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ModuleProtectedRoute } from "@/components/ModuleProtectedRoute";
+import OnboardingGuard from "@/routes/OnboardingGuard";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import AuthErrorBoundary from "@/components/error/AuthErrorBoundary";
 import Users from "@/pages/Users";
@@ -84,7 +85,8 @@ function AppContent() {
       <Route path="/forms/maintenance-request" element={<MaintenanceRequestFormPage />} />
       <Route path="/forms/issue-report" element={<IssueReportFormPage />} />
       
-      <Route element={<Layout />}>
+      {/* Protected Routes - Wrapped with OnboardingGuard */}
+      <Route element={<OnboardingGuard><Layout /></OnboardingGuard>}>
         {/* Admin Routes */}
         <Route path="/" element={
           <ProtectedRoute requireAdmin>
