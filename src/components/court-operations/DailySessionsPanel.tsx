@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Copy, RefreshCw, Users, CalendarCheck, FileText } from 'lucide-react';
+import { Calendar, Copy, RefreshCw, Users, CalendarCheck, FileText, Upload } from 'lucide-react';
 import { SessionsTable } from './SessionsTable';
 import { CoveragePanel } from './CoveragePanel';
 import { GenerateReportDialog } from './GenerateReportDialog';
 import { SessionConflictBanner } from './SessionConflictBanner';
 import { CreateSessionDialog } from './CreateSessionDialog';
+import { UploadDailyReportDialog } from './UploadDailyReportDialog';
+import { ExtractedDataReview } from './ExtractedDataReview';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -25,6 +27,9 @@ export function DailySessionsPanel() {
   const [showCoveragePanel, setShowCoveragePanel] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [extractedData, setExtractedData] = useState<any[]>([]);
 
   const { data: sessions, isLoading: sessionsLoading } = useCourtSessions(
     selectedDate,
@@ -146,6 +151,15 @@ export function DailySessionsPanel() {
           <div className="flex gap-2 flex-wrap">
             <Button
               size="sm"
+              variant="default"
+              onClick={() => setShowUploadDialog(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Report
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => setShowCreateDialog(true)}
             >
               <CalendarCheck className="h-4 w-4 mr-2" />
@@ -221,6 +235,31 @@ export function DailySessionsPanel() {
           buildingCode: selectedBuilding,
           sessions: sessions || [],
           coverages: coverages || [],
+        }}
+      />
+
+      {/* Upload Daily Report Dialog */}
+      <UploadDailyReportDialog
+        open={showUploadDialog}
+        onOpenChange={setShowUploadDialog}
+        onDataExtracted={(data) => {
+          setExtractedData(data);
+          setShowReviewDialog(true);
+        }}
+      />
+
+      {/* Extracted Data Review Dialog */}
+      <ExtractedDataReview
+        open={showReviewDialog}
+        onOpenChange={setShowReviewDialog}
+        data={extractedData}
+        date={selectedDate}
+        period={selectedPeriod}
+        buildingCode={selectedBuilding}
+        onApprove={(approvedData) => {
+          // TODO: Implement bulk insert to court_sessions table
+          console.log('Approved data:', approvedData);
+          // This will be implemented with actual database insert
         }}
       />
     </div>
