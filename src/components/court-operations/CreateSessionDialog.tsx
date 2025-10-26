@@ -45,6 +45,7 @@ export function CreateSessionDialog({
   const [roomSearch, setRoomSearch] = useState('');
   const [statusSearch, setStatusSearch] = useState('');
   const [showCustomStatus, setShowCustomStatus] = useState(false);
+  const [partSearch, setPartSearch] = useState('');
   
   // New calendar fields
   const [partsEnteredBy, setPartsEnteredBy] = useState('');
@@ -59,6 +60,32 @@ export function CreateSessionDialog({
   
   // Get absent staff for this date
   const { absentStaffMap } = useAbsentStaffNames(date);
+
+  // Fetch all available parts from court assignments
+  const { data: allParts, isLoading: partsLoading } = useQuery({
+    queryKey: ['court-assignment-parts'],
+    queryFn: async () => {
+      const { data: assignments, error } = await supabase
+        .from('court_assignments')
+        .select('part, justice, room_id')
+        .not('part', 'is', null)
+        .order('part');
+      
+      if (error) throw error;
+      
+      // Remove duplicates and sort
+      const uniqueParts = Array.from(new Set(assignments?.map(a => a.part) || []));
+      return uniqueParts.sort((a, b) => {
+        // Try to sort numerically if possible
+        const numA = parseInt(a);
+        const numB = parseInt(b);
+        if (!isNaN(numA) && !isNaN(numB)) {
+          return numA - numB;
+        }
+        return a.localeCompare(b);
+      });
+    },
+  });
 
   // Fetch court rooms with assignments for selected building
   const { data: roomsWithAssignments, isLoading: roomsLoading } = useQuery({
@@ -165,6 +192,12 @@ export function CreateSessionDialog({
            s.value.toLowerCase().includes(statusSearch.toLowerCase());
   });
 
+  // Filter parts based on search
+  const filteredParts = allParts?.filter(part => {
+    if (!partSearch) return true;
+    return part.toLowerCase().includes(partSearch.toLowerCase());
+  }) || [];
+
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
@@ -178,6 +211,7 @@ export function CreateSessionDialog({
       setRoomSearch('');
       setStatusSearch('');
       setShowCustomStatus(false);
+      setPartSearch('');
       // Reset new calendar fields
       setPartsEnteredBy('');
       setDefendants('');
@@ -500,16 +534,67 @@ export function CreateSessionDialog({
 
           {/* New Calendar Fields */}
           <div className="grid grid-cols-2 gap-4">
-          {/* Sending Part */}
-          <div className="space-y-2">
-            <Label htmlFor="parts-entered-by">Sending Part</Label>
-            <Input
-              id="parts-entered-by"
-              placeholder="Enter name..."
-              value={partsEnteredBy}
-              onChange={(e) => setPartsEnteredBy(e.target.value)}
-            />
-          </div>
+            {/* Sending Part */}
+            <div className="space-y-2">
+              <Label htmlFor="parts-entered-by">Sending Part {filteredParts.length > 0 && `(${filteredParts.length} available)`}</Label>
+              <div className="relative">
+                <Input
+                  id="parts-entered-by"
+                  placeholder="Type to search parts..."
+                  value={partSearch || partsEnteredBy}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPartSearch(value);
+                    // If user is typing freely (no dropdown visible), update partsEnteredBy directly
+                    if (!filteredParts.some(p => p.toLowerCase().includes(value.toLowerCase()))) {
+                      setPartsEnteredBy(value);
+                    }
+                  }}
+                  onFocus={() => setPartSearch('')}
+                  className="pr-10"
+                />
+                {partsLoading && (
+                  <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              
+              {/* Auto-filtered parts dropdown */}
+              {partSearch && filteredParts.length > 0 && (
+                <div className="border rounded-md max-h-[200px] overflow-y-auto bg-background">
+                  <div className="divide-y">
+                    {filteredParts.map((part) => (
+                      <button
+                        key={part}
+                        type="button"
+                        onClick={() => {
+                          setPartsEnteredBy(part);
+                          setPartSearch('');
+                        }}
+                        className="w-full p-2 text-left hover:bg-muted transition-colors"
+                      >
+                        <div className="font-medium">Part {part}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Selected part display */}
+              {partsEnteredBy && !partSearch && (
+                <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-between">
+                  <span className="text-sm font-medium">Part {partsEnteredBy}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPartsEnteredBy('')}
+                    className="h-6 px-2"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              )}
+            </div>
 
             {/* Defendants */}
             <div className="space-y-2">
