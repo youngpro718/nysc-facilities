@@ -98,10 +98,13 @@ export function UploadDailyReportDialog({
 
       // Step 3: Transform extracted court report data to session format
       const extractedData = parseResult.extracted_data;
+      console.log('📊 Extracted data entries:', extractedData?.entries);
       const sessions: any[] = [];
 
       if (extractedData?.entries) {
+        console.log(`🔄 Processing ${extractedData.entries.length} entries...`);
         for (const entry of extractedData.entries) {
+          console.log(`  Part ${entry.part}: ${entry.cases?.length || 0} cases`);
           // For each part entry, create sessions from its cases
           if (entry.cases && entry.cases.length > 0) {
             for (const courtCase of entry.cases) {
@@ -147,6 +150,8 @@ export function UploadDailyReportDialog({
           }
         }
       }
+
+      console.log(`✅ Created ${sessions.length} sessions from extracted data`);
 
       if (sessions.length === 0) {
         throw new Error('No sessions could be extracted from the document. The document may be empty or in an unsupported format.');
