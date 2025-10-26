@@ -41,11 +41,13 @@ scripts/
 !docs/*.md
 !docs/epics/*.md
 !docs/stories/*.md
+!db/README.md
 
 # Database and infrastructure assets (exclude from static deploy)
 sql/
 supabase/
 *.sql
+!db/**/*.sql
 
 # Database migrations (handled separately)
 supabase/migrations/
