@@ -14,7 +14,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Building2 } from 'lucide-react';
 
 // Import from Facilities feature - single entry point
 import {
@@ -25,6 +25,9 @@ import {
   type RoomFilters,
   type Room,
 } from '@/features/facilities';
+
+// Import standardized DataState component
+import { DataState, useDataState } from '@/ui';
 
 export default function Facilities() {
   const navigate = useNavigate();
@@ -43,7 +46,8 @@ export default function Facilities() {
   };
 
   // Use feature hook - all data fetching logic is in the feature
-  const { data: rooms, isLoading, error, refetch } = useRooms(filters);
+  const roomsQuery = useRooms(filters);
+  const dataStateProps = useDataState(roomsQuery);
 
   // Handle filter changes - update URL params
   const handleBuildingChange = (value: string) => {
@@ -157,18 +161,23 @@ export default function Facilities() {
         </CardContent>
       </Card>
 
-      {/* Room List - from feature, handles loading/error/empty states */}
-      <RoomList
-        rooms={rooms || []}
-        isLoading={isLoading}
-        error={error}
-        onRoomClick={handleRoomClick}
-        emptyMessage={
-          hasActiveFilters
-            ? 'No rooms match your filters. Try adjusting your search criteria.'
-            : 'No rooms found. Get started by adding your first room.'
-        }
-      />
+      {/* DataState - handles loading/error/empty states automatically */}
+      <DataState
+        {...dataStateProps}
+        loadingSkeleton={{ type: 'card', count: 6 }}
+        emptyState={{
+          title: hasActiveFilters ? 'No rooms match your filters' : 'No rooms found',
+          description: hasActiveFilters
+            ? 'Try adjusting your search criteria or clearing filters.'
+            : 'Get started by adding your first room to the system.',
+          icon: <Building2 className="h-6 w-6 text-muted-foreground" />,
+          action: hasActiveFilters
+            ? { label: 'Clear Filters', onClick: handleClearFilters }
+            : { label: 'Add Room', onClick: () => navigate('/facilities/new') },
+        }}
+      >
+        {(rooms) => <RoomList rooms={rooms} onRoomClick={handleRoomClick} />}
+      </DataState>
     </div>
   );
 }
