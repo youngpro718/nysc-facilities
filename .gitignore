@@ -35,10 +35,10 @@ coverage/
 .nyc_output/
 
 # Documentation and scripts (exclude from deployment)
-docs/
 scripts/
 *.md
 !README.md
+!docs/*.md
 
 # Database and infrastructure assets (exclude from static deploy)
 sql/
