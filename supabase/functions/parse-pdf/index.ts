@@ -213,7 +213,7 @@ Make sure you read through the complete document and don't miss any parts or cas
       cleanedEntries.map(async (entry) => {
         const { data: assignment, error: assignmentError } = await supabase
           .from('court_assignments')
-          .select('justice, room_number, building_code')
+          .select('justice, room_number, calendar_day')
           .eq('part', entry.part)
           .maybeSingle()
 
@@ -225,7 +225,7 @@ Make sure you read through the complete document and don't miss any parts or cas
           ...entry,
           judge: assignment?.justice || 'Unknown',
           room_number: assignment?.room_number || 'Unknown',
-          building_code: assignment?.building_code || '100'
+          calendar_day: assignment?.calendar_day || null
         }
         
         console.log(`✅ Part ${entry.part} -> Judge: ${enrichedEntry.judge}, Room: ${enrichedEntry.room_number}`)
