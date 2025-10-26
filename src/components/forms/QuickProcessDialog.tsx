@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -23,11 +24,13 @@ interface QuickProcessDialogProps {
 }
 
 export function QuickProcessDialog({ submission, open, onClose }: QuickProcessDialogProps) {
-  const [formType, setFormType] = useState('');
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [notes, setNotes] = useState('');
+  // Pre-populate with AI-extracted data if available
+  const extracted = submission?.extracted_data || {};
+  const [formType, setFormType] = useState(extracted.form_type || submission?.form_type || '');
+  const [contactName, setContactName] = useState(extracted.contact_name || '');
+  const [contactEmail, setContactEmail] = useState(extracted.contact_email || '');
+  const [contactPhone, setContactPhone] = useState(extracted.contact_phone || '');
+  const [notes, setNotes] = useState(extracted.notes || '');
   const [submitting, setSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -163,8 +166,17 @@ export function QuickProcessDialog({ submission, open, onClose }: QuickProcessDi
         <div className="space-y-4">
           {/* PDF Reference */}
           <div className="bg-muted p-3 rounded-lg">
-            <p className="text-sm font-medium">PDF File:</p>
-            <p className="text-xs text-muted-foreground">{submission.pdf_file_path.split('/').pop()}</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">PDF File:</p>
+                <p className="text-xs text-muted-foreground">{submission.pdf_file_path.split('/').pop()}</p>
+              </div>
+              {extracted.ai_extracted && (
+                <Badge variant="secondary" className="text-xs">
+                  AI Extracted
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Form Type */}
@@ -242,8 +254,17 @@ export function QuickProcessDialog({ submission, open, onClose }: QuickProcessDi
           {/* Instructions */}
           <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
             <p className="text-sm text-blue-900 dark:text-blue-100">
-              <strong>Quick Process:</strong> Select the form type, enter the contact info from the PDF, 
-              and click Create Request. The PDF will be attached as a reference.
+              {extracted.ai_extracted ? (
+                <>
+                  <strong>AI Pre-filled:</strong> Review the extracted information below, make any corrections needed, 
+                  and click Create Request to finalize.
+                </>
+              ) : (
+                <>
+                  <strong>Quick Process:</strong> Select the form type, enter the contact info from the PDF, 
+                  and click Create Request. The PDF will be attached as a reference.
+                </>
+              )}
             </p>
           </div>
         </div>
