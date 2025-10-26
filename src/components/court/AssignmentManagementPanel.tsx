@@ -129,10 +129,10 @@ export const AssignmentManagementPanel = () => {
 
       {/* Conditional Content Based on View Mode */}
       {viewMode === 'view' ? (
-        /* Term Sheet View */
+        // Term Sheet View
         <TermSheetBoard />
       ) : (
-        /* Edit Mode Content */
+        // Edit Mode Content
         <>
       {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
