@@ -246,6 +246,24 @@ export function findClerkName(extractedName: string, cache?: EnrichmentCache): s
 }
 
 /**
+ * Get judge name for a specific room from assignments
+ */
+export function getJudgeForRoom(roomNumber: string, cache?: EnrichmentCache): string {
+  const data = cache || enrichmentCache;
+  if (!data) return '';
+
+  const room = data.courtRooms.get(roomNumber);
+  if (!room) return '';
+
+  const assignment = data.assignments.find(a => a.room_id === room.room_id);
+  if (!assignment || !assignment.justice) {
+    return '';
+  }
+
+  return assignment.justice;
+}
+
+/**
  * Get clerk for a specific room from assignments
  */
 export function getClerkForRoom(roomNumber: string, cache?: EnrichmentCache): string {
@@ -268,16 +286,16 @@ export function getClerkForRoom(roomNumber: string, cache?: EnrichmentCache): st
  * Parse the multi-line Part/Judge column from PDF
  * 
  * Example input:
- * "PART 3 - TAPIA\nCal Wk 3\nOUT\n10/21-10/25\n10/24"
+ * "TAP A / TAP G / GWP1\nOWN\nOUT\n10/23\n10/24"
  * 
  * Returns:
  * {
- *   part_number: "3",
- *   judge_name: "TAPIA",
- *   calendar_week: "3",
+ *   part_number: "TAP A / TAP G / GWP1",
  *   absence_status: "OUT",
- *   absence_dates: ["10/21-10/25", "10/24"]
+ *   absence_dates: ["10/23", "10/24"]
  * }
+ * 
+ * Note: Judge name is NOT in the PDF - it comes from database assignments
  */
 export function parsePartJudgeColumn(columnText: string): Partial<ExtractedSession> {
   const lines = columnText.split('\n').map(l => l.trim()).filter(Boolean);
@@ -285,50 +303,47 @@ export function parsePartJudgeColumn(columnText: string): Partial<ExtractedSessi
 
   if (lines.length === 0) return result;
 
-  // Line 1: "PART 3 - TAPIA" or "PART 3 TAPIA"
+  // Line 1: Part identifier (e.g., "TAP A / TAP G / GWP1" or "PART 3")
+  // This is the part number/identifier, NOT the judge name
   const firstLine = lines[0];
-  const partMatch = firstLine.match(/PART\s*(\d+)/i);
-  if (partMatch) {
-    result.part_number = partMatch[1];
-    
-    // Extract judge name (everything after the part number)
-    const judgeName = firstLine
-      .replace(/PART\s*\d+/i, '')
-      .replace(/^[-\s]+/, '')
-      .trim();
-    if (judgeName) {
-      result.judge_name = judgeName;
-    }
-  }
+  result.part_number = firstLine;
+  
+  // Judge name will be filled in later from database based on part assignment
 
-  // Line 2: "Cal Wk 3" or calendar info
-  if (lines.length > 1) {
-    const calMatch = lines[1].match(/Cal\s*Wk\s*(\d+)/i);
+  // Remaining lines: Look for status codes and dates
+  // Status codes: OWN, OUT, etc.
+  // Dates: anything with numbers and slashes/dashes
+  const statusCodes: string[] = [];
+  const absenceDates: string[] = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Check if it's a calendar week
+    const calMatch = line.match(/Cal\s*Wk\s*(\d+)/i);
     if (calMatch) {
       result.calendar_week = calMatch[1];
-      result.calendar_day = lines[1]; // Keep full text too
-    } else if (lines[1].toLowerCase().includes('calendar')) {
-      result.calendar_day = lines[1];
+      result.calendar_day = line;
+      continue;
     }
-  }
-
-  // Line 3: Absence status ("OUT", "OWN", etc.)
-  if (lines.length > 2) {
-    const statusLine = lines[2].toUpperCase();
-    if (statusLine === 'OUT' || statusLine === 'OWN' || statusLine.length < 10) {
-      result.absence_status = statusLine;
-    }
-  }
-
-  // Remaining lines: Absence dates
-  const absenceDates: string[] = [];
-  for (let i = 3; i < lines.length; i++) {
-    const line = lines[i];
+    
     // Check if it looks like a date (contains numbers and slashes/dashes)
-    if (/\d+[-\/]\d+/.test(line)) {
+    if (/\d+[-\/]\d+/.test(line) || /^\d{1,2}\/\d{1,2}$/.test(line)) {
       absenceDates.push(line);
+      continue;
+    }
+    
+    // Check if it's a short status code (OWN, OUT, etc.)
+    if (line.length <= 10 && /^[A-Z\s]+$/.test(line.toUpperCase())) {
+      statusCodes.push(line.toUpperCase());
     }
   }
+  
+  // Combine status codes (e.g., "OWN" and "OUT" both present)
+  if (statusCodes.length > 0) {
+    result.absence_status = statusCodes.join(' / ');
+  }
+  
   if (absenceDates.length > 0) {
     result.absence_dates = absenceDates;
   }
@@ -366,24 +381,32 @@ export async function enrichSessionData(
   const enriched = sessions.map(session => {
     const enrichedSession = { ...session };
 
-    // 1. Find room number from part or judge
+    // 1. Find room number from part
+    // Note: Part number is the identifier (e.g., "TAP A / TAP G / GWP1"), not a simple number
     if (!enrichedSession.room_number) {
-      enrichedSession.room_number = findRoomFromPart(session.part_number) ||
-                                     findRoomFromJudge(session.judge_name);
+      enrichedSession.room_number = findRoomFromPart(session.part_number);
     }
 
-    // 2. Normalize judge name
+    // 2. Get judge name from room assignment (NOT from PDF)
+    // The PDF only has the part identifier, judge comes from database
+    if (enrichedSession.room_number && !enrichedSession.judge_name) {
+      enrichedSession.judge_name = getJudgeForRoom(enrichedSession.room_number);
+    }
+
+    // 3. If we have a judge name from PDF (legacy), normalize it
     if (enrichedSession.judge_name) {
       enrichedSession.judge_name = findJudgeName(enrichedSession.judge_name);
     }
 
-    // 3. Find clerk for the room
+    // 4. Find clerk for the room
     if (!enrichedSession.clerk_name && enrichedSession.room_number) {
       enrichedSession.clerk_name = getClerkForRoom(enrichedSession.room_number);
     }
 
-    // 4. Increase confidence if we found room number
-    if (enrichedSession.room_number && enrichedSession.confidence) {
+    // 5. Increase confidence if we found room number and judge
+    if (enrichedSession.room_number && enrichedSession.judge_name && enrichedSession.confidence) {
+      enrichedSession.confidence = Math.min(enrichedSession.confidence + 0.15, 0.95);
+    } else if (enrichedSession.room_number && enrichedSession.confidence) {
       enrichedSession.confidence = Math.min(enrichedSession.confidence + 0.1, 0.95);
     }
 

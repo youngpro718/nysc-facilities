@@ -6,19 +6,21 @@ Based on the actual court report PDF, here's the complete column structure:
 
 ### Column 1: PART/JUDGE (Multi-line)
 ```
-PART 3 - TAPIA
-Cal Wk 3
+TAP A / TAP G / GWP1
+OWN
 OUT
-10/21-10/25
+10/23
 10/24
 ```
 
 **Parsed Fields:**
-- `part_number`: "3"
-- `judge_name`: "TAPIA"
-- `calendar_week`: "3"
-- `absence_status`: "OUT"
-- `absence_dates`: ["10/21-10/25", "10/24"]
+- `part_number`: "TAP A / TAP G / GWP1"
+- `absence_status`: "OWN / OUT"
+- `absence_dates`: ["10/23", "10/24"]
+
+**NOT in PDF (comes from database):**
+- `judge_name`: "Judge Lewis" ← From court_assignments based on part
+- `room_number`: "1100" ← From court_rooms based on part
 
 ### Column 2: PAPERS IN
 ```
@@ -72,21 +74,29 @@ ADA BARBOUR
 ### Multi-line First Column
 The first column contains multiple pieces of information stacked vertically:
 
-1. **Line 1**: Part number and judge name
-   - Pattern: `PART \d+ - NAME` or `PART \d+ NAME`
-   - Example: "PART 3 - TAPIA" → part: 3, judge: TAPIA
+1. **Line 1**: Part identifier (NOT judge name!)
+   - Pattern: Part code/identifier (can be complex like "TAP A / TAP G / GWP1")
+   - Example: "TAP A / TAP G / GWP1" → part_number: "TAP A / TAP G / GWP1"
+   - **Judge name comes from database**, not from PDF!
 
-2. **Line 2**: Calendar week
-   - Pattern: `Cal Wk \d+` or `CALENDAR (2):`
-   - Example: "Cal Wk 3" → calendar_week: 3
-
-3. **Line 3**: Absence status
-   - Values: "OUT", "OWN", or other short codes
-   - Example: "OUT" → absence_status: OUT
-
-4. **Lines 4+**: Absence dates
-   - Pattern: Date ranges or specific dates
-   - Example: "10/21-10/25" → absence_dates: ["10/21-10/25", "10/24"]
+2. **Remaining Lines**: Status codes and dates (order varies)
+   - **Status codes**: "OUT", "OWN", etc.
+   - **Calendar week**: "Cal Wk 3" (if present)
+   - **Dates**: "10/23", "10/24", "10/21-10/25", etc.
+   
+3. **Example parsing**:
+   ```
+   TAP A / TAP G / GWP1  → part_number
+   OWN                    → status code
+   OUT                    → status code
+   10/23                  → absence date
+   10/24                  → absence date
+   ```
+   
+   Result:
+   - part_number: "TAP A / TAP G / GWP1"
+   - absence_status: "OWN / OUT"
+   - absence_dates: ["10/23", "10/24"]
 
 ### Case Details (Columns 2-9)
 Each row under a part represents a case with:
