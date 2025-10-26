@@ -7,6 +7,8 @@ import CourtAideDashboard from "@/pages/CourtAideDashboard";
 import PurchasingDashboard from "@/pages/PurchasingDashboard";
 import LoginPage from "@/pages/LoginPage";
 import MFASetup from "@/pages/auth/MFASetup";
+import VerifyEmail from "@/pages/auth/VerifyEmail";
+import ProfileOnboarding from "@/pages/onboarding/ProfileOnboarding";
 import NotFound from "@/pages/NotFound";
 import Spaces from "@/pages/Spaces";
 import Operations from "@/pages/Operations";
@@ -310,6 +312,8 @@ function AppContent() {
         {/* Public Routes */}
         <Route path="login" element={<LoginPage />} />
         <Route path="auth/mfa" element={<MFASetup />} />
+        <Route path="auth/verify" element={<VerifyEmail />} />
+        <Route path="onboarding/profile" element={<ProfileOnboarding />} />
         <Route path="verification-pending" element={<VerificationPending />} />
         <Route path="features-preview" element={<FeaturesPreview />} />
         <Route path="install" element={<InstallApp />} />
