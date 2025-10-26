@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { EnhancedCourtAssignmentTable } from "./EnhancedCourtAssignmentTable";
+import { TermSheetBoard } from "@/components/court-operations/personnel/TermSheetBoard";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
-import { RefreshCw, AlertTriangle, Users, Calendar, MapPin } from "lucide-react";
+import { RefreshCw, AlertTriangle, Users, Calendar, MapPin, Edit3, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const AssignmentManagementPanel = () => {
+  const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
   const { getCourtImpactSummary, getRecentlyAffectedRooms } = useCourtIssuesIntegration();
   const impactSummary = getCourtImpactSummary();
   const recentlyAffectedRooms = getRecentlyAffectedRooms();
@@ -92,15 +96,29 @@ export const AssignmentManagementPanel = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with Impact Summary */}
+      {/* Header with View Mode Toggle */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Assignment Management</h2>
+          <h2 className="text-2xl font-bold">Full Assignments</h2>
           <p className="text-muted-foreground">
-            Manage court assignments with real-time presence tracking and personnel selection
+            {viewMode === 'edit' 
+              ? 'Manage court assignments with real-time presence tracking' 
+              : 'View-only term sheet for reference and export'}
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'edit' | 'view')}>
+            <TabsList>
+              <TabsTrigger value="edit" className="flex items-center gap-2">
+                <Edit3 className="h-4 w-4" />
+                Edit Mode
+              </TabsTrigger>
+              <TabsTrigger value="view" className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                Term Sheet
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           <Button variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -109,6 +127,13 @@ export const AssignmentManagementPanel = () => {
       </div>
 
 
+      {/* Conditional Content Based on View Mode */}
+      {viewMode === 'view' ? (
+        /* Term Sheet View */
+        <TermSheetBoard />
+      ) : (
+        /* Edit Mode Content */
+        <>
       {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -227,6 +252,8 @@ export const AssignmentManagementPanel = () => {
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 };
