@@ -57,28 +57,61 @@ export default function FormIntake() {
 
       if (uploadError) throw uploadError;
 
-      // Create submission record - ready for staff to process
+      // Extract form data using AI
+      toast.info('Extracting form data with AI...');
+      
+      const { data: extractionResult, error: extractionError } = await supabase.functions.invoke(
+        'extract-form-data',
+        { body: { filePath: fileName } }
+      );
+
+      let extractedData = {
+        uploaded_by_staff: true,
+        staff_user_id: user.id,
+        uploaded_at: new Date().toISOString(),
+      };
+
+      let initialFormType = 'unknown';
+
+      if (!extractionError && extractionResult?.success) {
+        console.log('AI extraction successful:', extractionResult.extracted_data);
+        extractedData = {
+          ...extractedData,
+          ...extractionResult.extracted_data,
+          ai_extracted: true,
+        };
+        // Set form type if AI detected it
+        if (extractionResult.extracted_data.form_type) {
+          initialFormType = extractionResult.extracted_data.form_type;
+        }
+      } else {
+        console.warn('AI extraction failed, will require manual entry:', extractionError);
+      }
+
+      // Create submission record with extracted data
       const { data: submission, error: submissionError } = await supabase
         .from('form_submissions')
         .insert({
           pdf_file_path: fileName,
-          form_type: 'unknown',
+          form_type: initialFormType,
           uploaded_by: user.id,
           processing_status: 'pending',
-          extracted_data: {
-            uploaded_by_staff: true,
-            staff_user_id: user.id,
-            uploaded_at: new Date().toISOString(),
-          },
+          extracted_data: extractedData,
         })
         .select()
         .single();
 
       if (submissionError) throw submissionError;
 
-      toast.success('Form uploaded! Click to process it.', {
-        description: 'Select the form type and enter details to create the request.',
-      });
+      if (extractionResult?.success) {
+        toast.success('Form uploaded with AI-extracted data!', {
+          description: 'Review and confirm the extracted information.',
+        });
+      } else {
+        toast.success('Form uploaded! Click to process it.', {
+          description: 'AI extraction unavailable - please enter details manually.',
+        });
+      }
 
       // Refresh the list
       queryClient.invalidateQueries({ queryKey: ['form-submissions'] });
