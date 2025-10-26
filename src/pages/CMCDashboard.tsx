@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Gavel, AlertCircle, FileText, TrendingUp, Calendar, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { TermSheetBoard } from '@/components/court-operations/personnel/TermSheetBoard';
 
 /**
  * CMC Dashboard - Court Management Coordinator Dashboard
@@ -241,6 +242,11 @@ export default function CMCDashboard() {
             </Button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Term Sheet - Court Assignments Reference */}
+      <div className="mt-6">
+        <TermSheetBoard />
       </div>
     </div>
   );

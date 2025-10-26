@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Package, ShoppingCart, Warehouse, AlertCircle, TrendingUp, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { TermSheetBoard } from '@/components/court-operations/personnel/TermSheetBoard';
 
 /**
  * Court Aide Dashboard - Supply Staff Dashboard
@@ -266,6 +267,11 @@ export default function CourtAideDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Term Sheet - Court Assignments Reference */}
+      <div className="mt-6">
+        <TermSheetBoard />
+      </div>
     </div>
   );
 }

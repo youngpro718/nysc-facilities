@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuth } from '@/hooks/useAuth';
+import { TermSheetBoard } from '@/components/court-operations/personnel/TermSheetBoard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MaintenanceScheduleList } from "@/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@/components/maintenance/MaintenanceIssuesList";
@@ -74,6 +76,10 @@ export const MaintenanceDashboard = () => {
         open={issueDialogOpen} 
         onOpenChange={setIssueDialogOpen}
       />
+      {/* Term Sheet - Court Assignments Reference */}
+      <div className="mt-6">
+        <TermSheetBoard />
+      </div>
     </div>
   );
 };

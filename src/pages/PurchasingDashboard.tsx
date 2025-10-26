@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Warehouse, Package, AlertCircle, TrendingUp, DollarSign, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { TermSheetBoard } from '@/components/court-operations/personnel/TermSheetBoard';
 
 /**
  * Purchasing Dashboard - Purchasing Staff Dashboard
@@ -292,6 +293,10 @@ export default function PurchasingDashboard() {
           </div>
         </CardContent>
       </Card>
+      {/* Term Sheet - Court Assignments Reference */}
+      <div className="mt-6">
+        <TermSheetBoard />
+      </div>
     </div>
   );
 }
