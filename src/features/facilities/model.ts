@@ -41,6 +41,7 @@ export interface Room {
   floor_id: string;
   room_number: string;
   room_name?: string;
+  name?: string; // Alias for room_name for compatibility
   room_type?: RoomType;
   status: RoomStatus;
   capacity?: number;
@@ -51,6 +52,10 @@ export interface Room {
   building?: Building;
   floor?: Floor;
   occupants?: Occupant[];
+  current_occupants?: any[]; // Current room occupants
+  issues?: any[]; // Related issues
+  room_history?: any[]; // Room history records
+  notes?: string; // Room notes
 }
 
 export interface Occupant {
