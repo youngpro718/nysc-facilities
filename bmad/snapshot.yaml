@@ -1,0 +1,25 @@
+project:
+  name: NYSC Facilities Hub
+  type: brownfield
+  repo: https://github.com/youngpro718/nysc-facilities
+  stack:
+    frontend: React + TypeScript
+    backend: Supabase (Postgres + Auth + Storage)
+    tooling: Vite/Tailwind (adjust if different)
+  environments:
+    - dev
+    - prod
+state:
+  pain_points:
+    - Structure drift (UI logic mixed with data)
+    - Incomplete docs and unclear ownership
+    - No consistent migration or story flow
+  must_keep:
+    - Existing auth and DB schema in Supabase
+  notes:
+    - Update this file as scope evolves
+goals:
+  mvp_next_4_weeks:
+    - Stabilize schema + migrations
+    - Define UI architecture & routes
+    - Create first Ops module story and deliverable
