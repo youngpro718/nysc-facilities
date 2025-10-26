@@ -11,10 +11,7 @@ interface CourtReportExtraction {
   report_type: 'AM' | 'PM' | 'AM PM';
   location: string;
   entries: Array<{
-    part: string;
-    judge: string;
-    calendar_day?: string;
-    out_dates?: string[];
+    part: string;  // Only extract part number - we'll look up judge/room from database
     cases: Array<{
       sending_part: string;
       defendant: string;
@@ -26,7 +23,6 @@ interface CourtReportExtraction {
       estimated_final_date: string;
       indictment_number?: string;
     }>;
-    special_notes?: string[];
   }>;
   footer_notes?: string[];
 }
@@ -82,45 +78,41 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are extracting data from Court Daily Reports in a 9-column table format.
+            content: `You are extracting case data from Court Daily Reports. Focus ONLY on the variable case information.
 
 PDF STRUCTURE:
 - Header: Date (MM-DD-YY), Report Type (AM/PM/AM PM), Location
-- Table organized by Part entries with the following 9 COLUMNS:
+- Cases organized by Part number
+- Each case row has these columns:
 
-COLUMN 1 (Part Info): 
-  - Part number (e.g., "22")
-  - Judge name (e.g., "Statzinger")
-  - Calendar day (e.g., "Cal Wed")
-  - OUT dates (dates judge is unavailable, e.g., "OUT 10/24, 10/28, 11/10, 11/14")
-
-COLUMN 2: Sending Part - Which part is sending/keeping the case
-COLUMN 3: Defendant - Defendant name
-COLUMN 4: Purpose - Purpose of court appearance
-COLUMN 5: Transfer/Start Date - Date case was transferred or started
-COLUMN 6: Top Charge - Primary charge code
-COLUMN 7: Status - Case status information (JS date, HRG date, CONF date, etc.)
-COLUMN 8: Attorney - Defense attorney name
-COLUMN 9: Estimated Final Date - Expected case completion date
+COLUMN 1: Part Number (e.g., "22", "51", "93") - ONLY extract the part number
+COLUMN 2: Sending Part
+COLUMN 3: Defendant
+COLUMN 4: Purpose
+COLUMN 5: Transfer/Start Date
+COLUMN 6: Top Charge
+COLUMN 7: Status
+COLUMN 8: Attorney
+COLUMN 9: Estimated Final Date
 
 IMPORTANT: 
-- Each ROW after the part header represents ONE CASE with all 9 columns of data.
-- Extract ALL columns for each case row. Do not skip any columns.
-- For dates, convert from MM-DD-YY format to YYYY-MM-DD format (e.g., "10-22-25" becomes "2025-10-22").
-- Capture the calendar day from Column 1 (e.g., "Cal Wed", "Cal Mon").
-- Parse OUT dates from Column 1 as an array of dates.`
+- Extract EVERY case from ALL parts in the document
+- Do NOT extract judge names, room numbers, calendar days, or OUT dates - only the part number
+- Each row is one case with 8 columns of data (columns 2-9)
+- Group cases by their part number (column 1)
+- For dates, convert from MM-DD-YY format to YYYY-MM-DD format (e.g., "10-22-25" becomes "2025-10-22")`
           },
           {
             role: 'user',
-            content: `Extract all court report data from this PDF document. Return structured JSON with all parts, judges, cases, defendants, charges, and status information.
+            content: `Extract all case data from this PDF document. Return structured JSON with part numbers and all associated case information.
 
-CRITICAL: Parse the ENTIRE document from start to finish and extract EVERY part entry you find. Do not stop after a few entries. 
+CRITICAL: Parse the ENTIRE document from start to finish and extract EVERY case from EVERY part. Do not stop after a few entries. 
 - Scan through all pages
-- Extract every single part number and its associated data
-- Each part should include the part number, judge name, and all associated case information
-- If a part has no cases, still include it with an empty cases array
+- Extract every single part number and all its cases
+- If a part has no cases, skip it
+- Focus only on extracting the part number and the 8 case data columns (2-9)
 
-Make sure you read through the complete document and don't miss any parts.`
+Make sure you read through the complete document and don't miss any parts or cases.`
           }
         ],
         tools: [{
@@ -136,44 +128,32 @@ Make sure you read through the complete document and don't miss any parts.`
                 location: { type: 'string', description: 'Court location address' },
                 entries: {
                   type: 'array',
-                  description: 'Array of part entries from the court report',
+                  description: 'Array of part entries with cases from the court report',
                   items: {
                     type: 'object',
                     properties: {
-                      part: { type: 'string', description: 'Part number from Column 1 (e.g., "22", "37")' },
-                      judge: { type: 'string', description: 'Judge name from Column 1' },
-                      calendar_day: { type: 'string', description: 'Calendar day from Column 1 (e.g., "Cal Wed", "Cal Mon")' },
-                      out_dates: { 
-                        type: 'array', 
-                        items: { type: 'string' },
-                        description: 'OUT dates from Column 1 when judge is unavailable'
-                      },
+                      part: { type: 'string', description: 'Part number only from Column 1 (e.g., "22", "37")' },
                       cases: {
                         type: 'array',
-                        description: 'Array of cases for this part - each row is one case with 9 columns',
+                        description: 'Array of cases for this part - each row is one case with 8 data columns',
                         items: {
                           type: 'object',
                           properties: {
                             sending_part: { type: 'string', description: 'Column 2: Part sending or keeping case' },
                             defendant: { type: 'string', description: 'Column 3: Defendant name' },
                             purpose: { type: 'string', description: 'Column 4: Purpose of appearance' },
-                            transfer_date: { type: 'string', description: 'Column 5: Transfer or start date' },
+                            transfer_date: { type: 'string', description: 'Column 5: Transfer or start date in YYYY-MM-DD format' },
                             top_charge: { type: 'string', description: 'Column 6: Top charge code' },
                             status: { type: 'string', description: 'Column 7: Status info (all status text as single string)' },
                             attorney: { type: 'string', description: 'Column 8: Defense attorney name' },
-                            estimated_final_date: { type: 'string', description: 'Column 9: Estimated final date' },
+                            estimated_final_date: { type: 'string', description: 'Column 9: Estimated final date in YYYY-MM-DD format' },
                             indictment_number: { type: 'string', description: 'Case/indictment number if present' }
                           },
                           required: ['defendant', 'sending_part', 'purpose', 'transfer_date', 'top_charge', 'status', 'attorney']
                         }
-                      },
-                      special_notes: { 
-                        type: 'array', 
-                        items: { type: 'string' },
-                        description: 'Special notes or annotations for this part'
                       }
                     },
-                    required: ['part', 'judge']
+                    required: ['part', 'cases']
                   }
                 },
                 footer_notes: { 
@@ -216,6 +196,26 @@ Make sure you read through the complete document and don't miss any parts.`
     const extractedData: CourtReportExtraction = JSON.parse(toolCall.function.arguments)
     console.log('📊 Extracted', extractedData.entries.length, 'court part entries')
     
+    // Enrich data with judge and room info from database
+    console.log('🔍 Looking up judge and room assignments...')
+    const enrichedEntries = await Promise.all(
+      extractedData.entries.map(async (entry) => {
+        const { data: assignment } = await supabase
+          .from('court_assignments')
+          .select('justice, room_number, building_code')
+          .eq('part', entry.part)
+          .maybeSingle()
+
+        return {
+          ...entry,
+          judge: assignment?.justice || 'Unknown',
+          room_number: assignment?.room_number || 'Unknown',
+          building_code: assignment?.building_code || '100'
+        }
+      })
+    )
+    console.log('✅ Enriched data with', enrichedEntries.length, 'part assignments')
+    
     // Store in database
     const { data: reportData, error: reportError } = await supabase
       .from('court_reports')
@@ -236,17 +236,17 @@ Make sure you read through the complete document and don't miss any parts.`
 
     console.log('✅ Report stored with ID:', reportData.id)
 
-    // Store entries and cases
-    for (const entry of extractedData.entries) {
+    // Store entries and cases with enriched data
+    for (const entry of enrichedEntries) {
       const { data: entryData, error: entryError } = await supabase
         .from('court_report_entries')
         .insert({
           report_id: reportData.id,
           part: entry.part,
           judge: entry.judge,
-          calendar_day: entry.calendar_day,
-          out_dates: entry.out_dates,
-          special_notes: entry.special_notes
+          calendar_day: null,  // No longer extracted
+          out_dates: null,  // No longer extracted
+          special_notes: null
         })
         .select()
         .single()
@@ -287,10 +287,10 @@ Make sure you read through the complete document and don't miss any parts.`
       JSON.stringify({
         success: true,
         report_id: reportData.id,
-        extracted_data: extractedData,
+        extracted_data: { ...extractedData, entries: enrichedEntries },
         stats: {
-          parts: extractedData.entries.length,
-          total_cases: extractedData.entries.reduce((sum, e) => sum + (e.cases?.length || 0), 0)
+          parts: enrichedEntries.length,
+          total_cases: enrichedEntries.reduce((sum, e) => sum + (e.cases?.length || 0), 0)
         }
       }),
       { 
