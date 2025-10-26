@@ -99,13 +99,13 @@ export function UploadDailyReportDialog({
       // Step 3: Transform extracted court report data to session format
       // Create ONE session per part, with all cases grouped together
       const extractedData = parseResult.extracted_data;
-      console.log('📊 Extracted data entries:', extractedData?.entries);
+      console.log('📊 Frontend received extracted data:', extractedData?.entries);
       const sessions: any[] = [];
 
       if (extractedData?.entries) {
         console.log(`🔄 Processing ${extractedData.entries.length} part entries...`);
         for (const entry of extractedData.entries) {
-          console.log(`  Part ${entry.part}: ${entry.cases?.length || 0} cases`);
+          console.log(`  📍 Part ${entry.part}: Judge="${entry.judge}", Room="${entry.room_number}", Cases=${entry.cases?.length || 0}`);
           
           // Create ONE session per part with aggregated case data
           const cases = entry.cases || [];

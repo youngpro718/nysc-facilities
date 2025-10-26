@@ -196,25 +196,43 @@ Make sure you read through the complete document and don't miss any parts or cas
     const extractedData: CourtReportExtraction = JSON.parse(toolCall.function.arguments)
     console.log('📊 Extracted', extractedData.entries.length, 'court part entries')
     
-    // Enrich data with judge and room info from database
-    console.log('🔍 Looking up judge and room assignments...')
+    // Log what AI actually extracted (before enrichment)
+    console.log('🔍 AI extracted data sample:', JSON.stringify(extractedData.entries[0], null, 2))
+    
+    // CRITICAL: Strip any judge/room data that AI might have hallucinated
+    // We ONLY want part numbers and case data from AI
+    const cleanedEntries = extractedData.entries.map(entry => ({
+      part: entry.part,
+      cases: entry.cases,
+      // Explicitly remove any judge/room/calendar fields AI might have added
+    }))
+    
+    // Enrich data with judge and room info from database ONLY
+    console.log('🔍 Looking up judge and room assignments from database...')
     const enrichedEntries = await Promise.all(
-      extractedData.entries.map(async (entry) => {
-        const { data: assignment } = await supabase
+      cleanedEntries.map(async (entry) => {
+        const { data: assignment, error: assignmentError } = await supabase
           .from('court_assignments')
           .select('justice, room_number, building_code')
           .eq('part', entry.part)
           .maybeSingle()
 
-        return {
+        if (assignmentError) {
+          console.error(`❌ Error looking up part ${entry.part}:`, assignmentError)
+        }
+
+        const enrichedEntry = {
           ...entry,
           judge: assignment?.justice || 'Unknown',
           room_number: assignment?.room_number || 'Unknown',
           building_code: assignment?.building_code || '100'
         }
+        
+        console.log(`✅ Part ${entry.part} -> Judge: ${enrichedEntry.judge}, Room: ${enrichedEntry.room_number}`)
+        return enrichedEntry
       })
     )
-    console.log('✅ Enriched data with', enrichedEntries.length, 'part assignments')
+    console.log('✅ Enriched data with', enrichedEntries.length, 'part assignments from database')
     
     // Store in database
     const { data: reportData, error: reportError } = await supabase
