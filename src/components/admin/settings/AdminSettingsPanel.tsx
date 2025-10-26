@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/providers/ThemeProvider';
 import { toast } from 'sonner';
-import { Bell, Palette, Save, Moon, Sun } from 'lucide-react';
+import { Bell, Palette, Save, Moon, Sun, Clock, Shield, Globe, Calendar, LayoutDashboard } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -55,6 +55,10 @@ export default function AdminSettingsPanel() {
     weeklyReports: false,
     compactMode: false,
     showAvatars: true,
+    sessionTimeout: '30',
+    timezone: 'America/New_York',
+    dateFormat: 'MM/DD/YYYY',
+    defaultDashboard: '/',
   });
 
   // Load settings from database
@@ -62,6 +66,7 @@ export default function AdminSettingsPanel() {
     if (profile) {
       const notifPrefs = profile.notification_preferences || {};
       const interfacePrefs = profile.interface_preferences || {};
+      const systemPrefs = (profile as any).system_preferences || {};
       
       setSettings({
         emailNotifications: notifPrefs.email ?? true,
@@ -70,6 +75,10 @@ export default function AdminSettingsPanel() {
         weeklyReports: notifPrefs.weekly ?? false,
         compactMode: interfacePrefs.compact ?? false,
         showAvatars: interfacePrefs.showAvatars ?? true,
+        sessionTimeout: systemPrefs.sessionTimeout ?? '30',
+        timezone: systemPrefs.timezone ?? 'America/New_York',
+        dateFormat: systemPrefs.dateFormat ?? 'MM/DD/YYYY',
+        defaultDashboard: systemPrefs.defaultDashboard ?? '/',
       });
     }
   }, [profile]);
@@ -93,6 +102,12 @@ export default function AdminSettingsPanel() {
             compact: settings.compactMode,
             showAvatars: settings.showAvatars,
           },
+          system_preferences: {
+            sessionTimeout: settings.sessionTimeout,
+            timezone: settings.timezone,
+            dateFormat: settings.dateFormat,
+            defaultDashboard: settings.defaultDashboard,
+          },
         })
         .eq('id', user.id);
 
@@ -109,7 +124,7 @@ export default function AdminSettingsPanel() {
     },
   });
 
-  const handleChange = (field: string, value: boolean) => {
+  const handleChange = (field: string, value: boolean | string) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
@@ -289,6 +304,188 @@ export default function AdminSettingsPanel() {
               checked={settings.showAvatars}
               onCheckedChange={(checked) => handleChange('showAvatars', checked)}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Security Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Security & Authentication
+          </CardTitle>
+          <CardDescription>
+            Manage your security preferences and authentication settings
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="session-timeout">Session Timeout</Label>
+            <Select 
+              value={settings.sessionTimeout} 
+              onValueChange={(value) => handleChange('sessionTimeout', value)}
+            >
+              <SelectTrigger id="session-timeout">
+                <SelectValue placeholder="Select timeout" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    15 minutes
+                  </div>
+                </SelectItem>
+                <SelectItem value="30">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    30 minutes (default)
+                  </div>
+                </SelectItem>
+                <SelectItem value="60">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    1 hour
+                  </div>
+                </SelectItem>
+                <SelectItem value="120">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    2 hours
+                  </div>
+                </SelectItem>
+                <SelectItem value="240">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    4 hours
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Automatically log out after this period of inactivity
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-normal">Two-Factor Authentication</Label>
+              <p className="text-xs text-muted-foreground">
+                Add an extra layer of security to your account
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => window.location.href = '/auth/mfa'}>
+              Configure MFA
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Regional Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Regional & Format Settings
+          </CardTitle>
+          <CardDescription>
+            Customize date, time, and regional preferences
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="timezone">Timezone</Label>
+            <Select 
+              value={settings.timezone} 
+              onValueChange={(value) => handleChange('timezone', value)}
+            >
+              <SelectTrigger id="timezone">
+                <SelectValue placeholder="Select timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                <SelectItem value="America/Anchorage">Alaska Time (AKT)</SelectItem>
+                <SelectItem value="Pacific/Honolulu">Hawaii Time (HST)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              All dates and times will be displayed in this timezone
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date-format">Date Format</Label>
+            <Select 
+              value={settings.dateFormat} 
+              onValueChange={(value) => handleChange('dateFormat', value)}
+            >
+              <SelectTrigger id="date-format">
+                <SelectValue placeholder="Select format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MM/DD/YYYY">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    MM/DD/YYYY (US) - 10/26/2025
+                  </div>
+                </SelectItem>
+                <SelectItem value="DD/MM/YYYY">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    DD/MM/YYYY (International) - 26/10/2025
+                  </div>
+                </SelectItem>
+                <SelectItem value="YYYY-MM-DD">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    YYYY-MM-DD (ISO) - 2025-10-26
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Choose how dates are displayed throughout the app
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dashboard Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LayoutDashboard className="h-5 w-5" />
+            Dashboard Preferences
+          </CardTitle>
+          <CardDescription>
+            Set your default landing page and dashboard view
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="default-dashboard">Default Dashboard</Label>
+            <Select 
+              value={settings.defaultDashboard} 
+              onValueChange={(value) => handleChange('defaultDashboard', value)}
+            >
+              <SelectTrigger id="default-dashboard">
+                <SelectValue placeholder="Select dashboard" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="/">Admin Dashboard</SelectItem>
+                <SelectItem value="/operations">Operations Dashboard</SelectItem>
+                <SelectItem value="/spaces">Spaces Management</SelectItem>
+                <SelectItem value="/inventory">Inventory Overview</SelectItem>
+                <SelectItem value="/requests">Requests & Tickets</SelectItem>
+                <SelectItem value="/reports">Reports & Analytics</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              This page will load when you first log in
+            </p>
           </div>
         </CardContent>
       </Card>

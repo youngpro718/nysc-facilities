@@ -1,6 +1,6 @@
-import { ChevronLeft, QrCode, Download, Copy, Check, Users, Shield, Settings as SettingsIcon, Wrench, Building, Activity } from "lucide-react";
+import { ChevronLeft, Download, Copy, Check, Users, Shield, FileText, Settings as SettingsIcon, Activity, AlertTriangle, QrCode, AlertCircle } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -13,8 +13,6 @@ import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
 
 import { TitleAccessManager } from "@/components/admin/TitleAccessManager";
 import { EnhancedUserManagementModal } from "@/components/profile/modals/EnhancedUserManagementModal";
-import { FeatureDiscoveryCard } from "@/components/settings/FeatureDiscoveryCard";
-import { SettingsNavigation } from "@/components/settings/SettingsNavigation";
 import { AdminQuickActions } from "@/components/settings/AdminQuickActions";
 import SecurityPanel from "@/components/admin/security/SecurityPanel";
 import AdminSettingsPanel from "@/components/admin/settings/AdminSettingsPanel";
@@ -102,8 +100,6 @@ export default function AdminProfile() {
           <span className="hidden sm:inline">Install App</span>
         </Button>
       </div>
-      
-      <SettingsNavigation />
 
       {/* Install App QR Code Card */}
       {showQR && (
@@ -201,16 +197,72 @@ export default function AdminProfile() {
 
           {/* Users Tab */}
           <TabsContent value="users" className="mt-4">
-            <div className="space-y-4">
-              <FeatureDiscoveryCard />
-              
-              <div className="flex justify-end">
-                <Button onClick={() => setEnhancedUserManagementOpen(true)} className="gap-2" size="lg">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  Open User Management
-                </Button>
-              </div>
-            </div>
+                  User Statistics
+                </CardTitle>
+                <CardDescription>
+                  Click any statistic to view and manage those users
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 hover:bg-primary/5"
+                    onClick={() => setEnhancedUserManagementOpen(true)}
+                  >
+                    <div className="flex items-center gap-2 w-full mb-2">
+                      <Users className="h-4 w-4 text-blue-600" />
+                      <span className="text-xs font-medium">All Users</span>
+                    </div>
+                    <span className="text-3xl font-bold">View All</span>
+                    <span className="text-xs text-muted-foreground mt-1">Manage all users</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 hover:bg-primary/5"
+                    onClick={() => setEnhancedUserManagementOpen(true)}
+                  >
+                    <div className="flex items-center gap-2 w-full mb-2">
+                      <Shield className="h-4 w-4 text-yellow-600" />
+                      <span className="text-xs font-medium">Pending</span>
+                    </div>
+                    <span className="text-3xl font-bold">0</span>
+                    <span className="text-xs text-muted-foreground mt-1">Awaiting approval</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 hover:bg-primary/5"
+                    onClick={() => setEnhancedUserManagementOpen(true)}
+                  >
+                    <div className="flex items-center gap-2 w-full mb-2">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <span className="text-xs font-medium">Suspended</span>
+                    </div>
+                    <span className="text-3xl font-bold">0</span>
+                    <span className="text-xs text-muted-foreground mt-1">Blocked accounts</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 hover:bg-primary/5"
+                    onClick={() => setEnhancedUserManagementOpen(true)}
+                  >
+                    <div className="flex items-center gap-2 w-full mb-2">
+                      <Activity className="h-4 w-4 text-orange-600" />
+                      <span className="text-xs font-medium">Issues</span>
+                    </div>
+                    <span className="text-3xl font-bold">0</span>
+                    <span className="text-xs text-muted-foreground mt-1">Needs attention</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Access Tab */}
