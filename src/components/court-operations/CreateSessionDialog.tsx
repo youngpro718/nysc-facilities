@@ -9,9 +9,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Loader2, Users, CheckCircle, AlertCircle, UserX, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Users, CheckCircle, AlertCircle, UserX, Calendar as CalendarIcon, ChevronsUpDown, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -46,6 +47,7 @@ export function CreateSessionDialog({
   const [statusSearch, setStatusSearch] = useState('');
   const [showCustomStatus, setShowCustomStatus] = useState(false);
   const [partSearch, setPartSearch] = useState('');
+  const [partDropdownOpen, setPartDropdownOpen] = useState(false);
   
   // New calendar fields
   const [partsEnteredBy, setPartsEnteredBy] = useState('');
@@ -271,6 +273,7 @@ export function CreateSessionDialog({
       setStatusSearch('');
       setShowCustomStatus(false);
       setPartSearch('');
+      setPartDropdownOpen(false);
       // Reset new calendar fields
       setPartsEnteredBy('');
       setDefendants('');
@@ -599,133 +602,117 @@ export function CreateSessionDialog({
                 Sending Part {availableRooms && `(${availableRooms.empty.length} empty, ${availableRooms.absent.length} absent)`}
                 <span className="text-xs text-muted-foreground ml-2">(Leave blank for OWN)</span>
               </Label>
-              <div className="relative">
-                <Input
-                  id="parts-entered-by"
-                  placeholder="OWN (or type to search rooms...)"
-                  value={partSearch || partsEnteredBy}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setPartSearch(value);
-                    // If user is typing freely (no dropdown visible), update partsEnteredBy directly
-                    if (!filteredAvailableRooms.some(r => 
-                      r.room_number.toLowerCase().includes(value.toLowerCase()) ||
-                      r.part?.toLowerCase().includes(value.toLowerCase())
-                    )) {
-                      setPartsEnteredBy(value);
-                    }
-                  }}
-                  onFocus={() => setPartSearch('')}
-                  className="pr-10"
-                />
-                {partsLoading && (
-                  <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
-                )}
-              </div>
-              
-              {/* Auto-filtered rooms dropdown */}
-              {partSearch && (
-                <div className="border rounded-md max-h-[250px] overflow-y-auto bg-background">
-                  {filteredAvailableRooms.length === 0 ? (
-                    <div className="p-3 text-sm text-muted-foreground text-center">
-                      No available rooms found.
-                      <div className="text-xs mt-1">
-                        (Showing empty rooms and rooms with absent judges)
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Empty rooms section */}
-                      {availableRooms?.empty.some(r => 
-                        r.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
-                        r.part?.toLowerCase().includes(partSearch.toLowerCase())
-                      ) && (
-                        <div>
-                          <div className="px-3 py-1.5 bg-muted/50 text-xs font-medium text-muted-foreground sticky top-0">
-                            Empty Rooms
-                          </div>
-                          <div className="divide-y">
-                            {availableRooms.empty
-                              .filter(r => 
-                                r.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
-                                r.part?.toLowerCase().includes(partSearch.toLowerCase())
-                              )
-                              .map((room) => (
-                                <button
-                                  key={room.room_number}
-                                  type="button"
-                                  onClick={() => {
-                                    setPartsEnteredBy(room.part || room.room_number);
-                                    setPartSearch('');
-                                  }}
-                                  className="w-full p-2 text-left hover:bg-muted transition-colors"
-                                >
+              <Popover open={partDropdownOpen} onOpenChange={setPartDropdownOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={partDropdownOpen}
+                    className="w-full justify-between"
+                  >
+                    {partsEnteredBy || "OWN - Select a room..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0 z-50" align="start">
+                  <Command>
+                    <CommandInput 
+                      placeholder="Search rooms or parts..." 
+                      value={partSearch}
+                      onValueChange={setPartSearch}
+                    />
+                    <CommandList className="max-h-[300px]">
+                      <CommandEmpty>No available rooms found.</CommandEmpty>
+                      
+                      {/* Empty Rooms Group */}
+                      {availableRooms?.empty && availableRooms.empty.length > 0 && (
+                        <CommandGroup heading="Empty Rooms">
+                          {availableRooms.empty
+                            .filter(room => 
+                              !partSearch || 
+                              room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                              room.part?.toLowerCase().includes(partSearch.toLowerCase())
+                            )
+                            .map((room) => (
+                              <CommandItem
+                                key={`empty-${room.room_number}`}
+                                value={`${room.room_number} ${room.part || ''}`}
+                                onSelect={() => {
+                                  setPartsEnteredBy(room.part || room.room_number);
+                                  setPartDropdownOpen(false);
+                                  setPartSearch('');
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    partsEnteredBy === (room.part || room.room_number) ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                <div className="flex-1">
                                   <div className="font-medium">Room {room.room_number}</div>
-                                  {room.part && (
+                                  {room.part ? (
                                     <div className="text-xs text-muted-foreground">Part {room.part} • Empty</div>
-                                  )}
-                                  {!room.part && (
+                                  ) : (
                                     <div className="text-xs text-muted-foreground">No part assigned</div>
                                   )}
-                                </button>
-                              ))}
-                          </div>
-                        </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
                       )}
                       
-                      {/* Absent judge rooms section */}
-                      {availableRooms?.absent.some(r => 
-                        r.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
-                        r.part?.toLowerCase().includes(partSearch.toLowerCase())
-                      ) && (
-                        <div>
-                          <div className="px-3 py-1.5 bg-amber-500/10 text-xs font-medium text-amber-600 sticky top-0">
-                            Judge Absent
-                          </div>
-                          <div className="divide-y">
-                            {availableRooms.absent
-                              .filter(r => 
-                                r.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
-                                r.part?.toLowerCase().includes(partSearch.toLowerCase())
-                              )
-                              .map((room) => (
-                                <button
-                                  key={room.room_number}
-                                  type="button"
-                                  onClick={() => {
-                                    setPartsEnteredBy(room.part || room.room_number);
-                                    setPartSearch('');
-                                  }}
-                                  className="w-full p-2 text-left hover:bg-muted transition-colors"
-                                >
+                      {/* Absent Judge Rooms Group */}
+                      {availableRooms?.absent && availableRooms.absent.length > 0 && (
+                        <CommandGroup heading="Judge Absent">
+                          {availableRooms.absent
+                            .filter(room => 
+                              !partSearch || 
+                              room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                              room.part?.toLowerCase().includes(partSearch.toLowerCase())
+                            )
+                            .map((room) => (
+                              <CommandItem
+                                key={`absent-${room.room_number}`}
+                                value={`${room.room_number} ${room.part || ''}`}
+                                onSelect={() => {
+                                  setPartsEnteredBy(room.part || room.room_number);
+                                  setPartDropdownOpen(false);
+                                  setPartSearch('');
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    partsEnteredBy === (room.part || room.room_number) ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                <div className="flex-1">
                                   <div className="font-medium">Room {room.room_number}</div>
                                   {room.part && (
-                                    <div className="text-xs text-muted-foreground">Part {room.part} • Judge Out</div>
+                                    <div className="text-xs text-amber-600">Part {room.part} • Judge Out</div>
                                   )}
-                                </button>
-                              ))}
-                          </div>
-                        </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
                       )}
-                    </>
-                  )}
-                </div>
-              )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               
-              {/* Selected part display */}
-              {partsEnteredBy && !partSearch && (
-                <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-between">
-                  <span className="text-sm font-medium">{partsEnteredBy}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPartsEnteredBy('')}
-                    className="h-6 px-2"
-                  >
-                    Clear
-                  </Button>
-                </div>
+              {/* Clear button when part is selected */}
+              {partsEnteredBy && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPartsEnteredBy('')}
+                  className="w-full text-xs"
+                >
+                  Clear Selection (Default to OWN)
+                </Button>
               )}
             </div>
 
