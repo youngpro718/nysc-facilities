@@ -710,6 +710,142 @@ export type Database = {
         }
         Relationships: []
       }
+      court_report_cases: {
+        Row: {
+          ada_assigned: string[] | null
+          adjournment: string | null
+          attorneys: string[] | null
+          calendar_info: string | null
+          conf_date: string | null
+          created_at: string | null
+          defendant: string | null
+          entry_id: string | null
+          hrg_date: string | null
+          id: string
+          indictment_number: string | null
+          js_date: string | null
+          jury_indicator: boolean | null
+          top_charge: string | null
+        }
+        Insert: {
+          ada_assigned?: string[] | null
+          adjournment?: string | null
+          attorneys?: string[] | null
+          calendar_info?: string | null
+          conf_date?: string | null
+          created_at?: string | null
+          defendant?: string | null
+          entry_id?: string | null
+          hrg_date?: string | null
+          id?: string
+          indictment_number?: string | null
+          js_date?: string | null
+          jury_indicator?: boolean | null
+          top_charge?: string | null
+        }
+        Update: {
+          ada_assigned?: string[] | null
+          adjournment?: string | null
+          attorneys?: string[] | null
+          calendar_info?: string | null
+          conf_date?: string | null
+          created_at?: string | null
+          defendant?: string | null
+          entry_id?: string | null
+          hrg_date?: string | null
+          id?: string
+          indictment_number?: string | null
+          js_date?: string | null
+          jury_indicator?: boolean | null
+          top_charge?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_report_cases_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "court_report_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      court_report_entries: {
+        Row: {
+          calendar_type: string | null
+          created_at: string | null
+          id: string
+          judge: string | null
+          out_dates: string[] | null
+          part: string
+          report_id: string | null
+          special_notes: string[] | null
+        }
+        Insert: {
+          calendar_type?: string | null
+          created_at?: string | null
+          id?: string
+          judge?: string | null
+          out_dates?: string[] | null
+          part: string
+          report_id?: string | null
+          special_notes?: string[] | null
+        }
+        Update: {
+          calendar_type?: string | null
+          created_at?: string | null
+          id?: string
+          judge?: string | null
+          out_dates?: string[] | null
+          part?: string
+          report_id?: string | null
+          special_notes?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_report_entries_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "court_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      court_reports: {
+        Row: {
+          created_at: string | null
+          extracted_at: string | null
+          id: string
+          location: string
+          pdf_file_path: string | null
+          raw_extraction: Json | null
+          report_date: string
+          report_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          extracted_at?: string | null
+          id?: string
+          location: string
+          pdf_file_path?: string | null
+          raw_extraction?: Json | null
+          report_date: string
+          report_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          extracted_at?: string | null
+          id?: string
+          location?: string
+          pdf_file_path?: string | null
+          raw_extraction?: Json | null
+          report_date?: string
+          report_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       court_room_status: {
         Row: {
           note: string | null
@@ -742,57 +878,69 @@ export type Database = {
       court_rooms: {
         Row: {
           accessibility_features: Json | null
+          court_type: string | null
           courtroom_number: string | null
           created_at: string | null
           id: string
           is_active: boolean | null
           juror_capacity: number | null
+          jury_capacity: number | null
           maintenance_end_date: string | null
           maintenance_notes: string | null
           maintenance_start_date: string | null
           maintenance_status: string | null
           notes: string | null
           operational_status: string | null
+          reserved_for_moves: boolean | null
           room_id: string
           room_number: string
+          specialization: string[] | null
           spectator_capacity: number | null
           temporary_location: string | null
           updated_at: string | null
         }
         Insert: {
           accessibility_features?: Json | null
+          court_type?: string | null
           courtroom_number?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
           juror_capacity?: number | null
+          jury_capacity?: number | null
           maintenance_end_date?: string | null
           maintenance_notes?: string | null
           maintenance_start_date?: string | null
           maintenance_status?: string | null
           notes?: string | null
           operational_status?: string | null
+          reserved_for_moves?: boolean | null
           room_id: string
           room_number: string
+          specialization?: string[] | null
           spectator_capacity?: number | null
           temporary_location?: string | null
           updated_at?: string | null
         }
         Update: {
           accessibility_features?: Json | null
+          court_type?: string | null
           courtroom_number?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
           juror_capacity?: number | null
+          jury_capacity?: number | null
           maintenance_end_date?: string | null
           maintenance_notes?: string | null
           maintenance_start_date?: string | null
           maintenance_status?: string | null
           notes?: string | null
           operational_status?: string | null
+          reserved_for_moves?: boolean | null
           room_id?: string
           room_number?: string
+          specialization?: string[] | null
           spectator_capacity?: number | null
           temporary_location?: string | null
           updated_at?: string | null
@@ -826,9 +974,11 @@ export type Database = {
           date_transferred_or_started: string | null
           defendants: string | null
           estimated_finish_date: string | null
+          extension: string | null
           id: string
           judge_name: string | null
           notes: string | null
+          papers: string | null
           part_number: string | null
           parts_entered_by: string | null
           period: Database["public"]["Enums"]["session_period"]
@@ -852,9 +1002,11 @@ export type Database = {
           date_transferred_or_started?: string | null
           defendants?: string | null
           estimated_finish_date?: string | null
+          extension?: string | null
           id?: string
           judge_name?: string | null
           notes?: string | null
+          papers?: string | null
           part_number?: string | null
           parts_entered_by?: string | null
           period?: Database["public"]["Enums"]["session_period"]
@@ -878,9 +1030,11 @@ export type Database = {
           date_transferred_or_started?: string | null
           defendants?: string | null
           estimated_finish_date?: string | null
+          extension?: string | null
           id?: string
           judge_name?: string | null
           notes?: string | null
+          papers?: string | null
           part_number?: string | null
           parts_entered_by?: string | null
           period?: Database["public"]["Enums"]["session_period"]
@@ -5381,6 +5535,7 @@ export type Database = {
           accessibility_preferences: Json | null
           avatar_url: string | null
           bio: string | null
+          building: string | null
           created_at: string | null
           department: string | null
           department_id: string | null
@@ -5389,6 +5544,7 @@ export type Database = {
           enabled_modules: Json | null
           feature_flags: Json | null
           first_name: string | null
+          full_name: string | null
           id: string
           interface_preferences: Json | null
           is_approved: boolean | null
@@ -5399,11 +5555,14 @@ export type Database = {
           last_login_at: string | null
           last_name: string | null
           metadata: Json | null
+          mfa_enforced: boolean | null
           notification_preferences: Json | null
+          onboarded: boolean | null
           onboarding_completed: boolean | null
           onboarding_completed_at: string | null
           onboarding_skipped: boolean | null
           phone: string | null
+          role: string | null
           security_settings: Json | null
           suspended_at: string | null
           suspended_by: string | null
@@ -5424,6 +5583,7 @@ export type Database = {
           accessibility_preferences?: Json | null
           avatar_url?: string | null
           bio?: string | null
+          building?: string | null
           created_at?: string | null
           department?: string | null
           department_id?: string | null
@@ -5432,6 +5592,7 @@ export type Database = {
           enabled_modules?: Json | null
           feature_flags?: Json | null
           first_name?: string | null
+          full_name?: string | null
           id: string
           interface_preferences?: Json | null
           is_approved?: boolean | null
@@ -5442,11 +5603,14 @@ export type Database = {
           last_login_at?: string | null
           last_name?: string | null
           metadata?: Json | null
+          mfa_enforced?: boolean | null
           notification_preferences?: Json | null
+          onboarded?: boolean | null
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_skipped?: boolean | null
           phone?: string | null
+          role?: string | null
           security_settings?: Json | null
           suspended_at?: string | null
           suspended_by?: string | null
@@ -5467,6 +5631,7 @@ export type Database = {
           accessibility_preferences?: Json | null
           avatar_url?: string | null
           bio?: string | null
+          building?: string | null
           created_at?: string | null
           department?: string | null
           department_id?: string | null
@@ -5475,6 +5640,7 @@ export type Database = {
           enabled_modules?: Json | null
           feature_flags?: Json | null
           first_name?: string | null
+          full_name?: string | null
           id?: string
           interface_preferences?: Json | null
           is_approved?: boolean | null
@@ -5485,11 +5651,14 @@ export type Database = {
           last_login_at?: string | null
           last_name?: string | null
           metadata?: Json | null
+          mfa_enforced?: boolean | null
           notification_preferences?: Json | null
+          onboarded?: boolean | null
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_skipped?: boolean | null
           phone?: string | null
+          role?: string | null
           security_settings?: Json | null
           suspended_at?: string | null
           suspended_by?: string | null
@@ -6055,6 +6224,24 @@ export type Database = {
           reason?: string | null
           target_user_id?: string | null
           user_agent?: string | null
+        }
+        Relationships: []
+      }
+      roles_catalog: {
+        Row: {
+          created_at: string | null
+          description: string
+          role: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          role: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          role?: string
         }
         Relationships: []
       }
@@ -7390,6 +7577,54 @@ export type Database = {
           identifier?: string
           last_attempt?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      security_settings: {
+        Row: {
+          allowed_email_domain: string | null
+          block_minutes: number
+          created_at: string | null
+          id: boolean
+          max_login_attempts: number
+          mfa_required_roles: string[] | null
+          password_min_length: number
+          password_require_digit: boolean | null
+          password_require_lower: boolean | null
+          password_require_symbol: boolean | null
+          password_require_upper: boolean | null
+          session_timeout_minutes: number
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_email_domain?: string | null
+          block_minutes?: number
+          created_at?: string | null
+          id?: boolean
+          max_login_attempts?: number
+          mfa_required_roles?: string[] | null
+          password_min_length?: number
+          password_require_digit?: boolean | null
+          password_require_lower?: boolean | null
+          password_require_symbol?: boolean | null
+          password_require_upper?: boolean | null
+          session_timeout_minutes?: number
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_email_domain?: string | null
+          block_minutes?: number
+          created_at?: string | null
+          id?: boolean
+          max_login_attempts?: number
+          mfa_required_roles?: string[] | null
+          password_min_length?: number
+          password_require_digit?: boolean | null
+          password_require_lower?: boolean | null
+          password_require_symbol?: boolean | null
+          password_require_upper?: boolean | null
+          session_timeout_minutes?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -9758,6 +9993,7 @@ export type Database = {
       }
       get_request_header: { Args: { header_name: string }; Returns: string }
       get_request_headers: { Args: never; Returns: Json }
+      get_role_for_title: { Args: { p_job_title: string }; Returns: string }
       get_room_assignments_with_details: {
         Args: { p_room_id?: string }
         Returns: {
@@ -9851,10 +10087,12 @@ export type Database = {
         }[]
       }
       get_system_health: { Args: never; Returns: Json }
-      get_user_role: {
-        Args: { user_id: string }
-        Returns: Database["public"]["Enums"]["user_role"]
-      }
+      get_user_role:
+        | { Args: never; Returns: string }
+        | {
+            Args: { user_id: string }
+            Returns: Database["public"]["Enums"]["user_role"]
+          }
       get_user_verification_data: {
         Args: never
         Returns: {
@@ -9886,6 +10124,10 @@ export type Database = {
         Returns: boolean
       }
       increment_key_quantity: { Args: { key_id: string }; Returns: number }
+      increment_login_attempt: {
+        Args: { p_identifier: string }
+        Returns: undefined
+      }
       initialize_door_properties: {
         Args: {
           p_room_number?: string
@@ -9906,9 +10148,14 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      is_coordinator: { Args: never; Returns: boolean }
       is_courtroom: { Args: { room_type: string }; Returns: boolean }
       is_current_user_admin: { Args: never; Returns: boolean }
       is_facilities_or_admin: { Args: never; Returns: boolean }
+      is_identifier_blocked: {
+        Args: { p_identifier: string }
+        Returns: boolean
+      }
       list_occupants_minimal: {
         Args: never
         Returns: {
@@ -9986,6 +10233,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      map_legacy_role: { Args: { legacy_role: string }; Returns: string }
       mark_clerk_presence: {
         Args: {
           p_actor: string
@@ -10052,6 +10300,10 @@ export type Database = {
         Args: { reason?: string; target_user_id: string }
         Returns: undefined
       }
+      reset_login_attempts: {
+        Args: { p_identifier: string }
+        Returns: undefined
+      }
       reset_rate_limit: {
         Args: { p_attempt_type?: string; p_identifier: string }
         Returns: boolean
@@ -10110,6 +10362,7 @@ export type Database = {
         Args: { p_actor: string; p_room_a_id: string; p_room_b_id: string }
         Returns: undefined
       }
+      unblock_identifier: { Args: { p_identifier: string }; Returns: undefined }
       update_door_properties: {
         Args: {
           p_door_id: string

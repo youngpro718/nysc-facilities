@@ -8,10 +8,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QuickProcessDialog } from '@/components/forms/QuickProcessDialog';
+import { CourtReportPreview } from '@/components/court-reports/CourtReportPreview';
 
 export default function FormIntake() {
   const [uploading, setUploading] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [selectedCourtReport, setSelectedCourtReport] = useState<any>(null);
   const queryClient = useQueryClient();
 
   const { data: submissions, isLoading } = useQuery({
@@ -21,6 +23,20 @@ export default function FormIntake() {
         .from('form_submissions')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: courtReports } = useQuery({
+    queryKey: ['court-reports'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('court_reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
 
       if (error) throw error;
       return data;
@@ -265,12 +281,63 @@ export default function FormIntake() {
         )}
       </div>
 
+      {/* Court Reports Section */}
+      {courtReports && courtReports.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Extracted Court Reports</h2>
+          <div className="space-y-3">
+            {courtReports.map((report) => (
+              <Card key={report.id} className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 flex-1">
+                    <FileText className="h-5 w-5 text-primary mt-0.5" />
+                    <div className="flex-1">
+                      <div className="font-medium mb-1">
+                        {report.location} - {report.report_type}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Date: {new Date(report.report_date).toLocaleDateString()}
+                        {' • '}
+                        Extracted: {new Date(report.extracted_at).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedCourtReport(report)}
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {selectedSubmission && (
         <QuickProcessDialog
           submission={selectedSubmission}
           open={!!selectedSubmission}
           onClose={() => setSelectedSubmission(null)}
         />
+      )}
+
+      {selectedCourtReport && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Court Report Details</h2>
+              <Button variant="ghost" onClick={() => setSelectedCourtReport(null)}>
+                Close
+              </Button>
+            </div>
+            <div className="p-4">
+              <CourtReportPreview reportData={selectedCourtReport} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

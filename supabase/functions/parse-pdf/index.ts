@@ -6,19 +6,33 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface ParsedTermData {
-  termName: string;
+interface CourtReportExtraction {
+  report_date: string;
+  report_type: 'AM' | 'PM' | 'AM PM';
   location: string;
-  assignments: Array<{
+  entries: Array<{
     part: string;
-    justice: string;
-    room_number: string;
-    clerks?: string[];
-    sergeant?: string;
-    tel?: string;
-    fax?: string;
-    calendar_day?: string;
+    judge: string;
+    calendar_type?: string;
+    out_dates?: string[];
+    cases: Array<{
+      defendant: string;
+      indictment_number?: string;
+      jury_indicator?: boolean;
+      top_charge?: string;
+      status?: {
+        js_date?: string;
+        hrg_date?: string;
+        conf_date?: string;
+        calendar_info?: string;
+        adjournment?: string;
+      };
+      attorneys?: string[];
+      ada_assigned?: string[];
+    }>;
+    special_notes?: string[];
   }>;
+  footer_notes?: string[];
 }
 
 serve(async (req) => {
@@ -36,6 +50,7 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Download the PDF file from storage
@@ -47,23 +62,242 @@ serve(async (req) => {
       throw new Error(`Failed to download PDF: ${downloadError.message}`)
     }
 
-    // Convert blob to array buffer
-    const arrayBuffer = await fileData.arrayBuffer()
-    const uint8Array = new Uint8Array(arrayBuffer)
+    console.log('📄 Processing PDF with AI extraction...')
 
-    // Simple text extraction approach
-    // Convert binary data to string and look for patterns
-    const textContent = new TextDecoder('utf-8', { fatal: false }).decode(uint8Array)
+    // If no Lovable API key, return error prompting setup
+    if (!lovableApiKey) {
+      console.error('❌ LOVABLE_API_KEY not configured')
+      throw new Error('AI extraction not configured. Please enable Lovable AI in your project settings.')
+    }
+
+    // Convert blob to base64 (Gemini can handle PDF directly)
+    const arrayBuffer = await fileData.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
     
-    console.log('📄 Extracted text length:', textContent.length)
+    // Call Lovable AI Gateway for structured extraction
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You are extracting data from Court Daily Reports. Extract ALL information accurately.
+
+The document structure:
+- Header: Date (MM-DD-YY format, e.g., "10-22-25"), Report Type (AM/PM/AM PM), Location (e.g., "100 CENTRE STREET" or "111 CENTRE STREET")
+- Table with entries organized by Part number (e.g., "PART 22", "PART 37")
+- Each Part has: Part#, Judge name, Calendar type, and multiple case rows
+- Special notations: OUT (judge unavailable), Cal [Day] (calendar day), JS (jury selection), (J) (jury case marker)
+- Status codes: CONF, HRG, CALENDAR, ADJ, etc.
+- Footer notes with administrative information
+
+For dates, convert from MM-DD-YY format to YYYY-MM-DD format (e.g., "10-22-25" becomes "2025-10-22").
+
+Extract:
+1. Report metadata (date in YYYY-MM-DD, type, location)
+2. All parts with their judges and cases
+3. For each case: defendant name, indictment/case #, charge, status dates, attorneys
+4. Special notes and footer information`
+          },
+          {
+            role: 'user',
+            content: `Extract all court report data from this PDF document. Return structured JSON with all parts, judges, cases, defendants, charges, and status information.
+
+Parse the entire document and extract every part entry you find. Each part should include the part number, judge name, and all associated case information.`
+          }
+        ],
+        tools: [{
+          type: 'function',
+          function: {
+            name: 'extract_court_report',
+            description: 'Extract structured court report data from the PDF',
+            parameters: {
+              type: 'object',
+              properties: {
+                report_date: { type: 'string', description: 'Report date in YYYY-MM-DD format (convert from MM-DD-YY)' },
+                report_type: { type: 'string', enum: ['AM', 'PM', 'AM PM'], description: 'Report type (AM, PM, or AM PM)' },
+                location: { type: 'string', description: 'Court location address' },
+                entries: {
+                  type: 'array',
+                  description: 'Array of part entries from the court report',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      part: { type: 'string', description: 'Part number (e.g., "22", "37")' },
+                      judge: { type: 'string', description: 'Judge name' },
+                      calendar_type: { type: 'string', description: 'Calendar type if specified' },
+                      out_dates: { 
+                        type: 'array', 
+                        items: { type: 'string' },
+                        description: 'Dates when judge is out/unavailable'
+                      },
+                      cases: {
+                        type: 'array',
+                        description: 'Array of cases for this part',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            defendant: { type: 'string', description: 'Defendant name' },
+                            indictment_number: { type: 'string', description: 'Case/indictment number' },
+                            jury_indicator: { type: 'boolean', description: 'True if (J) marker present indicating jury case' },
+                            top_charge: { type: 'string', description: 'Top charge code' },
+                            status: {
+                              type: 'object',
+                              properties: {
+                                js_date: { type: 'string', description: 'Jury selection date' },
+                                hrg_date: { type: 'string', description: 'Hearing date' },
+                                conf_date: { type: 'string', description: 'Conference date' },
+                                calendar_info: { type: 'string', description: 'Calendar information' },
+                                adjournment: { type: 'string', description: 'Adjournment information' }
+                              }
+                            },
+                            attorneys: { 
+                              type: 'array', 
+                              items: { type: 'string' },
+                              description: 'Defense attorney names'
+                            },
+                            ada_assigned: { 
+                              type: 'array', 
+                              items: { type: 'string' },
+                              description: 'ADA names assigned'
+                            }
+                          },
+                          required: ['defendant']
+                        }
+                      },
+                      special_notes: { 
+                        type: 'array', 
+                        items: { type: 'string' },
+                        description: 'Special notes or annotations for this part'
+                      }
+                    },
+                    required: ['part', 'judge']
+                  }
+                },
+                footer_notes: { 
+                  type: 'array', 
+                  items: { type: 'string' },
+                  description: 'Footer notes from the report'
+                }
+              },
+              required: ['report_date', 'report_type', 'location', 'entries']
+            }
+          }
+        }],
+        tool_choice: { type: 'function', function: { name: 'extract_court_report' } }
+      })
+    })
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text()
+      console.error('❌ AI Gateway error:', aiResponse.status, errorText)
+      
+      if (aiResponse.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again in a moment.')
+      }
+      if (aiResponse.status === 402) {
+        throw new Error('AI credits exhausted. Please add credits to your workspace.')
+      }
+      
+      throw new Error(`AI extraction failed: ${errorText}`)
+    }
+
+    const aiData = await aiResponse.json()
+    console.log('✅ AI extraction completed')
+
+    // Extract the function call result
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0]
+    if (!toolCall) {
+      throw new Error('No structured data returned from AI')
+    }
+
+    const extractedData: CourtReportExtraction = JSON.parse(toolCall.function.arguments)
+    console.log('📊 Extracted', extractedData.entries.length, 'court part entries')
     
-    // Parse the extracted text for court assignments
-    const parsedData = parseCourtAssignments(textContent)
-    
-    console.log('✅ Parsed assignments:', parsedData.assignments.length)
+    // Store in database
+    const { data: reportData, error: reportError } = await supabase
+      .from('court_reports')
+      .insert({
+        report_date: extractedData.report_date,
+        report_type: extractedData.report_type,
+        location: extractedData.location,
+        pdf_file_path: filePath,
+        raw_extraction: extractedData
+      })
+      .select()
+      .single()
+
+    if (reportError) {
+      console.error('❌ Database insert error:', reportError)
+      throw new Error(`Failed to store report: ${reportError.message}`)
+    }
+
+    console.log('✅ Report stored with ID:', reportData.id)
+
+    // Store entries and cases
+    for (const entry of extractedData.entries) {
+      const { data: entryData, error: entryError } = await supabase
+        .from('court_report_entries')
+        .insert({
+          report_id: reportData.id,
+          part: entry.part,
+          judge: entry.judge,
+          calendar_type: entry.calendar_type,
+          out_dates: entry.out_dates,
+          special_notes: entry.special_notes
+        })
+        .select()
+        .single()
+
+      if (entryError) {
+        console.error('❌ Entry insert error for part', entry.part, ':', entryError)
+        continue
+      }
+
+      // Store cases for this entry
+      if (entry.cases && entry.cases.length > 0) {
+        for (const courtCase of entry.cases) {
+          const { error: caseError } = await supabase
+            .from('court_report_cases')
+            .insert({
+              entry_id: entryData.id,
+              defendant: courtCase.defendant,
+              indictment_number: courtCase.indictment_number,
+              jury_indicator: courtCase.jury_indicator || false,
+              top_charge: courtCase.top_charge,
+              js_date: courtCase.status?.js_date,
+              hrg_date: courtCase.status?.hrg_date,
+              conf_date: courtCase.status?.conf_date,
+              calendar_info: courtCase.status?.calendar_info,
+              adjournment: courtCase.status?.adjournment,
+              attorneys: courtCase.attorneys,
+              ada_assigned: courtCase.ada_assigned
+            })
+          
+          if (caseError) {
+            console.error('❌ Case insert error:', caseError)
+          }
+        }
+      }
+    }
+
+    console.log('✅ All data stored successfully')
 
     return new Response(
-      JSON.stringify(parsedData),
+      JSON.stringify({
+        success: true,
+        report_id: reportData.id,
+        extracted_data: extractedData,
+        stats: {
+          parts: extractedData.entries.length,
+          total_cases: extractedData.entries.reduce((sum, e) => sum + (e.cases?.length || 0), 0)
+        }
+      }),
       { 
         headers: { 
           ...corsHeaders, 
@@ -76,8 +310,8 @@ serve(async (req) => {
     console.error('❌ PDF parsing error:', error)
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to parse PDF',
-        assignments: []
+        success: false,
+        error: error.message || 'Failed to parse PDF'
       }),
       { 
         status: 400,
@@ -89,123 +323,3 @@ serve(async (req) => {
     )
   }
 })
-
-function parseCourtAssignments(text: string): ParsedTermData {
-  console.log('🔍 Parsing court assignments from text...')
-  
-  // Look for term information
-  let termName = 'Unknown Term'
-  let location = 'Unknown Location'
-  
-  // Extract term name (look for "TERM" followed by Roman numerals or numbers)
-  const termMatch = text.match(/TERM\s+([IVX]+|\d+)/i)
-  if (termMatch) {
-    termName = termMatch[0]
-  }
-  
-  // Extract location information
-  const locationMatch = text.match(/(?:COUNTY|COURT|LOCATION)[\s:]+([A-Z\s]+?)(?:\n|$)/i)
-  if (locationMatch) {
-    location = locationMatch[1].trim()
-  }
-
-  const assignments: any[] = []
-  
-  // Split text into lines and look for assignment patterns
-  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0)
-  
-  console.log('📝 Processing', lines.length, 'lines of text')
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    
-    // Look for patterns that might indicate court assignments
-    // Common patterns: "Part [A-Z]" or "Room [0-9]" or "Justice [Name]"
-    if (line.match(/part\s+[a-z0-9]+/i) || line.match(/room\s+\d+/i) || line.match(/justice/i)) {
-      
-      // Try to extract assignment data from this line and surrounding lines
-      const assignment = extractAssignmentFromLines(lines, i)
-      if (assignment) {
-        assignments.push(assignment)
-        console.log('✅ Found assignment:', assignment.part, assignment.justice)
-      }
-    }
-  }
-  
-  // If no structured assignments found, try simpler pattern matching
-  if (assignments.length === 0) {
-    console.log('🔄 Trying simpler pattern matching...')
-    
-    // Look for any text that contains room numbers and names
-    const simplePattern = /(\d+)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g
-    let match
-    
-    while ((match = simplePattern.exec(text)) !== null) {
-      const roomNumber = match[1]
-      const possibleName = match[2]
-      
-      if (possibleName.length > 3 && possibleName.length < 50) {
-        assignments.push({
-          part: `Part-${assignments.length + 1}`,
-          justice: possibleName,
-          room_number: roomNumber
-        })
-      }
-    }
-  }
-
-  return {
-    termName,
-    location,
-    assignments
-  }
-}
-
-function extractAssignmentFromLines(lines: string[], startIndex: number): any | null {
-  const line = lines[startIndex]
-  
-  // Initialize assignment object
-  const assignment: any = {
-    part: '',
-    justice: '',
-    room_number: ''
-  }
-  
-  // Extract part information
-  const partMatch = line.match(/part\s+([a-z0-9]+)/i)
-  if (partMatch) {
-    assignment.part = partMatch[1].toUpperCase()
-  }
-  
-  // Extract room number
-  const roomMatch = line.match(/room\s+(\d+)/i)
-  if (roomMatch) {
-    assignment.room_number = roomMatch[1]
-  }
-  
-  // Look for justice name in current line or next few lines
-  for (let i = 0; i < 3 && startIndex + i < lines.length; i++) {
-    const searchLine = lines[startIndex + i]
-    
-    // Look for patterns like "Justice [Name]" or "Hon. [Name]"
-    const justiceMatch = searchLine.match(/(?:justice|hon\.?)\s+([a-z\s]+)/i)
-    if (justiceMatch) {
-      assignment.justice = justiceMatch[1].trim()
-      break
-    }
-    
-    // If no explicit "Justice" keyword, look for capitalized names
-    const nameMatch = searchLine.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/)
-    if (nameMatch && nameMatch[1].length < 50) {
-      assignment.justice = nameMatch[1].trim()
-      break
-    }
-  }
-  
-  // Only return assignment if we have at least a part or room number
-  if (assignment.part || assignment.room_number) {
-    return assignment
-  }
-  
-  return null
-}
