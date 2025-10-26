@@ -4,17 +4,19 @@ import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 
 export type CourtRole = 
+  | 'admin'
+  | 'cmc'                          // Court Management Coordinator
+  | 'court_aide'                   // Supply staff (orders, room, inventory)
+  | 'purchasing_staff'             // Purchasing (view inventory/supply room)
+  | 'facilities_manager'
   | 'judge'
-  | 'court_aide' 
   | 'clerk'
   | 'sergeant'
   | 'court_officer'
   | 'bailiff'
   | 'court_reporter'
   | 'administrative_assistant'
-  | 'facilities_manager'
-  | 'supply_room_staff'
-  | 'admin'
+  | 'supply_room_staff'            // Legacy - maps to court_aide
   | 'standard';
 
 export type PermissionLevel = 'read' | 'write' | 'admin';
@@ -25,6 +27,7 @@ export interface RolePermissions {
   occupants: PermissionLevel | null;
   inventory: PermissionLevel | null;
   supply_requests: PermissionLevel | null;
+  supply_orders: PermissionLevel | null;  // NEW: Purchase order management
   keys: PermissionLevel | null;
   lighting: PermissionLevel | null;
   maintenance: PermissionLevel | null;
@@ -42,6 +45,7 @@ export function useRolePermissions() {
     occupants: null,
     inventory: null,
     supply_requests: null,
+    supply_orders: null,
     keys: null,
     lighting: null,
     maintenance: null,
@@ -57,26 +61,70 @@ export function useRolePermissions() {
   
   // Define role permissions mapping based on court roles
   const rolePermissionsMap: Record<CourtRole, RolePermissions> = {
-    judge: {
+    admin: {
+      spaces: 'admin',
+      issues: 'admin',
+      occupants: 'admin',
+      inventory: 'admin',
+      supply_requests: 'admin',
+      supply_orders: 'admin',
+      keys: 'admin',
+      lighting: 'admin',
+      maintenance: 'admin',
+      court_operations: 'admin',
+      operations: 'admin',
+      dashboard: 'admin',
+    },
+    cmc: {
       spaces: null,
       issues: 'write',
       occupants: null,
       inventory: null,
       supply_requests: 'write',
-      keys: 'write',
+      supply_orders: null,
+      keys: null,
+      lighting: null,
+      maintenance: 'read',
+      court_operations: 'admin',
+      operations: 'write',
+      dashboard: 'read',
+    },
+    court_aide: {
+      spaces: null,
+      issues: 'write',
+      occupants: 'read',
+      inventory: 'admin',
+      supply_requests: 'admin',
+      supply_orders: 'admin',
+      keys: null,
       lighting: null,
       maintenance: null,
       court_operations: null,
       operations: 'write',
       dashboard: 'read',
     },
-    court_aide: {
-      spaces: 'read',
+    purchasing_staff: {
+      spaces: null,
       issues: 'write',
       occupants: 'read',
-      inventory: 'admin',
-      supply_requests: 'admin',
-      keys: 'read',
+      inventory: 'read',
+      supply_requests: 'read',
+      supply_orders: null,
+      keys: null,
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'write',
+      dashboard: 'read',
+    },
+    judge: {
+      spaces: null,
+      issues: 'write',
+      occupants: null,
+      inventory: null,
+      supply_requests: 'write',
+      supply_orders: null,
+      keys: 'write',
       lighting: null,
       maintenance: null,
       court_operations: null,
@@ -89,6 +137,7 @@ export function useRolePermissions() {
       occupants: 'read',
       inventory: null,
       supply_requests: 'write',
+      supply_orders: null,
       keys: 'write',
       lighting: null,
       maintenance: null,
@@ -102,6 +151,7 @@ export function useRolePermissions() {
       occupants: 'read',
       inventory: null,
       supply_requests: null,
+      supply_orders: null,
       keys: 'admin',
       lighting: null,
       maintenance: null,
@@ -115,6 +165,7 @@ export function useRolePermissions() {
       occupants: 'read',
       inventory: null,
       supply_requests: null,
+      supply_orders: null,
       keys: 'write',
       lighting: null,
       maintenance: null,
@@ -128,6 +179,7 @@ export function useRolePermissions() {
       occupants: 'read',
       inventory: null,
       supply_requests: 'write',
+      supply_orders: null,
       keys: 'write',
       lighting: null,
       maintenance: null,
@@ -141,6 +193,7 @@ export function useRolePermissions() {
       occupants: null,
       inventory: null,
       supply_requests: 'write',
+      supply_orders: null,
       keys: null,
       lighting: null,
       maintenance: null,
@@ -154,6 +207,7 @@ export function useRolePermissions() {
       occupants: 'admin',
       inventory: null,
       supply_requests: 'write',
+      supply_orders: null,
       keys: 'write',
       lighting: null,
       maintenance: null,
@@ -167,6 +221,7 @@ export function useRolePermissions() {
       occupants: 'admin',
       inventory: 'write',
       supply_requests: 'write',
+      supply_orders: null,
       keys: 'admin',
       lighting: 'admin',
       maintenance: 'admin',
@@ -180,6 +235,7 @@ export function useRolePermissions() {
       occupants: 'read',
       inventory: 'admin',
       supply_requests: 'admin',
+      supply_orders: 'admin',
       keys: null,
       lighting: null,
       maintenance: null,
@@ -187,25 +243,13 @@ export function useRolePermissions() {
       operations: 'read',
       dashboard: 'read',
     },
-    admin: {
-      spaces: 'admin',
-      issues: 'admin',
-      occupants: 'admin',
-      inventory: 'admin',
-      supply_requests: 'admin',
-      keys: 'admin',
-      lighting: 'admin',
-      maintenance: 'admin',
-      court_operations: 'admin',
-      operations: 'admin',
-      dashboard: 'admin',
-    },
     standard: {
       spaces: null,
       issues: 'write',
       occupants: null,
       inventory: null,
       supply_requests: 'write',
+      supply_orders: null,
       keys: null,
       lighting: null,
       maintenance: null,
@@ -341,6 +385,7 @@ export function useRolePermissions() {
         occupants: null,
         inventory: null,
         supply_requests: null,
+        supply_orders: null,
         keys: null,
         lighting: null,
         maintenance: null,
@@ -358,6 +403,7 @@ export function useRolePermissions() {
           ...finalPermissions,
           inventory: 'admin',
           supply_requests: 'admin',
+          supply_orders: 'admin',
         };
         logger.debug('[useRolePermissions] Enhanced permissions for Supply Department user');
       }
@@ -443,6 +489,7 @@ export function useRolePermissions() {
           occupants: null,
           inventory: null,
           supply_requests: null,
+          supply_orders: null,
           keys: null,
           lighting: null,
           maintenance: null,
