@@ -51,12 +51,14 @@ export function UploadDailyReportDialog({
     setExtractionStatus('uploading');
 
     try {
-      // Step 1: Upload file to Supabase storage
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Not authenticated');
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error('You must be logged in to upload court reports. Please sign in and try again.');
       }
 
+      // Step 1: Upload file to Supabase storage
       const fileName = `court-reports/${user.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('term-pdfs')
