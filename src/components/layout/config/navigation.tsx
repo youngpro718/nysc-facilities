@@ -214,7 +214,42 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
   
-  // Supply room staff navigation (role-based OR department-based)
+  // CMC (Court Management Coordinator) navigation
+  if (userRole === 'cmc') {
+    return [
+      { title: 'Dashboard', icon: LayoutDashboard },
+      { title: 'Court Operations', icon: Gavel },
+      { title: 'My Requests', icon: FileText },
+      { title: 'My Issues', icon: MessageSquare },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
+    ];
+  }
+  
+  // Court Aide (Supply Staff) navigation
+  if (userRole === 'court_aide') {
+    return [
+      { title: 'Dashboard', icon: LayoutDashboard },
+      { title: 'Supply Orders', icon: Package },
+      { title: 'Supply Room', icon: Package },
+      { title: 'Inventory', icon: Package2 },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
+    ];
+  }
+  
+  // Purchasing Staff navigation
+  if (userRole === 'purchasing_staff') {
+    return [
+      { title: 'Dashboard', icon: LayoutDashboard },
+      { title: 'Inventory', icon: Package2 },
+      { title: 'Supply Room', icon: Package },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
+    ];
+  }
+  
+  // Supply room staff navigation (legacy - maps to court_aide)
   const isSupplyDepartment = profile?.departments?.name === 'Supply Department' || 
                              profile?.department === 'Supply Department';
   
@@ -281,7 +316,42 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
   
-  // Supply room staff routes (role-based OR department-based)
+  // CMC (Court Management Coordinator) routes
+  if (userRole === 'cmc') {
+    return [
+      '/cmc-dashboard',
+      '/court-operations',
+      '/my-requests',
+      '/my-issues',
+      '', // Separator
+      '/profile',
+    ];
+  }
+  
+  // Court Aide (Supply Staff) routes
+  if (userRole === 'court_aide') {
+    return [
+      '/court-aide-dashboard',
+      '/supply-orders',
+      '/supply-room',
+      '/inventory',
+      '', // Separator
+      '/profile',
+    ];
+  }
+  
+  // Purchasing Staff routes
+  if (userRole === 'purchasing_staff') {
+    return [
+      '/purchasing-dashboard',
+      '/inventory',
+      '/supply-room',
+      '', // Separator
+      '/profile',
+    ];
+  }
+  
+  // Supply room staff routes (legacy - maps to court_aide)
   const isSupplyDepartment = profile?.departments?.name === 'Supply Department' || 
                              profile?.department === 'Supply Department';
   
