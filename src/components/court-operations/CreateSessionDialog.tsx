@@ -63,7 +63,7 @@ export function CreateSessionDialog({
   // Get absent staff for this date
   const { absentStaffMap } = useAbsentStaffNames(date);
 
-  // Fetch all available rooms from both buildings (empty rooms + absent judges)
+  // Fetch all rooms from both buildings categorized by availability
   const { data: availableRooms, isLoading: partsLoading } = useQuery({
     queryKey: ['available-courtrooms', dateStr],
     queryFn: async () => {
@@ -102,9 +102,10 @@ export function CreateSessionDialog({
         assignments?.map(a => [a.room_id, a]) || []
       );
 
-      // Categorize rooms
-      const emptyRooms: Array<{ room_number: string; part?: string }> = [];
-      const absentJudgeRooms: Array<{ room_number: string; part?: string }> = [];
+      // Categorize rooms into 3 groups
+      const emptyRooms: Array<{ room_number: string; part?: string; judge?: string }> = [];
+      const absentJudgeRooms: Array<{ room_number: string; part?: string; judge: string }> = [];
+      const presentJudgeRooms: Array<{ room_number: string; part: string; judge: string }> = [];
       
       rooms?.forEach(room => {
         const assignment = assignmentMap.get(room.room_id);
@@ -121,27 +122,33 @@ export function CreateSessionDialog({
           if (absentStaffMap.has(judgeKey)) {
             absentJudgeRooms.push({
               room_number: room.room_number,
-              part: assignment.part
+              part: assignment.part,
+              judge: assignment.justice
+            });
+          } else {
+            // Judge is present - may have capacity
+            presentJudgeRooms.push({
+              room_number: room.room_number,
+              part: assignment.part,
+              judge: assignment.justice
             });
           }
         }
       });
       
-      // Return empty rooms first, then absent judge rooms
+      // Sort all groups by room number
+      const sortByRoomNumber = (a: any, b: any) => {
+        const numA = parseInt(a.room_number);
+        const numB = parseInt(b.room_number);
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        return a.room_number.localeCompare(b.room_number);
+      };
+      
       return {
-        empty: emptyRooms.sort((a, b) => {
-          const numA = parseInt(a.room_number);
-          const numB = parseInt(b.room_number);
-          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-          return a.room_number.localeCompare(b.room_number);
-        }),
-        absent: absentJudgeRooms.sort((a, b) => {
-          const numA = parseInt(a.room_number);
-          const numB = parseInt(b.room_number);
-          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-          return a.room_number.localeCompare(b.room_number);
-        }),
-        all: [...emptyRooms, ...absentJudgeRooms]
+        empty: emptyRooms.sort(sortByRoomNumber),
+        absent: absentJudgeRooms.sort(sortByRoomNumber),
+        present: presentJudgeRooms.sort(sortByRoomNumber),
+        all: [...emptyRooms, ...absentJudgeRooms, ...presentJudgeRooms]
       };
     },
     enabled: absentStaffMap.size >= 0,
@@ -599,7 +606,7 @@ export function CreateSessionDialog({
             {/* Sending Part */}
             <div className="space-y-2">
               <Label htmlFor="parts-entered-by">
-                Sending Part {availableRooms && `(${availableRooms.empty.length} empty, ${availableRooms.absent.length} absent)`}
+                Sending Part {availableRooms && `(${availableRooms.empty.length} empty, ${availableRooms.absent.length} absent, ${availableRooms.present.length} active)`}
                 <span className="text-xs text-muted-foreground ml-2">(Leave blank for OWN)</span>
               </Label>
               <Popover open={partDropdownOpen} onOpenChange={setPartDropdownOpen}>
@@ -669,12 +676,13 @@ export function CreateSessionDialog({
                             .filter(room => 
                               !partSearch || 
                               room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
-                              room.part?.toLowerCase().includes(partSearch.toLowerCase())
+                              room.part?.toLowerCase().includes(partSearch.toLowerCase()) ||
+                              room.judge?.toLowerCase().includes(partSearch.toLowerCase())
                             )
                             .map((room) => (
                               <CommandItem
                                 key={`absent-${room.room_number}`}
-                                value={`${room.room_number} ${room.part || ''}`}
+                                value={`${room.room_number} ${room.part || ''} ${room.judge || ''}`}
                                 onSelect={() => {
                                   setPartsEnteredBy(room.part || room.room_number);
                                   setPartDropdownOpen(false);
@@ -689,9 +697,46 @@ export function CreateSessionDialog({
                                 />
                                 <div className="flex-1">
                                   <div className="font-medium">Room {room.room_number}</div>
-                                  {room.part && (
-                                    <div className="text-xs text-amber-600">Part {room.part} • Judge Out</div>
-                                  )}
+                                  <div className="text-xs text-amber-600">
+                                    Part {room.part} • {room.judge} (Absent)
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      )}
+                      
+                      {/* Present Judge Rooms Group (May Have Capacity) */}
+                      {availableRooms?.present && availableRooms.present.length > 0 && (
+                        <CommandGroup heading="Judge Present / Available">
+                          {availableRooms.present
+                            .filter(room => 
+                              !partSearch || 
+                              room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                              room.part?.toLowerCase().includes(partSearch.toLowerCase()) ||
+                              room.judge?.toLowerCase().includes(partSearch.toLowerCase())
+                            )
+                            .map((room) => (
+                              <CommandItem
+                                key={`present-${room.room_number}`}
+                                value={`${room.room_number} ${room.part} ${room.judge}`}
+                                onSelect={() => {
+                                  setPartsEnteredBy(room.part || room.room_number);
+                                  setPartDropdownOpen(false);
+                                  setPartSearch('');
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    partsEnteredBy === (room.part || room.room_number) ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium">Room {room.room_number}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Part {room.part} • {room.judge} (In Session)
+                                  </div>
                                 </div>
                               </CommandItem>
                             ))}
