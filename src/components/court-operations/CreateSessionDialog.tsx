@@ -61,55 +61,88 @@ export function CreateSessionDialog({
   // Get absent staff for this date
   const { absentStaffMap } = useAbsentStaffNames(date);
 
-  // Fetch all available parts from court assignments (empty rooms + absent judges)
-  const { data: allParts, isLoading: partsLoading } = useQuery({
-    queryKey: ['court-assignment-parts', dateStr],
+  // Fetch all available rooms from both buildings (empty rooms + absent judges)
+  const { data: availableRooms, isLoading: partsLoading } = useQuery({
+    queryKey: ['available-courtrooms', dateStr],
     queryFn: async () => {
-      const { data: assignments, error } = await supabase
+      // Get all court rooms from both buildings
+      const { data: rooms, error: roomsError } = await supabase
+        .from('court_rooms')
+        .select(`
+          id,
+          room_number,
+          courtroom_number,
+          room_id,
+          rooms!inner(
+            floor_id,
+            floors!inner(
+              building_id,
+              buildings!inner(
+                name
+              )
+            )
+          )
+        `)
+        .eq('is_active', true)
+        .order('room_number');
+      
+      if (roomsError) throw roomsError;
+
+      // Get all court assignments
+      const { data: assignments, error: assignmentsError } = await supabase
         .from('court_assignments')
-        .select('part, justice, room_id')
-        .not('part', 'is', null)
-        .order('part');
+        .select('room_id, justice, part');
       
-      if (error) throw error;
+      if (assignmentsError) throw assignmentsError;
+
+      // Create a map of room_id to assignment
+      const assignmentMap = new Map(
+        assignments?.map(a => [a.room_id, a]) || []
+      );
+
+      // Categorize rooms
+      const emptyRooms: Array<{ room_number: string; part?: string }> = [];
+      const absentJudgeRooms: Array<{ room_number: string; part?: string }> = [];
       
-      // Separate empty rooms from rooms with judges
-      const emptyParts: string[] = [];
-      const partsWithJudges: Array<{ part: string; justice: string | null }> = [];
-      
-      assignments?.forEach(a => {
-        if (!a.justice || a.justice.trim() === '') {
-          emptyParts.push(a.part);
+      rooms?.forEach(room => {
+        const assignment = assignmentMap.get(room.room_id);
+        
+        if (!assignment || !assignment.justice || assignment.justice.trim() === '') {
+          // Empty room (no assignment or no judge)
+          emptyRooms.push({
+            room_number: room.room_number,
+            part: assignment?.part
+          });
         } else {
-          partsWithJudges.push({ part: a.part, justice: a.justice });
-        }
-      });
-      
-      // Check which judges are absent on the selected date
-      const absentParts: string[] = [];
-      for (const { part, justice } of partsWithJudges) {
-        if (justice) {
-          const judgeKey = justice.toLowerCase();
+          // Room has a judge - check if absent
+          const judgeKey = assignment.justice.toLowerCase();
           if (absentStaffMap.has(judgeKey)) {
-            absentParts.push(part);
+            absentJudgeRooms.push({
+              room_number: room.room_number,
+              part: assignment.part
+            });
           }
         }
-      }
-      
-      // Combine: empty rooms first, then absent judge rooms
-      const availableParts = [...new Set([...emptyParts, ...absentParts])];
-      
-      return availableParts.sort((a, b) => {
-        // Try to sort numerically if possible
-        const numA = parseInt(a);
-        const numB = parseInt(b);
-        if (!isNaN(numA) && !isNaN(numB)) {
-          return numA - numB;
-        }
-        return a.localeCompare(b);
       });
+      
+      // Return empty rooms first, then absent judge rooms
+      return {
+        empty: emptyRooms.sort((a, b) => {
+          const numA = parseInt(a.room_number);
+          const numB = parseInt(b.room_number);
+          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+          return a.room_number.localeCompare(b.room_number);
+        }),
+        absent: absentJudgeRooms.sort((a, b) => {
+          const numA = parseInt(a.room_number);
+          const numB = parseInt(b.room_number);
+          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+          return a.room_number.localeCompare(b.room_number);
+        }),
+        all: [...emptyRooms, ...absentJudgeRooms]
+      };
     },
-    enabled: absentStaffMap.size >= 0, // Only run when we have absence data
+    enabled: absentStaffMap.size >= 0,
   });
 
   // Fetch court rooms with assignments for selected building
@@ -217,10 +250,11 @@ export function CreateSessionDialog({
            s.value.toLowerCase().includes(statusSearch.toLowerCase());
   });
 
-  // Filter parts based on search
-  const filteredParts = allParts?.filter(part => {
+  // Filter available rooms based on search
+  const filteredAvailableRooms = availableRooms?.all.filter(room => {
     if (!partSearch) return true;
-    return part.toLowerCase().includes(partSearch.toLowerCase());
+    return room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+           room.part?.toLowerCase().includes(partSearch.toLowerCase());
   }) || [];
 
   // Reset form when dialog opens
@@ -562,19 +596,22 @@ export function CreateSessionDialog({
             {/* Sending Part */}
             <div className="space-y-2">
               <Label htmlFor="parts-entered-by">
-                Sending Part {filteredParts.length > 0 && `(${filteredParts.length} available)`}
+                Sending Part {availableRooms && `(${availableRooms.empty.length} empty, ${availableRooms.absent.length} absent)`}
                 <span className="text-xs text-muted-foreground ml-2">(Leave blank for OWN)</span>
               </Label>
               <div className="relative">
                 <Input
                   id="parts-entered-by"
-                  placeholder="OWN (or type to search parts...)"
+                  placeholder="OWN (or type to search rooms...)"
                   value={partSearch || partsEnteredBy}
                   onChange={(e) => {
                     const value = e.target.value;
                     setPartSearch(value);
                     // If user is typing freely (no dropdown visible), update partsEnteredBy directly
-                    if (!filteredParts.some(p => p.toLowerCase().includes(value.toLowerCase()))) {
+                    if (!filteredAvailableRooms.some(r => 
+                      r.room_number.toLowerCase().includes(value.toLowerCase()) ||
+                      r.part?.toLowerCase().includes(value.toLowerCase())
+                    )) {
                       setPartsEnteredBy(value);
                     }
                   }}
@@ -586,35 +623,91 @@ export function CreateSessionDialog({
                 )}
               </div>
               
-              {/* Auto-filtered parts dropdown */}
+              {/* Auto-filtered rooms dropdown */}
               {partSearch && (
-                <div className="border rounded-md max-h-[200px] overflow-y-auto bg-background">
-                  {filteredParts.length === 0 ? (
+                <div className="border rounded-md max-h-[250px] overflow-y-auto bg-background">
+                  {filteredAvailableRooms.length === 0 ? (
                     <div className="p-3 text-sm text-muted-foreground text-center">
-                      No empty or available parts found.
+                      No available rooms found.
                       <div className="text-xs mt-1">
-                        (Showing only empty rooms and parts with absent judges)
+                        (Showing empty rooms and rooms with absent judges)
                       </div>
                     </div>
                   ) : (
-                    <div className="divide-y">
-                      {filteredParts.map((part) => (
-                        <button
-                          key={part}
-                          type="button"
-                          onClick={() => {
-                            setPartsEnteredBy(part);
-                            setPartSearch('');
-                          }}
-                          className="w-full p-2 text-left hover:bg-muted transition-colors"
-                        >
-                          <div className="font-medium">Part {part}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {allParts?.includes(part) ? 'Empty room' : 'Judge absent'}
+                    <>
+                      {/* Empty rooms section */}
+                      {availableRooms?.empty.some(r => 
+                        r.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                        r.part?.toLowerCase().includes(partSearch.toLowerCase())
+                      ) && (
+                        <div>
+                          <div className="px-3 py-1.5 bg-muted/50 text-xs font-medium text-muted-foreground sticky top-0">
+                            Empty Rooms
                           </div>
-                        </button>
-                      ))}
-                    </div>
+                          <div className="divide-y">
+                            {availableRooms.empty
+                              .filter(r => 
+                                r.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                                r.part?.toLowerCase().includes(partSearch.toLowerCase())
+                              )
+                              .map((room) => (
+                                <button
+                                  key={room.room_number}
+                                  type="button"
+                                  onClick={() => {
+                                    setPartsEnteredBy(room.part || room.room_number);
+                                    setPartSearch('');
+                                  }}
+                                  className="w-full p-2 text-left hover:bg-muted transition-colors"
+                                >
+                                  <div className="font-medium">Room {room.room_number}</div>
+                                  {room.part && (
+                                    <div className="text-xs text-muted-foreground">Part {room.part} • Empty</div>
+                                  )}
+                                  {!room.part && (
+                                    <div className="text-xs text-muted-foreground">No part assigned</div>
+                                  )}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Absent judge rooms section */}
+                      {availableRooms?.absent.some(r => 
+                        r.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                        r.part?.toLowerCase().includes(partSearch.toLowerCase())
+                      ) && (
+                        <div>
+                          <div className="px-3 py-1.5 bg-amber-500/10 text-xs font-medium text-amber-600 sticky top-0">
+                            Judge Absent
+                          </div>
+                          <div className="divide-y">
+                            {availableRooms.absent
+                              .filter(r => 
+                                r.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                                r.part?.toLowerCase().includes(partSearch.toLowerCase())
+                              )
+                              .map((room) => (
+                                <button
+                                  key={room.room_number}
+                                  type="button"
+                                  onClick={() => {
+                                    setPartsEnteredBy(room.part || room.room_number);
+                                    setPartSearch('');
+                                  }}
+                                  className="w-full p-2 text-left hover:bg-muted transition-colors"
+                                >
+                                  <div className="font-medium">Room {room.room_number}</div>
+                                  {room.part && (
+                                    <div className="text-xs text-muted-foreground">Part {room.part} • Judge Out</div>
+                                  )}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -622,7 +715,7 @@ export function CreateSessionDialog({
               {/* Selected part display */}
               {partsEnteredBy && !partSearch && (
                 <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-between">
-                  <span className="text-sm font-medium">Part {partsEnteredBy}</span>
+                  <span className="text-sm font-medium">{partsEnteredBy}</span>
                   <Button
                     type="button"
                     variant="ghost"
