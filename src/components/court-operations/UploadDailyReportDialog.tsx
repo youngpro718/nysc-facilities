@@ -7,17 +7,20 @@ import { Upload, FileText, Loader2, CheckCircle, AlertTriangle } from 'lucide-re
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { enrichSessionData } from '@/services/court/pdfEnrichmentService';
 
 interface UploadDailyReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDataExtracted?: (data: any[]) => void;
+  buildingCode?: '100' | '111';
 }
 
 export function UploadDailyReportDialog({ 
   open, 
   onOpenChange,
-  onDataExtracted 
+  onDataExtracted,
+  buildingCode = '111'
 }: UploadDailyReportDialogProps) {
   const { user } = useAuth();
   const [file, setFile] = useState<File | null>(null);
@@ -157,11 +160,19 @@ export function UploadDailyReportDialog({
         throw new Error('No sessions could be extracted from the document. The document may be empty or in an unsupported format.');
       }
 
+      // Step 4: Enrich with database information
+      console.log('🔄 Enriching sessions with court data...');
+      toast.info('Enriching with court data...');
+      
+      const enrichedSessions = await enrichSessionData(sessions, buildingCode);
+      
+      console.log('✅ Sessions enriched with database information');
+
       setExtractionStatus('success');
-      toast.success(`Extracted ${sessions.length} sessions from document`);
+      toast.success(`Extracted and enriched ${enrichedSessions.length} sessions`);
       
       if (onDataExtracted) {
-        onDataExtracted(sessions);
+        onDataExtracted(enrichedSessions);
       }
 
       // Close dialog after short delay
