@@ -714,50 +714,68 @@ export type Database = {
         Row: {
           ada_assigned: string[] | null
           adjournment: string | null
+          attorney: string | null
           attorneys: string[] | null
           calendar_info: string | null
           conf_date: string | null
           created_at: string | null
           defendant: string | null
           entry_id: string | null
+          estimated_final_date: string | null
           hrg_date: string | null
           id: string
           indictment_number: string | null
           js_date: string | null
           jury_indicator: boolean | null
+          purpose: string | null
+          sending_part: string | null
+          status: string | null
           top_charge: string | null
+          transfer_date: string | null
         }
         Insert: {
           ada_assigned?: string[] | null
           adjournment?: string | null
+          attorney?: string | null
           attorneys?: string[] | null
           calendar_info?: string | null
           conf_date?: string | null
           created_at?: string | null
           defendant?: string | null
           entry_id?: string | null
+          estimated_final_date?: string | null
           hrg_date?: string | null
           id?: string
           indictment_number?: string | null
           js_date?: string | null
           jury_indicator?: boolean | null
+          purpose?: string | null
+          sending_part?: string | null
+          status?: string | null
           top_charge?: string | null
+          transfer_date?: string | null
         }
         Update: {
           ada_assigned?: string[] | null
           adjournment?: string | null
+          attorney?: string | null
           attorneys?: string[] | null
           calendar_info?: string | null
           conf_date?: string | null
           created_at?: string | null
           defendant?: string | null
           entry_id?: string | null
+          estimated_final_date?: string | null
           hrg_date?: string | null
           id?: string
           indictment_number?: string | null
           js_date?: string | null
           jury_indicator?: boolean | null
+          purpose?: string | null
+          sending_part?: string | null
+          status?: string | null
           top_charge?: string | null
+          transfer_date?: string | null
         }
         Relationships: [
           {
@@ -771,6 +789,7 @@ export type Database = {
       }
       court_report_entries: {
         Row: {
+          calendar_day: string | null
           calendar_type: string | null
           created_at: string | null
           id: string
@@ -781,6 +800,7 @@ export type Database = {
           special_notes: string[] | null
         }
         Insert: {
+          calendar_day?: string | null
           calendar_type?: string | null
           created_at?: string | null
           id?: string
@@ -791,6 +811,7 @@ export type Database = {
           special_notes?: string[] | null
         }
         Update: {
+          calendar_day?: string | null
           calendar_type?: string | null
           created_at?: string | null
           id?: string

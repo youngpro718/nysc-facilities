@@ -10,30 +10,33 @@ import { toast } from 'sonner';
 import { mapPartToRoom } from '@/utils/courtRoomMapping';
 
 interface CaseDetail {
+  sending_part: string;
   defendant: string;
-  indictment_no?: string;
-  top_charge?: string;
-  attorneys?: string[];
-  status?: {
-    js_date?: string;
-    hrg_date?: string;
-    conf_date?: string;
-    calendar_info?: string;
-    adjournment?: string;
-  };
+  purpose: string;
+  transfer_date: string;
+  top_charge: string;
+  status: string;
+  attorney: string;
+  estimated_final_date: string;
+  indictment_number?: string;
 }
 
 interface ExtractedSession {
   part_number: string;
   judge_name: string;
+  calendar_day?: string;
   part_sent_by: string;
-  defendants: string;
   clerk_name: string;
   room_number: string;
+  // Aggregated case data
+  sending_part: string;
+  defendants: string;
   purpose: string;
+  transfer_date: string;
   top_charge: string;
   status: string;
   attorney: string;
+  estimated_final_date: string;
   extension: string;
   papers: string;
   confidence: number;
@@ -175,9 +178,9 @@ export function ExtractedDataReview({
                 <TableHead className="w-16">Conf.</TableHead>
                 <TableHead>Part</TableHead>
                 <TableHead>Judge</TableHead>
+                <TableHead>Cal Day</TableHead>
                 <TableHead>Room</TableHead>
                 <TableHead className="w-20">Cases</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead className="w-24">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -229,6 +232,17 @@ export function ExtractedDataReview({
                     <TableCell>
                       {editingIndex === index ? (
                         <Input
+                          value={editData.calendar_day || ''}
+                          onChange={(e) => setEditData({ ...editData, calendar_day: e.target.value })}
+                          className="w-24"
+                        />
+                      ) : (
+                        <span className="text-xs">{session.calendar_day || 'N/A'}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingIndex === index ? (
+                        <Input
                           value={editData.room_number || ''}
                           onChange={(e) => setEditData({ ...editData, room_number: e.target.value })}
                           className="w-24"
@@ -241,17 +255,6 @@ export function ExtractedDataReview({
                       <Badge variant="secondary">
                         {session.case_count || 0}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs max-w-[200px] truncate">
-                      {editingIndex === index ? (
-                        <Input
-                          value={editData.purpose || ''}
-                          onChange={(e) => setEditData({ ...editData, purpose: e.target.value })}
-                          className="w-full"
-                        />
-                      ) : (
-                        session.purpose || session.status || 'Active'
-                      )}
                     </TableCell>
                     <TableCell>
                       {editingIndex === index ? (
@@ -285,37 +288,27 @@ export function ExtractedDataReview({
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead className="text-xs">Sending Part</TableHead>
                                 <TableHead className="text-xs">Defendant</TableHead>
-                                <TableHead className="text-xs">Indictment</TableHead>
+                                <TableHead className="text-xs">Purpose</TableHead>
+                                <TableHead className="text-xs">Transfer Date</TableHead>
                                 <TableHead className="text-xs">Top Charge</TableHead>
-                                <TableHead className="text-xs">Attorney</TableHead>
                                 <TableHead className="text-xs">Status</TableHead>
+                                <TableHead className="text-xs">Attorney</TableHead>
+                                <TableHead className="text-xs">Est Final</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {session.cases.map((courtCase, caseIdx) => (
                                 <TableRow key={caseIdx}>
-                                  <TableCell className="text-xs font-medium">
-                                    {courtCase.defendant}
-                                  </TableCell>
-                                  <TableCell className="text-xs">
-                                    {courtCase.indictment_no || 'N/A'}
-                                  </TableCell>
-                                  <TableCell className="text-xs">
-                                    {courtCase.top_charge || 'N/A'}
-                                  </TableCell>
-                                  <TableCell className="text-xs">
-                                    {courtCase.attorneys?.join(', ') || 'N/A'}
-                                  </TableCell>
-                                  <TableCell className="text-xs">
-                                    {[
-                                      courtCase.status?.js_date && `JS: ${courtCase.status.js_date}`,
-                                      courtCase.status?.hrg_date && `HRG: ${courtCase.status.hrg_date}`,
-                                      courtCase.status?.conf_date && `CONF: ${courtCase.status.conf_date}`,
-                                      courtCase.status?.calendar_info,
-                                      courtCase.status?.adjournment
-                                    ].filter(Boolean).join(', ') || 'N/A'}
-                                  </TableCell>
+                                  <TableCell className="text-xs">{courtCase.sending_part || 'N/A'}</TableCell>
+                                  <TableCell className="text-xs font-medium">{courtCase.defendant}</TableCell>
+                                  <TableCell className="text-xs">{courtCase.purpose || 'N/A'}</TableCell>
+                                  <TableCell className="text-xs">{courtCase.transfer_date || 'N/A'}</TableCell>
+                                  <TableCell className="text-xs">{courtCase.top_charge || 'N/A'}</TableCell>
+                                  <TableCell className="text-xs">{courtCase.status || 'N/A'}</TableCell>
+                                  <TableCell className="text-xs">{courtCase.attorney || 'N/A'}</TableCell>
+                                  <TableCell className="text-xs">{courtCase.estimated_final_date || 'N/A'}</TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>

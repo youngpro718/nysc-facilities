@@ -111,10 +111,15 @@ export function UploadDailyReportDialog({
           const cases = entry.cases || [];
           const caseCount = cases.length;
           
-          // Aggregate all defendants, charges, and attorneys from cases
+          // Aggregate all case data from the 9 columns
           const allDefendants = cases.map((c: any) => c.defendant).filter(Boolean);
+          const allSendingParts = cases.map((c: any) => c.sending_part).filter(Boolean);
+          const allPurposes = cases.map((c: any) => c.purpose).filter(Boolean);
+          const allTransferDates = cases.map((c: any) => c.transfer_date).filter(Boolean);
           const allCharges = cases.map((c: any) => c.top_charge).filter(Boolean);
-          const allAttorneys = cases.flatMap((c: any) => c.attorneys || []).filter(Boolean);
+          const allStatuses = cases.map((c: any) => c.status).filter(Boolean);
+          const allAttorneys = cases.map((c: any) => c.attorney).filter(Boolean);
+          const allEstFinalDates = cases.map((c: any) => c.estimated_final_date).filter(Boolean);
           
           // Calculate confidence based on field completeness
           let confidence = 0.85;
@@ -124,17 +129,21 @@ export function UploadDailyReportDialog({
           sessions.push({
             part_number: entry.part,
             judge_name: entry.judge,
+            calendar_day: entry.calendar_day || '',
             part_sent_by: entry.judge,
-            clerk_name: '', // Not available in current extraction
-            room_number: '', // Will be auto-populated in review based on part
-            purpose: entry.calendar_type || '',
+            clerk_name: '',
+            room_number: '', // Will be auto-populated in review
             // Store aggregated case data
             case_count: caseCount,
             cases: cases, // Store full case details for expandable view
+            sending_part: [...new Set(allSendingParts)].join('; '),
             defendants: allDefendants.join('; '),
+            purpose: [...new Set(allPurposes)].join('; '),
+            transfer_date: [...new Set(allTransferDates)].join('; '),
             top_charge: allCharges.join('; '),
-            attorney: [...new Set(allAttorneys)].join('; '), // Deduplicate attorneys
-            status: entry.special_notes?.join(', ') || '',
+            status: [...new Set(allStatuses)].join('; '),
+            attorney: [...new Set(allAttorneys)].join('; '),
+            estimated_final_date: [...new Set(allEstFinalDates)].join('; '),
             extension: '',
             papers: '',
             confidence: Math.min(confidence, 0.95)
