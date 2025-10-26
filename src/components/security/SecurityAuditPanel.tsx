@@ -4,13 +4,25 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, Activity, AlertTriangle, RotateCcw, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Shield, Activity, AlertTriangle, RotateCcw, Clock, Download, Filter, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface SecurityEvent {
   id: string;
   action: string;
   resource_type: string;
+  resource_id?: string;
+  user_id?: string;
+  details?: any;
   created_at: string;
 }
 
@@ -21,12 +33,31 @@ interface RateLimit {
   blocked_until?: string;
 }
 
-export function SecurityAuditPanel() {
+interface SecurityAuditPanelProps {
+  enableFilters?: boolean;
+  enableExport?: boolean;
+  pageSize?: number;
+}
+
+export function SecurityAuditPanel({ 
+  enableFilters = false, 
+  enableExport = false, 
+  pageSize = 50 
+}: SecurityAuditPanelProps = {}) {
   const { isAdmin } = useAuth();
   const [recentEvents, setRecentEvents] = useState<SecurityEvent[]>([]);
   const [activeBlocks, setActiveBlocks] = useState<RateLimit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    searchText: '',
+    resourceType: 'all',
+    dateFrom: '',
+    dateTo: '',
+  });
 
   const fetchSecurityData = async () => {
     if (!isAdmin) return;
@@ -34,13 +65,35 @@ export function SecurityAuditPanel() {
     try {
       setIsLoading(true);
 
-      // Fetch only recent failed/blocked events (last 10)
-      const { data: events, error: eventsError } = await supabase
+      // Build query with filters
+      let query = supabase
         .from('security_audit_log')
-        .select('id, action, resource_type, created_at')
-        .or('action.ilike.%failed%,action.ilike.%blocked%')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .select('id, action, resource_type, resource_id, user_id, details, created_at')
+        .order('created_at', { ascending: false });
+
+      // Apply filters if enabled
+      if (enableFilters) {
+        if (filters.searchText) {
+          query = query.or(`action.ilike.%${filters.searchText}%,resource_id.ilike.%${filters.searchText}%`);
+        }
+        if (filters.resourceType !== 'all') {
+          query = query.eq('resource_type', filters.resourceType);
+        }
+        if (filters.dateFrom) {
+          query = query.gte('created_at', new Date(filters.dateFrom).toISOString());
+        }
+        if (filters.dateTo) {
+          query = query.lte('created_at', new Date(filters.dateTo + 'T23:59:59').toISOString());
+        }
+        query = query.limit(pageSize);
+      } else {
+        // Default behavior: only failed/blocked events, limit 10
+        query = query
+          .or('action.ilike.%failed%,action.ilike.%blocked%')
+          .limit(10);
+      }
+
+      const { data: events, error: eventsError } = await query;
 
       if (eventsError) {
         console.error('Events error:', eventsError);
@@ -71,7 +124,54 @@ export function SecurityAuditPanel() {
 
   useEffect(() => {
     fetchSecurityData();
-  }, [isAdmin]);
+  }, [isAdmin, filters]);
+
+  const handleExport = () => {
+    if (recentEvents.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    try {
+      // Convert to CSV
+      const headers = ['Timestamp', 'Action', 'Resource Type', 'Resource ID', 'User ID'];
+      const rows = recentEvents.map(event => [
+        new Date(event.created_at).toISOString(),
+        event.action,
+        event.resource_type,
+        event.resource_id || '',
+        event.user_id || '',
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Create download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `security-audit-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast.success('Audit log exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export audit log');
+    }
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      searchText: '',
+      resourceType: 'all',
+      dateFrom: '',
+      dateTo: '',
+    });
+  };
 
 
   if (!isAdmin) {
@@ -93,15 +193,110 @@ export function SecurityAuditPanel() {
         <div>
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Security Overview
+            Security {enableFilters ? 'Audit Log' : 'Overview'}
           </h2>
-          <p className="text-sm text-muted-foreground">Monitor failed login attempts and blocked users</p>
+          <p className="text-sm text-muted-foreground">
+            {enableFilters 
+              ? 'Comprehensive security event log with filtering and export'
+              : 'Monitor failed login attempts and blocked users'}
+          </p>
         </div>
-        <Button onClick={fetchSecurityData} disabled={isLoading} size="sm">
-          <RotateCcw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          {enableFilters && (
+            <Button 
+              onClick={() => setShowFilters(!showFilters)} 
+              variant="outline" 
+              size="sm"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              {showFilters ? 'Hide' : 'Show'} Filters
+            </Button>
+          )}
+          {enableExport && (
+            <Button 
+              onClick={handleExport} 
+              variant="outline" 
+              size="sm"
+              disabled={recentEvents.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+          )}
+          <Button onClick={fetchSecurityData} disabled={isLoading} size="sm">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
+
+      {/* Filters Panel */}
+      {enableFilters && showFilters && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                Filters
+              </span>
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Clear
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="search">Search</Label>
+                <Input
+                  id="search"
+                  placeholder="Search action or resource..."
+                  value={filters.searchText}
+                  onChange={(e) => setFilters({ ...filters, searchText: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="resource-type">Resource Type</Label>
+                <Select
+                  value={filters.resourceType}
+                  onValueChange={(value) => setFilters({ ...filters, resourceType: value })}
+                >
+                  <SelectTrigger id="resource-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="auth">Authentication</SelectItem>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="security_settings">Security Settings</SelectItem>
+                    <SelectItem value="security_rate_limits">Rate Limits</SelectItem>
+                    <SelectItem value="profiles">Profiles</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="date-from">From Date</Label>
+                <Input
+                  id="date-from"
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="date-to">To Date</Label>
+                <Input
+                  id="date-to"
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -22,43 +22,49 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Shield } from "lucide-react";
+import { Plus, Trash2, Save, Shield, Upload, FileUp } from "lucide-react";
 import { CourtRole } from "@/hooks/useRolePermissions";
 
 interface TitleAccessRule {
   id?: string;
-  title: string;
+  job_title: string;
   role: CourtRole;
   description?: string;
 }
 
-const AVAILABLE_ROLES: Array<{ value: CourtRole; label: string; description: string }> = [
-  { 
-    value: "standard", 
-    label: "Standard User", 
-    description: "Basic access - can report issues and make requests" 
-  },
-  { 
-    value: "supply_room_staff", 
-    label: "Supply Staff", 
-    description: "Manages inventory and fulfills supply requests" 
-  },
-  { 
-    value: "clerk", 
-    label: "Court Manager", 
-    description: "Manages courts and court operations" 
-  },
-  { 
-    value: "facilities_manager", 
-    label: "Facility Coordinator (Admin)", 
-    description: "Full access to everything" 
-  },
+interface TitleAccessManagerProps {
+  rolesCatalogOverride?: string[];
+  enableCsvImport?: boolean;
+}
+
+const DEFAULT_ROLES: Array<{ value: string; label: string; description: string }> = [
+  { value: "standard", label: "Standard User", description: "Basic access - can report issues and make requests" },
+  { value: "admin", label: "Administrator", description: "Full system administrator" },
+  { value: "cmc", label: "CMC", description: "Court Management Coordinator - Court operations" },
+  { value: "court_aide", label: "Court Aide", description: "Supply orders, room, inventory management" },
+  { value: "purchasing_staff", label: "Purchasing Staff", description: "View inventory and supply room" },
+  { value: "facilities_manager", label: "Facilities Manager", description: "Building management" },
+  { value: "supply_room_staff", label: "Supply Staff (Legacy)", description: "Legacy - maps to court_aide" },
+  { value: "clerk", label: "Court Manager", description: "Court operations" },
+  { value: "sergeant", label: "Sergeant", description: "Operations supervisor" },
+  { value: "coordinator", label: "Coordinator (Legacy)", description: "Legacy - maps to admin" },
+  { value: "it_dcas", label: "IT/DCAS (Legacy)", description: "Legacy - maps to admin" },
+  { value: "viewer", label: "Viewer (Legacy)", description: "Legacy - read-only" },
 ];
 
-export function TitleAccessManager() {
+export function TitleAccessManager({ 
+  rolesCatalogOverride, 
+  enableCsvImport = false 
+}: TitleAccessManagerProps = {}) {
   const [newTitle, setNewTitle] = useState("");
   const [newRole, setNewRole] = useState<CourtRole | "">("");
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const queryClient = useQueryClient();
+
+  // Use override roles or default
+  const availableRoles = rolesCatalogOverride 
+    ? DEFAULT_ROLES.filter(r => rolesCatalogOverride.includes(r.value))
+    : DEFAULT_ROLES;
 
   // Fetch title rules from database
   const { data: titleRules, isLoading } = useQuery({
@@ -86,7 +92,7 @@ export function TitleAccessManager() {
     mutationFn: async (rule: TitleAccessRule) => {
       const { data, error } = await supabase
         .from("title_access_rules")
-        .insert([{ title: rule.title, role: rule.role }])
+        .insert([{ job_title: rule.job_title, role: rule.role }])
         .select()
         .single();
 
@@ -134,9 +140,56 @@ export function TitleAccessManager() {
     }
 
     addRuleMutation.mutate({
-      title: newTitle.trim(),
+      job_title: newTitle.trim(),
       role: newRole as CourtRole,
     });
+  };
+
+  const handleCsvImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      // Skip header if present
+      const startIndex = lines[0].toLowerCase().includes('title') || lines[0].toLowerCase().includes('role') ? 1 : 0;
+      
+      const rules: Array<{ job_title: string; role: string }> = [];
+      
+      for (let i = startIndex; i < lines.length; i++) {
+        const [title, role] = lines[i].split(',').map(s => s.trim().replace(/^["']|["']$/g, ''));
+        if (title && role) {
+          // Validate role exists
+          if (availableRoles.some(r => r.value === role)) {
+            rules.push({ job_title: title, role });
+          } else {
+            console.warn(`Skipping invalid role: ${role} for title: ${title}`);
+          }
+        }
+      }
+
+      if (rules.length === 0) {
+        toast.error('No valid rules found in CSV file');
+        return;
+      }
+
+      // Bulk insert
+      const { error } = await supabase
+        .from('title_access_rules')
+        .insert(rules);
+
+      if (error) throw error;
+
+      toast.success(`Successfully imported ${rules.length} title rules`);
+      queryClient.invalidateQueries({ queryKey: ['title-access-rules'] });
+      setCsvFile(null);
+      event.target.value = '';
+    } catch (error: any) {
+      console.error('CSV import failed:', error);
+      toast.error(error.message || 'Failed to import CSV file');
+    }
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -166,6 +219,47 @@ export function TitleAccessManager() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* CSV Import */}
+        {enableCsvImport && (
+          <div className="p-4 rounded-lg border bg-primary/5 border-primary/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Bulk Import from CSV
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upload a CSV file with columns: job_title, role
+                </p>
+              </div>
+              <div>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCsvImport}
+                  className="hidden"
+                  id="csv-upload"
+                />
+                <Button asChild variant="outline" size="sm">
+                  <label htmlFor="csv-upload" className="cursor-pointer">
+                    <FileUp className="h-4 w-4 mr-2" />
+                    Choose CSV File
+                  </label>
+                </Button>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p><strong>CSV Format Example:</strong></p>
+              <code className="block bg-background p-2 rounded border">
+                job_title,role<br />
+                Supply Clerk,court_aide<br />
+                Court Manager,clerk<br />
+                Facilities Director,facilities_manager
+              </code>
+            </div>
+          </div>
+        )}
+
         {/* Add New Rule */}
         <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
           <h3 className="font-semibold text-sm">Add New Title Rule</h3>
@@ -186,7 +280,7 @@ export function TitleAccessManager() {
                   <SelectValue placeholder="Choose access level" />
                 </SelectTrigger>
                 <SelectContent>
-                  {AVAILABLE_ROLES.map((role) => (
+                  {availableRoles.map((role) => (
                     <SelectItem key={role.value} value={role.value}>
                       <div className="flex flex-col py-1">
                         <span className="font-semibold">{role.label}</span>
@@ -232,10 +326,10 @@ export function TitleAccessManager() {
                   </TableRow>
                 ) : titleRules && titleRules.length > 0 ? (
                   titleRules.map((rule) => {
-                    const roleInfo = AVAILABLE_ROLES.find(r => r.value === rule.role);
+                    const roleInfo = availableRoles.find(r => r.value === rule.role);
                     return (
                       <TableRow key={rule.id}>
-                        <TableCell className="font-medium">{rule.title}</TableCell>
+                        <TableCell className="font-medium">{rule.job_title}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={getRoleBadgeColor(rule.role)}>
                             {roleInfo?.label || rule.role}

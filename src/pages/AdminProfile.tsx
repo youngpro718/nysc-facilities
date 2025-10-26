@@ -1,4 +1,4 @@
-import { ChevronLeft, QrCode, Download, Copy, Check, Users, Shield, Settings as SettingsIcon, Wrench, Building } from "lucide-react";
+import { ChevronLeft, QrCode, Download, Copy, Check, Users, Shield, Settings as SettingsIcon, Wrench, Building, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import { EnhancedUserManagementModal } from "@/components/profile/modals/Enhance
 import { FeatureDiscoveryCard } from "@/components/settings/FeatureDiscoveryCard";
 import { SettingsNavigation } from "@/components/settings/SettingsNavigation";
 import { AdminQuickActions } from "@/components/settings/AdminQuickActions";
+import SecurityPanel from "@/components/admin/security/SecurityPanel";
+import AdminSettingsPanel from "@/components/admin/settings/AdminSettingsPanel";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
@@ -160,7 +162,7 @@ export default function AdminProfile() {
       {/* Main Content */}
       {isAdmin ? (
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="w-full grid grid-cols-4">
+          <TabsList className="w-full grid grid-cols-5">
             <TabsTrigger value="users" className="text-xs sm:text-sm">
               <Users className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Users</span>
@@ -176,149 +178,17 @@ export default function AdminProfile() {
               <span className="hidden sm:inline">Security</span>
               <span className="sm:hidden">🛡️</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="text-xs sm:text-sm">
+            <TabsTrigger value="audit" className="text-xs sm:text-sm">
+              <Activity className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Audit</span>
+              <span className="sm:hidden">📋</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs sm:text-sm">
               <SettingsIcon className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Profile</span>
+              <span className="hidden sm:inline">Settings</span>
               <span className="sm:hidden">⚙️</span>
             </TabsTrigger>
           </TabsList>
-
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="mt-4">
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Profile Settings</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Manage your admin profile and preferences
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground mb-2">
-                        Your profile information is displayed in the card above. 
-                        To update your avatar, name, or other details, use the profile header.
-                      </p>
-                    </div>
-                    
-                    <div className="border-t pt-4">
-                      <h3 className="font-semibold mb-2">Admin Capabilities</h3>
-                      <ul className="space-y-2 text-xs sm:text-sm text-muted-foreground">
-                        <li>• Manage all users and permissions</li>
-                        <li>• View security audit logs</li>
-                        <li>• Access all system modules</li>
-                        <li>• Configure facility settings</li>
-                      </ul>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Admin Preferences</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Configure your admin-specific settings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <div className="font-medium">Real-time Notifications</div>
-                      <div className="text-xs text-muted-foreground">
-                        Receive instant alerts for critical system events
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/settings?tab=notifications')}>
-                      Configure
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t pt-4">
-                    <div className="space-y-0.5">
-                      <div className="font-medium">Display Settings</div>
-                      <div className="text-xs text-muted-foreground">
-                        Customize theme, appearance, and layout
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/settings?tab=display')}>
-                      Customize
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t pt-4">
-                    <div className="space-y-0.5">
-                      <div className="font-medium">Module Access</div>
-                      <div className="text-xs text-muted-foreground">
-                        Enable or disable system modules
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/system-settings')}>
-                      Manage Modules
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t pt-4">
-                    <div className="space-y-0.5">
-                      <div className="font-medium">Security Settings</div>
-                      <div className="text-xs text-muted-foreground">
-                        Configure two-factor auth and session management
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/settings?tab=security')}>
-                      Security
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Quick Actions</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Common administrative tasks
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Button 
-                      variant="outline" 
-                      className="justify-start" 
-                      onClick={() => navigate('/system-settings')}
-                    >
-                      <SettingsIcon className="h-4 w-4 mr-2" />
-                      System Settings
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="justify-start"
-                      onClick={() => setEnhancedUserManagementOpen(true)}
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Manage Users
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="justify-start"
-                      onClick={() => navigate('/operations')}
-                    >
-                      <Wrench className="h-4 w-4 mr-2" />
-                      Operations Hub
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="justify-start"
-                      onClick={() => navigate('/spaces')}
-                    >
-                      <Building className="h-4 w-4 mr-2" />
-                      Spaces Management
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
 
           {/* Users Tab */}
           <TabsContent value="users" className="mt-4">
@@ -334,14 +204,30 @@ export default function AdminProfile() {
             </div>
           </TabsContent>
 
-          {/* Title Access Manager Tab */}
+          {/* Access Tab */}
           <TabsContent value="access" className="mt-4">
-            <TitleAccessManager />
+            <TitleAccessManager 
+              rolesCatalogOverride={[
+                'admin', 'cmc', 'court_aide', 'purchasing_staff', 
+                'facilities_manager', 'clerk', 'sergeant', 'standard'
+              ]}
+              enableCsvImport={true}
+            />
           </TabsContent>
 
           {/* Security Tab */}
           <TabsContent value="security" className="mt-4">
-            <SecurityAuditPanel />
+            <SecurityPanel />
+          </TabsContent>
+
+          {/* Audit Tab */}
+          <TabsContent value="audit" className="mt-4">
+            <SecurityAuditPanel enableFilters={true} enableExport={true} pageSize={50} />
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="mt-4">
+            <AdminSettingsPanel />
           </TabsContent>
         </Tabs>
       ) : (
