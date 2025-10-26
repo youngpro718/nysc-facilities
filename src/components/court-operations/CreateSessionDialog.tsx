@@ -500,16 +500,16 @@ export function CreateSessionDialog({
 
           {/* New Calendar Fields */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Parts Entered By */}
-            <div className="space-y-2">
-              <Label htmlFor="parts-entered-by">Parts Entered By</Label>
-              <Input
-                id="parts-entered-by"
-                placeholder="Enter name..."
-                value={partsEnteredBy}
-                onChange={(e) => setPartsEnteredBy(e.target.value)}
-              />
-            </div>
+          {/* Sending Part */}
+          <div className="space-y-2">
+            <Label htmlFor="parts-entered-by">Sending Part</Label>
+            <Input
+              id="parts-entered-by"
+              placeholder="Enter name..."
+              value={partsEnteredBy}
+              onChange={(e) => setPartsEnteredBy(e.target.value)}
+            />
+          </div>
 
             {/* Defendants */}
             <div className="space-y-2">
