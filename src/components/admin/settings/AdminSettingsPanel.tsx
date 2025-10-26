@@ -58,7 +58,6 @@ export default function AdminSettingsPanel() {
     sessionTimeout: '30',
     timezone: 'America/New_York',
     dateFormat: 'MM/DD/YYYY',
-    defaultDashboard: '/',
   });
 
   // Load settings from database
@@ -77,7 +76,6 @@ export default function AdminSettingsPanel() {
         sessionTimeout: systemPrefs.sessionTimeout ?? '30',
         timezone: systemPrefs.timezone ?? 'America/New_York',
         dateFormat: systemPrefs.dateFormat ?? 'MM/DD/YYYY',
-        defaultDashboard: systemPrefs.defaultDashboard ?? '/',
       });
     }
   }, [profile]);
@@ -104,7 +102,6 @@ export default function AdminSettingsPanel() {
             sessionTimeout: settings.sessionTimeout,
             timezone: settings.timezone,
             dateFormat: settings.dateFormat,
-            defaultDashboard: settings.defaultDashboard,
           },
         })
         .eq('id', user.id);
@@ -157,23 +154,26 @@ export default function AdminSettingsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            Notifications
+            Notification Preferences
           </CardTitle>
           <CardDescription>
-            Configure how you receive notifications and alerts
+            Configure your notification preferences (saved for future use)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="p-3 bg-muted/50 rounded-lg border">
+            <p className="text-sm text-muted-foreground">
+              <strong>Note:</strong> These settings save your preferences but require notification service configuration to be fully functional.
+            </p>
+          </div>
+
           <div className="flex items-center justify-between">
-            <div className="space-y-0.5 flex-1">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="email-notifications" className="text-sm font-normal">
-                  Email Notifications
-                </Label>
-                <Badge variant="outline" className="text-xs">Saves Preference</Badge>
-              </div>
+            <div className="space-y-0.5">
+              <Label htmlFor="email-notifications" className="text-sm font-normal">
+                Email Notifications
+              </Label>
               <p className="text-xs text-muted-foreground">
-                Receive updates and alerts via email (requires email service configuration)
+                Receive updates and alerts via email
               </p>
             </div>
             <Switch
@@ -184,15 +184,12 @@ export default function AdminSettingsPanel() {
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="space-y-0.5 flex-1">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="push-notifications" className="text-sm font-normal">
-                  Push Notifications
-                </Label>
-                <Badge variant="outline" className="text-xs">Saves Preference</Badge>
-              </div>
+            <div className="space-y-0.5">
+              <Label htmlFor="push-notifications" className="text-sm font-normal">
+                Push Notifications
+              </Label>
               <p className="text-xs text-muted-foreground">
-                Get instant notifications on your device (requires push service setup)
+                Get instant notifications on your device
               </p>
             </div>
             <Switch
@@ -208,29 +205,13 @@ export default function AdminSettingsPanel() {
                 Critical Alerts
               </Label>
               <p className="text-xs text-muted-foreground">
-                Get notified about critical system events (requires notification service)
+                Get notified about critical system events
               </p>
             </div>
             <Switch
               id="critical-alerts"
               checked={settings.criticalAlerts}
               onCheckedChange={(checked) => handleChange('criticalAlerts', checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="weekly-reports" className="text-sm font-normal">
-                Weekly Reports
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Receive weekly summary reports
-              </p>
-            </div>
-            <Switch
-              id="weekly-reports"
-              checked={settings.weeklyReports}
-              onCheckedChange={(checked) => handleChange('weeklyReports', checked)}
             />
           </div>
         </CardContent>
@@ -244,12 +225,15 @@ export default function AdminSettingsPanel() {
             Display & Appearance
           </CardTitle>
           <CardDescription>
-            Customize the look and feel of the interface
+            Customize how the interface looks
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="theme-select">Theme</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="theme-select">Theme</Label>
+              <Badge variant="default" className="text-xs bg-green-600">Fully Functional</Badge>
+            </div>
             <Select value={theme} onValueChange={handleThemeChange}>
               <SelectTrigger id="theme-select">
                 <SelectValue placeholder="Select theme" />
@@ -270,7 +254,13 @@ export default function AdminSettingsPanel() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Choose your preferred color scheme
+              Changes take effect immediately
+            </p>
+          </div>
+
+          <div className="p-3 bg-muted/50 rounded-lg border">
+            <p className="text-sm text-muted-foreground">
+              <strong>Note:</strong> Compact Mode and Show Avatars save your preferences but require UI implementation to be functional.
             </p>
           </div>
 
@@ -313,13 +303,19 @@ export default function AdminSettingsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Security & Authentication
+            Security Preferences
           </CardTitle>
           <CardDescription>
-            Manage your security preferences and authentication settings
+            Configure security settings (saved for future use)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="p-3 bg-muted/50 rounded-lg border">
+            <p className="text-sm text-muted-foreground">
+              <strong>Note:</strong> These settings save your preferences but require session management logic to be fully functional.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="session-timeout">Session Timeout</Label>
             <Select 
@@ -386,13 +382,19 @@ export default function AdminSettingsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            Regional & Format Settings
+            Regional & Format Preferences
           </CardTitle>
           <CardDescription>
-            Customize date, time, and regional preferences
+            Set your timezone and date format preferences (saved for future use)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="p-3 bg-muted/50 rounded-lg border">
+            <p className="text-sm text-muted-foreground">
+              <strong>Note:</strong> These settings save your preferences but require date/time formatting logic to be fully functional.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="timezone">Timezone</Label>
             <Select 
@@ -453,71 +455,6 @@ export default function AdminSettingsPanel() {
         </CardContent>
       </Card>
 
-      {/* Dashboard Settings Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <LayoutDashboard className="h-5 w-5" />
-            Dashboard Preferences
-          </CardTitle>
-          <CardDescription>
-            Set your default landing page after login
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="default-dashboard">Default Landing Page</Label>
-              <Badge variant="outline" className="text-xs">Saves Preference</Badge>
-            </div>
-            <Select 
-              value={settings.defaultDashboard} 
-              onValueChange={(value) => handleChange('defaultDashboard', value)}
-            >
-              <SelectTrigger id="default-dashboard">
-                <SelectValue placeholder="Select dashboard" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="/">Admin Dashboard</SelectItem>
-                <SelectItem value="/operations">Operations Dashboard</SelectItem>
-                <SelectItem value="/spaces">Spaces Management</SelectItem>
-                <SelectItem value="/inventory">Inventory Overview</SelectItem>
-                <SelectItem value="/requests">Requests & Tickets</SelectItem>
-                <SelectItem value="/reports">Reports & Analytics</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              This page will load when you first log in (requires login redirect logic)
-            </p>
-          </div>
-
-          <div className="border-t pt-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Preview Other Role Dashboards</Label>
-                <Badge variant="secondary" className="text-xs">Admin Only</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                View dashboards from different role perspectives without switching accounts
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" size="sm" onClick={() => window.open('/?role=user', '_blank')}>
-                  View User Dashboard
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => window.open('/?role=cmc', '_blank')}>
-                  View CMC Dashboard
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => window.open('/?role=court_aide', '_blank')}>
-                  View Court Aide
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => window.open('/?role=facilities_manager', '_blank')}>
-                  View Facilities
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Save Button */}
       {hasChanges && (
