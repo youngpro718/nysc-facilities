@@ -17,31 +17,52 @@ This checklist verifies that the four core routes follow proper architectural pa
 
 ---
 
-## 🎯 Four Core Routes
+## 🎯 Four Core Routes (New Architecture)
 
-### **1. Admin Dashboard** (`/`)
-- **Component:** `AdminDashboard.tsx`
+### **1. Dashboard** (`/`)
+- **Component:** `src/pages/new/Dashboard.tsx`
 - **Protection:** ProtectedRoute (requireAdmin)
 - **Layout:** Yes (wrapped in Layout component)
 - **Module:** N/A (core admin route)
+- **Status:** ✅ Scaffolded with service layer
 
-### **2. Spaces Management** (`/spaces`)
-- **Component:** `Spaces.tsx`
+### **2. Facilities** (`/facilities`)
+- **Component:** `src/pages/new/Facilities.tsx`
 - **Protection:** ProtectedRoute + ModuleProtectedRoute
 - **Layout:** Yes (wrapped in Layout component)
 - **Module:** `spaces`
+- **Status:** ✅ Scaffolded with service layer
 
-### **3. Operations Hub** (`/operations`)
-- **Component:** `Operations.tsx`
+### **3. Facility Detail** (`/facilities/:id`)
+- **Component:** `src/pages/new/FacilityDetail.tsx`
+- **Protection:** ProtectedRoute + ModuleProtectedRoute
+- **Layout:** Yes (wrapped in Layout component)
+- **Module:** `spaces`
+- **Status:** ✅ Scaffolded with service layer
+
+### **4. Operations** (`/ops`)
+- **Component:** `src/pages/new/Operations.tsx`
 - **Protection:** ProtectedRoute + ModuleProtectedRoute
 - **Layout:** Yes (wrapped in Layout component)
 - **Module:** `operations`
+- **Status:** ✅ Scaffolded with service layer
 
-### **4. Court Operations** (`/court-operations`)
-- **Component:** `CourtOperationsDashboard.tsx`
-- **Protection:** ProtectedRoute + ModuleProtectedRoute
-- **Layout:** Yes (wrapped in Layout component)
-- **Module:** `court_operations`
+---
+
+## 📦 Service Layer Architecture
+
+All routes use the service-layer pattern:
+
+### **Services Created:**
+- ✅ `src/services/core/supabaseClient.ts` - ONLY Supabase import
+- ✅ `src/services/dashboard/dashboardService.ts` - Dashboard data
+- ✅ `src/services/facilities/facilitiesService.ts` - Facilities CRUD
+- ✅ `src/services/operations/operationsService.ts` - Operations data
+
+### **Common Components:**
+- ✅ `src/components/common/LoadingSkeleton.tsx` - Loading states
+- ✅ `src/components/common/ErrorMessage.tsx` - Error states
+- ✅ `src/components/common/EmptyState.tsx` - Empty states
 
 ---
 
@@ -176,7 +197,7 @@ This checklist verifies that the four core routes follow proper architectural pa
 
 ## 🔍 Detailed Route Verification
 
-### **Route 1: Admin Dashboard (`/`)**
+### **Route 1: Dashboard (`/`)**
 
 #### **Routing**
 - [ ] Accessible at root URL `/`
@@ -188,94 +209,155 @@ This checklist verifies that the four core routes follow proper architectural pa
 #### **Layout**
 - [ ] Header displays with user info
 - [ ] Navigation menu displays
-- [ ] Page title shows "Admin Dashboard"
+- [ ] Page title shows "Dashboard"
 - [ ] Responsive on all screen sizes
 - [ ] No layout shift on load
 
 #### **States**
-- [ ] Shows loading skeletons for stats cards
-- [ ] Displays building overview cards
-- [ ] Shows module cards (Spaces, Operations, etc.)
-- [ ] Displays recent activity/notifications
-- [ ] Handles empty state (no data)
-- [ ] Shows error message if data fetch fails
+- [x] Shows loading skeletons for stats cards (implemented)
+- [x] Displays building overview cards (placeholder)
+- [x] Shows module cards (placeholder)
+- [x] Displays recent activity (placeholder)
+- [x] Handles empty state with EmptyState component
+- [x] Shows error message with ErrorMessage component
 
 #### **Data Fetching**
-- [ ] No direct `supabase` imports in `AdminDashboard.tsx`
-- [ ] Uses `useAdminDashboardData` hook
-- [ ] Uses `useBuildingData` hook
-- [ ] Uses `useUserData` hook
-- [ ] All hooks use React Query
-- [ ] Data refreshes on window focus (if configured)
+- [x] No direct `supabase` imports in `Dashboard.tsx` ✅
+- [ ] Uses `useDashboardStats` hook (to be implemented)
+- [ ] Uses `useBuildingSummary` hook (to be implemented)
+- [ ] Uses `useRecentActivity` hook (to be implemented)
+- [ ] All hooks use React Query (to be implemented)
+- [ ] Data refreshes on window focus (to be configured)
+
+#### **Service Layer**
+- [x] `dashboardService.ts` created with methods:
+  - `getDashboardStats()` ✅
+  - `getBuildingSummary()` ✅
+  - `getRecentActivity()` ✅
+  - `getModuleStatus()` ✅
 
 #### **Verification Commands**
 ```bash
-# Check for direct supabase imports
-grep -r "from.*supabase" src/pages/AdminDashboard.tsx
+# Check for direct supabase imports (should return nothing)
+grep -r "from.*supabase" src/pages/new/Dashboard.tsx
 
-# Check for custom hooks usage
-grep -r "use[A-Z]" src/pages/AdminDashboard.tsx
+# Check service layer usage
+grep -r "dashboardService" src/pages/new/Dashboard.tsx
 
-# Check React Query usage
-grep -r "useQuery\|useMutation" src/pages/AdminDashboard.tsx
+# Verify service exists
+ls -la src/services/dashboard/dashboardService.ts
 ```
 
 ---
 
-### **Route 2: Spaces Management (`/spaces`)**
+### **Route 2: Facilities (`/facilities`)**
 
 #### **Routing**
-- [ ] Accessible at `/spaces`
+- [ ] Accessible at `/facilities`
 - [ ] Requires admin authentication
 - [ ] Requires `spaces` module enabled
 - [ ] Shows module disabled message if not enabled
 - [ ] Loads within Layout component
-- [ ] Navigation highlights "Spaces" menu item
+- [ ] Navigation highlights "Facilities" menu item
 
 #### **Layout**
-- [ ] Page header displays "Spaces Management"
-- [ ] Tab navigation displays (Rooms, Infrastructure, Floor Plan)
-- [ ] Building selector displays in header
-- [ ] Action buttons display (Create Room, etc.)
-- [ ] Responsive layout on mobile
-- [ ] Floor plan viewer loads correctly
+- [ ] Page header displays "Facilities"
+- [x] Create Facility button displays
+- [x] Filter section displays (placeholder)
+- [x] Responsive layout on mobile
+- [x] Grid view (4 columns on desktop)
 
 #### **States**
-- [ ] Shows loading state for rooms list
-- [ ] Displays room cards in grid layout
-- [ ] Shows empty state when no rooms exist
-- [ ] Displays building filter state
-- [ ] Shows floor filter state
-- [ ] Handles room creation/edit states
-- [ ] Shows success/error toasts
+- [x] Shows loading skeletons for rooms grid (implemented)
+- [x] Displays room cards in grid layout (placeholder)
+- [x] Shows empty state with EmptyState component
+- [x] Handles error state with ErrorMessage component
+- [x] URL state management with useSearchParams
+- [ ] Displays building filter state (to be implemented)
+- [ ] Shows floor filter state (to be implemented)
 
 #### **Data Fetching**
-- [ ] No direct `supabase` imports in `Spaces.tsx`
-- [ ] Uses `useSpaces` or `useRooms` hook
-- [ ] Uses `useBuildings` hook
-- [ ] Uses `useFloors` hook
-- [ ] All hooks use React Query
-- [ ] Mutations invalidate relevant queries
-- [ ] Optimistic updates work for room edits
+- [x] No direct `supabase` imports in `Facilities.tsx` ✅
+- [ ] Uses `useRooms` hook (to be implemented)
+- [ ] Uses `useBuildings` hook (to be implemented)
+- [ ] Uses `useFloors` hook (to be implemented)
+- [ ] All hooks use React Query (to be implemented)
+- [ ] Mutations invalidate relevant queries (to be implemented)
+
+#### **Service Layer**
+- [x] `facilitiesService.ts` created with methods:
+  - `getRooms(filters)` ✅
+  - `getRoomById(id)` ✅
+  - `getBuildings()` ✅
+  - `getFloors(buildingId)` ✅
+  - `createRoom(data)` ✅
+  - `updateRoom(id, updates)` ✅
+  - `deleteRoom(id)` ✅
 
 #### **Verification Commands**
 ```bash
-# Check for direct supabase imports
-grep -r "from.*supabase" src/pages/Spaces.tsx
+# Check for direct supabase imports (should return nothing)
+grep -r "from.*supabase" src/pages/new/Facilities.tsx
 
-# Check for custom hooks
-grep -r "useSpaces\|useRooms\|useBuildings" src/pages/Spaces.tsx
+# Check service layer exists
+ls -la src/services/facilities/facilitiesService.ts
 
-# Check for direct fetches
-grep -r "supabase.from\|fetch\|axios" src/pages/Spaces.tsx
+# Verify no direct database calls
+grep -r "supabase.from\|fetch\|axios" src/pages/new/Facilities.tsx
 ```
 
 ---
 
-### **Route 3: Operations Hub (`/operations`)**
+### **Route 3: Facility Detail (`/facilities/:id`)**
 
 #### **Routing**
-- [ ] Accessible at `/operations`
+- [ ] Accessible at `/facilities/:id`
+- [ ] Requires admin authentication
+- [ ] Requires `spaces` module enabled
+- [ ] Loads within Layout component
+- [ ] Back button navigates to `/facilities`
+
+#### **Layout**
+- [x] Page header displays room number
+- [x] Building and floor info displays
+- [x] Edit button displays
+- [x] Tabbed interface (info, issues, keys, history, 3D)
+- [x] Responsive layout on mobile
+
+#### **States**
+- [x] Shows loading skeleton (implemented)
+- [x] Handles error state with ErrorMessage component
+- [x] Tab state managed via URL params
+- [ ] Displays room information (to be implemented)
+- [ ] Shows related issues (to be implemented)
+- [ ] Displays key assignments (to be implemented)
+
+#### **Data Fetching**
+- [x] No direct `supabase` imports in `FacilityDetail.tsx` ✅
+- [ ] Uses `useFacilityDetails(id)` hook (to be implemented)
+- [ ] Uses `useFacilityIssues(id)` hook (to be implemented)
+- [ ] Uses `useFacilityKeys(id)` hook (to be implemented)
+- [ ] Uses `useFacilityHistory(id)` hook (to be implemented)
+
+#### **Service Layer**
+- [x] Uses `facilitiesService.getRoomById(id)` ✅
+- [ ] Additional detail service methods (to be added)
+
+#### **Verification Commands**
+```bash
+# Check for direct supabase imports (should return nothing)
+grep -r "from.*supabase" src/pages/new/FacilityDetail.tsx
+
+# Verify no direct database calls
+grep -r "supabase.from\|fetch\|axios" src/pages/new/FacilityDetail.tsx
+```
+
+---
+
+### **Route 4: Operations (`/ops`)**
+
+#### **Routing**
+- [ ] Accessible at `/ops`
 - [ ] Requires admin authentication
 - [ ] Requires `operations` module enabled
 - [ ] Legacy `/issues` redirects to `/operations?tab=issues`
@@ -284,46 +366,137 @@ grep -r "supabase.from\|fetch\|axios" src/pages/Spaces.tsx
 - [ ] Navigation highlights "Operations" menu item
 
 #### **Layout**
-- [ ] Page header displays "Operations Hub"
-- [ ] Tab navigation displays (Issues, Maintenance, Supply Requests)
-- [ ] Building filter displays
-- [ ] Action buttons display per tab
-- [ ] Responsive layout on mobile
-- [ ] Tab state persists in URL
+- [x] Page header displays "Operations"
+- [x] Tab navigation displays (Issues, Maintenance, Keys, Supplies)
+- [x] Filter section displays (placeholder)
+- [x] Create Issue button displays
+- [x] Responsive layout on mobile
+- [x] Tab state persists in URL with useSearchParams
 
 #### **States**
-- [ ] Shows loading state for issues/maintenance
-- [ ] Displays compact room cards (8 per row)
-- [ ] Shows empty state when no issues exist
-- [ ] Displays filter states (status, priority, building)
-- [ ] Shows quick action hover states
-- [ ] Handles issue creation/edit states
-- [ ] Shows success/error toasts
+- [x] Shows loading skeleton for cards (implemented)
+- [x] Displays compact issue cards (8 per row, placeholder)
+- [x] Shows empty state with EmptyState component
+- [x] Handles error state with ErrorMessage component
+- [x] Tab switching works correctly
+- [ ] Displays filter states (to be implemented)
+- [ ] Shows quick action states (to be implemented)
 
 #### **Data Fetching**
-- [ ] No direct `supabase` imports in `Operations.tsx`
-- [ ] Uses `useIssues` hook
-- [ ] Uses `useMaintenanceSchedule` hook
-- [ ] Uses `useSupplyRequests` hook
-- [ ] Uses `useBuildingData` hook
-- [ ] All hooks use React Query
-- [ ] Mutations invalidate relevant queries
+- [x] No direct `supabase` imports in `Operations.tsx` ✅
+- [ ] Uses `useIssues` hook (to be implemented)
+- [ ] Uses `useMaintenanceSchedule` hook (to be implemented)
+- [ ] Uses `useKeyRequests` hook (to be implemented)
+- [ ] Uses `useSupplyRequests` hook (to be implemented)
+- [ ] All hooks use React Query (to be implemented)
+
+#### **Service Layer**
+- [x] `operationsService.ts` created with methods:
+  - `getIssues(filters)` ✅
+  - `getIssueById(id)` ✅
+  - `createIssue(data)` ✅
+  - `updateIssue(id, updates)` ✅
+  - `resolveIssue(id, resolution)` ✅
+  - `assignIssue(id, userId)` ✅
+  - `getKeyRequests(filters)` ✅
+  - `getSupplyRequests(filters)` ✅
 
 #### **Verification Commands**
 ```bash
-# Check for direct supabase imports
-grep -r "from.*supabase" src/pages/Operations.tsx
+# Check for direct supabase imports (should return nothing)
+grep -r "from.*supabase" src/pages/new/Operations.tsx
 
-# Check for custom hooks
-grep -r "useIssues\|useMaintenance\|useSupply" src/pages/Operations.tsx
+# Check service layer exists
+ls -la src/services/operations/operationsService.ts
 
-# Check for direct fetches
-grep -r "supabase.from\|fetch\|axios" src/pages/Operations.tsx
+# Verify no direct database calls
+grep -r "supabase.from\|fetch\|axios" src/pages/new/Operations.tsx
 ```
 
 ---
 
-### **Route 4: Court Operations (`/court-operations`)**
+## 📊 Scaffolding Status Summary
+
+### **Completed ✅**
+- [x] Service layer architecture (4 services, 19 methods)
+- [x] Common UI components (LoadingSkeleton, ErrorMessage, EmptyState)
+- [x] Route placeholder components (4 routes)
+- [x] Loading/error/empty states in all routes
+- [x] Zero direct Supabase imports in components
+- [x] URL state management with useSearchParams
+- [x] Responsive grid layouts
+- [x] JSDoc documentation for all service methods
+
+### **To Be Implemented 📋**
+- [ ] Custom hooks with React Query
+- [ ] TypeScript type definitions
+- [ ] Connect hooks to components
+- [ ] Implement filters and actions
+- [ ] Add form handling
+- [ ] Write tests
+- [ ] Update App.tsx routing
+
+---
+
+## 🧪 Verification Script
+
+Run this script to verify service layer enforcement:
+
+```bash
+#!/bin/bash
+echo "=== Checking for direct Supabase imports in components ==="
+echo ""
+
+# Check new route components
+echo "Dashboard:"
+grep -r "from.*supabase" src/pages/new/Dashboard.tsx || echo "✅ No direct imports"
+
+echo "Facilities:"
+grep -r "from.*supabase" src/pages/new/Facilities.tsx || echo "✅ No direct imports"
+
+echo "FacilityDetail:"
+grep -r "from.*supabase" src/pages/new/FacilityDetail.tsx || echo "✅ No direct imports"
+
+echo "Operations:"
+grep -r "from.*supabase" src/pages/new/Operations.tsx || echo "✅ No direct imports"
+
+echo ""
+echo "=== Verifying service layer exists ==="
+ls -la src/services/core/supabaseClient.ts
+ls -la src/services/dashboard/dashboardService.ts
+ls -la src/services/facilities/facilitiesService.ts
+ls -la src/services/operations/operationsService.ts
+
+echo ""
+echo "=== Verifying common components exist ==="
+ls -la src/components/common/LoadingSkeleton.tsx
+ls -la src/components/common/ErrorMessage.tsx
+ls -la src/components/common/EmptyState.tsx
+```
+
+---
+
+## 🎯 Next Steps for QA
+
+1. **Run verification script** to confirm no direct database access
+2. **Implement custom hooks** with React Query
+3. **Add TypeScript types** for all data structures
+4. **Connect hooks to components** and test data flow
+5. **Test loading/error/empty states** manually
+6. **Verify URL state management** works correctly
+7. **Test responsive layouts** on mobile/tablet/desktop
+8. **Run automated tests** once implemented
+
+---
+
+**Old Route References Removed:**
+- ~~Admin Dashboard~~ → Dashboard
+- ~~Spaces Management~~ → Facilities
+- ~~Court Operations~~ → (Not in new architecture)
+
+**Last Updated:** October 25, 2025  
+**Version:** 2.0.0 (Updated for new architecture)  
+**Status:** Active - Scaffolding Complete
 
 #### **Routing**
 - [ ] Accessible at `/court-operations`
