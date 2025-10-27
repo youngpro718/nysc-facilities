@@ -56,18 +56,11 @@ export function MobileProfileHeader() {
         .eq('id', user.id)
         .single();
 
-      // Check if admin
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
       if (profileData) {
         setProfile({
           ...profileData,
           email: user.email || '',
-          is_admin: roleData?.role === 'admin'
+          is_admin: profileData.role === 'admin'
         });
       }
     } catch (error) {

@@ -72,6 +72,9 @@ export function BasicInfoFields({ form }: BasicInfoFieldsProps) {
                 {...field}
               />
             </FormControl>
+            <FormDescription>
+              {field.value?.length || 0}/500 characters
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}

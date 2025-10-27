@@ -3,8 +3,6 @@ import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
-import { MobileSettingsCard } from "@/components/profile/mobile/MobileSettingsCard";
-import { SettingsVerification } from "@/components/profile/SettingsVerification";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -37,33 +35,6 @@ export default function Profile() {
     }
   ];
 
-  const accountSettings = [
-    {
-      id: 'edit-profile',
-      title: 'Edit Personal Information',
-      description: 'Update your name, email, and contact details',
-      icon: User,
-      type: 'navigation' as const,
-      action: () => navigate('/profile#personal-info')
-    },
-    {
-      id: 'privacy',
-      title: 'Privacy Settings',
-      description: 'Control your privacy and data sharing',
-      icon: Shield,
-      type: 'navigation' as const,
-      action: () => navigate('/settings?tab=security')
-    },
-    {
-      id: 'all-settings',
-      title: 'All Settings',
-      description: 'Complete settings for notifications, privacy, appearance, and more',
-      icon: Settings2,
-      type: 'navigation' as const,
-      action: () => navigate('/settings')
-    }
-  ];
-
   if (isMobile) {
     return (
       <div className="space-y-4 pb-20">
@@ -81,17 +52,32 @@ export default function Profile() {
         
         <MobileProfileHeader />
         
-        <MobileSettingsCard
-          title="Account Settings"
-          description="Manage your personal information"
-          settings={accountSettings}
-        />
-        
-        <MobileSettingsCard
-          title="Notifications"
-          description="Configure your notification preferences"
-          settings={notificationSettings}
-        />
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">Quick Actions</h2>
+              <p className="text-sm text-muted-foreground">Manage your settings</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => navigate('/settings')}
+            >
+              <Settings2 className="h-4 w-4 mr-2" />
+              All Settings
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => navigate('/settings?tab=notifications')}
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              Notification Preferences
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -135,43 +121,6 @@ export default function Profile() {
         </div>
       </Card>
 
-      <Card className="border-0 sm:border sm:shadow-sm">
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Notification Settings</h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Configure your notification preferences in Settings
-            </p>
-          </div>
-          <div className="flex">
-            <Button onClick={() => navigate('/settings?tab=notifications')} className="ml-auto">
-              Open Settings
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="border-0 sm:border sm:shadow-sm">
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Security</h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Manage two-factor authentication and login notifications in Settings
-            </p>
-          </div>
-          <div className="flex">
-            <Button onClick={() => navigate('/settings?tab=security')} className="ml-auto">
-              Open Security Settings
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="border-0 sm:border sm:shadow-sm">
-        <div className="p-4 sm:p-6">
-          <SettingsVerification />
-        </div>
-      </Card>
     </div>
   );
 }

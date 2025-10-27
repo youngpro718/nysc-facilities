@@ -48,21 +48,10 @@ export function SettingsVerification() {
         errors.push(`Profile error: ${profileError.message}`);
       }
 
-      // Check user role
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (roleError) {
-        errors.push(`Role error: ${roleError.message}`);
-      }
-
       setStatus({
         profileData,
         notificationPreferences: profileData?.notification_preferences,
-        userRole: roleData?.role || null,
+        userRole: profileData?.role || null,
         errors
       });
 

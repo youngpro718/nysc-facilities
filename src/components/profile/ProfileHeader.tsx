@@ -25,13 +25,15 @@ export function ProfileHeader() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: roleData } = await supabase
-        .from('user_roles')
+      const { data: profileData } = await supabase
+        .from('profiles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .maybeSingle();
 
-      setUserRole(roleData?.role || null);
+      if (profileData) {
+        setUserRole(profileData.role);
+      }
     } catch (error) {
       console.error('Error fetching user role:', error);
     }
