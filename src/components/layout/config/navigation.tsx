@@ -230,7 +230,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'court_aide') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
-      { title: 'Supply Orders', icon: Package },
       { title: 'Supply Room', icon: Package },
       { title: 'Inventory', icon: Package2 },
       { type: "separator" },
@@ -257,7 +256,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Supply Room', icon: Package },
-      { title: 'Supply Requests', icon: Package },
       { title: 'Inventory', icon: Package2 },
       { type: "separator" },
       { title: 'Profile', icon: User },
@@ -332,7 +330,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   if (userRole === 'court_aide') {
     return [
       '/court-aide-dashboard',
-      '/supply-orders',
       '/supply-room',
       '/inventory',
       '', // Separator
@@ -359,7 +356,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     return [
       '/dashboard', // User Dashboard for supply staff
       '/supply-room',
-      '/admin/supply-requests',
       '/inventory',
       '', // Separator doesn't have a route
       '/profile',

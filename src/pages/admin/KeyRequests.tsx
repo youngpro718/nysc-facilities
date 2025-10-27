@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useToast } from "@/hooks/use-toast";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 interface KeyRequestWithUser {
   id: string;
@@ -223,7 +224,8 @@ export default function AdminKeyRequests() {
 
   return (
     <PageContainer>
-      <PageHeader 
+      <Breadcrumb />
+      <PageHeader
         title="Key Requests Management" 
         description="Review and manage key access requests"
       >

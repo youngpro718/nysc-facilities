@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { FulfillmentWorkflow } from "@/components/supply/FulfillmentWorkflow";
 import { useToast } from "@/hooks/use-toast";
 import { getSupplyRequests, updateSupplyRequestStatus, updateSupplyRequestItems } from "@/lib/supabase";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 interface SupplyRequestWithUser {
   id: string;
@@ -226,7 +227,8 @@ export default function AdminSupplyRequests() {
 
   return (
     <PageContainer>
-      <PageHeader 
+      <Breadcrumb />
+      <PageHeader
         title="Supply Requests Management" 
         description="Review and manage supply requests from staff members"
       >

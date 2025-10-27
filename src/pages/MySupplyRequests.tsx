@@ -15,6 +15,7 @@ import { QuickOrderGrid } from "@/components/supply/QuickOrderGrid";
 import { Card, CardContent } from "@/components/ui/card";
 import { SupplyRequestErrorBoundary } from "@/components/supply/SupplyRequestErrorBoundary";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 export default function MySupplyRequests() {
   const [showNewRequestForm, setShowNewRequestForm] = useState(false);
@@ -51,6 +52,7 @@ export default function MySupplyRequests() {
   if (isLoading) {
     return (
       <PageContainer>
+        <Breadcrumb />
         <PageHeader title="My Supply Requests" description="Track your supply requests" />
         <SkeletonList count={3} variant="detailed" />
       </PageContainer>
@@ -61,6 +63,7 @@ export default function MySupplyRequests() {
   if (isError) {
     return (
       <PageContainer>
+        <Breadcrumb />
         <PageHeader title="My Supply Requests" description="Track your supply requests" />
         <Card className="border-destructive/50">
           <CardContent className="flex flex-col items-center text-center py-12 px-4">
@@ -87,7 +90,8 @@ export default function MySupplyRequests() {
     <SupplyRequestErrorBoundary onReset={handleRetry}>
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
       <PageContainer>
-        <PageHeader 
+        <Breadcrumb />
+        <PageHeader
           title="My Supply Requests" 
           description="Track and manage your supply requests"
         >

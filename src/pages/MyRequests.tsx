@@ -21,6 +21,7 @@ import { supabase } from "@/lib/supabase";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 const statusConfig = {
   pending: { 
@@ -163,7 +164,8 @@ export default function MyRequests() {
   return (
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
       <PageContainer>
-      <PageHeader 
+      <Breadcrumb />
+      <PageHeader
         title="My Key Requests" 
         description="Track and manage your key requests"
       >

@@ -5,6 +5,7 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EnhancedAccessDenied } from '@/components/common/EnhancedAccessDenied';
 import { AlertTriangle } from 'lucide-react';
+import { Breadcrumb } from '@/components/layout/Breadcrumb';
 
 export default function SupplyRoom() {
   const { user, profile, isLoading } = useAuth();
@@ -32,6 +33,7 @@ export default function SupplyRoom() {
   if (isLoading || permissionsLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
+        <Breadcrumb />
         <Card>
           <CardContent className="p-8">
             <div className="flex items-center justify-center">
@@ -66,6 +68,7 @@ export default function SupplyRoom() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Breadcrumb />
       <ImprovedSupplyStaffDashboard />
     </div>
   );

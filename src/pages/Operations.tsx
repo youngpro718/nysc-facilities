@@ -50,6 +50,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 export default function Operations() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -276,6 +277,7 @@ export default function Operations() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      <Breadcrumb />
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="space-y-1">

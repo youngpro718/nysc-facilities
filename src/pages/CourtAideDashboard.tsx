@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, ShoppingCart, Warehouse, AlertCircle, TrendingUp, Clock } from 'lucide-react';
+import { Package, Warehouse, AlertCircle, TrendingUp, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { TermSheetBoard } from '@/components/court-operations/personnel/TermSheetBoard';
 
@@ -27,19 +27,11 @@ export default function CourtAideDashboard() {
   const quickActions = [
     {
       title: 'Supply Room',
-      description: 'Fulfill pending supply requests',
+      description: 'Fulfill and manage supply requests',
       icon: Package,
       path: '/supply-room',
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
-    },
-    {
-      title: 'Supply Orders',
-      description: 'Create and manage purchase orders',
-      icon: ShoppingCart,
-      path: '/supply-orders',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
     },
     {
       title: 'Inventory',
@@ -97,8 +89,8 @@ export default function CourtAideDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Requests</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeOrders}</div>
