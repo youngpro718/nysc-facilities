@@ -11,7 +11,8 @@ import {
   AlertTriangle, 
   TrendingDown,
   Edit,
-  Boxes
+  Boxes,
+  RefreshCcw
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { InventoryActivityLog } from './InventoryActivityLog';
@@ -47,6 +48,7 @@ export function InventoryManagementTab() {
       return data as InventoryItem[];
     },
     refetchInterval: 30000,
+    staleTime: 0, // Always consider data stale to get fresh updates
   });
 
   // Filter items
@@ -173,6 +175,15 @@ export function InventoryManagementTab() {
             size="sm"
           >
             Out of Stock ({outOfStockItems})
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Refresh
           </Button>
         </div>
         <Button size="sm">

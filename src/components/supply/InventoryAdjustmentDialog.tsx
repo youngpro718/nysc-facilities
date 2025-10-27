@@ -172,8 +172,15 @@ export function InventoryAdjustmentDialog({
         }
       );
       
+      // Invalidate all inventory-related queries to force refresh
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-items-all'] });
+      queryClient.invalidateQueries({ queryKey: ['storage-rooms'] });
+      
+      // Also refetch immediately to ensure UI updates
+      await queryClient.refetchQueries({ queryKey: ['inventory-items'] });
+      await queryClient.refetchQueries({ queryKey: ['inventory-items-all'] });
       
       handleClose();
     },
