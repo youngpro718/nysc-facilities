@@ -8,16 +8,30 @@ import { Loader2, CheckCircle, AlertTriangle, Package } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { FulfillmentSuccessScreen } from './FulfillmentSuccessScreen';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SimpleFulfillmentDialogProps {
   order: any;
   onClose: () => void;
 }
 
+interface InventoryChange {
+  itemName: string;
+  before: number;
+  after: number;
+  subtracted: number;
+  unit: string;
+}
+
 export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDialogProps) {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [isCompleting, setIsCompleting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [inventoryChanges, setInventoryChanges] = useState<InventoryChange[]>([]);
+  const [receiptNumber, setReceiptNumber] = useState('');
 
   const requesterName = order.profiles 
     ? `${order.profiles.first_name} ${order.profiles.last_name}`
@@ -50,6 +64,9 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
     try {
       console.log('Starting order fulfillment for order:', order.id);
 
+      // Track inventory changes for success screen
+      const changes: InventoryChange[] = [];
+
       // 1. Update order status to picking
       const { error: pickingError } = await supabase
         .from('supply_requests')
@@ -64,6 +81,19 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
       // 2. For each item, mark as fulfilled and subtract from inventory
       for (const item of order.supply_request_items) {
         console.log('Fulfilling item:', item.inventory_items?.name, 'Qty:', item.quantity_requested);
+
+        const beforeStock = item.inventory_items?.quantity || 0;
+        const subtracted = item.quantity_requested;
+        const afterStock = beforeStock - subtracted;
+
+        // Track this change
+        changes.push({
+          itemName: item.inventory_items?.name || 'Unknown Item',
+          before: beforeStock,
+          after: afterStock,
+          subtracted: subtracted,
+          unit: item.inventory_items?.unit || 'units',
+        });
 
         // Mark item as fulfilled
         const { error: itemError } = await supabase
@@ -96,6 +126,9 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
         console.log('✓ Item fulfilled and inventory updated');
       }
 
+      // Store changes for success screen
+      setInventoryChanges(changes);
+
       // 3. Mark order as completed
       const { error: completeError } = await supabase
         .from('supply_requests')
@@ -123,12 +156,14 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
         })),
       };
 
+      const receiptNum = `RCP-${order.id.slice(0, 8).toUpperCase()}`;
+      
       const { error: receiptError } = await supabase
         .from('supply_request_receipts')
         .insert({
           request_id: order.id,
           receipt_type: 'pickup',
-          receipt_number: `RCP-${order.id.slice(0, 8).toUpperCase()}`,
+          receipt_number: receiptNum,
           pdf_data: receiptData,
         });
 
@@ -139,16 +174,15 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
 
       console.log('✅ Order fulfilled successfully!');
 
-      toast({
-        title: 'Order Fulfilled!',
-        description: `Order #${order.id.slice(0, 8).toUpperCase()} has been completed and inventory updated.`,
-      });
+      // Store receipt number for success screen
+      setReceiptNumber(receiptNum);
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['supply-orders'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
 
-      onClose();
+      // Show success screen instead of just closing
+      setShowSuccess(true);
 
     } catch (error: any) {
       console.error('Error fulfilling order:', error);
@@ -289,6 +323,26 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
           )}
         </div>
       </DialogContent>
+
+      {/* Success Screen - Shows after fulfillment */}
+      {showSuccess && (
+        <FulfillmentSuccessScreen
+          open={showSuccess}
+          onClose={() => {
+            setShowSuccess(false);
+            onClose();
+          }}
+          orderNumber={order.id.slice(0, 8).toUpperCase()}
+          requesterName={requesterName}
+          deliveryLocation={order.delivery_location || 'Not specified'}
+          inventoryChanges={inventoryChanges}
+          receiptNumber={receiptNumber}
+          fulfilledBy={profile?.first_name && profile?.last_name 
+            ? `${profile.first_name} ${profile.last_name}` 
+            : 'Supply Staff'}
+          completedAt={new Date()}
+        />
+      )}
     </Dialog>
   );
 }
