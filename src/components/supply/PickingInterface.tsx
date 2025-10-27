@@ -90,17 +90,23 @@ export function PickingInterface({ request, onComplete, onCancel }: PickingInter
 
         if (itemError) throw itemError;
 
-        // 3. DEDUCT INVENTORY IMMEDIATELY
+        // 3. DEDUCT INVENTORY via transaction (trigger will update inventory_items)
         if (pickedData.quantityPicked > 0) {
-          const { error: invError } = await supabase.rpc('adjust_inventory_quantity', {
-            p_item_id: itemId,
-            p_quantity_change: -pickedData.quantityPicked,
-            p_transaction_type: 'fulfilled',
-            p_reference_id: request.id,
-            p_notes: `Ready for pickup: ${request.title}`,
-          });
+          const currentStock = inventoryLevels?.[itemId] || 0;
+          
+          const { error: invError } = await supabase
+            .from('inventory_item_transactions')
+            .insert({
+              item_id: itemId,
+              transaction_type: 'fulfilled',
+              quantity: pickedData.quantityPicked,
+              previous_quantity: currentStock,
+              new_quantity: currentStock - pickedData.quantityPicked,
+              notes: `Order #${request.id.slice(0, 8)} ready for pickup: ${request.title}`,
+            });
 
           if (invError) throw invError;
+          // Trigger automatically deducts from inventory_items
         }
       }
 

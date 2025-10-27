@@ -11,8 +11,7 @@ import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
- // Temporary forced minimum for low stock across UI (should match service)
- const FORCED_MINIMUM = 3;
+import { useInventoryRealtimeSync } from "@/hooks/optimized/useOptimizedInventory";
 type InventoryItem = {
   id: string;
   name: string;
@@ -59,6 +58,9 @@ export const InventoryItemsPanel = () => {
   const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Enable real-time synchronization
+  useInventoryRealtimeSync();
 
   // Reference data
   const { data: categories } = useQuery<InventoryCategory[]>({
@@ -217,7 +219,7 @@ export const InventoryItemsPanel = () => {
           Name: it.name,
           Quantity: it.quantity,
           Unit: it.unit || "",
-          Minimum: FORCED_MINIMUM,
+          Minimum: it.minimum_quantity,
           Category: cat?.name ?? "",
           Room: room?.name ?? "",
           RoomNumber: room?.room_number ?? "",
@@ -255,9 +257,9 @@ export const InventoryItemsPanel = () => {
     }
   };
 
-  const getStockStatus = (quantity: number) => {
+  const getStockStatus = (quantity: number, minimumQuantity: number) => {
     if (quantity === 0) return { label: "Out of Stock", color: "bg-destructive text-destructive-foreground" };
-    if (quantity > 0 && quantity <= FORCED_MINIMUM) return { label: "Low Stock", color: "bg-destructive/10 text-destructive" };
+    if (quantity > 0 && quantity <= minimumQuantity) return { label: "Low Stock", color: "bg-destructive/10 text-destructive" };
     return { label: "In Stock", color: "bg-secondary text-secondary-foreground" };
   };
 
@@ -410,7 +412,7 @@ export const InventoryItemsPanel = () => {
           </Card>
         ) : (
           items?.map((item) => {
-            const stockStatus = getStockStatus(item.quantity);
+            const stockStatus = getStockStatus(item.quantity, item.minimum_quantity);
             return (
               <Card key={item.id}>
                 <CardHeader>
@@ -436,10 +438,10 @@ export const InventoryItemsPanel = () => {
                           <Package className="h-4 w-4" />
                           Quantity: {item.quantity} {item.unit && `(${item.unit})`}
                         </div>
-                        {FORCED_MINIMUM > 0 && (
+                        {item.minimum_quantity > 0 && (
                           <div className="flex items-center gap-1">
                             <TrendingDown className="h-4 w-4" />
-                            Min: {FORCED_MINIMUM}
+                            Min: {item.minimum_quantity}
                           </div>
                         )}
                         {(() => {

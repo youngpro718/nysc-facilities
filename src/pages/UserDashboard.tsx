@@ -185,7 +185,7 @@ export default function UserDashboard() {
           firstName={firstName}
           lastName={lastName}
           email={user?.email}
-          department={(profile as any)?.department || personnelInfo?.department}
+          department={(profile as any)?.department || (personnelInfo as any)?.department}
           roomNumber={(profile as any)?.room_number || personnelInfo?.roomNumber}
           extension={(profile as any)?.extension || personnelInfo?.extension}
           avatarUrl={profile?.avatar_url}

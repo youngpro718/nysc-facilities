@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import { OptimizedInventoryService } from '@/services/optimized/inventoryService';
 import type {
   OptimizedInventoryItem,
@@ -153,6 +154,50 @@ export function useInventoryAnalytics() {
     isLoading: statsLoading || categoriesLoading || lowStockLoading,
     isError: false, // Individual hooks handle their own errors
   };
+}
+
+/**
+ * Real-time inventory updates hook
+ */
+export function useInventoryRealtimeSync() {
+  const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('inventory-realtime-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inventory_items'
+        },
+        (payload) => {
+          console.log('Inventory changed:', payload);
+          // Invalidate all inventory-related queries
+          queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.all });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inventory_item_transactions'
+        },
+        (payload) => {
+          console.log('Inventory transaction recorded:', payload);
+          // Refresh items and stats when transactions occur
+          queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.allItems() });
+          queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.dashboardStats() });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 }
 
 /**

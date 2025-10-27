@@ -101,7 +101,6 @@ export function InventoryAdjustmentDialog({
       console.log('Update result:');
       console.log('  Data returned:', updateData);
       console.log('  Error:', updateError);
-      console.log('  Rows affected:', updateData?.length || 0);
 
       if (updateError) {
         console.error('❌ Update failed:', updateError);

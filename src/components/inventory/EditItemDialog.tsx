@@ -120,12 +120,31 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
 
   const updateItemMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const newQuantity = parseInt(data.quantity) || 0;
+      const oldQuantity = item.quantity;
+      
+      // 1. Create transaction record if quantity changed
+      if (newQuantity !== oldQuantity) {
+        const { error: txError } = await supabase
+          .from("inventory_item_transactions")
+          .insert({
+            item_id: item.id,
+            transaction_type: 'adjustment',
+            quantity: newQuantity,
+            previous_quantity: oldQuantity,
+            new_quantity: newQuantity,
+            notes: 'Manual edit via Edit Item dialog',
+          });
+        if (txError) throw txError;
+        // Trigger will automatically update inventory_items.quantity
+      }
+      
+      // 2. Update other fields (NOT quantity - trigger handles that)
       const { error } = await supabase
         .from("inventory_items")
         .update({
           name: data.name,
           description: data.description || null,
-          quantity: parseInt(data.quantity) || 0,
           minimum_quantity: parseInt(data.minimum_quantity) || 0,
           unit: data.unit || null,
           category_id: data.category_id || null,
