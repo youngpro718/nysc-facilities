@@ -81,17 +81,33 @@ export function InventoryAdjustmentDialog({
 
       // Update inventory item
       console.log('🔄 Updating inventory item...');
-      const { data: updateData, error: updateError } = await supabase
+      console.log('  Table: inventory_items');
+      console.log('  Item ID:', item.id);
+      console.log('  New quantity:', newQuantity);
+      
+      const updateQuery = supabase
         .from('inventory_items')
         .update({ quantity: newQuantity })
         .eq('id', item.id)
         .select();
 
-      console.log('Update result:', { data: updateData, error: updateError });
+      console.log('  Query built:', updateQuery);
+
+      const { data: updateData, error: updateError } = await updateQuery;
+
+      console.log('Update result:');
+      console.log('  Data returned:', updateData);
+      console.log('  Error:', updateError);
+      console.log('  Rows affected:', updateData?.length || 0);
 
       if (updateError) {
         console.error('❌ Update failed:', updateError);
         throw updateError;
+      }
+
+      if (!updateData || updateData.length === 0) {
+        console.error('❌ No rows updated - check if item exists and user has permission');
+        throw new Error('No rows were updated. The item may not exist or you may not have permission to update it.');
       }
 
       // Record transaction
@@ -118,6 +134,28 @@ export function InventoryAdjustmentDialog({
       if (transactionError) {
         console.error('❌ Transaction failed:', transactionError);
         throw transactionError;
+      }
+
+      // Verify the update actually worked
+      console.log('🔍 Verifying update...');
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('inventory_items')
+        .select('id, name, quantity')
+        .eq('id', item.id)
+        .single();
+
+      console.log('Verification result:');
+      console.log('  Current quantity in DB:', verifyData?.quantity);
+      console.log('  Expected quantity:', newQuantity);
+      console.log('  Match:', verifyData?.quantity === newQuantity);
+
+      if (verifyError) {
+        console.error('❌ Verification failed:', verifyError);
+      }
+
+      if (verifyData?.quantity !== newQuantity) {
+        console.error('❌ Update verification failed - quantity not updated in database');
+        throw new Error('Update verification failed - the quantity was not actually updated in the database');
       }
 
       console.log('✅ Adjustment completed successfully!');
