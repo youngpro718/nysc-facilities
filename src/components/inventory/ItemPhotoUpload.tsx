@@ -85,7 +85,9 @@ export function ItemPhotoUpload({
       if (updateError) throw updateError;
 
       // Invalidate inventory queries to trigger re-fetch
-      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === "inventory-items"
+      });
       
       onPhotoUploaded(publicUrl.publicUrl);
       onOpenChange(false);
@@ -131,7 +133,9 @@ export function ItemPhotoUpload({
       if (updateError) throw updateError;
 
       // Invalidate inventory queries to trigger re-fetch
-      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === "inventory-items"
+      });
 
       onPhotoUploaded('');
       onOpenChange(false);

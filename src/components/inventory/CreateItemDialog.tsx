@@ -104,8 +104,16 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory-stats"] });
+      // Invalidate ALL inventory-related queries using predicate matching
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === "inventory-items" || 
+          query.queryKey[0] === "inventory-stats" ||
+          query.queryKey[0] === "inventory-categories" ||
+          query.queryKey[0] === "optimized-inventory" ||
+          query.queryKey[0] === "storage-rooms"
+      });
+      
       toast({
         title: "Item created",
         description: "Inventory item has been created successfully.",
