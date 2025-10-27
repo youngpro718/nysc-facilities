@@ -204,3 +204,55 @@ export async function confirmPickup(requestId: string) {
 
   if (error) throw error;
 }
+
+/**
+ * Cancel a supply request (only requester can cancel)
+ */
+export async function cancelSupplyRequest(requestId: string, reason?: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  // Only allow canceling pending/submitted/received requests
+  const { data: request, error: fetchError } = await supabase
+    .from('supply_requests')
+    .select('status, requester_id')
+    .eq('id', requestId)
+    .single();
+
+  if (fetchError) throw fetchError;
+  if (request.requester_id !== user.id) {
+    throw new Error('Only the requester can cancel this request');
+  }
+  if (!['pending', 'submitted', 'received'].includes(request.status)) {
+    throw new Error('Cannot cancel request in current status');
+  }
+
+  const { error } = await supabase
+    .from('supply_requests')
+    .update({
+      status: 'cancelled',
+      rejection_reason: reason || 'Cancelled by requester',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', requestId);
+
+  if (error) throw error;
+}
+
+/**
+ * Archive a completed request (soft delete)
+ */
+export async function archiveSupplyRequest(requestId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { error } = await supabase
+    .from('supply_requests')
+    .update({
+      metadata: { archived: true, archived_at: new Date().toISOString() }
+    })
+    .eq('id', requestId)
+    .eq('requester_id', user.id);
+
+  if (error) throw error;
+}

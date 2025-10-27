@@ -15,7 +15,11 @@ import {
   ChevronUp,
   Plus,
   ShoppingCart,
-  Receipt
+  Receipt,
+  X,
+  Archive,
+  EyeOff,
+  Eye
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -24,8 +28,19 @@ import { ReceiptDialog } from '@/components/supply/ReceiptDialog';
 import { useSupplyReceipts } from '@/hooks/useSupplyReceipts';
 import { createReceiptData } from '@/lib/receiptUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { confirmPickup } from '@/services/supplyOrdersService';
+import { confirmPickup, cancelSupplyRequest, archiveSupplyRequest } from '@/services/supplyOrdersService';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface SupplyRequest {
   id: string;
@@ -36,6 +51,10 @@ interface SupplyRequest {
   updated_at: string;
   supply_request_items?: any[];
   notes?: string;
+  metadata?: {
+    archived?: boolean;
+    archived_at?: string;
+  };
 }
 
 interface EnhancedSupplyTrackerProps {
@@ -97,6 +116,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
     requests.length > 0 ? requests[0].id : null
   );
   const [showNewRequestForm, setShowNewRequestForm] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(true);
   const [selectedReceiptRequestId, setSelectedReceiptRequestId] = useState<string | null>(null);
   const { data: receipts } = useSupplyReceipts(selectedReceiptRequestId || undefined);
 
@@ -111,9 +131,39 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
     },
   });
 
-  const activeRequests = requests.filter(r => 
+  const cancelRequestMutation = useMutation({
+    mutationFn: (requestId: string) => cancelSupplyRequest(requestId, 'Cancelled by user'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
+      toast.success('Request cancelled');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to cancel request');
+    },
+  });
+
+  const archiveRequestMutation = useMutation({
+    mutationFn: archiveSupplyRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
+      toast.success('Request archived');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to archive request');
+    },
+  });
+
+  // Filter out archived requests and optionally hide completed
+  const visibleRequests = requests.filter(r => !(r.metadata as any)?.archived);
+  const displayedRequests = showCompleted 
+    ? visibleRequests 
+    : visibleRequests.filter(r => r.status !== 'completed');
+
+  const activeRequests = visibleRequests.filter(r => 
     !['completed', 'rejected', 'cancelled'].includes(r.status)
   );
+  
+  const completedCount = visibleRequests.filter(r => r.status === 'completed').length;
 
   const toggleExpand = (requestId: string) => {
     setExpandedRequest(expandedRequest === requestId ? null : requestId);
@@ -165,13 +215,32 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
               )}
             </div>
           </div>
-          <Dialog open={showNewRequestForm} onOpenChange={setShowNewRequestForm}>
-            {/* Quick Order removed - users should use proper request form */}
-          </Dialog>
+          {completedCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowCompleted(!showCompleted)}
+              className="h-8 text-xs flex-shrink-0"
+            >
+              {showCompleted ? (
+                <>
+                  <EyeOff className="h-3 w-3 mr-1.5" />
+                  <span className="hidden sm:inline">Hide Completed ({completedCount})</span>
+                  <span className="sm:hidden">{completedCount}</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="h-3 w-3 mr-1.5" />
+                  <span className="hidden sm:inline">Show Completed ({completedCount})</span>
+                  <span className="sm:hidden">{completedCount}</span>
+                </>
+              )}
+            </Button>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 px-2 sm:px-6 py-3">
-        {requests.map((request) => {
+        {displayedRequests.map((request) => {
           const isExpanded = expandedRequest === request.id;
           const currentStageIndex = getCurrentStageIndex(request.status);
           const progress = getStageProgress(request.status);
@@ -182,7 +251,11 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
             <div
               key={request.id}
               className={`border rounded-lg transition-all touch-manipulation ${
-                isActive ? 'border-primary/30 bg-primary/5' : 'border-border'
+                request.status === 'completed'
+                  ? 'border-success bg-success/5'
+                  : isActive 
+                    ? 'border-primary/30 bg-primary/5' 
+                    : 'border-border'
               }`}
             >
               {/* Header - iPhone Optimized with larger touch targets */}
@@ -221,7 +294,16 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                     <Badge variant="outline" className="text-xs px-2 py-1">
                       {itemCount} {itemCount === 1 ? 'item' : 'items'}
                     </Badge>
-                    {isActive && (
+                    
+                    {/* Completed badge */}
+                    {request.status === 'completed' && (
+                      <Badge className="bg-success text-success-foreground border-success text-xs px-2 py-1">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Completed
+                      </Badge>
+                    )}
+                    
+                    {isActive && request.status !== 'completed' && (
                       <Badge variant="outline" className="bg-success/10 text-success-foreground border-success/30 text-xs px-2 py-1">
                         Active
                       </Badge>
@@ -343,7 +425,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                     </div>
                   )}
 
-                  {request.status === 'completed' && (
+                   {request.status === 'completed' && (
                     <div className="bg-success/10 border border-success/30 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-success-foreground">
@@ -361,6 +443,58 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                       </div>
                     </div>
                   )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-4 border-t">
+                    {/* Cancel button - only for pending/submitted/received */}
+                    {['pending', 'submitted', 'received'].includes(request.status) && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="flex-1">
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel Request
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancel Supply Request?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will cancel your request for "{request.title}". 
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Keep Request</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                cancelRequestMutation.mutate(request.id);
+                              }}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Yes, Cancel Request
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+
+                    {/* Archive button - only for completed */}
+                    {request.status === 'completed' && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          archiveRequestMutation.mutate(request.id);
+                        }}
+                        className="flex-1"
+                      >
+                        <Archive className="h-4 w-4 mr-2" />
+                        Archive
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

@@ -160,7 +160,7 @@ export default function UserDashboard() {
       const { data, error } = await supabase
         .from('key_assignments')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('occupant_id', user.id)
         .is('returned_at', null);
       if (error) throw error;
       return data || [];

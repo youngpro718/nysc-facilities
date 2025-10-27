@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Package, User, MapPin, Clock } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Package, User, MapPin, Clock, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface SimpleOrderCardProps {
@@ -19,6 +20,12 @@ export function SimpleOrderCard({ order, onFulfill }: SimpleOrderCardProps) {
   const deliveryRoom = order.delivery_location || 'Not specified';
   const itemCount = order.supply_request_items?.length || 0;
   const timeAgo = formatDistanceToNow(new Date(order.created_at), { addSuffix: true });
+
+  // Calculate if order is stuck in picking
+  const pickingDuration = order.picking_started_at 
+    ? (Date.now() - new Date(order.picking_started_at).getTime()) / 60000 
+    : 0;
+  const isStuckInPicking = order.status === 'picking' && pickingDuration > 5;
 
   // Determine priority badge
   const getPriorityBadge = () => {
@@ -63,6 +70,17 @@ export function SimpleOrderCard({ order, onFulfill }: SimpleOrderCardProps) {
             <span>Requested {timeAgo}</span>
           </div>
         </div>
+
+        {/* Stuck in Picking Warning */}
+        {isStuckInPicking && (
+          <Alert variant="destructive" className="border-yellow-500 bg-yellow-500/10">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-sm">
+              This order has been in picking status for {Math.round(pickingDuration)} minutes. 
+              Don't forget to mark it ready when done!
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Items List */}
         <div className="border-t pt-3">
