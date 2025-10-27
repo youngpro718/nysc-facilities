@@ -162,7 +162,7 @@ export function InventoryAdjustmentDialog({
       console.log('✅ Adjustment completed successfully!');
       return { previousQuantity, newQuantity, adjustmentAmount };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (!data) return;
       
       toast.success(
