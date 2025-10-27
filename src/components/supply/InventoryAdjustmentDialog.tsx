@@ -85,13 +85,16 @@ export function InventoryAdjustmentDialog({
       console.log('  Item ID:', item.id);
       console.log('  New quantity:', newQuantity);
       
+      // Try without .select() first to see if that's the issue
       const updateQuery = supabase
         .from('inventory_items')
         .update({ quantity: newQuantity })
-        .eq('id', item.id)
-        .select();
+        .eq('id', item.id);
 
       console.log('  Query built:', updateQuery);
+      console.log('  Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log('  Item ID type:', typeof item.id);
+      console.log('  New quantity type:', typeof newQuantity);
 
       const { data: updateData, error: updateError } = await updateQuery;
 
