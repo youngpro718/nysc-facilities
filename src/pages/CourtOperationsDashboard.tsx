@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { TodaysStatusDashboard } from "@/components/court-operations/TodaysStatusDashboard";
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
@@ -11,6 +12,7 @@ import { Activity, Users, CalendarCheck, Wrench } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
+import { useCourtOperationsCounts } from "@/hooks/useCourtOperationsCounts";
 import { Button } from "@/components/ui/button";
 
 export const CourtOperationsDashboard = () => {
@@ -20,6 +22,9 @@ export const CourtOperationsDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const tab = searchParams.get('tab') || 'today';
+
+  // Get counts for tab badges
+  const counts = useCourtOperationsCounts();
 
   // Determine when to glow/highlight the Manage Assignments tab
   const { getRecentlyAffectedRooms } = useCourtIssuesIntegration();
@@ -68,10 +73,20 @@ export const CourtOperationsDashboard = () => {
           <TabsTrigger value="today" className="flex items-center gap-2">
             <Activity className="h-4 w-4 flex-shrink-0" />
             Today's Status
+            {counts.todaysSessions > 0 && (
+              <Badge variant="secondary" className="ml-1">
+                {counts.todaysSessions}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="daily-sessions" className="flex items-center gap-2">
             <CalendarCheck className="h-4 w-4 flex-shrink-0" />
             Daily Sessions
+            {counts.dailySessions > 0 && (
+              <Badge variant="outline" className="ml-1">
+                {counts.dailySessions}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger
             value="assignments"
@@ -82,10 +97,20 @@ export const CourtOperationsDashboard = () => {
             )}
             <Users className="h-4 w-4 flex-shrink-0" />
             Full Assignments
+            {counts.assignments > 0 && (
+              <Badge variant="destructive" className="ml-1">
+                {counts.assignments}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="management" className="flex items-center gap-2">
             <Wrench className="h-4 w-4 flex-shrink-0" />
             Management Tools
+            {counts.maintenanceIssues > 0 && (
+              <Badge variant="destructive" className="ml-1">
+                {counts.maintenanceIssues}
+              </Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
