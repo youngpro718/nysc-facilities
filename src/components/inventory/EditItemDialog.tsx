@@ -159,13 +159,25 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory-stats"] });
+      // Invalidate ALL inventory-related queries using predicate matching
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === "inventory-items" || 
+          query.queryKey[0] === "inventory-stats" ||
+          query.queryKey[0] === "inventory-categories" ||
+          query.queryKey[0] === "optimized-inventory" ||
+          query.queryKey[0] === "storage-rooms"
+      });
+      
       toast({
         title: "Item updated",
         description: "Inventory item has been updated successfully.",
       });
-      onOpenChange(false);
+      
+      // Delay closing dialog to allow queries to refetch
+      setTimeout(() => {
+        onOpenChange(false);
+      }, 300);
     },
     onError: (error) => {
       toast({

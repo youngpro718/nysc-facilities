@@ -157,7 +157,10 @@ export const InventoryItemsPanel = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
+      // Invalidate ALL inventory queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === "inventory-items"
+      });
       toast({
         title: "Item deleted",
         description: "Inventory item has been deleted successfully.",
