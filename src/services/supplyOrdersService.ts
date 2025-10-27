@@ -51,7 +51,6 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     requested_delivery_date: payload.requested_delivery_date || null,
     delivery_location: payload.delivery_location || '',
     status: 'submitted',
-    // Hint for back office: many schemas already have this column; if not present, Supabase will ignore extra keys when using RPC.
     approval_notes: approvalRequired ? 'approval_required:auto' : null,
   };
 
@@ -87,5 +86,102 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     });
   if (histErr) throw histErr;
 
-  return { ...request, approval_required: approvalRequired };
+  return { request, approval_required: approvalRequired };
+}
+
+/**
+ * Accept an order and assign it to the current user
+ */
+export async function acceptOrder(requestId: string, userId: string) {
+  const { error } = await supabase
+    .from('supply_requests')
+    .update({
+      status: 'received',
+      assigned_fulfiller_id: userId,
+      work_started_at: new Date().toISOString(),
+    })
+    .eq('id', requestId);
+
+  if (error) throw error;
+}
+
+/**
+ * Start picking items for an order
+ */
+export async function startPicking(requestId: string) {
+  const { error } = await supabase
+    .from('supply_requests')
+    .update({
+      status: 'picking',
+      picking_started_at: new Date().toISOString(),
+    })
+    .eq('id', requestId);
+
+  if (error) throw error;
+}
+
+/**
+ * Mark order as ready and deduct inventory
+ */
+export async function markOrderReady(
+  requestId: string,
+  items: Array<{ item_id: string; quantity_fulfilled: number }>
+) {
+  // Update request status
+  const { error: statusError } = await supabase
+    .from('supply_requests')
+    .update({
+      status: 'ready',
+      picking_completed_at: new Date().toISOString(),
+      ready_for_delivery_at: new Date().toISOString(),
+    })
+    .eq('id', requestId);
+
+  if (statusError) throw statusError;
+
+  // Update item quantities and deduct inventory
+  for (const item of items) {
+    if (item.quantity_fulfilled > 0) {
+      // Update supply request item
+      const { error: itemError } = await supabase
+        .from('supply_request_items')
+        .update({ quantity_fulfilled: item.quantity_fulfilled })
+        .eq('request_id', requestId)
+        .eq('item_id', item.item_id);
+
+      if (itemError) throw itemError;
+
+      // Deduct from inventory
+      const { error: invError } = await supabase.rpc('adjust_inventory_quantity', {
+        p_item_id: item.item_id,
+        p_quantity_change: -item.quantity_fulfilled,
+        p_transaction_type: 'fulfilled',
+        p_reference_id: requestId,
+        p_notes: `Order ready for pickup`,
+      });
+
+      if (invError) throw invError;
+    }
+  }
+}
+
+/**
+ * Complete an order (user picked up or delivered)
+ */
+export async function completeOrder(
+  requestId: string,
+  userId: string,
+  notes?: string
+) {
+  const { error } = await supabase
+    .from('supply_requests')
+    .update({
+      status: 'completed',
+      fulfilled_by: userId,
+      fulfilled_at: new Date().toISOString(),
+      fulfillment_notes: notes || null,
+    })
+    .eq('id', requestId);
+
+  if (error) throw error;
 }

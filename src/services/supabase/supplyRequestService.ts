@@ -124,21 +124,29 @@ export async function updateSupplyRequestStatus(
   status: string,
   notes?: string
 ) {
-  // Handle fulfillment separately using the dedicated function
-  if (status === 'fulfilled') {
-    const { error } = await supabase.rpc('fulfill_supply_request', {
-      p_request_id: requestId,
-      p_fulfillment_notes: notes
-    });
-    if (error) throw error;
-    return;
-  }
-
-  // Handle other status updates normally
   const updates: any = { status };
   
-  if (status === 'approved' || status === 'rejected') {
-    updates.approval_notes = notes;
+  // Set appropriate timestamp fields based on status
+  if (status === 'received') {
+    updates.work_started_at = new Date().toISOString();
+  } else if (status === 'picking') {
+    updates.picking_started_at = new Date().toISOString();
+  } else if (status === 'ready') {
+    updates.picking_completed_at = new Date().toISOString();
+    updates.ready_for_delivery_at = new Date().toISOString();
+  } else if (status === 'completed') {
+    updates.fulfilled_at = new Date().toISOString();
+  }
+  
+  // Add notes if provided
+  if (notes) {
+    if (status === 'rejected') {
+      updates.rejection_reason = notes;
+    } else if (status === 'completed') {
+      updates.fulfillment_notes = notes;
+    } else {
+      updates.approval_notes = notes;
+    }
   }
 
   const { error } = await supabase

@@ -22,7 +22,7 @@ interface OrderCartProps {
   totalItems: number;
   onRemove: (itemId: string) => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
-  onSubmit: (options?: any) => Promise<void>;
+  onSubmit: (options?: any) => Promise<any>;
   onClear: () => void;
   isSubmitting: boolean;
 }
