@@ -141,7 +141,8 @@ export const StorageRoomsPanel = () => {
   // Combine storage rooms with their items
   const storageRoomsWithItems: StorageRoomWithItems[] = (storageRooms || []).map(room => {
     const roomItems = (inventoryItems || []).filter(item => item.storage_room_id === room.id);
-    const lowStockItems = roomItems.filter(item => item.quantity <= item.minimum_quantity);
+    // FIXED: Low stock only if BELOW minimum (not at or below)
+    const lowStockItems = roomItems.filter(item => item.quantity > 0 && item.quantity < item.minimum_quantity);
     const totalQuantity = roomItems.reduce((sum, item) => sum + item.quantity, 0);
 
     return {

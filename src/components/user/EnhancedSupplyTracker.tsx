@@ -114,18 +114,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
               <span>My Supply Requests</span>
             </div>
           <Dialog open={showNewRequestForm} onOpenChange={setShowNewRequestForm}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Quick Order
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Quick Order Supplies</DialogTitle>
-                </DialogHeader>
-                <QuickOrderGrid />
-              </DialogContent>
+              {/* Quick Order removed - supply staff fulfill orders, they don't create them */}
             </Dialog>
           </CardTitle>
         </CardHeader>
@@ -162,21 +151,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
             </div>
           </div>
           <Dialog open={showNewRequestForm} onOpenChange={setShowNewRequestForm}>
-            <DialogTrigger asChild>
-              <Button 
-                size="sm" 
-                className="flex-shrink-0 touch-manipulation min-h-[44px] active:scale-95 transition-transform"
-              >
-                <ShoppingCart className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Quick Order</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Quick Order Supplies</DialogTitle>
-              </DialogHeader>
-              <QuickOrderGrid />
-            </DialogContent>
+            {/* Quick Order removed - users should use proper request form */}
           </Dialog>
         </CardTitle>
       </CardHeader>
