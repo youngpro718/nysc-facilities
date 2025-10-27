@@ -50,8 +50,10 @@ import { AvatarPromptModal } from "@/components/auth/AvatarPromptModal";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Package, Key, AlertTriangle, CheckCircle } from "lucide-react";
+import { UserInfoCard } from "@/components/dashboard/UserInfoCard";
+import { Bell, Package, Key, AlertTriangle, CheckCircle, Wrench } from "lucide-react";
 
 export default function UserDashboard() {
   const { user, profile, isLoading, isAuthenticated, isAdmin } = useAuth();
@@ -156,19 +158,11 @@ export default function UserDashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
-      <div className="space-y-3 pb-20 px-3 sm:px-0">
-        {/* Header - Mobile Optimized */}
-        <div className="flex items-start justify-between gap-2 pt-2">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight truncate">
-              Welcome, {firstName}!
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-              Your facility management dashboard
-            </p>
-          </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Notifications Dropdown */}
+      <div className="space-y-6 pb-20 px-3 sm:px-0">
+        {/* Header with Actions */}
+        <div className="flex items-center justify-between pt-2">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <div className="flex items-center gap-2">
             <NotificationDropdown
               notifications={notifications}
               onMarkAsRead={markAsRead}
@@ -176,8 +170,6 @@ export default function UserDashboard() {
               onClearNotification={clearNotification}
               onClearAllNotifications={clearAllNotifications}
             />
-            
-            {/* Report Issue Button - Mobile Optimized */}
             <QuickIssueReportButton 
               variant="default"
               size={isMobile ? "sm" : "default"}
@@ -188,17 +180,103 @@ export default function UserDashboard() {
           </div>
         </div>
 
-        {/* PRIORITY 1: Supply Requests - Mobile Optimized */}
-        <EnhancedSupplyTracker 
-          requests={supplyRequests}
-          featured={false}
+        {/* User Info Card */}
+        <UserInfoCard
+          firstName={firstName}
+          lastName={lastName}
+          email={user?.email}
+          department={(profile as any)?.department || personnelInfo?.department}
+          roomNumber={(profile as any)?.room_number || personnelInfo?.roomNumber}
+          extension={(profile as any)?.extension || personnelInfo?.extension}
+          avatarUrl={profile?.avatar_url}
+          supplyRequestsCount={activeSupplyRequests}
+          openIssuesCount={openIssues}
+          keysHeldCount={fulfilledKeys}
         />
 
-        {/* PRIORITY 2: Court Assignments - Using Court Operations Design */}
-        <TermSheetBoard />
+        {/* Tabbed Content */}
+        <Tabs defaultValue="supply-requests" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="supply-requests" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              <span className="hidden sm:inline">Supply Requests</span>
+              <span className="sm:hidden">Supplies</span>
+              {activeSupplyRequests > 0 && (
+                <Badge variant="destructive" className="ml-1">
+                  {activeSupplyRequests}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="maintenance" className="flex items-center gap-2">
+              <Wrench className="h-4 w-4" />
+              <span className="hidden sm:inline">Maintenance</span>
+              <span className="sm:hidden">Issues</span>
+              {openIssues > 0 && (
+                <Badge variant="destructive" className="ml-1">
+                  {openIssues}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="keys" className="flex items-center gap-2">
+              <Key className="h-4 w-4" />
+              Keys
+              {fulfilledKeys > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {fulfilledKeys}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Key Assignments - Mobile Optimized */}
-        <KeyAssignmentCard userId={user.id} />
+          <TabsContent value="supply-requests" className="space-y-4">
+            <EnhancedSupplyTracker 
+              requests={supplyRequests}
+              featured={false}
+            />
+          </TabsContent>
+
+          <TabsContent value="maintenance" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5" />
+                  My Issues & Maintenance Requests
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {userIssues.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No issues reported</p>
+                    <p className="text-sm mt-1">Click "Report Issue" to submit a new request</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {userIssues.map((issue) => (
+                      <div key={issue.id} className="border rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-medium">{issue.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {issue.description}
+                            </p>
+                          </div>
+                          <Badge variant={issue.status === 'open' ? 'destructive' : 'secondary'}>
+                            {issue.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="keys" className="space-y-4">
+            <KeyAssignmentCard userId={user.id} />
+          </TabsContent>
+        </Tabs>
       </div>
       
       <AvatarPromptModal
