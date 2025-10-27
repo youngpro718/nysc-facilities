@@ -1,5 +1,5 @@
 import React from 'react';
-import { EnhancedSupplyRoomDashboard } from '@/components/supply/EnhancedSupplyRoomDashboard';
+import { SimpleSupplyDashboard } from '@/components/supply/SimpleSupplyDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,7 +65,7 @@ export default function SupplyRoom() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <EnhancedSupplyRoomDashboard />
+      <SimpleSupplyDashboard />
     </div>
   );
 }
