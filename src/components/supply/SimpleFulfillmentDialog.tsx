@@ -129,12 +129,11 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
       // Store changes for success screen
       setInventoryChanges(changes);
 
-      // 3. Mark order as completed
+      // 3. Mark order as ready for pickup
       const { error: completeError } = await supabase
         .from('supply_requests')
         .update({
-          status: 'completed',
-          fulfilled_at: new Date().toISOString(),
+          status: 'ready',
           picking_completed_at: new Date().toISOString(),
           ready_for_delivery_at: new Date().toISOString(),
         })
@@ -308,7 +307,7 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
               ) : (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Mark All Fulfilled & Generate Receipt
+                  Mark Order Ready for Pickup
                 </>
               )}
             </Button>

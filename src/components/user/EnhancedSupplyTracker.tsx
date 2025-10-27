@@ -23,6 +23,9 @@ import { QuickOrderGrid } from '@/components/supply/QuickOrderGrid';
 import { ReceiptDialog } from '@/components/supply/ReceiptDialog';
 import { useSupplyReceipts } from '@/hooks/useSupplyReceipts';
 import { createReceiptData } from '@/lib/receiptUtils';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { confirmPickup } from '@/services/supplyOrdersService';
+import { toast } from 'sonner';
 
 interface SupplyRequest {
   id: string;
@@ -89,12 +92,24 @@ const getStatusColor = (status: string) => {
 };
 
 export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSupplyTrackerProps) {
+  const queryClient = useQueryClient();
   const [expandedRequest, setExpandedRequest] = useState<string | null>(
     requests.length > 0 ? requests[0].id : null
   );
   const [showNewRequestForm, setShowNewRequestForm] = useState(false);
   const [selectedReceiptRequestId, setSelectedReceiptRequestId] = useState<string | null>(null);
   const { data: receipts } = useSupplyReceipts(selectedReceiptRequestId || undefined);
+
+  const confirmPickupMutation = useMutation({
+    mutationFn: confirmPickup,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
+      toast.success('Order marked as complete!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to confirm pickup');
+    },
+  });
 
   const activeRequests = requests.filter(r => 
     !['completed', 'rejected', 'cancelled'].includes(r.status)
@@ -306,7 +321,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
 
                   {/* Status Message */}
                   {isActive && request.status === 'ready' && (
-                    <div className="bg-success/10 border border-success/30 rounded-lg p-3">
+                    <div className="bg-success/10 border border-success/30 rounded-lg p-4 space-y-3">
                       <div className="flex items-center gap-2 text-success-foreground">
                         <CheckCircle className="h-5 w-5" />
                         <div>
@@ -316,6 +331,15 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                           </div>
                         </div>
                       </div>
+                      <Button
+                        onClick={() => confirmPickupMutation.mutate(request.id)}
+                        disabled={confirmPickupMutation.isPending}
+                        className="w-full touch-target"
+                        size="lg"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Confirm I Picked This Up
+                      </Button>
                     </div>
                   )}
 

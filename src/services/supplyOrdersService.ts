@@ -185,3 +185,22 @@ export async function completeOrder(
 
   if (error) throw error;
 }
+
+/**
+ * Confirm pickup by requester (user confirms they picked up their order)
+ */
+export async function confirmPickup(requestId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { error } = await supabase
+    .from('supply_requests')
+    .update({
+      status: 'completed',
+      fulfilled_at: new Date().toISOString(),
+    })
+    .eq('id', requestId)
+    .eq('requester_id', user.id); // Security: only requester can confirm
+
+  if (error) throw error;
+}
