@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download } from "lucide-react";
+import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Camera } from "lucide-react";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
+import { ItemPhotoUpload } from "./ItemPhotoUpload";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useInventoryRealtimeSync } from "@/hooks/optimized/useOptimizedInventory";
@@ -50,6 +51,7 @@ export const InventoryItemsPanel = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
@@ -183,6 +185,11 @@ export const InventoryItemsPanel = () => {
   const handleStockAdjustment = (item: InventoryItem) => {
     setSelectedItem(item);
     setStockDialogOpen(true);
+  };
+
+  const handlePhotoUpload = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setPhotoDialogOpen(true);
   };
 
   const handleDelete = async (item: InventoryItem) => {
@@ -419,8 +426,17 @@ export const InventoryItemsPanel = () => {
             return (
               <Card key={item.id}>
                 <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Photo thumbnail if exists */}
+                    {item.photo_url && (
+                      <img 
+                        src={item.photo_url} 
+                        alt={item.name}
+                        className="w-16 h-16 object-cover rounded border"
+                      />
+                    )}
+                    
+                    <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-3">
                         <CardTitle className="text-lg">{item.name}</CardTitle>
                         <Badge className={stockStatus.color}>
@@ -459,6 +475,7 @@ export const InventoryItemsPanel = () => {
                         })()}
                       </div>
                     </div>
+                    
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -466,6 +483,14 @@ export const InventoryItemsPanel = () => {
                         onClick={() => handleStockAdjustment(item)}
                       >
                         Adjust Stock
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handlePhotoUpload(item)}
+                        title="Upload photo"
+                      >
+                        <Camera className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
@@ -552,6 +577,19 @@ export const InventoryItemsPanel = () => {
             open={stockDialogOpen}
             onOpenChange={setStockDialogOpen}
             item={selectedItem}
+          />
+
+          <ItemPhotoUpload
+            open={photoDialogOpen}
+            onOpenChange={setPhotoDialogOpen}
+            itemId={selectedItem.id}
+            itemName={selectedItem.name}
+            currentPhotoUrl={selectedItem.photo_url}
+            onPhotoUploaded={() => {
+              queryClient.invalidateQueries({ 
+                predicate: (query) => query.queryKey[0] === "inventory-items"
+              });
+            }}
           />
         </>
       )}
