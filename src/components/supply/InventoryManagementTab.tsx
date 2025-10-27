@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { InventoryActivityLog } from './InventoryActivityLog';
+import { InventoryAdjustmentDialog } from './InventoryAdjustmentDialog';
 
 interface InventoryItem {
   id: string;
@@ -31,6 +32,7 @@ interface InventoryItem {
 export function InventoryManagementTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterView, setFilterView] = useState<'all' | 'low' | 'out'>('all');
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   // Fetch inventory items
   const { data: items, isLoading, refetch } = useQuery({
@@ -231,9 +233,13 @@ export function InventoryManagementTab() {
                       )}
                     </div>
 
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setSelectedItem(item)}
+                    >
                       <Edit className="h-4 w-4 mr-2" />
-                      Edit
+                      Adjust
                     </Button>
                   </div>
                 </div>
@@ -299,6 +305,13 @@ export function InventoryManagementTab() {
 
       {/* Activity Log */}
       <InventoryActivityLog limit={20} />
+
+      {/* Adjustment Dialog */}
+      <InventoryAdjustmentDialog
+        item={selectedItem}
+        open={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
     </div>
   );
 }
