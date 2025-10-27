@@ -5,12 +5,14 @@ import { RefreshCcw, Package, Inbox } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { SimpleOrderCard } from './SimpleOrderCard';
 import { SimpleFulfillmentDialog } from './SimpleFulfillmentDialog';
+import { LiveIndicator } from '@/components/common/LiveIndicator';
 
 export function SimpleSupplyDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   // Fetch all pending/approved orders
-  const { data: orders, isLoading, refetch } = useQuery({
+  const { data: orders, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['supply-orders'],
     queryFn: async () => {
       console.log('Fetching supply orders...');
@@ -45,6 +47,7 @@ export function SimpleSupplyDashboard() {
       }
 
       console.log('Fetched orders:', data?.length || 0);
+      setLastUpdated(new Date());
       return data || [];
     },
     refetchInterval: 30000, // Auto-refresh every 30 seconds
@@ -81,22 +84,31 @@ export function SimpleSupplyDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Package className="h-8 w-8" />
             Supply Room - Incoming Orders
           </h1>
-          <p className="text-muted-foreground mt-2">
-            View and fulfill supply requests
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-muted-foreground">
+              View and fulfill supply requests
+            </p>
+            <LiveIndicator
+              lastUpdated={lastUpdated}
+              onRefresh={handleRefresh}
+              isRefreshing={isFetching}
+              autoRefreshInterval={30}
+              showRefreshButton={false}
+            />
+          </div>
         </div>
         <Button
           variant="outline"
           size="icon"
           onClick={handleRefresh}
-          disabled={isLoading}
+          disabled={isFetching}
         >
-          <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCcw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 

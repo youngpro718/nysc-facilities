@@ -3,6 +3,7 @@ import { SimpleSupplyDashboard } from '@/components/supply/SimpleSupplyDashboard
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EnhancedAccessDenied } from '@/components/common/EnhancedAccessDenied';
 import { AlertTriangle } from 'lucide-react';
 
 export default function SupplyRoom() {
@@ -44,22 +45,22 @@ export default function SupplyRoom() {
 
   if (!canManageSupplyRequests && !canManageInventory && !isSupplyDepartmentUser) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              Access Restricted
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              You don't have permission to access the supply room. Please contact your administrator 
-              if you need access to supply request management features.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <EnhancedAccessDenied
+        title="Supply Room Access Restricted"
+        description="You don't have permission to access the Supply Room. This area is restricted to supply room staff and authorized personnel."
+        requiredPermissions={[
+          'Supply Room Staff role',
+          'Supply Requests permission (write or admin)',
+          'Assignment to Supply Department'
+        ]}
+        currentPermissions={{
+          'Supply Requests': canManageSupplyRequests ? 'admin' : null,
+          'Inventory': canManageInventory ? 'admin' : null,
+          'Department': (profile as any)?.department || 'Not assigned',
+        }}
+        contactEmail="support@nysc.gov"
+        showRequestAccess={true}
+      />
     );
   }
 
