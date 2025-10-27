@@ -220,12 +220,13 @@ export function ImprovedSupplyStaffDashboard() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="new" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            New Orders
+            <span className="hidden sm:inline">New Orders</span>
+            <span className="sm:hidden">New</span>
             {newCount > 0 && (
               <Badge variant="destructive" className="ml-1">
                 {newCount}
@@ -234,7 +235,8 @@ export function ImprovedSupplyStaffDashboard() {
           </TabsTrigger>
           <TabsTrigger value="ready" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            Ready for Pickup
+            <span className="hidden sm:inline">Ready</span>
+            <span className="sm:hidden">Ready</span>
             {readyCount > 0 && (
               <Badge variant="secondary" className="ml-1">
                 {readyCount}
@@ -243,7 +245,12 @@ export function ImprovedSupplyStaffDashboard() {
           </TabsTrigger>
           <TabsTrigger value="completed" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
-            Completed
+            <span className="hidden sm:inline">Completed</span>
+            <span className="sm:hidden">Done</span>
+          </TabsTrigger>
+          <TabsTrigger value="inventory" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Inventory
           </TabsTrigger>
         </TabsList>
 
@@ -321,6 +328,33 @@ export function ImprovedSupplyStaffDashboard() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* Inventory Tab */}
+        <TabsContent value="inventory" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Inventory Management</span>
+                <Button size="sm">
+                  <Package className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12 text-muted-foreground">
+                <Package className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">Inventory Management</h3>
+                <p className="text-sm">
+                  Full inventory management will be available here.
+                </p>
+                <p className="text-sm mt-2">
+                  For now, use the main Inventory page from the navigation menu.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
