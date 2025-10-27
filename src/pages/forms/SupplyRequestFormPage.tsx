@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { ArrowLeft, ClipboardList, Send, Plus, X, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Send, Plus, X, CheckCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface SupplyItem {
@@ -19,9 +21,23 @@ interface SupplyItem {
 
 export default function SupplyRequestFormPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { hasPermission } = useRolePermissions();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Check if user is supply staff (they should NOT be able to create requests)
+  const isSupplyStaff = hasPermission('supply_requests', 'admin') || 
+                        hasPermission('supply_requests', 'write') ||
+                        (profile as any)?.department === 'Supply Department';
+
+  // Redirect supply staff away from this page
+  useEffect(() => {
+    if (isSupplyStaff) {
+      toast.error('Supply staff cannot create supply requests');
+      navigate('/supply-room');
+    }
+  }, [isSupplyStaff, navigate]);
   
   const [formData, setFormData] = useState({
     title: '',
