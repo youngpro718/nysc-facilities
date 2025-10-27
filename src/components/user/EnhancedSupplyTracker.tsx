@@ -41,13 +41,11 @@ interface EnhancedSupplyTrackerProps {
 }
 
 const SUPPLY_STAGES = [
-  { key: 'pending', label: 'Submitted', icon: ClipboardCheck, color: 'text-yellow-600' },
-  { key: 'under_review', label: 'Review', icon: Clock, color: 'text-blue-600' },
-  { key: 'approved', label: 'Approved', icon: CheckCircle, color: 'text-green-600' },
-  { key: 'picking', label: 'Picking', icon: Box, color: 'text-purple-600' },
-  { key: 'packing', label: 'Packing', icon: Package, color: 'text-indigo-600' },
-  { key: 'ready', label: 'Ready', icon: CheckCircle, color: 'text-green-600' },
-  { key: 'fulfilled', label: 'Delivered', icon: Truck, color: 'text-emerald-600' },
+  { key: 'submitted', label: 'Submitted', icon: ClipboardCheck, color: 'text-yellow-600' },
+  { key: 'received', label: 'Received', icon: Clock, color: 'text-blue-600' },
+  { key: 'picking', label: 'Picking Items', icon: Box, color: 'text-purple-600' },
+  { key: 'ready', label: 'Ready for Pickup', icon: Package, color: 'text-green-600' },
+  { key: 'completed', label: 'Completed', icon: CheckCircle, color: 'text-emerald-600' },
 ];
 
 const getStageProgress = (status: string): number => {
@@ -99,7 +97,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
   const { data: receipts } = useSupplyReceipts(selectedReceiptRequestId || undefined);
 
   const activeRequests = requests.filter(r => 
-    !['fulfilled', 'rejected', 'cancelled'].includes(r.status)
+    !['completed', 'rejected', 'cancelled'].includes(r.status)
   );
 
   const toggleExpand = (requestId: string) => {
@@ -346,7 +344,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                     </div>
                   )}
 
-                  {request.status === 'fulfilled' && (
+                  {request.status === 'completed' && (
                     <div className="bg-success/10 border border-success/30 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-success-foreground">

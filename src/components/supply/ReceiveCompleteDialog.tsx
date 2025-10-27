@@ -59,40 +59,8 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange, userId }: R
         throw requestError;
       }
 
-      // Update item quantities and deduct from inventory
-      for (const item of request.supply_request_items || []) {
-        const fulfilledQty = fulfilledQuantities[item.item_id] || 0;
-        console.log('Processing item:', { itemId: item.item_id, fulfilledQty });
-        
-        // Update supply request item
-        const { error: itemError } = await supabase
-          .from('supply_request_items')
-          .update({ quantity_fulfilled: fulfilledQty })
-          .eq('id', item.id);
-
-        if (itemError) {
-          console.error('Item update error:', itemError);
-          throw itemError;
-        }
-
-        // Deduct from inventory using the updated function
-        if (fulfilledQty > 0) {
-          console.log('Deducting from inventory:', { itemId: item.item_id, qty: -fulfilledQty });
-          const { error: invError } = await supabase.rpc('adjust_inventory_quantity', {
-            p_item_id: item.item_id,
-            p_quantity_change: -fulfilledQty,
-            p_transaction_type: 'fulfilled',
-            p_reference_id: request.id,
-            p_notes: `Fulfilled supply request: ${request.title}`
-          });
-
-          if (invError) {
-            console.error('Inventory adjustment error:', invError);
-            throw invError;
-          }
-          console.log('Inventory adjusted successfully');
-        }
-      }
+      // Note: Inventory was already deducted when order was marked as "ready"
+      // Just confirm the quantities were actually delivered
       
       // Fetch updated request data for receipt
       const { data: updatedRequest } = await supabase

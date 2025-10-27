@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Package, CheckCircle2, XCircle, AlertCircle, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2, Package, CheckCircle2, XCircle, AlertCircle, Clock, Inbox, User, Gift } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ReceiveCompleteDialog } from './ReceiveCompleteDialog';
-import { MarkReadyButton } from './MarkReadyButton';
+import { PickingInterface } from './PickingInterface';
+import { InventoryPreviewCard } from './InventoryPreviewCard';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +24,8 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [pickingDialogOpen, setPickingDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'new' | 'active' | 'ready'>('new');
 
   useEffect(() => {
     fetchRequests();
@@ -145,10 +150,46 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
     }
   };
 
-  const pendingRequests = requests.filter((r: any) => r.status === 'pending') || [];
+  // Filter requests by status
+  const newOrders = requests.filter((r: any) => r.status === 'submitted') || [];
+  const activeOrders = requests.filter((r: any) => ['received', 'picking'].includes(r.status)) || [];
+  const readyOrders = requests.filter((r: any) => r.status === 'ready') || [];
   const completedRequests = requests.filter((r: any) => r.status === 'completed') || [];
 
-  const handleReceive = (request: any) => {
+  const handleAcceptOrder = async (request: any) => {
+    try {
+      const { error } = await supabase
+        .from('supply_requests')
+        .update({
+          status: 'received',
+          assigned_fulfiller_id: user?.id,
+          work_started_at: new Date().toISOString(),
+        })
+        .eq('id', request.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Order Accepted',
+        description: 'Order assigned to you. Start picking when ready.',
+      });
+      fetchRequests();
+      setActiveTab('active');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to accept order',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleStartPicking = (request: any) => {
+    setSelectedRequest(request);
+    setPickingDialogOpen(true);
+  };
+
+  const handleCompleteOrder = (request: any) => {
     setSelectedRequest(request);
     setDialogOpen(true);
   };
@@ -164,105 +205,221 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
 
   const isSupplyStaff = userRole === 'supply_staff' || userRole === 'supply_manager';
 
+  const renderOrderCard = (request: any, showActions: boolean = true) => (
+    <div
+      key={request.id}
+      className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold">{request.title}</h3>
+            <Badge variant={getPriorityColor(request.priority)}>
+              {request.priority}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {request.status}
+            </Badge>
+          </div>
+          
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium">
+              {request.profiles?.first_name} {request.profiles?.last_name}
+            </span>
+            {request.profiles?.department && ` - ${request.profiles.department}`}
+          </div>
+
+          <div className="text-sm">
+            <span className="font-medium">Items:</span>
+            <ul className="mt-1 ml-4 space-y-1">
+              {request.supply_request_items?.slice(0, 3).map((item: any, idx: number) => (
+                <li key={idx} className="flex items-center gap-2">
+                  {item.inventory_items?.sku && (
+                    <Badge variant="outline" className="font-mono text-xs">
+                      {item.inventory_items.sku}
+                    </Badge>
+                  )}
+                  <span>
+                    {item.inventory_items?.name}: {item.quantity_requested} {item.inventory_items?.unit || 'units'}
+                  </span>
+                </li>
+              ))}
+              {(request.supply_request_items?.length || 0) > 3 && (
+                <li className="text-muted-foreground">
+                  +{request.supply_request_items.length - 3} more items
+                </li>
+              )}
+            </ul>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            Submitted {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
+          </div>
+        </div>
+
+        {isSupplyStaff && showActions && (
+          <div className="flex flex-col gap-2">
+            {request.status === 'submitted' && (
+              <Button 
+                onClick={() => handleAcceptOrder(request)}
+                size="lg"
+                className="min-h-12 min-w-32"
+              >
+                Accept Order
+              </Button>
+            )}
+            {request.status === 'received' && (
+              <Button 
+                onClick={() => handleStartPicking(request)}
+                size="lg"
+                className="min-h-12 min-w-32"
+              >
+                Start Picking
+              </Button>
+            )}
+            {request.status === 'picking' && (
+              <Button 
+                onClick={() => handleStartPicking(request)}
+                size="lg"
+                variant="outline"
+                className="min-h-12 min-w-32"
+              >
+                Continue Picking
+              </Button>
+            )}
+            {request.status === 'ready' && (
+              <Button 
+                onClick={() => handleCompleteOrder(request)}
+                size="lg"
+                className="min-h-12 min-w-36"
+              >
+                Complete Order
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="space-y-6">
-        {/* Pending Orders */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Pending Orders
-              {pendingRequests.length > 0 && (
-                <Badge variant="secondary">{pendingRequests.length}</Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {pendingRequests.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Package className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                <p>No pending orders</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingRequests.map((request: any) => (
-                  <div
-                    key={request.id}
-                    className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold">{request.title}</h3>
-                          <Badge variant={getPriorityColor(request.priority)}>
-                            {request.priority}
-                          </Badge>
-                        </div>
-                        
-                        <div className="text-sm text-muted-foreground">
-                          <span className="font-medium">
-                            {request.profiles?.first_name} {request.profiles?.last_name}
-                          </span>
-                          {request.profiles?.department && ` - ${request.profiles.department}`}
-                        </div>
+        {isSupplyStaff ? (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="new" className="relative">
+                <Inbox className="h-4 w-4 mr-2" />
+                New Orders
+                {newOrders.length > 0 && (
+                  <Badge variant="destructive" className="ml-2 h-5 min-w-5 px-1">
+                    {newOrders.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="active" className="relative">
+                <User className="h-4 w-4 mr-2" />
+                My Orders
+                {activeOrders.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1">
+                    {activeOrders.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="ready">
+                <Gift className="h-4 w-4 mr-2" />
+                Ready
+                {readyOrders.length > 0 && (
+                  <Badge variant="default" className="ml-2 h-5 min-w-5 px-1">
+                    {readyOrders.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-                        <div className="text-sm">
-                          <span className="font-medium">Items:</span>
-                          <ul className="mt-1 ml-4 space-y-1">
-                            {request.supply_request_items?.slice(0, 3).map((item: any, idx: number) => (
-                              <li key={idx} className="flex items-center gap-2">
-                                {item.inventory_items?.sku && (
-                                  <Badge variant="outline" className="font-mono text-xs">
-                                    {item.inventory_items.sku}
-                                  </Badge>
-                                )}
-                                <span>
-                                  {item.inventory_items?.name}: {item.quantity_requested} {item.inventory_items?.unit || 'units'}
-                                </span>
-                              </li>
-                            ))}
-                            {(request.supply_request_items?.length || 0) > 3 && (
-                              <li className="text-muted-foreground">
-                                +{request.supply_request_items.length - 3} more items
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-
-                        <div className="text-sm text-muted-foreground">
-                          Submitted {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
-                        </div>
-                      </div>
-
-                      {isSupplyStaff && (
-                        <div className="flex gap-3 flex-wrap">
-                          {request.status === 'pending' && (
-                            <MarkReadyButton requestId={request.id} />
-                          )}
-                          {(request.status === 'pending' || request.status === 'ready') && (
-                            <Button 
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleReceive(request);
-                              }}
-                              size="lg"
-                              className="min-h-12 min-w-36"
-                            >
-                              Complete Order
-                            </Button>
-                          )}
-                        </div>
-                      )}
+            <TabsContent value="new" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>New Orders</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {newOrders.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Inbox className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>No new orders</p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ) : (
+                    <div className="space-y-3">
+                      {newOrders.map((request: any) => renderOrderCard(request))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="active" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>My Active Orders</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {activeOrders.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <User className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>No active orders</p>
+                      <p className="text-sm mt-1">Accept orders from the "New Orders" tab</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {activeOrders.map((request: any) => renderOrderCard(request))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="ready" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ready for Pickup</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {readyOrders.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Gift className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>No orders ready for pickup</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {readyOrders.map((request: any) => renderOrderCard(request))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                My Supply Requests
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {requests.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <p>No supply requests</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {requests.map((request: any) => renderOrderCard(request, false))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Completed Orders (Collapsible) */}
         <Card>
@@ -331,6 +488,25 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
         onOpenChange={setDialogOpen}
         userId={user?.id || ''}
       />
+
+      <Dialog open={pickingDialogOpen} onOpenChange={setPickingDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Pick Items</DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <PickingInterface
+              request={selectedRequest}
+              onComplete={() => {
+                setPickingDialogOpen(false);
+                fetchRequests();
+                setActiveTab('ready');
+              }}
+              onCancel={() => setPickingDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

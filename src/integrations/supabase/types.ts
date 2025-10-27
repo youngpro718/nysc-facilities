@@ -9523,26 +9523,16 @@ export type Database = {
     }
     Functions: {
       add_admin_user: { Args: { email_to_promote: string }; Returns: undefined }
-      adjust_inventory_quantity:
-        | {
-            Args: {
-              p_item_id: string
-              p_notes?: string
-              p_quantity_change: number
-              p_transaction_type: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_item_id: string
-              p_notes?: string
-              p_quantity_change: number
-              p_reference_id?: string
-              p_transaction_type: string
-            }
-            Returns: undefined
-          }
+      adjust_inventory_quantity: {
+        Args: {
+          p_item_id: string
+          p_notes?: string
+          p_quantity_change: number
+          p_reference_id?: string
+          p_transaction_type: string
+        }
+        Returns: undefined
+      }
       admin_bulk_update_roles: { Args: { updates: Json[] }; Returns: Json }
       admin_fix_user_account: {
         Args: { target_user_id: string }

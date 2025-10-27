@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +29,8 @@ import {
   Calendar,
   DollarSign,
   RefreshCw,
-  XCircle
+  XCircle,
+  Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -295,6 +297,24 @@ export function InventoryManagement() {
         </Card>
 
       </div>
+
+      {/* Contextual Help */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>When to use the Inventory tab</AlertTitle>
+        <AlertDescription className="mt-2">
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li>Check stock levels before accepting large orders</li>
+            <li>Monitor low-stock alerts and items needing reorder</li>
+            <li>View usage trends for better planning</li>
+            <li>Update item locations and details</li>
+            <li>Track inventory changes and transactions</li>
+          </ul>
+          <p className="text-xs text-muted-foreground mt-2">
+            💡 Tip: Inventory is automatically deducted when orders are marked as "Ready for Pickup"
+          </p>
+        </AlertDescription>
+      </Alert>
 
       <Tabs defaultValue="inventory" className="space-y-4">
         <TabsList>
