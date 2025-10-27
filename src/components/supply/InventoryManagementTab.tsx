@@ -14,6 +14,7 @@ import {
   Boxes
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { InventoryActivityLog } from './InventoryActivityLog';
 
 interface InventoryItem {
   id: string;
@@ -59,9 +60,10 @@ export function InventoryManagementTab() {
       if (!matchesSearch) return false;
     }
 
-    // Filter by stock level
+    // Filter by stock level - FIXED LOGIC
     if (filterView === 'low') {
-      return item.quantity > 0 && item.quantity <= item.minimum_quantity;
+      // Low stock = BELOW minimum (not at minimum)
+      return item.quantity > 0 && item.quantity < item.minimum_quantity;
     } else if (filterView === 'out') {
       return item.quantity === 0;
     }
@@ -69,14 +71,16 @@ export function InventoryManagementTab() {
     return true;
   });
 
-  // Calculate stats
+  // Calculate stats - FIXED LOGIC
   const totalItems = items?.length || 0;
-  const lowStockItems = items?.filter(i => i.quantity > 0 && i.quantity <= i.minimum_quantity).length || 0;
+  // Low stock = BELOW minimum (not at or below)
+  const lowStockItems = items?.filter(i => i.quantity > 0 && i.quantity < i.minimum_quantity).length || 0;
   const outOfStockItems = items?.filter(i => i.quantity === 0).length || 0;
 
   const getStockStatus = (item: InventoryItem) => {
     if (item.quantity === 0) return 'out';
-    if (item.quantity <= item.minimum_quantity) return 'low';
+    // FIXED: Low stock only if BELOW minimum, not at minimum
+    if (item.quantity < item.minimum_quantity) return 'low';
     return 'good';
   };
 
@@ -292,6 +296,9 @@ export function InventoryManagementTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Activity Log */}
+      <InventoryActivityLog limit={20} />
     </div>
   );
 }
