@@ -26,6 +26,7 @@ export function ImprovedSupplyStaffDashboard() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('new');
+  const [completedLastUpdated, setCompletedLastUpdated] = useState(new Date());
 
   // Fetch all orders
   const { data: allOrders, isLoading, refetch, isFetching } = useQuery({
@@ -54,7 +55,8 @@ export function ImprovedSupplyStaffDashboard() {
             )
           )
         `)
-        .in('status', ['pending', 'approved', 'ready', 'completed'])
+        // FIXED: Don't include 'completed' - those are done!
+        .in('status', ['pending', 'approved', 'ready'])
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -67,6 +69,47 @@ export function ImprovedSupplyStaffDashboard() {
       return data || [];
     },
     refetchInterval: 30000,
+  });
+
+  // Fetch completed orders separately (last 7 days only)
+  const { data: completedOrders } = useQuery({
+    queryKey: ['supply-staff-completed'],
+    queryFn: async () => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data, error } = await supabase
+        .from('supply_requests')
+        .select(`
+          *,
+          profiles:requester_id (
+            first_name,
+            last_name,
+            email,
+            department
+          ),
+          supply_request_items (
+            *,
+            inventory_items (
+              id,
+              name,
+              quantity,
+              unit,
+              sku
+            )
+          )
+        `)
+        .eq('status', 'completed')
+        .gte('updated_at', sevenDaysAgo.toISOString())
+        .order('updated_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setCompletedLastUpdated(new Date());
+      return data || [];
+    },
+    enabled: activeTab === 'completed', // Only fetch when viewing completed tab
+    refetchInterval: 60000, // Refresh every minute
   });
 
   // Subscribe to real-time updates
@@ -93,11 +136,14 @@ export function ImprovedSupplyStaffDashboard() {
   });
 
   // Filter orders by status and search
-  const filteredOrders = (allOrders || []).filter(order => {
-    // Filter by tab
-    if (activeTab === 'new' && !['pending', 'approved'].includes(order.status)) return false;
-    if (activeTab === 'ready' && order.status !== 'ready') return false;
-    if (activeTab === 'completed' && order.status !== 'completed') return false;
+  const ordersToFilter = activeTab === 'completed' ? (completedOrders || []) : (allOrders || []);
+  
+  const filteredOrders = ordersToFilter.filter(order => {
+    // Filter by tab (completed tab uses separate query, so skip this filter)
+    if (activeTab !== 'completed') {
+      if (activeTab === 'new' && !['pending', 'approved'].includes(order.status)) return false;
+      if (activeTab === 'ready' && order.status !== 'ready') return false;
+    }
 
     // Filter by search
     if (searchQuery) {
