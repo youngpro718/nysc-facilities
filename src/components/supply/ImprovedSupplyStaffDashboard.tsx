@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase';
 import { SimpleOrderCard } from './SimpleOrderCard';
 import { SimpleFulfillmentDialog } from './SimpleFulfillmentDialog';
 import { LiveIndicator } from '@/components/common/LiveIndicator';
+import { InventoryManagementTab } from './InventoryManagementTab';
 
 export function ImprovedSupplyStaffDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -332,29 +333,7 @@ export function ImprovedSupplyStaffDashboard() {
 
         {/* Inventory Tab */}
         <TabsContent value="inventory" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Inventory Management</span>
-                <Button size="sm">
-                  <Package className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <Package className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">Inventory Management</h3>
-                <p className="text-sm">
-                  Full inventory management will be available here.
-                </p>
-                <p className="text-sm mt-2">
-                  For now, use the main Inventory page from the navigation menu.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <InventoryManagementTab />
         </TabsContent>
       </Tabs>
 
