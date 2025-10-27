@@ -269,7 +269,7 @@ export function ImprovedSupplyStaffDashboard() {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="new" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">New Orders</span>
@@ -294,10 +294,6 @@ export function ImprovedSupplyStaffDashboard() {
             <CheckCircle className="h-4 w-4" />
             <span className="hidden sm:inline">Completed</span>
             <span className="sm:hidden">Done</span>
-          </TabsTrigger>
-          <TabsTrigger value="inventory" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Inventory
           </TabsTrigger>
         </TabsList>
 
@@ -375,11 +371,6 @@ export function ImprovedSupplyStaffDashboard() {
               ))}
             </div>
           )}
-        </TabsContent>
-
-        {/* Inventory Tab */}
-        <TabsContent value="inventory" className="space-y-4">
-          <InventoryManagementTab />
         </TabsContent>
       </Tabs>
 

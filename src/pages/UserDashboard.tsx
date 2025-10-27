@@ -34,6 +34,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupplyRequests } from "@/hooks/useSupplyRequests";
@@ -150,11 +152,27 @@ export default function UserDashboard() {
   const firstName = profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
   const lastName = profile?.last_name || user?.user_metadata?.last_name || '';
 
+  // Query active key assignments
+  const { data: keyAssignments = [] } = useQuery({
+    queryKey: ['user-key-assignments', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('key_assignments')
+        .select('id')
+        .eq('user_id', user.id)
+        .is('returned_at', null);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   // Calculate stats
   const activeSupplyRequests = supplyRequests.filter(r => !['fulfilled', 'rejected', 'cancelled'].includes(r.status)).length;
   const pendingKeyRequests = keyRequests.filter(r => r.status === 'pending').length;
   const openIssues = userIssues.filter(i => i.status === 'open').length;
-  const fulfilledKeys = keyRequests.filter(r => r.status === 'fulfilled').length;
+  const keysHeld = keyAssignments.length;
 
   return (
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
@@ -191,7 +209,7 @@ export default function UserDashboard() {
           avatarUrl={profile?.avatar_url}
           supplyRequestsCount={activeSupplyRequests}
           openIssuesCount={openIssues}
-          keysHeldCount={fulfilledKeys}
+          keysHeldCount={keysHeld}
         />
 
         {/* Tabbed Content */}
@@ -220,9 +238,9 @@ export default function UserDashboard() {
             <TabsTrigger value="keys" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
               Keys
-              {fulfilledKeys > 0 && (
+              {keysHeld > 0 && (
                 <Badge variant="secondary" className="ml-1">
-                  {fulfilledKeys}
+                  {keysHeld}
                 </Badge>
               )}
             </TabsTrigger>

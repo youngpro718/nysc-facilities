@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package, Warehouse, AlertCircle, TrendingUp, Clock } from 'lucide-react';
@@ -17,12 +19,66 @@ import { TermSheetBoard } from '@/components/court-operations/personnel/TermShee
 export default function CourtAideDashboard() {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const [stats] = useState({
-    pendingRequests: 12,
-    lowStockItems: 8,
-    activeOrders: 5,
-    itemsFulfilled: 45,
+
+  // Query pending supply requests
+  const { data: pendingRequestsData } = useQuery({
+    queryKey: ['supply-staff-pending-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('supply_requests')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['pending', 'approved']);
+      if (error) throw error;
+      return count || 0;
+    },
   });
+
+  // Query low stock items
+  const { data: lowStockData } = useQuery({
+    queryKey: ['inventory-low-stock-count'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('id, quantity, reorder_level');
+      if (error) throw error;
+      return data?.filter(item => item.quantity < item.reorder_level).length || 0;
+    },
+  });
+
+  // Query active orders (ready for pickup)
+  const { data: activeOrdersData } = useQuery({
+    queryKey: ['supply-staff-ready-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('supply_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ready');
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  // Query fulfilled items this month
+  const { data: itemsFulfilledData } = useQuery({
+    queryKey: ['supply-staff-fulfilled-month'],
+    queryFn: async () => {
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const { count, error } = await supabase
+        .from('supply_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed')
+        .gte('fulfilled_at', startOfMonth.toISOString());
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const stats = {
+    pendingRequests: pendingRequestsData || 0,
+    lowStockItems: lowStockData || 0,
+    activeOrders: activeOrdersData || 0,
+    itemsFulfilled: itemsFulfilledData || 0,
+  };
 
   const quickActions = [
     {
