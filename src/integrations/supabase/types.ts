@@ -9017,9 +9017,11 @@ export type Database = {
           is_spare: boolean | null
           key_id: string | null
           key_name: string | null
-          key_scope: string | null
           last_name: string | null
           occupant_id: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          recipient_type: string | null
           return_reason: string | null
           returned_at: string | null
           spare_key_reason: string | null
@@ -10394,6 +10396,10 @@ export type Database = {
       }
       validate_nycourt_email: { Args: { email: string }; Returns: boolean }
       validate_password_strength: { Args: { password: string }; Returns: Json }
+      validate_routing_rule_conditions: {
+        Args: { p_conditions: Json }
+        Returns: boolean
+      }
       validate_session_security: { Args: never; Returns: boolean }
       validate_simple_password: { Args: { password: string }; Returns: Json }
       validate_text_input: {

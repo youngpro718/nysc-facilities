@@ -106,6 +106,18 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
+
+    // Pre-validate before calling RPC
+    if (recipientType !== "occupant" && !recipientName.trim()) {
+      toast.error("Recipient name is required for non-occupant issuances");
+      return;
+    }
+    
+    if (recipientType === "occupant" && !occupantId) {
+      toast.error("Please select an occupant from the list");
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -122,7 +134,8 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
         p_notes: notes ? `${notes} (issued_by: ${issuedBy})` : `(issued_by: ${issuedBy})`,
       });
       if (error) {
-        toast.error(error.message);
+        console.error("RPC error details:", error);
+        toast.error(`Failed to issue pass: ${error.message || 'Unknown error'}`);
         return;
       }
       toast.success("Elevator pass issued");
@@ -139,8 +152,8 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
       setReason("");
       setNotes("");
     } catch (e: any) {
-      console.error(e);
-      toast.error("Failed to issue pass");
+      console.error("Unexpected error:", e);
+      toast.error(`Failed to issue pass: ${e.message || 'Unexpected error'}`);
     } finally {
       setLoading(false);
     }
@@ -195,6 +208,11 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
                       {o.first_name} {o.last_name} {o.email ? `• ${o.email}` : ''}
                     </div>
                   ))}
+                </div>
+              )}
+              {occupantQuery.trim().length > 0 && occupantOptions.length === 0 && (
+                <div className="text-sm text-muted-foreground p-2 border rounded-md">
+                  No occupants found. If this is an external recipient, select "Security" or "External Department/Office" above.
                 </div>
               )}
             </div>
