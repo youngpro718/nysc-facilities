@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { IssueWizard } from "@/components/issues/wizard/IssueWizard";
+import { ReportIssueWizard } from "@/components/issues/wizard/ReportIssueWizard";
 import { MobileIssueCard } from "@/components/issues/mobile/MobileIssueCard";
 import { MobileRequestForm } from "@/components/mobile/MobileRequestForm";
 import { DataState } from "@/ui";

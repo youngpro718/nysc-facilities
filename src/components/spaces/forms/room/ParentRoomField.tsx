@@ -1,5 +1,6 @@
 import { UseFormReturn } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import {
   FormControl,
   FormField,
@@ -15,9 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { RoomFormData } from "./RoomFormSchema";
 import { RoomTypeEnum, roomTypeToString } from "../../rooms/types/roomEnums";
+import { wouldCreateCircularDependency } from "@/utils/roomValidation";
 
 // Room types that can be parent rooms (typically larger spaces)
 export const PARENT_ROOM_TYPES: RoomTypeEnum[] = [
@@ -51,9 +55,36 @@ interface ParentRoomFieldProps {
 
 export function ParentRoomField({ form, floorId, currentRoomId }: ParentRoomFieldProps) {
   const roomType = form.watch("roomType");
+  const [circularWarning, setCircularWarning] = useState<string | null>(null);
   
   // Only show parent room field for room types that can have parents
   const canHaveParent = CAN_HAVE_PARENT_ROOM_TYPES.includes(roomType as RoomTypeEnum);
+  
+  // Watch for parent room changes and validate
+  const selectedParentId = form.watch("parentRoomId");
+  
+  useEffect(() => {
+    async function checkCircular() {
+      if (!selectedParentId || !currentRoomId) {
+        setCircularWarning(null);
+        return;
+      }
+      
+      const isCircular = await wouldCreateCircularDependency(currentRoomId, selectedParentId);
+      if (isCircular) {
+        setCircularWarning("This selection would create a circular dependency. Please choose a different parent room.");
+        form.setError("parentRoomId", {
+          type: "circular",
+          message: "Circular dependency detected"
+        });
+      } else {
+        setCircularWarning(null);
+        form.clearErrors("parentRoomId");
+      }
+    }
+    
+    checkCircular();
+  }, [selectedParentId, currentRoomId, form]);
   
   const { data: potentialParents, isLoading } = useQuery({
     queryKey: ["potential-parent-rooms", floorId, currentRoomId],
@@ -78,37 +109,46 @@ export function ParentRoomField({ form, floorId, currentRoomId }: ParentRoomFiel
   }
 
   return (
-    <FormField
-      control={form.control}
-      name="parentRoomId"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Office Suite (Optional)</FormLabel>
-          <Select
-            onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
-            value={field.value || 'none'}
-            disabled={isLoading}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select an office suite..." />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="none">No office suite</SelectItem>
-              {potentialParents?.map((room) => (
-                <SelectItem key={room.id} value={room.id}>
-                  {room.room_number} - {room.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormDescription>
-            Select an office suite if this is a sub room or subdivision of a larger space.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
+    <div className="space-y-2">
+      <FormField
+        control={form.control}
+        name="parentRoomId"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Office Suite (Optional)</FormLabel>
+            <Select
+              onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
+              value={field.value || 'none'}
+              disabled={isLoading}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an office suite..." />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="none">No office suite</SelectItem>
+                {potentialParents?.map((room) => (
+                  <SelectItem key={room.id} value={room.id}>
+                    {room.room_number} - {room.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Select an office suite if this is a sub room or subdivision of a larger space.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {circularWarning && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{circularWarning}</AlertDescription>
+        </Alert>
       )}
-    />
+    </div>
   );
 }
