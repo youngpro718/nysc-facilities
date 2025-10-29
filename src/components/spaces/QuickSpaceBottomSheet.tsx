@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { QuickSpaceTemplates } from './QuickSpaceTemplates';
-import { CreateSpaceDialog } from './CreateSpaceDialog';
-import { Settings, Zap } from 'lucide-react';
+import { Settings, Zap, ExternalLink } from 'lucide-react';
 
 interface QuickSpaceBottomSheetProps {
   open: boolean;
@@ -26,8 +25,22 @@ export function QuickSpaceBottomSheet({
   };
 
   const handleAdvancedCreate = () => {
-    setShowAdvancedDialog(true);
-    onClose(); // Close bottom sheet when opening advanced dialog
+    onClose(); // Close bottom sheet first
+    
+    // Small delay then trigger the desktop Add Space button
+    setTimeout(() => {
+      const addSpaceButton = document.querySelector('[data-testid="add-space-button"]') as HTMLButtonElement;
+      if (addSpaceButton) {
+        addSpaceButton.click();
+      } else {
+        // Fallback: look for any button with "Add Space" text
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const addButton = buttons.find(btn => btn.textContent?.includes('Add Space'));
+        if (addButton) {
+          (addButton as HTMLButtonElement).click();
+        }
+      }
+    }, 200);
   };
 
   const handleTemplatesClose = () => {
@@ -84,7 +97,7 @@ export function QuickSpaceBottomSheet({
               variant="outline"
             >
               <div className="p-2 bg-secondary text-secondary-foreground rounded-full">
-                <Settings className="h-5 w-5" />
+                <ExternalLink className="h-5 w-5" />
               </div>
               <div className="flex flex-col items-start">
                 <span className="font-semibold">Advanced Options</span>
@@ -96,11 +109,6 @@ export function QuickSpaceBottomSheet({
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* Advanced Dialog */}
-      {showAdvancedDialog && (
-        <CreateSpaceDialog />
-      )}
     </>
   );
 }

@@ -114,7 +114,7 @@ export function CreateSpaceDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="ml-auto">
+        <Button className="ml-auto" data-testid="add-space-button">
           <Plus className="mr-2 h-4 w-4" />
           Add Space
         </Button>
