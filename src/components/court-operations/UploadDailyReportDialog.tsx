@@ -83,18 +83,24 @@ export function UploadDailyReportDialog({
       });
 
       if (parseError) {
-        throw new Error(`Extraction failed: ${parseError.message}`);
+        // Sanitize error message to prevent information disclosure
+        console.error('[Admin Only] Parse error details:', parseError);
+        throw new Error('Document extraction failed. Please ensure the file is a valid PDF and try again.');
       }
 
       if (!parseResult?.success) {
-        const error = parseResult?.error || 'Failed to extract data from PDF';
+        const error = parseResult?.error || '';
         
-        // Check if it's a configuration error
-        if (error.includes('not configured') || error.includes('LOVABLE_API_KEY')) {
-          throw new Error('AI extraction not configured. Please contact your administrator to enable Lovable AI.');
+        // Log detailed error for admins only
+        console.error('[Admin Only] Parse result error:', error);
+        
+        // Check if it's a configuration error and provide helpful message
+        if (error.includes('not configured') || error.includes('LOVABLE_API_KEY') || error.includes('API key')) {
+          throw new Error('AI extraction service is not configured. Please contact your administrator.');
         }
         
-        throw new Error(error);
+        // Return generic error to user, don't expose internal details
+        throw new Error('Failed to process the document. Please check the file format and try again.');
       }
 
       console.log('✅ Extraction successful:', parseResult);
