@@ -48,12 +48,28 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
 
   // Handle photo upload
   const handlePhotoUpload = async (files: FileList) => {
+    if (!files || files.length === 0) return;
+    
     setUploading(true);
+    const uploadedUrls: string[] = [];
+    const errors: string[] = [];
+    
     try {
-      const uploadedUrls: string[] = [];
-      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          errors.push(`${file.name}: Not an image file`);
+          continue;
+        }
+        
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          errors.push(`${file.name}: File too large (max 5MB)`);
+          continue;
+        }
+        
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
         const filePath = `issue-photos/${fileName}`;
@@ -64,6 +80,7 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
           
         if (uploadError) {
           console.error('Error uploading photo:', uploadError);
+          errors.push(`${file.name}: Upload failed`);
           continue;
         }
         
@@ -74,10 +91,19 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
         uploadedUrls.push(publicUrl);
       }
       
-      setSelectedPhotos(prev => [...prev, ...uploadedUrls]);
+      if (uploadedUrls.length > 0) {
+        setSelectedPhotos(prev => [...prev, ...uploadedUrls]);
+        toast.success(`${uploadedUrls.length} photo(s) uploaded successfully`);
+      }
+      
+      if (errors.length > 0) {
+        toast.error(`Failed to upload ${errors.length} file(s)`, {
+          description: errors.join(', ')
+        });
+      }
     } catch (error) {
       console.error('Error in handlePhotoUpload:', error);
-      toast.error('Failed to upload photos');
+      toast.error('Failed to upload photos. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -87,8 +113,6 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
     mutationFn: async (data: FormData) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user found');
-
-      console.log('Submitting issue with data:', data);
       
       const { error } = await supabase
         .from('issues')
@@ -132,7 +156,6 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
 
   const validateCurrentStep = () => {
     const values = form.getValues();
-    console.log('Current form values:', values);
     
     switch (currentStep) {
       case 'type':
@@ -171,7 +194,6 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
     } else {
       // Submit the form
       const values = form.getValues();
-      console.log('Submitting form with values:', values);
       createIssueMutation.mutate(values);
     }
   };

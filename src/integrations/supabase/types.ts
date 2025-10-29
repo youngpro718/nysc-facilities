@@ -2983,7 +2983,6 @@ export type Database = {
           status: Database["public"]["Enums"]["issue_status_enum"]
           tags: string[] | null
           title: string
-          type: string | null
           updated_at: string
         }
         Insert: {
@@ -2997,7 +2996,7 @@ export type Database = {
           due_date?: string | null
           floor_id?: string | null
           id?: string
-          issue_type: string
+          issue_type?: string
           location_description?: string | null
           notes?: string | null
           photos?: string[] | null
@@ -3013,7 +3012,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["issue_status_enum"]
           tags?: string[] | null
           title: string
-          type?: string | null
           updated_at?: string
         }
         Update: {
@@ -3043,7 +3041,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["issue_status_enum"]
           tags?: string[] | null
           title?: string
-          type?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -9835,19 +9832,29 @@ export type Database = {
         }
         Returns: undefined
       }
-      fn_issue_elevator_pass: {
-        Args: {
-          p_expected_return_at: string
-          p_key_id: string
-          p_notes: string
-          p_occupant_id: string
-          p_reason: string
-          p_recipient_email: string
-          p_recipient_name: string
-          p_recipient_type: string
-        }
-        Returns: string
-      }
+      fn_issue_elevator_pass:
+        | {
+            Args: {
+              p_key_id: string
+              p_occupant_id?: string
+              p_recipient_email?: string
+              p_recipient_name?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_expected_return_at: string
+              p_key_id: string
+              p_notes: string
+              p_occupant_id: string
+              p_reason: string
+              p_recipient_email: string
+              p_recipient_name: string
+              p_recipient_type: string
+            }
+            Returns: string
+          }
       fulfill_supply_request: {
         Args: { p_fulfillment_notes?: string; p_request_id: string }
         Returns: undefined

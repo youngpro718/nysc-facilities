@@ -9,7 +9,7 @@ import { UseFormReturn } from "react-hook-form";
 import { FormData } from "../types/formTypes";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { getIssueTypeIcon } from "../wizard/IssueWizard";
+import { getIssueTypeIcon } from "../utils/issueTypeIcons";
 
 interface IssueTypeFieldProps {
   form: UseFormReturn<FormData>;
