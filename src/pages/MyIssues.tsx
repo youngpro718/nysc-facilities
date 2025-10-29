@@ -80,7 +80,7 @@ export default function MyIssues() {
       </PageHeader>
 
       {showIssueWizard && (
-        <IssueWizard
+        <ReportIssueWizard
           onSuccess={handleIssueCreated}
           onCancel={() => setShowIssueWizard(false)}
         />
