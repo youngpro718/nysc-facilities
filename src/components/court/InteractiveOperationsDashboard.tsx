@@ -102,7 +102,7 @@ export function InteractiveOperationsDashboard() {
       const { data: maintenanceIssues, error: maintenanceError } = await supabase
         .from('issues')
         .select('room_id, status, type')
-        .in('type', ['BUILDING_SYSTEMS', 'ELECTRICAL_NEEDS', 'PLUMBING_NEEDS', 'GENERAL_REQUESTS'])
+        .in('type', ['maintenance', 'repair', 'request'])
         .neq('status', 'resolved');
       if (maintenanceError) {
         logger.warn('Failed to load maintenance issues for court operations view', maintenanceError);

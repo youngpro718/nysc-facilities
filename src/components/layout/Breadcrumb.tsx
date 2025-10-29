@@ -67,14 +67,14 @@ export function Breadcrumb({ className }: BreadcrumbProps) {
               const Icon = route.icon;
 
               return (
-                <BreadcrumbItem key={route.path}>
-                  {isLast ? (
-                    <BreadcrumbPage className="flex items-center gap-2">
-                      {Icon && <Icon className="h-4 w-4" />}
-                      {route.breadcrumbLabel}
-                    </BreadcrumbPage>
-                  ) : (
-                    <>
+                <>
+                  <BreadcrumbItem key={route.path}>
+                    {isLast ? (
+                      <BreadcrumbPage className="flex items-center gap-2">
+                        {Icon && <Icon className="h-4 w-4" />}
+                        {route.breadcrumbLabel}
+                      </BreadcrumbPage>
+                    ) : (
                       <BreadcrumbLink
                         onClick={() => navigate(route.path)}
                         className="flex items-center gap-2 cursor-pointer"
@@ -82,10 +82,10 @@ export function Breadcrumb({ className }: BreadcrumbProps) {
                         {index === 0 && <Home className="h-4 w-4" />}
                         {route.breadcrumbLabel}
                       </BreadcrumbLink>
-                      <BreadcrumbSeparator />
-                    </>
-                  )}
-                </BreadcrumbItem>
+                    )}
+                  </BreadcrumbItem>
+                  {!isLast && <BreadcrumbSeparator key={`separator-${index}`} />}
+                </>
               );
             })}
           </BreadcrumbList>
