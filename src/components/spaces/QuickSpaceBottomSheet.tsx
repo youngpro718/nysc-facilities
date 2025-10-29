@@ -29,18 +29,37 @@ export function QuickSpaceBottomSheet({
     
     // Small delay then trigger the desktop Add Space button
     setTimeout(() => {
-      const addSpaceButton = document.querySelector('[data-testid="add-space-button"]') as HTMLButtonElement;
-      if (addSpaceButton) {
-        addSpaceButton.click();
-      } else {
+      console.log('🔍 Looking for Add Space button...');
+      
+      // Try to find by test ID first
+      let addSpaceButton = document.querySelector('[data-testid="add-space-button"]') as HTMLButtonElement;
+      console.log('Found by test ID:', !!addSpaceButton);
+      
+      if (!addSpaceButton) {
         // Fallback: look for any button with "Add Space" text
         const buttons = Array.from(document.querySelectorAll('button'));
-        const addButton = buttons.find(btn => btn.textContent?.includes('Add Space'));
-        if (addButton) {
-          (addButton as HTMLButtonElement).click();
-        }
+        console.log('Total buttons found:', buttons.length);
+        
+        addSpaceButton = buttons.find(btn => {
+          const text = btn.textContent?.trim();
+          console.log('Button text:', text);
+          return text?.includes('Add Space');
+        }) as HTMLButtonElement;
+        
+        console.log('Found by text search:', !!addSpaceButton);
       }
-    }, 200);
+      
+      if (addSpaceButton) {
+        console.log('✅ Clicking Add Space button');
+        addSpaceButton.click();
+      } else {
+        console.error('❌ Could not find Add Space button');
+        // Show a toast to inform user
+        import('sonner').then(({ toast }) => {
+          toast.error('Could not open advanced form. Please use the desktop Add Space button.');
+        });
+      }
+    }, 300);
   };
 
   const handleTemplatesClose = () => {
