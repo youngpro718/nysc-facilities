@@ -1,4 +1,4 @@
-// Transform database issues to application Issue type
+
 import { Issue, IssueStatus, IssuePriority, FixtureType, FixtureStatus, FixturePosition, LightingFixture } from "../types/IssueTypes";
 
 interface DatabaseIssue {
@@ -71,7 +71,7 @@ export const transformIssue = (dbIssue: DatabaseIssue): Issue => {
     id: dbIssue.id,
     title: dbIssue.title,
     description: dbIssue.description,
-    issue_type: dbIssue.type,
+    type: dbIssue.type,
     status: isValidIssueStatus(dbIssue.status) ? dbIssue.status : 'open',
     priority: isValidIssuePriority(dbIssue.priority) ? dbIssue.priority : 'medium',
     created_at: dbIssue.created_at,
