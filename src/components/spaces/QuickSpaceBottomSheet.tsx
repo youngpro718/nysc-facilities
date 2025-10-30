@@ -70,11 +70,11 @@ export function QuickSpaceBottomSheet({
   if (showQuickTemplates) {
     return (
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
+        <SheetContent side="bottom" className="h-[80vh] flex flex-col">
           <SheetHeader>
             <SheetTitle>Quick Add Space</SheetTitle>
           </SheetHeader>
-          <div className="py-4">
+          <div className="flex-1 overflow-y-auto py-4">
             <QuickSpaceTemplates
               onClose={handleTemplatesClose}
               preselectedBuilding={preselectedBuilding}

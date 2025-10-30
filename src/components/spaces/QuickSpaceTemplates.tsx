@@ -262,7 +262,7 @@ export function QuickSpaceTemplates({
               <SelectTrigger>
                 <SelectValue placeholder="Select building" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200] bg-background">
                 {buildings?.map((building) => (
                   <SelectItem key={building.id} value={building.id}>
                     {building.name}
@@ -278,7 +278,7 @@ export function QuickSpaceTemplates({
               <SelectTrigger>
                 <SelectValue placeholder="Select floor" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200] bg-background">
                 {floors?.map((floor) => (
                   <SelectItem key={floor.id} value={floor.id}>
                     {floor.name}
