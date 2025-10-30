@@ -101,8 +101,8 @@ export function InteractiveOperationsDashboard() {
       // Get active maintenance indicators from issues (non-resolved maintenance-related types)
       const { data: maintenanceIssues, error: maintenanceError } = await supabase
         .from('issues')
-        .select('room_id, status, type')
-        .in('type', ['maintenance', 'repair', 'request'])
+        .select('room_id, status, issue_type')
+        .in('issue_type', ['BUILDING_SYSTEMS', 'ELECTRICAL_NEEDS', 'GENERAL_REQUESTS'])
         .neq('status', 'resolved');
       if (maintenanceError) {
         logger.warn('Failed to load maintenance issues for court operations view', maintenanceError);

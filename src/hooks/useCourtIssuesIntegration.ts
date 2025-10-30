@@ -220,7 +220,7 @@ export const useCourtIssuesIntegration = () => {
       toast({
         title: "Courtroom Issue Alert",
         description: message,
-        variant: issue.priority === "urgent" ? "destructive" : "default",
+        variant: issue.priority === "high" ? "destructive" : "default",
       });
 
       // You could extend this to send emails, SMS, or other notifications
@@ -344,7 +344,7 @@ export const useCourtIssuesIntegration = () => {
           // Handle new critical issues (urgent/critical/high)
           if (
             payload.eventType === 'INSERT' &&
-            ['urgent', 'critical', 'high'].includes(String((payload as any).new?.priority || '').toLowerCase())
+            ['high'].includes(String((payload as any).new?.priority || '').toLowerCase())
           ) {
             const newIssue = (payload as any).new as any;
             toast({
@@ -381,7 +381,7 @@ export const useCourtIssuesIntegration = () => {
         (issue) =>
           issue.room_id === roomId &&
           // Treat "urgent" (and optionally "critical") priority as urgent indicators
-          (issue.priority === 'urgent' || issue.priority === 'critical')
+          (issue.priority === 'high')
       ) || false
     );
   };
@@ -392,7 +392,7 @@ export const useCourtIssuesIntegration = () => {
 
     const affectedRooms = new Set(courtIssues.map(issue => issue.room_id));
     const urgentIssues = courtIssues.filter((issue) =>
-      ['urgent', 'critical', 'high'].includes(String(issue.priority || '').toLowerCase())
+      ['high'].includes(String(issue.priority || '').toLowerCase())
     );
     const affectedAssignments = courtIssues.filter(issue => issue.assignments);
 

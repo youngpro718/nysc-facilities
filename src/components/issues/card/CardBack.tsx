@@ -53,7 +53,7 @@ export function CardBack({ issue }: CardBackProps) {
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Type</p>
                   <Badge variant="outline" className="text-xs">
-                    {issue.type}
+                    {issue.issue_type}
                   </Badge>
                 </div>
                 <div className="space-y-1">

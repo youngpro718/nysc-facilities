@@ -138,7 +138,7 @@ export function MobileIssueCard({
         <div className="w-full">
           <MobileCardView
             title={issue.title}
-            subtitle={issue.type}
+            subtitle={issue.issue_type}
             description={issue.description}
             status={status}
             badges={badges}

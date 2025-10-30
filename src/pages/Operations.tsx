@@ -223,7 +223,7 @@ export default function Operations() {
       const { data, error } = await supabase
         .from('issues')
         .select('*')
-        .in('type', ['maintenance', 'repair', 'request'])
+        .in('issue_type', ['BUILDING_SYSTEMS', 'ELECTRICAL_NEEDS', 'GENERAL_REQUESTS'])
         .order('created_at', { ascending: false });
       
       if (error) throw error;

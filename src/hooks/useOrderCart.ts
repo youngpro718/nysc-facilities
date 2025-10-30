@@ -62,7 +62,7 @@ export function useOrderCart() {
     title?: string;
     description?: string;
     justification?: string;
-    priority?: 'low' | 'medium' | 'high' | 'urgent';
+    priority?: 'low' | 'medium' | 'high';
     delivery_location?: string;
     requested_delivery_date?: string;
   }) => {
@@ -94,7 +94,7 @@ export function useOrderCart() {
         title: autoTitle,
         description: options?.description || '',
         justification: options?.justification || 'Standard supply request',
-        priority: (options?.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
+        priority: (options?.priority || 'medium') as 'low' | 'medium' | 'high',
         delivery_location: options?.delivery_location || '',
         requested_delivery_date: options?.requested_delivery_date || null,
         items: cartItems.map(item => ({

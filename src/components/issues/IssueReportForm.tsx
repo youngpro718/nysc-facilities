@@ -65,14 +65,14 @@ export const IssueReportForm: React.FC<IssueReportFormProps> = ({ open, onClose,
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="p-0 max-w-sm w-full mx-auto">
+        <DialogHeader className="p-4 pb-0">
+          <DialogTitle>Report an Issue</DialogTitle>
+          <DialogDescription>
+            Quickly report a facility issue. Provide a short type, location, and description.
+          </DialogDescription>
+        </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 p-4">
-            <DialogHeader>
-              <DialogTitle>Report an Issue</DialogTitle>
-              <DialogDescription>
-                Quickly report a facility issue. Provide a short type, location, and description.
-              </DialogDescription>
-            </DialogHeader>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 p-4 pt-0">
 
             <FormField
               control={form.control}

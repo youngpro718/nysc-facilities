@@ -52,7 +52,7 @@ export interface Issue {
   tags?: string[];
   due_date?: string;
   date_info?: string;
-  type: string;
+  issue_type: string;
   buildings?: {
     name: string;
   };

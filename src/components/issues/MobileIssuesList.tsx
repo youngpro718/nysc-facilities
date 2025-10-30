@@ -68,7 +68,7 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
         const query = searchQuery.toLowerCase();
         if (!issue.title.toLowerCase().includes(query) &&
             !issue.description.toLowerCase().includes(query) &&
-            !issue.type.toLowerCase().includes(query)) {
+            !issue.issue_type.toLowerCase().includes(query)) {
           return false;
         }
       }
@@ -89,7 +89,7 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
       
       // Apply type filter
       if (filters.type && filters.type !== 'all_types') {
-        if (issue.type !== filters.type) return false;
+        if (issue.issue_type !== filters.type) return false;
       }
       
       // Apply assignment filter
@@ -267,7 +267,7 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
           open={detailsOpen}
           onOpenChange={setDetailsOpen}
           title={selectedIssue.title}
-          description={`${selectedIssue.type} • ${selectedIssue.status}`}
+          description={`${selectedIssue.issue_type} • ${selectedIssue.status}`}
         >
           <div className="space-y-4">
             <div>

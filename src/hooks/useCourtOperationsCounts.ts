@@ -88,7 +88,7 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
         .from('issues')
         .select('*', { count: 'exact', head: true })
         .in('status', ['open', 'in_progress'])
-        .in('priority', ['urgent', 'high']);
+        .in('priority', ['high']);
 
       if (error) {
         console.error('Error counting maintenance issues:', error);

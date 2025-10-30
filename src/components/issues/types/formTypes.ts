@@ -19,6 +19,11 @@ export interface FormData {
   room_id?: string;
   impact_level?: string;
   tags?: string[];
+  // User contact information
+  reporter_name?: string;
+  reporter_phone?: string;
+  reporter_department?: string;
+  reporting_for_another_room?: boolean;
   recurring_pattern?: {
     is_recurring: boolean;
     frequency?: string;

@@ -1,15 +1,7 @@
-
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { MobileOptimizedDialog } from "@/components/ui/mobile-dialog";
 import { CreateKeyForm } from "./CreateKeyForm";
 import type { KeyFormData } from "./types/KeyTypes";
 import { useQueryClient } from "@tanstack/react-query";
@@ -152,26 +144,19 @@ export function CreateKeyDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] lg:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Create New Key</DialogTitle>
-          <DialogDescription>
-            Add a new key to the inventory system
-          </DialogDescription>
-        </DialogHeader>
-
-        <ScrollArea className="max-h-[calc(90vh-8rem)]">
-          <div className="p-4">
-            <CreateKeyForm 
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
-              onCancel={() => onOpenChange(false)}
-            />
-          </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+    <MobileOptimizedDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Create New Key"
+      description="Add a new key to the inventory system"
+      maxWidth="2xl"
+    >
+      <CreateKeyForm 
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        onCancel={() => onOpenChange(false)}
+      />
+    </MobileOptimizedDialog>
   );
 }
 

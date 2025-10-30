@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { MobileInput, MobileFormField, MobileButton } from "@/components/ui/mobile-form";
+import { Switch } from "@/components/ui/switch";
 import { FormData } from "../types/formTypes";
 import { StandardizedIssueType } from "../constants/issueTypes";
 import { UserAssignment } from "@/types/dashboard";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Loader2, Check, ArrowLeft, ArrowRight } from "lucide-react";
+import { AlertTriangle, Loader2, Check, ArrowLeft, ArrowRight, User, Phone, Building } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 // Import step components
 import { TypeStep } from "./components/TypeStep";
@@ -27,12 +30,13 @@ export interface ReportIssueWizardProps {
 }
 
 export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: ReportIssueWizardProps) {
-  const [currentStep, setCurrentStep] = useState<'type' | 'location' | 'details'>('type');
+  const [currentStep, setCurrentStep] = useState<'type' | 'location' | 'details' | 'contact'>('type');
   const [selectedIssueType, setSelectedIssueType] = useState<StandardizedIssueType | null>(null);
   const [isEmergency, setIsEmergency] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const form = useForm<FormData>({
     defaultValues: {
@@ -43,8 +47,41 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
       room_id: '',
       issue_type: undefined,
       problem_type: '',
+      reporter_name: '',
+      reporter_phone: '',
+      reporter_department: '',
+      reporting_for_another_room: false,
     }
   });
+
+  // Auto-populate user information when component mounts
+  useEffect(() => {
+    if (profile && user) {
+      const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+      form.setValue('reporter_name', fullName || user.email || '');
+      form.setValue('reporter_phone', profile.phone || '');
+      form.setValue('reporter_department', profile.title || '');
+    }
+  }, [profile, user, form]);
+
+  // Auto-populate user's primary room if they have one and aren't reporting for another room
+  useEffect(() => {
+    const reportingForAnother = form.watch('reporting_for_another_room');
+    if (!reportingForAnother && assignedRooms && assignedRooms.length > 0) {
+      // Find the primary room assignment
+      const primaryRoom = assignedRooms.find(room => room.assignment_type === 'primary') || assignedRooms[0];
+      if (primaryRoom) {
+        form.setValue('room_id', primaryRoom.room_id);
+        form.setValue('building_id', primaryRoom.building_id || '');
+        form.setValue('floor_id', primaryRoom.floor_id || '');
+      }
+    } else if (reportingForAnother) {
+      // Clear room selection if reporting for another room
+      form.setValue('room_id', '');
+      form.setValue('building_id', '');
+      form.setValue('floor_id', '');
+    }
+  }, [form.watch('reporting_for_another_room'), assignedRooms, form]);
 
   // Handle photo upload
   const handlePhotoUpload = async (files: FileList) => {
@@ -129,7 +166,9 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
           seen: false,
           due_date: data.due_date ? new Date(data.due_date).toISOString() : null,
           date_info: data.date_info || null,
-          created_by: user.id
+          created_by: user.id,
+          // Add contact information to notes for tracking
+          notes: `Contact: ${data.reporter_name || 'N/A'}${data.reporter_phone ? ` | Phone: ${data.reporter_phone}` : ''}${data.reporter_department ? ` | Dept: ${data.reporter_department}` : ''}${data.reporting_for_another_room ? ' | Reporting for another room' : ''}`
         });
       
       if (error) {
@@ -171,6 +210,12 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
           return false;
         }
         return true;
+      case 'contact':
+        if (!values.reporter_name?.trim()) {
+          toast.error("Please provide your name");
+          return false;
+        }
+        return true;
       case 'details':
         if (!values.description?.trim()) {
           toast.error("Please provide a description");
@@ -190,6 +235,8 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
     if (currentStep === 'type') {
       setCurrentStep('location');
     } else if (currentStep === 'location') {
+      setCurrentStep('contact');
+    } else if (currentStep === 'contact') {
       setCurrentStep('details');
     } else {
       // Submit the form
@@ -201,8 +248,10 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
   const handleBack = () => {
     if (currentStep === 'location') {
       setCurrentStep('type');
-    } else if (currentStep === 'details') {
+    } else if (currentStep === 'contact') {
       setCurrentStep('location');
+    } else if (currentStep === 'details') {
+      setCurrentStep('contact');
     }
   };
 
@@ -210,6 +259,7 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
   const steps = [
     { key: 'type', label: 'Issue Type', description: 'Select category' },
     { key: 'location', label: 'Location', description: 'Where is it?' },
+    { key: 'contact', label: 'Contact Info', description: 'Your details' },
     { key: 'details', label: 'Details', description: 'Describe the issue' }
   ];
   
@@ -217,20 +267,20 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
   const progressPercentage = ((currentStepIndex + 1) / steps.length) * 100;
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6">
       <Form {...form}>
-        <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-4 sm:space-y-6">
           {/* Progress Header */}
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold">Report an Issue</h1>
-                <p className="text-sm text-muted-foreground">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold truncate">Report an Issue</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Step {currentStepIndex + 1} of {steps.length}: {steps[currentStepIndex]?.description}
                 </p>
               </div>
               {isEmergency && (
-                <Badge variant="destructive" className="w-fit">
+                <Badge variant="destructive" className="w-fit shrink-0">
                   <AlertTriangle className="w-3 h-3 mr-1" />
                   Emergency
                 </Badge>
@@ -279,7 +329,7 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
           )}
 
           {/* Step Content */}
-          <div className="min-h-[400px] sm:min-h-[450px]">
+          <div className="min-h-[300px] sm:min-h-[400px] lg:min-h-[450px]">
             {currentStep === 'type' && (
               <Card className="border-0 shadow-sm">
                 <div className="p-4 sm:p-6">
@@ -319,6 +369,126 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
               </Card>
             )}
             
+            {currentStep === 'contact' && (
+              <Card className="border-0 shadow-sm">
+                <div className="p-4 sm:p-6">
+                  <div className="mb-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-2">
+                      Contact Information
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      We need your contact details to follow up on this issue
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-4 sm:space-y-6">
+                    {/* Reporting for another room toggle */}
+                    <FormField
+                      control={form.control}
+                      name="reporting_for_another_room"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 sm:p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm font-medium">
+                              Reporting for another room?
+                            </FormLabel>
+                            <p className="text-xs text-muted-foreground">
+                              Check this if you're reporting an issue in a room you don't normally use
+                            </p>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Reporter Name */}
+                    <FormField
+                      control={form.control}
+                      name="reporter_name"
+                      render={({ field }) => (
+                        <MobileFormField
+                          label={
+                            <span className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              Your Name *
+                            </span>
+                          }
+                          required
+                        >
+                          <MobileInput
+                            placeholder="Enter your full name"
+                            autoComplete="name"
+                            {...field}
+                          />
+                        </MobileFormField>
+                      )}
+                    />
+
+                    {/* Phone Number */}
+                    <FormField
+                      control={form.control}
+                      name="reporter_phone"
+                      render={({ field }) => (
+                        <MobileFormField
+                          label={
+                            <span className="flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              Phone Number
+                            </span>
+                          }
+                        >
+                          <MobileInput
+                            type="tel"
+                            placeholder="Enter your phone number"
+                            autoComplete="tel"
+                            {...field}
+                          />
+                        </MobileFormField>
+                      )}
+                    />
+
+                    {/* Department/Title */}
+                    <FormField
+                      control={form.control}
+                      name="reporter_department"
+                      render={({ field }) => (
+                        <MobileFormField
+                          label={
+                            <span className="flex items-center gap-2">
+                              <Building className="h-4 w-4" />
+                              Department/Title
+                            </span>
+                          }
+                        >
+                          <MobileInput
+                            placeholder="Enter your department or job title"
+                            autoComplete="organization-title"
+                            {...field}
+                          />
+                        </MobileFormField>
+                      )}
+                    />
+
+                    {/* Auto-populated info notice */}
+                    {profile && (
+                      <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
+                        <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <AlertDescription className="text-blue-800 dark:text-blue-200">
+                          Your information has been automatically filled from your profile. 
+                          You can edit it if needed.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )}
+            
             {currentStep === 'details' && (
               <Card className="border-0 shadow-sm">
                 <div className="p-4 sm:p-6">
@@ -345,8 +515,8 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between pt-4 border-t">
-            <Button
+          <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between pt-4 border-t bg-background/50 backdrop-blur-sm sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-4 sm:pb-0 sm:static sm:bg-transparent sm:backdrop-blur-none">
+            <MobileButton
               type="button"
               variant="outline"
               onClick={currentStep === 'type' ? onCancel : handleBack}
@@ -355,9 +525,9 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {currentStep === 'type' ? 'Cancel' : 'Back'}
-            </Button>
+            </MobileButton>
 
-            <Button
+            <MobileButton
               type="button"
               onClick={handleNext}
               disabled={createIssueMutation.isPending || (currentStep === 'type' && !selectedIssueType)}
@@ -381,7 +551,7 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
-            </Button>
+            </MobileButton>
           </div>
         </form>
       </Form>

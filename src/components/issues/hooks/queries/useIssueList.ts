@@ -40,7 +40,7 @@ export function useIssueList(filters: IssueFilters, searchQuery?: string) {
         // Apply filters
         if (filters.type && filters.type !== 'all_types') {
           console.log('Applying type filter:', filters.type);
-          query = query.eq('type', filters.type);
+          query = query.eq('issue_type', filters.type);
         }
 
         if (filters.status && filters.status !== 'all_statuses') {

@@ -36,7 +36,7 @@ export const MobileNavigationGrid: React.FC<MobileNavigationGridProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 h-full overflow-y-auto">
       {/* Navigation Grid */}
       <div className="grid grid-cols-2 gap-3">
         {items.map((item) => {

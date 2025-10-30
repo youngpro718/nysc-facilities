@@ -27,7 +27,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
     const subscribeWithRetry = async (channel: ReturnType<typeof supabase.channel>, name: string) => {
       let attempt = 0;
       const max = 3;
-      return new Promise<void>((resolve) => {
+      return new Promise<void>((resolve, reject) => {
         const doSub = () => {
           attempt += 1;
           channel.subscribe((status) => {
@@ -37,10 +37,15 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               resolve();
               return;
             }
-            if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+            if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
               if (attempt < max) {
-                const backoff = 500 * attempt; // 0.5s, 1s
+                const backoff = 1000 * attempt; // 1s, 2s, 3s
+                console.log(`${name} channel failed, retrying in ${backoff}ms (attempt ${attempt}/${max})`);
                 setTimeout(doSub, backoff);
+              } else {
+                console.error(`${name} channel failed after ${max} attempts`);
+                setIsConnected(false);
+                reject(new Error(`Failed to connect ${name} channel after ${max} attempts`));
               }
             }
           });
@@ -249,7 +254,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           console.log('New supply request for admin:', payload);
           const request = payload.new;
           
-          const isUrgent = request.priority === 'urgent' || request.priority === 'high';
+          const isUrgent = request.priority === 'high';
           
           if (isUrgent) {
             toast.error('🚨 Urgent Supply Request', {
@@ -291,7 +296,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           console.log('New issue for admin:', payload);
           const issue = payload.new as any;
           const priority = (issue?.priority || '').toLowerCase();
-          const isCritical = ['critical', 'urgent', 'high'].includes(priority);
+          const isCritical = ['high'].includes(priority);
           
           if (isCritical) {
             toast.error('🚨 Critical Issue Reported', {

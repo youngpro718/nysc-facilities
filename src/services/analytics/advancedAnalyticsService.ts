@@ -194,7 +194,7 @@ export class AdvancedAnalyticsService {
       // Group by issue type and analyze
       const issueTypeGroups = new Map<string, any[]>();
       (issuesData || []).forEach(issue => {
-        const type = issue.type || 'general';
+        const type = issue.issue_type || 'general';
         if (!issueTypeGroups.has(type)) {
           issueTypeGroups.set(type, []);
         }

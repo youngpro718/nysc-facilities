@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { ChevronLeft, Home } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -67,8 +68,8 @@ export function Breadcrumb({ className }: BreadcrumbProps) {
               const Icon = route.icon;
 
               return (
-                <>
-                  <BreadcrumbItem key={route.path}>
+                <Fragment key={route.path}>
+                  <BreadcrumbItem>
                     {isLast ? (
                       <BreadcrumbPage className="flex items-center gap-2">
                         {Icon && <Icon className="h-4 w-4" />}
@@ -84,8 +85,8 @@ export function Breadcrumb({ className }: BreadcrumbProps) {
                       </BreadcrumbLink>
                     )}
                   </BreadcrumbItem>
-                  {!isLast && <BreadcrumbSeparator key={`separator-${index}`} />}
-                </>
+                  {!isLast && <BreadcrumbSeparator />}
+                </Fragment>
               );
             })}
           </BreadcrumbList>

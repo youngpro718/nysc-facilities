@@ -135,7 +135,7 @@ export const useAdminIssuesData = () => {
     critical:
       allIssues?.filter((issue) => {
         const p = String(issue.priority || '').toLowerCase();
-        const isCriticalPriority = ['urgent', 'critical', 'high'].includes(p);
+        const isCriticalPriority = ['high'].includes(p);
         const isActive = ['open', 'in_progress'].includes(issue.status);
         return isCriticalPriority && isActive;
       }).length || 0,

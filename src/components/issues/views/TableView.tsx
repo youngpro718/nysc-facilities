@@ -83,8 +83,8 @@ export const TableView = ({
               <TableCell>{issue.title}</TableCell>
               <TableCell>{issue.description}</TableCell>
               <TableCell>
-                <Badge className={getTypeColor(issue.type)} variant="secondary">
-                  {issue.type}
+                <Badge className={getTypeColor(issue.issue_type)} variant="secondary">
+                  {issue.issue_type}
                 </Badge>
               </TableCell>
               <TableCell>
