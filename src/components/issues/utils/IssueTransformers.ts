@@ -1,4 +1,4 @@
-
+// Transform database issues to application Issue type
 import { Issue, IssueStatus, IssuePriority, FixtureType, FixtureStatus, FixturePosition, LightingFixture } from "../types/IssueTypes";
 
 interface DatabaseIssue {
