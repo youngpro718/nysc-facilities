@@ -71,7 +71,7 @@ export const transformIssue = (dbIssue: DatabaseIssue): Issue => {
     id: dbIssue.id,
     title: dbIssue.title,
     description: dbIssue.description,
-    type: dbIssue.type,
+    issue_type: dbIssue.type,
     status: isValidIssueStatus(dbIssue.status) ? dbIssue.status : 'open',
     priority: isValidIssuePriority(dbIssue.priority) ? dbIssue.priority : 'medium',
     created_at: dbIssue.created_at,
