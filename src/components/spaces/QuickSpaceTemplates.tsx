@@ -56,18 +56,18 @@ const SPACE_TEMPLATES: SpaceTemplate[] = [
     id: 'storage',
     name: 'Storage',
     icon: Package,
-    roomType: RoomTypeEnum.STORAGE,
+    roomType: RoomTypeEnum.UTILITY_ROOM,
     defaultName: 'Storage Room',
     description: 'Storage and supplies',
     color: 'bg-orange-500'
   },
   {
-    id: 'bathroom',
-    name: 'Bathroom',
-    icon: Bath,
-    roomType: RoomTypeEnum.BATHROOM,
-    defaultName: 'Restroom',
-    description: 'Public restroom',
+    id: 'filing',
+    name: 'Filing Room',
+    icon: Archive,
+    roomType: RoomTypeEnum.FILING_ROOM,
+    defaultName: 'Filing Room',
+    description: 'Document filing',
     color: 'bg-teal-500'
   },
   {
@@ -101,7 +101,7 @@ const SPACE_TEMPLATES: SpaceTemplate[] = [
     id: 'security',
     name: 'Security',
     icon: Shield,
-    roomType: RoomTypeEnum.SECURITY_OFFICE,
+    roomType: RoomTypeEnum.ADMINISTRATIVE_OFFICE,
     defaultName: 'Security Office',
     description: 'Security station',
     color: 'bg-red-500'
@@ -220,9 +220,9 @@ export function QuickSpaceTemplates({
       roomNumber: finalRoomNumber,
       currentFunction: selectedTemplate.name.toLowerCase(),
       description: selectedTemplate.description,
-      isStorage: selectedTemplate.roomType === RoomTypeEnum.STORAGE,
-      storageType: selectedTemplate.roomType === RoomTypeEnum.STORAGE ? 'general' as any : null,
-      storageCapacity: selectedTemplate.roomType === RoomTypeEnum.STORAGE ? 100 : null,
+      isStorage: selectedTemplate.roomType === RoomTypeEnum.UTILITY_ROOM || selectedTemplate.roomType === RoomTypeEnum.FILING_ROOM,
+      storageType: (selectedTemplate.roomType === RoomTypeEnum.UTILITY_ROOM || selectedTemplate.roomType === RoomTypeEnum.FILING_ROOM) ? 'general' as any : null,
+      storageCapacity: (selectedTemplate.roomType === RoomTypeEnum.UTILITY_ROOM || selectedTemplate.roomType === RoomTypeEnum.FILING_ROOM) ? 100 : null,
       storageNotes: '',
       parentRoomId: null,
       connections: [],
@@ -259,10 +259,10 @@ export function QuickSpaceTemplates({
           <div className="space-y-2">
             <Label htmlFor="building">Building</Label>
             <Select value={buildingId} onValueChange={handleBuildingChange}>
-              <SelectTrigger>
+              <SelectTrigger className="touch-manipulation">
                 <SelectValue placeholder="Select building" />
               </SelectTrigger>
-              <SelectContent className="z-[200] bg-background">
+              <SelectContent className="z-[200] bg-background touch-manipulation">
                 {buildings?.map((building) => (
                   <SelectItem key={building.id} value={building.id}>
                     {building.name}
@@ -275,10 +275,10 @@ export function QuickSpaceTemplates({
           <div className="space-y-2">
             <Label htmlFor="floor">Floor</Label>
             <Select value={floorId} onValueChange={setFloorId}>
-              <SelectTrigger>
+              <SelectTrigger className="touch-manipulation">
                 <SelectValue placeholder="Select floor" />
               </SelectTrigger>
-              <SelectContent className="z-[200] bg-background">
+              <SelectContent className="z-[200] bg-background touch-manipulation">
                 {floors?.map((floor) => (
                   <SelectItem key={floor.id} value={floor.id}>
                     {floor.name}
