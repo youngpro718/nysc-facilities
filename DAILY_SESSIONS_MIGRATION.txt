@@ -1,0 +1,416 @@
+-- ============================================================================
+-- DAILY SESSIONS MODULE - DATABASE MIGRATION
+-- File: daily_sessions_migration.sql
+-- Date: 2025-10-23
+-- Description: Phase 1 & 2 Implementation - Court Sessions & Coverage Tracking
+-- ============================================================================
+
+-- NOTE: This migration creates the database schema for the Daily Sessions module.
+-- Apply this migration to your Supabase project before implementing the UI components.
+
+-- ============================================================================
+-- STEP 1: CREATE ENUMS
+-- ============================================================================
+
+-- Create session_period enum for AM/PM/ALL_DAY periods
+CREATE TYPE session_period AS ENUM ('AM', 'PM', 'ALL_DAY');
+
+COMMENT ON TYPE session_period IS 'Session time periods: AM, PM, or ALL_DAY';
+
+-- ============================================================================
+-- STEP 2: CREATE TABLES
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Table: court_sessions
+-- Purpose: Stores daily AM/PM session records for each courtroom
+-- ----------------------------------------------------------------------------
+CREATE TABLE court_sessions (
+  -- Primary key
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Date and period
+  session_date DATE NOT NULL,
+  period session_period NOT NULL DEFAULT 'AM',
+
+  -- Building and room references
+  building_code TEXT NOT NULL, -- '100' or '111'
+  court_room_id UUID NOT NULL REFERENCES court_rooms(id) ON DELETE CASCADE,
+
+  -- Link to current assignment (optional)
+  assignment_id UUID REFERENCES court_assignments(id) ON DELETE SET NULL,
+
+  -- Session status and details
+  status TEXT NOT NULL DEFAULT 'CALENDAR', -- Flexible TEXT field: CALENDAR, HRG, PC_CONTD, JD_CONTD, BT, BT_PC, TR, ADJ, DARK, etc.
+  status_detail TEXT, -- Additional context (e.g., "Jury deliberation expected")
+  estimated_finish_date DATE, -- When case/trial expected to conclude
+
+  -- Personnel (denormalized from assignment for historical record)
+  judge_name TEXT,
+  part_number TEXT,
+  clerk_names TEXT[], -- Array for multiple clerks
+  sergeant_name TEXT,
+
+  -- Notes
+  notes TEXT,
+
+  -- Audit fields
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+  -- Prevent duplicate sessions for same room/date/period
+  UNIQUE(court_room_id, session_date, period)
+);
+
+-- Indexes for query performance
+CREATE INDEX idx_court_sessions_date ON court_sessions(session_date);
+CREATE INDEX idx_court_sessions_period ON court_sessions(period);
+CREATE INDEX idx_court_sessions_building ON court_sessions(building_code);
+CREATE INDEX idx_court_sessions_room ON court_sessions(court_room_id);
+CREATE INDEX idx_court_sessions_assignment ON court_sessions(assignment_id);
+CREATE INDEX idx_court_sessions_date_period ON court_sessions(session_date, period);
+
+-- Comments for documentation
+COMMENT ON TABLE court_sessions IS 'Daily AM/PM session records for courtrooms';
+COMMENT ON COLUMN court_sessions.status IS 'Session status: CALENDAR, HRG, PC_CONTD, JD_CONTD, BT, BT_PC, TR, ADJ, DARK (extensible TEXT field)';
+COMMENT ON COLUMN court_sessions.building_code IS 'Building code: 100 or 111';
+COMMENT ON COLUMN court_sessions.period IS 'Session period: AM, PM, or ALL_DAY';
+COMMENT ON COLUMN court_sessions.judge_name IS 'Denormalized judge name for historical record';
+COMMENT ON COLUMN court_sessions.part_number IS 'Court part number';
+COMMENT ON COLUMN court_sessions.clerk_names IS 'Array of clerk names assigned to this session';
+
+-- ----------------------------------------------------------------------------
+-- Table: coverage_assignments
+-- Purpose: Tracks coverage when staff are absent
+-- ----------------------------------------------------------------------------
+CREATE TABLE coverage_assignments (
+  -- Primary key
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Date and period
+  coverage_date DATE NOT NULL,
+  period session_period NOT NULL DEFAULT 'AM',
+
+  -- Building and room references
+  building_code TEXT NOT NULL, -- '100' or '111'
+  court_room_id UUID NOT NULL REFERENCES court_rooms(id) ON DELETE CASCADE,
+
+  -- Absent staff (judge/clerk/sergeant)
+  absent_staff_id UUID, -- References staff table if exists
+  absent_staff_name TEXT NOT NULL, -- Denormalized for reports
+  absent_staff_role TEXT NOT NULL, -- 'judge', 'clerk', 'sergeant'
+
+  -- Covering staff
+  covering_staff_id UUID, -- References staff table if exists
+  covering_staff_name TEXT NOT NULL,
+
+  -- Optional time range (if not all day)
+  start_time TIME,
+  end_time TIME,
+
+  -- Context
+  absence_reason TEXT, -- Links conceptually to staff_absences
+  notes TEXT,
+
+  -- Audit fields
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+  -- Prevent duplicate coverage for same room/date/period
+  UNIQUE(court_room_id, coverage_date, period)
+);
+
+-- Indexes for query performance
+CREATE INDEX idx_coverage_date ON coverage_assignments(coverage_date);
+CREATE INDEX idx_coverage_period ON coverage_assignments(period);
+CREATE INDEX idx_coverage_building ON coverage_assignments(building_code);
+CREATE INDEX idx_coverage_room ON coverage_assignments(court_room_id);
+CREATE INDEX idx_coverage_absent_staff ON coverage_assignments(absent_staff_id);
+CREATE INDEX idx_coverage_covering_staff ON coverage_assignments(covering_staff_id);
+
+-- Comments for documentation
+COMMENT ON TABLE coverage_assignments IS 'Daily coverage assignments when staff are absent';
+COMMENT ON COLUMN coverage_assignments.absent_staff_role IS 'Role of absent staff: judge, clerk, or sergeant';
+COMMENT ON COLUMN coverage_assignments.covering_staff_name IS 'Name of staff member providing coverage';
+
+-- ----------------------------------------------------------------------------
+-- Table: daily_report_notes
+-- Purpose: Stores freeform footer text for daily reports
+-- ----------------------------------------------------------------------------
+CREATE TABLE daily_report_notes (
+  -- Primary key
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Report context
+  report_date DATE NOT NULL,
+  period session_period NOT NULL DEFAULT 'AM',
+  building_code TEXT NOT NULL DEFAULT '100',
+
+  -- Footer sections
+  available_hrgs TEXT, -- "Available HRGs: 1234, 1567"
+  coverage_summary TEXT, -- Additional coverage notes
+  general_notes TEXT, -- Any other remarks
+
+  -- Audit fields
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+  -- One set of notes per date/period/building
+  UNIQUE(report_date, period, building_code)
+);
+
+-- Indexes for query performance
+CREATE INDEX idx_report_notes_date ON daily_report_notes(report_date);
+CREATE INDEX idx_report_notes_building ON daily_report_notes(building_code);
+
+-- Comments for documentation
+COMMENT ON TABLE daily_report_notes IS 'Footer notes for daily AM/PM reports';
+
+-- ============================================================================
+-- STEP 3: ENABLE ROW LEVEL SECURITY (RLS)
+-- ============================================================================
+
+ALTER TABLE court_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE coverage_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_report_notes ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================================
+-- STEP 4: CREATE RLS POLICIES
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Policies for court_sessions
+-- ----------------------------------------------------------------------------
+
+-- Admin full access
+CREATE POLICY "Admins full access to court_sessions"
+  ON court_sessions FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'admin'
+    )
+  );
+
+-- Authenticated users read access
+CREATE POLICY "Authenticated users read court_sessions"
+  ON court_sessions FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- ----------------------------------------------------------------------------
+-- Policies for coverage_assignments
+-- ----------------------------------------------------------------------------
+
+-- Admin full access
+CREATE POLICY "Admins manage coverage_assignments"
+  ON coverage_assignments FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'admin'
+    )
+  );
+
+-- Authenticated users read access
+CREATE POLICY "Authenticated users read coverage_assignments"
+  ON coverage_assignments FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- ----------------------------------------------------------------------------
+-- Policies for daily_report_notes
+-- ----------------------------------------------------------------------------
+
+-- Admin full access
+CREATE POLICY "Admins manage report_notes"
+  ON daily_report_notes FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'admin'
+    )
+  );
+
+-- Authenticated users read access
+CREATE POLICY "Authenticated users read report_notes"
+  ON daily_report_notes FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- ============================================================================
+-- STEP 5: CREATE TRIGGERS
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Trigger function to auto-update updated_at timestamp
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION update_updated_at_column() IS 'Automatically updates the updated_at column on row updates';
+
+-- Apply triggers to all three tables
+CREATE TRIGGER update_court_sessions_updated_at
+  BEFORE UPDATE ON court_sessions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_coverage_assignments_updated_at
+  BEFORE UPDATE ON coverage_assignments
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_daily_report_notes_updated_at
+  BEFORE UPDATE ON daily_report_notes
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================================
+-- STEP 6: CREATE HELPER FUNCTIONS (OPTIONAL)
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Function: auto_populate_daily_sessions
+-- Purpose: Creates today's AM/PM sessions from current court assignments
+-- Usage: SELECT auto_populate_daily_sessions();
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION auto_populate_daily_sessions()
+RETURNS void AS $$
+DECLARE
+  session_record RECORD;
+  sessions_created INTEGER := 0;
+BEGIN
+  -- For today's date, create sessions if they don't exist
+  FOR session_record IN
+    SELECT 
+      ca.id AS assignment_id,
+      cr.id AS court_room_id,
+      cr.room_number,
+      '100' AS building_code, -- Default to 100 Centre
+      ca.justice AS judge_name,
+      ca.part AS part_number,
+      ca.clerks AS clerk_names,
+      ca.sergeant AS sergeant_name
+    FROM court_assignments ca
+    INNER JOIN court_rooms cr ON ca.room_id = cr.room_id
+    WHERE ca.justice IS NOT NULL 
+      AND ca.part IS NOT NULL
+      AND cr.is_active = true
+  LOOP
+    -- Insert AM session if doesn't exist
+    INSERT INTO court_sessions (
+      session_date,
+      period,
+      building_code,
+      court_room_id,
+      assignment_id,
+      status,
+      judge_name,
+      part_number,
+      clerk_names,
+      sergeant_name
+    )
+    VALUES (
+      CURRENT_DATE,
+      'AM',
+      session_record.building_code,
+      session_record.court_room_id,
+      session_record.assignment_id,
+      'CALENDAR',
+      session_record.judge_name,
+      session_record.part_number,
+      session_record.clerk_names,
+      session_record.sergeant_name
+    )
+    ON CONFLICT (court_room_id, session_date, period) DO NOTHING;
+
+    IF FOUND THEN
+      sessions_created := sessions_created + 1;
+    END IF;
+
+    -- Insert PM session if doesn't exist
+    INSERT INTO court_sessions (
+      session_date,
+      period,
+      building_code,
+      court_room_id,
+      assignment_id,
+      status,
+      judge_name,
+      part_number,
+      clerk_names,
+      sergeant_name
+    )
+    VALUES (
+      CURRENT_DATE,
+      'PM',
+      session_record.building_code,
+      session_record.court_room_id,
+      session_record.assignment_id,
+      'CALENDAR',
+      session_record.judge_name,
+      session_record.part_number,
+      session_record.clerk_names,
+      session_record.sergeant_name
+    )
+    ON CONFLICT (court_room_id, session_date, period) DO NOTHING;
+
+    IF FOUND THEN
+      sessions_created := sessions_created + 1;
+    END IF;
+  END LOOP;
+
+  RAISE NOTICE 'Created % session records for today', sessions_created;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp;
+
+COMMENT ON FUNCTION auto_populate_daily_sessions() IS 'Creates today''s AM/PM sessions from current court assignments';
+
+-- ============================================================================
+-- STEP 7: ENABLE REALTIME
+-- ============================================================================
+
+-- Enable realtime subscriptions for the new tables
+ALTER PUBLICATION supabase_realtime ADD TABLE court_sessions;
+ALTER PUBLICATION supabase_realtime ADD TABLE coverage_assignments;
+ALTER PUBLICATION supabase_realtime ADD TABLE daily_report_notes;
+
+-- ============================================================================
+-- MIGRATION COMPLETE
+-- ============================================================================
+
+-- Verification queries (run these to verify the migration):
+-- SELECT COUNT(*) FROM court_sessions;
+-- SELECT COUNT(*) FROM coverage_assignments;
+-- SELECT COUNT(*) FROM daily_report_notes;
+-- SELECT * FROM pg_enum WHERE enumtypid = 'session_period'::regtype;

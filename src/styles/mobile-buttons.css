@@ -1,0 +1,130 @@
+/* Mobile button optimizations */
+
+/* Base mobile touch targets */
+@media (max-width: 768px) {
+  button,
+  [role="button"],
+  a[class*="button"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Ensure all interactive elements have minimum touch targets */
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Active state feedback for better perceived performance */
+  button:active:not(:disabled),
+  [role="button"]:active:not([aria-disabled="true"]) {
+    transform: scale(0.98);
+    transition: transform 0.1s ease-out;
+  }
+
+  /* Prevent double-tap zoom on buttons */
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* Optimize input fields for mobile */
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* Prevents iOS zoom */
+    min-height: 44px;
+  }
+
+  /* Better spacing for stacked buttons */
+  .button-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Horizontal button groups with proper spacing */
+  .button-group {
+    display: flex;
+    gap: 12px;
+  }
+
+  .button-group > * {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Compact padding for mobile dialogs */
+  [role="dialog"] .space-y-4 {
+    gap: 0.75rem;
+  }
+
+  /* Reduce excessive whitespace in mobile views */
+  .mobile-compact {
+    padding: 0.75rem;
+  }
+
+  /* Sticky headers in mobile dialogs */
+  .mobile-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: hsl(var(--background));
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  /* Sticky footers in mobile dialogs */
+  .mobile-sticky-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: hsl(var(--background));
+    border-top: 1px solid hsl(var(--border));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Optimize for small screens */
+@media (max-width: 430px) {
+  /* Slightly larger touch targets for very small devices */
+  button,
+  [role="button"] {
+    min-height: 48px;
+  }
+
+  /* Optimize button text for readability */
+  button {
+    font-size: 15px;
+  }
+
+  /* More compact spacing on very small screens */
+  .space-y-4 > * + * {
+    margin-top: 0.75rem;
+  }
+
+  .space-y-3 > * + * {
+    margin-top: 0.5rem;
+  }
+
+  /* Reduce dialog padding on small screens */
+  [role="dialog"] {
+    padding: 0.75rem;
+  }
+}
+
+/* Loading states optimized for mobile interactions */
+.button-loading {
+  pointer-events: none;
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Success feedback animation */
+@keyframes success-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.button-success {
+  animation: success-pulse 0.3s ease-in-out;
+}

@@ -1,0 +1,402 @@
+@import "./styles/mobile-safe-area.css";
+@import './styles/design-tokens.css';
+@import './styles/ios-compatibility.css';
+@import './styles/mobile-buttons.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+ 
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+ 
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+ 
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+ 
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+ 
+    --border: 0 0% 89.1%;
+    --input: 0 0% 89.1%;
+    --ring: 0 0% 3.9%;
+ 
+    --radius: 0.5rem;
+
+    /* Status colors */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 98%;
+
+    /* Enhanced lighting status colors */
+    --lighting-functional: 142 71% 45%;
+    --lighting-functional-foreground: 0 0% 98%;
+    
+    --lighting-partial: 38 92% 50%;
+    --lighting-partial-foreground: 0 0% 0%;
+    
+    --lighting-critical: 0 84% 60%;
+    --lighting-critical-foreground: 0 0% 98%;
+    
+    --lighting-maintenance: 217 91% 60%;
+    --lighting-maintenance-foreground: 0 0% 98%;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+ 
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+ 
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+ 
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+ 
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+ 
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+ 
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+
+    /* Status colors for dark mode */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 98%;
+
+    /* Enhanced lighting status colors for dark mode */
+    --lighting-functional: 142 71% 45%;
+    --lighting-functional-foreground: 0 0% 98%;
+    
+    --lighting-partial: 38 92% 50%;
+    --lighting-partial-foreground: 0 0% 0%;
+    
+    --lighting-critical: 0 84% 60%;
+    --lighting-critical-foreground: 0 0% 98%;
+    
+    --lighting-maintenance: 217 91% 60%;
+    --lighting-maintenance-foreground: 0 0% 98%;
+  }
+
+  /* Theme Variants */
+  .blue {
+    --background: 214 32% 91%;
+    --foreground: 214 84% 12%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 214 32% 81%;
+    --secondary-foreground: 214 84% 12%;
+    --muted: 214 32% 81%;
+    --muted-foreground: 214 84% 32%;
+    --accent: 214 32% 81%;
+    --accent-foreground: 214 84% 12%;
+    --border: 214 32% 71%;
+    --input: 214 32% 71%;
+    --ring: 221 83% 53%;
+  }
+
+  .green {
+    --background: 138 62% 91%;
+    --foreground: 138 84% 12%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 138 62% 81%;
+    --secondary-foreground: 138 84% 12%;
+    --muted: 138 62% 81%;
+    --muted-foreground: 138 84% 32%;
+    --accent: 138 62% 81%;
+    --accent-foreground: 138 84% 12%;
+    --border: 138 62% 71%;
+    --input: 138 62% 71%;
+    --ring: 142 71% 45%;
+  }
+
+  .purple {
+    --background: 276 44% 91%;
+    --foreground: 276 84% 12%;
+    --primary: 271 81% 56%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 276 44% 81%;
+    --secondary-foreground: 276 84% 12%;
+    --muted: 276 44% 81%;
+    --muted-foreground: 276 84% 32%;
+    --accent: 276 44% 81%;
+    --accent-foreground: 276 84% 12%;
+    --border: 276 44% 71%;
+    --input: 276 44% 71%;
+    --ring: 271 81% 56%;
+  }
+
+  /* Layout Density */
+  .density-compact {
+    --spacing-unit: 0.75rem;
+    --card-padding: 1rem;
+    --section-gap: 1rem;
+  }
+
+  .density-comfortable {
+    --spacing-unit: 1rem;
+    --card-padding: 1.5rem;
+    --section-gap: 1.5rem;
+  }
+
+  .density-spacious {
+    --spacing-unit: 1.5rem;
+    --card-padding: 2rem;
+    --section-gap: 2rem;
+  }
+
+  /* High Contrast Mode */
+  .high-contrast {
+    --border: 0 0% 0%;
+    --ring: 0 0% 0%;
+  }
+
+  .high-contrast.dark {
+    --border: 0 0% 100%;
+    --ring: 0 0% 100%;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-family-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+  
+  h1 {
+    @apply text-3xl lg:text-4xl;
+  }
+  
+  h2 {
+    @apply text-2xl lg:text-3xl;
+  }
+  
+  h3 {
+    @apply text-xl lg:text-2xl;
+  }
+  
+  h4 {
+    @apply text-lg lg:text-xl;
+  }
+  
+  p {
+    @apply leading-normal;
+  }
+}
+
+/* Form readability fixes */
+@layer base {
+  /* Ensure placeholders are readable on light/dark backgrounds */
+  input::placeholder,
+  textarea::placeholder {
+    /* Slightly darker than muted-foreground for contrast */
+    color: hsl(var(--foreground) / 0.55);
+    opacity: 1; /* Safari */
+  }
+
+  /* Fix WebKit autofill painting dark backgrounds that hide text */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    /* Paint the field with our theme background */
+    -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset;
+    box-shadow: 0 0 0px 1000px hsl(var(--background)) inset;
+    /* Make autofilled text clearly readable */
+    -webkit-text-fill-color: hsl(var(--foreground));
+    caret-color: hsl(var(--foreground));
+    transition: background-color 9999s ease-in-out 0s;
+  }
+}
+
+@layer utilities {
+  /* Touch Target Utility */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Larger touch targets for mobile */
+  @media (max-width: 768px) {
+    .touch-target {
+      @apply min-h-[48px] min-w-[48px];
+    }
+  }
+  
+  /* Prevent text selection during touch interactions */
+  .floor-plan-canvas {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Smooth touch scrolling */
+  .floor-plan-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+  
+  /* Issue wizard animations */
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+  
+  .animate-slide-in-up {
+    animation: slide-in-up 0.3s ease-out;
+  }
+  
+  .animate-slide-out-down {
+    animation: slide-out-down 0.2s ease-in;
+  }
+  
+  /* Touch-friendly styles */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Subtle animated red glow for maintenance */
+  .animate-red-glow {
+    animation: red-glow 2.2s ease-in-out infinite;
+  }
+
+  /* Subtle animated blue glow for maintenance */
+  .animate-blue-glow {
+    animation: blue-glow 2.2s ease-in-out infinite;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-out-down {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+/* Keyframes for subtle red glow */
+@keyframes red-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 18px rgba(239, 68, 68, 0.6); }
+}
+
+/* Keyframes for subtle blue glow */
+@keyframes blue-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+  50% { box-shadow: 0 0 18px rgba(59, 130, 246, 0.6); }
+}
+
+/* Keyframes for subtle yellow glow (issues) */
+@keyframes yellow-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(234, 179, 8, 0); }
+  50% { box-shadow: 0 0 18px rgba(234, 179, 8, 0.6); }
+}
+
+/* Keyframes for subtle purple glow (no justice) */
+@keyframes purple-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(168, 85, 247, 0); }
+  50% { box-shadow: 0 0 18px rgba(168, 85, 247, 0.6); }
+}
+
+/* Animated glow utility classes */
+.animate-yellow-glow { animation: yellow-glow 2.2s ease-in-out infinite; }
+.animate-purple-glow { animation: purple-glow 2.2s ease-in-out infinite; }

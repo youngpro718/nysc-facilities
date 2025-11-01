@@ -1,0 +1,99 @@
+🔔 PUSH NOTIFICATIONS SETUP FOR iOS 16.4+
+==========================================
+
+Your NYSC Facilities Hub app is now configured for push notifications on iOS!
+
+📋 SETUP STEPS:
+
+1. GENERATE VAPID KEYS
+   ----------------------
+   Run this command to generate VAPID keys for push notifications:
+   
+   npx web-push generate-vapid-keys
+   
+   This will output:
+   - Public Key (share with frontend)
+   - Private Key (keep secret on backend)
+
+2. ADD TO ENVIRONMENT VARIABLES
+   ------------------------------
+   Add these to your .env file:
+   
+   VITE_VAPID_PUBLIC_KEY=your_public_key_here
+   VAPID_PRIVATE_KEY=your_private_key_here (backend only)
+
+3. SUBSCRIBE USERS TO PUSH
+   -------------------------
+   In your app, call the subscription function:
+   
+   import { subscribeToPushNotifications } from '@/utils/registerServiceWorker';
+   
+   const subscription = await subscribeToPushNotifications(
+     import.meta.env.VITE_VAPID_PUBLIC_KEY
+   );
+   
+   // Send subscription to your backend
+   await fetch('/api/push/subscribe', {
+     method: 'POST',
+     body: JSON.stringify(subscription)
+   });
+
+4. SEND PUSH NOTIFICATIONS (Backend)
+   ----------------------------------
+   Use web-push library on your backend:
+   
+   const webpush = require('web-push');
+   
+   webpush.setVapidDetails(
+     'mailto:your-email@example.com',
+     process.env.VAPID_PUBLIC_KEY,
+     process.env.VAPID_PRIVATE_KEY
+   );
+   
+   const payload = JSON.stringify({
+     title: 'NYSC Facilities',
+     body: 'New maintenance request',
+     icon: '/icons/icon-192x192.png',
+     badge: '/icons/badge-72x72.png'
+   });
+   
+   await webpush.sendNotification(subscription, payload);
+
+5. iOS REQUIREMENTS
+   -----------------
+   ✅ App must be installed to Home Screen (not in Safari)
+   ✅ User must grant notification permission
+   ✅ Works on iOS 16.4 and later
+   ✅ Requires HTTPS (or localhost for testing)
+
+6. TESTING ON iPhone
+   ------------------
+   1. Open app in Safari
+   2. Tap Share → Add to Home Screen
+   3. Open app from Home Screen
+   4. Grant notification permission when prompted
+   5. Test by sending a push notification from backend
+
+📚 RESOURCES:
+   - Web Push Protocol: https://web.dev/push-notifications-overview/
+   - iOS PWA Guide: https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/
+   - VAPID Keys: https://github.com/web-push-libs/web-push
+
+⚠️ IMPORTANT NOTES:
+   - Push notifications ONLY work when app is installed to Home Screen
+   - They do NOT work in Safari browser on iOS
+   - User must explicitly grant permission
+   - Notifications appear in iOS Notification Center
+   - Can be managed in iOS Settings → Notifications → NYSC Hub
+
+🎯 INTEGRATION WITH SUPABASE:
+   If using Supabase, you can store subscriptions in a table:
+   
+   CREATE TABLE push_subscriptions (
+     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     user_id UUID REFERENCES auth.users(id),
+     subscription JSONB NOT NULL,
+     created_at TIMESTAMPTZ DEFAULT NOW()
+   );
+   
+   Then trigger push notifications from Supabase Edge Functions!
