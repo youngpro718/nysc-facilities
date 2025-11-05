@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 const DEFAULT_EMAIL = 'facilities@example.com';
 const DEFAULT_PHONE = '(555) 123-4567';

@@ -1,5 +1,5 @@
-import { supabase } from '@/integrations/supabase/client';
-import { submitKeyRequest } from '@/services/supabase/keyRequestService';
+import { supabase } from '@/lib/supabase';
+import { submitKeyRequest } from '@/services/keyRequestService';
 
 export async function createKeyRequestFromForm(
   formData: any,

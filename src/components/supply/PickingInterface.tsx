@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, CheckCircle, Loader2, MapPin, Package } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { useGenerateReceipt } from '@/hooks/useSupplyReceipts';
 import { createReceiptData } from '@/lib/receiptUtils';

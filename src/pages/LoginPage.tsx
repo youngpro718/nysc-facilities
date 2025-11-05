@@ -26,6 +26,7 @@ const LoginPage = () => {
 
   // Show loading while auth state is being determined
   if (isLoading) {
+    console.log('[LoginPage] isLoading = true, showing spinner');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -35,12 +36,15 @@ const LoginPage = () => {
 
   // Don't render login form if already authenticated - let AuthProvider handle redirect
   if (isAuthenticated) {
+    console.log('[LoginPage] isAuthenticated = true, showing spinner');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  console.log('[LoginPage] Rendering login form');
 
 
 

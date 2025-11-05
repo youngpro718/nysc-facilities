@@ -21,7 +21,7 @@ export function EnhancedSupplyRoomDashboard() {
     if (userRole === 'admin' || permissions?.supply_requests === 'admin') {
       return 'supply_manager';
     }
-    if (userRole === 'supply_room_staff' || permissions?.supply_requests === 'write') {
+    if (userRole === 'court_aide' || userRole === 'purchasing_staff' || permissions?.supply_requests === 'write') {
       return 'supply_staff';
     }
     // Check if user is in Supply Department

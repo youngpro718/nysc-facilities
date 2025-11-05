@@ -4,7 +4,7 @@ import { Upload, FileText, CheckCircle, XCircle, Clock, AlertCircle } from 'luci
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QuickProcessDialog } from '@/components/forms/QuickProcessDialog';

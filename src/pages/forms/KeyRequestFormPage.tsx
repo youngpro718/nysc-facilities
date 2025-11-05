@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ArrowLeft, Key, Send, CheckCircle } from 'lucide-react';
-import { submitKeyRequest } from '@/services/supabase/keyRequestService';
+import { submitKeyRequest } from '@/services/keyRequestService';
 import { supabase } from '@/lib/supabase';
 
 export default function KeyRequestFormPage() {

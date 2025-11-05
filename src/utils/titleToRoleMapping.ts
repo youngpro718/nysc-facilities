@@ -48,7 +48,20 @@ export const TITLE_ROLE_MAPPINGS: TitleRoleMapping[] = [
     accessDescription: "Full access to spaces, issues, maintenance, keys, and lighting"
   },
 
-  // SUPPLY ROOM STAFF - Inventory and supply management
+  // CMC - Court Management Coordinator  
+  {
+    keywords: [
+      "cmc",
+      "court management",
+      "management coordinator",
+      "operations coordinator"
+    ],
+    role: "cmc",
+    description: "Court Management Coordinator",
+    accessDescription: "Access to court operations, scheduling, and key management"
+  },
+
+  // SUPPLY/INVENTORY STAFF
   {
     keywords: [
       "supply",
@@ -64,105 +77,61 @@ export const TITLE_ROLE_MAPPINGS: TitleRoleMapping[] = [
       "supply room",
       "storekeeper"
     ],
-    role: "supply_room_staff",
-    description: "Supply Room Staff",
+    role: "court_aide",
+    description: "Court Aide / Supply Staff",
     accessDescription: "Full access to inventory and supply requests"
   },
 
-  // COURT OPERATIONS - Judges and court personnel
+  // PURCHASING STAFF
+  {
+    keywords: [
+      "purchasing",
+      "buyer",
+      "procurement specialist",
+      "purchasing agent"
+    ],
+    role: "purchasing_staff",
+    description: "Purchasing Staff",
+    accessDescription: "Handles purchasing and procurement operations"
+  },
+
+  // COURT OPERATIONS - Judges and court personnel mapped to CMC or standard
   {
     keywords: [
       "judge",
       "justice",
       "magistrate",
       "judicial",
-      "honorable"
-    ],
-    role: "judge",
-    description: "Judge/Justice",
-    accessDescription: "Access to court operations, issues, supply requests, and keys"
-  },
-
-  {
-    keywords: [
+      "honorable",
       "court aide",
       "judicial aide",
-      "court assistant"
-    ],
-    role: "court_aide",
-    description: "Court Aide",
-    accessDescription: "Access to spaces, issues, occupants, inventory, and supply requests"
-  },
-
-  {
-    keywords: [
+      "court assistant",
       "clerk",
       "court clerk",
       "deputy clerk",
       "chief clerk",
-      "judicial clerk"
-    ],
-    role: "clerk",
-    description: "Court Clerk",
-    accessDescription: "Access to issues, occupants, supply requests, and keys"
-  },
-
-  {
-    keywords: [
+      "judicial clerk",
       "sergeant",
       "court sergeant",
       "security sergeant",
-      "captain"
-    ],
-    role: "sergeant",
-    description: "Sergeant/Security",
-    accessDescription: "Full access to keys, spaces, issues, and operations"
-  },
-
-  {
-    keywords: [
+      "captain",
       "court officer",
       "judicial officer",
-      "peace officer"
-    ],
-    role: "court_officer",
-    description: "Court Officer",
-    accessDescription: "Access to issues, occupants, keys, and operations"
-  },
-
-  {
-    keywords: [
+      "peace officer",
       "bailiff",
-      "court bailiff"
-    ],
-    role: "bailiff",
-    description: "Bailiff",
-    accessDescription: "Access to issues, occupants, supply requests, and keys"
-  },
-
-  {
-    keywords: [
+      "court bailiff",
       "court reporter",
       "stenographer",
-      "transcriptionist"
-    ],
-    role: "court_reporter",
-    description: "Court Reporter",
-    accessDescription: "Access to issues and supply requests"
-  },
-
-  // ADMINISTRATIVE STAFF
-  {
-    keywords: [
+      "transcriptionist",
       "administrative assistant",
       "admin assistant",
       "executive assistant",
       "secretary",
       "office manager"
     ],
-    role: "administrative_assistant",
-    description: "Administrative Assistant",
-    accessDescription: "Full access to occupants, issues, supply requests, and keys"
+    role: "standard",
+    description: "Court Personnel",
+    accessDescription: "Access to issues and supply requests"
   },
 
   // DEFAULT - Standard user
