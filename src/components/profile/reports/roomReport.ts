@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import { RoomHealthData, ReportCallback } from "./types";

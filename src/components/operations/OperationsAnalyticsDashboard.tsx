@@ -20,7 +20,7 @@ import {
   Calendar,
   Activity
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 
 interface OperationsMetrics {

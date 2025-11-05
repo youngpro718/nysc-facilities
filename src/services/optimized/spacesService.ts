@@ -5,7 +5,7 @@
  * Provides high-performance data access with intelligent caching
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { Database } from '@/integrations/supabase/types';
 
 // Type definitions for optimized queries
