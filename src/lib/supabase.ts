@@ -7,13 +7,13 @@ import { createClient } from '@supabase/supabase-js';
 
 // Load Supabase credentials from environment variables
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Validate that required environment variables are present
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   throw new Error(
     'Missing required Supabase environment variables. ' +
-    'Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env.local file.'
+    'Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set in your .env file.'
   );
 }
 
