@@ -48,7 +48,7 @@ interface UserProfile {
   is_suspended: boolean;
   suspension_reason: string | null;
   created_at: string;
-  role?: UserRole;
+  role?: UserRole; // Populated from user_roles table join
   department?: { name: string };
 }
 

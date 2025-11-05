@@ -62,8 +62,15 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           }
 
           // 4) MFA enforcement for privileged roles
+          // Fetch user's role from user_roles table
+          const { data: userRoleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
           const privilegedRoles = ['admin', 'cmc', 'coordinator', 'sergeant', 'facilities_manager'];
-          const isPrivileged = privilegedRoles.includes(profile.role || '');
+          const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
           const enforceMfa = profile.mfa_enforced === true || isPrivileged;
 
           if (enforceMfa) {

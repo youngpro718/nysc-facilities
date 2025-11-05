@@ -44,7 +44,7 @@ interface UserProfile {
   email: string;
   title: string | null;
   department: string | null;
-  role: string | null;
+  role: string | null; // Populated from user_roles table join
   created_at: string;
 }
 

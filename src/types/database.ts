@@ -6,6 +6,7 @@ export interface Profile {
   theme: 'light' | 'dark';
   department: string | null;
   last_login_at: string | null;
+  // IMPORTANT: role field has been removed - roles are now stored in user_roles table
   notification_preferences: {
     email: {
       issues: boolean;
