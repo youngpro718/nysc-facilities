@@ -13,6 +13,34 @@ export function useSecureAuth() {
     logSecurityEvent
   } = useSecurityValidation();
 
+  // Helper to get remaining attempts
+  const getRemainingAttempts = useCallback(async (email: string) => {
+    try {
+      const { data, error } = await supabase.rpc('get_rate_limit_status', {
+        p_identifier: email,
+        p_attempt_type: 'login'
+      });
+      
+      if (error || !data || data.length === 0) {
+        return { remaining: 10, total: 10, blocked: false };
+      }
+      
+      const status = data[0];
+      const maxAttempts = 10;
+      const remaining = Math.max(0, maxAttempts - (status.attempts || 0));
+      
+      return {
+        remaining,
+        total: maxAttempts,
+        blocked: status.is_blocked || false,
+        blockedUntil: status.blocked_until
+      };
+    } catch (error) {
+      console.warn('Error getting remaining attempts:', error);
+      return { remaining: 10, total: 10, blocked: false };
+    }
+  }, []);
+
   const secureSignIn = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     
@@ -33,10 +61,18 @@ export function useSecureAuth() {
       // Check rate limiting
       const rateLimitOk = await checkRateLimit(email, 'login');
       if (!rateLimitOk) {
+        const attemptInfo = await getRemainingAttempts(email);
         await logSecurityEvent('rate_limit_exceeded', 'authentication', undefined, {
           identifier: email,
           attempt_type: 'login'
         });
+        
+        if (attemptInfo.blockedUntil) {
+          const blockedTime = new Date(attemptInfo.blockedUntil);
+          const minutesRemaining = Math.ceil((blockedTime.getTime() - Date.now()) / 60000);
+          throw new Error(`Account temporarily locked. Please try again in ${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}.`);
+        }
+        
         throw new Error('Too many login attempts. Please try again later.');
       }
 
@@ -50,11 +86,32 @@ export function useSecureAuth() {
       });
 
       if (error) {
+        // Get remaining attempts for better error message
+        const attemptInfo = await getRemainingAttempts(email);
+        
         await logSecurityEvent('failed_login', 'authentication', undefined, {
           email: sanitizedEmail,
-          error_code: error.message
+          error_code: error.message,
+          remaining_attempts: attemptInfo.remaining
         });
-        throw error;
+        
+        // Enhance error message with remaining attempts
+        let errorMessage = error.message;
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = `Invalid email or password. ${attemptInfo.remaining} attempt${attemptInfo.remaining !== 1 ? 's' : ''} remaining before temporary lockout.`;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Reset rate limit on successful login
+      try {
+        await supabase.rpc('reset_rate_limit', {
+          p_identifier: email,
+          p_attempt_type: 'login'
+        });
+      } catch (resetError) {
+        console.warn('Failed to reset rate limit after successful login:', resetError);
       }
 
       // Log successful login
@@ -70,7 +127,7 @@ export function useSecureAuth() {
     } finally {
       setIsLoading(false);
     }
-  }, [validateEmail, sanitizeInput, checkRateLimit, logSecurityEvent]);
+  }, [validateEmail, sanitizeInput, checkRateLimit, logSecurityEvent, getRemainingAttempts]);
 
   const secureSignUp = useCallback(async (email: string, password: string, userData: any) => {
     setIsLoading(true);

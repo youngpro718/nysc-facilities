@@ -27,7 +27,7 @@ export default function RateLimitPanel() {
   const { data: blockedList, isLoading: blockedLoading } = useQuery({
     queryKey: ['blocked-identifiers'],
     queryFn: listBlocked,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    // refetchInterval disabled
   });
 
   const updateMutation = useMutation({

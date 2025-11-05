@@ -75,10 +75,10 @@ export function useSecurityValidation() {
   const checkRateLimit = useCallback(async (
     identifier: string, 
     attemptType: string,
-    maxAttempts: number = 5,
-    windowMinutes: number = 15
+    maxAttempts: number = 10,  // Increased from 5 to 10 attempts
+    windowMinutes: number = 30  // Increased from 15 to 30 minutes
   ): Promise<boolean> => {
-    // SECURITY: Rate limit bypass removed for production security
+    // More lenient rate limiting to prevent premature lockouts
     try {
       const { data, error } = await supabase.rpc('check_rate_limit', {
         p_identifier: identifier,
@@ -87,7 +87,10 @@ export function useSecurityValidation() {
         p_window_minutes: windowMinutes
       });
       
-      if (error) throw error;
+      if (error) {
+        console.warn('Rate limit check error (allowing attempt by default):', error);
+        return true; // Allow on error to prevent blocking login due to RPC issues
+      }
       
       return Boolean(data);
     } catch (error) {

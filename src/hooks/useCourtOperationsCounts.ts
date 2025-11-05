@@ -28,7 +28,6 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
 
       return count || 0;
     },
-    refetchInterval: 60000, // Refresh every minute
   });
 
   // Count daily sessions (upcoming/active)
@@ -47,7 +46,6 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
 
       return count || 0;
     },
-    refetchInterval: 60000,
   });
 
   // Count assignments needing attention (rooms without assignments or incomplete)
@@ -77,7 +75,6 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
       // Return count of unassigned rooms
       return (totalRooms || 0) - (assignedRooms || 0);
     },
-    refetchInterval: 60000,
   });
 
   // Count maintenance issues affecting courts
@@ -97,7 +94,6 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
 
       return count || 0;
     },
-    refetchInterval: 60000,
   });
 
   return {

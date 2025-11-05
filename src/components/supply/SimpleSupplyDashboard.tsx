@@ -50,7 +50,7 @@ export function SimpleSupplyDashboard() {
       setLastUpdated(new Date());
       return data || [];
     },
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    // refetchInterval disabled
   });
 
   // Subscribe to real-time updates

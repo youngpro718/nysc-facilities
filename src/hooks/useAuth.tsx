@@ -286,15 +286,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Role-based redirects after login
+      // Role-based redirects after login OR if on wrong dashboard
+      const userRole = userData.profile?.role;
+      const correctDashboard = getDashboardForRole(userRole);
+      
       if (currentPath === '/login') {
-        const userRole = userData.profile?.role;
-        const dashboardPath = getDashboardForRole(userRole);
         logger.debug('User coming from login, redirecting to role-based dashboard', {
           role: userRole,
-          dashboard: dashboardPath
+          dashboard: correctDashboard
         });
-        navigate(dashboardPath, { replace: true });
+        navigate(correctDashboard, { replace: true });
+      } else if (currentPath === '/dashboard' && correctDashboard !== '/dashboard') {
+        // User is on generic dashboard but should be on role-specific dashboard
+        logger.debug('Redirecting from generic dashboard to role-specific dashboard', {
+          role: userRole,
+          from: currentPath,
+          to: correctDashboard
+        });
+        navigate(correctDashboard, { replace: true });
+      } else if (currentPath === '/' && userRole !== 'admin' && userRole !== 'facilities_manager') {
+        // Non-admin on admin dashboard, redirect to their dashboard
+        logger.debug('Non-admin on admin dashboard, redirecting', {
+          role: userRole,
+          to: correctDashboard
+        });
+        navigate(correctDashboard, { replace: true });
       }
     };
 

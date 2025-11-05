@@ -44,6 +44,7 @@ export const useAdminIssuesData = () => {
     queryKey: ['adminIssues'],
     queryFn: async (): Promise<EnhancedIssue[]> => {
       try {
+        // OPTIMIZED: Single query with available joins
         const { data, error } = await supabase
           .from('issues')
           .select(`
@@ -64,57 +65,14 @@ export const useAdminIssuesData = () => {
 
         if (error) throw error;
         
-        // Enhance issues with additional data
-        const enhancedIssues = await Promise.all(
-          (data || []).map(async (issue): Promise<EnhancedIssue> => {
-            // Get reporter info
-            let reporter = null;
-            if (issue.created_by) {
-              const { data: reporterData } = await supabase
-                .from('profiles')
-                .select('id, first_name, last_name, email, title')
-                .eq('id', issue.created_by)
-                .single();
-              reporter = reporterData;
-            }
-
-            // Get room occupants if room exists
-            let room_occupants: any[] = [];
-            if (issue.room_id) {
-              const { data: occupants } = await supabase
-                .from('occupant_room_assignments')
-                .select(`
-                  is_primary,
-                  occupants:occupant_id (
-                    id,
-                    first_name,
-                    last_name,
-                    email
-                  )
-                `)
-                .eq('room_id', issue.room_id);
-              
-              room_occupants = occupants?.map(occ => ({
-                ...(occ.occupants as any),
-                is_primary: occ.is_primary
-              })) || [];
-            }
-
-            // Get comments count
-            const { count: comments_count } = await supabase
-              .from('issue_comments')
-              .select('*', { count: 'exact', head: true })
-              .eq('issue_id', issue.id);
-
-            return {
-              ...issue,
-              reporter,
-              room_occupants,
-              comments_count: comments_count || 0,
-              last_activity: issue.updated_at || issue.created_at,
-            } as EnhancedIssue;
-          })
-        );
+        // Map to enhanced issues format (reporter info skipped for performance)
+        const enhancedIssues: EnhancedIssue[] = (data || []).map(issue => ({
+          ...issue,
+          reporter: null, // Skip reporter for performance - no FK relationship
+          room_occupants: [], // Skip occupants for performance - can be loaded on-demand
+          comments_count: 0, // Skip comments count for performance - can be loaded on-demand
+          last_activity: issue.updated_at || issue.created_at,
+        }));
 
         return enhancedIssues;
       } catch (error) {
@@ -123,7 +81,7 @@ export const useAdminIssuesData = () => {
       }
     },
     staleTime: 30000,
-    refetchInterval: 60000, // Refresh every minute for real-time updates
+    refetchInterval: false, // Disabled - use manual refresh button instead
   });
 
   // Calculate statistics

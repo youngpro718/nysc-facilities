@@ -200,11 +200,12 @@ export const authService = {
       console.error('[authService.fetchUserProfile] Error fetching profile:', profileResult.error);
     }
 
-    const isAdmin = rolesResult.data?.role === 'admin' || false;
-    const profile = profileResult.data || null;
+    const role = rolesResult.data?.role || 'standard';
+    const isAdmin = role === 'admin';
+    const profile = profileResult.data ? { ...profileResult.data, role } : null;
 
     const elapsed = Date.now() - startTime;
-    console.log(`[authService.fetchUserProfile] Completed in ${elapsed}ms - isAdmin: ${isAdmin}, profile: ${!!profile}`);
+    console.log(`[authService.fetchUserProfile] Completed in ${elapsed}ms - role: ${role}, isAdmin: ${isAdmin}, profile: ${!!profile}`);
 
     return { isAdmin, profile };
   },

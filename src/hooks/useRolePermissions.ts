@@ -228,14 +228,6 @@ export function useRolePermissions() {
 
       logger.debug('[useRolePermissions] Final role from role lookup layer');
       
-      // If user is in Supply Department and NOT admin, treat them as court_aide
-      if (profileData?.departments?.name === 'Supply Department' && role !== 'admin') {
-        logger.debug('[useRolePermissions] Overriding role to court_aide');
-        role = 'court_aide';
-      } else if (role === 'admin') {
-        logger.debug('[useRolePermissions] Keeping admin role');
-      }
-      
       logger.debug('[useRolePermissions] Final role before preview');
       setProfile(profileData);
 

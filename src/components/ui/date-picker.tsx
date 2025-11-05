@@ -26,13 +26,20 @@ export function DatePicker({
   placeholder = "Select date",
   className
 }: DatePickerProps) {
+  const [open, setOpen] = React.useState(false);
+
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange?.(undefined);
   };
 
+  const handleSelect = (date: Date | undefined) => {
+    onChange?.(date);
+    setOpen(false);
+  };
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
@@ -63,7 +70,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={value}
-          onSelect={onChange}
+          onSelect={handleSelect}
           initialFocus
           className="p-3 pointer-events-auto"
         />

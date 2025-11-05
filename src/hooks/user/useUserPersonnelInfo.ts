@@ -31,14 +31,14 @@ export function useUserPersonnelInfo(userId?: string) {
         };
       }
 
-      // First, get the user's profile to find their personnel_id
+      // Get the user's profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, personnel_id')
+        .select('id, first_name, last_name, title')
         .eq('id', userId)
         .single();
 
-      if (profileError || !profile?.personnel_id) {
+      if (profileError || !profile) {
         return {
           personnelId: null,
           role: null,
@@ -50,19 +50,21 @@ export function useUserPersonnelInfo(userId?: string) {
         };
       }
 
-      // Get the personnel details
+      // Try to find matching personnel by name
+      const fullName = `${profile.first_name} ${profile.last_name}`.trim();
       const { data: personnel, error: personnelError } = await supabase
         .from('personnel_profiles')
         .select('id, display_name, title, primary_role, room_number, phone, extension')
-        .eq('id', profile.personnel_id)
-        .single();
+        .or(`display_name.ilike.%${fullName}%,title.ilike.%${profile.title || ''}%`)
+        .limit(1)
+        .maybeSingle();
 
       if (personnelError || !personnel) {
         return {
-          personnelId: profile.personnel_id,
+          personnelId: null,
           role: null,
           displayName: `${profile.first_name} ${profile.last_name}`,
-          title: null,
+          title: profile.title,
           roomNumber: null,
           phone: null,
           extension: null,

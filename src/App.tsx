@@ -134,7 +134,7 @@ function AppContent() {
         } />
         {/* Issues now handled by Operations page */}
         <Route path="/operations" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="operations" moduleName="Operations Management">
               <Operations />
             </ModuleProtectedRoute>
@@ -248,7 +248,7 @@ function AppContent() {
         } />
         {/* Maintenance now handled by Operations page */}
         <Route path="court-operations" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Operations">
               <CourtOperationsDashboard />
             </ModuleProtectedRoute>

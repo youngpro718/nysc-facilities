@@ -47,7 +47,7 @@ export function InventoryManagementTab() {
       if (error) throw error;
       return data as InventoryItem[];
     },
-    refetchInterval: 30000,
+    // refetchInterval disabled
     staleTime: 0, // Always consider data stale to get fresh updates
   });
 

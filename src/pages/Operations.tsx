@@ -89,8 +89,7 @@ export default function Operations() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(persistedStatus || 'all');
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>(persistedPriority || 'all');
-  const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
-  const refreshTimerRef = useRef<number | null>(null);
+  // Auto-refresh removed to prevent page reloading issues
 
   // Clear building filter
   const clearBuildingFilter = () => {
@@ -198,23 +197,7 @@ export default function Operations() {
     refreshData: refreshIssues
   } = useAdminIssuesData();
 
-  // Auto-refresh toggle (now that refreshIssues is defined)
-  useEffect(() => {
-    if (autoRefresh) {
-      refreshTimerRef.current = window.setInterval(() => {
-        refreshIssues();
-      }, 30000) as unknown as number;
-    } else if (refreshTimerRef.current) {
-      window.clearInterval(refreshTimerRef.current);
-      refreshTimerRef.current = null;
-    }
-    return () => {
-      if (refreshTimerRef.current) {
-        window.clearInterval(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-    };
-  }, [autoRefresh, refreshIssues]);
+  // Auto-refresh removed - use manual refresh button instead
 
   // Fetch maintenance data
   const { data: maintenanceData = [], isLoading: maintenanceLoading } = useQuery({
@@ -651,13 +634,6 @@ export default function Operations() {
               <Button onClick={refreshAllData} variant="outline" size="sm" disabled={isLoading}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
-              </Button>
-              <Button
-                onClick={() => setAutoRefresh(v => !v)}
-                variant={autoRefresh ? 'default' : 'outline'}
-                size="sm"
-              >
-                {autoRefresh ? 'Auto-refresh: On' : 'Auto-refresh: Off'}
               </Button>
               <Button onClick={() => setShowCreateIssue(true)} size="sm">
                 <Plus className="h-4 w-4 mr-2" />

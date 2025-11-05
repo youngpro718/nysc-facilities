@@ -28,7 +28,6 @@ export function ConflictDetectionPanel() {
   const { data: detectionResult, isLoading, refetch } = useQuery({
     queryKey: ["conflict-detection"],
     queryFn: () => ConflictDetectionService.detectConflicts(),
-    refetchInterval: 60000, // Auto-refresh every minute
   });
 
   const handleRefresh = async () => {

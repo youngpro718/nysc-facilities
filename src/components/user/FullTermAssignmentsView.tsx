@@ -186,7 +186,6 @@ export function FullTermAssignmentsView({
     },
     staleTime: 2 * 60 * 1000, // Cache for 2 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
-    refetchInterval: 30000, // Refresh every 30 seconds
   });
   
   // Log any query errors

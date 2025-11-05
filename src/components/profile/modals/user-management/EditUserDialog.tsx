@@ -22,7 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { SYSTEM_ROLES, getRoleLabel } from "@/config/roles";
 import { toast } from "sonner";
-import { Loader2, User as UserIcon, Mail, Briefcase, Building2, Shield, AlertTriangle } from "lucide-react";
+import { Loader2, User as UserIcon, Mail, Briefcase, Building2, Shield, AlertTriangle, Unlock } from "lucide-react";
+import { useRateLimitManager } from "@/hooks/security/useRateLimitManager";
 
 interface EditUserDialogProps {
   open: boolean;
@@ -41,6 +42,8 @@ export function EditUserDialog({ open, onOpenChange, user, onSave }: EditUserDia
   const [departments, setDepartments] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [initialRole, setInitialRole] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+  const { resetLoginAttempts } = useRateLimitManager();
 
   useEffect(() => {
     if (user && open) {
@@ -64,6 +67,30 @@ export function EditUserDialog({ open, onOpenChange, user, onSave }: EditUserDia
       .order('name');
     
     if (data) setDepartments(data);
+  };
+
+  const handleUnlockAccount = async () => {
+    if (!user?.email) return;
+    
+    setUnlocking(true);
+    try {
+      const success = await resetLoginAttempts(user.email);
+      
+      if (success) {
+        toast.success('Account Unlocked', {
+          description: `Login attempts reset for ${user.email}`
+        });
+      } else {
+        toast.error('Failed to unlock account');
+      }
+    } catch (error: any) {
+      console.error('Error unlocking account:', error);
+      toast.error('Failed to unlock account', {
+        description: error.message
+      });
+    } finally {
+      setUnlocking(false);
+    }
   };
 
   const handleSave = async () => {
@@ -258,28 +285,50 @@ export function EditUserDialog({ open, onOpenChange, user, onSave }: EditUserDia
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSave}
-            disabled={saving}
-            className="min-w-[120px]"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Save Changes'
-            )}
-          </Button>
+        <DialogFooter className="gap-2 flex-col sm:flex-row">
+          <div className="flex gap-2 flex-1">
+            <Button 
+              variant="secondary"
+              onClick={handleUnlockAccount}
+              disabled={unlocking || saving}
+              className="gap-2"
+            >
+              {unlocking ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Unlocking...
+                </>
+              ) : (
+                <>
+                  <Unlock className="h-4 w-4" />
+                  Unlock Account
+                </>
+              )}
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={saving}
+              className="min-w-[120px]"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

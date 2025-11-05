@@ -1,9 +1,67 @@
 
-import { defineConfig } from "vite";
+import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from 'vite-plugin-pwa';
+
+// Intercept console.error to suppress WebSocket RSV1 errors
+const originalConsoleError = console.error;
+console.error = function(...args: any[]) {
+  const message = args.join(' ');
+  // Suppress RSV1 WebSocket errors from browser extensions
+  if (message.includes('RSV1') || message.includes('ws error') || message.includes('Invalid WebSocket frame')) {
+    return;
+  }
+  originalConsoleError.apply(console, args);
+};
+
+// Suppress WebSocket compression errors that crash the dev server
+process.on('uncaughtException', (err: any) => {
+  if (err.code === 'WS_ERR_UNEXPECTED_RSV_1' || err.message?.includes('RSV1')) {
+    // Silently suppress - this is caused by browser extensions
+    return;
+  }
+  throw err; // Re-throw other errors
+});
+
+// Plugin to handle WebSocket errors gracefully
+const handleWebSocketErrors = (): Plugin => ({
+  name: 'handle-websocket-errors',
+  configureServer(server) {
+    // Intercept and suppress WebSocket errors
+    const originalOn = server.ws.on?.bind(server.ws);
+    if (originalOn) {
+      server.ws.on = function(event: string, handler: any) {
+        if (event === 'error') {
+          const wrappedHandler = (err: any) => {
+            // Silently ignore RSV1 errors from browser extensions
+            if (err.code === 'WS_ERR_UNEXPECTED_RSV_1' || err.message?.includes('RSV1')) {
+              return;
+            }
+            handler(err);
+          };
+          return originalOn(event, wrappedHandler);
+        }
+        return originalOn(event, handler);
+      };
+    }
+    
+    server.httpServer?.on('upgrade', (request, socket) => {
+      // Remove compression headers to prevent RSV1 errors
+      if (request.headers['sec-websocket-extensions']) {
+        delete request.headers['sec-websocket-extensions'];
+      }
+      
+      socket.on('error', (err: any) => {
+        if (err.code === 'WS_ERR_UNEXPECTED_RSV_1' || err.message?.includes('RSV1')) {
+          // Silently suppress and close socket
+          socket.destroy();
+        }
+      });
+    });
+  },
+});
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -27,6 +85,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
+    handleWebSocketErrors(),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {

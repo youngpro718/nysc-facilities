@@ -56,7 +56,7 @@ export function useUserStatistics() {
         verifiedUsers,
       };
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    // refetchInterval disabled
     staleTime: 10000, // Consider data stale after 10 seconds
   });
 }

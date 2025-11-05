@@ -72,7 +72,7 @@ export function InventoryActivityLog({ itemId, limit = 50 }: InventoryActivityLo
       if (error) throw error;
       return data as InventoryTransaction[];
     },
-    refetchInterval: 30000,
+    // refetchInterval disabled
   });
 
   const getTransactionIcon = (type: string) => {

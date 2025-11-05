@@ -15,6 +15,5 @@ export function useSessionConflicts(date: Date, period: string, buildingCode: st
       );
     },
     staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute
   });
 }

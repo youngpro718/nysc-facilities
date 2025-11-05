@@ -1,4 +1,4 @@
-import { ChevronLeft, Download, Copy, Check, Users, Shield, FileText, Settings as SettingsIcon, Activity, AlertTriangle, QrCode, AlertCircle, Search, RefreshCw, MoreVertical, Edit, Mail, KeyRound, UserX, UserCheck, Ban, CheckCircle, Clock } from 'lucide-react';
+import { ChevronLeft, Download, Copy, Check, Users, Shield, FileText, Settings as SettingsIcon, Activity, AlertTriangle, QrCode, AlertCircle, Search, RefreshCw, MoreVertical, Edit, Mail, KeyRound, UserX, UserCheck, Ban, CheckCircle, Clock, Unlock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import { AdminQuickActions } from "@/components/settings/AdminQuickActions";
 import SecurityPanel from "@/components/admin/security/SecurityPanel";
 import AdminSettingsPanel from "@/components/admin/settings/AdminSettingsPanel";
 import { useUserStatistics } from "@/hooks/admin/useUserStatistics";
+import { useRateLimitManager } from "@/hooks/security/useRateLimitManager";
 
 interface UserProfile {
   id: string;
@@ -65,6 +66,7 @@ export default function AdminProfile() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const appUrl = window.location.origin;
+  const { resetLoginAttempts } = useRateLimitManager();
   
   // Fetch real user statistics
   const { data: stats, isLoading: statsLoading } = useUserStatistics();
@@ -180,6 +182,23 @@ export default function AdminProfile() {
     } catch (error) {
       console.error('Error rejecting user:', error);
       toast.error(`❌ Failed to reject ${userName}`, { id: 'reject-user' });
+    }
+  };
+
+  const handleUnlockAccount = async (userEmail: string) => {
+    toast.loading('Unlocking account...', { id: 'unlock-account' });
+    
+    try {
+      const success = await resetLoginAttempts(userEmail);
+      
+      if (success) {
+        toast.success(`✅ Account unlocked for ${userEmail}`, { id: 'unlock-account' });
+      } else {
+        toast.error('Failed to unlock account', { id: 'unlock-account' });
+      }
+    } catch (error: any) {
+      console.error('Error unlocking account:', error);
+      toast.error(`❌ Failed to unlock account: ${error.message}`, { id: 'unlock-account' });
     }
   };
 
@@ -602,7 +621,7 @@ export default function AdminProfile() {
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuContent align="end" className="w-56">
                                   {(user.verification_status === 'pending' || !user.is_approved) && (
                                     <>
                                       <DropdownMenuItem onClick={() => handleApproveUser(user.id)}>
@@ -619,6 +638,17 @@ export default function AdminProfile() {
                                       <DropdownMenuSeparator />
                                     </>
                                   )}
+                                  <DropdownMenuItem onClick={() => handleUnlockAccount(user.email)}>
+                                    <Unlock className="h-4 w-4 mr-2" />
+                                    Unlock Account
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    navigator.clipboard.writeText(user.email);
+                                    toast.success('Email copied to clipboard');
+                                  }}>
+                                    <Mail className="h-4 w-4 mr-2" />
+                                    Copy Email
+                                  </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>

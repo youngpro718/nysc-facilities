@@ -48,10 +48,10 @@ export const navigationItems: NavigationItem[] = [
     moduleKey: 'spaces',
   },
   {
-    title: 'Issues',
+    title: 'Operations',
     href: '/operations',
     icon: AlertTriangle,
-    adminOnly: true,
+    adminOnly: false, // Allow CMC and facility staff
     moduleKey: 'operations',
   },
 ];

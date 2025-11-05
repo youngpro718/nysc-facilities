@@ -48,6 +48,8 @@ export function CreateSessionDialog({
   const [showCustomStatus, setShowCustomStatus] = useState(false);
   const [partSearch, setPartSearch] = useState('');
   const [partDropdownOpen, setPartDropdownOpen] = useState(false);
+  const [statusDetailDateOpen, setStatusDetailDateOpen] = useState(false);
+  const [notesDateOpen, setNotesDateOpen] = useState(false);
   
   // New calendar fields
   const [partsEnteredBy, setPartsEnteredBy] = useState('');
@@ -269,9 +271,13 @@ export function CreateSessionDialog({
            room.part?.toLowerCase().includes(partSearch.toLowerCase());
   }) || [];
 
-  // Reset form when dialog opens
+  // Track previous open state to detect when dialog first opens
+  const prevOpenRef = useRef(false);
+  
+  // Reset form only when dialog first opens (not on subsequent prop changes)
   useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
+      // Dialog just opened - reset everything
       setSelectedBuilding(initialBuildingCode);
       setSelectedRoomId('');
       setStatus('OUT');
@@ -284,6 +290,8 @@ export function CreateSessionDialog({
       setShowCustomStatus(false);
       setPartSearch('');
       setPartDropdownOpen(false);
+      setStatusDetailDateOpen(false);
+      setNotesDateOpen(false);
       // Reset new calendar fields
       setPartsEnteredBy('');
       setDefendants('');
@@ -292,6 +300,7 @@ export function CreateSessionDialog({
       setTopCharge('');
       setAttorney('');
     }
+    prevOpenRef.current = open;
   }, [open, initialBuildingCode]);
 
   // Reset only case-specific fields after successful save
@@ -595,7 +604,7 @@ export function CreateSessionDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="status-detail">Status Detail (Optional)</Label>
-              <Popover>
+              <Popover open={statusDetailDateOpen} onOpenChange={setStatusDetailDateOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" type="button">
                     <CalendarIcon className="h-3 w-3 mr-1" />
@@ -610,6 +619,7 @@ export function CreateSessionDialog({
                       if (selectedDate) {
                         const dateStr = format(selectedDate, 'MM/dd');
                         setStatusDetail(prev => prev ? `${prev} ${dateStr}` : dateStr);
+                        setStatusDetailDateOpen(false);
                       }
                     }}
                     initialFocus
@@ -645,7 +655,7 @@ export function CreateSessionDialog({
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0 z-50" align="start">
+                <PopoverContent className="w-[400px] p-0" align="start">
                   <Command>
                     <CommandInput 
                       placeholder="Search rooms or parts..." 
@@ -848,7 +858,7 @@ export function CreateSessionDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="notes">Notes</Label>
-              <Popover>
+              <Popover open={notesDateOpen} onOpenChange={setNotesDateOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" type="button">
                     <CalendarIcon className="h-3 w-3 mr-1" />
@@ -863,6 +873,7 @@ export function CreateSessionDialog({
                       if (selectedDate) {
                         const dateStr = format(selectedDate, 'MM/dd');
                         setNotes(prev => prev ? `${prev} ${dateStr}` : dateStr);
+                        setNotesDateOpen(false);
                       }
                     }}
                     initialFocus

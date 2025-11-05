@@ -131,7 +131,7 @@ const Layout = () => {
                       {profile?.first_name} {profile?.last_name}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {navReady ? (userRole === 'admin' ? 'Administrator' : 'User') : ''}
+                      {profile?.title || (navReady ? (userRole === 'admin' ? 'Administrator' : 'User') : '')}
                     </span>
                   </div>
                   <button

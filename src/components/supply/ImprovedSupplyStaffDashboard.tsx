@@ -68,7 +68,7 @@ export function ImprovedSupplyStaffDashboard() {
       setLastUpdated(new Date());
       return data || [];
     },
-    refetchInterval: 30000,
+    // refetchInterval disabled
   });
 
   // Fetch completed orders separately (last 7 days only)
@@ -109,7 +109,7 @@ export function ImprovedSupplyStaffDashboard() {
       return data || [];
     },
     enabled: activeTab === 'completed', // Only fetch when viewing completed tab
-    refetchInterval: 60000, // Refresh every minute
+    // refetchInterval disabled
   });
 
   // Subscribe to real-time updates
