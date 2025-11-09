@@ -2,8 +2,23 @@
 // Profile management service with role-based access control
 import { supabase } from '@/lib/supabase';
 
+// Export the new role management functions
+export { 
+  updateUserRole, 
+  getUsersByRole as getProfilesByRoleNew,
+  getProfileWithRole,
+  getUserRole,
+  hasRole,
+  getAllUsersWithRoles,
+  removeUserRole,
+  type ProfileWithRole,
+  type UserRole as RoleType
+} from './profile/roleManagement';
+
 /**
  * User roles in the system
+ * @deprecated Roles are now stored in user_roles table, not in profiles
+ * Use user_roles table directly for role management
  * - coordinator: Full access (read/write all profiles, assign roles)
  * - sergeant: Limited updates (to be implemented)
  * - it_dcas: Read + targeted updates (to be implemented)
@@ -13,12 +28,12 @@ export type Role = 'coordinator' | 'sergeant' | 'it_dcas' | 'viewer';
 
 /**
  * Profile data structure matching the database schema
+ * @note The 'role' field has been removed - roles are now stored in user_roles table
  */
 export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
-  role: Role;
   building: string | null;
   onboarded: boolean;
   mfa_enforced: boolean;
@@ -66,8 +81,9 @@ export async function getMyProfile(): Promise<Profile> {
 
 /**
  * Update the current user's profile
- * Note: Users cannot update their own role, mfa_enforced, or onboarded fields
+ * Note: Users cannot update their own mfa_enforced or onboarded fields
  * Only coordinators can modify these security-related fields
+ * Role updates must be done through user_roles table
  * 
  * @param patch - Partial profile data to update
  * @returns The updated profile data
@@ -75,7 +91,6 @@ export async function getMyProfile(): Promise<Profile> {
  */
 export async function updateMyProfile(patch: Partial<{
   full_name: string;
-  role: Role;
   building: string;
   onboarded: boolean;
   mfa_enforced: boolean;
@@ -179,19 +194,31 @@ export async function isCoordinator(): Promise<boolean> {
 
 /**
  * Get profiles by role
+ * @deprecated Use getUsersByRole instead - roles are now in user_roles table
  * @param role - The role to filter by
  * @returns Array of profiles with the specified role
  * @throws Error if not authorized
  */
 export async function getProfilesByRole(role: Role): Promise<Profile[]> {
+  console.warn('getProfilesByRole is deprecated. Use getUsersByRole instead.');
   const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('role', role)
-    .order('full_name', { ascending: true });
+    .from('user_roles')
+    .select('user_id')
+    .eq('role', role);
   
   if (error) throw error;
-  return data as Profile[];
+  
+  const userIds = data.map(r => r.user_id);
+  if (userIds.length === 0) return [];
+  
+  const { data: profiles, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('id', userIds)
+    .order('full_name', { ascending: true });
+  
+  if (profileError) throw profileError;
+  return profiles as Profile[];
 }
 
 /**
@@ -250,11 +277,18 @@ export async function setMfaEnforcement(userId: string, enforced: boolean): Prom
 
 /**
  * Assign a role to a user (requires coordinator role)
+ * @deprecated Use updateUserRole from roleManagement.ts instead - roles are now in user_roles table
  * @param userId - The user ID to assign role to
  * @param role - The role to assign
  * @returns The updated profile
  * @throws Error if not authorized or update fails
  */
 export async function assignRole(userId: string, role: Role): Promise<Profile> {
-  return updateProfile(userId, { role });
+  console.warn('assignRole is deprecated. Use updateUserRole from roleManagement.ts instead.');
+  
+  // Import dynamically to avoid circular dependency
+  const { updateUserRole } = await import('./profile/roleManagement');
+  await updateUserRole(userId, role as any);
+  
+  return getProfileById(userId);
 }

@@ -281,7 +281,7 @@ export const operationsService = {
         .from('audit_logs')
         .select(`
           *,
-          user:profiles(id, email, first_name, last_name, role)
+          user:profiles(id, email, first_name, last_name)
         `)
         .eq('table_name', tableName)
         .eq('record_id', recordId)
