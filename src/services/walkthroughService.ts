@@ -193,18 +193,30 @@ function getActionMessage(action: QuickAction): string {
 }
 
 export async function getHallwayFixtures(hallwayId: string) {
-  const { data, error } = await supabase
+  // Fetch fixtures
+  const { data: fixtures, error: fixturesError } = await supabase
     .from('lighting_fixtures')
-    .select(`
-      *,
-      hallways!lighting_fixtures_space_id_fkey(name, code, floor_id)
-    `)
+    .select('*')
     .eq('space_id', hallwayId)
     .eq('space_type', 'hallway')
     .order('sequence_number');
 
-  if (error) throw error;
-  return data || [];
+  if (fixturesError) throw fixturesError;
+
+  // Fetch hallway details separately
+  const { data: hallway, error: hallwayError } = await supabase
+    .from('hallways')
+    .select('name, code, floor_id')
+    .eq('id', hallwayId)
+    .maybeSingle();
+
+  if (hallwayError) throw hallwayError;
+
+  // Combine data
+  return (fixtures || []).map(fixture => ({
+    ...fixture,
+    hallways: hallway
+  }));
 }
 
 export async function getWalkthroughHistory(hallwayId?: string, limit = 10) {
