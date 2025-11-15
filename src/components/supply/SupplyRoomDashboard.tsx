@@ -1,0 +1,575 @@
+// @ts-nocheck
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { supabase } from '@/lib/supabase';
+import { 
+  Package, 
+  CheckCircle, 
+  Clock, 
+  AlertTriangle, 
+  BarChart3,
+  Users,
+  XCircle,
+  Search,
+  MapPin,
+  Calendar,
+  Truck
+} from 'lucide-react';
+import { format } from 'date-fns';
+ 
+ 
+
+interface SupplyRequest {
+  id: string;
+  title: string;
+  description?: string;
+  justification: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'fulfilled' | 'cancelled';
+  requested_delivery_date?: string;
+  delivery_location?: string;
+  created_at: string;
+  updated_at: string;
+  requester_id: string;
+  profiles: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    department?: string;
+  };
+  supply_request_items: Array<{
+    id: string;
+    item_id: string;
+    quantity_requested: number;
+    quantity_approved?: number;
+    quantity_fulfilled?: number;
+    notes?: string;
+    inventory_items: {
+      name: string;
+      unit?: string;
+      quantity: number;
+      inventory_categories?: {
+        name: string;
+        color: string;
+      };
+    };
+  }>;
+}
+
+const statusConfig = {
+  pending: { icon: Clock, color: "text-yellow-600 bg-yellow-50 border-yellow-200", label: "Pending Review" },
+  under_review: { icon: AlertTriangle, color: "text-blue-600 bg-blue-50 border-blue-200", label: "Under Review" },
+  approved: { icon: CheckCircle, color: "text-green-600 bg-green-50 border-green-200", label: "Approved" },
+  rejected: { icon: XCircle, color: "text-red-600 bg-red-50 border-red-200", label: "Rejected" },
+  fulfilled: { icon: Package, color: "text-purple-600 bg-purple-50 border-purple-200", label: "Fulfilled" },
+  cancelled: { icon: XCircle, color: "text-gray-600 bg-gray-50 border-gray-200", label: "Cancelled" },
+};
+
+const priorityConfig = {
+  low: { color: "text-green-600 bg-green-50 border-green-200", label: "Low" },
+  medium: { color: "text-yellow-600 bg-yellow-50 border-yellow-200", label: "Medium" },
+  high: { color: "text-orange-600 bg-orange-50 border-orange-200", label: "High" },
+  urgent: { color: "text-red-600 bg-red-50 border-red-200", label: "Urgent" },
+};
+
+export function SupplyRoomDashboard() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { userRole, permissions } = useRolePermissions();
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [dashboardStats, setDashboardStats] = useState({
+    totalRequests: 0,
+    pendingRequests: 0,
+    lowStockItems: 0,
+    completedToday: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [requests, setRequests] = useState<SupplyRequest[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<SupplyRequest | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [fulfillmentNotes, setFulfillmentNotes] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [fulfillmentDialog, setFulfillmentDialog] = useState(false);
+
+  useEffect(() => {
+    fetchDashboardStats();
+    fetchRequests();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch supply requests stats
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('supply_requests')
+        .select('id, status, created_at')
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()); // Last 30 days
+
+      if (requestsError) throw requestsError;
+
+      const totalRequests = requestsData?.length || 0;
+      const pendingRequests = requestsData?.filter(r => 
+        ['pending', 'under_review'].includes(r.status)
+      ).length || 0;
+      
+      const today = new Date().toDateString();
+      const completedToday = requestsData?.filter(r => 
+        r.status === 'fulfilled' && new Date(r.created_at).toDateString() === today
+      ).length || 0;
+
+      setDashboardStats({
+        totalRequests,
+        pendingRequests,
+        lowStockItems: 5, // Mock data - would come from inventory
+        completedToday
+      });
+
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard statistics",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRequests = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('supply_requests')
+        .select(`
+          *,
+          profiles:requester_id (
+            first_name,
+            last_name,
+            email,
+            department
+          ),
+          supply_request_items (
+            id,
+            item_id,
+            quantity_requested,
+            quantity_approved,
+            quantity_fulfilled,
+            notes,
+            inventory_items (
+              name,
+              unit,
+              quantity,
+              inventory_categories (
+                name,
+                color
+              )
+            )
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRequests((data || []) as SupplyRequest[]);
+    } catch (error) {
+      console.error('Error fetching supply requests:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load supply requests",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateRequestStatus = async (requestId: string, status: string, notes?: string) => {
+    try {
+      const updates: any = {
+        status,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (status === 'fulfilled') {
+        updates.fulfilled_by = user?.id;
+        updates.fulfilled_at = new Date().toISOString();
+        updates.fulfillment_notes = notes;
+      }
+
+      const { error } = await supabase
+        .from('supply_requests')
+        .update(updates)
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Request ${status} successfully`,
+      });
+
+      fetchRequests();
+      setFulfillmentDialog(false);
+      setSelectedRequest(null);
+      setFulfillmentNotes('');
+      setDeliveryDate('');
+    } catch (error) {
+      console.error('Error updating request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredRequests = requests.filter(request => {
+    const matchesStatus = filterStatus === 'all' || request.status === filterStatus;
+    const matchesPriority = filterPriority === 'all' || request.priority === filterPriority;
+    const matchesSearch = searchQuery === '' || 
+      request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.profiles?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.profiles?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.profiles?.department?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesStatus && matchesPriority && matchesSearch;
+  });
+
+  const getStatusCounts = () => {
+    return {
+      pending: requests.filter(r => r.status === 'pending').length,
+      under_review: requests.filter(r => r.status === 'under_review').length,
+      approved: requests.filter(r => r.status === 'approved').length,
+      fulfilled: requests.filter(r => r.status === 'fulfilled').length,
+      total: requests.length,
+    };
+  };
+
+  const statusCounts = getStatusCounts();
+
+  const handleFulfillRequest = (request: SupplyRequest) => {
+    setSelectedRequest(request);
+    setFulfillmentDialog(true);
+  };
+
+  const confirmFulfillment = () => {
+    if (selectedRequest) {
+      updateRequestStatus(selectedRequest.id, 'fulfilled', fulfillmentNotes);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading supply requests...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Supply Room Dashboard</h1>
+          <p className="text-muted-foreground">Manage and fulfill supply requests</p>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{statusCounts.pending}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Under Review</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{statusCounts.under_review}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{statusCounts.approved}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Fulfilled</CardTitle>
+            <Package className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{statusCounts.fulfilled}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <BarChart3 className="h-4 w-4 text-gray-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statusCounts.total}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search requests, requesters, or departments..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="under_review">Under Review</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="fulfilled">Fulfilled</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filterPriority} onValueChange={setFilterPriority}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Filter by priority" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Priorities</SelectItem>
+            <SelectItem value="urgent">Urgent</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Requests List */}
+      <div className="space-y-4">
+        {filteredRequests.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Package className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No requests found</h3>
+              <p className="text-muted-foreground text-center">
+                {searchQuery || filterStatus !== 'all' || filterPriority !== 'all'
+                  ? 'Try adjusting your filters or search query'
+                  : 'No supply requests available at the moment'}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredRequests.map((request) => {
+            const StatusIcon = statusConfig[request.status]?.icon || AlertTriangle;
+            
+            return (
+              <Card key={request.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <StatusIcon className="h-4 w-4" />
+                        <h3 className="font-semibold">{request.title}</h3>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {request.profiles?.first_name} {request.profiles?.last_name}
+                        </div>
+                        {request.profiles?.department && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {request.profiles.department}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {format(new Date(request.created_at), 'MMM d, yyyy')}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Badge className={priorityConfig[request.priority]?.color}>
+                        {priorityConfig[request.priority]?.label}
+                      </Badge>
+                      <Badge className={statusConfig[request.status]?.color}>
+                        {statusConfig[request.status]?.label}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="space-y-4">
+                    {request.description && (
+                      <p className="text-sm text-muted-foreground">{request.description}</p>
+                    )}
+                    
+                    {/* Items */}
+                    <div>
+                      <h4 className="font-medium mb-2">Requested Items:</h4>
+                      <div className="space-y-2">
+                        {(request.supply_request_items || []).map((item) => (
+                          <div key={item.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                            <div>
+                              <span className="font-medium">{item.inventory_items.name}</span>
+                              {item.inventory_items.inventory_categories && (
+                                <Badge 
+                                  variant="outline" 
+                                  className="ml-2"
+                                  style={{ 
+                                    borderColor: item.inventory_items.inventory_categories.color,
+                                    color: item.inventory_items.inventory_categories.color
+                                  }}
+                                >
+                                  {item.inventory_items.inventory_categories.name}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-medium">{item.quantity_requested}</span>
+                              {item.inventory_items.unit && (
+                                <span className="text-muted-foreground"> {item.inventory_items.unit}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-2">
+                      {request.status === 'approved' && (
+                        <Button 
+                          onClick={() => handleFulfillRequest(request)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Truck className="h-4 w-4 mr-2" />
+                          Mark as Fulfilled
+                        </Button>
+                      )}
+                      
+                      {request.status === 'pending' && (
+                        <>
+                          <Button 
+                            onClick={() => updateRequestStatus(request.id, 'under_review')}
+                            variant="outline"
+                          >
+                            <AlertTriangle className="h-4 w-4 mr-2" />
+                            Review
+                          </Button>
+                          <Button 
+                            onClick={() => updateRequestStatus(request.id, 'approved')}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Approve
+                          </Button>
+                        </>
+                      )}
+                      
+                      {(request.status === 'pending' || request.status === 'under_review') && (
+                        <Button 
+                          onClick={() => updateRequestStatus(request.id, 'rejected')}
+                          variant="destructive"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Reject
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
+      {/* Fulfillment Dialog */}
+      <Dialog open={fulfillmentDialog} onOpenChange={setFulfillmentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark Request as Fulfilled</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="fulfillment-notes">Fulfillment Notes</Label>
+              <Textarea
+                id="fulfillment-notes"
+                placeholder="Add any notes about the fulfillment (optional)"
+                value={fulfillmentNotes}
+                onChange={(e) => setFulfillmentNotes(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="delivery-date">Delivery Date (optional)</Label>
+              <Input
+                id="delivery-date"
+                type="date"
+                value={deliveryDate}
+                onChange={(e) => setDeliveryDate(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setFulfillmentDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={confirmFulfillment} className="bg-green-600 hover:bg-green-700">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Mark as Fulfilled
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

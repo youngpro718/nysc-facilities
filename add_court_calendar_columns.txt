@@ -1,0 +1,30 @@
+-- ============================================================================
+-- Migration: Add Court Calendar Columns to court_sessions
+-- Purpose: Add additional columns to match court calendar format requirements
+-- Date: 2025-10-23
+-- ============================================================================
+
+-- Add new columns to court_sessions table
+ALTER TABLE court_sessions
+ADD COLUMN IF NOT EXISTS parts_entered_by TEXT,
+ADD COLUMN IF NOT EXISTS defendants TEXT,
+ADD COLUMN IF NOT EXISTS purpose TEXT,
+ADD COLUMN IF NOT EXISTS date_transferred_or_started DATE,
+ADD COLUMN IF NOT EXISTS top_charge TEXT,
+ADD COLUMN IF NOT EXISTS attorney TEXT;
+
+-- Add comments for documentation
+COMMENT ON COLUMN court_sessions.parts_entered_by IS 'Name of person who entered the parts';
+COMMENT ON COLUMN court_sessions.defendants IS 'Defendant names for the case';
+COMMENT ON COLUMN court_sessions.purpose IS 'Purpose of the session (e.g., hearing, trial, conference)';
+COMMENT ON COLUMN court_sessions.date_transferred_or_started IS 'Date the case was transferred or started';
+COMMENT ON COLUMN court_sessions.top_charge IS 'Top charge in the case';
+COMMENT ON COLUMN court_sessions.attorney IS 'Attorney information';
+
+-- Create indexes for commonly queried columns
+CREATE INDEX IF NOT EXISTS idx_court_sessions_date_transferred ON court_sessions(date_transferred_or_started);
+CREATE INDEX IF NOT EXISTS idx_court_sessions_defendants ON court_sessions USING gin(to_tsvector('english', defendants));
+
+-- ============================================================================
+-- End of Migration
+-- ============================================================================

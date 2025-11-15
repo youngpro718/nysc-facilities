@@ -1,0 +1,100 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+node_modules/.cache
+node_modules/.bin
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Development and build files
+*.tsbuildinfo
+.eslintcache
+.turbo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Documentation and scripts (exclude from deployment)
+scripts/
+*.md
+!README.md
+!docs/*.md
+!docs/epics/*.md
+!docs/stories/*.md
+!docs/qa/*.md
+!db/README.md
+
+# Database and infrastructure assets (exclude from static deploy)
+sql/
+supabase/
+*.sql
+!db/**/*.sql
+
+# Database migrations (handled separately)
+supabase/migrations/
+supabase/seed.sql
+
+# Lock files (keep only one)
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.local.example
+
+# Additional exclusions for deployment
+*.map
+*.tgz
+*.tar.gz
+.cache/
+temp/
+tmp/
+components.json
+eslint.config.js
+windsurf_deployment.yaml
+README.md
+
+# IDE and editor files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.swp
+*.swo
+*~
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Package manager files
+.pnpm-store/
+.yarn/
+.npm/
+
+# Local Netlify folder
+.netlify
