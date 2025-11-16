@@ -54,6 +54,7 @@ const LoginPage = () => {
       <img
         src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png"
         alt="Court Seal Watermark"
+        fetchPriority="high"
         className="pointer-events-none select-none absolute right-6 top-6 opacity-10 w-24 h-24 -z-10"
       />
 
