@@ -34,11 +34,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const maintenanceSchema = z.object({
   scheduled_date: z.string().min(1, "Maintenance date is required"),
-  maintenance_type: z.string().min(1, "Maintenance type is required"),
-  priority_level: z.string().default("normal"),
+  maintenance_type: z.enum([
+    "routine",
+    "repair",
+    "replacement",
+    "inspection",
+    "emergency",
+  ]),
+  priority_level: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
   estimated_duration: z.string().optional(),
   notes: z.string().optional(),
-  parts_required: z.string().optional()
+  parts_required: z.string().optional(),
 });
 
 type MaintenanceFormData = z.infer<typeof maintenanceSchema>;
@@ -58,7 +64,7 @@ export function LightingMaintenanceDialog({
   const form = useForm<MaintenanceFormData>({
     resolver: zodResolver(maintenanceSchema),
     defaultValues: {
-      maintenance_type: "",
+      maintenance_type: "routine",
       priority_level: "normal",
       estimated_duration: "",
       notes: "",

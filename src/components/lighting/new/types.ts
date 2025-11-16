@@ -1,4 +1,4 @@
-export type LightingTab = 'overview' | 'fixtures' | 'rooms' | 'maintenance' | 'reports';
+export type LightingTab = 'overview' | 'location' | 'status' | 'templates' | 'reports';
 
 export interface QuickFilterState {
   showOnlyIssues?: boolean;

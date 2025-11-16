@@ -79,6 +79,17 @@ export interface LightingFixture {
   maintenance_notes?: string | null;
   inspection_history?: InspectionRecord[];
   spatial_assignment?: SpatialAssignment;
+  // Additional maintenance/inspection metadata present in DB
+  maintenance_priority?: string | null;
+  last_inspection_date?: string | null;
+  next_inspection_date?: string | null;
+  scheduled_maintenance_date?: string | null;
+  maintenance_frequency_days?: number | null;
+  last_scheduled_by?: string | null;
+  balance_check_date?: string | null;
+  qr_code_url?: string | null;
+  last_scanned_at?: string | null;
+  times_scanned?: number | null;
   // Computed client-side metrics
   outage_minutes?: number | null;      // if currently out (reported_out_date && !replaced_date)
   repair_minutes?: number | null;      // if repaired (reported_out_date && replaced_date)

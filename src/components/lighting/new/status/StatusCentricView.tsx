@@ -1,136 +1,115 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Lightbulb, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
+import {
+  Lightbulb,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
   Settings,
   Filter,
   Download,
-  Wrench
+  Wrench,
+  Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { fetchLightingFixtures, markLightsFixed, markLightsOut, supabaseWithRetry, toggleElectricianRequired } from '@/lib/supabase';
+import type { LightStatus, LightingFixture } from '@/types/lighting';
+import { getFixtureFullLocationText } from '@/components/lighting/utils/location';
 
 export function StatusCentricView() {
   const [selectedFixtures, setSelectedFixtures] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterHallway, setFilterHallway] = useState<string>('all');
+  const queryClient = useQueryClient();
 
-  // Mock data organized by status
-  const fixturesByStatus = {
-    functional: [
-      {
-        id: 'fix-1',
-        name: 'Main Hall Light 01',
-        location: '13th Floor - Main Hallway',
-        hallway: 'main',
-        position: 1,
-        bulbs: 2,
-        technology: 'LED',
-        lastMaintenance: '2024-01-15'
-      },
-      {
-        id: 'fix-2',
-        name: 'Main Hall Light 02',
-        location: '13th Floor - Main Hallway',
-        hallway: 'main',
-        position: 2,
-        bulbs: 2,
-        technology: 'LED',
-        lastMaintenance: '2024-01-15'
+  const { data: fixtures = [], isLoading, isFetching } = useQuery({
+    queryKey: ['lighting-fixtures'],
+    queryFn: () => supabaseWithRetry.query(fetchLightingFixtures),
+  });
+
+  const allFixtures = fixtures as LightingFixture[];
+
+  const fixturesByStatus = allFixtures.reduce(
+    (acc, fixture) => {
+      const status = fixture.status as LightStatus;
+      if (!acc[status]) {
+        acc[status] = [];
       }
-    ],
-    non_functional: [
-      {
-        id: 'fix-broken-1',
-        name: 'Main Hall Light 15',
-        location: '13th Floor - Main Hallway',
-        hallway: 'main',
-        position: 15,
-        bulbs: 2,
-        technology: 'LED',
-        reportedDate: '2024-01-20',
-        issueType: 'Bulb replacement needed'
-      },
-      {
-        id: 'fix-broken-2',
-        name: 'Elevator Bank 2 Light 01',
-        location: '17th Floor - Elevator Bank 2',
-        hallway: 'center_west',
-        position: 1,
-        bulbs: 2,
-        technology: 'Fluorescent',
-        reportedDate: '2024-01-18',
-        issueType: 'Electrical issue'
-      }
-    ],
-    maintenance_needed: [
-      {
-        id: 'fix-maint-1',
-        name: 'North East Light 03',
-        location: '13th Floor - North East',
-        hallway: 'north_east',
-        position: 3,
-        bulbs: 2,
-        technology: 'LED',
-        scheduledDate: '2024-02-01',
-        maintenanceType: 'Routine inspection'
-      }
-    ],
-    scheduled_replacement: [
-      {
-        id: 'fix-sched-1',
-        name: 'Main Hall Light 08',
-        location: '14th Floor - Main Hallway',
-        hallway: 'main',
-        position: 8,
-        bulbs: 2,
-        technology: 'Fluorescent',
-        scheduledDate: '2024-02-15',
-        replacementType: 'LED upgrade'
-      }
-    ]
-  };
+      acc[status].push(fixture);
+      return acc;
+    },
+    {
+      functional: [] as LightingFixture[],
+      non_functional: [] as LightingFixture[],
+      maintenance_needed: [] as LightingFixture[],
+      scheduled_replacement: [] as LightingFixture[],
+      pending_maintenance: [] as LightingFixture[],
+    }
+  );
 
   const statusConfig = {
     functional: {
       label: 'Functional',
       icon: CheckCircle,
       color: 'bg-green-100 text-green-800',
-      count: fixturesByStatus.functional.length
+      count: fixturesByStatus.functional.length,
     },
     non_functional: {
       label: 'Non-Functional',
       icon: AlertTriangle,
       color: 'bg-red-100 text-red-800',
-      count: fixturesByStatus.non_functional.length
+      count: fixturesByStatus.non_functional.length,
     },
     maintenance_needed: {
       label: 'Maintenance Needed',
       icon: Clock,
       color: 'bg-yellow-100 text-yellow-800',
-      count: fixturesByStatus.maintenance_needed.length
+      count:
+        fixturesByStatus.maintenance_needed.length +
+        fixturesByStatus.pending_maintenance.length,
     },
     scheduled_replacement: {
       label: 'Scheduled Replacement',
       icon: Settings,
       color: 'bg-blue-100 text-blue-800',
-      count: fixturesByStatus.scheduled_replacement.length
-    }
-  };
+      count: fixturesByStatus.scheduled_replacement.length,
+    },
+  } as const;
 
-  const hallwayOptions = [
-    { value: 'all', label: 'All Hallways' },
-    { value: 'main', label: 'Main Hallway' },
-    { value: 'north_east', label: 'North East' },
-    { value: 'north_west', label: 'North West' },
-    { value: 'center_east', label: 'Center East' },
-    { value: 'center_west', label: 'Center West' }
-  ];
+  const hallwayOptions = useMemo(
+    () => {
+      const optionsMap = new Map<string, string>();
+      for (const fixture of allFixtures) {
+        const key = fixture.space_name || fixture.room_number || fixture.id;
+        if (!key) continue;
+        const label = fixture.space_name || fixture.room_number || key;
+        if (!optionsMap.has(key)) {
+          optionsMap.set(key, label);
+        }
+      }
+      const dynamicOptions = Array.from(optionsMap.entries()).map(([value, label]) => ({
+        value,
+        label,
+      }));
+      return [{ value: 'all', label: 'All Locations' }, ...dynamicOptions];
+    },
+    [allFixtures]
+  );
+
+  const getStatusFixtures = (status: keyof typeof statusConfig): LightingFixture[] => {
+    if (status === 'maintenance_needed') {
+      return [
+        ...fixturesByStatus.maintenance_needed,
+        ...fixturesByStatus.pending_maintenance,
+      ];
+    }
+    return fixturesByStatus[status as keyof typeof fixturesByStatus] || [];
+  };
 
   const toggleFixture = (fixtureId: string) => {
     const newSelected = new Set(selectedFixtures);
@@ -142,12 +121,72 @@ export function StatusCentricView() {
     setSelectedFixtures(newSelected);
   };
 
-  const getFilteredFixtures = (fixtures: any[], status: string) => {
+  const getFilteredFixtures = (fixtures: LightingFixture[]) => {
     if (filterHallway === 'all') return fixtures;
-    return fixtures.filter(fixture => fixture.hallway === filterHallway);
+    return fixtures.filter((fixture) => {
+      const key = fixture.space_name || fixture.room_number || fixture.id;
+      return key === filterHallway;
+    });
   };
 
-  const renderFixtureCard = (fixture: any, status: string) => (
+  const handleMarkOut = async (requiresElectrician: boolean) => {
+    const ids = Array.from(selectedFixtures);
+    if (!ids.length) return;
+    try {
+      await markLightsOut(ids, requiresElectrician);
+      toast.success(
+        `Marked ${ids.length} light${ids.length > 1 ? 's' : ''} as out${
+          requiresElectrician ? ' (electrician)' : ''
+        }`
+      );
+      setSelectedFixtures(new Set());
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to update lights');
+    }
+  };
+
+  const handleMarkFixed = async () => {
+    const ids = Array.from(selectedFixtures);
+    if (!ids.length) return;
+    try {
+      await markLightsFixed(ids);
+      toast.success(
+        `Marked ${ids.length} light${ids.length > 1 ? 's' : ''} as fixed`
+      );
+      setSelectedFixtures(new Set());
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to update lights');
+    }
+  };
+
+  const handleToggleElectrician = async (required: boolean) => {
+    const ids = Array.from(selectedFixtures);
+    if (!ids.length) return;
+    try {
+      await toggleElectricianRequired(ids, required);
+      toast.success(
+        `Updated electrician requirement for ${ids.length} light${
+          ids.length > 1 ? 's' : ''
+        }`
+      );
+      setSelectedFixtures(new Set());
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to update electrician requirement');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const renderFixtureCard = (fixture: LightingFixture) => (
     <div key={fixture.id} className="border rounded-lg p-4 hover:bg-muted/50">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
@@ -158,41 +197,32 @@ export function StatusCentricView() {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h4 className="font-medium">{fixture.name}</h4>
-              <Badge variant="outline" className="text-xs">
-                Pos {fixture.position}
-              </Badge>
+              {fixture.sequence_number != null && (
+                <Badge variant="outline" className="text-xs">
+                  Pos {fixture.sequence_number}
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground mb-2">
-              {fixture.location}
+              {getFixtureFullLocationText(fixture)}
             </p>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span>{fixture.bulbs} bulbs</span>
-              <span>{fixture.technology}</span>
-              {fixture.lastMaintenance && (
-                <span>Last: {fixture.lastMaintenance}</span>
+              <span>{fixture.bulb_count} bulbs</span>
+              <span>{fixture.technology || 'Unknown'}</span>
+              {fixture.last_maintenance_date && (
+                <span>Last: {fixture.last_maintenance_date}</span>
               )}
-              {fixture.reportedDate && (
-                <span className="text-red-600">Reported: {fixture.reportedDate}</span>
+              {fixture.reported_out_date && (
+                <span className="text-red-600">
+                  Out since {new Date(fixture.reported_out_date).toLocaleDateString()}
+                </span>
               )}
-              {fixture.scheduledDate && (
-                <span className="text-blue-600">Scheduled: {fixture.scheduledDate}</span>
+              {fixture.next_maintenance_date && (
+                <span className="text-blue-600">
+                  Next: {new Date(fixture.next_maintenance_date).toLocaleDateString()}
+                </span>
               )}
             </div>
-            {fixture.issueType && (
-              <div className="mt-2 text-sm text-red-600">
-                Issue: {fixture.issueType}
-              </div>
-            )}
-            {fixture.maintenanceType && (
-              <div className="mt-2 text-sm text-yellow-600">
-                {fixture.maintenanceType}
-              </div>
-            )}
-            {fixture.replacementType && (
-              <div className="mt-2 text-sm text-blue-600">
-                {fixture.replacementType}
-              </div>
-            )}
           </div>
         </div>
         <Button size="sm" variant="outline">
@@ -217,9 +247,33 @@ export function StatusCentricView() {
               <span className="text-sm text-muted-foreground">
                 {selectedFixtures.size} selected
               </span>
-              <Button size="sm" variant="outline">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleMarkOut(false)}
+              >
                 <Wrench className="h-4 w-4 mr-1" />
-                Bulk Action
+                Mark Out
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleMarkOut(true)}
+              >
+                <Wrench className="h-4 w-4 mr-1" />
+                Out - Needs Electrician
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleMarkFixed}>
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Mark Fixed
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleToggleElectrician(true)}
+              >
+                <AlertTriangle className="h-4 w-4 mr-1" />
+                Flag Electrician
               </Button>
             </div>
           )}
@@ -288,9 +342,11 @@ export function StatusCentricView() {
       {Object.entries(statusConfig)
         .filter(([key]) => filterStatus === 'all' || filterStatus === key)
         .map(([status, config]) => {
-          const fixtures = getFilteredFixtures(fixturesByStatus[status as keyof typeof fixturesByStatus], status);
-          
-          if (fixtures.length === 0) return null;
+          const fixturesForStatus = getFilteredFixtures(
+            getStatusFixtures(status as keyof typeof statusConfig)
+          );
+
+          if (fixturesForStatus.length === 0) return null;
 
           return (
             <Card key={status}>
@@ -299,12 +355,12 @@ export function StatusCentricView() {
                   <config.icon className="h-5 w-5" />
                   {config.label}
                   <Badge className={config.color}>
-                    {fixtures.length}
+                    {fixturesForStatus.length}
                   </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {fixtures.map(fixture => renderFixtureCard(fixture, status))}
+                {fixturesForStatus.map((fixture) => renderFixtureCard(fixture))}
               </CardContent>
             </Card>
           );
