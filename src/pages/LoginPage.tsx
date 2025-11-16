@@ -52,9 +52,11 @@ const LoginPage = () => {
     <div className="min-h-screen relative w-full bg-background flex flex-col items-center justify-center px-4">
       {/* Subtle watermark in corner */}
       <img
-        src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png"
+        src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.webp"
         alt="Court Seal Watermark"
         fetchPriority="high"
+        width={96}
+        height={96}
         className="pointer-events-none select-none absolute right-6 top-6 opacity-10 w-24 h-24 -z-10"
       />
 
@@ -63,14 +65,18 @@ const LoginPage = () => {
           <div className="relative h-12 w-12">
             {/* Light mode logo - navy blue */}
             <img
-              src="/nysc-logo-light.png"
+              src="/nysc-logo-light.webp"
               alt="NYSC Logo"
+              width={48}
+              height={48}
               className="h-full w-full object-contain dark:hidden"
             />
             {/* Dark mode logo - light/white */}
             <img
-              src="/nysc-logo-dark.png"
+              src="/nysc-logo-dark.webp"
               alt="NYSC Logo"
+              width={48}
+              height={48}
               className="h-full w-full object-contain hidden dark:block"
             />
           </div>
