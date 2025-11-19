@@ -157,7 +157,7 @@ export function MobileLightingList({
             </p>
           </div>
           <div className="flex gap-2">
-             <Button size="sm" variant={mode === 'walkthrough' ? 'default' : 'outline'} onClick={() => setMode('walkthrough')}>
+             <Button size="sm" variant="outline" onClick={() => setMode('walkthrough')}>
                 <Footprints className="h-4 w-4 mr-2" />
                 Walkthrough
              </Button>
@@ -301,7 +301,7 @@ export function MobileLightingList({
           open={showDetails}
           onOpenChange={setShowDetails}
           title={selectedFixture.name}
-          description={`${selectedFixture.type} • ${selectedFixture.location}`}
+          description={`${selectedFixture.type} • ${locationUtil.getFixtureFullLocationText(selectedFixture)}`}
           actions={
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1">

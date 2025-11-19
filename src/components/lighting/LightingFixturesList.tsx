@@ -147,24 +147,10 @@ export const LightingFixturesList = ({
     }
   };
 
-  // Convert fixtures to mobile format
-  const mobileFixtures = filteredFixtures.map(fixture => ({
-    id: fixture.id,
-    name: fixture.name || `Fixture ${fixture.id.slice(0, 8)}`,
-    type: fixture.type || 'LED',
-    status: fixture.status || 'functional',
-    location: locationUtil.getFixtureLocationText(fixture),
-    wattage: undefined, // Not available in current type
-    lastMaintenance: undefined,
-    nextMaintenance: undefined,
-    energyConsumption: undefined, // Not available in current type
-    issues: 0 // Will be calculated from issues data
-  }));
-
   if (isMobile) {
     return (
       <MobileLightingList
-        fixtures={mobileFixtures}
+        fixtures={filteredFixtures}
         selectedBuilding={selectedBuilding}
         selectedFloor={selectedFloor}
         onFixtureSelect={setSelectedFixtures}
