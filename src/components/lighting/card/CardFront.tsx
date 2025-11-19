@@ -451,9 +451,13 @@ export function CardFront({
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              {fixture.status === 'non_functional' && (
+              {fixture.status === 'non_functional' ? (
                 <Button className="w-full" size="sm" variant="default" disabled={isActing} onClick={handleMarkFixed}>
                   Mark Repaired
+                </Button>
+              ) : (
+                <Button className="flex-1" size="sm" variant="outline" onClick={() => handleBarClick(0)}>
+                  Report Outage
                 </Button>
               )}
 

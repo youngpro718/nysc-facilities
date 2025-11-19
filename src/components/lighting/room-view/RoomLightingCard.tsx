@@ -12,9 +12,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, MapPin, Lightbulb, AlertTriangle, CheckCircle, MoreVertical } from "lucide-react";
+import { ChevronDown, ChevronRight, MapPin, Lightbulb, AlertTriangle, CheckCircle, MoreVertical, Plus } from "lucide-react";
 import { LightingFixture } from "@/types/lighting";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
+import { CreateLightingDialog } from "../CreateLightingDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -124,6 +125,21 @@ export const RoomLightingCard = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Room actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="p-1">
+                  <CreateLightingDialog 
+                    onFixtureCreated={onFixtureUpdated}
+                    onZoneCreated={onFixtureUpdated}
+                    initialSpaceId={roomId.includes('unknown') ? undefined : roomId}
+                    initialSpaceType="room"
+                    trigger={
+                      <Button variant="ghost" size="sm" className="w-full justify-start h-8 px-2 font-normal">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Quick Add Fixture
+                      </Button>
+                    }
+                  />
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={toggleSelectAllRoom}>
                   Select all fixtures

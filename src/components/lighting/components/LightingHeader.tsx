@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { CreateLightingDialog } from "../CreateLightingDialog";
+import { BulkCreateLightingDialog } from "../BulkCreateLightingDialog";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -162,6 +163,7 @@ export const LightingHeader = ({
             </DropdownMenu>
           </>
         )}
+        <BulkCreateLightingDialog onFixtureCreated={onFixtureCreated} />
         <CreateLightingDialog 
           onFixtureCreated={onFixtureCreated} 
           onZoneCreated={onFixtureCreated}

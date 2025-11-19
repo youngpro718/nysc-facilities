@@ -13,20 +13,11 @@ import {
 import { MobileCardView } from "@/components/mobile/MobileCardView";
 import { MobileActionSheet } from "@/components/mobile/MobileActionSheet";
 import { useState } from "react";
+import { LightingFixture } from "@/types/lighting";
+import * as locationUtil from "@/components/lighting/utils/location";
 
 interface MobileLightingFixtureCardProps {
-  fixture: {
-    id: string;
-    name: string;
-    type: string;
-    status: string;
-    location: string;
-    wattage?: number;
-    lastMaintenance?: string;
-    nextMaintenance?: string;
-    energyConsumption?: number;
-    issues?: number;
-  };
+  fixture: LightingFixture;
   isSelected: boolean;
   onSelect: (checked: boolean) => void;
   onDelete: () => void;
@@ -47,14 +38,12 @@ export function MobileLightingFixtureCard({
   const [showActions, setShowActions] = useState(false);
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-      case 'operational':
+    switch (status) {
+      case 'functional':
         return 'bg-green-500/10 text-green-700 border-green-500/20';
-      case 'maintenance':
+      case 'maintenance_needed':
         return 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20';
-      case 'offline':
-      case 'broken':
+      case 'non_functional':
         return 'bg-red-500/10 text-red-700 border-red-500/20';
       default:
         return 'bg-gray-500/10 text-gray-700 border-gray-500/20';
@@ -98,9 +87,9 @@ export function MobileLightingFixtureCard({
       <MobileCardView
         title={fixture.name}
         subtitle={fixture.type}
-        description={fixture.location}
+        description={locationUtil.getFixtureFullLocationText(fixture)}
         status={{
-          label: fixture.status,
+          label: fixture.status.replace('_', ' '),
           variant: fixture.status === 'functional' ? 'default' : 
                    fixture.status === 'maintenance_needed' ? 'secondary' : 
                    'destructive'
@@ -130,29 +119,27 @@ export function MobileLightingFixtureCard({
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-yellow-600" />
               <span className="text-muted-foreground">
-                Wattage: {fixture.wattage ? `${fixture.wattage}W` : "N/A"}
+                {fixture.bulb_count}x {fixture.technology || 'Bulb'}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-600" />
               <span className="text-muted-foreground">
-                Next: {fixture.nextMaintenance || "Not scheduled"}
+                Next: {fixture.next_maintenance_date ? new Date(fixture.next_maintenance_date).toLocaleDateString() : "Not scheduled"}
               </span>
             </div>
           </div>
 
           {/* Additional info */}
           <div className="grid grid-cols-2 gap-3 text-xs">
-            {fixture.energyConsumption && (
-              <div className="flex items-center gap-1">
+             <div className="flex items-center gap-1">
                 <Zap className="h-3 w-3 text-yellow-600" />
-                <span className="text-muted-foreground">Energy: {fixture.energyConsumption}kWh</span>
-              </div>
-            )}
-            {fixture.issues && fixture.issues > 0 && (
+                <span className="text-muted-foreground">{fixture.position}</span>
+             </div>
+            {fixture.status !== 'functional' && (
               <div className="flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3 text-red-600" />
-                <span className="text-red-600">{fixture.issues} issues</span>
+                <span className="text-red-600">Issues Detected</span>
               </div>
             )}
           </div>

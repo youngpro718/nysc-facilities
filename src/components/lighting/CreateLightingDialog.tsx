@@ -32,9 +32,18 @@ const fetchLightingZones = async () => {
 interface CreateLightingDialogProps {
   onFixtureCreated: () => void;
   onZoneCreated: () => void;
+  trigger?: React.ReactNode;
+  initialSpaceId?: string;
+  initialSpaceType?: "room" | "hallway";
 }
 
-export function CreateLightingDialog({ onFixtureCreated, onZoneCreated }: CreateLightingDialogProps) {
+export function CreateLightingDialog({ 
+  onFixtureCreated, 
+  onZoneCreated, 
+  trigger,
+  initialSpaceId,
+  initialSpaceType 
+}: CreateLightingDialogProps) {
   const { open, setOpen, onSubmitFixture, onSubmitZone } = useLightingSubmit(onFixtureCreated, onZoneCreated);
   const [activeTab, setActiveTab] = useState("fixture");
   
@@ -45,8 +54,8 @@ export function CreateLightingDialog({ onFixtureCreated, onZoneCreated }: Create
       name: "",
       type: "standard",
       status: "functional",
-      space_id: "",
-      space_type: "room",
+      space_id: initialSpaceId || "",
+      space_type: initialSpaceType || "room",
       room_number: "",
       position: "ceiling",
       technology: "LED",
@@ -101,10 +110,12 @@ export function CreateLightingDialog({ onFixtureCreated, onZoneCreated }: Create
       title="Add Lighting Component"
       description="Create a new lighting fixture or zone in the system with proper configuration and context."
       trigger={
-        <Button data-testid="create-lighting-button" className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          <span>Add New</span>
-        </Button>
+        trigger || (
+          <Button data-testid="create-lighting-button" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            <span>Add New</span>
+          </Button>
+        )
       }
     >
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

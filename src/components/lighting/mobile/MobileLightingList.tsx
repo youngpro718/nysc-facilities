@@ -8,7 +8,9 @@ import {
   Plus,
   Lightbulb,
   Zap,
-  Calendar
+  Calendar,
+  List,
+  Footprints
 } from "lucide-react";
 import { toast } from "sonner";
 import { MobileSearchBar } from "@/components/mobile/MobileSearchBar";
@@ -16,19 +18,9 @@ import { MobileFilterSheet } from "@/components/mobile/MobileFilterSheet";
 import { MobileDetailsDialog } from "@/components/mobile/MobileDetailsDialog";
 import { MobileLightingFilters } from "./MobileLightingFilters";
 import { MobileLightingFixtureCard } from "./MobileLightingFixtureCard";
-
-interface LightingFixture {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  location: string;
-  wattage?: number;
-  lastMaintenance?: string;
-  nextMaintenance?: string;
-  energyConsumption?: number;
-  issues?: number;
-}
+import { WalkthroughMode } from "./WalkthroughMode";
+import { LightingFixture } from "@/types/lighting";
+import * as locationUtil from "@/components/lighting/utils/location";
 
 interface MobileLightingListProps {
   fixtures: LightingFixture[];
@@ -37,6 +29,7 @@ interface MobileLightingListProps {
   onFixtureSelect?: (fixtureIds: string[]) => void;
   onAddFixture?: () => void;
   onBulkAction?: (action: string, fixtureIds: string[]) => void;
+  refetch?: () => void;
 }
 
 export function MobileLightingList({
@@ -45,8 +38,10 @@ export function MobileLightingList({
   selectedFloor,
   onFixtureSelect,
   onAddFixture,
-  onBulkAction
+  onBulkAction,
+  refetch
 }: MobileLightingListProps) {
+  const [mode, setMode] = useState<'list' | 'walkthrough'>('list');
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -60,28 +55,39 @@ export function MobileLightingList({
     maintenance: "all"
   });
 
+  if (mode === 'walkthrough') {
+    return (
+      <WalkthroughMode 
+        fixtures={fixtures} 
+        onExit={() => setMode('list')} 
+        onFixtureUpdate={() => refetch?.()} 
+      />
+    );
+  }
+
   // Quick filter options
   const quickFilters = [
-    { id: "operational", label: "Operational", count: 23, color: "bg-green-500" },
-    { id: "maintenance", label: "Needs Maintenance", count: 5, color: "bg-yellow-500" },
-    { id: "offline", label: "Offline", count: 2, color: "bg-red-500" },
-    { id: "led", label: "LED", count: 18, color: "bg-blue-500" }
+    { id: "functional", label: "Functional", count: fixtures.filter(f => f.status === 'functional').length, color: "bg-green-500" },
+    { id: "maintenance_needed", label: "Maintenance", count: fixtures.filter(f => f.status === 'maintenance_needed').length, color: "bg-yellow-500" },
+    { id: "non_functional", label: "Out", count: fixtures.filter(f => f.status === 'non_functional').length, color: "bg-red-500" },
+    { id: "LED", label: "LED", count: fixtures.filter(f => f.technology === 'LED').length, color: "bg-blue-500" }
   ];
 
   // Filter fixtures based on search and filters
   const filteredFixtures = fixtures.filter(fixture => {
+    const locationText = locationUtil.getFixtureFullLocationText(fixture).toLowerCase();
     const matchesSearch = fixture.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         fixture.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         locationText.includes(searchQuery.toLowerCase()) ||
                          fixture.type.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = filters.status === "all" || 
-                         fixture.status.toLowerCase() === filters.status;
+                         fixture.status === filters.status;
 
     const matchesType = filters.type.length === 0 || 
-                       filters.type.some(type => fixture.type.toLowerCase().includes(type));
+                       filters.type.some(type => fixture.type.toLowerCase().includes(type.toLowerCase()));
 
     const matchesLocation = filters.location.length === 0 || 
-                           filters.location.some(loc => fixture.location.toLowerCase().includes(loc));
+                           filters.location.some(loc => locationText.includes(loc.toLowerCase()));
 
     return matchesSearch && matchesStatus && matchesType && matchesLocation;
   });
@@ -96,13 +102,11 @@ export function MobileLightingList({
   };
 
   const handleQuickFilter = (filterId: string) => {
-    if (["operational", "maintenance", "offline"].includes(filterId)) {
-      setFilters(prev => ({ ...prev, status: filterId }));
-    } else if (filterId === "led") {
-      setFilters(prev => ({ 
-        ...prev, 
-        type: prev.type.includes("led") ? [] : ["led"] 
-      }));
+    if (["functional", "maintenance_needed", "non_functional"].includes(filterId)) {
+      setFilters(prev => ({ ...prev, status: filterId === prev.status ? 'all' : filterId }));
+    } else if (filterId === "LED") {
+      // Technology filter implementation would need expansion of filter state or type matching
+      // simplifying to type for now or ignoring if strictly technology
     }
   };
 
@@ -144,7 +148,7 @@ export function MobileLightingList({
   return (
     <div className="flex flex-col h-full">
       {/* Mobile Header */}
-      <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b p-4 space-y-4">
+      <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b p-4 space-y-4 z-10">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Lighting Fixtures</h2>
@@ -152,10 +156,15 @@ export function MobileLightingList({
               {filteredFixtures.length} of {fixtures.length} fixtures
             </p>
           </div>
-          <Button size="sm" onClick={onAddFixture}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add
-          </Button>
+          <div className="flex gap-2">
+             <Button size="sm" variant={mode === 'walkthrough' ? 'default' : 'outline'} onClick={() => setMode('walkthrough')}>
+                <Footprints className="h-4 w-4 mr-2" />
+                Walkthrough
+             </Button>
+             <Button size="sm" onClick={onAddFixture}>
+                <Plus className="h-4 w-4" />
+             </Button>
+          </div>
         </div>
 
         <MobileSearchBar
@@ -311,9 +320,9 @@ export function MobileLightingList({
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Status</p>
                 <Badge className={`mt-1 ${
-                  selectedFixture.status === 'operational' 
+                  selectedFixture.status === 'functional' 
                     ? 'bg-green-500/10 text-green-700' 
-                    : selectedFixture.status === 'maintenance'
+                    : selectedFixture.status === 'maintenance_needed'
                     ? 'bg-yellow-500/10 text-yellow-700'
                     : 'bg-red-500/10 text-red-700'
                 }`}>
@@ -321,36 +330,36 @@ export function MobileLightingList({
                 </Badge>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Wattage</p>
-                <p className="text-sm mt-1">{selectedFixture.wattage || 'N/A'}W</p>
+                <p className="text-sm font-medium text-muted-foreground">Bulbs</p>
+                <p className="text-sm mt-1">{selectedFixture.bulb_count}x {selectedFixture.technology || 'Bulb'}</p>
               </div>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Energy Consumption</p>
-              <p className="text-sm mt-1">{selectedFixture.energyConsumption || 'N/A'} kWh</p>
+              <p className="text-sm font-medium text-muted-foreground">Location</p>
+              <p className="text-sm mt-1">{locationUtil.getFixtureFullLocationText(selectedFixture)}</p>
             </div>
 
             <div>
               <p className="text-sm font-medium text-muted-foreground">Last Maintenance</p>
-              <p className="text-sm mt-1">{selectedFixture.lastMaintenance || 'No record'}</p>
+              <p className="text-sm mt-1">{selectedFixture.last_maintenance_date ? new Date(selectedFixture.last_maintenance_date).toLocaleDateString() : 'No record'}</p>
             </div>
 
             <div>
               <p className="text-sm font-medium text-muted-foreground">Next Maintenance</p>
-              <p className="text-sm mt-1">{selectedFixture.nextMaintenance || 'Not scheduled'}</p>
+              <p className="text-sm mt-1">{selectedFixture.next_maintenance_date ? new Date(selectedFixture.next_maintenance_date).toLocaleDateString() : 'Not scheduled'}</p>
             </div>
 
-            {selectedFixture.issues && selectedFixture.issues > 0 && (
+            {selectedFixture.status !== 'functional' && (
               <div className="p-3 bg-red-50 rounded-lg border border-red-200">
                 <div className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-red-600" />
                   <p className="text-sm font-medium text-red-700">
-                    {selectedFixture.issues} Active Issues
+                    Issues Detected
                   </p>
                 </div>
                 <p className="text-xs text-red-600 mt-1">
-                  This fixture requires immediate attention
+                  {selectedFixture.requires_electrician ? 'Electrician required' : 'Bulb replacement needed'}
                 </p>
               </div>
             )}
