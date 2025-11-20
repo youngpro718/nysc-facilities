@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,6 +32,7 @@ import { SearchPanel } from './components/SearchPanel';
 import { AdvancedSearchPanel } from './components/AdvancedSearchPanel';
 import { ViewControls } from './components/ViewControls';
 import { cn } from '@/lib/utils';
+import { FloorPlanNode } from './types/floorPlanTypes';
 
 interface Floor {
   id: string;
@@ -41,22 +41,15 @@ interface Floor {
   buildings: { name: string };
 }
 
-interface FloorPlanObject {
-  id: string;
-  type: 'room' | 'hallway' | 'door';
-  position: { x: number; y: number };
-  data: {
-    size: { width: number; height: number };
-    properties: FloorPlanObjectProperties;
-  };
-}
+// Use the shared type or extends it if UI needs more specific fields
+type FloorPlanObject = FloorPlanNode;
 
 // Properties stored with each floor plan object. Add known keys as needed while
 // keeping an index signature for extensibility coming from the editor.
 interface FloorPlanObjectProperties {
   rotation?: number;
   label?: string;
-  [key: string]: string | number | boolean | null | undefined;
+  [key: string]: string | number | boolean | null | undefined | object;
 }
 
 interface FloorPlanPreview {
@@ -177,7 +170,12 @@ export function ModernFloorPlanView() {
           return;
         }
         
-        setFloors(data || []);
+        setFloors(
+          (data || []).map((f: any) => ({
+            ...f,
+            buildings: Array.isArray(f.buildings) ? f.buildings[0] : f.buildings
+          }))
+        );
         if (data && data.length > 0) {
           // If a saved floor exists and is still valid, keep it; otherwise default to first
           const exists = selectedFloor && data.some((f: any) => f.id === selectedFloor);
@@ -205,6 +203,14 @@ export function ModernFloorPlanView() {
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
 
   // Handle property updates with real-time preview
   const handlePropertyUpdate = useCallback((updates: FloorPlanObjectProperties) => {
@@ -471,12 +477,14 @@ export function ModernFloorPlanView() {
       <SearchPanel
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         filterType={filterType}
         onFilterTypeChange={setFilterType}
         objects={filteredObjects}
-        onObjectSelect={handleObjectSelect}
+        onObjectSelect={(obj: any) => handleObjectSelect(obj as FloorPlanObject)}
       />
 
       {/* Advanced Search Panel */}
@@ -484,7 +492,7 @@ export function ModernFloorPlanView() {
         isOpen={isAdvancedSearchOpen}
         onClose={() => setIsAdvancedSearchOpen(false)}
         objects={filteredObjects}
-        onObjectSelect={handleObjectSelect}
+        onObjectSelect={(obj: any) => handleObjectSelect(obj as FloorPlanObject)}
         onHighlightObjects={setHighlightedObjects}
       />
 

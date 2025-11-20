@@ -77,9 +77,9 @@ export default defineConfig(({ mode }) => ({
       "e785d8ca-c2d1-4fcc-af24-583a7e48eaa6.lovableproject.com",
     ],
     hmr: {
-      protocol: 'ws',
-      host: 'localhost',
-      port: 8080,
+      // Let Vite determine the protocol/host/port automatically
+      // This prevents issues where 'localhost' binding fails in tunneled environments
+      clientPort: 8080, 
     },
   },
   plugins: [

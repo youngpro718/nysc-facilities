@@ -55,6 +55,7 @@ interface ModernThreeDViewerProps {
   showConnectionsExternal?: boolean;
   commandToken?: { type: 'fit' } | { type: 'focus'; id: string } | null;
   labelScale?: number;
+  moveEnabled?: boolean;
 }
 
 export function ModernThreeDViewer({ 
@@ -66,7 +67,8 @@ export function ModernThreeDViewer({
   filterType = 'all',
   showConnectionsExternal,
   commandToken = null,
-  labelScale = 1
+  labelScale = 1,
+  moveEnabled = false
 }: ModernThreeDViewerProps) {
   const { objects, edges, isLoading } = useFloorPlanData(floorId);
   const [showConnections, setShowConnections] = useState<boolean>(true);

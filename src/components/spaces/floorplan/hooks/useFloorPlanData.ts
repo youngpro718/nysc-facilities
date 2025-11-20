@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
-import { transformSpaceToNode } from "../utils/nodeTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
+import { processFloorPlanObjects } from "../utils/floorPlanTransformers";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
 import { FloorPlanLayerDB, RawFloorPlanObject, Position, Size } from "../types/floorPlanTypes";
 import { supabase } from "@/lib/supabase";
@@ -66,7 +66,6 @@ export function useFloorPlanData(floorId: string | null) {
   const safeSpaceData = spaceData || { objects: [], connections: [] };
   
   // Assign default positions to objects without positions
-  // This is crucial for the 3D view to show objects
   const objectsWithPositions = Array.isArray(safeSpaceData.objects) ? 
     safeSpaceData.objects.map((rawObj: any, index) => {
       // Default values
@@ -166,210 +165,45 @@ export function useFloorPlanData(floorId: string | null) {
     }) : 
     [];
   
-  // Transform all objects into floor plan nodes
-  const objects = objectsWithPositions.map((obj, index) => {
-    // Ensure each object has the required properties
-    try {
-      return transformSpaceToNode(obj, index);
-    } catch (error) {
-      console.error('Error transforming object to node:', error, obj);
-      // Return a fallback node in case of errors
-      return {
-        id: obj.id || `error-${index}`,
-        type: obj.object_type || 'room',
-        position: obj.position as Position || { x: index * 100, y: index * 100 },
-        data: {
-          label: obj.name || 'Error Object',
-          type: obj.object_type || 'room',
-          size: obj.size as Size || { width: 150, height: 100 },
-          style: {
-            backgroundColor: '#f87171',
-            border: '1px dashed #ef4444',
-            opacity: 0.7
-          },
-          properties: obj.properties || {},
-          rotation: obj.rotation || 0
-        },
-        zIndex: 0
-      };
-    }
-  });
-    
-  // Create edges from connections data - using a safe approach
+  // Create edges from connections data
   const edges = Array.isArray(safeSpaceData.connections) ? 
     createEdgesFromConnections(safeSpaceData.connections) : 
     [];
-  
+
+  // Transform all objects into floor plan nodes using the utility
+  const objects = processFloorPlanObjects(objectsWithPositions, edges);
+    
   const FP_DEBUG = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLOORPLAN_DEBUG === 'true';
   if (FP_DEBUG) {
     console.log('Transformed objects:', objects);
     console.log('Created edges:', edges);
-  }
-  
-  // Detailed object analysis for 3D rendering
-  if (FP_DEBUG && objects.length > 0) {
-    console.log('=== DETAILED OBJECT ANALYSIS ===');
-    objects.forEach((obj, index) => {
-      console.log(`Object ${index + 1}:`, {
-        id: obj.id,
-        type: obj.type,
-        position: obj.position,
-        data: obj.data,
-        hasSize: !!obj.data?.size,
-        size: obj.data?.size,
-        hasProperties: !!obj.data?.properties,
-        properties: obj.data?.properties
-      });
-    });
-    console.log('=== END OBJECT ANALYSIS ===');
-  }
-
-  // Process parent/child relationships and establish connections
-  const processedObjects = objects.map(obj => {
-    // Handle parent/child room relationships
-    if (obj.data?.properties?.parent_room_id) {
-      const parentObj = objects.find(parent => parent.id === obj.data.properties.parent_room_id);
-      if (parentObj) {
-        // Adjust position relative to parent
-        obj.position = {
-          x: parentObj.position.x + 50,
-          y: parentObj.position.y + 50
-        };
-        
-        // Adjust size to be smaller than parent
-        const parentSize = parentObj.data?.size;
-        if (parentSize) {
-          obj.data.size = {
-            width: Math.max(parentSize.width * 0.7, 100),
-            height: Math.max(parentSize.height * 0.7, 80)
-          };
-        }
-        
-        // Inherit style properties but make it visually distinct
-        if (obj.data?.style) {
-          obj.data.style = {
-            ...obj.data.style,
-            border: '1px dashed #64748b',
-            opacity: 0.9
-          };
-        }
-        
-        // Increment zIndex to draw above parent
-        obj.zIndex = (parentObj.zIndex || 0) + 1;
-      }
-    }
-
-    // Process connected spaces for each object
-    if (obj.type === 'hallway' || obj.type === 'room') {
-      // Find all objects connected to this one
-      const connectedTo = edges
-        .filter(edge => edge.source === obj.id || edge.target === obj.id)
-        .map(edge => {
-          const connectionId = edge.id;
-          const connectedObjectId = edge.source === obj.id ? edge.target : edge.source;
-          const connectedObject = objects.find(o => o.id === connectedObjectId);
-          
-          return {
-            id: connectedObjectId,
-            connectionId,
-            type: connectedObject?.type || 'unknown',
-            name: connectedObject?.data?.label || 'Unknown'
-          };
-        });
-      
-      // Add connected spaces to the object properties
-      if (connectedTo.length > 0) {
-        obj.data.properties = {
-          ...obj.data.properties,
-          connected_spaces: connectedTo
-        };
-      }
-    }
-
-    // For hallways, ensure they're properly sized based on connections
-    if (obj.type === 'hallway' && edges.length > 0) {
-      // Find connections to this hallway
-      const hallwayConnections = edges.filter(edge => 
-        edge.source === obj.id || edge.target === obj.id
-      );
-      
-      if (hallwayConnections.length >= 2) {
-        // Get connected room positions to determine hallway length and orientation
-        const connectedRooms = hallwayConnections.map(conn => {
-          const roomId = conn.source === obj.id ? conn.target : conn.source;
-          return objects.find(room => room.id === roomId);
-        }).filter(Boolean);
-        
-        if (connectedRooms.length >= 2) {
-          // Determine if hallway should be horizontal or vertical based on connected rooms
-          let minX = Math.min(...connectedRooms.map(room => room.position.x));
-          let maxX = Math.max(...connectedRooms.map(room => room.position.x));
-          let minY = Math.min(...connectedRooms.map(room => room.position.y));
-          let maxY = Math.max(...connectedRooms.map(room => room.position.y));
-          
-          const xDistance = maxX - minX;
-          const yDistance = maxY - minY;
-          
-          // Determine if hallway should be horizontal or vertical
-          const isHorizontal = xDistance > yDistance;
-          
-          // Size and position the hallway accordingly
-          if (isHorizontal) {
-            // Horizontal hallway - long width, short height
-            obj.data.size = {
-              width: Math.max(xDistance + 200, 300),  // Add padding to extend beyond rooms
-              height: 50                             // Standard hallway width
-            };
-            
-            // Position hallway between connected rooms
-            obj.position = {
-              x: (minX + maxX) / 2,
-              y: obj.position.y  // Keep original Y position
-            };
-            
-            // Set rotation to 0 for horizontal hallway
-            obj.data.rotation = 0;
-          } else {
-            // Vertical hallway - short width, long height
-            obj.data.size = {
-              width: 50,                             // Standard hallway width
-              height: Math.max(yDistance + 200, 300)  // Add padding to extend beyond rooms
-            };
-            
-            // Position hallway between connected rooms
-            obj.position = {
-              x: obj.position.x,  // Keep original X position
-              y: (minY + maxY) / 2
-            };
-            
-            // Set rotation to 90 degrees for vertical hallway
-            obj.data.rotation = 90;
-          }
-        }
-      }
-    }
     
-    return obj;
-  });
+    if (objects.length > 0) {
+      console.log('=== DETAILED OBJECT ANALYSIS ===');
+      objects.forEach((obj, index) => {
+        console.log(`Object ${index + 1}:`, {
+          id: obj.id,
+          type: obj.type,
+          position: obj.position,
+          data: obj.data,
+          hasSize: !!obj.data?.size,
+          size: obj.data?.size,
+          hasProperties: !!obj.data?.properties,
+          properties: obj.data?.properties
+        });
+      });
+      console.log('=== END OBJECT ANALYSIS ===');
+    }
+  }
 
   // Don't block loading on lighting data since it's optional
   const finalIsLoading = isLoadingLayers || isLoadingObjects;
   
-  if (FP_DEBUG) {
-    console.log('useFloorPlanData - Loading states:', {
-      isLoadingLayers,
-      isLoadingObjects, 
-      isLoadingLighting,
-      finalIsLoading,
-      objectsCount: processedObjects.length
-    });
-  }
-
   return {
     layers: layers || [],
-    objects: processedObjects,
+    objects,
     edges,
     isLoading: finalIsLoading,
-    error // Include error in the return value
+    error
   };
 }
