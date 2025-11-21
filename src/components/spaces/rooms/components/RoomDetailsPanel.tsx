@@ -11,11 +11,13 @@ import {
   User,
   Users,
   X,
+  Key,
 } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { RoomCard } from "../RoomCard";
 import { Room } from "../types/RoomTypes";
 import React from "react";
+import { useRoomAccess } from "@/hooks/useRoomAccess";
 
 interface RoomDetailsPanelProps {
   room: Room | null;
@@ -51,6 +53,8 @@ const getStatusVariant = (status?: string) => {
 };
 
 export function RoomDetailsPanel({ room, onDelete, onClose }: RoomDetailsPanelProps) {
+  const { data: accessInfo } = useRoomAccess(room?.id);
+
   if (!room) {
     return (
       <Card className="sticky top-24">
@@ -105,6 +109,39 @@ export function RoomDetailsPanel({ room, onDelete, onClose }: RoomDetailsPanelPr
             <div className="space-y-2">
               <h4 className="font-medium">Description</h4>
               <p className="text-sm text-muted-foreground">{room.description}</p>
+            </div>
+          </>
+        )}
+
+        {/* Key Access Information */}
+        {accessInfo && accessInfo.key_holders.length > 0 && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <h4 className="font-medium flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                Key Access ({accessInfo.key_holders.length})
+              </h4>
+              <div className="space-y-2">
+                {accessInfo.key_holders.slice(0, 5).map((holder, index) => (
+                  <div key={index} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-md">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{holder.first_name} {holder.last_name}</span>
+                      <span className="text-xs text-muted-foreground">{holder.key_name} {holder.is_passkey && '(Passkey)'}</span>
+                    </div>
+                    {holder.department && (
+                      <Badge variant="outline" className="text-xs scale-90">
+                        {holder.department}
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+                {accessInfo.key_holders.length > 5 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    + {accessInfo.key_holders.length - 5} more key holders
+                  </p>
+                )}
+              </div>
             </div>
           </>
         )}
