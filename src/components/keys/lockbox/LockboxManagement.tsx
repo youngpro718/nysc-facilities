@@ -7,13 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Edit, Trash2, MapPin, Package } from "lucide-react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { LockboxWithSlotCount } from "../types/LockboxTypes";
+import { LockboxWithSlotCount, Lockbox } from "../types/LockboxTypes";
+import { EditLockboxDialog } from "./EditLockboxDialog";
 
 export function LockboxManagement() {
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [lockboxToDelete, setLockboxToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [lockboxToEdit, setLockboxToEdit] = useState<Lockbox | null>(null);
 
   const { data: lockboxes, isLoading } = useQuery({
     queryKey: ["lockboxes-management"],
@@ -130,7 +133,10 @@ export function LockboxManagement() {
                   variant="outline" 
                   size="sm" 
                   className="flex-1"
-                  onClick={() => toast.info("Edit functionality coming soon")}
+                  onClick={() => {
+                    setLockboxToEdit(lockbox);
+                    setEditDialogOpen(true);
+                  }}
                 >
                   <Edit className="h-3 w-3 mr-1" />
                   Edit
@@ -159,6 +165,16 @@ export function LockboxManagement() {
           <p className="text-sm">Create a new lockbox to get started</p>
         </div>
       )}
+
+      <EditLockboxDialog 
+        lockbox={lockboxToEdit}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["lockboxes-management"] });
+          queryClient.invalidateQueries({ queryKey: ["lockboxes"] });
+        }}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
