@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, AlertCircle, Settings, History, Lightbulb } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, Settings, History, Lightbulb, ChevronDown, ChevronUp } from "lucide-react";
 import { format, differenceInDays, isAfter, isWithinInterval, subDays } from "date-fns";
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
 import { supabase } from "@/lib/supabase";
-import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface RoomHistoryTimelineProps {
   room: EnhancedRoom;
 }
 
 interface HistoryEvent {
+  id: string;
   date: string;
   type: 'issue_created' | 'issue_resolved' | 'quick_fix' | 'temp_fix' | 'ongoing_issue';
   title: string;
@@ -18,33 +20,44 @@ interface HistoryEvent {
   severity: 'low' | 'medium' | 'high' | 'critical';
   resolutionSpeed?: 'quick' | 'normal' | 'slow' | 'ongoing';
   category: 'lighting' | 'maintenance' | 'safety' | 'access' | 'other';
+  status: string;
 }
 
 export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
   const [realEvents, setRealEvents] = useState<HistoryEvent[]>([]);
-  const { getIssuesForRoom } = useCourtIssuesIntegration();
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   // Fetch real data from database
   useEffect(() => {
     const fetchRoomHistory = async () => {
+      setIsLoading(true);
       try {
-        // Get issues for this room
-        const roomIssues = getIssuesForRoom(room.id);
+        // Fetch ALL issues for this room, regardless of status
+        const { data: roomIssues, error } = await supabase
+          .from('issues')
+          .select('*')
+          .eq('room_id', room.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
         
         // Convert issues to history events
-        const events: HistoryEvent[] = roomIssues.map(issue => {
-          const resolutionSpeed = issue.status === 'resolved' 
+        const events: HistoryEvent[] = (roomIssues || []).map((issue: any) => {
+          const resolutionSpeed = issue.status === 'resolved' || issue.status === 'closed'
             ? getResolutionSpeed(issue.created_at, issue.updated_at)
             : 'ongoing';
             
           return {
+            id: issue.id,
             date: issue.created_at || new Date().toISOString(),
-            type: issue.status === 'resolved' ? 'issue_resolved' : 'issue_created',
+            type: (issue.status === 'resolved' || issue.status === 'closed') ? 'issue_resolved' : 'issue_created',
             title: issue.title || 'Issue',
             description: issue.description || 'No description available',
             severity: (issue.priority || 'medium') as 'low' | 'medium' | 'high' | 'critical',
             resolutionSpeed,
-            category: getCategoryFromIssue(issue)
+            category: getCategoryFromIssue(issue),
+            status: issue.status
           };
         });
 
@@ -52,13 +65,15 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
         if (room.previous_functions && Array.isArray(room.previous_functions)) {
           room.previous_functions.forEach((func: any) => {
             events.push({
+              id: `func-${func.date}`,
               date: func.date || room.function_change_date || new Date().toISOString(),
               type: 'quick_fix',
               title: 'Room Function Changed',
               description: `Room repurposed from ${func.type?.replace(/_/g, ' ')} - ${func.reason || 'No reason provided'}`,
               severity: 'low',
               resolutionSpeed: func.temporary ? 'ongoing' : 'quick',
-              category: 'other'
+              category: 'other',
+              status: 'completed'
             });
           });
         }
@@ -66,8 +81,8 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
         setRealEvents(events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       } catch (error) {
         console.error('Error fetching room history:', error);
-        // Fallback to mock data if real data fails
-        setRealEvents(generateMockEvents());
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -95,76 +110,16 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
     return 'other';
   };
 
-  const generateMockEvents = (): HistoryEvent[] => {
-    const events: HistoryEvent[] = [];
-    const today = new Date();
-    
-    // Generate events based on room stats
-    if (room.history_stats?.total_issues > 0) {
-      // Recent lighting issues
-      events.push({
-        date: format(subDays(today, 5), 'yyyy-MM-dd'),
-        type: 'issue_resolved',
-        title: 'Lighting Issue Resolved',
-        description: 'Fluorescent ballast replaced in main area - quick fix',
-        severity: 'medium',
-        resolutionSpeed: 'quick',
-        category: 'lighting'
-      });
-      
-      if (room.history_stats.total_issues > 2) {
-        events.push({
-          date: format(subDays(today, 15), 'yyyy-MM-dd'),
-          type: 'temp_fix',
-          title: 'HVAC Temporary Fix',
-          description: 'Temperature control adjusted - ongoing monitoring required',
-          severity: 'medium',
-          resolutionSpeed: 'ongoing',
-          category: 'maintenance'
-        });
-      }
-      
-      if (room.history_stats.total_issues > 5) {
-        events.push({
-          date: format(subDays(today, 30), 'yyyy-MM-dd'),
-          type: 'issue_created',
-          title: 'Door Handle Issue',
-          description: 'Door handle becoming loose - scheduled for maintenance',
-          severity: 'low',
-          resolutionSpeed: 'normal',
-          category: 'maintenance'
-        });
-      }
-    }
-    
-    // Room function changes
-    if (room.function_change_date) {
-      events.push({
-        date: room.function_change_date,
-        type: 'quick_fix',
-        title: 'Room Function Updated',
-        description: `Room repurposed to ${room.current_function || room.room_type}`,
-        severity: 'low',
-        resolutionSpeed: 'quick',
-        category: 'other'
-      });
-    }
-    
-    return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  };
-
-  const events = realEvents.length > 0 ? realEvents : generateMockEvents();
-  
   const getResolutionBadge = (speed?: string) => {
     switch (speed) {
       case 'quick':
-        return <Badge variant="default" className="bg-success text-success-foreground text-xs">Quick Fix</Badge>;
+        return <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-1 py-0">Quick Fix</Badge>;
       case 'normal':
-        return <Badge variant="secondary" className="text-xs">Resolved</Badge>;
+        return <Badge variant="secondary" className="text-[10px] px-1 py-0">Resolved</Badge>;
       case 'slow':
-        return <Badge variant="outline" className="text-xs border-warning text-warning-foreground">Slow Resolution</Badge>;
+        return <Badge variant="outline" className="text-[10px] px-1 py-0 border-yellow-500 text-yellow-600">Slow Resolution</Badge>;
       case 'ongoing':
-        return <Badge variant="destructive" className="text-xs">Ongoing</Badge>;
+        return <Badge variant="destructive" className="text-[10px] px-1 py-0">Ongoing</Badge>;
       default:
         return null;
     }
@@ -186,56 +141,75 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return 'border-destructive bg-destructive/10';
+        return 'border-l-red-500 bg-red-50 dark:bg-red-950/20';
       case 'high':
-        return 'border-warning bg-warning/10';
+        return 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20';
       case 'medium':
-        return 'border-info bg-info/10';
+        return 'border-l-blue-500 bg-blue-50 dark:bg-blue-950/20';
       default:
-        return 'border-muted bg-muted/30';
+        return 'border-l-gray-300 bg-gray-50 dark:bg-gray-900/20';
     }
   };
 
-  if (events.length === 0) {
+  if (isLoading) {
+    return <div className="text-center py-4 text-xs text-muted-foreground">Loading history...</div>;
+  }
+
+  if (realEvents.length === 0) {
     return (
-      <div className="text-center py-4">
-        <CheckCircle className="h-8 w-8 text-success mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">No recent issues - room running smoothly</p>
+      <div className="text-center py-6 bg-muted/10 rounded-lg border border-dashed">
+        <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2 opacity-80" />
+        <p className="text-sm font-medium text-foreground">No Recorded Issues</p>
+        <p className="text-xs text-muted-foreground">This room has a clean history.</p>
       </div>
     );
   }
 
   // Generate summary insights
-  const quickFixes = events.filter(e => e.resolutionSpeed === 'quick').length;
-  const ongoingIssues = events.filter(e => e.resolutionSpeed === 'ongoing').length;
-  const recentIssues = events.filter(e => 
+  const quickFixes = realEvents.filter(e => e.resolutionSpeed === 'quick').length;
+  const ongoingIssues = realEvents.filter(e => e.resolutionSpeed === 'ongoing').length;
+  const recentIssues = realEvents.filter(e => 
     isAfter(new Date(e.date), subDays(new Date(), 30))
   ).length;
+
+  const displayedEvents = showAll ? realEvents : realEvents.slice(0, 5);
+
+  const handleEventClick = (event: HistoryEvent) => {
+    if (event.type === 'quick_fix' && event.id.startsWith('func-')) {
+      // Room function changes aren't issues, so no detail view
+      return;
+    }
+    // Navigate to operations page with issue_id to open the dialog
+    navigate(`/operations?tab=issues&issue_id=${event.id}`);
+  };
 
   return (
     <div className="space-y-4">
       {/* Summary insights */}
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="text-center p-2 bg-muted/30 rounded-md">
-          <div className="text-sm font-bold text-success">{quickFixes}</div>
-          <div className="text-xs text-muted-foreground">Quick Fixes</div>
+        <div className="text-center p-2 bg-muted/30 rounded-md border">
+          <div className="text-sm font-bold text-green-600">{quickFixes}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Quick Fixes</div>
         </div>
-        <div className="text-center p-2 bg-muted/30 rounded-md">
-          <div className="text-sm font-bold text-warning">{ongoingIssues}</div>
-          <div className="text-xs text-muted-foreground">Ongoing</div>
+        <div className="text-center p-2 bg-muted/30 rounded-md border">
+          <div className="text-sm font-bold text-orange-600">{ongoingIssues}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Ongoing</div>
         </div>
-        <div className="text-center p-2 bg-muted/30 rounded-md">
-          <div className="text-sm font-bold text-foreground">{recentIssues}</div>
-          <div className="text-xs text-muted-foreground">This Month</div>
+        <div className="text-center p-2 bg-muted/30 rounded-md border">
+          <div className="text-sm font-bold text-blue-600">{recentIssues}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">This Month</div>
         </div>
       </div>
 
       {/* Timeline */}
-      <div className="space-y-3">
-        {events.slice(0, 6).map((event, index) => (
+      <div className="space-y-3 relative">
+        {displayedEvents.map((event, index) => (
           <div 
-            key={index} 
-            className={`p-3 rounded-md border-l-4 transition-colors ${getSeverityColor(event.severity)}`}
+            key={event.id} 
+            className={`p-3 rounded-r-md border-l-4 transition-all hover:bg-muted/50 cursor-pointer group ${getSeverityColor(event.severity)}`}
+            onClick={() => handleEventClick(event)}
+            role="button"
+            tabIndex={0}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2 flex-1">
@@ -243,16 +217,17 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
                   {getCategoryIcon(event.category)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h5 className="text-sm font-medium text-foreground truncate">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h5 className="text-sm font-medium text-foreground truncate max-w-[150px] group-hover:text-primary transition-colors">
                       {event.title}
                     </h5>
                     {getResolutionBadge(event.resolutionSpeed)}
+                    <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity ml-auto" />
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-1.5">
                     {event.description}
                   </p>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                     <Clock className="h-3 w-3" />
                     {format(new Date(event.date), 'MMM d, yyyy')}
                     <span className="text-muted-foreground/60">
@@ -265,12 +240,25 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
           </div>
         ))}
         
-        {events.length > 6 && (
-          <div className="text-center pt-2">
-            <p className="text-xs text-muted-foreground">
-              + {events.length - 6} more historical events
-            </p>
-          </div>
+        {realEvents.length > 5 && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full text-xs text-muted-foreground hover:text-foreground h-8 mt-2"
+            onClick={() => setShowAll(!showAll)}
+          >
+            {showAll ? (
+              <>
+                <ChevronUp className="h-3 w-3 mr-1" />
+                Show Less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3 mr-1" />
+                View {realEvents.length - 5} More Events
+              </>
+            )}
+          </Button>
         )}
       </div>
     </div>
