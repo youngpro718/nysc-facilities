@@ -22,7 +22,7 @@ import { TemplatesBulkView } from "./templates/TemplatesBulkView";
 import { ReportsView } from "./reports/ReportsView";
 import { CreateLightingDialog } from "../CreateLightingDialog";
 import { SettingsDialog } from "./settings/SettingsDialog";
-import { MobileWalkthroughPage } from "../mobile/MobileWalkthroughPage";
+import { QuickMarkView } from "../mobile/QuickMarkView";
 import { Smartphone } from "lucide-react";
 
 export function LightingPageLayout() {
@@ -37,12 +37,12 @@ export function LightingPageLayout() {
         <Button
           variant="ghost"
           size="sm"
-          className="absolute top-4 left-4 z-10"
+          className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur"
           onClick={() => setShowMobileWalkthrough(false)}
         >
           ← Back to Dashboard
         </Button>
-        <MobileWalkthroughPage />
+        <QuickMarkView />
       </div>
     );
   }
@@ -108,7 +108,7 @@ export function LightingPageLayout() {
             onClick={() => setShowMobileWalkthrough(true)}
           >
             <Smartphone className="h-4 w-4 mr-2" />
-            Mobile Walkthrough
+            Quick Mark
           </Button>
           
           <Button 
