@@ -25,6 +25,7 @@ interface HistoryEvent {
 }
 
 export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
+  const navigate = useNavigate();
   const [realEvents, setRealEvents] = useState<HistoryEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);

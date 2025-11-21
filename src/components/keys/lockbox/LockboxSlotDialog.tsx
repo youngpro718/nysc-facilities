@@ -13,9 +13,10 @@ interface LockboxSlotDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  lockboxName?: string;
 }
 
-export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess }: LockboxSlotDialogProps) {
+export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockboxName }: LockboxSlotDialogProps) {
   const [personName, setPersonName] = useState("");
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -80,6 +81,11 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess }: Lockb
           <DialogTitle className="flex items-center gap-2">
              Slot {slot.slot_number}: {slot.label}
           </DialogTitle>
+          {lockboxName && (
+            <p className="text-sm text-muted-foreground">
+              Lockbox: {lockboxName}
+            </p>
+          )}
         </DialogHeader>
         
         <div className="space-y-4 py-4">

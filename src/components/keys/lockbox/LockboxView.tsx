@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { LockboxSlot } from "../types/LockboxTypes";
+import { LockboxSlot, LockboxWithSlotCount } from "../types/LockboxTypes";
 import { LockboxSearch } from "./LockboxSearch";
 import { LockboxSlotDialog } from "./LockboxSlotDialog";
+import { LockboxSelector } from "./LockboxSelector";
+import { CreateLockboxDialog } from "./CreateLockboxDialog";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -11,13 +14,62 @@ export function LockboxView() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<LockboxSlot | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedLockboxId, setSelectedLockboxId] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  // Fetch all lockboxes with slot counts
+  const { data: lockboxes, refetch: refetchLockboxes } = useQuery({
+    queryKey: ["lockboxes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lockboxes')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Get slot counts for each lockbox
+      const lockboxesWithCounts = await Promise.all(
+        (data || []).map(async (lockbox) => {
+          const { data: slots, error: slotsError } = await supabase
+            .from('lockbox_slots')
+            .select('status')
+            .eq('lockbox_id', lockbox.id);
+
+          if (slotsError) throw slotsError;
+
+          return {
+            ...lockbox,
+            total_slots: slots.length,
+            available_slots: slots.filter(s => s.status === 'in_box').length,
+            checked_out_slots: slots.filter(s => s.status === 'checked_out').length,
+          } as LockboxWithSlotCount;
+        })
+      );
+
+      return lockboxesWithCounts;
+    },
+  });
+
+  // Auto-select first lockbox if none selected
+  useEffect(() => {
+    if (lockboxes && lockboxes.length > 0 && !selectedLockboxId) {
+      setSelectedLockboxId(lockboxes[0].id);
+    }
+  }, [lockboxes, selectedLockboxId]);
 
   const fetchSlots = async () => {
+    if (!selectedLockboxId) {
+      setSlots([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Assuming one main lockbox for now as per requirement
       const { data, error } = await supabase
         .from('lockbox_slots')
         .select('*')
+        .eq('lockbox_id', selectedLockboxId)
         .order('slot_number', { ascending: true });
 
       if (error) throw error;
@@ -33,18 +85,22 @@ export function LockboxView() {
   useEffect(() => {
     fetchSlots();
     
-    // Optional: Set up realtime subscription here
+    // Set up realtime subscriptions for both lockboxes and slots
     const channel = supabase
       .channel('lockbox_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lockbox_slots' }, (payload) => {
-        fetchSlots(); // Simplest way to keep sync
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lockbox_slots' }, () => {
+        fetchSlots();
+        refetchLockboxes();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lockboxes' }, () => {
+        refetchLockboxes();
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [selectedLockboxId]);
 
   const handleSlotClick = (slot: LockboxSlot) => {
     setSelectedSlot(slot);
@@ -59,15 +115,46 @@ export function LockboxView() {
     );
   }
 
+  const handleCreateSuccess = () => {
+    refetchLockboxes();
+  };
+
   return (
-    <div className="h-[calc(100vh-200px)]">
-      <LockboxSearch slots={slots} onSlotClick={handleSlotClick} />
+    <div className="space-y-4">
+      <LockboxSelector 
+        lockboxes={lockboxes || []}
+        selectedLockboxId={selectedLockboxId}
+        onSelectLockbox={setSelectedLockboxId}
+        onCreateNew={() => setCreateDialogOpen(true)}
+        isLoading={isLoading}
+      />
+
+      {selectedLockboxId ? (
+        <div className="h-[calc(100vh-350px)]">
+          <LockboxSearch 
+            slots={slots} 
+            onSlotClick={handleSlotClick}
+            lockboxName={lockboxes?.find(lb => lb.id === selectedLockboxId)?.name}
+          />
+        </div>
+      ) : (
+        <div className="text-center py-12 text-muted-foreground">
+          <p>Please select or create a lockbox to view slots</p>
+        </div>
+      )}
       
       <LockboxSlotDialog 
         slot={selectedSlot} 
         open={dialogOpen} 
         onOpenChange={setDialogOpen}
         onSuccess={fetchSlots}
+        lockboxName={lockboxes?.find(lb => lb.id === selectedLockboxId)?.name}
+      />
+
+      <CreateLockboxDialog 
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={handleCreateSuccess}
       />
     </div>
   );
