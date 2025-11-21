@@ -1,15 +1,13 @@
-import { useAuth } from '@/hooks/useAuth';
-import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
-import { useAdminRealtimeNotifications } from '@/hooks/useAdminRealtimeNotifications';
+import { useUserRealtimeNotifications } from '@/hooks/realtime/useUserRealtimeNotifications';
+import { useAdminRealtimeNotifications } from '@/hooks/realtime/useAdminRealtimeNotifications';
 
 export const useConditionalNotifications = () => {
-  // Always initialize user notifications
-  const userNotifications = useRealtimeNotifications();
+  // Consolidated user notifications (1 channel instead of 6)
+  const userNotifications = useUserRealtimeNotifications();
   
-  // Always initialize admin notifications (it will be conditional inside the hook)
+  // Consolidated admin notifications (1 channel instead of 9+)
   const adminNotifications = useAdminRealtimeNotifications();
   
-  // Return the appropriate notification status
   return {
     isConnected: userNotifications.isConnected,
     lastNotification: userNotifications.lastNotification,
