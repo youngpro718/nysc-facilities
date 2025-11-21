@@ -1,0 +1,165 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { Loader2, Edit3 } from "lucide-react";
+import { LockboxSlot, LockboxWithSlotCount } from "../types/LockboxTypes";
+import { useQuery } from "@tanstack/react-query";
+
+interface EditSlotDialogProps {
+  slot: LockboxSlot | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
+
+export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlotDialogProps) {
+  const [label, setLabel] = useState("");
+  const [roomNumber, setRoomNumber] = useState("");
+  const [targetLockboxId, setTargetLockboxId] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const { data: lockboxes } = useQuery({
+    queryKey: ["lockboxes-for-move"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lockboxes')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: open
+  });
+
+  useEffect(() => {
+    if (slot) {
+      setLabel(slot.label);
+      setRoomNumber(slot.room_number || "");
+      setTargetLockboxId(slot.lockbox_id);
+    }
+  }, [slot]);
+
+  const handleUpdate = async () => {
+    if (!slot || !label.trim()) {
+      toast.error("Please enter a slot label");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const updates: any = {
+        label: label.trim(),
+        room_number: roomNumber.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+
+      // Check if we're moving to a different lockbox
+      const isMoving = targetLockboxId !== slot.lockbox_id;
+      if (isMoving) {
+        updates.lockbox_id = targetLockboxId;
+      }
+
+      const { error: updateError } = await supabase
+        .from('lockbox_slots')
+        .update(updates)
+        .eq('id', slot.id);
+
+      if (updateError) throw updateError;
+
+      // Log the activity
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: logError } = await supabase
+        .from('lockbox_activity_logs')
+        .insert({
+          slot_id: slot.id,
+          action: 'edit_details',
+          status_before: slot.status,
+          status_after: slot.status,
+          actor_user_id: user?.id,
+          actor_name: user?.email,
+          note: isMoving ? `Moved to different lockbox. Updated label to "${label}"` : `Updated label to "${label}"`
+        });
+
+      if (logError) console.error('Error logging activity:', logError);
+
+      toast.success(isMoving ? "Slot moved successfully" : "Slot updated successfully");
+      onSuccess();
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error updating slot:', error);
+      toast.error(error.message || "Failed to update slot");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Edit3 className="h-5 w-5" />
+            Edit Slot Details
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Slot Label <span className="text-destructive">*</span></Label>
+            <Input 
+              placeholder="e.g. Master Key, Office 101" 
+              value={label} 
+              onChange={(e) => setLabel(e.target.value)}
+              disabled={isUpdating}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Room Number (Optional)</Label>
+            <Input 
+              placeholder="e.g. 1701, A-205" 
+              value={roomNumber} 
+              onChange={(e) => setRoomNumber(e.target.value)}
+              disabled={isUpdating}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Move to Lockbox</Label>
+            <Select value={targetLockboxId} onValueChange={setTargetLockboxId} disabled={isUpdating}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select lockbox..." />
+              </SelectTrigger>
+              <SelectContent>
+                {lockboxes?.map((lockbox) => (
+                  <SelectItem key={lockbox.id} value={lockbox.id}>
+                    {lockbox.name} {lockbox.location_description && `- ${lockbox.location_description}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Change this to move the slot to a different lockbox
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUpdating}>
+            Cancel
+          </Button>
+          <Button onClick={handleUpdate} disabled={isUpdating}>
+            {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

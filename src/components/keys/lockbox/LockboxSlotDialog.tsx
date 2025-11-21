@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { LockboxSlot } from "../types/LockboxTypes";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Edit3 } from "lucide-react";
+import { EditSlotDialog } from "./EditSlotDialog";
 
 interface LockboxSlotDialogProps {
   slot: LockboxSlot | null;
@@ -20,6 +22,7 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
   const [personName, setPersonName] = useState("");
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   if (!slot) return null;
 
@@ -75,18 +78,33 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-             Slot {slot.slot_number}: {slot.label}
-          </DialogTitle>
-          {lockboxName && (
-            <p className="text-sm text-muted-foreground">
-              Lockbox: {lockboxName}
-            </p>
-          )}
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  Slot {slot.slot_number}: {slot.label}
+                </DialogTitle>
+                {lockboxName && (
+                  <p className="text-sm text-muted-foreground">
+                    Lockbox: {lockboxName}
+                  </p>
+                )}
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => {
+                  setEditDialogOpen(true);
+                  onOpenChange(false);
+                }}
+              >
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
         
         <div className="space-y-4 py-4">
           <div className="bg-muted p-3 rounded-md text-sm">
@@ -145,5 +163,16 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <EditSlotDialog 
+      slot={slot}
+      open={editDialogOpen}
+      onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) onOpenChange(true);
+      }}
+      onSuccess={onSuccess}
+    />
+    </>
   );
 }
