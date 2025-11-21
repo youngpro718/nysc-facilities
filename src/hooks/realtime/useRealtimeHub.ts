@@ -21,6 +21,7 @@ let hubInstance: {
   isConnected: boolean;
   connectionAttempts: number;
   maxRetries: number;
+  activeUsers: Set<string>;
 } | null = null;
 
 const MAX_RETRIES = 3;
@@ -48,8 +49,13 @@ export const useRealtimeHub = (userId?: string, isAdmin?: boolean): RealtimeHub 
         isConnected: false,
         connectionAttempts: 0,
         maxRetries: MAX_RETRIES,
+        activeUsers: new Set(),
       };
     }
+
+    // Add this user to active users
+    hubInstance.activeUsers.add(userId);
+    console.log('[RealtimeHub] Active users:', hubInstance.activeUsers.size);
 
     const setupChannel = () => {
       if (hubInstance!.channel) {
@@ -116,10 +122,21 @@ export const useRealtimeHub = (userId?: string, isAdmin?: boolean): RealtimeHub 
     setupChannel();
 
     return () => {
-      console.log('[RealtimeHub] Cleaning up hub');
-      if (hubInstance?.channel) {
-        supabase.removeChannel(hubInstance.channel);
-        hubInstance.channel = null;
+      if (!userId || !hubInstance) return;
+
+      // Remove this user from active users
+      hubInstance.activeUsers.delete(userId);
+      console.log('[RealtimeHub] User disconnected. Active users remaining:', hubInstance.activeUsers.size);
+
+      // Only cleanup channel if NO users are active
+      if (hubInstance.activeUsers.size === 0) {
+        console.log('[RealtimeHub] No active users - cleaning up channel');
+        if (hubInstance.channel) {
+          supabase.removeChannel(hubInstance.channel);
+          hubInstance.channel = null;
+        }
+        // Reset the hub instance
+        hubInstance = null;
       }
     };
   }, [userId, isAdmin]);
