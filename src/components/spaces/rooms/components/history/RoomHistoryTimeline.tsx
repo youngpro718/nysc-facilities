@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, AlertCircle, Settings, History, Lightbulb, ChevronDown, ChevronUp } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, Settings, History, Lightbulb, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { format, differenceInDays, isAfter, isWithinInterval, subDays } from "date-fns";
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNavigate } from "react-router-dom";
 
 interface RoomHistoryTimelineProps {
   room: EnhancedRoom;
