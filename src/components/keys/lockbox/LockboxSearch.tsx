@@ -8,9 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface LockboxSearchProps {
   slots: LockboxSlot[];
   onSlotClick: (slot: LockboxSlot) => void;
+  lockboxName?: string;
 }
 
-export function LockboxSearch({ slots, onSlotClick }: LockboxSearchProps) {
+export function LockboxSearch({ slots, onSlotClick, lockboxName }: LockboxSearchProps) {
   const [query, setQuery] = useState("");
 
   const filteredSlots = slots.filter(slot => {

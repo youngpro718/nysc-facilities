@@ -31,3 +31,14 @@ export interface LockboxActivityLog {
   note?: string;
   created_at: string;
 }
+
+export interface LockboxWithSlotCount extends Lockbox {
+  total_slots: number;
+  available_slots: number;
+  checked_out_slots: number;
+}
+
+export interface LockboxSlotWithLockbox extends LockboxSlot {
+  lockbox_name?: string;
+  lockbox_location?: string;
+}

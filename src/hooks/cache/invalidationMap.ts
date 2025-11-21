@@ -50,6 +50,19 @@ export const tableInvalidationMap: Record<string, AnyQueryKey[]> = {
   lighting_issues: [
     ['lighting-issues-report'],
   ],
+  // Lockbox tables
+  lockboxes: [
+    ['lockboxes'],
+    ['lockboxes-management'],
+  ],
+  lockbox_slots: [
+    ['lockboxes'],
+    ['lockboxes-management'],
+  ],
+  lockbox_activity_logs: [
+    ['lockboxes'],
+    ['lockboxes-management'],
+  ],
   inventory_item_transactions: [
     inventoryQueryKeys.all,
     inventoryQueryKeys.allItems(),

@@ -6,8 +6,9 @@ import { KeyOrderSection } from "@/components/keys/sections/KeyOrderSection";
 import { ElevatorPassSection } from "@/components/keys/sections/ElevatorPassSection";
 import { KeyStatisticsCards } from "@/components/keys/KeyStatisticsCards";
 import { LockboxView } from "@/components/keys/lockbox/LockboxView";
+import { LockboxManagement } from "@/components/keys/lockbox/LockboxManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Users, History, KeyRound, Box } from "lucide-react";
+import { Package, Users, History, KeyRound, Box, Settings } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyData } from "@/components/keys/types/KeyTypes";
@@ -56,7 +57,7 @@ export default function Keys() {
 
       <Tabs defaultValue="lockbox" className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="grid w-full grid-cols-5 bg-muted">
+          <TabsList className="grid w-full grid-cols-6 bg-muted">
             <TabsTrigger 
               value="lockbox" 
               className="flex items-center justify-center gap-2"
@@ -97,6 +98,14 @@ export default function Keys() {
               <span className="hidden sm:inline">Passes</span>
               <span className="sm:hidden">Passes</span>
             </TabsTrigger>
+            <TabsTrigger 
+              value="manage" 
+              className="flex items-center justify-center gap-2"
+            >
+              <Settings className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Manage</span>
+              <span className="sm:hidden">Manage</span>
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -119,6 +128,16 @@ export default function Keys() {
 
         <TabsContent value="elevator-passes" className="space-y-4 mt-4">
           <ElevatorPassSection />
+        </TabsContent>
+
+        <TabsContent value="manage" className="space-y-4 mt-4">
+          <div className="space-y-2 mb-6">
+            <h2 className="text-xl font-semibold">Lockbox Management</h2>
+            <p className="text-sm text-muted-foreground">
+              Manage lockboxes, view statistics, and organize key storage locations
+            </p>
+          </div>
+          <LockboxManagement />
         </TabsContent>
       </Tabs>
     </div>

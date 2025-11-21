@@ -5,9 +5,11 @@ import { Key, AlertTriangle, CheckCircle, Archive } from "lucide-react";
 interface LockboxSlotCardProps {
   slot: LockboxSlot;
   onClick: (slot: LockboxSlot) => void;
+  lockboxName?: string;
+  lockboxLocation?: string;
 }
 
-export function LockboxSlotCard({ slot, onClick }: LockboxSlotCardProps) {
+export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }: LockboxSlotCardProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'in_box':
