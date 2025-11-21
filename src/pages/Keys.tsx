@@ -5,8 +5,9 @@ import { KeyHistorySection } from "@/components/keys/sections/KeyHistorySection"
 import { KeyOrderSection } from "@/components/keys/sections/KeyOrderSection";
 import { ElevatorPassSection } from "@/components/keys/sections/ElevatorPassSection";
 import { KeyStatisticsCards } from "@/components/keys/KeyStatisticsCards";
+import { LockboxView } from "@/components/keys/lockbox/LockboxView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Users, History, KeyRound } from "lucide-react";
+import { Package, Users, History, KeyRound, Box } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyData } from "@/components/keys/types/KeyTypes";
@@ -53,15 +54,23 @@ export default function Keys() {
         {(keyStats) => <KeyStatisticsCards keyStats={keyStats} isLoading={false} />}
       </DataState>
 
-      <Tabs defaultValue="inventory" className="space-y-4 sm:space-y-6">
+      <Tabs defaultValue="lockbox" className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="grid w-full grid-cols-4 bg-muted">
+          <TabsList className="grid w-full grid-cols-5 bg-muted">
+            <TabsTrigger 
+              value="lockbox" 
+              className="flex items-center justify-center gap-2"
+            >
+              <Box className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Lockbox</span>
+              <span className="sm:hidden">Lockbox</span>
+            </TabsTrigger>
             <TabsTrigger 
               value="inventory" 
               className="flex items-center justify-center gap-2"
             >
               <Package className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Inventory & Orders</span>
+              <span className="hidden sm:inline">Inventory</span>
               <span className="sm:hidden">Keys</span>
             </TabsTrigger>
             <TabsTrigger 
@@ -78,17 +87,22 @@ export default function Keys() {
             >
               <History className="h-4 w-4 flex-shrink-0" />
               <span className="hidden sm:inline">History</span>
+              <span className="sm:hidden">History</span>
             </TabsTrigger>
             <TabsTrigger 
               value="elevator-passes" 
               className="flex items-center justify-center gap-2"
             >
               <KeyRound className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Elevator Passes</span>
-              <span className="sm:hidden">Elevator</span>
+              <span className="hidden sm:inline">Passes</span>
+              <span className="sm:hidden">Passes</span>
             </TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="lockbox" className="space-y-6 mt-4">
+          <LockboxView />
+        </TabsContent>
 
         <TabsContent value="inventory" className="space-y-6 mt-4">
           <KeyInventorySection />
