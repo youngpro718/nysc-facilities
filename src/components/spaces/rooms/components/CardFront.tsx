@@ -2,10 +2,8 @@
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag, AlertTriangle, Phone, Building, Pencil } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
-import { RoomAccessSummary } from "@/components/access/RoomAccessSummary";
 import { RoomLightingManager } from "./lighting/RoomLightingManager";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { getNormalizedCurrentUse } from "../utils/currentUse";
@@ -225,38 +223,19 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
         <div className="flex items-center gap-2">
           <TooltipProvider>
             <div className="flex items-center gap-1.5 flex-1">
-              <RoomLightingManager
-                room={room}
-                trigger={
-                  <Tooltip>
+              <Tooltip>
+                <RoomLightingManager
+                  room={room}
+                  trigger={
                     <TooltipTrigger asChild>
                       <Button variant="outline" size="sm" className="h-8">
                         <Lightbulb className="h-3.5 w-3.5" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Manage lighting</TooltipContent>
-                  </Tooltip>
-                }
-              />
-              
-              <Dialog>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-8" onClick={(e) => e.stopPropagation()}>
-                        <Shield className="h-3.5 w-3.5" />
-                      </Button>
-                    </DialogTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>Access</TooltipContent>
-                </Tooltip>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Room Access - {room.name}</DialogTitle>
-                  </DialogHeader>
-                  <RoomAccessSummary roomId={room.id} />
-                </DialogContent>
-              </Dialog>
+                  }
+                />
+                <TooltipContent>Manage lighting</TooltipContent>
+              </Tooltip>
 
               {room.is_storage && (
                 <Tooltip>
