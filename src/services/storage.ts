@@ -333,6 +333,27 @@ export const storageService = {
       console.error(`Error cleaning up orphaned files for ${entityId} in ${bucketName}:`, error);
       return -1;
     }
+  },
+
+  /**
+   * Gets all photos for a room
+   * @param roomId ID of the room
+   * @returns Array of photo URLs or null if error
+   */
+  async getRoomPhotos(roomId: string): Promise<string[] | null> {
+    return this.getEntityFiles("room-photos", roomId);
+  },
+
+  /**
+   * Deletes a specific room photo
+   * @param roomId ID of the room
+   * @param photoUrl URL of the photo to delete
+   * @returns True if successful, false otherwise
+   */
+  async deleteRoomPhoto(roomId: string, photoUrl: string): Promise<boolean> {
+    const filename = this.getFilenameFromUrl(photoUrl);
+    if (!filename) return false;
+    return this.removeFile("room-photos", filename);
   }
 };
 
@@ -343,5 +364,5 @@ export const storageService = {
  */
 export async function initializeStorage(): Promise<void> {
   // Verify required buckets exist
-  await storageService.ensureBucketsExist(['courtroom-photos', 'term-pdfs']);
+  await storageService.ensureBucketsExist(['courtroom-photos', 'term-pdfs', 'room-photos']);
 }

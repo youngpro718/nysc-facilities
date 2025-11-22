@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
 import { RoomFormSchema, type RoomFormData, ConnectionDirections } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
+import { RoomEditWizard } from "./forms/room/wizard/RoomEditWizard";
 import { storageService } from "@/services/storage"; 
 import { 
   StatusEnum, 
@@ -191,8 +192,9 @@ export function EditSpaceDialog({
       );
     }
     
+    // Use the progressive wizard for room editing
     return (
-      <RoomFormContent
+      <RoomEditWizard
         form={form}
         onSubmit={handleSubmit}
         isPending={editSpaceMutation.isPending}
