@@ -1,12 +1,22 @@
-// Court room mapping for building 111 based on part numbers
-// This maps typical part numbers to their courtroom assignments
+/**
+ * Court room mapping utility for building 111 based on part numbers
+ * 
+ * NOTE: This is a legacy static mapping. The new dynamic mapping system
+ * in src/services/court/courtroomMappingService.ts queries the database
+ * for accurate, up-to-date courtroom assignments.
+ * 
+ * This file is kept for backward compatibility with existing code.
+ */
 
 export function mapPartToRoom(partNumber: string, buildingCode: '100' | '111'): string {
+  console.warn('⚠️ Using legacy static part mapping. Consider migrating to courtroomMappingService.ts for database-driven mapping.');
+  
   // For building 111, we have some known part-to-room mappings
   if (buildingCode === '111') {
     const partNum = partNumber.toUpperCase().replace(/[^0-9A-Z]/g, '');
     
     // Common mappings for building 111
+    // These are static fallbacks and may be outdated
     const roomMapping: Record<string, string> = {
       'PART1': '1000',
       'PART2': '1100',
