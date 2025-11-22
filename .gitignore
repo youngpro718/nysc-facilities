@@ -7,9 +7,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
-node_modules/.cache
-node_modules/.bin
+
+# Build output
 dist
 dist-ssr
 *.local
@@ -24,6 +25,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+*~
 
 # Development and build files
 *.tsbuildinfo
@@ -34,27 +38,13 @@ dist-ssr
 coverage/
 .nyc_output/
 
-# Documentation and scripts (exclude from deployment)
-scripts/
-*.md
-!README.md
-!docs/*.md
-!docs/epics/*.md
-!docs/stories/*.md
-!docs/qa/*.md
-!db/README.md
-
-# Database and infrastructure assets (exclude from static deploy)
+# Database and infrastructure
 sql/
 supabase/
 *.sql
 !db/**/*.sql
 
-# Database migrations (handled separately)
-supabase/migrations/
-supabase/seed.sql
-
-# Lock files (keep only one)
+# Lock files (keep only npm's)
 yarn.lock
 pnpm-lock.yaml
 bun.lockb
@@ -65,31 +55,14 @@ bun.lockb
 .env.development
 .env.test
 .env.production
-.env.local.example
 
-# Additional exclusions for deployment
+# Build artifacts
 *.map
 *.tgz
 *.tar.gz
 .cache/
 temp/
 tmp/
-components.json
-eslint.config.js
-windsurf_deployment.yaml
-README.md
-
-# IDE and editor files
-.vscode/settings.json
-.vscode/launch.json
-.vscode/tasks.json
-*.swp
-*.swo
-*~
-
-# OS generated files
-Thumbs.db
-ehthumbs.db
 
 # Package manager files
 .pnpm-store/

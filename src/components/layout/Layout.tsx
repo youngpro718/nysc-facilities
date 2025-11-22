@@ -38,12 +38,6 @@ const Layout = () => {
   
   // Show partial UI faster - don't wait for full permissions
   const canShowPartialUI = isAuthenticated && !isLoading;
-    
-  console.log('Layout - userRole:', userRole, 'permissionsLoading:', permissionsLoading);
-  console.log('Layout - isAdmin:', isAdmin);
-  console.log('Layout - user:', user?.id);
-  console.log('Layout - profile:', profile);
-  console.log('Layout - navigation:', navigation);
 
   // OPTIMIZATION: Reduced timeout from 8s to 5s since we now load faster
   useEffect(() => {

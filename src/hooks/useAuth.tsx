@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const hasCompletedInitialAuth = useRef(false);
+  const isFetchingProfile = useRef(false);
   const navigate = useNavigate();
 
   // Enhanced hallway lighting system - build trigger v2
@@ -96,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [getUserProfile]);
+  }, []); // Remove getUserProfile dependency as it's not used
 
   // Sign in function with email verification enforcement
   const signIn = async (email: string, password: string) => {
@@ -268,7 +269,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const currentPath = window.location.pathname;
 
-      logger.debug('handleRedirect: evaluating redirect logic');
+      logger.debug('[useAuth.handleRedirect] START', {
+        currentPath,
+        isExplicitSignIn,
+        hasCompletedInitialAuth: hasCompletedInitialAuth.current,
+        userRole: userData.profile?.role,
+        verificationStatus: userData.profile?.verification_status
+      });
 
       // Always enforce verification flow ON INITIAL LOAD or EXPLICIT SIGN IN ONLY
       // Do NOT redirect during background token refreshes
@@ -280,8 +287,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 1. This is an explicit sign in event, OR
         // 2. This is initial page load AND we're not already on an allowed page
         if (isExplicitSignIn || (!hasCompletedInitialAuth.current && !allowlist.has(currentPath))) {
-          logger.debug('Redirecting to verification pending');
+          logger.debug('[useAuth.handleRedirect] REDIRECT: verification pending');
           navigate('/verification-pending', { replace: true });
+        } else {
+          logger.debug('[useAuth.handleRedirect] SKIP: already on allowed page or not initial auth');
         }
         return;
       }
@@ -291,14 +300,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const correctDashboard = getDashboardForRole(userRole);
       
       if (currentPath === '/login') {
-        logger.debug('User coming from login, redirecting to role-based dashboard', {
+        logger.debug('[useAuth.handleRedirect] REDIRECT: login -> dashboard', {
           role: userRole,
           dashboard: correctDashboard
         });
         navigate(correctDashboard, { replace: true });
       } else if (currentPath === '/dashboard' && correctDashboard !== '/dashboard') {
         // User is on generic dashboard but should be on role-specific dashboard
-        logger.debug('Redirecting from generic dashboard to role-specific dashboard', {
+        logger.debug('[useAuth.handleRedirect] REDIRECT: generic -> role-specific dashboard', {
           role: userRole,
           from: currentPath,
           to: correctDashboard
@@ -306,18 +315,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         navigate(correctDashboard, { replace: true });
       } else if (currentPath === '/' && userRole !== 'admin' && userRole !== 'facilities_manager') {
         // Non-admin on admin dashboard, redirect to their dashboard
-        logger.debug('Non-admin on admin dashboard, redirecting', {
+        logger.debug('[useAuth.handleRedirect] REDIRECT: admin page -> user dashboard', {
           role: userRole,
           to: correctDashboard
         });
         navigate(correctDashboard, { replace: true });
+      } else {
+        logger.debug('[useAuth.handleRedirect] NO REDIRECT needed', { currentPath });
       }
     };
 
     // Initialize auth state
     const initializeAuth = async () => {
         try {
-          logger.debug('Initializing authentication');
+          logger.debug('[useAuth.initializeAuth] START');
           setIsLoading(true);
           const currentSession = await authService.getSession();
           
@@ -329,7 +340,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(currentSession.user);
           
           // Fetch user profile and role - critical for consistent admin status
-      const userData = await authService.fetchUserProfile(currentSession.user.id);
+          // Guard against duplicate fetches
+          if (isFetchingProfile.current) {
+            logger.debug('Profile fetch already in progress, skipping duplicate');
+            return;
+          }
+          
+          isFetchingProfile.current = true;
+          const userData = await authService.fetchUserProfile(currentSession.user.id);
+          isFetchingProfile.current = false;
       
       if (!mounted) return;
       
@@ -388,6 +407,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           logger.debug('Auth state changed', { event });
 
           if (event === 'SIGNED_IN' && newSession) {
+            logger.debug('[useAuth.onAuthStateChange] SIGNED_IN event', { userId: newSession.user.id });
             setSession(newSession);
             setUser(newSession.user);
             
@@ -396,8 +416,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             (async () => {
               if (!mounted) return;
               
+              // Skip if we already have profile data for this user (avoids duplicate fetch on initial load)
+              if (profile?.id === newSession.user.id && !hasCompletedInitialAuth.current) {
+                logger.debug('Profile already loaded during initialization, skipping duplicate fetch');
+                return;
+              }
+              
               try {
+                if (isFetchingProfile.current) {
+                  logger.debug('Profile fetch in progress, skipping');
+                  return;
+                }
+                
+                isFetchingProfile.current = true;
                 const userData = await authService.fetchUserProfile(newSession.user.id);
+                isFetchingProfile.current = false;
                 
                 if (!mounted) return;
                 
@@ -410,6 +443,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   handleRedirect(userData, true);
                 }
               } catch (error) {
+                isFetchingProfile.current = false;
                 logger.error('Error fetching user data after sign in', error);
               }
             })();
@@ -435,7 +469,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [getUserProfile, navigate])
+  }, [navigate]); // Remove getUserProfile dependency - not used in the effect
 
   // Compute isAuthenticated derived from session
   const isAuthenticated = !!session;

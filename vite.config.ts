@@ -79,14 +79,24 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       // Let Vite determine the protocol/host/port automatically
       // This prevents issues where 'localhost' binding fails in tunneled environments
-      clientPort: 8080, 
+      clientPort: 8080,
+      overlay: false, // Disable error overlay that can trigger refreshes
+    },
+    watch: {
+      // Prevent excessive file watching that causes refresh loops
+      ignored: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**'],
+      usePolling: false, // Use native file watching for better performance
+    },
+    fs: {
+      // Strict file system access to prevent unnecessary file reads
+      strict: true,
     },
   },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
     handleWebSocketErrors(),
-    VitePWA({
+    mode === 'production' && VitePWA({
       registerType: 'autoUpdate',
       workbox: {
         skipWaiting: true,

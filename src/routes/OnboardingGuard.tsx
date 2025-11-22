@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { getMyProfile } from '@/services/profile';
@@ -20,17 +20,28 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const hasCheckedRef = useRef(false);
+  const isCheckingRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
     let authSubscription: { data: { subscription: { unsubscribe: () => void } } } | null = null;
 
     const check = async () => {
+      // Prevent concurrent checks
+      if (isCheckingRef.current) {
+        logger.debug('[OnboardingGuard] Check already in progress, skipping');
+        return;
+      }
+      
+      isCheckingRef.current = true;
+      
       try {
         // Don't check if we're already on an auth/onboarding page
         const publicPaths = ['/auth/', '/onboarding/', '/login'];
         if (publicPaths.some(path => location.pathname.startsWith(path))) {
           if (mounted) setChecking(false);
+          isCheckingRef.current = false;
           return;
         }
 
@@ -92,27 +103,38 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           logger.error('[OnboardingGuard] Profile fetch failed:', profileError);
           // If profile fetch fails, redirect to sign-in for safety
           navigate('/login', { replace: true });
+          isCheckingRef.current = false;
           return;
         }
       } catch (error) {
         logger.error('[OnboardingGuard] Check failed:', error);
         navigate('/login', { replace: true });
       } finally {
-        if (mounted) setChecking(false);
+        isCheckingRef.current = false;
+        if (mounted) {
+          setChecking(false);
+          hasCheckedRef.current = true;
+        }
       }
     };
 
-    // Initial check
-    check();
+    // Initial check only if not already checked
+    if (!hasCheckedRef.current) {
+      logger.debug('[OnboardingGuard] Running initial check');
+      check();
+    } else {
+      logger.debug('[OnboardingGuard] Already checked, skipping');
+      setChecking(false);
+    }
 
-    // Subscribe to auth state changes
+    // Subscribe to auth state changes - but only act on SIGNED_OUT
     authSubscription = supabase.auth.onAuthStateChange((_event, session) => {
       logger.debug('[OnboardingGuard] Auth state changed:', _event);
-      if (!session) {
+      if (_event === 'SIGNED_OUT' && !session) {
+        hasCheckedRef.current = false;
         navigate('/login', { replace: true });
-      } else {
-        check();
       }
+      // Don't re-check on SIGNED_IN - useAuth handles that flow
     });
 
     return () => {

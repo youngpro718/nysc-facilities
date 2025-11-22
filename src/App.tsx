@@ -330,8 +330,6 @@ function NotificationsWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  console.log('App: Starting application render');
-  
   return (
     <ErrorBoundary onError={(error) => console.error('App: Global error caught:', error)}>
       <QueryClientProvider client={queryClient}>

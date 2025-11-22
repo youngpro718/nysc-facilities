@@ -44,6 +44,8 @@ export interface UserIssue {
   priority: "low" | "medium" | "high";
   building_id: string;
   seen: boolean;
+  issue_type?: string; // Added to match database
+  assigned_to?: string; // Added to match database
   photos?: string[];
   rooms?: {
     id: string;

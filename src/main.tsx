@@ -11,7 +11,7 @@ initializeStorage().catch(err => {
   // Continue loading the app even if bucket initialization fails
 });
 
-// Register service worker for PWA support (iOS 18+ compatible)
+// Register service worker for PWA support (iOS 18+ compatible) - ONLY in production
 if (import.meta.env.PROD) {
   registerServiceWorker({
     onSuccess: (registration) => {
@@ -28,6 +28,16 @@ if (import.meta.env.PROD) {
       console.error('❌ Service Worker registration failed:', error);
     },
   });
+} else {
+  // Unregister any existing service workers in development to prevent conflicts
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(registration => {
+        registration.unregister();
+        console.log('🧹 Unregistered service worker in development mode');
+      });
+    });
+  }
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

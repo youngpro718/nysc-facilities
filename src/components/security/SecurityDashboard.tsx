@@ -140,10 +140,10 @@ export const SecurityDashboard = () => {
   useEffect(() => {
     loadSecurityData({ showLoading: true });
     
-    // Set up periodic refresh
-    const interval = setInterval(() => loadSecurityData(), 30000); // Every 30 seconds
+    // Set up periodic refresh - DISABLED to prevent auto-refresh
+    // const interval = setInterval(() => loadSecurityData(), 30000); // Every 30 seconds
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, []);
 
   const getSecurityLevelColor = (level: string) => {

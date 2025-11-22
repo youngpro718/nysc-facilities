@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
@@ -48,6 +48,10 @@ export function useRolePermissions() {
   
   // OPTIMIZATION: Track if we've loaded from cache to show UI faster
   const [loadedFromCache, setLoadedFromCache] = useState(false);
+  
+  // Guard to prevent concurrent fetches
+  const isFetchingRef = useRef(false);
+  const hasFetchedRef = useRef(false);
   
   // Define role permissions mapping - 6 ALLOWED ROLES
   const rolePermissionsMap: Record<CourtRole, RolePermissions> = {
@@ -139,12 +143,21 @@ export function useRolePermissions() {
 
   const fetchUserRoleAndPermissions = async (skipCache = false) => {
     const startTime = Date.now();
+    
+    // Guard against concurrent fetches
+    if (isFetchingRef.current) {
+      logger.debug('[useRolePermissions] Fetch already in progress, skipping');
+      return;
+    }
+    
+    isFetchingRef.current = true;
     logger.debug('[useRolePermissions] Fetch started');
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         logger.debug('[useRolePermissions] No user found');
+        isFetchingRef.current = false;
         return;
       }
 
@@ -302,6 +315,7 @@ export function useRolePermissions() {
       
       const elapsed = Date.now() - startTime;
       logger.debug(`[useRolePermissions] Fetch completed in ${elapsed}ms`);
+      hasFetchedRef.current = true;
     } catch (error) {
       logger.error('[useRolePermissions] Error in fetchUserRoleAndPermissions', error);
       
@@ -315,6 +329,7 @@ export function useRolePermissions() {
         variant: "destructive",
       });
     } finally {
+      isFetchingRef.current = false;
       const elapsed = Date.now() - startTime;
       logger.debug(`[useRolePermissions] Loading complete (${elapsed}ms)`);
       setLoading(false);
@@ -346,12 +361,13 @@ export function useRolePermissions() {
   const isPurchasingStaff = userRole === 'purchasing_staff';
 
   useEffect(() => {
-    logger.debug('[useRolePermissions] Initial mount - fetching permissions');
+    logger.debug('[useRolePermissions] Initial mount - setting up');
     
     // Listen for auth state changes to reset permissions on sign out
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         logger.debug('[useRolePermissions] Sign out detected - resetting state');
+        hasFetchedRef.current = false;
         setUserRole(null);
         setProfile(null);
         setPermissions({
@@ -378,8 +394,8 @@ export function useRolePermissions() {
         });
         localStorage.removeItem('preview_role');
       } else if (event === 'SIGNED_IN' && session) {
-        logger.debug('[useRolePermissions] Sign in detected - fetching fresh permissions');
-        fetchUserRoleAndPermissions(true); // Skip cache on new sign in
+        // Don't refetch here - let useAuth handle it
+        logger.debug('[useRolePermissions] Sign in detected - skipping refetch (handled by useAuth)');
       }
     });
     
@@ -399,9 +415,16 @@ export function useRolePermissions() {
       }
     }, 3000);
     
-    fetchUserRoleAndPermissions().finally(() => {
+    // Only fetch if we haven't already fetched
+    if (!hasFetchedRef.current) {
+      logger.debug('[useRolePermissions] Fetching permissions for first time');
+      fetchUserRoleAndPermissions().finally(() => {
+        clearTimeout(timeout);
+      });
+    } else {
+      logger.debug('[useRolePermissions] Skipping fetch - already completed');
       clearTimeout(timeout);
-    });
+    }
     
     return () => {
       clearTimeout(timeout);
@@ -412,10 +435,12 @@ export function useRolePermissions() {
   // Listen for preview role changes and storage updates to refresh permissions across the app
   useEffect(() => {
     const handlePreviewChange = () => {
+      logger.debug('[useRolePermissions] Preview role changed event triggered');
       fetchUserRoleAndPermissions();
     };
     const handleStorage = (e: StorageEvent) => {
       if (e.key === 'preview_role') {
+        logger.debug('[useRolePermissions] Storage event for preview_role');
         fetchUserRoleAndPermissions();
       }
     };

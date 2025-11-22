@@ -106,10 +106,10 @@ export function SecurityMonitoring() {
 
     fetchSecurityData();
 
-    // Set up real-time monitoring
-    const interval = setInterval(fetchSecurityData, 60000); // Refresh every minute
+    // Set up real-time monitoring - DISABLED to prevent auto-refresh
+    // const interval = setInterval(fetchSecurityData, 60000); // Refresh every minute
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [isAdmin]);
 
   if (!isAdmin) {

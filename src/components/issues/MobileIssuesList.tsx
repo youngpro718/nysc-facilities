@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { MobileSearchBar } from "@/components/mobile/MobileSearchBar";
 import { MobileIssueFilters } from "./MobileIssueFilters";
 import { MobileIssueCard } from "./MobileIssueCard";
@@ -30,7 +30,7 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
     order: 'desc'
   });
 
-  // Mock data for now - replace with actual hook
+  // Fetch issues with server-side filtering
   const { issues, isLoading } = useIssueQueries({
     searchQuery,
     filters
@@ -59,47 +59,8 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
     setRecentSearches([]);
   };
 
-  const filteredIssues = useMemo(() => {
-    if (!issues) return [];
-    
-    return issues.filter(issue => {
-      // Apply search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        if (!issue.title.toLowerCase().includes(query) &&
-            !issue.description.toLowerCase().includes(query) &&
-            !issue.issue_type.toLowerCase().includes(query)) {
-          return false;
-        }
-      }
-      
-      // Apply status filter
-      if (filters.status && filters.status !== 'all_statuses') {
-        if (Array.isArray(filters.status)) {
-          if (!filters.status.includes(issue.status as any)) return false;
-        } else {
-          if (issue.status !== filters.status) return false;
-        }
-      }
-      
-      // Apply priority filter
-      if (filters.priority && filters.priority !== 'all_priorities') {
-        if (issue.priority !== filters.priority) return false;
-      }
-      
-      // Apply type filter
-      if (filters.type && filters.type !== 'all_types') {
-        if (issue.issue_type !== filters.type) return false;
-      }
-      
-      // Apply assignment filter
-      if (filters.assigned_to && filters.assigned_to !== 'all_assignments') {
-        if (issue.assigned_to !== filters.assigned_to) return false;
-      }
-      
-      return true;
-    });
-  }, [issues, searchQuery, filters]);
+  // Issues are already filtered by the hook
+  const filteredIssues = issues || [];
 
   const handleIssueView = (issue: Issue) => {
     setSelectedIssue(issue);

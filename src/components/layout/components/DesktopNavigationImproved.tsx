@@ -6,7 +6,6 @@ import { NavigationTab } from "../types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
-import { useAdminRealtimeNotifications } from "@/hooks/useAdminRealtimeNotifications";
 
 interface DesktopNavigationImprovedProps {
   navigation: NavigationTab[];
@@ -21,7 +20,7 @@ export const DesktopNavigationImproved = ({
   const location = useLocation();
   const { isAdmin, user } = useAuth();
   const { data: adminNotifications = [] } = useAdminNotifications();
-  useAdminRealtimeNotifications();
+  // Real-time notifications are set up at app level via useConditionalNotifications
   // Use a simple "last seen" timestamp to compute new notifications
   const [lastSeenAt, setLastSeenAt] = React.useState<string>(() => {
     try { return localStorage.getItem('admin.notifications.lastSeen') || ''; } catch { return ''; }

@@ -8,7 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { useAdminNotifications, useMarkNotificationRead } from "@/hooks/useAdminNotifications";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAdminRealtimeNotifications } from "@/hooks/useAdminRealtimeNotifications";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { supabase } from "@/lib/supabase";
 
@@ -41,8 +40,7 @@ export const NotificationBox = () => {
   const { data: notifications, isLoading } = useAdminNotifications();
   const markAsReadMutation = useMarkNotificationRead();
   
-  // Use real-time notifications for immediate toast alerts
-  useAdminRealtimeNotifications();
+  // Real-time notifications are set up at app level via useConditionalNotifications
   // Court issues summary for distinct critical indicator
   const { courtIssues } = useCourtIssuesIntegration();
   const openHighSeverityIssues = (courtIssues || []).filter(i =>
