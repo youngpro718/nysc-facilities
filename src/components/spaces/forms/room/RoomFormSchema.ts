@@ -73,7 +73,6 @@ export const RoomFormSchema = z.object({
   ]),
   description: z.string().optional(),
   phoneNumber: z.string().optional(),
-  currentFunction: z.string().optional(),
   // Capacity Management Fields
   capacity: z.number().min(1, "Capacity must be at least 1").optional(),
   maxOccupancy: z.number().min(1, "Max occupancy must be at least 1").optional(),
@@ -137,6 +136,23 @@ export const RoomFormSchema = z.object({
   // Replace keyDoorConnections with new room access system
   roomAccess: z.array(RoomAccessSchema).optional(),
   passkeyEnabled: z.boolean().default(false),
+  // Progressive data collection fields
+  currentFunction: z.string().nullable().optional(),
+  temporaryUseTimeline: z.object({
+    startDate: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+    reason: z.string().nullable().optional(),
+  }).nullable().optional(),
+  generalPhotos: z.array(z.object({
+    url: z.string(),
+    caption: z.string().nullable().optional(),
+    uploadedAt: z.string().nullable().optional(),
+  })).nullable().optional(),
+  lastInspectionDate: z.string().nullable().optional(),
+  nextMaintenanceDate: z.string().nullable().optional(),
+  technologyInstalled: z.array(z.string()).nullable().optional(),
+  securityLevel: z.string().nullable().optional(),
+  environmentalControls: z.string().nullable().optional(),
 });
 
 // Export types derived from the schema
