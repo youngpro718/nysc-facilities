@@ -3,6 +3,7 @@ import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "../RoomFormSchema";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Form } from "@/components/ui/form";
 import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { CoreIdentityStep } from "./steps/CoreIdentityStep";
 import { CapacityAccessStep } from "./steps/CapacityAccessStep";
@@ -131,10 +132,11 @@ export function RoomEditWizard({
       </div>
 
       {/* Step Content */}
-      <form onSubmit={handleSubmit}>
-        <div className="min-h-[400px]">{renderStep()}</div>
+      <Form {...form}>
+        <form onSubmit={handleSubmit}>
+          <div className="min-h-[400px]">{renderStep()}</div>
 
-        {/* Navigation Buttons */}
+          {/* Navigation Buttons */}
         <div className="flex items-center justify-between gap-2 pt-6 border-t mt-6">
           <div className="flex gap-2">
             <Button
@@ -187,7 +189,8 @@ export function RoomEditWizard({
             )}
           </div>
         </div>
-      </form>
+        </form>
+      </Form>
     </div>
   );
 }
