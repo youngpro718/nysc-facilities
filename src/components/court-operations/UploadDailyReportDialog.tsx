@@ -7,7 +7,9 @@ import { Upload, FileText, Loader2, CheckCircle, AlertTriangle } from 'lucide-re
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import { enrichSessionData } from '@/services/court/pdfEnrichmentService';
+import { batchMapPartsToCourtrooms } from '@/services/court/courtroomMappingService';
+import { PDFExtractionPreview, type ExtractedPart } from './PDFExtractionPreview';
+import { validateBatch, getValidationSummary } from '@/services/court/sessionValidation';
 
 interface UploadDailyReportDialogProps {
   open: boolean;
@@ -25,8 +27,10 @@ export function UploadDailyReportDialog({
   const { user } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
-  const [extractionStatus, setExtractionStatus] = useState<'idle' | 'uploading' | 'extracting' | 'success' | 'error'>('idle');
+  const [extractionStatus, setExtractionStatus] = useState<'idle' | 'uploading' | 'extracting' | 'enriching' | 'preview' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [extractedParts, setExtractedParts] = useState<ExtractedPart[]>([]);
+  const [availableRooms, setAvailableRooms] = useState<Array<{ id: string; room_number: string; name: string }>>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -105,86 +109,86 @@ export function UploadDailyReportDialog({
 
       console.log('✅ Extraction successful:', parseResult);
 
-      // Step 3: Transform extracted court report data to session format
-      // Create ONE session per part, with all cases grouped together
+      // Step 3: Map parts to courtrooms
+      setExtractionStatus('enriching');
+      toast.info('Mapping parts to courtrooms...');
+
       const extractedData = parseResult.extracted_data;
-      console.log('📊 Frontend received extracted data:', extractedData?.entries);
-      const sessions: any[] = [];
+      const entries = extractedData?.entries || [];
 
-      if (extractedData?.entries) {
-        console.log(`🔄 Processing ${extractedData.entries.length} part entries...`);
-        for (const entry of extractedData.entries) {
-          console.log(`  📍 Part ${entry.part}: Judge="${entry.judge}", Room="${entry.room_number}", Cases=${entry.cases?.length || 0}`);
-          
-          // Create ONE session per part with aggregated case data
-          const cases = entry.cases || [];
-          const caseCount = cases.length;
-          
-          // Aggregate all case data from the 9 columns
-          const allDefendants = cases.map((c: any) => c.defendant).filter(Boolean);
-          const allSendingParts = cases.map((c: any) => c.sending_part).filter(Boolean);
-          const allPurposes = cases.map((c: any) => c.purpose).filter(Boolean);
-          const allTransferDates = cases.map((c: any) => c.transfer_date).filter(Boolean);
-          const allCharges = cases.map((c: any) => c.top_charge).filter(Boolean);
-          const allStatuses = cases.map((c: any) => c.status).filter(Boolean);
-          const allAttorneys = cases.map((c: any) => c.attorney).filter(Boolean);
-          const allEstFinalDates = cases.map((c: any) => c.estimated_final_date).filter(Boolean);
-          
-          // Calculate confidence based on field completeness
-          let confidence = 0.85;
-          if (entry.judge && entry.part) confidence += 0.05;
-          if (caseCount > 0) confidence += 0.05;
-          
-          sessions.push({
-            part_number: entry.part,
-            judge_name: entry.judge,
-            calendar_day: entry.calendar_day || '',
-            part_sent_by: entry.judge,
-            clerk_name: '',
-            room_number: '', // Will be auto-populated in review
-            // Store aggregated case data
-            case_count: caseCount,
-            cases: cases, // Store full case details for expandable view
-            sending_part: [...new Set(allSendingParts)].join('; '),
-            defendants: allDefendants.join('; '),
-            purpose: [...new Set(allPurposes)].join('; '),
-            transfer_date: [...new Set(allTransferDates)].join('; '),
-            top_charge: allCharges.join('; '),
-            status: [...new Set(allStatuses)].join('; '),
-            attorney: [...new Set(allAttorneys)].join('; '),
-            estimated_final_date: [...new Set(allEstFinalDates)].join('; '),
-            extension: '',
-            papers: '',
-            confidence: Math.min(confidence, 0.95)
-          });
-        }
+      if (entries.length === 0) {
+        throw new Error('No sessions could be extracted from the document.');
       }
 
-      console.log(`✅ Created ${sessions.length} sessions from extracted data`);
+      // Load available courtrooms for manual mapping
+      const { data: rooms } = await supabase
+        .from('court_rooms')
+        .select(`
+          id,
+          room_number,
+          courtroom_number,
+          rooms!inner(
+            name,
+            floors!inner(
+              buildings!inner(address)
+            )
+          )
+        `)
+        .eq('is_active', true);
 
-      if (sessions.length === 0) {
-        throw new Error('No sessions could be extracted from the document. The document may be empty or in an unsupported format.');
+      const filteredRooms = (rooms || [])
+        .filter((r: any) => r.rooms?.floors?.buildings?.address?.includes(`${buildingCode} Centre`))
+        .map((r: any) => ({
+          id: r.id,
+          room_number: r.room_number,
+          name: r.rooms?.name || r.courtroom_number || r.room_number,
+        }));
+
+      setAvailableRooms(filteredRooms);
+
+      // Batch map all parts to courtrooms
+      const partsToMap = entries.map((e: any) => ({
+        part_number: e.part,
+        building_code: buildingCode,
+      }));
+
+      const mappings = await batchMapPartsToCourtrooms(partsToMap);
+      console.log(`📍 Mapped ${mappings.size} of ${entries.length} parts`);
+
+      // Transform to ExtractedPart format with mapping info
+      const transformedParts: ExtractedPart[] = entries.map((entry: any) => {
+        const mapping = mappings.get(entry.part);
+        
+        return {
+          part: entry.part,
+          judge: entry.judge || '',
+          calendar_day: entry.calendar_day || '',
+          out_dates: entry.out_dates || [],
+          room_number: mapping?.room_number || '',
+          cases: entry.cases || [],
+          confidence: entry.confidence || 0.75,
+          courtroom_id: mapping?.courtroom_id,
+          mapping_status: mapping ? 'found' : 'not_found',
+          mapping_message: mapping
+            ? `Mapped to ${mapping.room_name} (${mapping.room_number})`
+            : `Part "${entry.part}" not found in database. Please select manually.`,
+          needs_review: !mapping || entry.confidence < 0.85,
+        };
+      });
+
+      console.log(`✅ Prepared ${transformedParts.length} parts for preview`);
+
+      // Validate all parts
+      const validationResults = validateBatch(transformedParts, buildingCode);
+      const summary = getValidationSummary(validationResults);
+
+      if (summary.hasErrors) {
+        toast.warning(`Found ${summary.totalErrors} validation errors. Please review before importing.`);
       }
 
-      // Step 4: Enrich with database information
-      console.log('🔄 Enriching sessions with court data...');
-      toast.info('Enriching with court data...');
-      
-      const enrichedSessions = await enrichSessionData(sessions, buildingCode);
-      
-      console.log('✅ Sessions enriched with database information');
-
-      setExtractionStatus('success');
-      toast.success(`Extracted and enriched ${enrichedSessions.length} sessions`);
-      
-      if (onDataExtracted) {
-        onDataExtracted(enrichedSessions);
-      }
-
-      // Close dialog after short delay
-      setTimeout(() => {
-        onOpenChange(false);
-      }, 1000);
+      setExtractedParts(transformedParts);
+      setExtractionStatus('preview');
+      toast.success(`Ready to preview ${transformedParts.length} extracted parts`);
 
     } catch (error) {
       console.error('Extraction error:', error);
@@ -201,8 +205,75 @@ export function UploadDailyReportDialog({
     setFile(null);
     setExtractionStatus('idle');
     setErrorMessage('');
+    setExtractedParts([]);
     onOpenChange(false);
   };
+
+  const handleAcceptParts = async (selectedParts: ExtractedPart[]) => {
+    console.log(`📥 Importing ${selectedParts.length} selected parts...`);
+    
+    // Transform to session format for onDataExtracted callback
+    const sessions = selectedParts.map(part => ({
+      part_number: part.part,
+      judge_name: part.judge,
+      calendar_day: part.calendar_day,
+      court_room_id: part.courtroom_id,
+      room_number: part.room_number,
+      cases: part.cases,
+      case_count: part.cases.length,
+      // Aggregate case data
+      defendants: part.cases.map(c => c.defendant).filter(Boolean).join('; '),
+      sending_part: [...new Set(part.cases.map(c => c.sending_part).filter(Boolean))].join('; '),
+      purpose: [...new Set(part.cases.map(c => c.purpose).filter(Boolean))].join('; '),
+      top_charge: part.cases.map(c => c.top_charge).filter(Boolean).join('; '),
+      attorney: [...new Set(part.cases.map(c => c.attorney).filter(Boolean))].join('; '),
+      status: [...new Set(part.cases.map(c => c.status).filter(Boolean))].join('; '),
+      confidence: part.confidence,
+    }));
+
+    setExtractionStatus('success');
+    toast.success(`Importing ${sessions.length} court sessions`);
+
+    if (onDataExtracted) {
+      onDataExtracted(sessions);
+    }
+
+    // Close dialog
+    setTimeout(() => {
+      onOpenChange(false);
+      setFile(null);
+      setExtractedParts([]);
+      setExtractionStatus('idle');
+    }, 500);
+  };
+
+  const handleBackToUpload = () => {
+    setExtractedParts([]);
+    setExtractionStatus('idle');
+  };
+
+  // Show preview if we have extracted parts
+  if (extractionStatus === 'preview' && extractedParts.length > 0) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-6xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Review Extracted Data</DialogTitle>
+            <DialogDescription>
+              Review and edit the extracted court session data before importing.
+            </DialogDescription>
+          </DialogHeader>
+          <PDFExtractionPreview
+            parts={extractedParts}
+            buildingCode={buildingCode}
+            onAccept={handleAcceptParts}
+            onCancel={handleBackToUpload}
+            availableRooms={availableRooms}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -275,6 +346,15 @@ export function UploadDailyReportDialog({
               <Loader2 className="h-4 w-4 animate-spin" />
               <AlertDescription>
                 Extracting data using AI... This may take a moment.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {extractionStatus === 'enriching' && (
+            <Alert>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertDescription>
+                Mapping parts to courtrooms and enriching data...
               </AlertDescription>
             </Alert>
           )}
