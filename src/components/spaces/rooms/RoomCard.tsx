@@ -6,6 +6,7 @@ import { EnhancedRoom } from "./types/EnhancedRoomTypes";
 import { CardFront } from "./components/CardFront";
 import { CardBack } from "./components/CardBack";
 import { useEnhancedRoomData } from "@/hooks/useEnhancedRoomData";
+import { RoomQuickEditSheet } from "../RoomQuickEditSheet";
 
 interface RoomCardProps {
   room: Room;
@@ -18,6 +19,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [showQuickEdit, setShowQuickEdit] = useState(false);
   
   // Fetch enhanced room data
   const { data: enhancedRoom, isLoading } = useEnhancedRoomData(room.id);
@@ -52,6 +54,10 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
       const displayRoomAny = (enhancedRoom || room) as unknown as Room;
       onRoomClick?.(displayRoomAny);
     }
+  };
+
+  const handleQuickNoteClick = () => {
+    setShowQuickEdit(true);
   };
 
   // Use enhanced room data if available, fallback to basic room data with safe defaults
@@ -107,7 +113,13 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
               className="absolute inset-0 w-full h-full bg-card"
               style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' as any }}
             >
-              <CardFront room={displayRoom} onFlip={handleFlip} onDelete={onDelete} isHovered={variant === 'panel' ? true : isHovered} />
+              <CardFront 
+                room={displayRoom} 
+                onFlip={handleFlip} 
+                onDelete={onDelete} 
+                isHovered={variant === 'panel' ? true : isHovered}
+                onQuickNoteClick={handleQuickNoteClick}
+              />
             </div>
             
             {/* Back of card */}
@@ -124,6 +136,14 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
           </div>
         </div>
       </CardContent>
+
+      <RoomQuickEditSheet
+        open={showQuickEdit}
+        onClose={() => setShowQuickEdit(false)}
+        roomId={room.id}
+        roomType={room.room_type || 'office'}
+        defaultSection="basic"
+      />
     </Card>
   );
 }

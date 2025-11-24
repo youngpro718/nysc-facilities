@@ -14,9 +14,10 @@ interface CardFrontProps {
   onFlip: (e?: React.MouseEvent) => void;
   onDelete: (id: string) => void;
   isHovered?: boolean;
+  onQuickNoteClick?: () => void;
 }
 
-export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFrontProps) {
+export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNoteClick }: CardFrontProps) {
   const { getIssuesForRoom } = useCourtIssuesIntegration();
   const unresolvedIssues = getIssuesForRoom(room.id);
   const hasIssues = unresolvedIssues.length > 0;
@@ -163,7 +164,22 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
           )}
 
           {/* Quick Notes / Sticky Info */}
-          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 relative">
+          <div 
+            className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 relative cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-950/30 transition-colors active:scale-[0.98]"
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              onQuickNoteClick?.();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                onQuickNoteClick?.();
+              }
+            }}
+          >
             <div className="flex items-center gap-2 mb-2">
               <div className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400">📝</div>
               <span className="text-xs font-medium text-amber-800 dark:text-amber-300">Quick Notes</span>
@@ -175,7 +191,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                 </p>
               ) : (
                 <p className="text-xs text-amber-600/60 dark:text-amber-400/60 italic">
-                  No notes yet
+                  Tap to add notes...
                 </p>
               )}
             </div>
