@@ -162,14 +162,25 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
             </div>
           )}
 
-          {/* Access/Keys */}
-          <div className="bg-card border border-border rounded-lg p-3">
+          {/* Quick Notes / Sticky Info */}
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 relative">
             <div className="flex items-center gap-2 mb-2">
-              <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">Access</span>
+              <div className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400">📝</div>
+              <span className="text-xs font-medium text-amber-800 dark:text-amber-300">Quick Notes</span>
             </div>
-            <div className="text-xl font-bold">{room.history_stats?.unique_occupants || 0}</div>
-            <div className="text-xs text-muted-foreground">Key holders</div>
+            <div className="space-y-1 min-h-[2rem]">
+              {room.description ? (
+                <p className="text-xs text-amber-900 dark:text-amber-200 line-clamp-2">
+                  {room.description}
+                </p>
+              ) : (
+                <p className="text-xs text-amber-600/60 dark:text-amber-400/60 italic">
+                  No notes yet
+                </p>
+              )}
+            </div>
+            {/* Sticky note corner fold effect */}
+            <div className="absolute bottom-0 right-0 w-0 h-0 border-l-[12px] border-l-transparent border-b-[12px] border-b-amber-300 dark:border-b-amber-700 rounded-bl-sm" />
           </div>
 
           {/* Location */}
