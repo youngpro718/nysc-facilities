@@ -171,8 +171,8 @@ export function QuickSpaceTemplates({
     }
   };
 
-  const handleCreateSpace = (name: string, roomNumber: string) => {
-    if (!selectedTemplate || !smartDefaults) {
+  const handleCreateSpace = (name: string, roomNumber: string, buildingId: string, floorId: string) => {
+    if (!selectedTemplate) {
       toast.error('Missing required information');
       return;
     }
@@ -180,8 +180,8 @@ export function QuickSpaceTemplates({
     const spaceData = {
       type: 'room' as const,
       name,
-      buildingId: smartDefaults.buildingId,
-      floorId: smartDefaults.floorId,
+      buildingId,
+      floorId,
       roomType: selectedTemplate.roomType,
       roomNumber,
       currentFunction: selectedTemplate.name.toLowerCase(),
@@ -223,6 +223,8 @@ export function QuickSpaceTemplates({
           templateIcon={selectedTemplate.icon}
           templateName={selectedTemplate.name}
           templateColor={selectedTemplate.color}
+          templateId={selectedTemplate.id}
+          roomType={selectedTemplate.roomType}
           onConfirm={handleCreateSpace}
           onBack={() => {
             setSelectedTemplate(null);
