@@ -1,27 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { 
-  Building2, 
   Scale, 
   Package, 
-  Bath, 
   Coffee, 
   Users, 
   FileText, 
   Shield,
   Briefcase,
-  Archive
+  Archive,
+  Loader2
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { RoomTypeEnum } from './rooms/types/roomEnums';
 import { createSpace } from './services/createSpace';
-import { generateSmartRoomNumber, suggestRoomName } from './utils/roomNumberGenerator';
+import { generateSmartDefaults } from '@/services/spaces/smartRoomDefaults';
+import { RoomPreviewCard } from './RoomPreviewCard';
+import { RoomQuickEditSheet } from './RoomQuickEditSheet';
 
 interface SpaceTemplate {
   id: string;
@@ -120,49 +117,30 @@ export function QuickSpaceTemplates({
   preselectedFloor 
 }: QuickSpaceTemplatesProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<SpaceTemplate | null>(null);
-  const [buildingId, setBuildingId] = useState(preselectedBuilding || '');
-  const [floorId, setFloorId] = useState(preselectedFloor || '');
-  const [roomNumber, setRoomNumber] = useState('');
-  const [customName, setCustomName] = useState('');
+  const [smartDefaults, setSmartDefaults] = useState<any>(null);
+  const [isLoadingDefaults, setIsLoadingDefaults] = useState(false);
+  const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
+  const [showQuickEdit, setShowQuickEdit] = useState(false);
 
   const queryClient = useQueryClient();
 
-  // Fetch buildings
-  const { data: buildings } = useQuery({
-    queryKey: ['buildings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('buildings')
-        .select('id, name')
-        .order('name');
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Fetch floors for selected building
-  const { data: floors } = useQuery({
-    queryKey: ['floors', buildingId],
-    queryFn: async () => {
-      if (!buildingId) return [];
-      const { data, error } = await supabase
-        .from('floors')
-        .select('id, name, floor_number')
-        .eq('building_id', buildingId)
-        .order('floor_number');
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!buildingId
-  });
-
   const createSpaceMutation = useMutation({
     mutationFn: createSpace,
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['floor-spaces'] });
-      toast.success(`Successfully created ${selectedTemplate?.name.toLowerCase()}`);
-      onClose();
+      
+      setCreatedRoomId(data.id);
+      
+      toast.success(`Successfully created ${selectedTemplate?.name.toLowerCase()}`, {
+        action: {
+          label: 'Edit Details',
+          onClick: () => setShowQuickEdit(true)
+        }
+      });
+      
+      // Close after a short delay
+      setTimeout(onClose, 2000);
     },
     onError: (error) => {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create space';
@@ -172,52 +150,40 @@ export function QuickSpaceTemplates({
 
   const handleTemplateSelect = async (template: SpaceTemplate) => {
     setSelectedTemplate(template);
+    setIsLoadingDefaults(true);
     
-    // Generate smart defaults if building and floor are selected
-    if (buildingId && floorId) {
-      try {
-        const suggestedName = await suggestRoomName(
-          template.roomType, 
-          floorId, 
-          buildingId
-        );
-        setCustomName(suggestedName);
-
-        const floor = floors?.find(f => f.id === floorId);
-        if (floor) {
-          const smartRoomNumber = await generateSmartRoomNumber({
-            floorId,
-            floorNumber: floor.floor_number,
-            roomType: template.roomType,
-            buildingId
-          });
-          setRoomNumber(smartRoomNumber);
-        }
-      } catch (error) {
-        console.error('Error generating smart defaults:', error);
-        setCustomName(template.defaultName);
-      }
-    } else {
-      setCustomName(template.defaultName);
+    try {
+      const defaults = await generateSmartDefaults({
+        templateId: template.id,
+        roomType: template.roomType,
+        defaultName: template.defaultName,
+        buildingId: preselectedBuilding,
+        floorId: preselectedFloor
+      });
+      
+      setSmartDefaults(defaults);
+    } catch (error) {
+      console.error('Error generating smart defaults:', error);
+      toast.error('Failed to generate defaults');
+      setSelectedTemplate(null);
+    } finally {
+      setIsLoadingDefaults(false);
     }
   };
 
-  const handleCreateSpace = () => {
-    if (!selectedTemplate || !buildingId || !floorId) {
-      toast.error('Please select a template, building, and floor');
+  const handleCreateSpace = (name: string, roomNumber: string) => {
+    if (!selectedTemplate || !smartDefaults) {
+      toast.error('Missing required information');
       return;
     }
 
-    const spaceName = customName || selectedTemplate.defaultName;
-    const finalRoomNumber = roomNumber || generateRoomNumber();
-
     const spaceData = {
       type: 'room' as const,
-      name: spaceName,
-      buildingId,
-      floorId,
+      name,
+      buildingId: smartDefaults.buildingId,
+      floorId: smartDefaults.floorId,
       roomType: selectedTemplate.roomType,
-      roomNumber: finalRoomNumber,
+      roomNumber,
       currentFunction: selectedTemplate.name.toLowerCase(),
       description: selectedTemplate.description,
       isStorage: selectedTemplate.roomType === RoomTypeEnum.UTILITY_ROOM || selectedTemplate.roomType === RoomTypeEnum.FILING_ROOM,
@@ -234,106 +200,54 @@ export function QuickSpaceTemplates({
     createSpaceMutation.mutate(spaceData);
   };
 
-  const generateRoomNumber = () => {
-    // Simple room number generation - could be made smarter
-    const floorNumber = floors?.find(f => f.id === floorId)?.floor_number || 1;
-    const randomNum = Math.floor(Math.random() * 99) + 1;
-    return `${floorNumber}${randomNum.toString().padStart(2, '0')}`;
-  };
-
-  const handleBuildingChange = (newBuildingId: string) => {
-    setBuildingId(newBuildingId);
-    setFloorId(''); // Reset floor when building changes
-  };
-
-  if (selectedTemplate) {
+  // Loading state
+  if (isLoadingDefaults && selectedTemplate) {
     return (
       <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <selectedTemplate.icon className="h-5 w-5" />
-            Create {selectedTemplate.name}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="building">Building</Label>
-            <Select value={buildingId} onValueChange={handleBuildingChange}>
-              <SelectTrigger className="touch-manipulation">
-                <SelectValue placeholder="Select building" />
-              </SelectTrigger>
-              <SelectContent className="z-[200] bg-background touch-manipulation">
-                {buildings?.map((building) => (
-                  <SelectItem key={building.id} value={building.id}>
-                    {building.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="floor">Floor</Label>
-            <Select value={floorId} onValueChange={setFloorId}>
-              <SelectTrigger className="touch-manipulation">
-                <SelectValue placeholder="Select floor" />
-              </SelectTrigger>
-              <SelectContent className="z-[200] bg-background touch-manipulation">
-                {floors?.map((floor) => (
-                  <SelectItem key={floor.id} value={floor.id}>
-                    {floor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder={selectedTemplate.defaultName}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="roomNumber">Room #</Label>
-              <Input
-                id="roomNumber"
-                value={roomNumber}
-                onChange={(e) => setRoomNumber(e.target.value)}
-                placeholder="Auto"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setSelectedTemplate(null)}
-              className="flex-1"
-            >
-              Back
-            </Button>
-            <Button 
-              onClick={handleCreateSpace}
-              disabled={createSpaceMutation.isPending || !buildingId || !floorId}
-              className="flex-1"
-            >
-              {createSpaceMutation.isPending ? 'Creating...' : 'Create'}
-            </Button>
+        <CardContent className="py-12">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Generating smart defaults...</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
+  // Preview state
+  if (selectedTemplate && smartDefaults) {
+    return (
+      <>
+        <RoomPreviewCard
+          defaults={smartDefaults}
+          templateIcon={selectedTemplate.icon}
+          templateName={selectedTemplate.name}
+          templateColor={selectedTemplate.color}
+          onConfirm={handleCreateSpace}
+          onBack={() => {
+            setSelectedTemplate(null);
+            setSmartDefaults(null);
+          }}
+          isCreating={createSpaceMutation.isPending}
+        />
+        
+        {createdRoomId && (
+          <RoomQuickEditSheet
+            open={showQuickEdit}
+            onClose={() => setShowQuickEdit(false)}
+            roomId={createdRoomId}
+            roomType={selectedTemplate.roomType}
+          />
+        )}
+      </>
+    );
+  }
+
+  // Template selection
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Quick Add Space</CardTitle>
+        <CardTitle>Choose Space Type</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-3">
@@ -341,13 +255,13 @@ export function QuickSpaceTemplates({
             <Button
               key={template.id}
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-muted"
+              className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-accent touch-manipulation"
               onClick={() => handleTemplateSelect(template)}
             >
-              <div className={`p-2 rounded-full ${template.color} text-white`}>
-                <template.icon className="h-4 w-4" />
+              <div className={`p-2.5 rounded-full ${template.color} text-white`}>
+                <template.icon className="h-5 w-5" />
               </div>
-              <span className="text-xs font-medium">{template.name}</span>
+              <span className="text-sm font-medium">{template.name}</span>
             </Button>
           ))}
         </div>
@@ -355,7 +269,7 @@ export function QuickSpaceTemplates({
         <div className="mt-4 pt-4 border-t">
           <Button 
             variant="ghost" 
-            className="w-full"
+            className="w-full touch-manipulation"
             onClick={onClose}
           >
             Cancel
