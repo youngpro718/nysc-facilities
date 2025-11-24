@@ -15,13 +15,14 @@ interface RoomQuickEditSheetProps {
   onClose: () => void;
   roomId: string;
   roomType: string;
+  defaultSection?: string;
 }
 
-export function RoomQuickEditSheet({ open, onClose, roomId, roomType }: RoomQuickEditSheetProps) {
+export function RoomQuickEditSheet({ open, onClose, roomId, roomType, defaultSection = 'basic' }: RoomQuickEditSheetProps) {
   const [description, setDescription] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [storageNotes, setStorageNotes] = useState('');
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set([defaultSection]));
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
