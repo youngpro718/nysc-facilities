@@ -40,22 +40,6 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
     setIsFlipped(prev => !prev);
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Don't open dialog if clicking on interactive elements (buttons, links, etc.)
-    const target = e.target as HTMLElement;
-    const isInteractiveElement = target.closest('button, a, [role="button"], [data-radix-collection-item]');
-    
-    if (isInteractiveElement) {
-      return;
-    }
-    
-    // Only open details dialog on mobile when clicking the card background
-    if (isMobile) {
-      const displayRoomAny = (enhancedRoom || room) as unknown as Room;
-      onRoomClick?.(displayRoomAny);
-    }
-  };
-
   const handleQuickNoteClick = () => {
     setShowQuickEdit(true);
   };
@@ -83,12 +67,11 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
 
   return (
     <Card 
-      className={`relative ${variant === 'panel' ? 'h-full w-full max-w-none' : 'h-[320px]'} group overflow-hidden ${variant === 'panel' ? 'cursor-default' : isMobile ? 'cursor-pointer' : 'cursor-default'} transition-all duration-200 ease-out ${
+      className={`relative ${variant === 'panel' ? 'h-full w-full max-w-none' : 'h-[320px]'} group overflow-hidden cursor-default transition-all duration-200 ease-out ${
         isHovered 
           ? 'shadow-2xl shadow-black/20 dark:shadow-black/40' 
           : 'shadow-md hover:shadow-lg'
       }`}
-      onClick={variant === 'panel' ? undefined : (e) => handleCardClick(e)}
       onMouseEnter={() => { setIsHovered(true); }}
       onMouseLeave={() => { setIsHovered(false); }}
     >
