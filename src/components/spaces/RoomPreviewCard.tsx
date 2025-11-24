@@ -1,18 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Layers, Hash, Edit2, Check, X } from 'lucide-react';
 import { SmartDefaults } from '@/services/spaces/smartRoomDefaults';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { generateSmartRoomNumber } from '@/components/spaces/utils/roomNumberGenerator';
 
 interface RoomPreviewCardProps {
   defaults: SmartDefaults;
   templateIcon: React.ComponentType<{ className?: string }>;
   templateName: string;
   templateColor: string;
-  onConfirm: (name: string, roomNumber: string) => void;
+  templateId: string;
+  roomType: string;
+  onConfirm: (name: string, roomNumber: string, buildingId: string, floorId: string) => void;
   onBack: () => void;
   isCreating?: boolean;
 }
@@ -22,6 +28,8 @@ export function RoomPreviewCard({
   templateIcon: Icon,
   templateName,
   templateColor,
+  templateId,
+  roomType,
   onConfirm,
   onBack,
   isCreating = false
@@ -30,9 +38,64 @@ export function RoomPreviewCard({
   const [isEditingNumber, setIsEditingNumber] = useState(false);
   const [name, setName] = useState(defaults.name);
   const [roomNumber, setRoomNumber] = useState(defaults.roomNumber);
+  const [buildingId, setBuildingId] = useState(defaults.buildingId);
+  const [floorId, setFloorId] = useState(defaults.floorId);
+
+  // Fetch buildings
+  const { data: buildings } = useQuery({
+    queryKey: ['buildings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('id, name')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch floors for selected building
+  const { data: floors } = useQuery({
+    queryKey: ['floors', buildingId],
+    queryFn: async () => {
+      if (!buildingId) return [];
+      const { data, error } = await supabase
+        .from('floors')
+        .select('id, name, floor_number')
+        .eq('building_id', buildingId)
+        .order('floor_number');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!buildingId
+  });
+
+  // Regenerate room number when floor changes
+  useEffect(() => {
+    const regenerateRoomNumber = async () => {
+      if (floorId && buildingId) {
+        const floor = floors?.find(f => f.id === floorId);
+        if (floor) {
+          try {
+            const newRoomNumber = await generateSmartRoomNumber({
+              floorId,
+              floorNumber: floor.floor_number,
+              roomType,
+              buildingId
+            });
+            setRoomNumber(newRoomNumber);
+          } catch (error) {
+            console.error('Error regenerating room number:', error);
+          }
+        }
+      }
+    };
+
+    regenerateRoomNumber();
+  }, [floorId, buildingId, floors, roomType]);
 
   const handleConfirm = () => {
-    onConfirm(name, roomNumber);
+    onConfirm(name, roomNumber, buildingId, floorId);
   };
 
   return (
@@ -144,21 +207,48 @@ export function RoomPreviewCard({
             )}
           </div>
 
-          {/* Location Info */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">Building</p>
-                <p className="text-sm font-medium truncate">{defaults.buildingName}</p>
-              </div>
+          {/* Location Selection */}
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-2">
+                <Building2 className="h-3 w-3" />
+                Building
+              </Label>
+              <Select value={buildingId} onValueChange={setBuildingId}>
+                <SelectTrigger className="h-12 touch-manipulation">
+                  <SelectValue placeholder="Select building" />
+                </SelectTrigger>
+                <SelectContent className="z-[200]">
+                  {buildings?.map((building) => (
+                    <SelectItem key={building.id} value={building.id}>
+                      {building.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-              <Layers className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">Floor</p>
-                <p className="text-sm font-medium truncate">{defaults.floorName}</p>
-              </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-2">
+                <Layers className="h-3 w-3" />
+                Floor
+              </Label>
+              <Select 
+                value={floorId} 
+                onValueChange={setFloorId}
+                disabled={!buildingId}
+              >
+                <SelectTrigger className="h-12 touch-manipulation">
+                  <SelectValue placeholder="Select floor" />
+                </SelectTrigger>
+                <SelectContent className="z-[200]">
+                  {floors?.map((floor) => (
+                    <SelectItem key={floor.id} value={floor.id}>
+                      {floor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -175,7 +265,7 @@ export function RoomPreviewCard({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={isCreating || !name || !roomNumber}
+            disabled={isCreating || !name || !roomNumber || !buildingId || !floorId}
             className="flex-1 h-12 touch-manipulation"
           >
             {isCreating ? 'Creating...' : 'Create Space'}
