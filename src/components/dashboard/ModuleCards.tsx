@@ -333,14 +333,6 @@ export const SupplyDashboardCard = () => {
 };
 
 export const ModuleCards = () => {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <IssuesDashboardCard />
-      <SupplyDashboardCard />
-      <KeysDashboardCard />
-      <SpacesDashboardCard />
-      <LightingDashboardCard />
-      <MaintenanceDashboardCard />
-    </div>
-  );
+  // Module cards disabled - use individual cards where needed
+  return null;
 };
