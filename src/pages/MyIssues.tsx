@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, AlertCircle, Clock, CheckCircle, Settings } from "lucide-react";
+import { Plus, AlertCircle, Clock, CheckCircle, Settings, ArrowUpCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserIssues } from "@/hooks/dashboard/useUserIssues";
@@ -11,7 +11,10 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { ReportIssueWizard } from "@/components/issues/wizard/ReportIssueWizard";
 import { MobileIssueCard } from "@/components/issues/mobile/MobileIssueCard";
 import { MobileRequestForm } from "@/components/mobile/MobileRequestForm";
+import { UserIssueDetailDialog } from "@/components/issues/UserIssueDetailDialog";
 import { DataState } from "@/ui";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const statusConfig = {
   open: { 
@@ -47,6 +50,7 @@ export default function MyIssues() {
   const [showIssueWizard, setShowIssueWizard] = useState(false);
   const [showMobileForm, setShowMobileForm] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const { user } = useAuth();
   const { userIssues: issues = [], isLoading, refetchIssues } = useUserIssues(user?.id);
 
@@ -65,6 +69,33 @@ export default function MyIssues() {
     setShowIssueWizard(false);
     setShowMobileForm(false);
     refetchIssues();
+  };
+
+  const handleViewDetails = (issueId: string) => {
+    setSelectedIssueId(issueId);
+  };
+
+  const handleEscalate = async (issueId: string) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ priority: 'high' })
+        .eq('id', issueId);
+      
+      if (error) throw error;
+      toast.success('Issue escalated to high priority');
+      refetchIssues();
+      setSelectedIssueId(null);
+    } catch (error) {
+      toast.error('Failed to escalate issue');
+      console.error('Escalate error:', error);
+    }
+  };
+
+  const handleFollowUp = (issueId: string) => {
+    // Open the issue detail with comments tab
+    setSelectedIssueId(issueId);
+    toast.info('Add a comment to follow up on this issue');
   };
 
   return (
@@ -116,10 +147,10 @@ export default function MyIssues() {
                 <MobileIssueCard
                   key={issue.id}
                   issue={issue}
-                  onViewDetails={() => {/* Handle view details */}}
-                  onAddComment={() => {/* Handle add comment */}}
-                  onFollowUp={() => {/* Handle follow up */}}
-                  onEscalate={() => {/* Handle escalate */}}
+                  onViewDetails={() => handleViewDetails(issue.id)}
+                  onAddComment={() => handleViewDetails(issue.id)}
+                  onFollowUp={() => handleFollowUp(issue.id)}
+                  onEscalate={() => handleEscalate(issue.id)}
                 />
               ))
             ) : (
@@ -130,7 +161,11 @@ export default function MyIssues() {
             const StatusIcon = statusConf?.icon || AlertCircle;
             
             return (
-              <Card key={issue.id}>
+              <Card 
+                key={issue.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleViewDetails(issue.id)}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -161,15 +196,32 @@ export default function MyIssues() {
                   
                   <div>
                     <p className="font-medium text-sm text-muted-foreground mb-1">Description</p>
-                    <p className="text-sm">{issue.description}</p>
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    <p>Status: {issue.status}</p>
+                    <p className="text-sm line-clamp-2">{issue.description}</p>
                   </div>
                   
                   <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
                     <span>Reported: {format(new Date(issue.created_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                    <div className="flex gap-2">
+                      {issue.status === 'resolved' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleFollowUp(issue.id); }}
+                        >
+                          Follow Up
+                        </Button>
+                      )}
+                      {['open', 'in_progress'].includes(issue.status) && issue.priority !== 'urgent' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleEscalate(issue.id); }}
+                        >
+                          <ArrowUpCircle className="h-4 w-4 mr-1" />
+                          Escalate
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -179,6 +231,15 @@ export default function MyIssues() {
           </div>
         )}
       </DataState>
+
+      {/* Issue Detail Dialog */}
+      <UserIssueDetailDialog
+        issueId={selectedIssueId}
+        open={!!selectedIssueId}
+        onClose={() => setSelectedIssueId(null)}
+        onFollowUp={handleFollowUp}
+        onEscalate={handleEscalate}
+      />
     </PageContainer>
   );
 }
