@@ -301,13 +301,13 @@ export default function SupplyRequestFormPage() {
           <Button
             variant="ghost"
             className="mb-2 text-primary-foreground hover:bg-primary-foreground/20"
-            onClick={() => window.location.href = '/public-forms'}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Forms
+            Back
           </Button>
-          <h1 className="text-3xl font-bold">NYSC Facilities Hub</h1>
-          <p className="text-lg opacity-90 mt-1">Supply Request</p>
+          <h1 className="text-3xl font-bold">Supply Request</h1>
+          <p className="text-lg opacity-90 mt-1">Request office supplies and materials</p>
         </div>
       </div>
 
