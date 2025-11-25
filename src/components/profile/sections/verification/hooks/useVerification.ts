@@ -25,7 +25,7 @@ export function useVerification() {
     handleBulkVerification,
     handleToggleAdmin,
     handleDeleteUser
-  } = useVerificationMutations(departments, refetchUsers);
+  } = useVerificationMutations(refetchUsers);
 
   return {
     // State
