@@ -38,7 +38,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
       
       try {
         // Don't check if we're already on an auth/onboarding page
-        const publicPaths = ['/auth/', '/onboarding/', '/login'];
+        const publicPaths = ['/auth/', '/onboarding/', '/login', '/public-forms', '/forms/'];
         if (publicPaths.some(path => location.pathname.startsWith(path))) {
           if (mounted) setChecking(false);
           isCheckingRef.current = false;
@@ -60,7 +60,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
-        // 3) Check profile completeness
+        // 3) Check profile completeness and approval status
         try {
           const profile = await getMyProfile();
           
@@ -72,7 +72,24 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
             return;
           }
 
-          // 4) MFA enforcement for privileged roles
+          // 4) Check if user is approved (skip for admins)
+          const isAdmin = profile?.access_level === 'admin';
+          const isPending = profile?.verification_status === 'pending' || profile?.is_approved === false;
+          
+          if (!isAdmin && isPending) {
+            logger.debug('[OnboardingGuard] User pending approval, redirecting to pending page');
+            navigate('/auth/pending-approval', { replace: true });
+            return;
+          }
+
+          // Check if user was rejected
+          if (profile?.verification_status === 'rejected') {
+            logger.debug('[OnboardingGuard] User rejected, redirecting to rejected page');
+            navigate('/auth/account-rejected', { replace: true });
+            return;
+          }
+
+          // 5) MFA enforcement for privileged roles
           // Fetch user's role from user_roles table
           const { data: userRoleData } = await supabase
             .from('user_roles')

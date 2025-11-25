@@ -8,6 +8,8 @@ import PurchasingDashboard from "@/pages/PurchasingDashboard";
 import LoginPage from "@/pages/LoginPage";
 import MFASetup from "@/pages/auth/MFASetup";
 import VerifyEmail from "@/pages/auth/VerifyEmail";
+import PendingApproval from "@/pages/auth/PendingApproval";
+import AccountRejected from "@/pages/auth/AccountRejected";
 import ProfileOnboarding from "@/pages/onboarding/ProfileOnboarding";
 import NotFound from "@/pages/NotFound";
 import Spaces from "@/pages/Spaces";
@@ -87,6 +89,10 @@ function AppContent() {
       <Route path="/forms/supply-request" element={<SupplyRequestFormPage />} />
       <Route path="/forms/maintenance-request" element={<MaintenanceRequestFormPage />} />
       <Route path="/forms/issue-report" element={<IssueReportFormPage />} />
+      
+      {/* Auth Flow Pages - Outside OnboardingGuard */}
+      <Route path="/auth/pending-approval" element={<PendingApproval />} />
+      <Route path="/auth/account-rejected" element={<AccountRejected />} />
       
       {/* Protected Routes - Wrapped with OnboardingGuard */}
       <Route element={<OnboardingGuard><Layout /></OnboardingGuard>}>
