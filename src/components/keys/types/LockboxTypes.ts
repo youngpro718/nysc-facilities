@@ -16,6 +16,7 @@ export interface LockboxSlot {
   room_number?: string;
   key_id?: string;
   status: LockboxSlotStatus;
+  quantity: number;
   created_at: string;
   updated_at: string;
 }

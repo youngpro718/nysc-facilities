@@ -38,6 +38,11 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
           <h4 className="font-bold text-base">{slot.label}</h4>
           <div className="text-sm text-muted-foreground flex gap-2">
             {slot.room_number && <span>Room: {slot.room_number}</span>}
+            {slot.quantity && slot.quantity > 1 && (
+              <span className="text-primary font-semibold">
+                × {slot.quantity} keys
+              </span>
+            )}
           </div>
         </div>
       </div>
