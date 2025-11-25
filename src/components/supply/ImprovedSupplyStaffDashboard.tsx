@@ -13,13 +13,16 @@ import {
   CheckCircle,
   AlertCircle,
   Search,
-  Filter
+  Filter,
+  Boxes,
+  Truck
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { SimpleOrderCard } from './SimpleOrderCard';
 import { SimpleFulfillmentDialog } from './SimpleFulfillmentDialog';
 import { LiveIndicator } from '@/components/common/LiveIndicator';
 import { InventoryManagementTab } from './InventoryManagementTab';
+import { LowStockPanel } from '@/components/inventory/LowStockPanel';
 
 export function ImprovedSupplyStaffDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -269,7 +272,7 @@ export function ImprovedSupplyStaffDashboard() {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="new" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">New Orders</span>
@@ -281,8 +284,8 @@ export function ImprovedSupplyStaffDashboard() {
             )}
           </TabsTrigger>
           <TabsTrigger value="ready" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            <span className="hidden sm:inline">Ready</span>
+            <Truck className="h-4 w-4" />
+            <span className="hidden sm:inline">Ready/Deliver</span>
             <span className="sm:hidden">Ready</span>
             {readyCount > 0 && (
               <Badge variant="secondary" className="ml-1">
@@ -294,6 +297,11 @@ export function ImprovedSupplyStaffDashboard() {
             <CheckCircle className="h-4 w-4" />
             <span className="hidden sm:inline">Completed</span>
             <span className="sm:hidden">Done</span>
+          </TabsTrigger>
+          <TabsTrigger value="inventory" className="flex items-center gap-2">
+            <Boxes className="h-4 w-4" />
+            <span className="hidden sm:inline">Inventory</span>
+            <span className="sm:hidden">Stock</span>
           </TabsTrigger>
         </TabsList>
 
@@ -371,6 +379,42 @@ export function ImprovedSupplyStaffDashboard() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* Inventory Tab */}
+        <TabsContent value="inventory" className="space-y-4">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                  Low Stock Items
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LowStockPanel />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Boxes className="h-5 w-5" />
+                  Quick Stock Check
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  For full inventory management, go to the Inventory Dashboard.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = '/inventory'}
+                >
+                  Open Inventory Dashboard
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

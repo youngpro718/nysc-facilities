@@ -31,12 +31,29 @@ export const SUPPLY_REQUEST_PRIORITIES = [
 ] as const;
 
 // Supply request status lifecycle
+// Standard flow: submitted → received → processing → ready → completed
+// Big ticket flow: submitted → pending_approval → approved/rejected → (if approved) received → processing → ready → completed
 export const SUPPLY_REQUEST_STATUSES = [
-  { value: 'submitted', label: 'Submitted', description: 'Request submitted, awaiting review' },
-  { value: 'received', label: 'Received', description: 'Request received by supply room' },
-  { value: 'processing', label: 'Processing', description: 'Items being gathered' },
-  { value: 'ready', label: 'Ready', description: 'Ready for pickup' },
-  { value: 'picked_up', label: 'Picked Up', description: 'Items collected by requester' },
-  { value: 'completed', label: 'Completed', description: 'Request fulfilled' },
-  { value: 'cancelled', label: 'Cancelled', description: 'Request cancelled' },
+  { value: 'submitted', label: 'Submitted', description: 'Request submitted, awaiting supply room', forUser: true },
+  { value: 'pending_approval', label: 'Pending Approval', description: 'Requires admin approval (big ticket item)', forUser: true },
+  { value: 'approved', label: 'Approved', description: 'Approved by admin, sent to supply room', forUser: true },
+  { value: 'rejected', label: 'Rejected', description: 'Request rejected by admin', forUser: true },
+  { value: 'received', label: 'Received', description: 'Supply room received the request', forUser: true },
+  { value: 'processing', label: 'Processing', description: 'Items being gathered from inventory', forUser: true },
+  { value: 'ready', label: 'Ready for Pickup', description: 'Items ready - come pick them up!', forUser: true },
+  { value: 'delivered', label: 'Delivered', description: 'Items delivered to your mailbox/location', forUser: true },
+  { value: 'completed', label: 'Completed', description: 'Request fulfilled', forUser: true },
+  { value: 'cancelled', label: 'Cancelled', description: 'Request cancelled', forUser: true },
 ] as const;
+
+// Statuses that supply staff can transition TO
+export const SUPPLY_STAFF_ACTIONS = {
+  submitted: ['received', 'cancelled'], // Receive or cancel
+  received: ['processing', 'cancelled'], // Start processing
+  processing: ['ready', 'delivered'], // Mark ready or deliver
+  ready: ['completed', 'delivered'], // Complete pickup or deliver
+  delivered: ['completed'], // Mark complete after delivery
+} as const;
+
+// Statuses that require admin approval
+export const ADMIN_APPROVAL_STATUSES = ['pending_approval'] as const;
