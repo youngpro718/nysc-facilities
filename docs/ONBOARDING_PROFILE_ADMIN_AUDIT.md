@@ -270,12 +270,38 @@ if (profile?.onboarding_completed || profile?.onboarding_skipped) → skip
 
 ## Summary
 
-The current system has:
-- ✅ Email verification
-- ✅ Admin approval workflow
-- ✅ Role-based permissions
-- ❌ Duplicate data collection (signup vs onboarding)
-- ❌ Missing room/building in signup
-- ❌ No notifications for approval status
-- ❌ Confusing dual role systems
-- ❌ Pending users not prominently displayed
+### COMPLETED IMPROVEMENTS 
+
+1. **Fixed Profile Auto-Creation** (Migration 022)
+   - Trigger now copies ALL signup data to profile
+   - Sets `verification_status='pending'`, `is_approved=false`
+   - Creates default 'standard' role in user_roles table
+   - Added `approve_user_verification()` and `reject_user_verification()` RPCs
+
+2. **Added Room Number to Signup**
+   - New field in SignupForm for room/office number
+   - Used for supply request delivery location
+   - Passed through secureSignUp sanitization
+
+3. **Pending Approval Flow**
+   - New `/auth/pending-approval` page for waiting users
+   - Auto-checks status every 30 seconds
+   - New `/auth/account-rejected` page for rejected users
+   - OnboardingGuard redirects unapproved users
+
+4. **Admin Pending Users Visibility**
+   - Prominent amber alert banner when users pending
+   - Badge on Users tab showing pending count
+   - One-click "Review Now" button
+
+5. **Supply Request Auto-Fill**
+   - Form auto-populates from user profile
+   - Name, email, department, room number pre-filled
+   - Shows user info as read-only for authenticated users
+
+### REMAINING ITEMS
+
+- ❌ Email notification to admin when new user signs up
+- ❌ Email notification to user when approved/rejected
+- ❌ Consolidate dual role systems (profile.role vs user_roles table)
+- ❌ Remove duplicate onboarding page (signup already collects data)
