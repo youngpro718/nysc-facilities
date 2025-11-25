@@ -353,4 +353,97 @@ export const operationsService = {
       throw error;
     }
   },
+
+  /**
+   * Update issue status
+   * @param id - Issue ID
+   * @param status - New status
+   * @returns Promise<any> - Updated issue
+   */
+  async updateIssueStatus(id: string, status: 'open' | 'in_progress' | 'resolved'): Promise<any> {
+    try {
+      const { data, error } = await db
+        .from('issues')
+        .update({ 
+          status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) handleSupabaseError(error, 'Failed to update issue status');
+      return validateData(data, 'Failed to update issue status');
+    } catch (error) {
+      console.error('[operationsService.updateIssueStatus]:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update issue priority
+   * @param id - Issue ID
+   * @param priority - New priority
+   * @returns Promise<any> - Updated issue
+   */
+  async updateIssuePriority(id: string, priority: 'low' | 'medium' | 'high'): Promise<any> {
+    try {
+      const { data, error } = await db
+        .from('issues')
+        .update({ 
+          priority,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) handleSupabaseError(error, 'Failed to update issue priority');
+      return validateData(data, 'Failed to update issue priority');
+    } catch (error) {
+      console.error('[operationsService.updateIssuePriority]:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Add comment to issue
+   * @param issueId - Issue ID
+   * @param content - Comment content
+   * @param authorId - Author user ID
+   * @returns Promise<any> - Created comment
+   */
+  async addIssueComment(issueId: string, content: string, authorId: string): Promise<any> {
+    try {
+      const { data, error } = await db
+        .from('issue_comments')
+        .insert({
+          issue_id: issueId,
+          author_id: authorId,
+          content: content.trim()
+        })
+        .select()
+        .single();
+
+      if (error) handleSupabaseError(error, 'Failed to add comment');
+      return validateData(data, 'Failed to add comment');
+    } catch (error) {
+      console.error('[operationsService.addIssueComment]:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get current user ID
+   * @returns Promise<string | null> - Current user ID or null
+   */
+  async getCurrentUserId(): Promise<string | null> {
+    try {
+      const { data: { user } } = await db.auth.getUser();
+      return user?.id || null;
+    } catch (error) {
+      console.error('[operationsService.getCurrentUserId]:', error);
+      return null;
+    }
+  },
 };

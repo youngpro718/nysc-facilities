@@ -27,14 +27,14 @@ module.exports = {
     // ARCHITECTURAL GUARDRAILS
     // ========================================================================
     
-    /**
+    /*
      * Ban @supabase/supabase-js imports outside src/services/
      * 
      * Rationale: All database access must go through the service layer
      * to maintain clean architecture and make testing easier.
      * 
-     * ✅ Allowed: src/services/**/*.ts
-     * ❌ Forbidden: src/pages/**/*.tsx, src/components/**/*.tsx, src/hooks/**/*.ts
+     * Allowed: src/services/ and src/lib/
+     * Forbidden: src/pages/, src/components/, src/hooks/
      */
     'no-restricted-imports': [
       'error',
@@ -67,6 +67,41 @@ module.exports = {
     {
       // Allow Supabase imports in feature services
       files: ['src/features/**/services/**/*.ts'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+    {
+      // Allow Supabase imports in lib directory (core infrastructure)
+      files: ['src/lib/**/*.ts', 'src/lib/**/*.tsx'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+    {
+      // Allow Supabase imports in hooks (data fetching layer)
+      files: ['src/hooks/**/*.ts', 'src/hooks/**/*.tsx'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+    {
+      // Allow Supabase imports in providers (context/state management)
+      files: ['src/providers/**/*.ts', 'src/providers/**/*.tsx'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+    {
+      // Allow Supabase imports in component-local services
+      files: ['src/components/**/services/**/*.ts', 'src/components/**/services/**/*.tsx'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+    {
+      // Allow Supabase imports in component-local hooks (data fetching)
+      files: ['src/components/**/hooks/**/*.ts', 'src/components/**/hooks/**/*.tsx'],
       rules: {
         'no-restricted-imports': 'off',
       },

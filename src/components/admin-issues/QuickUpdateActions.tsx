@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Check, Clock, AlertTriangle, MessageCircle, UserPlus } from "lucide-react";
+import { Check, Clock, AlertTriangle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "../../lib/supabase";
+import { operationsService } from "@/services/operations/operationsService";
 import { useToast } from "@/hooks/use-toast";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
 
@@ -20,25 +20,17 @@ export function QuickUpdateActions({ issue, onUpdate }: QuickUpdateActionsProps)
   const handleStatusUpdate = async (newStatus: string) => {
     setIsUpdating(true);
     try {
-      const { error } = await supabase
-        .from('issues')
-        .update({ 
-          status: newStatus as "open" | "in_progress" | "resolved",
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', issue.id);
-
-      if (error) throw error;
+      await operationsService.updateIssueStatus(
+        issue.id, 
+        newStatus as "open" | "in_progress" | "resolved"
+      );
 
       // Add a comment if provided
       if (comment.trim()) {
-        await supabase
-          .from('issue_comments')
-          .insert({
-            issue_id: issue.id,
-            author_id: (await supabase.auth.getUser()).data.user?.id,
-            content: comment.trim()
-          });
+        const userId = await operationsService.getCurrentUserId();
+        if (userId) {
+          await operationsService.addIssueComment(issue.id, comment, userId);
+        }
       }
 
       toast({
@@ -63,15 +55,10 @@ export function QuickUpdateActions({ issue, onUpdate }: QuickUpdateActionsProps)
   const handlePriorityUpdate = async (newPriority: string) => {
     setIsUpdating(true);
     try {
-      const { error } = await supabase
-        .from('issues')
-        .update({ 
-          priority: newPriority as "low" | "medium" | "high",
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', issue.id);
-
-      if (error) throw error;
+      await operationsService.updateIssuePriority(
+        issue.id, 
+        newPriority as "low" | "medium" | "high"
+      );
 
       toast({
         title: "Priority Updated",

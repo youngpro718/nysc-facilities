@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from 'sonner';
+
+// Minimum time between invalidations for the same query key (in ms)
+const INVALIDATION_THROTTLE_MS = 5000;
 
 interface AdminRealtimeNotificationHook {
   isConnected: boolean;
@@ -14,6 +17,24 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
   const [isConnected, setIsConnected] = useState(false);
   const [lastNotification, setLastNotification] = useState<any>(null);
   const queryClient = useQueryClient();
+  
+  // Track last invalidation time per query key to throttle
+  const lastInvalidationRef = useRef<Record<string, number>>({});
+  
+  // Throttled invalidation helper
+  const throttledInvalidate = useCallback((queryKey: string[]) => {
+    const key = queryKey.join('-');
+    const now = Date.now();
+    const lastTime = lastInvalidationRef.current[key] || 0;
+    
+    if (now - lastTime < INVALIDATION_THROTTLE_MS) {
+      // Skip - too soon since last invalidation
+      return;
+    }
+    
+    lastInvalidationRef.current[key] = now;
+    queryClient.invalidateQueries({ queryKey });
+  }, [queryClient]);
 
   useEffect(() => {
     if (!user?.id || !isAdmin) return;
@@ -70,7 +91,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           
           setLastNotification(notification);
           // Keep the notifications list in sync
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
           
           // Show toast notification based on urgency and type
           const toastOptions = {
@@ -192,7 +213,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             }
           });
           // If a trigger also inserts into admin_notifications, keep cache fresh
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .on(
@@ -234,7 +255,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               onClick: () => window.location.href = '/admin/key-requests'
             }
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .subscribe();
@@ -276,7 +297,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             });
           }
           // Keep notifications list updated if backend mirrors to admin_notifications
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .subscribe();
@@ -318,13 +339,13 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             });
           }
           // Invalidate related caches for immediate UI refresh across dashboards
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-          queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
-          queryClient.invalidateQueries({ queryKey: ['issues'] });
-          queryClient.invalidateQueries({ queryKey: ['court-issues'] });
-          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
-          queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
-          queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
+          throttledInvalidate(['adminNotifications']);
+          throttledInvalidate(['adminIssues']);
+          throttledInvalidate(['issues']);
+          throttledInvalidate(['court-issues']);
+          throttledInvalidate(['interactive-operations']);
+          throttledInvalidate(['quick-actions']);
+          throttledInvalidate(['assignment-stats']);
         }
       )
       .on(
@@ -347,13 +368,13 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               }
             });
           }
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-          queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
-          queryClient.invalidateQueries({ queryKey: ['issues'] });
-          queryClient.invalidateQueries({ queryKey: ['court-issues'] });
-          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
-          queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
-          queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
+          throttledInvalidate(['adminNotifications']);
+          throttledInvalidate(['adminIssues']);
+          throttledInvalidate(['issues']);
+          throttledInvalidate(['court-issues']);
+          throttledInvalidate(['interactive-operations']);
+          throttledInvalidate(['quick-actions']);
+          throttledInvalidate(['assignment-stats']);
         }
       )
       .on(
@@ -365,13 +386,13 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         },
         (payload) => {
           console.log('Issue deleted for admin:', payload);
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-          queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
-          queryClient.invalidateQueries({ queryKey: ['issues'] });
-          queryClient.invalidateQueries({ queryKey: ['court-issues'] });
-          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
-          queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
-          queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
+          throttledInvalidate(['adminNotifications']);
+          throttledInvalidate(['adminIssues']);
+          throttledInvalidate(['issues']);
+          throttledInvalidate(['court-issues']);
+          throttledInvalidate(['interactive-operations']);
+          throttledInvalidate(['quick-actions']);
+          throttledInvalidate(['assignment-stats']);
         }
       )
       .subscribe();
@@ -391,7 +412,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/admin/key-orders') },
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .on(
@@ -407,7 +428,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/admin/key-orders') },
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .subscribe();
@@ -427,7 +448,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/admin/room-assignments') },
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .on(
@@ -441,7 +462,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/admin/room-assignments') },
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .on(
@@ -454,7 +475,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/admin/room-assignments') },
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .subscribe();
@@ -474,7 +495,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/admin') },
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .on(
@@ -488,7 +509,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/admin') },
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          throttledInvalidate(['adminNotifications']);
         }
       )
       .subscribe();
@@ -508,9 +529,9 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/court-operations') },
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-          queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
-          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+          throttledInvalidate(['adminNotifications']);
+          throttledInvalidate(['court-assignments-enhanced']);
+          throttledInvalidate(['interactive-operations']);
         }
       )
       .on(
@@ -547,11 +568,11 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             action: { label: 'View', onClick: () => (window.location.href = '/court-operations') },
           });
           
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-          queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
-          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
-          queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
-          queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
+          throttledInvalidate(['adminNotifications']);
+          throttledInvalidate(['court-assignments-enhanced']);
+          throttledInvalidate(['interactive-operations']);
+          throttledInvalidate(['quick-actions']);
+          throttledInvalidate(['assignment-stats']);
         }
       )
       .on(
@@ -565,9 +586,9 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/court-operations') },
           });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-          queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
-          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+          throttledInvalidate(['adminNotifications']);
+          throttledInvalidate(['court-assignments-enhanced']);
+          throttledInvalidate(['interactive-operations']);
         }
       )
       .subscribe();
@@ -579,7 +600,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         try { supabase.removeChannel(ch); } catch (_) {}
       });
     };
-  }, [user?.id, isAdmin, queryClient]);
+  }, [user?.id, isAdmin, throttledInvalidate]);
 
   return {
     isConnected,

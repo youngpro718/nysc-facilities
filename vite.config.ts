@@ -81,11 +81,18 @@ export default defineConfig(({ mode }) => ({
       // This prevents issues where 'localhost' binding fails in tunneled environments
       clientPort: 8080,
       overlay: false, // Disable error overlay that can trigger refreshes
+      protocol: 'ws', // Use ws instead of wss for local dev
+      timeout: 30000, // Increase timeout to prevent premature reconnects
     },
     watch: {
       // Prevent excessive file watching that causes refresh loops
       ignored: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**'],
       usePolling: false, // Use native file watching for better performance
+      // Increase delay to batch rapid file changes (e.g., from IDE auto-save)
+      awaitWriteFinish: {
+        stabilityThreshold: 500,
+        pollInterval: 100,
+      },
     },
     fs: {
       // Strict file system access to prevent unnecessary file reads
@@ -94,7 +101,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' && componentTagger(),
+    // DISABLED: componentTagger can cause reload loops in dev
+    // mode === 'development' && componentTagger(),
     handleWebSocketErrors(),
     mode === 'production' && VitePWA({
       registerType: 'autoUpdate',

@@ -12,9 +12,8 @@ import {
   X
 } from 'lucide-react';
 import RoomsPage from './views/RoomsPage';
-// Removed Infrastructure views (HallwaysList, DoorsList)
-import { ModernFloorPlanView } from './floorplan/ModernFloorPlanView';
-// Removed Access Control view (RoomAccessManager)
+// Use the new redesigned floor plan component
+import { FloorPlanViewer } from './floorplan/FloorPlanViewer';
 
 const SpacesTabs = () => {
   const [activeView, setActiveView] = useState("rooms");
@@ -155,7 +154,7 @@ const SpacesTabs = () => {
                   </div>
                 }>
                   <div className="w-full h-full">
-                    <ModernFloorPlanView />
+                    <FloorPlanViewer />
                   </div>
                 </Suspense>
               </div>

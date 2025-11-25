@@ -1,14 +1,22 @@
 import { supabase } from "@/lib/supabase";
 
 export async function fetchFloorPlanLayers(floorId: string) {
-  const { data, error } = await supabase
-    .from('floorplan_layers')
-    .select('*')
-    .eq('floor_id', floorId)
-    .order('order_index');
-    
-  if (error) throw error;
-  return data || [];
+  try {
+    const { data, error } = await supabase
+      .from('floorplan_layers')
+      .select('*')
+      .eq('floor_id', floorId)
+      .order('order_index');
+      
+    if (error) {
+      console.log('[floorPlanQueries] Floorplan layers table not available or error:', error.message);
+      return [];
+    }
+    return data || [];
+  } catch (e) {
+    console.log('[floorPlanQueries] Floorplan layers table not available');
+    return [];
+  }
 }
 
 export async function fetchFloorPlanObjects(floorId: string) {
@@ -38,14 +46,21 @@ export async function fetchFloorPlanObjects(floorId: string) {
     object_type: 'room' as const
   }));
 
-  // Fetch hallways
-  const { data: hallways, error: hallwaysError } = await supabase
-    .from('hallways')
-    .select('id, name, status, position, size, rotation, floor_id')
-    .eq('floor_id', floorId)
-    .eq('status', 'active');
+  // Fetch hallways (table may not exist in all deployments)
+  let hallways: any[] = [];
+  try {
+    const { data, error: hallwaysError } = await supabase
+      .from('hallways')
+      .select('id, name, status, position, size, rotation, floor_id')
+      .eq('floor_id', floorId)
+      .eq('status', 'active');
 
-  if (hallwaysError) throw hallwaysError;
+    if (!hallwaysError && data) {
+      hallways = data;
+    }
+  } catch (e) {
+    console.log('[floorPlanQueries] Hallways table not available');
+  }
 
   const hallwayObjects = (hallways || []).map(hallway => ({
     id: hallway.id,
@@ -62,14 +77,21 @@ export async function fetchFloorPlanObjects(floorId: string) {
     }
   }));
 
-  // Fetch doors
-  const { data: doors, error: doorsError } = await supabase
-    .from('doors')
-    .select('id, name, status, position, size, floor_id')
-    .eq('floor_id', floorId)
-    .eq('status', 'active');
+  // Fetch doors (table may not exist in all deployments)
+  let doors: any[] = [];
+  try {
+    const { data, error: doorsError } = await supabase
+      .from('doors')
+      .select('id, name, status, position, size, floor_id')
+      .eq('floor_id', floorId)
+      .eq('status', 'active');
 
-  if (doorsError) throw doorsError;
+    if (!doorsError && data) {
+      doors = data;
+    }
+  } catch (e) {
+    console.log('[floorPlanQueries] Doors table not available');
+  }
 
   const doorObjects = (doors || []).map(door => ({
     id: door.id,
