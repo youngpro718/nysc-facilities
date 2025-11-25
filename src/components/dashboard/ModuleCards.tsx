@@ -233,27 +233,37 @@ export const KeysDashboardCard = () => {
       const { data: assignedKeys, error: assignedError } = await supabase
         .from('key_assignments')
         .select('id')
-        .eq('status', 'active') as any;
+        .is('returned_at', null);
 
-      if (totalError || assignedError) throw totalError || assignedError;
+      const { data: pendingRequests, error: requestsError } = await supabase
+        .from('key_requests')
+        .select('id')
+        .eq('status', 'pending');
+
+      if (totalError || assignedError || requestsError) throw totalError || assignedError || requestsError;
       
       return {
         total: totalKeys?.length || 0,
         assigned: assignedKeys?.length || 0,
-        available: (totalKeys?.length || 0) - (assignedKeys?.length || 0)
+        available: (totalKeys?.length || 0) - (assignedKeys?.length || 0),
+        pendingRequests: pendingRequests?.length || 0
       };
     }
   });
+
+  const hasPending = (keys?.pendingRequests || 0) > 0;
 
   return (
     <ModuleCard
       title="Keys Management"
       icon={<KeyRound className="h-5 w-5 text-purple-500" />}
       count={keys?.total || 0}
-      description={`${keys?.assigned || 0} assigned, ${keys?.available || 0} available`}
+      description={`${keys?.assigned || 0} assigned, ${keys?.available || 0} available${hasPending ? `, ${keys?.pendingRequests} pending requests` : ''}`}
       route="/keys"
       color="purple"
       loading={isLoading}
+      secondaryLabel={hasPending ? `${keys?.pendingRequests} Pending` : undefined}
+      secondaryRoute={hasPending ? "/admin/key-requests" : undefined}
     />
   );
 };
@@ -296,29 +306,41 @@ export const SupplyDashboardCard = () => {
       const { data: requests, error } = await supabase
         .from('supply_requests')
         .select('id, status')
-        .neq('status', 'completed');
+        .not('status', 'in', '(completed,cancelled)');
       
       if (error) throw error;
       return requests;
     }
   });
 
-  const pending = supply?.filter(s => s.status === 'pending')?.length || 0;
-  const processing = supply?.filter(s => s.status === 'processing')?.length || 0;
+  const submitted = supply?.filter(s => s.status === 'submitted')?.length || 0;
+  const processing = supply?.filter(s => ['received', 'processing'].includes(s.status))?.length || 0;
+  const ready = supply?.filter(s => s.status === 'ready')?.length || 0;
 
   return (
     <ModuleCard
       title="Supply Requests"
       icon={<Package className="h-5 w-5 text-orange-500" />}
       count={supply?.length || 0}
-      description={`${pending} pending, ${processing} processing`}
-      route="/supply-room"
+      description={`${submitted} new, ${processing} processing, ${ready} ready`}
+      route="/admin/supply-requests"
       color="orange"
       loading={isLoading}
+      secondaryLabel="Supply Room"
+      secondaryRoute="/supply-room"
     />
   );
 };
 
 export const ModuleCards = () => {
-  return null;
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <IssuesDashboardCard />
+      <SupplyDashboardCard />
+      <KeysDashboardCard />
+      <SpacesDashboardCard />
+      <LightingDashboardCard />
+      <MaintenanceDashboardCard />
+    </div>
+  );
 };

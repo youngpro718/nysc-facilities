@@ -8,20 +8,21 @@ This document analyzes the app from both admin and user perspectives, identifyin
 ## USER FLOWS
 
 ### 1. User Dashboard (`/dashboard`)
-**Current State:** Shows user info, supply requests, issues, and keys in tabs.
+**Current State:** ✅ IMPROVED - Added supply request button and enhanced issues.
 
 **Issues Found:**
-- ❌ No quick link to create new supply request from dashboard header
-- ❌ Issues tab shows minimal info (no priority, location, or progress)
+- ✅ No quick link to create new supply request from dashboard header - FIXED
+- ✅ Issues tab shows minimal info (no priority, location, or progress) - FIXED
 - ❌ No notification count badge visible in header
 - ❌ "Report Issue" button could be more prominent
 
-**Recommended Improvements:**
-- [ ] Add "New Supply Request" button next to "Report Issue" in header
-- [ ] Enhance issue cards with priority badges, location, and estimated resolution time
+**Completed Improvements:**
+- [x] Add "New Supply Request" button next to "Report Issue" in header
+- [x] Enhance issue cards with priority badges and location info
+- [x] Add "View All" button linking to full issues page
+- [x] Limit display to 5 items with "View X more" link
 - [ ] Add notification badge to header showing unread count
 - [ ] Add quick stats for "Days since last issue" or "Average resolution time"
-- [ ] Add "View All" links at bottom of each tab section
 
 ---
 
@@ -44,19 +45,21 @@ This document analyzes the app from both admin and user perspectives, identifyin
 ---
 
 ### 3. My Issues (`/my-issues`)
-**Current State:** Basic list with status badges.
+**Current State:** ✅ IMPROVED - Now has detail dialog with comments.
 
 **Issues Found:**
-- ❌ No way to add comments or updates to existing issues
-- ❌ No progress indicator for in-progress issues
-- ❌ Can't see who is assigned to work on the issue
+- ✅ No way to add comments or updates to existing issues - FIXED
+- ✅ No progress indicator for in-progress issues - FIXED
+- ✅ Can't see who is assigned to work on the issue - FIXED
 - ❌ No estimated resolution time
 
-**Recommended Improvements:**
-- [ ] Add comment/update functionality for users
-- [ ] Show assigned staff member (if any)
-- [ ] Add progress bar for in-progress issues
-- [ ] Add "Follow Up" button for issues older than X days
+**Completed Improvements:**
+- [x] Add comment/update functionality for users
+- [x] Show assigned staff member (if any)
+- [x] Add progress bar for in-progress issues
+- [x] Add "Follow Up" button for resolved issues
+- [x] Add "Escalate" button to increase priority
+- [x] Clickable cards open detail dialog
 - [ ] Show last update timestamp prominently
 
 ---
@@ -111,16 +114,16 @@ This document analyzes the app from both admin and user perspectives, identifyin
 ---
 
 ### 7. Operations (`/operations`)
-**Current State:** Comprehensive with tabs for overview, issues, maintenance, analytics.
+**Current State:** ✅ IMPROVED - Dynamic building filter.
 
 **Issues Found:**
-- ❌ Building filter is hardcoded (100 Centre, 111 Centre)
+- ✅ Building filter is hardcoded (100 Centre, 111 Centre) - FIXED
 - ❌ "System Performance 98%" is hardcoded, not real data
 - ❌ No bulk actions for issues (assign multiple, change status)
 - ❌ Quick filter presets could be more useful
 
-**Recommended Improvements:**
-- [ ] Fetch building list dynamically from database
+**Completed Improvements:**
+- [x] Fetch building list dynamically from database
 - [ ] Calculate real system performance metrics
 - [ ] Add bulk selection and actions for issues
 - [ ] Add "My Assigned Issues" quick filter
