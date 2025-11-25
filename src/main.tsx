@@ -6,11 +6,10 @@ import { initializeStorage } from './services/storage.ts'
 import { registerServiceWorker } from './utils/registerServiceWorker'
 
 // Initialize storage buckets
-if (import.meta.env.PROD) {
-  initializeStorage().catch(err => {
-    console.warn('Failed to initialize storage buckets:', err);
-  });
-}
+initializeStorage().catch(err => {
+  console.warn('Failed to initialize storage buckets:', err);
+  // Continue loading the app even if bucket initialization fails
+});
 
 // Register service worker for PWA support (iOS 18+ compatible) - ONLY in production
 if (import.meta.env.PROD) {

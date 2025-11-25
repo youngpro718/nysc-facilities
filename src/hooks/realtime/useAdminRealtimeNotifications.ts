@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { logRealtimeEvent, logInvalidation } from '@/utils/reloadDebugger';
 
 interface AdminRealtimeNotificationHook {
   isConnected: boolean;
@@ -15,33 +14,11 @@ interface AdminRealtimeNotificationHook {
  * Uses a SINGLE multiplexed channel for all admin-related realtime updates
  * Replaces 9+ separate channels with 1 channel
  */
-// Minimum time between invalidations for the same query key (in ms)
-const INVALIDATION_THROTTLE_MS = 5000;
-
 export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook => {
   const { user, isAdmin } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [lastNotification, setLastNotification] = useState<any>(null);
   const queryClient = useQueryClient();
-  
-  // Track last invalidation time per query key to throttle
-  const lastInvalidationRef = useRef<Record<string, number>>({});
-  
-  // Throttled invalidation helper
-  const throttledInvalidate = useCallback((queryKey: string[]) => {
-    const key = queryKey.join('-');
-    const now = Date.now();
-    const lastTime = lastInvalidationRef.current[key] || 0;
-    
-    if (now - lastTime < INVALIDATION_THROTTLE_MS) {
-      // Skip - too soon since last invalidation
-      return;
-    }
-    
-    lastInvalidationRef.current[key] = now;
-    logInvalidation(key, 'AdminRealtimeNotifications');
-    queryClient.invalidateQueries({ queryKey });
-  }, [queryClient]);
 
   useEffect(() => {
     if (!user?.id || !isAdmin) return;
@@ -63,7 +40,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           console.log('[AdminRealtime] New admin notification:', payload);
           const notification = payload.new;
           setLastNotification(notification);
-          throttledInvalidate(['adminNotifications']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
 
           const toastOptions = {
             duration: notification.urgency === 'high' ? 10000 : 6000,
@@ -109,7 +86,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 8000,
             action: { label: 'Review Request', onClick: () => (window.location.href = '/admin/key-requests') },
           });
-          throttledInvalidate(['adminNotifications']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       .on(
@@ -117,7 +94,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         { event: 'UPDATE', schema: 'public', table: 'key_requests' },
         (payload) => {
           console.log('[AdminRealtime] Key request updated:', payload);
-          throttledInvalidate(['adminNotifications']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       // Supply requests
@@ -142,7 +119,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               action: { label: 'Review Request', onClick: () => (window.location.href = '/admin/supply-requests') },
             });
           }
-          throttledInvalidate(['adminNotifications']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       // Issues
@@ -168,8 +145,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             });
           }
 
-          throttledInvalidate(['adminNotifications']);
-          throttledInvalidate(['issues']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          queryClient.invalidateQueries({ queryKey: ['issues'] });
         }
       )
       .on(
@@ -187,8 +164,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             });
           }
 
-          throttledInvalidate(['adminNotifications']);
-          throttledInvalidate(['issues']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          queryClient.invalidateQueries({ queryKey: ['issues'] });
         }
       )
       // Key orders
@@ -203,7 +180,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 6000,
             action: { label: 'View', onClick: () => (window.location.href = '/admin/key-orders') },
           });
-          throttledInvalidate(['adminNotifications']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       .on(
@@ -211,7 +188,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         { event: 'UPDATE', schema: 'public', table: 'key_orders' },
         (payload) => {
           console.log('[AdminRealtime] Key order updated:', payload);
-          throttledInvalidate(['adminNotifications']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       // Profiles
@@ -225,7 +202,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             duration: 8000,
             action: { label: 'Review User', onClick: () => (window.location.href = '/admin') },
           });
-          throttledInvalidate(['adminNotifications']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       .on(
@@ -233,7 +210,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         { event: 'UPDATE', schema: 'public', table: 'profiles' },
         (payload) => {
           console.log('[AdminRealtime] Profile updated:', payload);
-          throttledInvalidate(['adminNotifications']);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       .subscribe((status) => {
@@ -249,7 +226,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
       console.log('[AdminRealtime] Cleaning up');
       supabase.removeChannel(channel);
     };
-  }, [user?.id, isAdmin, throttledInvalidate]);
+  }, [user?.id, isAdmin, queryClient]);
 
   return {
     isConnected,

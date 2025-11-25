@@ -10,7 +10,6 @@ import { logger } from '@/lib/logger';
 import * as authServices from '@/services/auth';
 import { getMyProfile } from '@/services/profile';
 import { getDashboardForRole, isAdminRole } from '@/utils/roleBasedRouting';
-import { logAuthEvent } from '@/utils/reloadDebugger';
 
 // Define the shape of our auth context
 export interface AuthContextType {
@@ -406,22 +405,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!mounted) return;
           
           logger.debug('Auth state changed', { event });
-          logAuthEvent(event);
-
-          // IMPORTANT: Handle token refresh silently - don't trigger re-renders or redirects
-          if (event === 'TOKEN_REFRESHED' && newSession) {
-            logger.debug('[useAuth.onAuthStateChange] TOKEN_REFRESHED - updating session silently');
-            setSession(newSession);
-            // Don't update user or profile - they haven't changed
-            return;
-          }
-
-          // Handle initial session restore (e.g., page refresh with valid session)
-          if (event === 'INITIAL_SESSION' && newSession) {
-            logger.debug('[useAuth.onAuthStateChange] INITIAL_SESSION - handled by initializeAuth');
-            // Don't do anything here - initializeAuth handles this
-            return;
-          }
 
           if (event === 'SIGNED_IN' && newSession) {
             logger.debug('[useAuth.onAuthStateChange] SIGNED_IN event', { userId: newSession.user.id });
@@ -434,8 +417,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (!mounted) return;
               
               // Skip if we already have profile data for this user (avoids duplicate fetch on initial load)
-              if (profile?.id === newSession.user.id && hasCompletedInitialAuth.current) {
-                logger.debug('Profile already loaded, skipping duplicate fetch');
+              if (profile?.id === newSession.user.id && !hasCompletedInitialAuth.current) {
+                logger.debug('Profile already loaded during initialization, skipping duplicate fetch');
                 return;
               }
               
@@ -486,8 +469,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - navigate is stable, don't need to re-run on changes
+  }, [navigate]); // Remove getUserProfile dependency - not used in the effect
 
   // Compute isAuthenticated derived from session
   const isAuthenticated = !!session;
