@@ -107,9 +107,15 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
           </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <div className="bg-muted p-3 rounded-md text-sm">
-            <span className="font-semibold">Current Status: </span>
-            <span className="uppercase">{slot.status.replace('_', ' ')}</span>
+          <div className="bg-muted p-3 rounded-md text-sm space-y-1">
+            <div>
+              <span className="font-semibold">Current Status: </span>
+              <span className="uppercase">{slot.status.replace('_', ' ')}</span>
+            </div>
+            <div>
+              <span className="font-semibold">Quantity: </span>
+              <span>{slot.quantity || 1} {slot.quantity === 1 ? 'key' : 'keys'}</span>
+            </div>
           </div>
 
           {slot.status === 'in_box' && (

@@ -21,6 +21,7 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
   const [label, setLabel] = useState("");
   const [roomNumber, setRoomNumber] = useState("");
   const [targetLockboxId, setTargetLockboxId] = useState("");
+  const [quantity, setQuantity] = useState(1);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const { data: lockboxes } = useQuery({
@@ -42,6 +43,7 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
       setLabel(slot.label);
       setRoomNumber(slot.room_number || "");
       setTargetLockboxId(slot.lockbox_id);
+      setQuantity(slot.quantity || 1);
     }
   }, [slot]);
 
@@ -56,6 +58,7 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
       const updates: any = {
         label: label.trim(),
         room_number: roomNumber.trim() || null,
+        quantity: quantity,
         updated_at: new Date().toISOString()
       };
 
@@ -128,6 +131,21 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
               onChange={(e) => setRoomNumber(e.target.value)}
               disabled={isUpdating}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Number of Keys <span className="text-destructive">*</span></Label>
+            <Input 
+              type="number"
+              min="1"
+              placeholder="e.g. 1, 2, 3" 
+              value={quantity} 
+              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              disabled={isUpdating}
+            />
+            <p className="text-xs text-muted-foreground">
+              How many physical keys are in this slot
+            </p>
           </div>
 
           <div className="space-y-2">
