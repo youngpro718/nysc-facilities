@@ -557,15 +557,18 @@ export function EnhancedSupplyManagement() {
               </div>
               
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-36">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="fulfilled">Fulfilled</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="received">Received</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="ready">Ready</SelectItem>
+                  <SelectItem value="picked_up">Picked Up</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
               

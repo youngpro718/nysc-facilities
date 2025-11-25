@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import RoomsPage from './views/RoomsPage';
 // Removed Infrastructure views (HallwaysList, DoorsList)
-import { FloorPlanViewer } from './floorplan/FloorPlanViewer';
+import { ModernFloorPlanView } from './floorplan/ModernFloorPlanView';
 // Removed Access Control view (RoomAccessManager)
 
 const SpacesTabs = () => {
@@ -155,7 +155,7 @@ const SpacesTabs = () => {
                   </div>
                 }>
                   <div className="w-full h-full">
-                    <FloorPlanViewer />
+                    <ModernFloorPlanView />
                   </div>
                 </Suspense>
               </div>

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +10,30 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { ArrowLeft, ClipboardList, Send, Plus, X, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Send, Plus, X, CheckCircle, AlertTriangle, Search, Package, Check, ChevronsUpDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
+import { FORCED_MINIMUM } from '@/constants/inventory';
 
 interface SupplyItem {
+  item_id?: string; // Link to inventory item if selected
   item_name: string;
   quantity: number;
   notes: string;
+  available_stock?: number;
+  unit?: string;
+}
+
+interface InventoryItemOption {
+  id: string;
+  name: string;
+  quantity: number;
+  unit?: string;
+  category_name?: string;
 }
 
 export default function SupplyRequestFormPage() {
@@ -38,6 +55,36 @@ export default function SupplyRequestFormPage() {
       navigate('/supply-room');
     }
   }, [isSupplyStaff, navigate]);
+
+  // Fetch inventory items for autocomplete
+  const { data: inventoryItems = [] } = useQuery<InventoryItemOption[]>({
+    queryKey: ['inventory-items-for-request'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select(`
+          id,
+          name,
+          quantity,
+          unit,
+          inventory_categories (name)
+        `)
+        .gt('quantity', 0) // Only show items in stock
+        .order('name');
+      
+      if (error) throw error;
+      return (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        category_name: item.inventory_categories?.name
+      }));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [openItemPicker, setOpenItemPicker] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -69,6 +116,20 @@ export default function SupplyRequestFormPage() {
     setItems(newItems);
   };
 
+  // Select an inventory item from the picker
+  const selectInventoryItem = (index: number, inventoryItem: InventoryItemOption) => {
+    const newItems = [...items];
+    newItems[index] = {
+      ...newItems[index],
+      item_id: inventoryItem.id,
+      item_name: inventoryItem.name,
+      available_stock: inventoryItem.quantity,
+      unit: inventoryItem.unit,
+    };
+    setItems(newItems);
+    setOpenItemPicker(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -97,6 +158,7 @@ export default function SupplyRequestFormPage() {
           .filter(item => item.item_name.trim())
           .map(item => ({
             request_id: request.id,
+            item_id: item.item_id || null, // Link to inventory item if selected
             item_name: item.item_name,
             quantity_requested: item.quantity,
             notes: item.notes || null,
@@ -258,9 +320,14 @@ export default function SupplyRequestFormPage() {
             {/* Items List */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>
-                  Items List <span className="text-destructive">*</span>
-                </Label>
+                <div>
+                  <Label>
+                    Items List <span className="text-destructive">*</span>
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Select from inventory or type a custom item name
+                  </p>
+                </div>
                 <Button type="button" variant="outline" size="sm" onClick={addItem}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Item
@@ -272,22 +339,101 @@ export default function SupplyRequestFormPage() {
                   <div className="space-y-3">
                     <div className="flex items-start gap-2">
                       <div className="flex-1 space-y-3">
-                        <Input
-                          placeholder="Item name"
-                          value={item.item_name}
-                          onChange={(e) => updateItem(index, 'item_name', e.target.value)}
-                          required
-                        />
+                        {/* Item picker with autocomplete */}
+                        <Popover open={openItemPicker === index} onOpenChange={(open) => setOpenItemPicker(open ? index : null)}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openItemPicker === index}
+                              className="w-full justify-between font-normal"
+                            >
+                              {item.item_name || "Select or type item name..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0" align="start">
+                            <Command>
+                              <CommandInput 
+                                placeholder="Search inventory items..." 
+                                onValueChange={(value) => {
+                                  // Allow typing custom item name
+                                  if (value && !inventoryItems.find(i => i.name.toLowerCase() === value.toLowerCase())) {
+                                    updateItem(index, 'item_name', value);
+                                  }
+                                }}
+                              />
+                              <CommandList>
+                                <CommandEmpty>
+                                  <div className="p-2 text-sm">
+                                    <p className="text-muted-foreground">No matching inventory items.</p>
+                                    <p className="text-xs mt-1">Type to enter a custom item name.</p>
+                                  </div>
+                                </CommandEmpty>
+                                <CommandGroup heading="Available Inventory">
+                                  {inventoryItems.map((invItem) => (
+                                    <CommandItem
+                                      key={invItem.id}
+                                      value={invItem.name}
+                                      onSelect={() => selectInventoryItem(index, invItem)}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          item.item_id === invItem.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span>{invItem.name}</span>
+                                          {invItem.category_name && (
+                                            <Badge variant="outline" className="text-xs">
+                                              {invItem.category_name}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {invItem.quantity} {invItem.unit || 'units'} available
+                                          {invItem.quantity <= FORCED_MINIMUM && (
+                                            <span className="text-destructive ml-2">• Low stock</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+
+                        {/* Show stock info if inventory item selected */}
+                        {item.item_id && item.available_stock !== undefined && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <Package className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              {item.available_stock} {item.unit || 'units'} in stock
+                            </span>
+                            {item.quantity > item.available_stock && (
+                              <Badge variant="destructive" className="text-xs">
+                                Exceeds stock
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+
                         <div className="flex gap-2">
-                          <Input
-                            type="number"
-                            placeholder="Quantity"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                            className="w-32"
-                            required
-                          />
+                          <div className="w-32">
+                            <Input
+                              type="number"
+                              placeholder="Qty"
+                              min="1"
+                              max={item.available_stock || undefined}
+                              value={item.quantity}
+                              onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                              required
+                            />
+                          </div>
                           <Input
                             placeholder="Notes (optional)"
                             value={item.notes}

@@ -99,8 +99,9 @@ export function SearchPanel({
     setActiveIndex(-1);
   };
 
+  if (!isOpen) return null;
+
   // Derive results from objects (legacy mode) when results prop is not provided by parent
-  // IMPORTANT: All hooks must be called before any early returns
   const derivedResults = useMemo<SearchResult[]>(() => {
     if (!Array.isArray(objects)) return [];
     const q = (query || '').toLowerCase().trim();
@@ -136,10 +137,7 @@ export function SearchPanel({
     }
     onClose();
     // keep query visible; caller may choose to clear
-  }, [onClose, onSelect, onObjectSelect, objects]);
-
-  // Early return AFTER all hooks have been called
-  if (!isOpen) return null;
+  }, [onClose, onSelect]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!safeResults.length) return;

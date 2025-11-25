@@ -46,16 +46,10 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     };
   }
 
-  // Calculate default position with proper grid spacing to avoid overlaps
-  // Use a 4-column grid with generous spacing
-  const GRID_COLS = 4;
-  const CELL_WIDTH = 220;  // Room width (150) + spacing (70)
-  const CELL_HEIGHT = 180; // Room height (100) + spacing (80)
-  const START_OFFSET = 100;
-  
+  // Calculate default position with more spacing
   const defaultPosition = {
-    x: (index % GRID_COLS) * CELL_WIDTH + START_OFFSET,
-    y: Math.floor(index / GRID_COLS) * CELL_HEIGHT + START_OFFSET
+    x: (index % 3) * 300 + 100,  // Increased spacing
+    y: Math.floor(index / 3) * 200 + 100  // Increased spacing
   };
 
   // Parse position from space object
@@ -118,8 +112,7 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
   // Merge properties from different possible sources for hallways
   const properties = {
     ...spaceProperties,
-    room_number: space.room_number || spaceProperties.room_number || '',
-    room_type: space.room_type || spaceProperties.room_type || null,  // CRITICAL: Include room_type for 3D templates
+    room_number: space.room_number || '',
     space_type: space.type || spaceType || 'default',
     status: space.status || 'active',
     parent_room_id: space.parent_room_id || null,

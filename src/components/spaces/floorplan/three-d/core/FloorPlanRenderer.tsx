@@ -98,31 +98,20 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
   // Transform room data to the format expected by Scene3DManager
   const transformRoomData = useCallback((rooms: any[]): RoomData[] => {
     try {
-      // First pass: map all rooms to RoomData format
-      const mapped = rooms.map(room => {
-        // Extract position - check multiple possible sources
-        const posX = room.position?.x ?? room.data?.position?.x ?? 0;
-        const posY = room.position?.y ?? room.data?.position?.y ?? 0;
-        
-        // Extract size - check multiple possible sources
-        const sizeW = room.data?.size?.width ?? room.size?.width ?? 100;
-        const sizeH = room.data?.size?.height ?? room.size?.height ?? 100;
-        
-        return {
-          id: stableRoomId(room),
-          name: room.name || room.data?.label || room.room_number || `Room ${room.id?.slice(-4) || 'Unknown'}`,
-          position: {
-            x: Math.round(Number(posX) / gridSnap) * gridSnap,
-            y: Math.round(Number(posY) / gridSnap) * gridSnap
-          },
-          size: {
-            width: Math.max(40, Number(sizeW)),
-            height: Math.max(40, Number(sizeH))
-          },
-          type: room.type || 'room',
-          rotation: Number(room.rotation || room.data?.rotation || 0)
-        };
-      }).filter(room => 
+      const mapped = rooms.map(room => ({
+        id: stableRoomId(room),
+        name: room.name || room.data?.label || room.room_number || `Room ${room.id?.slice(-4) || 'Unknown'}`,
+        position: {
+          x: Math.round(Number(room.position?.x || 0) / gridSnap) * gridSnap,
+          y: Math.round(Number(room.position?.y || 0) / gridSnap) * gridSnap
+        },
+        size: {
+          width: Number(room.data?.size?.width || room.size?.width || 100),
+          height: Number(room.data?.size?.height || room.size?.height || 100)
+        },
+        type: room.type || 'room',
+        rotation: Number(room.rotation || 0)
+      })).filter(room => 
         !isNaN(room.position.x) && 
         !isNaN(room.position.y) && 
         !isNaN(room.size.width) && 
@@ -131,27 +120,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
         room.size.height > 0
       );
 
-      if (mapped.length === 0) return mapped;
-
-      // Check if positions are valid (not all at origin)
-      const allAtOrigin = mapped.every(r => r.position.x === 0 && r.position.y === 0);
-      
-      if (allAtOrigin) {
-        // Apply grid layout if all objects are at origin
-        console.log('[FloorPlanRenderer] All objects at origin, applying grid layout');
-        const cols = Math.ceil(Math.sqrt(mapped.length));
-        const spacing = 200;
-        
-        return mapped.map((r, i) => ({
-          ...r,
-          position: {
-            x: (i % cols) * spacing - (cols * spacing) / 2,
-            y: Math.floor(i / cols) * spacing - (Math.ceil(mapped.length / cols) * spacing) / 2
-          }
-        }));
-      }
-
-      if (!normalizeLayout) return mapped;
+      if (!normalizeLayout || mapped.length === 0) return mapped;
 
       // Center layout around origin for a stable visual frame
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -178,7 +147,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
       console.error('FloorPlanRenderer: Error transforming room data:', error);
       return [];
     }
-  }, [stableRoomId, gridSnap, normalizeLayout]);
+  }, [stableRoomId]);
 
   // Keep latest transformed rooms in a ref for camera operations
   const latestRoomsRef = useRef<RoomData[]>([]);

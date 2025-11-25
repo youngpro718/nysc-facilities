@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Package, TrendingDown, Plus } from "lucide-react";
 import { StockAdjustmentDialog } from "@/components/inventory/StockAdjustmentDialog";
+import { FORCED_MINIMUM } from "@/constants/inventory";
 
 type LowStockItem = {
   id: string;
@@ -33,8 +34,7 @@ export const LowStockPanel = () => {
     unit: string;
   } | null>(null);
 
-  // TEMP: Force minimum threshold to 3 for testing across this panel
-  const FORCED_MINIMUM = 3;
+  // Using shared constant from @/constants/inventory
 
   const handleDialogOpenChange = (open: boolean) => {
     setDialogOpen(open);
