@@ -405,10 +405,15 @@ export default function AdminProfile() {
       {isAdmin ? (
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full grid grid-cols-5">
-            <TabsTrigger value="users" className="text-xs sm:text-sm">
+            <TabsTrigger value="users" className="text-xs sm:text-sm relative">
               <Users className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Users</span>
               <span className="sm:hidden">👥</span>
+              {users.filter(u => u.verification_status === 'pending' || !u.is_approved).length > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold">
+                  {users.filter(u => u.verification_status === 'pending' || !u.is_approved).length}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="access" className="text-xs sm:text-sm">
               <Shield className="h-4 w-4 mr-1 sm:mr-2" />
@@ -529,6 +534,35 @@ export default function AdminProfile() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Pending Users Alert */}
+            {users.filter(u => u.verification_status === 'pending' || !u.is_approved).length > 0 && filterStatus !== 'pending' && (
+              <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                        <AlertTriangle className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-amber-800 dark:text-amber-200">
+                          {users.filter(u => u.verification_status === 'pending' || !u.is_approved).length} Users Awaiting Approval
+                        </p>
+                        <p className="text-sm text-amber-600 dark:text-amber-400">
+                          New users are waiting for your approval to access the system
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => setFilterStatus('pending')}
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      Review Now
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Search Bar */}
             <Card>
