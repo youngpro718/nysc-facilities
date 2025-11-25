@@ -163,6 +163,7 @@ export function useSecureAuth() {
         phone: userData.phone ? await sanitizeInput(userData.phone) : undefined,
         department_id: userData.department_id,
         court_position: userData.court_position ? await sanitizeInput(userData.court_position) : undefined,
+        room_number: userData.room_number ? await sanitizeInput(userData.room_number) : undefined,
         emergency_contact: userData.emergency_contact,
         // capture requested role in auth metadata so it can be propagated to profile
         requested_access_level: userData.requested_access_level

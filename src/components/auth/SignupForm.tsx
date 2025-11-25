@@ -44,6 +44,7 @@ export const SignupForm = ({
   const [phone, setPhone] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [courtPosition, setCourtPosition] = useState("");
+  const [roomNumber, setRoomNumber] = useState("");
   const [emergencyContact, setEmergencyContact] = useState({
     name: "",
     phone: "",
@@ -83,6 +84,7 @@ export const SignupForm = ({
         phone: phone || undefined,
         department_id: departmentId || undefined,
         court_position: courtPosition || undefined,
+        room_number: roomNumber || undefined,
         emergency_contact: Object.values(emergencyContact).some(Boolean) ? emergencyContact : undefined
       };
       
@@ -244,6 +246,17 @@ export const SignupForm = ({
               className=""
               placeholder="Enter your official title (optional)"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="roomNumber" className="text-slate-700">Room/Office Number</Label>
+            <Input
+              id="roomNumber"
+              value={roomNumber}
+              onChange={(e) => setRoomNumber(e.target.value)}
+              className=""
+              placeholder="e.g., Room 301, Office 4B (for supply deliveries)"
+            />
+            <p className="text-xs text-slate-500">Used for supply request deliveries</p>
           </div>
         </div>
       )

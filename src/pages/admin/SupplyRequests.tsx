@@ -62,11 +62,15 @@ interface SupplyRequestWithUser {
 }
 
 const statusConfig = {
-  pending: { icon: Clock, color: "text-yellow-600 bg-yellow-50", label: "Pending" },
-  under_review: { icon: AlertTriangle, color: "text-blue-600 bg-blue-50", label: "Under Review" },
+  submitted: { icon: Clock, color: "text-blue-600 bg-blue-50", label: "Submitted" },
+  pending_approval: { icon: AlertTriangle, color: "text-orange-600 bg-orange-50", label: "Pending Approval" },
   approved: { icon: CheckCircle, color: "text-green-600 bg-green-50", label: "Approved" },
   rejected: { icon: XCircle, color: "text-red-600 bg-red-50", label: "Rejected" },
-  fulfilled: { icon: CheckCircle, color: "text-purple-600 bg-purple-50", label: "Fulfilled" },
+  received: { icon: Package, color: "text-blue-600 bg-blue-50", label: "Received" },
+  processing: { icon: Clock, color: "text-yellow-600 bg-yellow-50", label: "Processing" },
+  ready: { icon: CheckCircle, color: "text-green-600 bg-green-50", label: "Ready for Pickup" },
+  delivered: { icon: CheckCircle, color: "text-purple-600 bg-purple-50", label: "Delivered" },
+  completed: { icon: CheckCircle, color: "text-gray-600 bg-gray-50", label: "Completed" },
   cancelled: { icon: XCircle, color: "text-gray-600 bg-gray-50", label: "Cancelled" },
 };
 
@@ -229,8 +233,8 @@ export default function AdminSupplyRequests() {
     <PageContainer>
       <Breadcrumb />
       <PageHeader
-        title="Supply Requests Management" 
-        description="Review and manage supply requests from staff members"
+        title="Supply Requests Overview" 
+        description="View all supply requests and approve big-ticket items. Fulfillment is handled by Supply Room staff."
       >
         <div className="flex gap-2">
           <Input
@@ -245,11 +249,13 @@ export default function AdminSupplyRequests() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="under_review">Under Review</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="pending_approval">Pending Approval</SelectItem>
+              <SelectItem value="received">Received</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="ready">Ready</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="fulfilled">Fulfilled</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterPriority} onValueChange={setFilterPriority}>

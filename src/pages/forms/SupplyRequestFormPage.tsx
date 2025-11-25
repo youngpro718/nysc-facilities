@@ -43,18 +43,21 @@ export default function SupplyRequestFormPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Check if user is supply staff (they should NOT be able to create requests)
-  const isSupplyStaff = hasPermission('supply_requests', 'admin') || 
-                        hasPermission('supply_requests', 'write') ||
-                        (profile as any)?.department === 'Supply Department';
+  // Check if user is supply room staff who FULFILLS orders (not creates them)
+  // Only redirect users who have supply_orders admin permission (court_aide, purchasing_staff)
+  // AND are in the Supply Department - these are the fulfillment staff
+  const isSupplyFulfillmentStaff = hasPermission('supply_orders', 'admin') && 
+                                   (profile as any)?.department === 'Supply Department';
 
-  // Redirect supply staff away from this page
+  // Note: We do NOT redirect based on supply_requests permission
+  // because ALL users should be able to CREATE supply requests
+  // Only supply room fulfillment staff should be redirected to their dashboard
   useEffect(() => {
-    if (isSupplyStaff) {
-      toast.error('Supply staff cannot create supply requests');
+    if (isSupplyFulfillmentStaff) {
+      toast.info('As supply staff, please use the Supply Room dashboard');
       navigate('/supply-room');
     }
-  }, [isSupplyStaff, navigate]);
+  }, [isSupplyFulfillmentStaff, navigate]);
 
   // Fetch inventory items for autocomplete
   const { data: inventoryItems = [] } = useQuery<InventoryItemOption[]>({
@@ -86,6 +89,7 @@ export default function SupplyRequestFormPage() {
 
   const [openItemPicker, setOpenItemPicker] = useState<number | null>(null);
   
+  // Auto-fill form with user profile data
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -94,7 +98,24 @@ export default function SupplyRequestFormPage() {
     department: '',
     requestor_name: '',
     requestor_email: '',
+    delivery_method: 'pickup', // 'pickup' or 'mailbox'
+    delivery_location: '', // Room number or mailbox location
   });
+
+  // Auto-populate form fields from user profile when available
+  useEffect(() => {
+    if (user && profile) {
+      const profileData = profile as any;
+      setFormData(prev => ({
+        ...prev,
+        requestor_name: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || prev.requestor_name,
+        requestor_email: user.email || prev.requestor_email,
+        department: profileData.department || profileData.departments?.name || prev.department,
+        // Pre-fill delivery location with user's room if available
+        delivery_location: profileData.room_number || profileData.office_location || prev.delivery_location,
+      }));
+    }
+  }, [user, profile]);
 
   const [items, setItems] = useState<SupplyItem[]>([
     { item_name: '', quantity: 1, notes: '' }
@@ -141,11 +162,14 @@ export default function SupplyRequestFormPage() {
           .from('supply_requests')
           .insert({
             user_id: user.id,
+            requester_id: user.id,
             title: formData.title,
             description: formData.description,
             justification: formData.justification,
             priority: formData.priority,
-            status: 'pending',
+            status: 'submitted', // Use 'submitted' as initial status
+            delivery_method: formData.delivery_method,
+            delivery_location: formData.delivery_location || null,
             notes: formData.department ? `Department: ${formData.department}` : null,
           })
           .select()
@@ -175,8 +199,9 @@ export default function SupplyRequestFormPage() {
         // Add to status history
         await supabase.from('supply_request_status_history').insert({
           request_id: request.id,
-          status: 'pending',
+          status: 'submitted',
           changed_by: user.id,
+          notes: `Delivery: ${formData.delivery_method}${formData.delivery_location ? ` to ${formData.delivery_location}` : ''}`,
         });
       } else {
         // Anonymous user submission
@@ -486,66 +511,161 @@ export default function SupplyRequestFormPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="low">Low - No rush</SelectItem>
+                  <SelectItem value="medium">Medium - Within a week</SelectItem>
+                  <SelectItem value="high">High - Within 2-3 days</SelectItem>
+                  <SelectItem value="urgent">Urgent - ASAP</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Department/Location */}
-            <div className="space-y-2">
-              <Label htmlFor="department">
-                Department/Location <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="department"
-                placeholder="Your department or office location"
-                value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                required
-              />
+            {/* Delivery Preference */}
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              <div className="space-y-2">
+                <Label htmlFor="delivery_method">
+                  How would you like to receive your supplies? <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.delivery_method}
+                  onValueChange={(value) => setFormData({ ...formData, delivery_method: value })}
+                >
+                  <SelectTrigger id="delivery_method">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pickup">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        <span>I'll pick up from Supply Room</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="mailbox">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        <span>Deliver to my mailbox/office</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.delivery_method === 'mailbox' && (
+                <div className="space-y-2">
+                  <Label htmlFor="delivery_location">
+                    Delivery Location <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="delivery_location"
+                    placeholder="Room number, mailbox number, or office location"
+                    value={formData.delivery_location}
+                    onChange={(e) => setFormData({ ...formData, delivery_location: e.target.value })}
+                    required={formData.delivery_method === 'mailbox'}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Please provide your room number or mailbox location for delivery
+                  </p>
+                </div>
+              )}
+
+              {formData.delivery_method === 'pickup' && (
+                <Alert>
+                  <Package className="h-4 w-4" />
+                  <AlertDescription>
+                    You'll receive a notification when your supplies are ready for pickup at the Supply Room.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
-            {/* Requestor Information */}
-            <div className="border-t pt-6 space-y-4">
-              <h3 className="font-semibold text-lg">Your Information</h3>
-              
+            {/* Department - Only show for non-authenticated users */}
+            {!user && (
               <div className="space-y-2">
-                <Label htmlFor="requestor_name">
-                  Full Name <span className="text-destructive">*</span>
+                <Label htmlFor="department">
+                  Department <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="requestor_name"
-                  placeholder="Your full name"
-                  value={formData.requestor_name}
-                  onChange={(e) => setFormData({ ...formData, requestor_name: e.target.value })}
+                  id="department"
+                  placeholder="Your department name"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   required
                 />
               </div>
+            )}
 
-              <div className="space-y-2">
-                <Label htmlFor="requestor_email">
-                  Email <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="requestor_email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={formData.requestor_email}
-                  onChange={(e) => setFormData({ ...formData, requestor_email: e.target.value })}
-                  required
-                />
+            {/* Requestor Information - Auto-filled from profile */}
+            {user ? (
+              <div className="border-t pt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Your Information</h3>
+                  <Badge variant="secondary">Auto-filled from profile</Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Name</Label>
+                    <p className="font-medium">{formData.requestor_name || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Email</Label>
+                    <p className="font-medium">{formData.requestor_email || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Department</Label>
+                    <p className="font-medium">{formData.department || 'Not set'}</p>
+                  </div>
+                  {formData.delivery_location && formData.delivery_method === 'mailbox' && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Default Location</Label>
+                      <p className="font-medium">{formData.delivery_location}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <p className="text-xs text-muted-foreground">
+                  This information is from your profile. To update it, visit your <a href="/profile" className="text-primary underline">Profile Settings</a>.
+                </p>
               </div>
-            </div>
+            ) : (
+              // For non-authenticated users, show editable fields
+              <div className="border-t pt-6 space-y-4">
+                <h3 className="font-semibold text-lg">Your Information</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="requestor_name">
+                    Full Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="requestor_name"
+                    placeholder="Your full name"
+                    value={formData.requestor_name}
+                    onChange={(e) => setFormData({ ...formData, requestor_name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="requestor_email">
+                    Email <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="requestor_email"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={formData.requestor_email}
+                    onChange={(e) => setFormData({ ...formData, requestor_email: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Submit Button */}
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => window.location.href = '/public-forms'}
+                onClick={() => navigate(-1)}
                 className="flex-1"
               >
                 Cancel

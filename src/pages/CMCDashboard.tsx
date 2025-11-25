@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gavel, AlertCircle, FileText, TrendingUp, Calendar, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Gavel, AlertCircle, FileText, TrendingUp, Calendar, Users, Package, Plus, Wrench } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { TermSheetBoard } from '@/components/court-operations/personnel/TermSheetBoard';
+import { supabase } from '@/lib/supabase';
 
 /**
  * CMC Dashboard - Court Management Coordinator Dashboard
@@ -18,14 +21,46 @@ import { TermSheetBoard } from '@/components/court-operations/personnel/TermShee
  */
 export default function CMCDashboard() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
-  const [stats] = useState({
+  const { user, profile } = useAuth();
+
+  // Fetch real data for the dashboard
+  const { data: supplyRequests = [] } = useQuery({
+    queryKey: ['cmc-supply-requests', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('supply_requests')
+        .select('id, status')
+        .eq('requester_id', user.id)
+        .not('status', 'in', '(completed,cancelled)');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const { data: myIssues = [] } = useQuery({
+    queryKey: ['cmc-issues', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('issues')
+        .select('id, status')
+        .eq('reported_by', user.id)
+        .not('status', 'in', '(resolved,closed)');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const stats = {
     activeCourtrooms: 28,
     totalCourtrooms: 32,
-    pendingIssues: 5,
-    mySupplyRequests: 3,
+    pendingIssues: myIssues.length,
+    mySupplyRequests: supplyRequests.length,
     upcomingTerms: 2,
-  });
+  };
 
   const quickActions = [
     {
@@ -38,19 +73,27 @@ export default function CMCDashboard() {
     },
     {
       title: 'Report Issue',
-      description: 'Report a facility or operational issue',
-      icon: AlertCircle,
-      path: '/operations',
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
+      description: 'Report a facility or maintenance issue',
+      icon: Wrench,
+      path: '/my-issues',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
     },
     {
-      title: 'Supply Requests',
-      description: 'Submit or view supply requests',
-      icon: FileText,
-      path: '/my-requests',
+      title: 'Request Supplies',
+      description: 'Order office supplies and materials',
+      icon: Package,
+      path: '/forms/supply-request',
       color: 'text-green-600',
       bgColor: 'bg-green-50',
+    },
+    {
+      title: 'My Supply Requests',
+      description: 'Track your supply request status',
+      icon: FileText,
+      path: '/my-supply-requests',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
     },
   ];
 
@@ -64,10 +107,16 @@ export default function CMCDashboard() {
             Welcome back, {profile?.first_name || 'Court Manager'}
           </p>
         </div>
-        <Button onClick={() => navigate('/court-operations')}>
-          <Gavel className="mr-2 h-4 w-4" />
-          Court Operations
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate('/forms/supply-request')}>
+            <Package className="mr-2 h-4 w-4" />
+            Request Supplies
+          </Button>
+          <Button onClick={() => navigate('/court-operations')}>
+            <Gavel className="mr-2 h-4 w-4" />
+            Court Operations
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -85,28 +134,44 @@ export default function CMCDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/my-issues')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Issues</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">My Issues</CardTitle>
+            <Wrench className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingIssues}</div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold">{stats.pendingIssues}</span>
+              {stats.pendingIssues > 0 && (
+                <Badge variant="destructive">Active</Badge>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Requires attention
+              Open issues you've reported
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/my-supply-requests')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">My Supply Requests</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.mySupplyRequests}</div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold">{stats.mySupplyRequests}</span>
+              {stats.mySupplyRequests > 0 && (
+                <Badge variant="secondary">In Progress</Badge>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              In progress
+              Active supply requests
             </p>
           </CardContent>
         </Card>
@@ -128,7 +193,7 @@ export default function CMCDashboard() {
       {/* Quick Actions */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {quickActions.map((action) => (
             <Card
               key={action.path}

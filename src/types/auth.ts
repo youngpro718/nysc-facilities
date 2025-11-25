@@ -32,6 +32,7 @@ export interface UserSignupData {
   phone?: string;
   department_id?: string;
   court_position?: string;
+  room_number?: string; // Office/room number for delivery location
   emergency_contact?: {
     name?: string;
     phone?: string;
