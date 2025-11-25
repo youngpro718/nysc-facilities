@@ -46,10 +46,16 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     };
   }
 
-  // Calculate default position with more spacing
+  // Calculate default position with proper grid spacing to avoid overlaps
+  // Use a 4-column grid with generous spacing
+  const GRID_COLS = 4;
+  const CELL_WIDTH = 220;  // Room width (150) + spacing (70)
+  const CELL_HEIGHT = 180; // Room height (100) + spacing (80)
+  const START_OFFSET = 100;
+  
   const defaultPosition = {
-    x: (index % 3) * 300 + 100,  // Increased spacing
-    y: Math.floor(index / 3) * 200 + 100  // Increased spacing
+    x: (index % GRID_COLS) * CELL_WIDTH + START_OFFSET,
+    y: Math.floor(index / GRID_COLS) * CELL_HEIGHT + START_OFFSET
   };
 
   // Parse position from space object

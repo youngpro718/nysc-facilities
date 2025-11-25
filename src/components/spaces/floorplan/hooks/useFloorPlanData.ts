@@ -5,6 +5,12 @@ import { processFloorPlanObjects } from "../utils/floorPlanTransformers";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
 import { FloorPlanLayerDB, RawFloorPlanObject, Position, Size } from "../types/floorPlanTypes";
 import { supabase } from "@/lib/supabase";
+import { 
+  applySmartLayout, 
+  needsAutoLayout, 
+  hasOverlappingObjects,
+  resolveCollisions 
+} from "../utils/smartLayout";
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
@@ -171,7 +177,21 @@ export function useFloorPlanData(floorId: string | null) {
     [];
 
   // Transform all objects into floor plan nodes using the utility
-  const objects = processFloorPlanObjects(objectsWithPositions, edges);
+  let objects = processFloorPlanObjects(objectsWithPositions, edges);
+  
+  // Apply smart layout if objects need it (missing positions or overlapping)
+  if (objects.length > 0) {
+    const needsLayout = needsAutoLayout(objects);
+    const hasOverlaps = !needsLayout && hasOverlappingObjects(objects);
+    
+    if (needsLayout) {
+      console.log('[FloorPlan] Applying smart auto-layout to', objects.length, 'objects');
+      objects = applySmartLayout(objects);
+    } else if (hasOverlaps) {
+      console.log('[FloorPlan] Resolving collisions for', objects.length, 'objects');
+      objects = resolveCollisions(objects);
+    }
+  }
     
   const FP_DEBUG = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLOORPLAN_DEBUG === 'true';
   if (FP_DEBUG) {
