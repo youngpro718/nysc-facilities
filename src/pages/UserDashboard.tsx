@@ -54,6 +54,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { UserInfoCard } from "@/components/dashboard/UserInfoCard";
 import { Bell, Package, Key, AlertTriangle, CheckCircle, Wrench } from "lucide-react";
 
@@ -188,6 +189,15 @@ export default function UserDashboard() {
               onClearNotification={clearNotification}
               onClearAllNotifications={clearAllNotifications}
             />
+            <Button
+              variant="outline"
+              size={isMobile ? "sm" : "default"}
+              onClick={() => navigate('/forms/supply-request')}
+              className="touch-manipulation"
+            >
+              <Package className="h-4 w-4 mr-1" />
+              {isMobile ? "Supply" : "Request Supplies"}
+            </Button>
             <QuickIssueReportButton 
               variant="default"
               size={isMobile ? "sm" : "default"}
@@ -255,11 +265,14 @@ export default function UserDashboard() {
 
           <TabsContent value="maintenance" className="space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Wrench className="h-5 w-5" />
                   My Issues & Maintenance Requests
                 </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => navigate('/my-issues')}>
+                  View All
+                </Button>
               </CardHeader>
               <CardContent>
                 {userIssues.length === 0 ? (
@@ -270,21 +283,55 @@ export default function UserDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {userIssues.map((issue) => (
-                      <div key={issue.id} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h4 className="font-medium">{issue.title}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">
+                    {userIssues.slice(0, 5).map((issue) => (
+                      <div key={issue.id} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-medium truncate">{issue.title}</h4>
+                              <Badge 
+                                variant={
+                                  issue.priority === 'urgent' || issue.priority === 'high' 
+                                    ? 'destructive' 
+                                    : 'outline'
+                                }
+                                className="text-xs"
+                              >
+                                {issue.priority}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
                               {issue.description}
                             </p>
+                            {(issue.unified_spaces?.name || issue.buildings?.name) && (
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <span>📍</span>
+                                {issue.buildings?.name}
+                                {issue.unified_spaces?.name && ` - ${issue.unified_spaces.name}`}
+                              </p>
+                            )}
                           </div>
-                          <Badge variant={issue.status === 'open' ? 'destructive' : 'secondary'}>
-                            {issue.status}
+                          <Badge 
+                            variant={
+                              issue.status === 'open' ? 'destructive' : 
+                              issue.status === 'in_progress' ? 'secondary' : 
+                              'outline'
+                            }
+                          >
+                            {issue.status === 'in_progress' ? 'In Progress' : issue.status}
                           </Badge>
                         </div>
                       </div>
                     ))}
+                    {userIssues.length > 5 && (
+                      <Button 
+                        variant="ghost" 
+                        className="w-full" 
+                        onClick={() => navigate('/my-issues')}
+                      >
+                        View {userIssues.length - 5} more issues
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>

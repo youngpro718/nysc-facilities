@@ -199,6 +199,20 @@ export default function Operations() {
 
   // Auto-refresh removed - use manual refresh button instead
 
+  // Fetch buildings for filter
+  const { data: buildings = [] } = useQuery({
+    queryKey: ['buildings-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('id, name')
+        .order('name');
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+
   // Fetch maintenance data
   const { data: maintenanceData = [], isLoading: maintenanceLoading } = useQuery({
     queryKey: ['maintenanceOverview'],
@@ -301,8 +315,9 @@ export default function Operations() {
         </div>
       </div>
 
-      {/* Building Filter - Converted to dropdown for mobile */}
+      {/* Building Filter - Dynamic from database */}
       <div className="flex items-center gap-2 p-3 sm:p-4 border rounded-lg bg-muted/50">
+        <Building2 className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Building:</span>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -311,24 +326,19 @@ export default function Operations() {
             onClick={clearBuildingFilter}
             className="text-xs sm:text-sm"
           >
-            All
+            All Buildings
           </Button>
-          <Button
-            variant={buildingId === '7a9d7532-ebe7-496f-b5f1-10887f91edd5' ? "default" : "outline"}
-            size="sm"
-            onClick={() => setBuildingFilter('7a9d7532-ebe7-496f-b5f1-10887f91edd5')}
-            className="text-xs sm:text-sm"
-          >
-            100 Centre
-          </Button>
-          <Button
-            variant={buildingId === 'c735c6a8-7c61-4417-b2e3-3ebbb3045db7' ? "default" : "outline"}
-            size="sm"
-            onClick={() => setBuildingFilter('c735c6a8-7c61-4417-b2e3-3ebbb3045db7')}
-            className="text-xs sm:text-sm"
-          >
-            111 Centre
-          </Button>
+          {buildings.map((building: { id: string; name: string }) => (
+            <Button
+              key={building.id}
+              variant={buildingId === building.id ? "default" : "outline"}
+              size="sm"
+              onClick={() => setBuildingFilter(building.id)}
+              className="text-xs sm:text-sm"
+            >
+              {building.name}
+            </Button>
+          ))}
         </div>
       </div>
 
