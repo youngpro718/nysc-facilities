@@ -1,11 +1,9 @@
 
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Department } from "./types";
 import { SelectedUser } from "./useVerificationState";
 
 export function useVerificationMutations(
-  departments: Department[] | undefined,
   refetchUsers: () => void
 ) {
   const handleVerification = async (
@@ -15,66 +13,25 @@ export function useVerificationMutations(
   ) => {
     try {
       if (approved) {
-        // First update the profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            verification_status: 'verified',
-            department_id: selectedDepartment,
-            metadata: {
-              employment_type: 'full_time',
-              access_level: 'standard',
-              start_date: new Date().toISOString().split('T')[0]
-            }
-          })
-          .eq('id', userId)
-          .select()
-          .single();
-
-        if (profileError) throw profileError;
-
-        // Check if occupant already exists
-        const { data: existingOccupant, error: checkError } = await supabase
-          .from('occupants')
-          .select('id')
-          .eq('id', userId)
-          .maybeSingle();
-
-        if (checkError) throw checkError;
-
-        // Only create occupant if it doesn't exist
-        if (!existingOccupant) {
-          const { error: occupantError } = await supabase
-            .from('occupants')
-            .insert({
-              id: userId,
-              first_name: profile.first_name,
-              last_name: profile.last_name,
-              email: profile.email,
-              department: departments?.find(d => d.id === selectedDepartment)?.name,
-              status: 'active',
-              access_level: 'standard',
-              employment_type: 'full_time',
-              start_date: new Date().toISOString().split('T')[0]
-            });
-
-          if (occupantError) {
-            // If error is not duplicate key, throw it
-            if (occupantError.code !== '23505') {
-              throw occupantError;
-            }
-          }
+        if (!selectedDepartment) {
+          toast.error('Please select a department');
+          return;
         }
+
+        const { error } = await supabase.rpc('approve_user_verification', {
+          p_user_id: userId,
+          p_department_id: selectedDepartment
+        });
+
+        if (error) throw error;
         
         toast.success('User approved successfully');
       } else {
-        // Delete user profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', userId);
+        const { error } = await supabase.rpc('reject_user_verification', {
+          p_user_id: userId
+        });
 
-        if (profileError) throw profileError;
+        if (error) throw error;
         
         toast.success('User rejected and removed');
       }
@@ -94,25 +51,12 @@ export function useVerificationMutations(
     }
 
     try {
-      if (approve) {
-        for (const user of selectedUsers) {
-          await handleVerification(user.userId, true, selectedDepartment);
-        }
-        toast.success(`${selectedUsers.length} users approved successfully`);
-      } else {
-        // Delete user profiles
-        const userIds = selectedUsers.map(user => user.userId);
-        
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .delete()
-          .in('id', userIds);
-
-        if (profileError) throw profileError;
-        
-        toast.success(`${selectedUsers.length} users rejected and removed`);
+      for (const user of selectedUsers) {
+        await handleVerification(user.userId, approve, selectedDepartment);
       }
-
+      
+      const action = approve ? 'approved' : 'rejected and removed';
+      toast.success(`${selectedUsers.length} users ${action} successfully`);
       refetchUsers();
     } catch (error) {
       console.error('Error in bulk verification:', error);
