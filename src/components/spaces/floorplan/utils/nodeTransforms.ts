@@ -118,7 +118,8 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
   // Merge properties from different possible sources for hallways
   const properties = {
     ...spaceProperties,
-    room_number: space.room_number || '',
+    room_number: space.room_number || spaceProperties.room_number || '',
+    room_type: space.room_type || spaceProperties.room_type || null,  // CRITICAL: Include room_type for 3D templates
     space_type: space.type || spaceType || 'default',
     status: space.status || 'active',
     parent_room_id: space.parent_room_id || null,

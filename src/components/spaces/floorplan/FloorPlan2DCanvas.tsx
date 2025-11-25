@@ -14,6 +14,9 @@ import ReactFlow, {
   NodeProps,
   Handle,
   Position,
+  SelectionMode,
+  useReactFlow,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { cn } from '@/lib/utils';
@@ -23,19 +26,46 @@ interface FloorPlan2DCanvasProps {
   edges: any[];
   selectedObjectId: string | null;
   onObjectSelect: (id: string | null) => void;
+  onPositionChange?: (id: string, position: { x: number; y: number }) => void;
   showLabels: boolean;
   showGrid: boolean;
   zoom: number;
 }
 
-// Custom Room Node
+// Room type colors matching database enum
+const ROOM_TYPE_STYLES: Record<string, { bg: string; border: string; text: string }> = {
+  courtroom: { bg: 'bg-amber-100 dark:bg-amber-900', border: 'border-amber-500', text: 'text-amber-900 dark:text-amber-100' },
+  office: { bg: 'bg-blue-50 dark:bg-blue-950', border: 'border-blue-300', text: 'text-blue-900 dark:text-blue-100' },
+  conference: { bg: 'bg-indigo-50 dark:bg-indigo-950', border: 'border-indigo-300', text: 'text-indigo-900 dark:text-indigo-100' },
+  storage: { bg: 'bg-stone-100 dark:bg-stone-800', border: 'border-stone-400', text: 'text-stone-900 dark:text-stone-100' },
+  restroom: { bg: 'bg-cyan-50 dark:bg-cyan-950', border: 'border-cyan-400', text: 'text-cyan-900 dark:text-cyan-100' },
+  lobby: { bg: 'bg-amber-50 dark:bg-amber-950', border: 'border-amber-400', text: 'text-amber-900 dark:text-amber-100' },
+  utility: { bg: 'bg-zinc-100 dark:bg-zinc-800', border: 'border-zinc-400', text: 'text-zinc-900 dark:text-zinc-100' },
+  mechanical: { bg: 'bg-neutral-200 dark:bg-neutral-800', border: 'border-neutral-500', text: 'text-neutral-900 dark:text-neutral-100' },
+  jury_room: { bg: 'bg-violet-50 dark:bg-violet-950', border: 'border-violet-400', text: 'text-violet-900 dark:text-violet-100' },
+  chamber: { bg: 'bg-teal-50 dark:bg-teal-950', border: 'border-teal-500', text: 'text-teal-900 dark:text-teal-100' },
+  other: { bg: 'bg-slate-100 dark:bg-slate-800', border: 'border-slate-300', text: 'text-slate-900 dark:text-slate-100' },
+  default: { bg: 'bg-blue-50 dark:bg-blue-950', border: 'border-blue-200', text: 'text-blue-900 dark:text-blue-100' },
+};
+
+function getRoomTypeStyle(roomType: string | undefined) {
+  if (!roomType) return ROOM_TYPE_STYLES.default;
+  const normalized = roomType.toLowerCase().replace(/\s+/g, '_');
+  return ROOM_TYPE_STYLES[normalized] || ROOM_TYPE_STYLES.default;
+}
+
+// Custom Room Node with room-type specific colors
 function RoomNode({ data, selected }: NodeProps) {
+  const roomType = data.properties?.room_type;
+  const style = getRoomTypeStyle(roomType);
+  
   return (
     <div
       className={cn(
         'rounded-lg border-2 transition-all duration-200',
-        'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800',
-        selected && 'ring-2 ring-primary ring-offset-2 border-primary'
+        style.bg,
+        style.border,
+        selected && 'ring-2 ring-primary ring-offset-2 !border-primary'
       )}
       style={{
         width: data.size?.width || 120,
@@ -44,20 +74,34 @@ function RoomNode({ data, selected }: NodeProps) {
         minHeight: 60,
       }}
     >
-      <Handle type="target" position={Position.Top} className="!bg-blue-400 !w-2 !h-2" />
-      <Handle type="source" position={Position.Bottom} className="!bg-blue-400 !w-2 !h-2" />
-      <Handle type="target" position={Position.Left} className="!bg-blue-400 !w-2 !h-2" />
-      <Handle type="source" position={Position.Right} className="!bg-blue-400 !w-2 !h-2" />
+      <Handle type="target" position={Position.Top} className="!bg-current !w-2 !h-2 opacity-50" />
+      <Handle type="source" position={Position.Bottom} className="!bg-current !w-2 !h-2 opacity-50" />
+      <Handle type="target" position={Position.Left} className="!bg-current !w-2 !h-2 opacity-50" />
+      <Handle type="source" position={Position.Right} className="!bg-current !w-2 !h-2 opacity-50" />
       
-      <div className="h-full flex flex-col items-center justify-center p-2 text-center">
-        <span className="text-xs font-semibold text-blue-900 dark:text-blue-100 truncate max-w-full">
+      <div className="h-full flex flex-col items-center justify-center p-1.5 text-center overflow-hidden">
+        <span className={cn('text-[11px] font-semibold leading-tight', style.text)} style={{ 
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          wordBreak: 'break-word',
+          maxWidth: '100%'
+        }}>
           {data.label || 'Room'}
         </span>
-        {data.properties?.room_number && (
-          <span className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
-            #{data.properties.room_number}
-          </span>
-        )}
+        <div className="flex items-center gap-1 mt-0.5 flex-wrap justify-center">
+          {data.properties?.room_number && (
+            <span className="text-[9px] opacity-70 bg-black/5 dark:bg-white/10 px-1 rounded">
+              #{data.properties.room_number}
+            </span>
+          )}
+          {roomType && (
+            <span className="text-[8px] opacity-50 capitalize">
+              {roomType.replace(/_/g, ' ')}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -131,12 +175,14 @@ export function FloorPlan2DCanvas({
   edges: inputEdges,
   selectedObjectId,
   onObjectSelect,
+  onPositionChange,
   showLabels,
   showGrid,
   zoom,
 }: FloorPlan2DCanvasProps) {
   const initialized = useRef(false);
   const lastObjectsRef = useRef<string>('');
+  const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Convert objects to ReactFlow nodes
   const initialNodes = useMemo(() => {
@@ -193,6 +239,42 @@ export function FloorPlan2DCanvas({
     onObjectSelect(null);
   }, [onObjectSelect]);
 
+  // Handle node drag end - debounced to avoid too many updates
+  const onNodeDragStop = useCallback((_: React.MouseEvent, node: Node, nodes: Node[]) => {
+    if (!onPositionChange) return;
+    
+    // Clear any pending timeout
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+    }
+    
+    // Get all selected nodes (for group drag)
+    const selectedNodes = nodes.filter(n => n.selected);
+    const nodesToUpdate = selectedNodes.length > 1 ? selectedNodes : [node];
+    
+    // Debounce the position updates
+    dragTimeoutRef.current = setTimeout(() => {
+      nodesToUpdate.forEach(n => {
+        onPositionChange(n.id, { x: Math.round(n.position.x), y: Math.round(n.position.y) });
+      });
+    }, 300);
+  }, [onPositionChange]);
+
+  // Handle selection drag stop (for group selection box drag)
+  const onSelectionDragStop = useCallback((_: React.MouseEvent, nodes: Node[]) => {
+    if (!onPositionChange) return;
+    
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+    }
+    
+    dragTimeoutRef.current = setTimeout(() => {
+      nodes.forEach(node => {
+        onPositionChange(node.id, { x: Math.round(node.position.x), y: Math.round(node.position.y) });
+      });
+    }, 300);
+  }, [onPositionChange]);
+
   return (
     <div className="w-full h-full">
       <ReactFlow
@@ -201,6 +283,8 @@ export function FloorPlan2DCanvas({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
+        onNodeDragStop={onNodeDragStop}
+        onSelectionDragStop={onSelectionDragStop}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         fitView
@@ -209,17 +293,24 @@ export function FloorPlan2DCanvas({
         maxZoom={4}
         defaultViewport={{ x: 0, y: 0, zoom: zoom }}
         snapToGrid
-        snapGrid={[10, 10]}
+        snapGrid={[20, 20]}
         nodesDraggable
         nodesConnectable={false}
         elementsSelectable
+        selectionOnDrag
+        selectionMode={SelectionMode.Partial}
+        selectNodesOnDrag
+        panOnDrag={[1, 2]}
+        selectionKeyCode={null}
+        multiSelectionKeyCode="Shift"
         className="bg-transparent"
       >
         {showGrid && (
           <Background 
             gap={20} 
-            size={1} 
-            color="hsl(var(--muted-foreground) / 0.1)"
+            size={1}
+            color="hsl(var(--muted-foreground) / 0.15)"
+            style={{ opacity: 0.8 }}
           />
         )}
         <Controls 

@@ -12,33 +12,39 @@ interface FloorPlan3DCanvasProps {
   edges: any[];
   selectedObjectId: string | null;
   onObjectSelect: (id: string | null) => void;
+  onPositionChange?: (id: string, position: { x: number; y: number }) => void;
   showLabels: boolean;
   showConnections: boolean;
+  showGrid?: boolean;
   fitViewTrigger?: number;
 }
 
-// Color palette for different room types
-const ROOM_TYPE_COLORS = {
-  // Courtrooms - Distinguished with rich wood tones
+// Color palette for different room types (matches room_type_enum in database)
+// Database types: office, courtroom, conference, storage, restroom, lobby, hallway, utility, mechanical, other
+const ROOM_TYPE_COLORS: Record<string, { walls: number; floor: number; accent: number }> = {
+  // Courtrooms - Distinguished with rich wood tones (brown)
   courtroom: { walls: 0x8b4513, floor: 0xdeb887, accent: 0x654321 },
   // Offices - Professional blue
   office: { walls: 0x3b82f6, floor: 0xf0f9ff, accent: 0x1d4ed8 },
-  // Conference rooms - Modern gray
+  // Conference rooms - Indigo/purple
   conference: { walls: 0x6366f1, floor: 0xf5f5f5, accent: 0x4f46e5 },
-  conference_room: { walls: 0x6366f1, floor: 0xf5f5f5, accent: 0x4f46e5 },
-  // Storage - Neutral
+  // Storage - Neutral stone
   storage: { walls: 0x78716c, floor: 0xe7e5e4, accent: 0x57534e },
-  // Restroom - Clean white/blue
+  // Restroom - Clean cyan/blue
   restroom: { walls: 0x06b6d4, floor: 0xecfeff, accent: 0x0891b2 },
-  // Utility - Industrial
+  // Lobby - Warm amber/gold
+  lobby: { walls: 0xd97706, floor: 0xfef3c7, accent: 0xb45309 },
+  // Utility - Industrial gray
   utility: { walls: 0x71717a, floor: 0xd4d4d8, accent: 0x52525b },
-  // Jury room - Formal
+  // Mechanical - Dark industrial
+  mechanical: { walls: 0x525252, floor: 0xa3a3a3, accent: 0x404040 },
+  // Other - Neutral
+  other: { walls: 0x94a3b8, floor: 0xf1f5f9, accent: 0x64748b },
+  // Additional types that might be used
   jury_room: { walls: 0x7c3aed, floor: 0xf5f3ff, accent: 0x6d28d9 },
-  // Chamber - Executive
   chamber: { walls: 0x0f766e, floor: 0xf0fdfa, accent: 0x115e59 },
-  // Filing room
   filing_room: { walls: 0xea580c, floor: 0xfff7ed, accent: 0xc2410c },
-  // Default
+  // Default fallback
   default: { walls: 0x64748b, floor: 0xf8fafc, accent: 0x475569 },
 };
 
@@ -64,8 +70,10 @@ export function FloorPlan3DCanvas({
   edges,
   selectedObjectId,
   onObjectSelect,
+  onPositionChange,
   showLabels,
   showConnections,
+  showGrid = true,
   fitViewTrigger = 0,
 }: FloorPlan3DCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,6 +86,16 @@ export function FloorPlan3DCanvas({
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const layoutBoundsRef = useRef({ width: 500, depth: 500 });
+  const gridHelperRef = useRef<THREE.GridHelper | null>(null);
+  const layoutCenterRef = useRef({ x: 0, z: 0 });
+  
+  // Drag state
+  const isDraggingRef = useRef(false);
+  const dragObjectIdRef = useRef<string | null>(null);
+  const dragPlaneRef = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
+  const dragOffsetRef = useRef(new THREE.Vector3());
+  const dragStartPosRef = useRef({ x: 0, z: 0 });
+  const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize scene
   useEffect(() => {
@@ -138,22 +156,24 @@ export function FloorPlan3DCanvas({
     fillLight.position.set(-200, 200, -200);
     scene.add(fillLight);
 
-    // Ground plane
-    const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+    // Ground plane - will be resized when objects load
+    const groundGeometry = new THREE.PlaneGeometry(2000, 2000);
     const groundMaterial = new THREE.MeshLambertMaterial({ 
       color: COLORS.floor,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.9,
     });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1;
+    ground.position.y = -0.5;
     ground.receiveShadow = true;
+    ground.name = 'ground';
     scene.add(ground);
 
-    // Grid
-    const gridHelper = new THREE.GridHelper(1000, 50, COLORS.grid, COLORS.grid);
-    gridHelper.position.y = 0;
+    // Grid - use 20 unit spacing to match snap grid, will be resized when objects load
+    const gridHelper = new THREE.GridHelper(2000, 100, 0xcccccc, 0xe5e5e5);
+    gridHelper.position.y = 0.1;
+    gridHelperRef.current = gridHelper;
     scene.add(gridHelper);
 
     // Animation loop
@@ -233,20 +253,37 @@ export function FloorPlan3DCanvas({
     const layoutWidth = Math.max(maxX - minX, 200);
     const layoutDepth = Math.max(maxZ - minZ, 200);
     
-    // Store bounds for fit view
+    // Store bounds for fit view and center for drag calculations
     layoutBoundsRef.current = { width: layoutWidth, depth: layoutDepth };
+    layoutCenterRef.current = { x: centerX, z: centerZ };
     
     console.log('[3D] Layout bounds:', { minX, maxX, minZ, maxZ, centerX, centerZ, layoutWidth, layoutDepth });
+    
+    // Debug: Log room types being processed
+    const roomsWithTypes = objects.filter(o => o.type === 'room' && o.data?.properties?.room_type);
+    console.log('[3D] Rooms with room_type:', roomsWithTypes.length, 'of', objects.filter(o => o.type === 'room').length);
+    if (roomsWithTypes.length > 0) {
+      console.log('[3D] Room types found:', roomsWithTypes.map(r => ({
+        name: r.data?.label,
+        room_type: r.data?.properties?.room_type
+      })));
+    }
 
     // Create meshes for each object
+    const gridSnap = 20; // Match grid spacing
+    
     objects.forEach((obj) => {
       const group = new THREE.Group();
       group.userData = { id: obj.id, type: obj.type };
 
-      const x = (obj.position?.x || 0) - centerX;
-      const z = (obj.position?.y || 0) - centerZ;
-      const width = obj.data?.size?.width || 100;
-      const depth = obj.data?.size?.height || 100;
+      // Calculate position relative to center, snapped to grid
+      const rawX = (obj.position?.x || 0) - centerX;
+      const rawZ = (obj.position?.y || 0) - centerZ;
+      const x = Math.round(rawX / gridSnap) * gridSnap;
+      const z = Math.round(rawZ / gridSnap) * gridSnap;
+      
+      const width = Math.round((obj.data?.size?.width || 100) / gridSnap) * gridSnap || 100;
+      const depth = Math.round((obj.data?.size?.height || 100) / gridSnap) * gridSnap || 100;
       const isSelected = obj.id === selectedObjectId;
 
       const colorSet = obj.type === 'room' ? COLORS.room : 
@@ -504,6 +541,68 @@ export function FloorPlan3DCanvas({
           }
         }
 
+        // === LOBBY FEATURES ===
+        const isLobby = roomType?.toLowerCase() === 'lobby';
+        if (isLobby) {
+          // Reception desk
+          const deskGeo = new THREE.BoxGeometry(width * 0.4, 4, depth * 0.12);
+          const deskMat = new THREE.MeshLambertMaterial({ color: 0xb45309 });
+          const desk = new THREE.Mesh(deskGeo, deskMat);
+          desk.position.set(x + width/2, 4, z + depth * 0.2);
+          desk.castShadow = true;
+          group.add(desk);
+
+          // Seating area - benches/chairs
+          const benchMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+          const benchPositions = [[0.2, 0.6], [0.5, 0.7], [0.8, 0.6]];
+          benchPositions.forEach(([px, pz]) => {
+            const benchGeo = new THREE.BoxGeometry(width * 0.15, 3, depth * 0.08);
+            const bench = new THREE.Mesh(benchGeo, benchMat);
+            bench.position.set(x + width * px, 3.5, z + depth * pz);
+            bench.castShadow = true;
+            group.add(bench);
+          });
+
+          // Plant/decoration
+          const plantGeo = new THREE.CylinderGeometry(3, 4, 8, 8);
+          const plantMat = new THREE.MeshLambertMaterial({ color: 0x166534 });
+          const plant = new THREE.Mesh(plantGeo, plantMat);
+          plant.position.set(x + width * 0.9, 6, z + depth * 0.15);
+          group.add(plant);
+        }
+
+        // === MECHANICAL ROOM FEATURES ===
+        const isMechanical = roomType?.toLowerCase() === 'mechanical';
+        if (isMechanical) {
+          // Large equipment units
+          const equipMat = new THREE.MeshLambertMaterial({ color: 0x404040 });
+          
+          // HVAC unit
+          const hvacGeo = new THREE.BoxGeometry(width * 0.35, 15, depth * 0.25);
+          const hvac = new THREE.Mesh(hvacGeo, equipMat);
+          hvac.position.set(x + width * 0.25, 9.5, z + depth * 0.2);
+          hvac.castShadow = true;
+          group.add(hvac);
+
+          // Electrical panel
+          const panelGeo = new THREE.BoxGeometry(width * 0.2, 18, 3);
+          const panelMat = new THREE.MeshLambertMaterial({ color: 0x374151 });
+          const panel = new THREE.Mesh(panelGeo, panelMat);
+          panel.position.set(x + width * 0.85, 11, z + 4);
+          panel.castShadow = true;
+          group.add(panel);
+
+          // Pipes
+          const pipeMat = new THREE.MeshLambertMaterial({ color: 0x6b7280 });
+          for (let i = 0; i < 3; i++) {
+            const pipeGeo = new THREE.CylinderGeometry(1.5, 1.5, depth * 0.8, 8);
+            const pipe = new THREE.Mesh(pipeGeo, pipeMat);
+            pipe.rotation.x = Math.PI / 2;
+            pipe.position.set(x + width * (0.4 + i * 0.15), 20, z + depth/2);
+            group.add(pipe);
+          }
+        }
+
         // === JURY ROOM FEATURES ===
         const isJuryRoom = roomType?.toLowerCase().includes('jury');
         if (isJuryRoom && !isCourtroom) {
@@ -626,6 +725,15 @@ export function FloorPlan3DCanvas({
         group.add(mesh);
       }
 
+      // Store original positions for drag calculations
+      group.children.forEach(child => {
+        child.userData.originalX = child.position.x;
+        child.userData.originalZ = child.position.z;
+      });
+      
+      // Store group's logical position (for drag tracking)
+      group.position.set(x, 0, z);
+      
       scene.add(group);
       meshMapRef.current.set(obj.id, group);
     });
@@ -649,6 +757,13 @@ export function FloorPlan3DCanvas({
     }
   }, [objects, selectedObjectId, showLabels]);
 
+  // Toggle grid visibility
+  useEffect(() => {
+    if (gridHelperRef.current) {
+      gridHelperRef.current.visible = showGrid;
+    }
+  }, [showGrid]);
+
   // Fit view when triggered
   useEffect(() => {
     if (fitViewTrigger === 0) return;
@@ -670,9 +785,9 @@ export function FloorPlan3DCanvas({
     }
   }, [fitViewTrigger]);
 
-  // Handle click
-  const handleClick = useCallback((event: React.MouseEvent) => {
-    if (!containerRef.current || !cameraRef.current || !sceneRef.current) return;
+  // Get intersected object
+  const getIntersectedObject = useCallback((event: React.MouseEvent | MouseEvent) => {
+    if (!containerRef.current || !cameraRef.current || !sceneRef.current) return null;
 
     const rect = containerRef.current.getBoundingClientRect();
     mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -697,18 +812,139 @@ export function FloorPlan3DCanvas({
         parent = parent.parent;
       }
       if (parent?.userData?.id) {
-        onObjectSelect(parent.userData.id);
-        return;
+        return { group: parent as THREE.Group, point: intersects[0].point };
       }
     }
     
-    onObjectSelect(null);
-  }, [onObjectSelect]);
+    return null;
+  }, []);
+
+  // Handle mouse down - start drag or select
+  const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    if (event.button !== 0) return; // Only left click
+    
+    const hit = getIntersectedObject(event);
+    if (hit && hit.group.userData?.id) {
+      const objectId = hit.group.userData.id;
+      onObjectSelect(objectId);
+      
+      // Start dragging
+      isDraggingRef.current = true;
+      dragObjectIdRef.current = objectId;
+      
+      // Calculate offset from click point to object center
+      const group = meshMapRef.current.get(objectId);
+      if (group) {
+        // Store starting position
+        dragStartPosRef.current = { x: group.position.x, z: group.position.z };
+        
+        // Calculate drag offset
+        dragOffsetRef.current.copy(hit.point).sub(new THREE.Vector3(group.position.x, 0, group.position.z));
+        
+        // Disable orbit controls while dragging
+        if (controlsRef.current) {
+          controlsRef.current.enabled = false;
+        }
+      }
+    }
+  }, [getIntersectedObject, onObjectSelect]);
+
+  // Handle mouse move - drag object
+  const handleMouseMove = useCallback((event: React.MouseEvent) => {
+    if (!isDraggingRef.current || !dragObjectIdRef.current) return;
+    if (!containerRef.current || !cameraRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+    
+    // Find intersection with ground plane
+    const intersection = new THREE.Vector3();
+    if (raycasterRef.current.ray.intersectPlane(dragPlaneRef.current, intersection)) {
+      const group = meshMapRef.current.get(dragObjectIdRef.current);
+      if (group) {
+        // Snap to grid (20 units)
+        const gridSize = 20;
+        const newX = Math.round((intersection.x - dragOffsetRef.current.x) / gridSize) * gridSize;
+        const newZ = Math.round((intersection.z - dragOffsetRef.current.z) / gridSize) * gridSize;
+        
+        // Move all children relative to group
+        const deltaX = newX - dragStartPosRef.current.x;
+        const deltaZ = newZ - dragStartPosRef.current.z;
+        
+        group.children.forEach(child => {
+          if (child.userData.originalX !== undefined) {
+            child.position.x = child.userData.originalX + deltaX;
+            child.position.z = child.userData.originalZ + deltaZ;
+          }
+        });
+        
+        // Update group position tracking
+        group.position.x = newX;
+        group.position.z = newZ;
+      }
+    }
+  }, []);
+
+  // Handle mouse up - end drag and save position
+  const handleMouseUp = useCallback((event: React.MouseEvent) => {
+    if (isDraggingRef.current && dragObjectIdRef.current && onPositionChange) {
+      const group = meshMapRef.current.get(dragObjectIdRef.current);
+      if (group) {
+        // Convert 3D position back to 2D coordinates
+        const center = layoutCenterRef.current;
+        const newX = group.position.x + center.x;
+        const newY = group.position.z + center.z; // z in 3D is y in 2D
+        
+        // Debounce the save
+        if (dragTimeoutRef.current) {
+          clearTimeout(dragTimeoutRef.current);
+        }
+        
+        const objectId = dragObjectIdRef.current;
+        dragTimeoutRef.current = setTimeout(() => {
+          onPositionChange(objectId, { x: Math.round(newX), y: Math.round(newY) });
+          console.log('[3D] Position saved:', objectId, { x: Math.round(newX), y: Math.round(newY) });
+        }, 300);
+      }
+    }
+    
+    // Reset drag state
+    isDraggingRef.current = false;
+    dragObjectIdRef.current = null;
+    
+    // Re-enable orbit controls
+    if (controlsRef.current) {
+      controlsRef.current.enabled = true;
+    }
+  }, [onPositionChange]);
+
+  // Handle click (for selection without drag)
+  const handleClick = useCallback((event: React.MouseEvent) => {
+    // If we were dragging, don't process as click
+    if (isDraggingRef.current) return;
+    
+    const hit = getIntersectedObject(event);
+    if (hit && hit.group.userData?.id) {
+      onObjectSelect(hit.group.userData.id);
+    } else {
+      onObjectSelect(null);
+    }
+  }, [getIntersectedObject, onObjectSelect]);
 
   return (
     <div 
       ref={containerRef} 
-      className="w-full h-full cursor-grab active:cursor-grabbing"
+      className={cn(
+        "w-full h-full",
+        isDraggingRef.current ? "cursor-grabbing" : "cursor-grab"
+      )}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
       onClick={handleClick}
     />
   );

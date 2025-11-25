@@ -48,18 +48,22 @@ const typeColors = {
   door: 'bg-amber-100 text-amber-700 border-amber-200',
 };
 
-// Room type specific colors for badges
+// Room type specific colors for badges (matches room_type_enum in database)
+// Database types: office, courtroom, conference, storage, restroom, lobby, hallway, utility, mechanical, other
 const roomTypeColors: Record<string, string> = {
   courtroom: 'bg-amber-800 text-amber-50',
   office: 'bg-blue-500 text-blue-50',
   conference: 'bg-indigo-500 text-indigo-50',
-  conference_room: 'bg-indigo-500 text-indigo-50',
   storage: 'bg-stone-500 text-stone-50',
-  filing_room: 'bg-orange-500 text-orange-50',
   restroom: 'bg-cyan-500 text-cyan-50',
+  lobby: 'bg-amber-500 text-amber-50',
   utility: 'bg-zinc-500 text-zinc-50',
+  mechanical: 'bg-neutral-600 text-neutral-50',
+  other: 'bg-slate-400 text-slate-50',
+  // Additional types
   jury_room: 'bg-violet-600 text-violet-50',
   chamber: 'bg-teal-600 text-teal-50',
+  filing_room: 'bg-orange-500 text-orange-50',
   default: 'bg-slate-500 text-slate-50',
 };
 
