@@ -1,8 +1,15 @@
-import React from "react";
-import { User, Settings, LogOut, Shield, HelpCircle } from "lucide-react";
+import React, { useState } from "react";
+import { User, Settings, LogOut, Shield, HelpCircle, Mail, Phone, ExternalLink, FileText, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +18,7 @@ export const MoreTabContent: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAdmin, isLoading } = useAuth();
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -51,13 +59,7 @@ export const MoreTabContent: React.FC = () => {
     {
       icon: HelpCircle,
       label: "Help & Support",
-      action: () => {
-        // TODO: Add help/support functionality
-        toast({
-          title: "Coming Soon",
-          description: "Help & Support feature is coming soon!",
-        });
-      },
+      action: () => setHelpDialogOpen(true),
     },
   ];
 
@@ -133,6 +135,93 @@ export const MoreTabContent: React.FC = () => {
           Version 1.0.0
         </div>
       </div>
+
+      {/* Help & Support Dialog */}
+      <Dialog open={helpDialogOpen} onOpenChange={setHelpDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5" />
+              Help & Support
+            </DialogTitle>
+            <DialogDescription>
+              Get help with the NYSC Facilities Management System
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Quick Links */}
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Quick Links</h4>
+              <div className="grid gap-2">
+                <Button 
+                  variant="outline" 
+                  className="justify-start h-auto py-3"
+                  onClick={() => {
+                    navigate('/forms/issue-report');
+                    setHelpDialogOpen(false);
+                  }}
+                >
+                  <MessageSquare className="h-4 w-4 mr-3" />
+                  <div className="text-left">
+                    <div className="font-medium">Report an Issue</div>
+                    <div className="text-xs text-muted-foreground">Submit a facility issue or request</div>
+                  </div>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="justify-start h-auto py-3"
+                  onClick={() => {
+                    navigate('/forms/supply-request');
+                    setHelpDialogOpen(false);
+                  }}
+                >
+                  <FileText className="h-4 w-4 mr-3" />
+                  <div className="text-left">
+                    <div className="font-medium">Request Supplies</div>
+                    <div className="text-xs text-muted-foreground">Order office supplies and materials</div>
+                  </div>
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Contact Information */}
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Contact Support</h4>
+              <div className="space-y-2 text-sm">
+                <a 
+                  href="mailto:facilities@nycourts.gov" 
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Mail className="h-4 w-4" />
+                  facilities@nycourts.gov
+                </a>
+                <a 
+                  href="tel:+12125551234" 
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Phone className="h-4 w-4" />
+                  (212) 555-1234
+                </a>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* System Info */}
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">System Information</h4>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>NYSC Facilities Management System v1.0.0</p>
+                <p>User ID: {user?.id?.slice(0, 8)}...</p>
+                <p>Role: {isAdmin ? 'Administrator' : 'Standard User'}</p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

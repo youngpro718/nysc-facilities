@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface InventoryChange {
   itemName: string;
@@ -48,14 +50,132 @@ export function FulfillmentSuccessScreen({
   completedAt,
 }: FulfillmentSuccessScreenProps) {
   
-  const handleEmailReceipt = () => {
-    // TODO: Implement email receipt functionality
-    console.log('Email receipt:', receiptNumber);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handleEmailReceipt = async () => {
+    // Generate receipt content for email
+    const receiptContent = `
+Supply Order Receipt - ${receiptNumber}
+========================================
+Order #: ${orderNumber}
+Date: ${format(completedAt, 'MMM d, yyyy h:mm a')}
+
+Requester: ${requesterName}
+Delivery Location: ${deliveryLocation}
+Fulfilled By: ${fulfilledBy}
+
+Items Fulfilled:
+${inventoryChanges.map(c => `- ${c.itemName}: ${c.subtracted} ${c.unit}`).join('\n')}
+
+Thank you for using NYSC Facilities Management.
+    `.trim();
+
+    // Try to use mailto link for email
+    const subject = encodeURIComponent(`Supply Order Receipt - ${receiptNumber}`);
+    const body = encodeURIComponent(receiptContent);
+    const mailtoLink = `mailto:?subject=${subject}&body=${body}`;
+    
+    try {
+      window.open(mailtoLink, '_blank');
+      toast.success("Email client opened", {
+        description: "Receipt content has been prepared for sending"
+      });
+    } catch (error) {
+      // Fallback: copy to clipboard
+      await navigator.clipboard.writeText(receiptContent);
+      toast.success("Receipt copied to clipboard", {
+        description: "You can paste this into an email"
+      });
+    }
   };
 
   const handlePrint = () => {
-    // TODO: Implement print functionality
-    window.print();
+    // Create a printable version of the receipt
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Supply Order Receipt - ${receiptNumber}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+          h1 { font-size: 24px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+          .header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+          .section { margin: 15px 0; }
+          .label { color: #666; font-size: 12px; }
+          .value { font-weight: bold; }
+          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background: #f5f5f5; }
+          .footer { margin-top: 30px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <h1>Supply Order Receipt</h1>
+        <div class="header">
+          <div>
+            <div class="label">Order Number</div>
+            <div class="value">#${orderNumber}</div>
+          </div>
+          <div>
+            <div class="label">Receipt Number</div>
+            <div class="value">${receiptNumber}</div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="label">Requester</div>
+          <div class="value">${requesterName}</div>
+        </div>
+        <div class="section">
+          <div class="label">Delivery Location</div>
+          <div class="value">${deliveryLocation}</div>
+        </div>
+        <div class="section">
+          <div class="label">Fulfilled By</div>
+          <div class="value">${fulfilledBy}</div>
+        </div>
+        <div class="section">
+          <div class="label">Completed At</div>
+          <div class="value">${format(completedAt, 'MMM d, yyyy h:mm a')}</div>
+        </div>
+        <h2>Items Fulfilled</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${inventoryChanges.map(c => `
+              <tr>
+                <td>${c.itemName}</td>
+                <td>${c.subtracted}</td>
+                <td>${c.unit}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="footer">
+          <p>NYSC Facilities Management System</p>
+          <p>Generated: ${format(new Date(), 'MMM d, yyyy h:mm a')}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      toast.success("Print dialog opened");
+    } else {
+      toast.error("Unable to open print window", {
+        description: "Please check your popup blocker settings"
+      });
+    }
   };
 
   return (

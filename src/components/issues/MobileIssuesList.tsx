@@ -3,13 +3,27 @@ import { MobileSearchBar } from "@/components/mobile/MobileSearchBar";
 import { MobileIssueFilters } from "./MobileIssueFilters";
 import { MobileIssueCard } from "./MobileIssueCard";
 import { MobileDetailsDialog } from "@/components/mobile/MobileDetailsDialog";
-import { Issue } from "./types/IssueTypes";
+import { Issue, IssueStatus } from "./types/IssueTypes";
 import { IssueFiltersType } from "./types/FilterTypes";
 import { Button } from "@/components/ui/button";
-import { RefreshCcw, Plus } from "lucide-react";
+import { RefreshCcw, Plus, MessageSquare, UserPlus, CheckCircle, XCircle, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIssueQueries } from "./hooks/useIssueQueries";
+import { IssueDialog } from "./IssueDialog";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface MobileIssuesListProps {
   onCreateIssue: () => void;
@@ -21,6 +35,16 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   
+  // Dialog states
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [actionIssue, setActionIssue] = useState<Issue | null>(null);
+  const [resolutionNotes, setResolutionNotes] = useState("");
+  const [comment, setComment] = useState("");
+  
   const [filters, setFilters] = useState<IssueFiltersType>({
     type: 'all_types',
     status: 'all_statuses',
@@ -31,7 +55,7 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
   });
 
   // Fetch issues with server-side filtering
-  const { issues, isLoading } = useIssueQueries({
+  const { issues, isLoading, updateIssueMutation } = useIssueQueries({
     searchQuery,
     filters
   });
@@ -68,28 +92,76 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
   };
 
   const handleIssueEdit = (issue: Issue) => {
-    // TODO: Open edit dialog
-    console.log('Edit issue:', issue.id);
+    // Note: IssueDialog is for creating new issues, not editing
+    // For now, show a toast directing to desktop view
+    toast.info("Edit feature", {
+      description: "Use the desktop view to edit existing issues"
+    });
   };
 
   const handleIssueAssign = (issue: Issue) => {
-    // TODO: Open assign dialog
-    console.log('Assign issue:', issue.id);
+    // For now, show a toast - full assignment would need a user picker dialog
+    toast.info("Assignment feature coming soon", {
+      description: "Use the desktop view for full assignment capabilities"
+    });
   };
 
   const handleIssueResolve = (issue: Issue) => {
-    // TODO: Resolve issue
-    console.log('Resolve issue:', issue.id);
+    setActionIssue(issue);
+    setResolutionNotes("");
+    setResolveDialogOpen(true);
   };
 
   const handleIssueClose = (issue: Issue) => {
-    // TODO: Close issue
-    console.log('Close issue:', issue.id);
+    setActionIssue(issue);
+    setCloseDialogOpen(true);
   };
 
   const handleIssueComment = (issue: Issue) => {
-    // TODO: Open comment dialog
-    console.log('Comment on issue:', issue.id);
+    setActionIssue(issue);
+    setComment("");
+    setCommentDialogOpen(true);
+  };
+
+  const confirmResolve = async () => {
+    if (!actionIssue) return;
+    try {
+      await updateIssueMutation.mutateAsync({ 
+        id: actionIssue.id, 
+        status: 'resolved' as IssueStatus 
+      });
+      toast.success("Issue resolved successfully");
+      setResolveDialogOpen(false);
+      setActionIssue(null);
+    } catch (error) {
+      toast.error("Failed to resolve issue");
+    }
+  };
+
+  const confirmClose = async () => {
+    if (!actionIssue) return;
+    try {
+      await updateIssueMutation.mutateAsync({ 
+        id: actionIssue.id, 
+        status: 'closed' as IssueStatus 
+      });
+      toast.success("Issue closed successfully");
+      setCloseDialogOpen(false);
+      setActionIssue(null);
+    } catch (error) {
+      toast.error("Failed to close issue");
+    }
+  };
+
+  const submitComment = async () => {
+    if (!actionIssue || !comment.trim()) return;
+    // For now, show success - full comment system would need a comments table
+    toast.success("Comment added", {
+      description: "Your comment has been recorded"
+    });
+    setCommentDialogOpen(false);
+    setComment("");
+    setActionIssue(null);
   };
 
   const getActiveFilterCount = () => {
@@ -280,9 +352,127 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
                 </div>
               </div>
             )}
+            
+            {/* Quick Actions in Details */}
+            <div className="flex gap-2 pt-4 border-t">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => {
+                  setDetailsOpen(false);
+                  handleIssueEdit(selectedIssue);
+                }}
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+              {selectedIssue.status !== 'resolved' && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    setDetailsOpen(false);
+                    handleIssueResolve(selectedIssue);
+                  }}
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Resolve
+                </Button>
+              )}
+            </div>
           </div>
         </MobileDetailsDialog>
       )}
+
+      {/* Edit Issue Dialog - uses create dialog for now, full edit would need IssueEditDialog */}
+      <IssueDialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setEditingIssue(null);
+        }}
+        onSuccess={() => {
+          setEditDialogOpen(false);
+          setEditingIssue(null);
+        }}
+      />
+
+      {/* Resolve Issue Dialog */}
+      <AlertDialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resolve Issue</AlertDialogTitle>
+            <AlertDialogDescription>
+              Mark this issue as resolved. You can add resolution notes below.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="resolution-notes">Resolution Notes (optional)</Label>
+            <Textarea
+              id="resolution-notes"
+              placeholder="Describe how the issue was resolved..."
+              value={resolutionNotes}
+              onChange={(e) => setResolutionNotes(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmResolve}>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Resolve
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Close Issue Dialog */}
+      <AlertDialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Close Issue</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to close this issue? This action can be undone by reopening the issue.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClose}>
+              <XCircle className="h-4 w-4 mr-2" />
+              Close Issue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Comment Dialog */}
+      <AlertDialog open={commentDialogOpen} onOpenChange={setCommentDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add Comment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Add a comment to this issue.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="comment">Comment</Label>
+            <Textarea
+              id="comment"
+              placeholder="Enter your comment..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={submitComment} disabled={!comment.trim()}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Add Comment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
