@@ -38,6 +38,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 // Status configurations
 const supplyStatusConfig: Record<string, { icon: any; label: string; color: string }> = {
@@ -96,23 +97,14 @@ export default function MyActivity() {
 
   const content = (
     <div className="space-y-4 pb-20 md:pb-8">
+      <Breadcrumb />
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-9 w-9"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">My Activity</h1>
-            <p className="text-sm text-muted-foreground">
-              Track all your requests and issues
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold">My Activity</h1>
+          <p className="text-sm text-muted-foreground">
+            Track all your requests and issues
+          </p>
         </div>
         
         {/* Quick Actions */}

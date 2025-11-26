@@ -14,6 +14,7 @@ import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
 import { useCourtOperationsCounts } from "@/hooks/useCourtOperationsCounts";
 import { Button } from "@/components/ui/button";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 export const CourtOperationsDashboard = () => {
 
@@ -45,6 +46,7 @@ export const CourtOperationsDashboard = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <Breadcrumb />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Court Operations</h1>

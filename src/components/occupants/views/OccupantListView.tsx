@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { LoadingState } from "../LoadingState";
 import { ErrorState } from "../ErrorState";
@@ -15,6 +14,7 @@ import { useOccupantList } from "../hooks/useOccupantList";
 import { useOccupantDialogs } from "../hooks/useOccupantDialogs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PersonnelProfilesTab } from "../PersonnelProfilesTab";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 export function OccupantListView() {
   const [view, setView] = useState<"grid" | "list">("list");
@@ -119,6 +119,7 @@ export function OccupantListView() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb />
       <OccupantHeader
         selectedOccupants={selectedOccupants}
         onBulkStatusUpdate={handleBulkStatusUpdate}
