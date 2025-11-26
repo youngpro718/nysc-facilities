@@ -1,4 +1,4 @@
-import { ChevronLeft, Download, Copy, Check, Users, Shield, FileText, Settings as SettingsIcon, Activity, AlertTriangle, QrCode, AlertCircle, Search, RefreshCw, MoreVertical, Edit, Mail, KeyRound, UserX, UserCheck, Ban, CheckCircle, Clock, Unlock } from 'lucide-react';
+import { ChevronLeft, Download, Copy, Check, Users, Shield, Settings as SettingsIcon, Activity, QrCode, Search, RefreshCw } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,30 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminManagementTab } from "@/components/profile/reorganized/AdminManagementTab";
 import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
 
 import { TitleAccessManager } from "@/components/admin/TitleAccessManager";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { SYSTEM_ROLES, getRoleLabel, type UserRole } from "@/config/roles";
+import { type UserRole, getRoleLabel } from "@/config/roles";
+import { UserStatsCards, PendingUsersAlert, UserListCard } from "@/components/admin/users";
 import { supabase } from "@/lib/supabase";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { AdminQuickActions } from "@/components/settings/AdminQuickActions";
 import SecurityPanel from "@/components/admin/security/SecurityPanel";
 import AdminSettingsPanel from "@/components/admin/settings/AdminSettingsPanel";
@@ -118,12 +105,6 @@ export default function AdminProfile() {
         role: roleMap.get(profile.id) as UserRole || 'standard',
         department: (profile as any).department,
       }));
-
-      console.log('Loaded users with roles:', usersWithRoles.map(u => ({ 
-        name: `${u.first_name} ${u.last_name}`, 
-        email: u.email,
-        role: u.role 
-      })));
 
       setUsers(usersWithRoles);
     } catch (error) {
@@ -219,10 +200,7 @@ export default function AdminProfile() {
         new_role: newRole
       });
       
-      console.log('RPC Response:', { data, error });
-      
       if (error) {
-        console.error('RPC error:', error);
         throw error;
       }
       
@@ -242,8 +220,6 @@ export default function AdminProfile() {
       
       // Reload users with fresh data
       await loadUsers(true);
-      
-      console.log('Role updated successfully for user:', userId, 'to role:', newRole);
     } catch (error: any) {
       console.error('Error changing role:', error);
       const errorMessage = error?.message || 'Unknown error';
@@ -253,23 +229,34 @@ export default function AdminProfile() {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = !searchTerm || 
-      user.email?.toLowerCase().includes(searchLower) ||
-      user.first_name?.toLowerCase().includes(searchLower) ||
-      user.last_name?.toLowerCase().includes(searchLower);
+  // Memoize statistics to avoid recalculating on every render
+  const userStats = useMemo(() => ({
+    total: users.length,
+    pending: users.filter(u => u.verification_status === 'pending' || !u.is_approved).length,
+    verified: users.filter(u => u.verification_status === 'verified' && u.is_approved && !u.is_suspended).length,
+    suspended: users.filter(u => u.is_suspended).length,
+    admins: users.filter(u => u.role === 'admin').length,
+  }), [users]);
 
-    if (!matchesSearch) return false;
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        user.email?.toLowerCase().includes(searchLower) ||
+        user.first_name?.toLowerCase().includes(searchLower) ||
+        user.last_name?.toLowerCase().includes(searchLower);
 
-    switch (filterStatus) {
-      case 'pending': return user.verification_status === 'pending' || !user.is_approved;
-      case 'verified': return user.verification_status === 'verified' && user.is_approved && !user.is_suspended;
-      case 'suspended': return user.is_suspended;
-      case 'admins': return user.role === 'admin';
-      default: return true;
-    }
-  });
+      if (!matchesSearch) return false;
+
+      switch (filterStatus) {
+        case 'pending': return user.verification_status === 'pending' || !user.is_approved;
+        case 'verified': return user.verification_status === 'verified' && user.is_approved && !user.is_suspended;
+        case 'suspended': return user.is_suspended;
+        case 'admins': return user.role === 'admin';
+        default: return true;
+      }
+    });
+  }, [users, searchTerm, filterStatus]);
 
   const copyToClipboard = async () => {
     try {
@@ -314,19 +301,10 @@ export default function AdminProfile() {
 
   return (
     <div className="space-y-4 pb-20 px-3 sm:px-0">
+      <Breadcrumb />
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 pt-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-9 w-9 flex-shrink-0"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-xl sm:text-2xl font-semibold truncate">Admin Profile</h1>
-        </div>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-semibold truncate">Admin Profile</h1>
         <Button
           onClick={() => setShowQR(!showQR)}
           variant="outline"
@@ -460,109 +438,22 @@ export default function AdminProfile() {
             </Card>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <Card 
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  filterStatus === 'all' 
-                    ? 'ring-2 ring-primary bg-primary/5' 
-                    : 'hover:bg-accent'
-                }`}
-                onClick={() => {
-                  setFilterStatus('all');
-                  toast.info('Showing all users');
-                }}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Shield className="h-5 w-5 text-blue-600" />
-                    <span className="text-2xl font-bold">{users.length}</span>
-                  </div>
-                  <p className="text-sm font-medium">All Users</p>
-                  <p className="text-xs text-muted-foreground mt-1">Click to view</p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={`cursor-pointer transition-colors ${filterStatus === 'pending' ? 'ring-2 ring-primary' : 'hover:bg-accent'}`}
-                onClick={() => setFilterStatus('pending')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Clock className="h-5 w-5 text-yellow-600" />
-                    <span className="text-2xl font-bold">{users.filter(u => u.verification_status === 'pending' || !u.is_approved).length}</span>
-                  </div>
-                  <p className="text-sm font-medium">Pending</p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={`cursor-pointer transition-colors ${filterStatus === 'verified' ? 'ring-2 ring-primary' : 'hover:bg-accent'}`}
-                onClick={() => setFilterStatus('verified')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span className="text-2xl font-bold">{users.filter(u => u.verification_status === 'verified' && u.is_approved && !u.is_suspended).length}</span>
-                  </div>
-                  <p className="text-sm font-medium">Verified</p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={`cursor-pointer transition-colors ${filterStatus === 'suspended' ? 'ring-2 ring-primary' : 'hover:bg-accent'}`}
-                onClick={() => setFilterStatus('suspended')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Ban className="h-5 w-5 text-red-600" />
-                    <span className="text-2xl font-bold">{users.filter(u => u.is_suspended).length}</span>
-                  </div>
-                  <p className="text-sm font-medium">Suspended</p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={`cursor-pointer transition-colors ${filterStatus === 'admins' ? 'ring-2 ring-primary' : 'hover:bg-accent'}`}
-                onClick={() => setFilterStatus('admins')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Shield className="h-5 w-5 text-purple-600" />
-                    <span className="text-2xl font-bold">{users.filter(u => u.role === 'admin').length}</span>
-                  </div>
-                  <p className="text-sm font-medium">Admins</p>
-                </CardContent>
-              </Card>
-            </div>
+            <UserStatsCards
+              totalUsers={userStats.total}
+              pendingCount={userStats.pending}
+              verifiedCount={userStats.verified}
+              suspendedCount={userStats.suspended}
+              adminCount={userStats.admins}
+              activeFilter={filterStatus}
+              onFilterChange={setFilterStatus}
+            />
 
             {/* Pending Users Alert */}
-            {users.filter(u => u.verification_status === 'pending' || !u.is_approved).length > 0 && filterStatus !== 'pending' && (
-              <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
-                        <AlertTriangle className="h-5 w-5 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-amber-800 dark:text-amber-200">
-                          {users.filter(u => u.verification_status === 'pending' || !u.is_approved).length} Users Awaiting Approval
-                        </p>
-                        <p className="text-sm text-amber-600 dark:text-amber-400">
-                          New users are waiting for your approval to access the system
-                        </p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={() => setFilterStatus('pending')}
-                      className="bg-amber-600 hover:bg-amber-700 text-white"
-                    >
-                      Review Now
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <PendingUsersAlert
+              pendingCount={userStats.pending}
+              onReviewClick={() => setFilterStatus('pending')}
+              isVisible={filterStatus !== 'pending'}
+            />
 
             {/* Search Bar */}
             <Card>
@@ -615,130 +506,20 @@ export default function AdminProfile() {
                 ) : (
                   <div className="space-y-3">
                     {filteredUsers.map((user) => (
-                      <Card 
-                        key={user.id} 
-                        className={`p-4 transition-all ${
-                          updatingUserId === user.id 
-                            ? 'ring-2 ring-primary animate-pulse' 
-                            : ''
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <Avatar className="h-12 w-12">
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                              {user.first_name?.[0] || user.email[0].toUpperCase()}
-                              {user.last_name?.[0] || ''}
-                            </AvatarFallback>
-                          </Avatar>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-base truncate">
-                                  {user.first_name && user.last_name 
-                                    ? `${user.first_name} ${user.last_name}`
-                                    : user.email
-                                  }
-                                  {user.id === currentUserId && (
-                                    <Badge variant="outline" className="ml-2 text-xs">You</Badge>
-                                  )}
-                                </h3>
-                                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                                {user.title && (
-                                  <p className="text-sm text-muted-foreground">{user.title}</p>
-                                )}
-                              </div>
-
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                  {(user.verification_status === 'pending' || !user.is_approved) && (
-                                    <>
-                                      <DropdownMenuItem onClick={() => handleApproveUser(user.id)}>
-                                        <UserCheck className="h-4 w-4 mr-2" />
-                                        Approve User
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem 
-                                        onClick={() => handleRejectUser(user.id)}
-                                        className="text-red-600"
-                                      >
-                                        <UserX className="h-4 w-4 mr-2" />
-                                        Reject User
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                    </>
-                                  )}
-                                  <DropdownMenuItem onClick={() => handleUnlockAccount(user.email)}>
-                                    <Unlock className="h-4 w-4 mr-2" />
-                                    Unlock Account
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => {
-                                    navigator.clipboard.writeText(user.email);
-                                    toast.success('Email copied to clipboard');
-                                  }}>
-                                    <Mail className="h-4 w-4 mr-2" />
-                                    Copy Email
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-
-                            <div className="space-y-2 mt-3">
-                              <div className="flex flex-wrap gap-2">
-                                {user.is_suspended ? (
-                                  <Badge variant="destructive" className="gap-1"><Ban className="h-3 w-3" />Suspended</Badge>
-                                ) : user.verification_status === 'pending' || !user.is_approved ? (
-                                  <Badge variant="secondary" className="gap-1"><Clock className="h-3 w-3" />Pending</Badge>
-                                ) : (
-                                  <Badge variant="default" className="gap-1 bg-green-600"><CheckCircle className="h-3 w-3" />Verified</Badge>
-                                )}
-                              </div>
-                              
-                              {user.verification_status === 'verified' && user.is_approved && !user.is_suspended && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-medium text-muted-foreground">Role:</span>
-                                  <Select
-                                    key={`${user.id}-${user.role}`}
-                                    value={user.role || 'standard'}
-                                    onValueChange={(value) => handleChangeRole(user.id, value as UserRole)}
-                                    disabled={user.id === currentUserId || updatingUserId === user.id}
-                                  >
-                                    <SelectTrigger className="w-[220px] h-8 text-sm font-medium border-2 hover:border-primary transition-colors">
-                                      <SelectValue>
-                                        {updatingUserId === user.id ? 'Updating...' : getRoleLabel(user.role || 'standard')}
-                                      </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {SYSTEM_ROLES.map((role) => (
-                                        <SelectItem key={role.value} value={role.value} className="font-medium">
-                                          <div className="flex items-center gap-2">
-                                            <div className={`h-2 w-2 rounded-full ${
-                                              role.color === 'red' ? 'bg-red-500' :
-                                              role.color === 'blue' ? 'bg-blue-500' :
-                                              role.color === 'green' ? 'bg-green-500' :
-                                              role.color === 'purple' ? 'bg-purple-500' :
-                                              role.color === 'orange' ? 'bg-orange-500' :
-                                              'bg-gray-500'
-                                            }`} />
-                                            {role.label}
-                                          </div>
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  {user.id === currentUserId && (
-                                    <span className="text-xs text-muted-foreground italic">(Cannot change your own role)</span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
+                      <UserListCard
+                        key={user.id}
+                        user={user}
+                        currentUserId={currentUserId}
+                        updatingUserId={updatingUserId}
+                        onApprove={handleApproveUser}
+                        onReject={handleRejectUser}
+                        onUnlock={handleUnlockAccount}
+                        onChangeRole={handleChangeRole}
+                        onCopyEmail={(email) => {
+                          navigator.clipboard.writeText(email);
+                          toast.success('Email copied to clipboard');
+                        }}
+                      />
                     ))}
                   </div>
                 )}
