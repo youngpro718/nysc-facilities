@@ -13,14 +13,12 @@ export function useVerificationMutations(
   ) => {
     try {
       if (approved) {
-        if (!selectedDepartment) {
-          toast.error('Please select a department');
-          return;
-        }
-
+        // Note: The database function expects p_role, not p_department_id
+        // For now, using 'standard' as default role
         const { error } = await supabase.rpc('approve_user_verification', {
           p_user_id: userId,
-          p_department_id: selectedDepartment
+          p_role: 'standard',
+          p_admin_notes: null
         });
 
         if (error) throw error;
@@ -28,7 +26,8 @@ export function useVerificationMutations(
         toast.success('User approved successfully');
       } else {
         const { error } = await supabase.rpc('reject_user_verification', {
-          p_user_id: userId
+          p_user_id: userId,
+          p_reason: null
         });
 
         if (error) throw error;
