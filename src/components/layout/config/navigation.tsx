@@ -234,8 +234,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Court Operations', icon: Gavel },
-      { title: 'My Requests', icon: FileText },
-      { title: 'My Issues', icon: MessageSquare },
+      { title: 'My Activity', icon: FileText },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
@@ -266,8 +265,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   // Standard user navigation
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
-    { title: 'My Requests', icon: FileText },
-    { title: 'My Issues', icon: MessageSquare },
+    { title: 'My Activity', icon: FileText },
     { type: "separator" },
     { title: 'Profile', icon: User },
   ];
@@ -289,8 +287,7 @@ export const adminNavigation: NavigationTab[] = getAdminNavigation();
 
 export const userNavigation: NavigationTab[] = [
   { title: 'Dashboard', icon: LayoutDashboard },
-  { title: 'My Requests', icon: FileText },
-  { title: 'My Issues', icon: MessageSquare },
+  { title: 'My Activity', icon: FileText },
   { type: "separator" },
   { title: 'Profile', icon: User },
 ];
@@ -335,8 +332,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     return [
       '/cmc-dashboard',
       '/court-operations',
-      '/my-requests',
-      '/my-issues',
+      '/my-activity',
       '', // Separator
       '/profile',
     ];
@@ -367,8 +363,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   // Standard user routes
   return [
     '/dashboard', // User Dashboard
-    '/my-requests',
-    '/my-issues',
+    '/my-activity',
     '', // Separator
     '/profile',
   ];

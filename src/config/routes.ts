@@ -57,26 +57,33 @@ export const routes: Record<string, RouteConfig> = {
   },
   
   // User request pages
+  '/my-activity': {
+    path: '/my-activity',
+    title: 'My Activity',
+    breadcrumbLabel: 'My Activity',
+    icon: FileText,
+    parent: '/dashboard',
+  },
   '/my-requests': {
     path: '/my-requests',
     title: 'My Key Requests',
-    breadcrumbLabel: 'My Key Requests',
+    breadcrumbLabel: 'Key Requests',
     icon: FileText,
-    parent: '/dashboard',
+    parent: '/my-activity',
   },
   '/my-supply-requests': {
     path: '/my-supply-requests',
     title: 'My Supply Requests',
-    breadcrumbLabel: 'My Supply Requests',
+    breadcrumbLabel: 'Supply Requests',
     icon: Package,
-    parent: '/dashboard',
+    parent: '/my-activity',
   },
   '/my-issues': {
     path: '/my-issues',
     title: 'My Issues',
-    breadcrumbLabel: 'My Issues',
+    breadcrumbLabel: 'Issues',
     icon: MessageSquare,
-    parent: '/dashboard',
+    parent: '/my-activity',
   },
   
   // Admin pages

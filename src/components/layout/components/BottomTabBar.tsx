@@ -76,17 +76,18 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     Dashboard: isAdmin ? "/" : "/dashboard",
     Spaces: "/spaces",
     Operations: "/operations",
-    Issues: "/issues",
+    Issues: "/operations?tab=issues",
     Occupants: "/occupants",
     Inventory: "/inventory",
     "Supply Requests": "/admin/supply-requests",
     "Supply Room": "/supply-room",
     Keys: "/keys",
     Lighting: "/lighting",
-    Maintenance: "/maintenance",
+    Maintenance: "/operations?tab=maintenance",
     "Court Operations": "/court-operations",
-    "My Requests": "/my-supply-requests",
-    "My Issues": "/my-issues",
+    "My Activity": "/my-activity",
+    "My Requests": "/my-activity?tab=keys", // Legacy - redirect to activity
+    "My Issues": "/my-activity?tab=issues", // Legacy - redirect to activity
     "Admin Profile": "/admin-profile",
     Profile: "/profile",
   };

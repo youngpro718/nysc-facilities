@@ -16,6 +16,7 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { Button } from "@/components/ui/button";
 import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
+import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { logger } from "@/lib/logger";
 
 const Layout = () => {
@@ -224,6 +225,9 @@ const Layout = () => {
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />
       )}
+      
+      {/* Floating Action Button for quick actions */}
+      {isAuthenticated && !isLoginPage && <FloatingActionButton />}
     </div>
   );
 };

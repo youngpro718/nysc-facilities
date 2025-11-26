@@ -23,6 +23,7 @@ import UserDashboard from "@/pages/UserDashboard";
 import MyRequests from "@/pages/MyRequests";
 import MyIssues from "@/pages/MyIssues";
 import MySupplyRequests from "@/pages/MySupplyRequests";
+import MyActivity from "@/pages/MyActivity";
 import AdminProfile from "@/pages/AdminProfile";
 import SystemSettings from "@/pages/SystemSettings";
 import VerificationPending from "@/pages/VerificationPending";
@@ -275,18 +276,15 @@ function AppContent() {
             <ThemeSettings />
           </ProtectedRoute>
         } />
-        {/* Legacy routes redirected to canonical Security tab */}
-        <Route path="settings/security/2fa" element={<Navigate to="/settings?tab=security" replace />} />
-        <Route path="settings/security/session" element={<Navigate to="/settings?tab=security" replace />} />
+        {/* Legacy routes redirected to Profile settings tab */}
+        <Route path="settings/security/2fa" element={<Navigate to="/profile?tab=settings" replace />} />
+        <Route path="settings/security/session" element={<Navigate to="/profile?tab=settings" replace />} />
         {/* Legacy operations routes redirected to consolidated Operations hub */}
         <Route path="issues" element={<Navigate to="/operations?tab=issues" replace />} />
         <Route path="maintenance" element={<Navigate to="/operations?tab=maintenance" replace />} />
-        <Route path="settings" element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="profile/settings" element={<Navigate to="/settings" replace />} />
+        {/* Settings now consolidated into Profile page */}
+        <Route path="settings" element={<Navigate to="/profile?tab=settings" replace />} />
+        <Route path="profile/settings" element={<Navigate to="/profile?tab=settings" replace />} />
 
         {/* User Routes */}
         <Route path="dashboard" element={
@@ -294,6 +292,13 @@ function AppContent() {
             <UserDashboard />
           </ProtectedRoute>
         } />
+        {/* Unified My Activity page */}
+        <Route path="my-activity" element={
+          <ProtectedRoute>
+            <MyActivity />
+          </ProtectedRoute>
+        } />
+        {/* Legacy routes - keep for backwards compatibility */}
         <Route path="my-requests" element={
           <ProtectedRoute>
             <MyRequests />
