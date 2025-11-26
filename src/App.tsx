@@ -24,6 +24,7 @@ import MyRequests from "@/pages/MyRequests";
 import MyIssues from "@/pages/MyIssues";
 import MySupplyRequests from "@/pages/MySupplyRequests";
 import MyActivity from "@/pages/MyActivity";
+import SuppliesHub from "@/pages/SuppliesHub";
 import AdminProfile from "@/pages/AdminProfile";
 import SystemSettings from "@/pages/SystemSettings";
 import VerificationPending from "@/pages/VerificationPending";
@@ -239,8 +240,14 @@ function AppContent() {
             <FormTemplatesAdmin />
           </ProtectedRoute>
         } />
-        {/* Supply Requests - User facing route */}
-        <Route path="supply-requests" element={<Navigate to="/my-supply-requests" replace />} />
+        {/* Unified Supplies Hub */}
+        <Route path="supplies" element={
+          <ProtectedRoute>
+            <SuppliesHub />
+          </ProtectedRoute>
+        } />
+        {/* Legacy Supply Routes - redirect to hub */}
+        <Route path="supply-requests" element={<Navigate to="/supplies?tab=my-requests" replace />} />
         <Route path="my-supply-requests" element={
           <ProtectedRoute>
             <MySupplyRequests />

@@ -81,6 +81,7 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     Inventory: "/inventory",
     "Supply Requests": "/admin/supply-requests",
     "Supply Room": "/supply-room",
+    "Supplies": "/supplies",
     Keys: "/keys",
     Lighting: "/lighting",
     Maintenance: "/operations?tab=maintenance",
