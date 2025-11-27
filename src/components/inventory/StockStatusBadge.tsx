@@ -18,7 +18,7 @@ interface StockStatusBadgeProps {
 
 export function getStockStatus(quantity: number, minimumQuantity: number = 0): StockStatus {
   if (quantity === 0) return "out_of_stock";
-  if (minimumQuantity > 0 && quantity <= minimumQuantity) return "low_stock";
+  if (minimumQuantity > 0 && quantity < minimumQuantity) return "low_stock";
   return "in_stock";
 }
 

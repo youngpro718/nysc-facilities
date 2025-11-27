@@ -51,7 +51,22 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
         throw new Error("Please enter a valid quantity");
       }
 
-      // Create transaction record
+      // Calculate new quantity
+      const newQuantity = adjustmentType === "add" 
+        ? item.quantity + adjustmentQuantity 
+        : adjustmentType === "remove"
+        ? Math.max(0, item.quantity - adjustmentQuantity)
+        : adjustmentQuantity;
+
+      // CRITICAL: First update the inventory_items table
+      const { error: updateError } = await supabase
+        .from("inventory_items")
+        .update({ quantity: newQuantity })
+        .eq("id", item.id);
+
+      if (updateError) throw updateError;
+
+      // Then create transaction record
       const { error: transactionError } = await supabase
         .from("inventory_item_transactions")
         .insert({
@@ -59,11 +74,7 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
           transaction_type: adjustmentType,
           quantity: adjustmentQuantity,
           previous_quantity: item.quantity,
-          new_quantity: adjustmentType === "add" 
-            ? item.quantity + adjustmentQuantity 
-            : adjustmentType === "remove"
-            ? Math.max(0, item.quantity - adjustmentQuantity)
-            : adjustmentQuantity,
+          new_quantity: newQuantity,
           notes: notes || null,
         });
 
