@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { Package, Plus, TrendingDown, History, Boxes, BarChart3, MapPin, AlertTriangle, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
-import { FORCED_MINIMUM } from "@/constants/inventory";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 export const InventoryDashboard = () => {
@@ -43,12 +42,14 @@ export const InventoryDashboard = () => {
         .in('status', ['submitted', 'pending']);
       if (typeof reqCount === 'number') setNewRequestsCount(reqCount);
 
-      // Low stock count
-      const { count: lowCount } = await supabase
+      // Low stock count - fetch items to compare quantity with minimum_quantity
+      const { data: allItems } = await supabase
         .from('inventory_items')
-        .select('id', { count: 'exact', head: true })
-        .gt('quantity', 0)
-        .lte('quantity', FORCED_MINIMUM);
+        .select('quantity, minimum_quantity');
+      
+      const lowCount = (allItems || []).filter(
+        item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity
+      ).length;
       if (typeof lowCount === 'number') setLowStockCount(lowCount);
     };
 
