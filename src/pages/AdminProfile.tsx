@@ -1,4 +1,4 @@
-import { ChevronLeft, Download, Copy, Check, Users, Shield, Settings as SettingsIcon, Activity, QrCode, Search, RefreshCw } from 'lucide-react';
+import { Download, Copy, Check, Users, Shield, Settings as SettingsIcon, Activity, QrCode, Search, RefreshCw } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,37 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminManagementTab } from "@/components/profile/reorganized/AdminManagementTab";
 import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
 
 import { TitleAccessManager } from "@/components/admin/TitleAccessManager";
-import { type UserRole, getRoleLabel } from "@/config/roles";
+import { type UserRole } from "@/config/roles";
 import { UserStatsCards, PendingUsersAlert, UserListCard } from "@/components/admin/users";
-import { supabase } from "@/lib/supabase";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { AdminQuickActions } from "@/components/settings/AdminQuickActions";
 import SecurityPanel from "@/components/admin/security/SecurityPanel";
 import AdminSettingsPanel from "@/components/admin/settings/AdminSettingsPanel";
 import { useUserStatistics } from "@/hooks/admin/useUserStatistics";
-import { useRateLimitManager } from "@/hooks/security/useRateLimitManager";
-
-interface UserProfile {
-  id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  title: string | null;
-  verification_status: 'pending' | 'verified' | 'rejected';
-  is_approved: boolean;
-  is_suspended: boolean;
-  suspension_reason: string | null;
-  created_at: string;
-  role?: UserRole; // Populated from user_roles table join
-  department?: { name: string };
-}
+import { useUserManagement, type FilterStatus } from "@/hooks/admin/useUserManagement";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
@@ -45,17 +29,27 @@ export default function AdminProfile() {
   const { isAdmin, userRole } = useRolePermissions();
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'verified' | 'suspended' | 'admins'>('all');
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const appUrl = window.location.origin;
-  const { resetLoginAttempts } = useRateLimitManager();
   
-  // Fetch real user statistics
+  // User management hook - handles all user data and mutations
+  const {
+    users,
+    userStats,
+    currentUserId,
+    isLoading: loading,
+    isRefreshing: refreshing,
+    filterUsers,
+    refreshUsers,
+    approveUser,
+    rejectUser,
+    changeRole,
+    unlockAccount,
+    updatingUserId,
+  } = useUserManagement();
+  
+  // Fetch real user statistics for dashboard
   const { data: stats, isLoading: statsLoading } = useUserStatistics();
   
   // Get active tab from URL or default to 'users'
@@ -66,197 +60,11 @@ export default function AdminProfile() {
     setSearchParams({ tab: value });
   };
 
-  useEffect(() => {
-    if (activeTab === 'users') {
-      loadCurrentUser();
-      loadUsers();
-    }
-  }, [activeTab]);
-
-  const loadCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setCurrentUserId(user?.id || null);
-  };
-
-  const loadUsers = async (showRefreshIndicator = false) => {
-    try {
-      if (showRefreshIndicator) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`*, department:departments(name)`)
-        .order('created_at', { ascending: false });
-
-      if (profilesError) throw profilesError;
-
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) throw rolesError;
-
-      const roleMap = new Map(userRoles?.map(r => [r.user_id, r.role]) || []);
-      const usersWithRoles = (profiles || []).map(profile => ({
-        ...profile,
-        role: roleMap.get(profile.id) as UserRole || 'standard',
-        department: (profile as any).department,
-      }));
-
-      setUsers(usersWithRoles);
-    } catch (error) {
-      console.error('Error loading users:', error);
-      toast.error('Failed to load users');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleManualRefresh = () => {
-    loadUsers(true);
-    toast.success('Refreshing user data...');
-  };
-
-  const handleApproveUser = async (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    const userName = user?.email || 'User';
-    
-    toast.loading('Approving user...', { id: 'approve-user' });
-    
-    try {
-      const { error } = await supabase.rpc('approve_user_verification', {
-        p_user_id: userId,
-        p_role: 'standard',
-        p_admin_notes: 'Approved via admin panel'
-      });
-      
-      if (error) throw error;
-      
-      toast.success(`✅ ${userName} has been approved!`, { id: 'approve-user' });
-      await loadUsers(true);
-    } catch (error) {
-      console.error('Error approving user:', error);
-      toast.error(`❌ Failed to approve ${userName}`, { id: 'approve-user' });
-    }
-  };
-
-  const handleRejectUser = async (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    const userName = user?.email || 'User';
-    
-    toast.loading('Rejecting user...', { id: 'reject-user' });
-    
-    try {
-      const { error } = await supabase.rpc('reject_user_verification', {
-        p_user_id: userId,
-        p_admin_notes: 'Rejected via admin panel'
-      });
-      
-      if (error) throw error;
-      
-      toast.success(`✅ ${userName} has been rejected`, { id: 'reject-user' });
-      await loadUsers(true);
-    } catch (error) {
-      console.error('Error rejecting user:', error);
-      toast.error(`❌ Failed to reject ${userName}`, { id: 'reject-user' });
-    }
-  };
-
-  const handleUnlockAccount = async (userEmail: string) => {
-    toast.loading('Unlocking account...', { id: 'unlock-account' });
-    
-    try {
-      const success = await resetLoginAttempts(userEmail);
-      
-      if (success) {
-        toast.success(`✅ Account unlocked for ${userEmail}`, { id: 'unlock-account' });
-      } else {
-        toast.error('Failed to unlock account', { id: 'unlock-account' });
-      }
-    } catch (error: any) {
-      console.error('Error unlocking account:', error);
-      toast.error(`❌ Failed to unlock account: ${error.message}`, { id: 'unlock-account' });
-    }
-  };
-
-  const handleChangeRole = async (userId: string, newRole: UserRole) => {
-    const user = users.find(u => u.id === userId);
-    const userName = user?.first_name && user?.last_name 
-      ? `${user.first_name} ${user.last_name}` 
-      : user?.email || 'User';
-    const roleLabel = getRoleLabel(newRole);
-    
-    setUpdatingUserId(userId);
-    toast.loading(`Changing role to ${roleLabel}...`, { id: 'change-role' });
-    
-    try {
-      // Use RPC function to update role (bypasses RLS policies)
-      const { data, error } = await supabase.rpc('admin_update_user_role', {
-        target_user_id: userId,
-        new_role: newRole
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Check if the function returned a success: false response
-      if (data && typeof data === 'object' && 'success' in data && !data.success) {
-        console.error('Function returned error:', data);
-        throw new Error(data.message || 'Role update failed');
-      }
-      
-      // Wait a moment for the database to fully commit the change
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Clear users state to force a fresh fetch
-      setUsers([]);
-      
-      toast.success(`✅ ${userName} is now a ${roleLabel}!`, { id: 'change-role' });
-      
-      // Reload users with fresh data
-      await loadUsers(true);
-    } catch (error: any) {
-      console.error('Error changing role:', error);
-      const errorMessage = error?.message || 'Unknown error';
-      toast.error(`❌ Failed to change role for ${userName}: ${errorMessage}`, { id: 'change-role' });
-    } finally {
-      setUpdatingUserId(null);
-    }
-  };
-
-  // Memoize statistics to avoid recalculating on every render
-  const userStats = useMemo(() => ({
-    total: users.length,
-    pending: users.filter(u => u.verification_status === 'pending' || !u.is_approved).length,
-    verified: users.filter(u => u.verification_status === 'verified' && u.is_approved && !u.is_suspended).length,
-    suspended: users.filter(u => u.is_suspended).length,
-    admins: users.filter(u => u.role === 'admin').length,
-  }), [users]);
-
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = !searchTerm || 
-        user.email?.toLowerCase().includes(searchLower) ||
-        user.first_name?.toLowerCase().includes(searchLower) ||
-        user.last_name?.toLowerCase().includes(searchLower);
-
-      if (!matchesSearch) return false;
-
-      switch (filterStatus) {
-        case 'pending': return user.verification_status === 'pending' || !user.is_approved;
-        case 'verified': return user.verification_status === 'verified' && user.is_approved && !user.is_suspended;
-        case 'suspended': return user.is_suspended;
-        case 'admins': return user.role === 'admin';
-        default: return true;
-      }
-    });
-  }, [users, searchTerm, filterStatus]);
+  // Filter users based on search and status
+  const filteredUsers = useMemo(() => 
+    filterUsers(searchTerm, filterStatus), 
+    [filterUsers, searchTerm, filterStatus]
+  );
 
   const copyToClipboard = async () => {
     try {
@@ -467,7 +275,7 @@ export default function AdminProfile() {
                     className="flex-1"
                   />
                   <Button
-                    onClick={handleManualRefresh}
+                    onClick={refreshUsers}
                     variant="outline"
                     size="sm"
                     disabled={refreshing}
@@ -511,10 +319,10 @@ export default function AdminProfile() {
                         user={user}
                         currentUserId={currentUserId}
                         updatingUserId={updatingUserId}
-                        onApprove={handleApproveUser}
-                        onReject={handleRejectUser}
-                        onUnlock={handleUnlockAccount}
-                        onChangeRole={handleChangeRole}
+                        onApprove={approveUser}
+                        onReject={rejectUser}
+                        onUnlock={unlockAccount}
+                        onChangeRole={changeRole}
                         onCopyEmail={(email) => {
                           navigator.clipboard.writeText(email);
                           toast.success('Email copied to clipboard');

@@ -31,21 +31,7 @@ import {
   Unlock 
 } from "lucide-react";
 import { SYSTEM_ROLES, getRoleLabel, type UserRole } from "@/config/roles";
-
-interface UserProfile {
-  id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  title: string | null;
-  verification_status: 'pending' | 'verified' | 'rejected';
-  is_approved: boolean;
-  is_suspended: boolean;
-  suspension_reason: string | null;
-  created_at: string;
-  role?: UserRole;
-  department?: { name: string };
-}
+import { type UserProfile } from "@/hooks/admin/useUserManagement";
 
 interface UserListCardProps {
   user: UserProfile;
