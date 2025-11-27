@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Package, TrendingDown, Plus } from "lucide-react";
 import { StockAdjustmentDialog } from "@/components/inventory/StockAdjustmentDialog";
-import { FORCED_MINIMUM } from "@/constants/inventory";
 
 type LowStockItem = {
   id: string;
@@ -61,7 +60,7 @@ export const LowStockPanel = () => {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        minimum_quantity: FORCED_MINIMUM,
+        minimum_quantity: item.minimum_quantity || 0,
         unit: item.unit || '',
         location_details: item.location_details || '',
         preferred_vendor: item.preferred_vendor || '',
@@ -101,10 +100,10 @@ export const LowStockPanel = () => {
           } as LowStockItem;
         });
 
-        return enriched.filter(item => item.quantity > 0 && item.quantity <= FORCED_MINIMUM);
+        return enriched.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity);
       } catch (e) {
-        console.warn('[LowStockPanel] enrichment failed, using base data:', e);
-        return base.filter(item => item.quantity > 0 && item.quantity <= FORCED_MINIMUM);
+        if (import.meta.env.DEV) console.warn('[LowStockPanel] enrichment failed, using base data:', e);
+        return base.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity);
       }
     },
   });
@@ -123,7 +122,7 @@ export const LowStockPanel = () => {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        minimum_quantity: FORCED_MINIMUM,
+        minimum_quantity: item.minimum_quantity || 0,
         unit: item.unit || '',
         location_details: item.location_details || '',
         preferred_vendor: item.preferred_vendor || '',
@@ -158,7 +157,7 @@ export const LowStockPanel = () => {
           } as LowStockItem;
         });
       } catch (e) {
-        console.warn('[LowStockPanel] enrichment (OOS) failed, using base data:', e);
+        if (import.meta.env.DEV) console.warn('[LowStockPanel] enrichment (OOS) failed, using base data:', e);
         return base;
       }
     },

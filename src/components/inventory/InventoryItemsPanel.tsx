@@ -134,8 +134,6 @@ export const InventoryItemsPanel = () => {
 
       const normalized = (data || []) as InventoryItem[];
 
-      // Debug: log count and returned items length to spot RLS or filter issues
-      console.debug('[InventoryItemsPanel] fetched', { totalCount: count, page, pageSize, itemsLength: normalized.length, searchQuery });
       return { items: normalized, total: count ?? 0 };
     },
     refetchOnWindowFocus: false,

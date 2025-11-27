@@ -62,7 +62,7 @@ export function FeatureDiscoveryCard() {
     return !user.is_approved || user.verification_status === 'rejected';
   };
 
-  const noRoleUsers = users.filter(u => !u.title && u.access_level !== 'admin');
+  const noRoleUsers = users.filter(u => !u.title && u.role !== 'admin');
   const issuesUsers = users.filter(hasIssues);
   const suspendedUsers = users.filter(u => (u as any).is_suspended);
 
@@ -125,7 +125,7 @@ export function FeatureDiscoveryCard() {
                 <UserCheck className="h-4 w-4 text-yellow-600" />
                 <span className="text-xs font-medium">Pending</span>
               </div>
-              <span className="text-2xl font-bold mt-1">{userStats.pendingApprovals}</span>
+              <span className="text-2xl font-bold mt-1">{userStats.pending}</span>
             </Button>
 
             <Button
@@ -169,7 +169,7 @@ export function FeatureDiscoveryCard() {
     </Card>
 
     <QuickActionsCard
-      pendingCount={userStats.pendingApprovals}
+      pendingCount={userStats.pending}
       suspendedCount={suspendedUsers.length}
       noRoleCount={noRoleUsers.length}
       issuesCount={issuesUsers.length}

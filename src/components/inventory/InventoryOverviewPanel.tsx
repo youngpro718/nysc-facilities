@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Package, TrendingDown, Folder, Activity, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FORCED_MINIMUM } from "@/constants/inventory";
 
 type InventoryStats = {
   total_items: number;
@@ -69,12 +68,17 @@ export const InventoryOverviewPanel = () => {
         txCountQuery,
       ]);
 
-      // Count low stock items directly in the database (0 < quantity <= threshold)
-      const { count: lowStockCount, error: lowStockError } = await supabase
+      // Count low stock items where quantity > 0 and quantity <= minimum_quantity
+      // Note: This requires fetching all items to compare quantity with minimum_quantity
+      const { data: allItems } = await supabase
         .from("inventory_items")
-        .select("id", { count: "exact", head: true })
-        .gt("quantity", 0)
-        .lte("quantity", FORCED_MINIMUM);
+        .select("quantity, minimum_quantity");
+      
+      const lowStockCount = (allItems || []).filter(
+        item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity
+      ).length;
+      
+      const lowStockError = null;
       if (lowStockError) {
         console.error('Error counting low stock items:', lowStockError);
       }
@@ -275,13 +279,18 @@ export const InventoryOverviewPanel = () => {
           id,
           name,
           quantity,
+          minimum_quantity,
           category_id
         `)
         .order("quantity", { ascending: true });
       if (error) throw error;
 
-      // Filter items that are below FORCED_MINIMUM
-      const filteredItems = (data || []).filter(item => (item?.quantity || 0) > 0 && (item?.quantity || 0) <= FORCED_MINIMUM);
+      // Filter items that are below their minimum_quantity
+      const filteredItems = (data || []).filter(item => 
+        (item?.quantity || 0) > 0 && 
+        (item?.minimum_quantity || 0) > 0 && 
+        (item?.quantity || 0) <= (item?.minimum_quantity || 0)
+      );
 
       // Enrich with category names
       const categoryIds = Array.from(new Set(filteredItems.map((i: any) => i.category_id).filter(Boolean)));
@@ -299,7 +308,7 @@ export const InventoryOverviewPanel = () => {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        minimum_quantity: FORCED_MINIMUM,
+        minimum_quantity: item.minimum_quantity || 0,
         // Only include a category name if we have one; otherwise leave undefined/null
         category_name: categoriesById.get(item.category_id) ?? null
       })) as LowStockItem[];

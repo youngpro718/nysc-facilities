@@ -42,10 +42,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
-// Temporary forced minimum threshold for low stock across the app (testing only)
-// TODO: Gate behind an env/feature flag and revert to DB-driven minimums when ready
-const FORCED_MINIMUM = 3;
-
 interface SupplyRequestWithDetails {
   id: string;
   title: string;
@@ -215,16 +211,19 @@ export function EnhancedSupplyManagement() {
           id,
           name,
           quantity,
+          minimum_quantity,
           inventory_categories (name)
         `);
 
       if (error) throw error;
 
-      // Use forced minimum for consistency across the app
+      // Use item-specific minimum_quantity for accurate low stock detection
       const lowStock = data.filter(
         (item: any) =>
           typeof item.quantity === 'number' &&
-          item.quantity <= FORCED_MINIMUM
+          typeof item.minimum_quantity === 'number' &&
+          item.quantity > 0 &&
+          item.quantity <= item.minimum_quantity
       );
       const totalItems = data.length;
       const totalValue = data.reduce((sum, item) => sum + item.quantity, 0);
@@ -250,11 +249,16 @@ export function EnhancedSupplyManagement() {
           id,
           name,
           quantity,
+          minimum_quantity,
           unit,
           inventory_categories(name)
         `)
-      // Apply forced minimum client-side for consistency
-      return (data || []).filter((item: any) => item.quantity <= FORCED_MINIMUM);
+      // Use item-specific minimum_quantity for accurate low stock detection
+      return (data || []).filter((item: any) => 
+        item.quantity > 0 && 
+        item.minimum_quantity > 0 && 
+        item.quantity <= item.minimum_quantity
+      );
     },
     enabled: isAdmin
   });
@@ -691,7 +695,7 @@ export function EnhancedSupplyManagement() {
                           )}
                         </div>
                         <p className="text-sm text-gray-600 mt-1">
-                          {item.quantity} {item.unit} (Min: {FORCED_MINIMUM})
+                          {item.quantity} {item.unit} (Min: {item.minimum_quantity})
                         </p>
                       </div>
                     </div>
