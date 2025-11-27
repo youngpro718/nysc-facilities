@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, ClipboardList, Send, Plus, X, CheckCircle, AlertTriangle, Search, Package, Check, ChevronsUpDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
-import { FORCED_MINIMUM } from '@/constants/inventory';
+import { isLowStock } from '@/constants/inventory';
 
 interface SupplyItem {
   item_id?: string; // Link to inventory item if selected
@@ -32,6 +32,7 @@ interface InventoryItemOption {
   id: string;
   name: string;
   quantity: number;
+  minimum_quantity?: number;
   unit?: string;
   category_name?: string;
 }
@@ -69,6 +70,7 @@ export default function SupplyRequestFormPage() {
           id,
           name,
           quantity,
+          minimum_quantity,
           unit,
           inventory_categories (name)
         `)
@@ -80,6 +82,7 @@ export default function SupplyRequestFormPage() {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
+        minimum_quantity: item.minimum_quantity,
         unit: item.unit,
         category_name: item.inventory_categories?.name
       }));
@@ -419,7 +422,7 @@ export default function SupplyRequestFormPage() {
                                         </div>
                                         <div className="text-xs text-muted-foreground">
                                           {invItem.quantity} {invItem.unit || 'units'} available
-                                          {invItem.quantity <= FORCED_MINIMUM && (
+                                          {isLowStock(invItem.quantity, invItem.minimum_quantity) && (
                                             <span className="text-destructive ml-2">• Low stock</span>
                                           )}
                                         </div>

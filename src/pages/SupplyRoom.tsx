@@ -17,17 +17,6 @@ export default function SupplyRoom() {
   
   // Also allow access for users assigned to Supply Department
   const isSupplyDepartmentUser = (profile as any)?.department === 'Supply Department';
-  
-  // Debug logging
-  console.log('SupplyRoom Debug:', {
-    isLoading,
-    permissionsLoading,
-    canManageSupplyRequests,
-    canManageInventory,
-    isSupplyDepartmentUser,
-    department: (profile as any)?.department,
-    profile
-  });
 
   // Show loading state while checking permissions
   if (isLoading || permissionsLoading) {

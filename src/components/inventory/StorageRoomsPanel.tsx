@@ -14,6 +14,7 @@ import {
   Box,
   AlertTriangle
 } from "lucide-react";
+import { isLowStock } from "@/constants/inventory";
 import {
   Accordion,
   AccordionContent,
@@ -141,8 +142,8 @@ export const StorageRoomsPanel = () => {
   // Combine storage rooms with their items
   const storageRoomsWithItems: StorageRoomWithItems[] = (storageRooms || []).map(room => {
     const roomItems = (inventoryItems || []).filter(item => item.storage_room_id === room.id);
-    // Low stock if quantity is below minimum
-    const lowStockItems = roomItems.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
+    // Low stock using shared logic
+    const lowStockItems = roomItems.filter(item => isLowStock(item.quantity, item.minimum_quantity));
     const totalQuantity = roomItems.reduce((sum, item) => sum + item.quantity, 0);
 
     return {
@@ -295,19 +296,19 @@ export const StorageRoomsPanel = () => {
                       ) : (
                         <div className="space-y-2">
                           {room.items.map((item) => {
-                            const isLowStock = item.quantity < item.minimum_quantity;
+                            const itemIsLowStock = isLowStock(item.quantity, item.minimum_quantity);
                             return (
                               <div
                                 key={item.id}
                                 className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                                  isLowStock 
+                                  itemIsLowStock 
                                     ? 'bg-destructive/5 border-destructive/20 hover:bg-destructive/10' 
                                     : 'bg-card border-border hover:bg-accent/50'
                                 }`}
                               >
                                 <div className="flex items-center gap-3 flex-1">
-                                  <div className={`p-2 rounded-md ${isLowStock ? 'bg-destructive/10' : 'bg-muted'}`}>
-                                    <Package className={`h-4 w-4 ${isLowStock ? 'text-destructive' : 'text-muted-foreground'}`} />
+                                  <div className={`p-2 rounded-md ${itemIsLowStock ? 'bg-destructive/10' : 'bg-muted'}`}>
+                                    <Package className={`h-4 w-4 ${itemIsLowStock ? 'text-destructive' : 'text-muted-foreground'}`} />
                                   </div>
                                   <div className="flex-1">
                                     <div className="font-medium text-foreground">{item.name}</div>
@@ -325,14 +326,14 @@ export const StorageRoomsPanel = () => {
                                     </Badge>
                                   )}
                                   <div className="text-right min-w-[80px]">
-                                    <div className={`font-semibold ${isLowStock ? 'text-destructive' : 'text-foreground'}`}>
+                                    <div className={`font-semibold ${itemIsLowStock ? 'text-destructive' : 'text-foreground'}`}>
                                       {item.quantity} {item.unit}
                                     </div>
                                     <div className="text-xs text-muted-foreground">
                                       Min: {item.minimum_quantity}
                                     </div>
                                   </div>
-                                  {isLowStock && (
+                                  {itemIsLowStock && (
                                     <Badge variant="destructive" className="ml-2 shrink-0">
                                       <TrendingDown className="h-3 w-3 mr-1" />
                                       Low

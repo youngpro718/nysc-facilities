@@ -5,6 +5,7 @@
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isLowStock, isOutOfStock } from "@/constants/inventory";
 
 export type StockStatus = "in_stock" | "low_stock" | "out_of_stock";
 
@@ -17,8 +18,8 @@ interface StockStatusBadgeProps {
 }
 
 export function getStockStatus(quantity: number, minimumQuantity: number = 0): StockStatus {
-  if (quantity === 0) return "out_of_stock";
-  if (minimumQuantity > 0 && quantity < minimumQuantity) return "low_stock";
+  if (isOutOfStock(quantity)) return "out_of_stock";
+  if (isLowStock(quantity, minimumQuantity)) return "low_stock";
   return "in_stock";
 }
 

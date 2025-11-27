@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Package, TrendingDown, Plus } from "lucide-react";
 import { StockAdjustmentDialog } from "@/components/inventory/StockAdjustmentDialog";
+import { isLowStock, isOutOfStock } from "@/constants/inventory";
 
 type LowStockItem = {
   id: string;
@@ -100,10 +101,10 @@ export const LowStockPanel = () => {
           } as LowStockItem;
         });
 
-        return enriched.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
+        return enriched.filter(item => isLowStock(item.quantity, item.minimum_quantity));
       } catch (e) {
         if (import.meta.env.DEV) console.warn('[LowStockPanel] enrichment failed, using base data:', e);
-        return base.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
+        return base.filter(item => isLowStock(item.quantity, item.minimum_quantity));
       }
     },
   });
@@ -164,7 +165,7 @@ export const LowStockPanel = () => {
   });
 
   const getStockLevel = (quantity: number, minimum: number) => {
-    if (quantity === 0) {
+    if (isOutOfStock(quantity)) {
       return {
         level: "critical",
         label: "Out of Stock",
@@ -172,7 +173,7 @@ export const LowStockPanel = () => {
         badgeClass: "",
       };
     }
-    if (quantity > 0 && quantity < minimum) {
+    if (isLowStock(quantity, minimum)) {
       return {
         level: "warning",
         label: "Low Stock",

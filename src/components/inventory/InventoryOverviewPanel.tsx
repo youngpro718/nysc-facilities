@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Package, TrendingDown, Folder, Activity, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { isLowStock } from "@/constants/inventory";
 
 type InventoryStats = {
   total_items: number;
@@ -68,20 +69,14 @@ export const InventoryOverviewPanel = () => {
         txCountQuery,
       ]);
 
-      // Count low stock items where quantity > 0 and quantity <= minimum_quantity
-      // Note: This requires fetching all items to compare quantity with minimum_quantity
+      // Count low stock items using shared logic
       const { data: allItems } = await supabase
         .from("inventory_items")
         .select("quantity, minimum_quantity");
       
       const lowStockCount = (allItems || []).filter(
-        item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
+        item => isLowStock(item.quantity, item.minimum_quantity)
       ).length;
-      
-      const lowStockError = null;
-      if (lowStockError) {
-        console.error('Error counting low stock items:', lowStockError);
-      }
       return {
         total_items: itemsResult.count || 0,
         total_categories: categoriesResult.count || 0,
@@ -285,11 +280,9 @@ export const InventoryOverviewPanel = () => {
         .order("quantity", { ascending: true });
       if (error) throw error;
 
-      // Filter items that are below their minimum_quantity
+      // Filter items that are below their minimum_quantity using shared logic
       const filteredItems = (data || []).filter(item => 
-        (item?.quantity || 0) > 0 && 
-        (item?.minimum_quantity || 0) > 0 && 
-        (item?.quantity || 0) < (item?.minimum_quantity || 0)
+        isLowStock(item?.quantity || 0, item?.minimum_quantity)
       );
 
       // Enrich with category names

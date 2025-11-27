@@ -76,8 +76,6 @@ export function useInventory(roomId: string) {
   const bulkCreateMutation = useMutation({
     mutationFn: async (items: Array<any>) => {
       try {
-        console.log('Bulk creating items:', items);
-
         // Transform items to ensure proper field mapping
         const transformedItems = items.map(item => ({
           name: item.name,
@@ -93,22 +91,14 @@ export function useInventory(roomId: string) {
           category_id: item.category_id || null, // This is the key fix - use category_id not category
         }));
 
-        console.log('Transformed items for database:', transformedItems);
-
         const { data, error } = await supabase
           .from("inventory_items")
           .insert(transformedItems)
           .select();
 
-        if (error) {
-          console.error('Database error during bulk insert:', error);
-          throw error;
-        }
-
-        console.log('Successfully inserted items:', data);
+        if (error) throw error;
         return data;
       } catch (error: any) {
-        console.error("Error creating items:", error);
         throw new Error(error.message || "Failed to create inventory items");
       }
     },
@@ -120,7 +110,6 @@ export function useInventory(roomId: string) {
       });
     },
     onError: (error: Error) => {
-      console.error('Bulk create mutation error:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -143,7 +132,6 @@ export function useInventory(roomId: string) {
         if (error) throw error;
         return updatedData;
       } catch (error: any) {
-        console.error("Error updating item:", error);
         throw new Error(error.message || "Failed to update inventory item");
       }
     },
@@ -173,7 +161,6 @@ export function useInventory(roomId: string) {
 
         if (error) throw error;
       } catch (error: any) {
-        console.error("Error deleting item:", error);
         throw new Error(error.message || "Failed to delete inventory item");
       }
     },
