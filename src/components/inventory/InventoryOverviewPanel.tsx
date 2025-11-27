@@ -75,7 +75,7 @@ export const InventoryOverviewPanel = () => {
         .select("quantity, minimum_quantity");
       
       const lowStockCount = (allItems || []).filter(
-        item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity
+        item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
       ).length;
       
       const lowStockError = null;
@@ -289,7 +289,7 @@ export const InventoryOverviewPanel = () => {
       const filteredItems = (data || []).filter(item => 
         (item?.quantity || 0) > 0 && 
         (item?.minimum_quantity || 0) > 0 && 
-        (item?.quantity || 0) <= (item?.minimum_quantity || 0)
+        (item?.quantity || 0) < (item?.minimum_quantity || 0)
       );
 
       // Enrich with category names

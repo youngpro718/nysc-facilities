@@ -48,7 +48,7 @@ export const InventoryDashboard = () => {
         .select('quantity, minimum_quantity');
       
       const lowCount = (allItems || []).filter(
-        item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity
+        item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
       ).length;
       if (typeof lowCount === 'number') setLowStockCount(lowCount);
     };
