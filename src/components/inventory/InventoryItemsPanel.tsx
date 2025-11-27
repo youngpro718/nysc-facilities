@@ -5,7 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Camera } from "lucide-react";
+import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Camera, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { StockStatusBadge } from "./StockStatusBadge";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
@@ -267,11 +275,6 @@ export const InventoryItemsPanel = () => {
     }
   };
 
-  const getStockStatus = (quantity: number, minimumQuantity: number) => {
-    if (quantity === 0) return { label: "Out of Stock", color: "bg-destructive text-destructive-foreground" };
-    if (quantity > 0 && quantity <= minimumQuantity) return { label: "Low Stock", color: "bg-destructive/10 text-destructive" };
-    return { label: "In Stock", color: "bg-secondary text-secondary-foreground" };
-  };
 
   if (isLoading) {
     return <div className="flex justify-center p-8">Loading inventory items...</div>;
@@ -422,91 +425,127 @@ export const InventoryItemsPanel = () => {
           </Card>
         ) : (
           items?.map((item) => {
-            const stockStatus = getStockStatus(item.quantity, item.minimum_quantity);
+            const category = categoriesById.get(item.category_id);
+            const room = roomsById.get(item.storage_room_id);
+            
             return (
               <Card key={item.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
+                <CardHeader className="pb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                     {/* Photo thumbnail if exists */}
                     {item.photo_url && (
                       <img 
                         src={item.photo_url} 
                         alt={item.name}
-                        className="w-16 h-16 object-cover rounded border"
+                        className="w-20 h-20 sm:w-16 sm:h-16 object-cover rounded border flex-shrink-0"
                       />
                     )}
                     
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-3">
-                        <CardTitle className="text-lg">{item.name}</CardTitle>
-                        <Badge className={stockStatus.color}>
-                          {stockStatus.label}
-                        </Badge>
-                        {(() => {
-                          const cat = categoriesById.get(item.category_id);
-                          if (!cat) return null;
-                          return (
-                            <Badge variant="outline">
-                              {cat.name}
-                            </Badge>
-                          );
-                        })()}
+                    <div className="flex-1 min-w-0 space-y-2">
+                      {/* Title row with badges */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <CardTitle className="text-lg truncate">{item.name}</CardTitle>
+                        <StockStatusBadge 
+                          quantity={item.quantity} 
+                          minimumQuantity={item.minimum_quantity}
+                          size="sm"
+                        />
+                        {category && (
+                          <Badge variant="outline" className="text-xs">
+                            {category.name}
+                          </Badge>
+                        )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      
+                      {/* Details row */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <Package className="h-4 w-4" />
-                          Quantity: {item.quantity} {item.unit && `(${item.unit})`}
+                          <Package className="h-4 w-4 flex-shrink-0" />
+                          <span>{item.quantity} {item.unit || 'units'}</span>
                         </div>
                         {item.minimum_quantity > 0 && (
                           <div className="flex items-center gap-1">
-                            <TrendingDown className="h-4 w-4" />
-                            Min: {item.minimum_quantity}
+                            <TrendingDown className="h-4 w-4 flex-shrink-0" />
+                            <span>Min: {item.minimum_quantity}</span>
                           </div>
                         )}
-                        {(() => {
-                          const room = roomsById.get(item.storage_room_id);
-                          if (!room) return null;
-                          return (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-4 w-4" />
-                              {room.name} {room.room_number ? `(${room.room_number})` : ""}
-                            </div>
-                          );
-                        })()}
+                        {room && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate">{room.name} {room.room_number ? `(${room.room_number})` : ""}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleStockAdjustment(item)}
-                      >
-                        Adjust Stock
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handlePhotoUpload(item)}
-                        title="Upload photo"
-                      >
-                        <Camera className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(item)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(item)}
-                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    {/* Actions - Desktop: inline buttons, Mobile: dropdown */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* Desktop actions */}
+                      <div className="hidden sm:flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStockAdjustment(item)}
+                        >
+                          Adjust Stock
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePhotoUpload(item)}
+                          title="Upload photo"
+                        >
+                          <Camera className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(item)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(item)}
+                          className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {/* Mobile actions dropdown */}
+                      <div className="sm:hidden">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => handleStockAdjustment(item)}>
+                              <Package className="h-4 w-4 mr-2" />
+                              Adjust Stock
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handlePhotoUpload(item)}>
+                              <Camera className="h-4 w-4 mr-2" />
+                              Upload Photo
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(item)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Item
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(item)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Item
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>

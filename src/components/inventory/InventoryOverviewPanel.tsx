@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Package, TrendingDown, Folder, Activity, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FORCED_MINIMUM } from "@/constants/inventory";
 
 type InventoryStats = {
   total_items: number;
@@ -35,10 +36,6 @@ type LowStockItem = {
 export const InventoryOverviewPanel = () => {
   const [range, setRange] = useState<"7d" | "30d" | "90d" | "ytd">("30d");
   const [typeFilter, setTypeFilter] = useState<"all" | "add" | "remove" | "adjustment">("all");
-
-  // TEMP: Force minimum threshold to 3 for testing across overview
-  const FORCED_MINIMUM = 3;
-
 
   const startDate = useMemo(() => {
     const now = new Date();

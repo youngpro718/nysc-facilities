@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,10 +12,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useInventory } from "@/components/inventory/hooks/useInventory";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Package, Plus, Minus, Camera, History, ImageIcon, Eye } from "lucide-react";
+import { Loader2, Package, Plus, Minus, Camera, History, ImageIcon, Eye, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ItemPhotoUpload } from "@/components/inventory/ItemPhotoUpload";
 import { ItemHistoryModal } from "@/components/inventory/ItemHistoryModal";
+import { StockStatusBadge } from "@/components/inventory/StockStatusBadge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface StorageInventoryModalProps {
   open: boolean;
@@ -38,6 +40,37 @@ export function StorageInventoryModal({
   const [selectedPhotoItem, setSelectedPhotoItem] = useState<any>(null);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
   const [photoPreviewItem, setPhotoPreviewItem] = useState<any>(null);
+  
+  // Pagination and search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState<"name" | "quantity">("name");
+  
+  // Filter and paginate items
+  const filteredItems = useMemo(() => {
+    if (!items) return [];
+    let filtered = items.filter(item => 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    // Sort
+    filtered.sort((a, b) => {
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      return b.quantity - a.quantity; // Descending for quantity
+    });
+    return filtered;
+  }, [items, searchQuery, sortBy]);
+  
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, page, pageSize]);
+  
+  // Reset page when search changes
+  React.useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   const handleAddItem = async () => {
     if (!newItemName.trim() || !newItemQuantity.trim()) {
@@ -137,8 +170,35 @@ export function StorageInventoryModal({
 
           {/* Inventory List */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Current Inventory</CardTitle>
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base">Current Inventory</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 sm:w-48">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search items..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 h-9"
+                    />
+                  </div>
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as "name" | "quantity")}>
+                    <SelectTrigger className="w-28 h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="name">Name</SelectItem>
+                      <SelectItem value="quantity">Quantity</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {filteredItems.length > 0 && (
+                <div className="text-sm text-muted-foreground mt-2">
+                  Showing {Math.min((page - 1) * pageSize + 1, filteredItems.length)}–{Math.min(page * pageSize, filteredItems.length)} of {filteredItems.length} items
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -146,9 +206,9 @@ export function StorageInventoryModal({
                   <Loader2 className="h-6 w-6 animate-spin" />
                   <span className="ml-2">Loading inventory...</span>
                 </div>
-              ) : items && items.length > 0 ? (
+              ) : paginatedItems.length > 0 ? (
                 <div className="space-y-3">
-                  {items.map((item) => (
+                  {paginatedItems.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center justify-between p-3 border rounded-lg"
@@ -185,16 +245,11 @@ export function StorageInventoryModal({
                                 {item.category.name}
                               </Badge>
                             )}
-                            {item.photo_url && (
-                              <Badge variant="secondary" className="text-xs">
-                                Has Photo
-                              </Badge>
-                            )}
-                            {item.minimum_quantity && item.quantity < item.minimum_quantity && (
-                              <Badge variant="destructive" className="text-xs">
-                                Low Stock
-                              </Badge>
-                            )}
+                            <StockStatusBadge 
+                              quantity={item.quantity} 
+                              minimumQuantity={item.minimum_quantity || 0}
+                              size="sm"
+                            />
                           </div>
                         </div>
                       </div>
@@ -256,12 +311,61 @@ export function StorageInventoryModal({
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Show:</span>
+                        <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                          <SelectTrigger className="w-16 h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5">5</SelectItem>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(p => Math.max(1, p - 1))}
+                          disabled={page === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm text-muted-foreground min-w-[80px] text-center">
+                          Page {page} of {totalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                          disabled={page >= totalPages}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center p-8 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No items in storage</p>
-                  <p className="text-sm">Add your first item above</p>
+                  {searchQuery ? (
+                    <>
+                      <p>No items match "{searchQuery}"</p>
+                      <p className="text-sm">Try a different search term</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>No items in storage</p>
+                      <p className="text-sm">Add your first item above</p>
+                    </>
+                  )}
                 </div>
               )}
             </CardContent>
