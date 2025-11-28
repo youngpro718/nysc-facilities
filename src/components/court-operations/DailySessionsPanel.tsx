@@ -14,7 +14,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCourtSessions, useCopyYesterdaySessions, useBulkCreateCourtSessions } from '@/hooks/useCourtSessions';
+import { useCourtSessions, useCopyYesterdaySessions } from '@/hooks/useCourtSessions';
 import { useCoverageAssignments } from '@/hooks/useCoverageAssignments';
 import { useSessionConflicts } from '@/hooks/useSessionConflicts';
 import { SessionPeriod, BuildingCode } from '@/types/courtSessions';
@@ -50,7 +50,6 @@ export function DailySessionsPanel() {
   );
 
   const copyYesterday = useCopyYesterdaySessions();
-  const bulkCreateSessions = useBulkCreateCourtSessions();
 
   const handleCopyYesterday = () => {
     const yesterday = subDays(selectedDate, 1);
@@ -258,32 +257,9 @@ export function DailySessionsPanel() {
         period={selectedPeriod}
         buildingCode={selectedBuilding}
         onApprove={(approvedData) => {
-          // Bulk insert approved sessions to court_sessions table
-          bulkCreateSessions.mutate({
-            sessions: approvedData.map(session => ({
-              part_number: session.part_number,
-              judge_name: session.judge_name,
-              room_number: session.room_number,
-              clerk_name: session.clerk_name,
-              calendar_day: session.calendar_day,
-              defendants: session.defendants,
-              purpose: session.purpose,
-              transfer_date: session.transfer_date,
-              top_charge: session.top_charge,
-              status: session.status,
-              attorney: session.attorney,
-              estimated_final_date: session.estimated_final_date,
-              part_sent_by: session.part_sent_by,
-            })),
-            date: selectedDate,
-            period: selectedPeriod,
-            buildingCode: selectedBuilding,
-          }, {
-            onSuccess: () => {
-              setShowReviewDialog(false);
-              setExtractedData([]);
-            }
-          });
+          // TODO: Implement bulk insert to court_sessions table
+          console.log('Approved data:', approvedData);
+          // This will be implemented with actual database insert
         }}
       />
     </div>

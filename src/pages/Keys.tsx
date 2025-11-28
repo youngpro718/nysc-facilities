@@ -1,3 +1,4 @@
+
 import { KeyInventorySection } from "@/components/keys/sections/KeyInventorySection";
 import { KeyAssignmentSection } from "@/components/keys/sections/KeyAssignmentSection";
 import { KeyHistorySection } from "@/components/keys/sections/KeyHistorySection";
@@ -12,7 +13,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyData } from "@/components/keys/types/KeyTypes";
 import { DataState, useDataState } from "@/ui";
-import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 export default function Keys() {
   const keyStatsQuery = useQuery({
@@ -36,7 +36,6 @@ export default function Keys() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-safe">
-      <Breadcrumb />
       <div className="space-y-1">
         <h1 className="text-xl sm:text-2xl font-bold">Key Management</h1>
         <p className="text-sm text-muted-foreground">

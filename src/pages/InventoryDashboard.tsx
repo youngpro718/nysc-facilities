@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Package, Plus, TrendingDown, History, Boxes, BarChart3, MapPin, AlertTriangle, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
-import { Breadcrumb } from "@/components/layout/Breadcrumb";
+import { FORCED_MINIMUM } from "@/constants/inventory";
 
 export const InventoryDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -42,14 +42,12 @@ export const InventoryDashboard = () => {
         .in('status', ['submitted', 'pending']);
       if (typeof reqCount === 'number') setNewRequestsCount(reqCount);
 
-      // Low stock count - fetch items to compare quantity with minimum_quantity
-      const { data: allItems } = await supabase
+      // Low stock count
+      const { count: lowCount } = await supabase
         .from('inventory_items')
-        .select('quantity, minimum_quantity');
-      
-      const lowCount = (allItems || []).filter(
-        item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
-      ).length;
+        .select('id', { count: 'exact', head: true })
+        .gt('quantity', 0)
+        .lte('quantity', FORCED_MINIMUM);
       if (typeof lowCount === 'number') setLowStockCount(lowCount);
     };
 
@@ -68,7 +66,6 @@ export const InventoryDashboard = () => {
 
   return (
     <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-      <Breadcrumb />
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>

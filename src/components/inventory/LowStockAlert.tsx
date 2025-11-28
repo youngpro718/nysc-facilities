@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Package, TrendingDown, ExternalLink } from "lucide-react";
 import { InventoryItem } from "@/components/spaces/inventory/types/inventoryTypes";
-import { isLowStock, isOutOfStock } from "@/constants/inventory";
 
 interface LowStockAlertProps {
   open: boolean;
@@ -23,23 +22,24 @@ export function LowStockAlert({
   roomName,
   onManageItem,
 }: LowStockAlertProps) {
-  // Filter items using shared stock status logic
+  // Temporary forced minimum for consistent low stock UI across app
+  const FORCED_MINIMUM = 3;
+  // Low stock: 0 < quantity <= FORCED_MINIMUM (exclude 0 which is out of stock)
   const lowStockItems = items.filter(item =>
-    isLowStock(item.quantity, item.minimum_quantity)
+    item.quantity > 0 && item.quantity <= FORCED_MINIMUM
   );
 
-  const outOfStockItems = items.filter(item => isOutOfStock(item.quantity));
+  const outOfStockItems = items.filter(item => item.quantity === 0);
 
   const getStockStatus = (item: InventoryItem) => {
-    if (isOutOfStock(item.quantity)) return { label: "Out of Stock", color: "bg-red-500" };
-    if (isLowStock(item.quantity, item.minimum_quantity)) return { label: "Low Stock", color: "bg-yellow-500" };
+    if (item.quantity === 0) return { label: "Out of Stock", color: "bg-red-500" };
+    if (item.quantity > 0 && item.quantity <= FORCED_MINIMUM) return { label: "Low Stock", color: "bg-yellow-500" };
     return { label: "Normal", color: "bg-green-500" };
   };
 
   const getUrgencyBadge = (item: InventoryItem) => {
-    if (isOutOfStock(item.quantity)) return { label: "Critical", variant: "destructive" as const };
-    const min = item.minimum_quantity || 0;
-    if (min > 0 && item.quantity < min / 2) return { label: "High", variant: "destructive" as const };
+    if (item.quantity === 0) return { label: "Critical", variant: "destructive" as const };
+    if (item.quantity < FORCED_MINIMUM / 2) return { label: "High", variant: "destructive" as const };
     return { label: "Medium", variant: "secondary" as const };
   };
 
@@ -143,7 +143,7 @@ export function LowStockAlert({
                         
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                           <span>Current: {item.quantity} {item.unit || 'units'}</span>
-                          <span>Minimum: {item.minimum_quantity || 0} {item.unit || 'units'}</span>
+                          <span>Minimum: {FORCED_MINIMUM} {item.unit || 'units'}</span>
                         </div>
 
                         {item.category && (

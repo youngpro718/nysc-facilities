@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +35,8 @@ export function ImprovedSupplyStaffDashboard() {
   const { data: allOrders, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['supply-staff-orders'],
     queryFn: async () => {
+      console.log('Fetching supply orders for staff...');
+      
       const { data, error } = await supabase
         .from('supply_requests')
         .select(`
@@ -60,8 +62,12 @@ export function ImprovedSupplyStaffDashboard() {
         .in('status', ['pending', 'approved', 'ready'])
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
 
+      console.log('Fetched orders:', data?.length || 0);
       setLastUpdated(new Date());
       return data || [];
     },
@@ -110,7 +116,7 @@ export function ImprovedSupplyStaffDashboard() {
   });
 
   // Subscribe to real-time updates
-  useEffect(() => {
+  useState(() => {
     const channel = supabase
       .channel('supply-staff-changes')
       .on(
@@ -121,6 +127,7 @@ export function ImprovedSupplyStaffDashboard() {
           table: 'supply_requests',
         },
         () => {
+          console.log('Supply request changed, refetching...');
           refetch();
         }
       )
@@ -129,7 +136,7 @@ export function ImprovedSupplyStaffDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetch]);
+  });
 
   // Filter orders by status and search
   const ordersToFilter = activeTab === 'completed' ? (completedOrders || []) : (allOrders || []);

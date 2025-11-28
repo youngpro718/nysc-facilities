@@ -1,21 +1,6 @@
 // Shared inventory-related constants
-
-/**
- * Determines if an item is low on stock.
- * Low stock = quantity is above 0 but below the minimum threshold.
- * Items with no minimum set (0 or undefined) are never considered low stock.
- */
-export function isLowStock(quantity: number, minimumQuantity: number | null | undefined): boolean {
-  const min = minimumQuantity ?? 0;
-  return quantity > 0 && min > 0 && quantity < min;
-}
-
-/**
- * Determines if an item is out of stock.
- */
-export function isOutOfStock(quantity: number): boolean {
-  return quantity === 0;
-}
+// Centralized minimum stock threshold used across the app
+export const FORCED_MINIMUM = 3;
 
 // Common units for inventory items
 export const INVENTORY_UNITS = [

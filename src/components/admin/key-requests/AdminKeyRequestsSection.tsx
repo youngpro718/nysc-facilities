@@ -11,7 +11,6 @@ import { AdminKeyRequestCard } from "./AdminKeyRequestCard";
 import { useKeyRequests } from "@/hooks/useKeyRequests";
 import { useUpdateKeyRequestStatus } from "@/hooks/useKeyRequestWorkflow";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export function AdminKeyRequestsSection() {
@@ -21,7 +20,6 @@ export function AdminKeyRequestsSection() {
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  const { user } = useAuth();
   const { data: allRequests, isLoading } = useKeyRequests();
   const { data: notifications } = useAdminNotifications();
   const updateStatus = useUpdateKeyRequestStatus();
@@ -48,7 +46,7 @@ export function AdminKeyRequestsSection() {
 
   const unreadNotifications = (notifications || []).filter(n => 
     n.notification_type === 'new_key_request' && 
-    !(n.read_by || []).includes(user?.id || '')
+    !(n.read_by || []).includes('current-user') // TODO: Replace with actual user ID
   ).length;
 
   const handleApprove = (requestId: string) => {
