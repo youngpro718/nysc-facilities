@@ -153,6 +153,11 @@ export const RoomFormSchema = z.object({
   technologyInstalled: z.array(z.string()).nullable().optional(),
   securityLevel: z.string().nullable().optional(),
   environmentalControls: z.string().nullable().optional(),
+  // Lighting fields
+  ceilingHeight: z.enum(['standard', 'high', 'double_height']).nullable().optional(),
+  expectedFixtureCount: z.number().min(0).nullable().optional(),
+  primaryBulbType: z.enum(['LED', 'Fluorescent', 'Mixed']).nullable().optional(),
+  lightingNotes: z.string().nullable().optional(),
 });
 
 // Export types derived from the schema

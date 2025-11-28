@@ -18,6 +18,8 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { RouteProgressIndicator } from './RouteProgressIndicator';
 import { useHallwayLandmarks, useHallwayDetails } from '@/hooks/useHallwayLandmarks';
+import { AdjacentRoomsPanel } from './AdjacentRoomsPanel';
+import { useAdjacentRooms } from '@/hooks/useAdjacentRooms';
 
 interface WalkthroughModeProps {
   hallwayId: string;
@@ -39,6 +41,11 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
   // Fetch landmarks and hallway details
   const { data: landmarks = [] } = useHallwayLandmarks(hallwayId);
   const { data: hallwayDetails } = useHallwayDetails(hallwayId);
+  
+  // Fetch adjacent rooms on the same floor
+  const { data: adjacentRooms = [], isLoading: isLoadingRooms } = useAdjacentRooms(
+    hallwayDetails?.floor_id || null
+  );
 
   const currentFixture = fixtures[currentIndex];
   const progress = ((currentIndex + 1) / fixtures.length) * 100;
@@ -263,6 +270,9 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
           </CardContent>
         </Card>
       )}
+
+      {/* Adjacent Rooms Panel */}
+      <AdjacentRoomsPanel rooms={adjacentRooms} isLoading={isLoadingRooms} />
     </div>
   );
 }

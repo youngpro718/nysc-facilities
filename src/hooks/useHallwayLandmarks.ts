@@ -39,7 +39,7 @@ export function useHallwayDetails(hallwayId: string | null) {
 
       const { data, error } = await supabase
         .from('hallways')
-        .select('id, name, code, start_reference, end_reference, estimated_walk_time_seconds')
+        .select('id, name, code, start_reference, end_reference, estimated_walk_time_seconds, floor_id')
         .eq('id', hallwayId)
         .single();
 
