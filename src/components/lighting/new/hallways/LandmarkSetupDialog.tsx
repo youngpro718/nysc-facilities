@@ -127,8 +127,17 @@ export function LandmarkSetupDialog({ hallwayId, hallwayName }: LandmarkSetupDia
       </DialogTrigger>
       <DialogContent 
         className="max-w-2xl max-h-[80vh] overflow-y-auto"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement;
+          // Prevent closing when clicking Select dropdowns
+          if (
+            target.closest('[role="listbox"]') || 
+            target.closest('[data-radix-select-content]') ||
+            target.closest('[data-radix-popper-content-wrapper]')
+          ) {
+            e.preventDefault();
+          }
+        }}
       >
         <DialogHeader>
           <DialogTitle>Configure Route: {hallwayName}</DialogTitle>
