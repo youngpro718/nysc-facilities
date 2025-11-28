@@ -20,6 +20,7 @@ import { RouteProgressIndicator } from './RouteProgressIndicator';
 import { useHallwayLandmarks, useHallwayDetails } from '@/hooks/useHallwayLandmarks';
 import { AdjacentRoomsPanel } from './AdjacentRoomsPanel';
 import { useHallwayRooms } from '@/hooks/useHallwayRooms';
+import { QuickRoomAssignment } from './QuickRoomAssignment';
 
 interface WalkthroughModeProps {
   hallwayId: string;
@@ -275,6 +276,16 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
         totalFixtures={fixtures.length}
         isLoading={isLoadingRooms} 
       />
+
+      {/* Quick Room Assignment Floating Button */}
+      {hallwayDetails?.floor_id && (
+        <QuickRoomAssignment
+          hallwayId={hallwayId}
+          floorId={hallwayDetails.floor_id}
+          currentProgress={progress / 100}
+          assignedRoomIds={hallwayRooms.map(r => r.room_id)}
+        />
+      )}
     </div>
   );
 }
