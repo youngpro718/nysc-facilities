@@ -16,6 +16,8 @@ import { LightingFixture, LightStatus } from '@/types/lighting';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { RouteProgressIndicator } from './RouteProgressIndicator';
+import { useHallwayLandmarks, useHallwayDetails } from '@/hooks/useHallwayLandmarks';
 
 interface WalkthroughModeProps {
   hallwayId: string;
@@ -33,6 +35,10 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
   const [currentIndex, setCurrentIndex] = useState(0);
   const [updates, setUpdates] = useState<{ [key: string]: FixtureUpdate }>({});
   const queryClient = useQueryClient();
+
+  // Fetch landmarks and hallway details
+  const { data: landmarks = [] } = useHallwayLandmarks(hallwayId);
+  const { data: hallwayDetails } = useHallwayDetails(hallwayId);
 
   const currentFixture = fixtures[currentIndex];
   const progress = ((currentIndex + 1) / fixtures.length) * 100;
@@ -111,6 +117,15 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
           {currentIndex + 1} of {fixtures.length} fixtures
         </div>
       </div>
+
+      {/* Route Progress Indicator */}
+      <RouteProgressIndicator
+        landmarks={landmarks}
+        currentFixtureSequence={currentFixture.sequence_number || currentIndex + 1}
+        totalFixtures={fixtures.length}
+        startReference={hallwayDetails?.start_reference}
+        endReference={hallwayDetails?.end_reference}
+      />
 
       {/* Progress Bar */}
       <div>

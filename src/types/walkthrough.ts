@@ -38,6 +38,18 @@ export interface HallwayWithHierarchy {
   status: string;
 }
 
+export interface HallwayLandmark {
+  id: string;
+  hallway_id: string;
+  name: string;
+  type: 'elevator_bank' | 'stairwell' | 'entrance' | 'intersection' | 'room' | 'other';
+  sequence_order: number;
+  fixture_range_start: number | null;
+  fixture_range_end: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type QuickAction = 'mark_out' | 'ballast_issue' | 'maintenance_needed' | 'mark_functional' | 'skip';
 
 export interface QuickActionResult {
