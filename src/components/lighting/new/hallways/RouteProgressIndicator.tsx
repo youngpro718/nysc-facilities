@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ArrowRight, Lightbulb } from 'lucide-react';
+import { MapPin, ArrowRight, ArrowUpDown, TrendingUp, DoorOpen, GitBranch, DoorClosed, MapPinned } from 'lucide-react';
 import { HallwayLandmark } from '@/hooks/useHallwayLandmarks';
 import { HallwayRoom } from '@/hooks/useHallwayRooms';
 
@@ -80,6 +80,23 @@ export function RouteProgressIndicator({
 
   const currentProgress = (currentFixtureSequence / totalFixtures) * 100;
 
+  const getLandmarkIcon = (type: HallwayLandmark['type']) => {
+    switch (type) {
+      case 'elevator_bank':
+        return <ArrowUpDown className="h-4 w-4 text-blue-500" />;
+      case 'stairwell':
+        return <TrendingUp className="h-4 w-4 text-green-500" />;
+      case 'entrance':
+        return <DoorOpen className="h-4 w-4 text-orange-500" />;
+      case 'intersection':
+        return <GitBranch className="h-4 w-4 text-purple-500" />;
+      case 'room':
+        return <DoorClosed className="h-4 w-4 text-muted-foreground" />;
+      default:
+        return <MapPinned className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
   const getRoomIcon = (room: HallwayRoom) => {
     const ceiling = room.room.ceiling_height === 'high' ? '🔺' : 
                     room.room.ceiling_height === 'double_height' ? '🏔️' : '⬜';
@@ -154,7 +171,9 @@ export function RouteProgressIndicator({
               style={{ left: `${getLandmarkPosition(landmark)}%` }}
             >
               <div className="relative -translate-x-1/2">
-                <div className="w-2 h-2 rounded-full bg-border" />
+                <div className="p-1 rounded-full bg-background shadow-sm border border-border">
+                  {getLandmarkIcon(landmark.type)}
+                </div>
                 <div className="absolute top-full mt-1 text-xs text-muted-foreground whitespace-nowrap -translate-x-1/2 left-1/2">
                   {landmark.name}
                 </div>
@@ -176,12 +195,19 @@ export function RouteProgressIndicator({
         {/* Context Text */}
         {context && (
           <div className="flex items-center justify-center gap-2">
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs flex items-center gap-1.5">
               {context.type === 'at' && (
-                <>Near: {context.landmark.name}</>
+                <>
+                  {getLandmarkIcon(context.landmark.type)}
+                  <span>Near: {context.landmark.name}</span>
+                </>
               )}
               {context.type === 'between' && (
-                <>Between {context.before.name} and {context.after.name}</>
+                <>
+                  {getLandmarkIcon(context.before.type)}
+                  <span>Between {context.before.name} and {context.after.name}</span>
+                  {getLandmarkIcon(context.after.type)}
+                </>
               )}
             </Badge>
           </div>
