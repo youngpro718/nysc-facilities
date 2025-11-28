@@ -125,7 +125,10 @@ export function LandmarkSetupDialog({ hallwayId, hallwayName }: LandmarkSetupDia
           Configure Route
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-2xl max-h-[80vh] overflow-y-auto"
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Configure Route: {hallwayName}</DialogTitle>
         </DialogHeader>
