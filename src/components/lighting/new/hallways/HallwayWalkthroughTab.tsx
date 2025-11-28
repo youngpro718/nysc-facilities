@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Building2, ArrowRight, Lightbulb, AlertCircle, CheckCircle } from 'lucide-react';
 import { useLightingHallways, useHallwayFixtures } from '@/hooks/useLightingHallways';
 import { WalkthroughMode } from './WalkthroughMode';
+import { LandmarkSetupDialog } from './LandmarkSetupDialog';
 
 export function HallwayWalkthroughTab() {
   const [selectedHallwayId, setSelectedHallwayId] = useState<string | null>(null);
@@ -117,10 +118,16 @@ export function HallwayWalkthroughTab() {
                       </div>
                     </div>
 
-                    <Button size="lg" className="ml-4">
-                      <span className="mr-2">Start Walkthrough</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2 ml-4">
+                      <LandmarkSetupDialog
+                        hallwayId={hallway.id}
+                        hallwayName={hallway.name}
+                      />
+                      <Button size="lg">
+                        <span className="mr-2">Start Walkthrough</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
