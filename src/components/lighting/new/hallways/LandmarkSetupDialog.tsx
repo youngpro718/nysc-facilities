@@ -119,8 +119,8 @@ export function LandmarkSetupDialog({ hallwayId, hallwayName }: LandmarkSetupDia
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant="outline" size="sm">
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
           <Settings className="h-4 w-4 mr-2" />
           Configure Route
         </Button>
