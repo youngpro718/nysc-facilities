@@ -1,10 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ArrowRight } from 'lucide-react';
+import { MapPin, ArrowRight, Lightbulb } from 'lucide-react';
 import { HallwayLandmark } from '@/hooks/useHallwayLandmarks';
+import { HallwayRoom } from '@/hooks/useHallwayRooms';
 
 interface RouteProgressIndicatorProps {
   landmarks: HallwayLandmark[];
+  hallwayRooms: HallwayRoom[];
   currentFixtureSequence: number;
   totalFixtures: number;
   startReference?: string | null;
@@ -13,11 +15,18 @@ interface RouteProgressIndicatorProps {
 
 export function RouteProgressIndicator({
   landmarks,
+  hallwayRooms,
   currentFixtureSequence,
   totalFixtures,
   startReference,
   endReference,
 }: RouteProgressIndicatorProps) {
+  // Group rooms by position
+  const roomsByPosition = {
+    start: hallwayRooms.filter(r => r.position === 'start'),
+    middle: hallwayRooms.filter(r => r.position === 'middle'),
+    end: hallwayRooms.filter(r => r.position === 'end'),
+  };
   // Determine current landmark context
   const getCurrentLandmarkContext = () => {
     if (landmarks.length === 0) return null;
@@ -71,9 +80,51 @@ export function RouteProgressIndicator({
 
   const currentProgress = (currentFixtureSequence / totalFixtures) * 100;
 
+  const getRoomIcon = (room: HallwayRoom) => {
+    const ceiling = room.room.ceiling_height === 'high' ? '🔺' : 
+                    room.room.ceiling_height === 'double_height' ? '🏔️' : '⬜';
+    const bulb = room.room.primary_bulb_type === 'LED' ? '💡' : 
+                 room.room.primary_bulb_type === 'Fluorescent' ? '🔆' : '🔄';
+    return `${ceiling}${bulb}`;
+  };
+
   return (
     <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
       <CardContent className="p-4 space-y-4">
+        {/* Room badges by position */}
+        {(roomsByPosition.start.length > 0 || roomsByPosition.middle.length > 0 || roomsByPosition.end.length > 0) && (
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            {/* Start rooms */}
+            <div className="space-y-1">
+              <div className="text-muted-foreground font-medium">START</div>
+              {roomsByPosition.start.map(room => (
+                <Badge key={room.id} variant="secondary" className="text-xs block truncate">
+                  {getRoomIcon(room)} {room.room.room_number}
+                </Badge>
+              ))}
+            </div>
+
+            {/* Middle rooms */}
+            <div className="space-y-1">
+              <div className="text-muted-foreground font-medium">MIDDLE</div>
+              {roomsByPosition.middle.map(room => (
+                <Badge key={room.id} variant="secondary" className="text-xs block truncate">
+                  {getRoomIcon(room)} {room.room.room_number}
+                </Badge>
+              ))}
+            </div>
+
+            {/* End rooms */}
+            <div className="space-y-1">
+              <div className="text-muted-foreground font-medium">END</div>
+              {roomsByPosition.end.map(room => (
+                <Badge key={room.id} variant="secondary" className="text-xs block truncate">
+                  {getRoomIcon(room)} {room.room.room_number}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Route Direction */}
         {(startReference || endReference) && (
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
