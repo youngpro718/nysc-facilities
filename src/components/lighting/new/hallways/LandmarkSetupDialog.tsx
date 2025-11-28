@@ -127,9 +127,11 @@ export function LandmarkSetupDialog({ hallwayId, hallwayName }: LandmarkSetupDia
       </DialogTrigger>
       <DialogContent 
         className="max-w-2xl max-h-[80vh] overflow-y-auto"
-        onInteractOutside={(e) => {
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerDownOutside={(e) => {
+          // Prevent closing when clicking Select dropdowns or any portal content
           const target = e.target as HTMLElement;
-          // Prevent closing when clicking Select dropdowns
           if (
             target.closest('[role="listbox"]') || 
             target.closest('[data-radix-select-content]') ||
@@ -137,6 +139,10 @@ export function LandmarkSetupDialog({ hallwayId, hallwayName }: LandmarkSetupDia
           ) {
             e.preventDefault();
           }
+        }}
+        onInteractOutside={(e) => {
+          // Prevent dialog from closing on any interaction with form elements
+          e.preventDefault();
         }}
       >
         <DialogHeader>

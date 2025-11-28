@@ -66,15 +66,17 @@ export function HallwayWalkthroughTab() {
             return (
               <Card
                 key={hallway.id}
-                className="hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => {
-                  setSelectedHallwayId(hallway.id);
-                  setIsWalkthroughActive(true);
-                }}
+                className="hover:bg-muted/50 transition-colors"
               >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => {
+                        setSelectedHallwayId(hallway.id);
+                        setIsWalkthroughActive(true);
+                      }}
+                    >
                       <div className="flex items-center gap-3 mb-2">
                         <Building2 className="h-5 w-5 text-muted-foreground" />
                         <div>
@@ -118,12 +120,18 @@ export function HallwayWalkthroughTab() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
                       <LandmarkSetupDialog
                         hallwayId={hallway.id}
                         hallwayName={hallway.name}
                       />
-                      <Button size="lg">
+                      <Button 
+                        size="lg"
+                        onClick={() => {
+                          setSelectedHallwayId(hallway.id);
+                          setIsWalkthroughActive(true);
+                        }}
+                      >
                         <span className="mr-2">Start Walkthrough</span>
                         <ArrowRight className="h-4 w-4" />
                       </Button>
