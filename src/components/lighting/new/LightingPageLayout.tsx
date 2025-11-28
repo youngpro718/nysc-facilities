@@ -1,59 +1,37 @@
-import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { 
   LayoutDashboard, 
   Lightbulb, 
   MapPin, 
-  Wrench, 
-  BarChart3,
-  Plus,
-  Settings,
-  Bell
+  AlertCircle,
+  BarChart3
 } from "lucide-react";
 import { useLightingTabs } from "./hooks/useLightingTabs";
-import { EnhancedDashboard } from "./dashboard/EnhancedDashboard";
 import { OverviewView } from "./overview/OverviewView";
 import { LocationCentricView } from "./location/LocationCentricView";
 import { StatusCentricView } from "./status/StatusCentricView";
-import { TemplatesBulkView } from "./templates/TemplatesBulkView";
 import { ReportsView } from "./reports/ReportsView";
 import { CreateLightingDialog } from "../CreateLightingDialog";
-import { SettingsDialog } from "./settings/SettingsDialog";
-import { QuickMarkView } from "../mobile/QuickMarkView";
-import { Smartphone } from "lucide-react";
+import { HallwayWalkthroughTab } from "./hallways/HallwayWalkthroughTab";
 
 export function LightingPageLayout() {
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [alertsExpanded, setAlertsExpanded] = useState(false);
-  const [showMobileWalkthrough, setShowMobileWalkthrough] = useState(false);
   const { state, setActiveTab } = useLightingTabs();
-
-  if (showMobileWalkthrough) {
-    return (
-      <div className="relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-4 left-4 z-10 bg-background/80 backdrop-blur"
-          onClick={() => setShowMobileWalkthrough(false)}
-        >
-          ← Back to Dashboard
-        </Button>
-        <QuickMarkView />
-      </div>
-    );
-  }
 
   const tabConfig = [
     {
       id: 'overview',
-      label: 'Overview',
+      label: 'Dashboard',
       icon: LayoutDashboard,
       component: OverviewView,
-      description: 'Executive dashboard with hallway status summaries'
+      description: 'Overview stats, health metrics, and priority alerts'
+    },
+    {
+      id: 'hallways',
+      label: 'Hallways',
+      icon: MapPin,
+      component: HallwayWalkthroughTab,
+      description: 'Hallway-focused walkthrough mode for quick inspections'
     },
     {
       id: 'location',
@@ -64,24 +42,17 @@ export function LightingPageLayout() {
     },
     {
       id: 'status',
-      label: 'By Status',
-      icon: Lightbulb,
+      label: 'Issues',
+      icon: AlertCircle,
       component: StatusCentricView,
-      description: 'Fixtures organized by functional status across hallways'
-    },
-    {
-      id: 'templates',
-      label: 'Templates & Bulk',
-      icon: Settings,
-      component: TemplatesBulkView,
-      description: 'Template management and bulk operations by hallway'
+      description: 'All fixtures organized by status and issues'
     },
     {
       id: 'reports',
       label: 'Reports',
       icon: BarChart3,
       component: ReportsView,
-      description: 'Multi-dimensional reporting (room, hallway, floor, status)'
+      description: 'Multi-dimensional reporting and analytics'
     }
   ];
 
@@ -102,37 +73,10 @@ export function LightingPageLayout() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => setShowMobileWalkthrough(true)}
-          >
-            <Smartphone className="h-4 w-4 mr-2" />
-            Quick Mark
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setActiveTab('overview')}
-          >
-            <Bell className="h-4 w-4 mr-2" />
-            View Alerts
-          </Button>
-          
           <CreateLightingDialog 
             onFixtureCreated={() => console.log('Fixture created')}
             onZoneCreated={() => console.log('Zone created')}
           />
-          
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setSettingsOpen(true)}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
         </div>
       </div>
 
@@ -158,8 +102,6 @@ export function LightingPageLayout() {
           </TabsContent>
         ))}
       </Tabs>
-
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }
