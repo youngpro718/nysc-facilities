@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Settings, Plus, Trash2, GripVertical } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
+import { Settings, Plus, Trash2, GripVertical, Building } from 'lucide-react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useHallwayLandmarks, useHallwayDetails } from '@/hooks/useHallwayLandmarks';
 import { createLandmark, deleteLandmark, updateHallwayReferences } from '@/services/hallwayLandmarkService';
 import { HallwayLandmark } from '@/types/walkthrough';
+import { useHallwayRooms, useAddHallwayRoom, useRemoveHallwayRoom } from '@/hooks/useHallwayRooms';
+import { supabase } from '@/lib/supabase';
 
 interface LandmarkSetupDialogProps {
   hallwayId: string;
@@ -36,10 +39,34 @@ export function LandmarkSetupDialog({ hallwayId, hallwayName }: LandmarkSetupDia
     fixtureStart: '',
     fixtureEnd: '',
   });
+  const [newRoom, setNewRoom] = useState({
+    room_id: '',
+    position: 'start' as 'start' | 'middle' | 'end',
+    side: 'left' as 'left' | 'right',
+  });
 
   const queryClient = useQueryClient();
   const { data: landmarks = [] } = useHallwayLandmarks(hallwayId);
   const { data: hallwayDetails } = useHallwayDetails(hallwayId);
+  const { data: hallwayRooms = [] } = useHallwayRooms(hallwayId);
+  const addRoomMutation = useAddHallwayRoom();
+  const removeRoomMutation = useRemoveHallwayRoom();
+
+  // Fetch available rooms on the same floor
+  const { data: availableRooms = [] } = useQuery({
+    queryKey: ['floor-rooms', hallwayDetails?.floor_id],
+    queryFn: async () => {
+      if (!hallwayDetails?.floor_id) return [];
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('id, name, room_number')
+        .eq('floor_id', hallwayDetails.floor_id)
+        .order('room_number', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!hallwayDetails?.floor_id,
+  });
 
   // Initialize start/end refs when dialog opens
   const handleOpenChange = (isOpen: boolean) => {
@@ -241,6 +268,136 @@ export function LandmarkSetupDialog({ hallwayId, hallwayName }: LandmarkSetupDia
                 <Plus className="h-4 w-4 mr-2" />
                 Add Landmark
               </Button>
+            </div>
+          </div>
+
+          {/* Rooms Along Route */}
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              <h3 className="font-semibold">Rooms Along Route</h3>
+              <Badge variant="secondary" className="ml-auto">{hallwayRooms.length}</Badge>
+            </div>
+            
+            {hallwayRooms.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No rooms assigned yet. Assign rooms to help technicians identify nearby spaces.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {hallwayRooms.map((hallwayRoom) => (
+                  <Card key={hallwayRoom.id}>
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-1">
+                          <div className="font-medium text-sm">
+                            {hallwayRoom.room.room_number} - {hallwayRoom.room.name}
+                          </div>
+                          <div className="flex gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline" className="text-xs">
+                              {hallwayRoom.position}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {hallwayRoom.side}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeRoomMutation.mutate({ id: hallwayRoom.id, hallwayId })}
+                        disabled={removeRoomMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Add New Room */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-sm font-medium">Assign Room</h4>
+              <div className="grid gap-3">
+                <div className="space-y-2">
+                  <Label>Room</Label>
+                  <Select
+                    value={newRoom.room_id}
+                    onValueChange={(value) => setNewRoom({ ...newRoom, room_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select room..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRooms
+                        .filter(room => !hallwayRooms.find(hr => hr.room_id === room.id))
+                        .map((room: any) => (
+                          <SelectItem key={room.id} value={room.id}>
+                            {room.room_number} - {room.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Position</Label>
+                    <Select
+                      value={newRoom.position}
+                      onValueChange={(value: 'start' | 'middle' | 'end') =>
+                        setNewRoom({ ...newRoom, position: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="start">Start</SelectItem>
+                        <SelectItem value="middle">Middle</SelectItem>
+                        <SelectItem value="end">End</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Side</Label>
+                    <Select
+                      value={newRoom.side}
+                      onValueChange={(value: 'left' | 'right') =>
+                        setNewRoom({ ...newRoom, side: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Left</SelectItem>
+                        <SelectItem value="right">Right</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    addRoomMutation.mutate({
+                      hallway_id: hallwayId,
+                      room_id: newRoom.room_id,
+                      position: newRoom.position,
+                      side: newRoom.side,
+                    });
+                    setNewRoom({ room_id: '', position: 'start', side: 'left' });
+                  }}
+                  disabled={!newRoom.room_id || addRoomMutation.isPending}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Room
+                </Button>
+              </div>
             </div>
           </div>
         </div>

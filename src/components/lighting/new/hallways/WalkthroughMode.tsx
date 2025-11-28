@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { RouteProgressIndicator } from './RouteProgressIndicator';
 import { useHallwayLandmarks, useHallwayDetails } from '@/hooks/useHallwayLandmarks';
 import { AdjacentRoomsPanel } from './AdjacentRoomsPanel';
-import { useAdjacentRooms } from '@/hooks/useAdjacentRooms';
+import { useHallwayRooms } from '@/hooks/useHallwayRooms';
 
 interface WalkthroughModeProps {
   hallwayId: string;
@@ -41,11 +41,7 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
   // Fetch landmarks and hallway details
   const { data: landmarks = [] } = useHallwayLandmarks(hallwayId);
   const { data: hallwayDetails } = useHallwayDetails(hallwayId);
-  
-  // Fetch adjacent rooms on the same floor
-  const { data: adjacentRooms = [], isLoading: isLoadingRooms } = useAdjacentRooms(
-    hallwayDetails?.floor_id || null
-  );
+  const { data: hallwayRooms = [], isLoading: isLoadingRooms } = useHallwayRooms(hallwayId);
 
   const currentFixture = fixtures[currentIndex];
   const progress = ((currentIndex + 1) / fixtures.length) * 100;
@@ -128,6 +124,7 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
       {/* Route Progress Indicator */}
       <RouteProgressIndicator
         landmarks={landmarks}
+        hallwayRooms={hallwayRooms}
         currentFixtureSequence={currentFixture.sequence_number || currentIndex + 1}
         totalFixtures={fixtures.length}
         startReference={hallwayDetails?.start_reference}
@@ -272,7 +269,12 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
       )}
 
       {/* Adjacent Rooms Panel */}
-      <AdjacentRoomsPanel rooms={adjacentRooms} isLoading={isLoadingRooms} />
+      <AdjacentRoomsPanel 
+        hallwayRooms={hallwayRooms} 
+        currentFixtureSequence={currentFixture.sequence_number || currentIndex + 1}
+        totalFixtures={fixtures.length}
+        isLoading={isLoadingRooms} 
+      />
     </div>
   );
 }
