@@ -5,7 +5,8 @@ import {
   Lightbulb, 
   MapPin, 
   AlertCircle,
-  BarChart3
+  BarChart3,
+  DoorOpen
 } from "lucide-react";
 import { useLightingTabs } from "./hooks/useLightingTabs";
 import { OverviewView } from "./overview/OverviewView";
@@ -14,6 +15,7 @@ import { StatusCentricView } from "./status/StatusCentricView";
 import { ReportsView } from "./reports/ReportsView";
 import { CreateLightingDialog } from "../CreateLightingDialog";
 import { HallwayWalkthroughTab } from "./hallways/HallwayWalkthroughTab";
+import { RoomMonitoringTab } from "./rooms/RoomMonitoringTab";
 
 export function LightingPageLayout() {
   const { state, setActiveTab } = useLightingTabs();
@@ -34,11 +36,11 @@ export function LightingPageLayout() {
       description: 'Hallway-focused walkthrough mode for quick inspections'
     },
     {
-      id: 'location',
-      label: 'By Location',
-      icon: MapPin,
-      component: LocationCentricView,
-      description: 'Hierarchical view: floors → hallways → rooms'
+      id: 'rooms',
+      label: 'Rooms',
+      icon: DoorOpen,
+      component: RoomMonitoringTab,
+      description: 'Monitor lighting fixtures room by room'
     },
     {
       id: 'status',
