@@ -1,8 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ArrowRight, ArrowUpDown, TrendingUp, DoorOpen, GitBranch, DoorClosed, MapPinned } from 'lucide-react';
+import { MapPin, ArrowRight } from 'lucide-react';
 import { HallwayLandmark } from '@/hooks/useHallwayLandmarks';
 import { HallwayRoom } from '@/hooks/useHallwayRooms';
+import { CorridorRoomCard } from './CorridorRoomCard';
+import { CorridorLandmark } from './CorridorLandmark';
 
 interface RouteProgressIndicatorProps {
   landmarks: HallwayLandmark[];
@@ -11,6 +13,8 @@ interface RouteProgressIndicatorProps {
   totalFixtures: number;
   startReference?: string | null;
   endReference?: string | null;
+  onRoomClick?: (roomId: string) => void;
+  onLandmarkClick?: (landmarkId: string) => void;
 }
 
 export function RouteProgressIndicator({
@@ -20,13 +24,35 @@ export function RouteProgressIndicator({
   totalFixtures,
   startReference,
   endReference,
+  onRoomClick,
+  onLandmarkClick,
 }: RouteProgressIndicatorProps) {
-  // Group rooms by position
-  const roomsByPosition = {
-    start: hallwayRooms.filter(r => r.position === 'start'),
-    middle: hallwayRooms.filter(r => r.position === 'middle'),
-    end: hallwayRooms.filter(r => r.position === 'end'),
+  // Group rooms by side
+  const leftRooms = hallwayRooms.filter(r => r.side === 'left').sort((a, b) => a.sequence_order - b.sequence_order);
+  const rightRooms = hallwayRooms.filter(r => r.side === 'right').sort((a, b) => a.sequence_order - b.sequence_order);
+
+  // Calculate horizontal position based on position field and sequence
+  const getHorizontalPosition = (room: HallwayRoom) => {
+    let basePosition = 0;
+    if (room.position === 'start') basePosition = 10;
+    else if (room.position === 'middle') basePosition = 45;
+    else if (room.position === 'end') basePosition = 80;
+    
+    // Offset by sequence within position group (small offset to avoid overlap)
+    const offset = room.sequence_order * 2;
+    return Math.min(95, basePosition + offset);
   };
+
+  // Calculate progress percentage for each landmark
+  const getLandmarkPosition = (landmark: HallwayLandmark) => {
+    const midPoint = landmark.fixture_range_start && landmark.fixture_range_end
+      ? (landmark.fixture_range_start + landmark.fixture_range_end) / 2
+      : landmark.fixture_range_start || 0;
+    return (midPoint / totalFixtures) * 100;
+  };
+
+  const currentProgress = (currentFixtureSequence / totalFixtures) * 100;
+
   // Determine current landmark context
   const getCurrentLandmarkContext = () => {
     if (landmarks.length === 0) return null;
@@ -70,78 +96,9 @@ export function RouteProgressIndicator({
 
   const context = getCurrentLandmarkContext();
 
-  // Calculate progress percentage for each landmark
-  const getLandmarkPosition = (landmark: HallwayLandmark) => {
-    const midPoint = landmark.fixture_range_start && landmark.fixture_range_end
-      ? (landmark.fixture_range_start + landmark.fixture_range_end) / 2
-      : landmark.fixture_range_start || 0;
-    return (midPoint / totalFixtures) * 100;
-  };
-
-  const currentProgress = (currentFixtureSequence / totalFixtures) * 100;
-
-  const getLandmarkIcon = (type: HallwayLandmark['type']) => {
-    switch (type) {
-      case 'elevator_bank':
-        return <ArrowUpDown className="h-4 w-4 text-blue-500" />;
-      case 'stairwell':
-        return <TrendingUp className="h-4 w-4 text-green-500" />;
-      case 'entrance':
-        return <DoorOpen className="h-4 w-4 text-orange-500" />;
-      case 'intersection':
-        return <GitBranch className="h-4 w-4 text-purple-500" />;
-      case 'room':
-        return <DoorClosed className="h-4 w-4 text-muted-foreground" />;
-      default:
-        return <MapPinned className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getRoomIcon = (room: HallwayRoom) => {
-    const ceiling = room.room.ceiling_height === 'high' ? '🔺' : 
-                    room.room.ceiling_height === 'double_height' ? '🏔️' : '⬜';
-    const bulb = room.room.primary_bulb_type === 'LED' ? '💡' : 
-                 room.room.primary_bulb_type === 'Fluorescent' ? '🔆' : '🔄';
-    return `${ceiling}${bulb}`;
-  };
-
   return (
-    <Card className="bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-      <CardContent className="p-4 space-y-4">
-        {/* Room badges by position */}
-        {(roomsByPosition.start.length > 0 || roomsByPosition.middle.length > 0 || roomsByPosition.end.length > 0) && (
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            {/* Start rooms */}
-            <div className="space-y-1">
-              <div className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wide">START</div>
-              {roomsByPosition.start.map(room => (
-                <Badge key={room.id} variant="outline" className="text-xs block truncate bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600">
-                  {getRoomIcon(room)} {room.room.room_number}
-                </Badge>
-              ))}
-            </div>
-
-            {/* Middle rooms */}
-            <div className="space-y-1">
-              <div className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wide">MIDDLE</div>
-              {roomsByPosition.middle.map(room => (
-                <Badge key={room.id} variant="outline" className="text-xs block truncate bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600">
-                  {getRoomIcon(room)} {room.room.room_number}
-                </Badge>
-              ))}
-            </div>
-
-            {/* End rooms */}
-            <div className="space-y-1">
-              <div className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wide">END</div>
-              {roomsByPosition.end.map(room => (
-                <Badge key={room.id} variant="outline" className="text-xs block truncate bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600">
-                  {getRoomIcon(room)} {room.room.room_number}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
+    <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+      <CardContent className="p-4 space-y-3">
         {/* Route Direction */}
         {(startReference || endReference) && (
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -155,59 +112,92 @@ export function RouteProgressIndicator({
           </div>
         )}
 
-        {/* Visual Route Bar */}
-        <div className="relative h-12 bg-slate-200 dark:bg-slate-800 rounded-full border border-slate-300 dark:border-slate-600">
-          {/* Progress fill */}
-          <div
-            className="absolute inset-y-0 left-0 bg-primary/40 transition-all duration-300"
-            style={{ width: `${currentProgress}%` }}
-          />
-
-          {/* Landmark markers */}
-          {landmarks.map((landmark) => (
+        {/* Left Side Rooms */}
+        <div className="relative h-10">
+          {leftRooms.map((room) => (
             <div
-              key={landmark.id}
-              className="absolute inset-y-0 flex items-center"
-              style={{ left: `${getLandmarkPosition(landmark)}%` }}
+              key={room.id}
+              className="absolute top-0"
+              style={{ left: `${getHorizontalPosition(room)}%`, transform: 'translateX(-50%)' }}
             >
-              <div className="relative -translate-x-1/2">
-                <div className="p-1.5 rounded-full bg-white dark:bg-slate-800 shadow-md border-2 border-slate-300 dark:border-slate-500">
-                  {getLandmarkIcon(landmark.type)}
-                </div>
-                <div className="absolute top-full mt-1 text-xs font-medium text-slate-700 dark:text-slate-300 max-w-[80px] text-center -translate-x-1/2 left-1/2 truncate">
-                  {landmark.name}
-                </div>
-              </div>
+              <CorridorRoomCard 
+                room={room} 
+                onClick={() => onRoomClick?.(room.room_id)}
+              />
             </div>
           ))}
+        </div>
 
-          {/* Current position indicator */}
-          <div
-            className="absolute inset-y-0 flex items-center transition-all duration-300 z-10"
-            style={{ left: `${currentProgress}%` }}
-          >
-            <div className="relative -translate-x-1/2">
-              <MapPin className="h-7 w-7 text-blue-600 fill-blue-500 animate-pulse drop-shadow-lg" />
+        {/* Corridor Bar with Landmarks */}
+        <div className="relative">
+          {/* START/MIDDLE/END Labels */}
+          <div className="absolute -top-5 left-0 right-0 flex justify-between px-2 text-xs font-semibold text-primary/60 uppercase tracking-wide">
+            <span>Start</span>
+            <span>Middle</span>
+            <span>End</span>
+          </div>
+
+          {/* Visual Route Bar */}
+          <div className="relative h-8 bg-primary/10 rounded-full border-2 border-primary/20">
+            {/* Progress fill */}
+            <div
+              className="absolute inset-y-0 left-0 bg-primary/30 rounded-full transition-all duration-300"
+              style={{ width: `${currentProgress}%` }}
+            />
+
+            {/* Landmark markers */}
+            {landmarks.map((landmark) => (
+              <div
+                key={landmark.id}
+                className="absolute inset-y-0 flex items-center z-20"
+                style={{ left: `${getLandmarkPosition(landmark)}%` }}
+              >
+                <div className="relative -translate-x-1/2">
+                  <CorridorLandmark 
+                    landmark={landmark} 
+                    onClick={() => onLandmarkClick?.(landmark.id)}
+                  />
+                </div>
+              </div>
+            ))}
+
+            {/* Current position indicator */}
+            <div
+              className="absolute inset-y-0 flex items-center transition-all duration-300 z-30"
+              style={{ left: `${currentProgress}%` }}
+            >
+              <div className="relative -translate-x-1/2">
+                <MapPin className="h-6 w-6 text-primary fill-primary/50 animate-pulse drop-shadow-lg" />
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Right Side Rooms */}
+        <div className="relative h-10">
+          {rightRooms.map((room) => (
+            <div
+              key={room.id}
+              className="absolute top-0"
+              style={{ left: `${getHorizontalPosition(room)}%`, transform: 'translateX(-50%)' }}
+            >
+              <CorridorRoomCard 
+                room={room} 
+                onClick={() => onRoomClick?.(room.room_id)}
+              />
+            </div>
+          ))}
         </div>
 
         {/* Context Text */}
         {context && (
           <div className="flex items-center justify-center gap-2">
-            <Badge variant="secondary" className="text-xs flex items-center gap-1.5">
+            <Badge variant="secondary" className="text-xs">
               {context.type === 'at' && (
-                <>
-                  {getLandmarkIcon(context.landmark.type)}
-                  <span>Near: {context.landmark.name}</span>
-                </>
+                <span>Near: {context.landmark.name}</span>
               )}
               {context.type === 'between' && (
-                <>
-                  {getLandmarkIcon(context.before.type)}
-                  <span>Between {context.before.name} and {context.after.name}</span>
-                  {getLandmarkIcon(context.after.type)}
-                </>
+                <span>Between {context.before.name} and {context.after.name}</span>
               )}
             </Badge>
           </div>
