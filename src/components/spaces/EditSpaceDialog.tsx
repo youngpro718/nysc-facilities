@@ -75,12 +75,7 @@ export function EditSpaceDialog({
 
   const editSpaceMutation = useMutation({
     mutationFn: async (data: RoomFormData) => {
-      console.log("=== MUTATION START ===");
-      console.log("Form data being submitted:", data);
-      console.log("Parent room ID from form:", data.parentRoomId);
       const dbData = formToDbRoom(data);
-      console.log("Submitting data for room update (DB format):", dbData);
-      console.log("Parent room ID in DB format:", dbData.parent_room_id);
       
       if (!dbData.id && !id) {
         throw new Error("Room ID is missing - cannot update room");
@@ -95,7 +90,6 @@ export function EditSpaceDialog({
       }
       
       const roomId = dbData.id || id;
-      console.log("Using room ID for update:", roomId);
       
       // Handle courtroom photo storage cleanup if needed
       if (dbData.room_type === RoomTypeEnum.COURTROOM) {
@@ -107,8 +101,8 @@ export function EditSpaceDialog({
               await storageService.cleanupOrphanedFiles('courtroom-photos', roomId, validUrls);
             }
           }
-        } catch (bucketError) {
-          console.error('Error verifying storage bucket:', bucketError);
+        } catch {
+          // Silently handle bucket verification errors
         }
       }
 
@@ -116,15 +110,9 @@ export function EditSpaceDialog({
       await import("./services/updateSpace").then(async ({ updateSpace }) => {
         await updateSpace(roomId, dbData);
       });
-      // Handle connections using simplified approach - removed since space_connections table doesn't exist
-      console.log("Room update successful");
-      
-      console.log("=== MUTATION SUCCESS ===");
       return data;
     },
     onSuccess: () => {
-      console.log("Update successful, invalidating queries");
-      console.log("Invalidating queries for room hierarchy display");
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['room-connections', id] });
       queryClient.invalidateQueries({ queryKey: ['floorplan-objects'] });
@@ -136,45 +124,28 @@ export function EditSpaceDialog({
       toast.success("Room updated successfully");
       setOpen(false);
       if (onSpaceUpdated) {
-        console.log("Calling onSpaceUpdated callback");
         onSpaceUpdated();
       }
     },
     onError: (error) => {
-      console.error("=== MUTATION ERROR ===");
-      console.error("Update error:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to update room";
       toast.error(`Update failed: ${errorMessage}`);
     },
   });
 
   const handleSubmit = async (data: RoomFormData) => {
-    console.log("=== HANDLE SUBMIT CALLED ===");
-    console.log("Handling submit with data:", data);
-    console.log("Parent room ID in data:", data.parentRoomId);
-    
     if (!data.id) {
-      console.warn("ID missing in form data, setting from props");
       data.id = id;
     }
     
-    console.log("About to trigger form validation...");
     const isValid = await form.trigger();
-    console.log("Form validation result:", isValid);
     
     if (!isValid) {
-      console.error("Form validation failed:", form.formState.errors);
-      console.error("Detailed validation errors:", JSON.stringify(form.formState.errors, null, 2));
       toast.error("Please fix the validation errors before submitting");
       return;
     }
     
-    console.log("Form validation passed, calling mutation...");
-    try {
-      await editSpaceMutation.mutateAsync(data);
-    } catch (error) {
-      console.error("Mutation failed:", error);
-    }
+    await editSpaceMutation.mutateAsync(data);
   };
 
   const renderContent = () => {

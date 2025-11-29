@@ -2,6 +2,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useEffect } from "react";
+import { logger } from "@/utils/logger";
 
 export interface Notification {
   id: string;
@@ -78,12 +79,7 @@ export const useNotifications = (userId?: string) => {
   });
 
   const markAsRead = async (notificationId: string) => {
-    if (!userId) {
-      console.error('markAsRead: No user ID available');
-      return;
-    }
-
-    console.log('Marking notification as read:', { notificationId, userId });
+    if (!userId) return;
 
     try {
       const { error } = await supabase
@@ -92,25 +88,15 @@ export const useNotifications = (userId?: string) => {
         .eq('id', notificationId)
         .eq('user_id', userId);
 
-      if (error) {
-        console.error('Error marking notification as read:', error);
-        throw error;
-      }
-
-      console.log('Notification marked as read successfully');
+      if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      logger.error('Failed to mark notification as read:', error);
     }
   };
 
   const markAllAsRead = async () => {
-    if (!userId) {
-      console.error('markAllAsRead: No user ID available');
-      return;
-    }
-
-    console.log('Marking all notifications as read for user:', userId);
+    if (!userId) return;
 
     try {
       const { error } = await supabase
@@ -119,25 +105,15 @@ export const useNotifications = (userId?: string) => {
         .eq('user_id', userId)
         .eq('read', false);
 
-      if (error) {
-        console.error('Error marking all notifications as read:', error);
-        throw error;
-      }
-
-      console.log('All notifications marked as read successfully');
+      if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      logger.error('Failed to mark all notifications as read:', error);
     }
   };
 
   const clearNotification = async (notificationId: string) => {
-    if (!userId) {
-      console.error('clearNotification: No user ID available');
-      return;
-    }
-
-    console.log('Clearing notification:', { notificationId, userId });
+    if (!userId) return;
 
     try {
       const { error } = await supabase
@@ -146,27 +122,16 @@ export const useNotifications = (userId?: string) => {
         .eq('id', notificationId)
         .eq('user_id', userId);
 
-      if (error) {
-        console.error('Error clearing notification:', error);
-        throw error;
-      }
-
-      console.log('Notification cleared successfully');
-      // Invalidate and refetch immediately
+      if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
       await queryClient.refetchQueries({ queryKey: ['notifications', userId] });
     } catch (error) {
-      console.error('Failed to clear notification:', error);
+      logger.error('Failed to clear notification:', error);
     }
   };
 
   const clearAllNotifications = async () => {
-    if (!userId) {
-      console.error('clearAllNotifications: No user ID available');
-      return;
-    }
-
-    console.log('Clearing all notifications for user:', userId);
+    if (!userId) return;
 
     try {
       const { error } = await supabase
@@ -174,20 +139,11 @@ export const useNotifications = (userId?: string) => {
         .delete()
         .eq('user_id', userId);
 
-      if (error) {
-        console.error('Error clearing all notifications:', error);
-        throw error;
-      }
-
-      console.log('All notifications cleared successfully');
-      // Invalidate and refetch immediately
-      console.log('Invalidating queries for userId:', userId);
+      if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
-      console.log('Refetching queries for userId:', userId);
       await queryClient.refetchQueries({ queryKey: ['notifications', userId] });
-      console.log('Query refetch completed');
     } catch (error) {
-      console.error('Failed to clear all notifications:', error);
+      logger.error('Failed to clear all notifications:', error);
     }
   };
 

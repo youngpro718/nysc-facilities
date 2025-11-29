@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logger } from "@/utils/logger";
 
 /**
  * Service for handling Supabase storage operations
@@ -25,7 +26,7 @@ export const storageService = {
       // Check authentication first
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        console.error('User not authenticated for upload');
+        logger.error('User not authenticated for upload');
         toast.error('You must be logged in to upload files');
         return null;
       }
@@ -36,22 +37,22 @@ export const storageService = {
       // If bucket doesn't exist, try to create it
       if (!bucketExists) {
         try {
-          console.log(`Attempting to create bucket: ${bucketName}`);
+          logger.log(`Attempting to create bucket: ${bucketName}`);
           const { error } = await supabase.storage.createBucket(bucketName, {
             public: true,  // Make it public to allow direct access to files
             fileSizeLimit: 10485760, // 10MB
           });
           
           if (!error) {
-            console.log(`Successfully created bucket: ${bucketName}`);
+            logger.log(`Successfully created bucket: ${bucketName}`);
             bucketExists = true;
           } else {
-            console.error(`Failed to create bucket ${bucketName}:`, error);
+            logger.error(`Failed to create bucket ${bucketName}:`, error);
             toast.error(`Storage bucket '${bucketName}' could not be created. Please contact your administrator.`);
             return null;
           }
         } catch (createError) {
-          console.error(`Error creating bucket ${bucketName}:`, createError);
+          logger.error(`Error creating bucket ${bucketName}:`, createError);
           toast.error(`Failed to create storage bucket. Please contact your administrator.`);
           return null;
         }
@@ -74,7 +75,7 @@ export const storageService = {
         }
       }
       
-      console.log(`Uploading file to ${bucketName} at path: ${filePath}`);
+      logger.log(`Uploading file to ${bucketName} at path: ${filePath}`);
       
       // Upload the file
       const { data, error: uploadError } = await supabase.storage
@@ -86,7 +87,7 @@ export const storageService = {
         });
         
       if (uploadError) {
-        console.error(`Error uploading file to ${bucketName}:`, uploadError);
+        logger.error(`Error uploading file to ${bucketName}:`, uploadError);
         throw uploadError;
       }
       
@@ -97,7 +98,7 @@ export const storageService = {
         
       return publicUrl;
     } catch (error) {
-      console.error(`Unexpected error uploading file to ${bucketName}:`, error);
+      logger.error(`Unexpected error uploading file to ${bucketName}:`, error);
       toast.error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return null;
     }
@@ -114,7 +115,7 @@ export const storageService = {
       // Check authentication first
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        console.error('User not authenticated for file removal');
+        logger.error('User not authenticated for file removal');
         toast.error('You must be logged in to remove files');
         return false;
       }
@@ -123,7 +124,7 @@ export const storageService = {
       const bucketExists = await this.checkBucketExists(bucketName);
       if (!bucketExists) {
         const errorMessage = `Storage bucket '${bucketName}' does not exist. Please contact your administrator.`;
-        console.error(errorMessage);
+        logger.error(errorMessage);
         toast.error(errorMessage);
         return false;
       }
@@ -133,14 +134,14 @@ export const storageService = {
         .remove([filePath]);
         
       if (error) {
-        console.error(`Error removing file from ${bucketName}:`, error);
+        logger.error(`Error removing file from ${bucketName}:`, error);
         toast.error(`Error removing file: ${error.message}`);
         return false;
       }
       
       return true;
     } catch (error) {
-      console.error(`Unexpected error removing file from ${bucketName}:`, error);
+      logger.error(`Unexpected error removing file from ${bucketName}:`, error);
       toast.error(`Failed to remove file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
@@ -159,13 +160,13 @@ export const storageService = {
         .list(path);
       
       if (error) {
-        console.error(`Error listing files in ${bucketName}/${path}:`, error);
+        logger.error(`Error listing files in ${bucketName}/${path}:`, error);
         return null;
       }
       
       return data;
     } catch (error) {
-      console.error(`Unexpected error listing files in ${bucketName}/${path}:`, error);
+      logger.error(`Unexpected error listing files in ${bucketName}/${path}:`, error);
       return null;
     }
   },
@@ -198,7 +199,7 @@ export const storageService = {
           return publicUrl;
         });
     } catch (error) {
-      console.error(`Error getting entity files for ${entityId} in ${bucketName}:`, error);
+      logger.error(`Error getting entity files for ${entityId} in ${bucketName}:`, error);
       return null;
     }
   },
@@ -234,22 +235,22 @@ export const storageService = {
    */
   async checkBucketExists(bucketName: string): Promise<boolean> {
     try {
-      console.log(`Checking if bucket ${bucketName} exists...`);
+      logger.log(`Checking if bucket ${bucketName} exists...`);
       
       // Use listBuckets instead of getBucket to avoid permission issues
       const { data: buckets, error } = await supabase.storage.listBuckets();
       
       if (error) {
-        console.error(`Error listing buckets: ${error.message}`, error);
+        logger.error(`Error listing buckets: ${error.message}`, error);
         return false;
       }
       
       // Check if the bucket exists in the list
       const bucketExists = buckets?.some(bucket => bucket.name === bucketName) || false;
-      console.log(`Bucket '${bucketName}' exists: ${bucketExists}`);
+      logger.log(`Bucket '${bucketName}' exists: ${bucketExists}`);
       return bucketExists;
     } catch (error) {
-      console.error(`Exception checking if bucket ${bucketName} exists:`, error);
+      logger.error(`Exception checking if bucket ${bucketName} exists:`, error);
       return false;
     }
   },
@@ -263,7 +264,7 @@ export const storageService = {
       // Check authentication first
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        console.log('Skipping bucket verification: User not authenticated');
+        logger.log('Skipping bucket verification: User not authenticated');
         return;
       }
       
@@ -271,14 +272,14 @@ export const storageService = {
         const exists = await this.checkBucketExists(bucketName);
         
         if (exists) {
-          console.log(`✅ Verified bucket exists: ${bucketName}`);
+          logger.log(`Verified bucket exists: ${bucketName}`);
         } else {
-          console.warn(`⚠️ Storage bucket not found: ${bucketName}`);
+          logger.warn(`Storage bucket not found: ${bucketName}`);
           // We don't try to create it as it should be created via SQL
         }
       }
     } catch (error) {
-      console.error('Failed to verify storage buckets:', error);
+      logger.error('Failed to verify storage buckets:', error);
     }
   },
   
@@ -324,13 +325,13 @@ export const storageService = {
         .remove(filesToDelete);
         
       if (error) {
-        console.error(`Error cleaning up orphaned files in ${bucketName}:`, error);
+        logger.error(`Error cleaning up orphaned files in ${bucketName}:`, error);
         return -1;
       }
       
       return filesToDelete.length;
     } catch (error) {
-      console.error(`Error cleaning up orphaned files for ${entityId} in ${bucketName}:`, error);
+      logger.error(`Error cleaning up orphaned files for ${entityId} in ${bucketName}:`, error);
       return -1;
     }
   },

@@ -9,30 +9,20 @@ import {
 import { toast } from "sonner";
 
 // Type guard function to check if the data has a valid space type
-function hasValidSpaceType(data: any): data is CreateSpaceFormData {
-  return data && typeof data === 'object' && 
-         data.type && ['room', 'hallway', 'door'].includes(data.type);
+function hasValidSpaceType(data: unknown): data is CreateSpaceFormData {
+  return data !== null && typeof data === 'object' && 
+         'type' in data && ['room', 'hallway', 'door'].includes((data as CreateSpaceFormData).type);
 }
 
 export async function createSpace(data: CreateSpaceFormData) {
-  console.log('=== CREATE SPACE STARTED ===');
-  console.log('Creating space with data:', data);
-  
-  // Check authentication first
   const { data: { user } } = await supabase.auth.getUser();
-  console.log('Current user:', user);
   
   if (!user) {
-    const errorMsg = 'User not authenticated';
-    console.error('Authentication failed:', errorMsg);
-    throw new Error(errorMsg);
+    throw new Error('User not authenticated');
   }
   
-  // Validate the data has a valid type
   if (!hasValidSpaceType(data)) {
-    const errorMsg = `Invalid or missing space type: ${String((data as any)?.type || 'unknown')}`;
-    console.error('Validation failed:', errorMsg);
-    throw new Error(errorMsg);
+    throw new Error(`Invalid or missing space type: ${String((data as Record<string, unknown>)?.type || 'unknown')}`);
   }
   
   try {
@@ -74,10 +64,6 @@ export async function createSpace(data: CreateSpaceFormData) {
           (data.courtRoomPhotos || { judge_view: null, audience_view: null }) : null
       };
       
-      console.log('Final room data being inserted:', roomData);
-
-      console.log('Inserting room data:', roomData);
-
       const { data: room, error: roomError } = await supabase
         .from('rooms')
         .insert(roomData)
@@ -85,12 +71,6 @@ export async function createSpace(data: CreateSpaceFormData) {
         .single();
 
       if (roomError) {
-        console.error('=== ROOM CREATION ERROR ===');
-        console.error('Error details:', roomError);
-        console.error('Error code:', (roomError as any).code);
-        console.error('Error hint:', (roomError as any).hint);
-        console.error('Room data that failed:', roomData);
-        
         if ((roomError as any).code === '23505') {
           toast.error('Room number already exists. Please use a unique room number.');
         } else if ((roomError as any).code === '42501') {
@@ -101,23 +81,10 @@ export async function createSpace(data: CreateSpaceFormData) {
         throw new Error(`Failed to create room: ${roomError.message}`);
       }
 
-      console.log('Room created successfully:', room);
       return room;
     }
 
     if (data.type === 'hallway') {
-      console.log('Creating hallway with data:', {
-        name: data.name,
-        type: data.type,
-        section: data.section,
-        hallwayType: data.hallwayType,
-        trafficFlow: data.trafficFlow,
-        accessibility: data.accessibility,
-        emergencyRoute: data.emergencyRoute,
-        maintenancePriority: data.maintenancePriority,
-        capacityLimit: data.capacityLimit
-      });
-      
       // Map/normalize to DB enums
       const TYPE_ALLOWED = new Set(['public_main','private','private_main']);
       const SECTION_ALLOWED = new Set(['left_wing','right_wing','connector']);
@@ -149,11 +116,6 @@ export async function createSpace(data: CreateSpaceFormData) {
         .single();
 
       if (hallwayError) {
-        console.error('=== HALLWAY CREATION ERROR ===');
-        console.error('Error details:', hallwayError);
-        console.error('Error code:', (hallwayError as any).code);
-        console.error('Hallway data that failed:', hallwayData);
-        
         if ((hallwayError as any).code === '42501') {
           toast.error('Permission denied. Please check your authentication status.');
         } else {
@@ -162,7 +124,6 @@ export async function createSpace(data: CreateSpaceFormData) {
         throw new Error(`Failed to create hallway: ${hallwayError.message}`);
       }
 
-      console.log('Created hallway:', hallway);
       return hallway;
     }
 
@@ -190,11 +151,6 @@ export async function createSpace(data: CreateSpaceFormData) {
         .single();
 
       if (doorError) {
-        console.error('=== DOOR CREATION ERROR ===');
-        console.error('Error details:', doorError);
-        console.error('Error code:', (doorError as any).code);
-        console.error('Door data that failed:', doorData);
-        
         if ((doorError as any).code === '42501') {
           toast.error('Permission denied. Please check your authentication status.');
         } else {
@@ -203,13 +159,11 @@ export async function createSpace(data: CreateSpaceFormData) {
         throw new Error(`Failed to create door: ${doorError.message}`);
       }
 
-      console.log('Created door:', door);
       return door;
     }
 
     
   } catch (error) {
-    console.error('Error in createSpace:', error);
     throw error;
   }
 }

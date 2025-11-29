@@ -52,20 +52,12 @@ export function InventoryAdjustmentDialog({
 
   const adjustMutation = useMutation({
     mutationFn: async () => {
-      console.log('🔧 Starting inventory adjustment...');
-      console.log('Item:', item);
-      console.log('User:', user);
-      console.log('Quantity:', quantity);
-      console.log('Type:', adjustmentType);
-      
       if (!item || !quantity || !user) {
-        console.error('❌ Missing required data');
         throw new Error('Missing required data');
       }
 
       const adjustmentAmount = parseInt(quantity);
       if (isNaN(adjustmentAmount) || adjustmentAmount <= 0) {
-        console.error('❌ Invalid quantity:', quantity);
         throw new Error('Please enter a valid quantity');
       }
 
@@ -74,91 +66,48 @@ export function InventoryAdjustmentDialog({
         ? previousQuantity + adjustmentAmount
         : Math.max(0, previousQuantity - adjustmentAmount);
 
-      console.log('📊 Adjustment calculation:');
-      console.log('  Previous:', previousQuantity);
-      console.log('  Adjustment:', adjustmentAmount);
-      console.log('  New:', newQuantity);
-
       // Update inventory item
-      console.log('🔄 Updating inventory item...');
-      console.log('  Table: inventory_items');
-      console.log('  Item ID:', item.id);
-      console.log('  New quantity:', newQuantity);
-      
-      // Try without .select() first to see if that's the issue
-      const updateQuery = supabase
+      const { error: updateError } = await supabase
         .from('inventory_items')
         .update({ quantity: newQuantity })
         .eq('id', item.id);
 
-      console.log('  Query built:', updateQuery);
-      console.log('  Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-      console.log('  Item ID type:', typeof item.id);
-      console.log('  New quantity type:', typeof newQuantity);
-
-      const { data: updateData, error: updateError } = await updateQuery;
-
-      console.log('Update result:');
-      console.log('  Data returned:', updateData);
-      console.log('  Error:', updateError);
-
       if (updateError) {
-        console.error('❌ Update failed:', updateError);
         throw updateError;
       }
 
-      // Since we removed .select(), updateData will be null
-      // We need to verify the update worked by reading the item back
-      console.log('🔍 Verifying update after write...');
+      // Verify the update worked
       const { data: verifyData, error: verifyError } = await supabase
         .from('inventory_items')
         .select('id, name, quantity')
         .eq('id', item.id)
         .single();
 
-      console.log('Verification result:');
-      console.log('  Current quantity in DB:', verifyData?.quantity);
-      console.log('  Expected quantity:', newQuantity);
-      console.log('  Match:', verifyData?.quantity === newQuantity);
-
       if (verifyError) {
-        console.error('❌ Verification failed:', verifyError);
         throw new Error('Update verification failed - could not read the item back');
       }
 
       if (verifyData?.quantity !== newQuantity) {
-        console.error('❌ Update verification failed - quantity not updated in database');
-        console.error('  Expected:', newQuantity, 'Got:', verifyData?.quantity);
-        throw new Error(`Update verification failed - the quantity was not actually updated. Expected ${newQuantity}, got ${verifyData?.quantity}`);
+        throw new Error(`Update verification failed - expected ${newQuantity}, got ${verifyData?.quantity}`);
       }
 
       // Record transaction
-      console.log('📝 Recording transaction...');
-      const transactionData = {
-        item_id: item.id,
-        transaction_type: adjustmentType === 'add' ? 'adjustment_increase' : 'adjustment_decrease',
-        quantity: adjustmentAmount,
-        previous_quantity: previousQuantity,
-        new_quantity: newQuantity,
-        performed_by: user.id,
-        notes: notes || `Manual ${adjustmentType === 'add' ? 'addition' : 'removal'} by staff`,
-      };
-      
-      console.log('Transaction data:', transactionData);
-
-      const { data: transactionInsertData, error: transactionError } = await supabase
+      const { error: transactionError } = await supabase
         .from('inventory_item_transactions')
-        .insert(transactionData)
-        .select();
-
-      console.log('Transaction result:', { data: transactionInsertData, error: transactionError });
+        .insert({
+          item_id: item.id,
+          transaction_type: adjustmentType === 'add' ? 'adjustment_increase' : 'adjustment_decrease',
+          quantity: adjustmentAmount,
+          previous_quantity: previousQuantity,
+          new_quantity: newQuantity,
+          performed_by: user.id,
+          notes: notes || `Manual ${adjustmentType === 'add' ? 'addition' : 'removal'} by staff`,
+        });
 
       if (transactionError) {
-        console.error('❌ Transaction failed:', transactionError);
         throw transactionError;
       }
 
-      console.log('✅ Adjustment completed successfully!');
       return { previousQuantity, newQuantity, adjustmentAmount };
     },
     onSuccess: async (data) => {
@@ -183,8 +132,7 @@ export function InventoryAdjustmentDialog({
       
       handleClose();
     },
-    onError: (error: any) => {
-      console.error('💥 Mutation error:', error);
+    onError: (error: Error) => {
       toast.error('Failed to adjust inventory', {
         description: error.message || 'Unknown error occurred',
       });

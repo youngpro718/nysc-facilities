@@ -35,7 +35,6 @@ export function ImprovedSupplyStaffDashboard() {
   const { data: allOrders, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['supply-staff-orders'],
     queryFn: async () => {
-      console.log('Fetching supply orders for staff...');
       
       const { data, error } = await supabase
         .from('supply_requests')
@@ -67,7 +66,6 @@ export function ImprovedSupplyStaffDashboard() {
         throw error;
       }
 
-      console.log('Fetched orders:', data?.length || 0);
       setLastUpdated(new Date());
       return data || [];
     },
@@ -126,10 +124,7 @@ export function ImprovedSupplyStaffDashboard() {
           schema: 'public',
           table: 'supply_requests',
         },
-        () => {
-          console.log('Supply request changed, refetching...');
-          refetch();
-        }
+        () => refetch()
       )
       .subscribe();
 

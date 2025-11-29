@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Canvas } from '@react-three/fiber';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { useFloorPlanData } from '../hooks/useFloorPlanData';
 import { toast } from 'sonner';
 import { 

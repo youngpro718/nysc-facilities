@@ -14,17 +14,13 @@ import { supabase } from "@/lib/supabase";
 import { BaseLightingDialog } from "./shared/BaseLightingDialog";
 import { StandardFormSection } from "./shared/StandardFormSection";
 
-console.log("CreateLightingDialog: Supabase client loaded:", !!supabase);
-
 // Direct function to fetch lighting zones
 const fetchLightingZones = async () => {
-  console.log("fetchLightingZones: Starting fetch");
   const { data, error } = await supabase
     .from('lighting_zones')
     .select('*')
     .order('name');
   
-  console.log("fetchLightingZones: Result", { data, error });
   if (error) throw error;
   return data || [];
 };
@@ -88,7 +84,6 @@ export function CreateLightingDialog({
   });
 
   const handleFixtureSubmit = async (data: LightingFixtureFormData) => {
-    console.log("handleFixtureSubmit: Data", data);
     const success = await onSubmitFixture(data);
     if (success) {
       fixtureForm.reset();
@@ -96,7 +91,6 @@ export function CreateLightingDialog({
   };
 
   const handleZoneSubmit = async (data: LightingZoneFormData) => {
-    console.log("handleZoneSubmit: Data", data);
     const success = await onSubmitZone(data);
     if (success) {
       zoneForm.reset();
