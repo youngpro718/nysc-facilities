@@ -5,7 +5,7 @@ export interface HallwayLandmark {
   id: string;
   hallway_id: string;
   name: string;
-  type: 'elevator_bank' | 'stairwell' | 'entrance' | 'intersection' | 'room' | 'other';
+  type: 'elevator_bank' | 'stairwell' | 'entrance' | 'intersection' | 'room' | 'transit_door' | 'private_hallway' | 'fire_exit' | 'other';
   sequence_order: number;
   fixture_range_start: number | null;
   fixture_range_end: number | null;
