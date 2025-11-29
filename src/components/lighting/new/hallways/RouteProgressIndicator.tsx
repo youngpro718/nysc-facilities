@@ -111,7 +111,7 @@ export function RouteProgressIndicator({
         )}
 
         {/* Branch Hallways with Rooms */}
-        <div className="relative flex justify-between px-4 mb-2 min-h-32">
+        <div className="relative flex justify-between px-4 mb-4 min-h-40">
           <div style={{ position: 'absolute', left: `${getBranchPosition('start')}%`, transform: 'translateX(-50%)' }}>
             <CorridorBranch
               position="start"

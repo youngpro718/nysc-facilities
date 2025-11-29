@@ -28,45 +28,41 @@ export function CorridorBranch({ position, leftRooms, rightRooms, onRoomClick }:
         </div>
         <div className="flex gap-2">
           {/* Left Column */}
-          <div className="flex flex-col gap-1 flex-1">
-            {leftRooms.length > 0 && (
-              <>
-                <div className="text-[9px] text-muted-foreground text-center">Left</div>
-                {leftRooms
-                  .sort((a, b) => a.sequence_order - b.sequence_order)
-                  .map((room) => (
-                    <CorridorRoomCard
-                      key={room.id}
-                      room={room}
-                      onClick={() => onRoomClick?.(room)}
-                    />
-                  ))}
-              </>
-            )}
-          </div>
+          {leftRooms.length > 0 && (
+            <div className="flex flex-col gap-1 flex-1">
+              <div className="text-[9px] text-muted-foreground text-center">Left</div>
+              {leftRooms
+                .sort((a, b) => a.sequence_order - b.sequence_order)
+                .map((room) => (
+                  <CorridorRoomCard
+                    key={room.id}
+                    room={room}
+                    onClick={() => onRoomClick?.(room)}
+                  />
+                ))}
+            </div>
+          )}
           
           {/* Right Column */}
-          <div className="flex flex-col gap-1 flex-1">
-            {rightRooms.length > 0 && (
-              <>
-                <div className="text-[9px] text-muted-foreground text-center">Right</div>
-                {rightRooms
-                  .sort((a, b) => a.sequence_order - b.sequence_order)
-                  .map((room) => (
-                    <CorridorRoomCard
-                      key={room.id}
-                      room={room}
-                      onClick={() => onRoomClick?.(room)}
-                    />
-                  ))}
-              </>
-            )}
-          </div>
+          {rightRooms.length > 0 && (
+            <div className="flex flex-col gap-1 flex-1">
+              <div className="text-[9px] text-muted-foreground text-center">Right</div>
+              {rightRooms
+                .sort((a, b) => a.sequence_order - b.sequence_order)
+                .map((room) => (
+                  <CorridorRoomCard
+                    key={room.id}
+                    room={room}
+                    onClick={() => onRoomClick?.(room)}
+                  />
+                ))}
+            </div>
+          )}
         </div>
       </Card>
       
       {/* Connector line to hallway */}
-      <div className="w-0.5 h-4 bg-primary/30" />
+      <div className="w-0.5 h-8 bg-primary/30" />
     </div>
   );
 }
