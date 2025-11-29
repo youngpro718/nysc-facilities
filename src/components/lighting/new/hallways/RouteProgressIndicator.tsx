@@ -3,8 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, ArrowRight } from 'lucide-react';
 import { HallwayLandmark } from '@/hooks/useHallwayLandmarks';
 import { HallwayRoom } from '@/hooks/useHallwayRooms';
-import { CorridorRoomCard } from './CorridorRoomCard';
 import { CorridorLandmark } from './CorridorLandmark';
+import { CorridorBranch } from './CorridorBranch';
 
 interface RouteProgressIndicatorProps {
   landmarks: HallwayLandmark[];
@@ -27,20 +27,18 @@ export function RouteProgressIndicator({
   onRoomClick,
   onLandmarkClick,
 }: RouteProgressIndicatorProps) {
-  // Group rooms by side
-  const leftRooms = hallwayRooms.filter(r => r.side === 'left').sort((a, b) => a.sequence_order - b.sequence_order);
-  const rightRooms = hallwayRooms.filter(r => r.side === 'right').sort((a, b) => a.sequence_order - b.sequence_order);
+  // Group rooms by position (branch), then by side
+  const startBranchRooms = hallwayRooms.filter(r => r.position === 'start');
+  const middleBranchRooms = hallwayRooms.filter(r => r.position === 'middle');
+  const endBranchRooms = hallwayRooms.filter(r => r.position === 'end');
 
-  // Calculate horizontal position based on position field and sequence
-  const getHorizontalPosition = (room: HallwayRoom) => {
-    let basePosition = 0;
-    if (room.position === 'start') basePosition = 10;
-    else if (room.position === 'middle') basePosition = 45;
-    else if (room.position === 'end') basePosition = 80;
-    
-    // Offset by sequence within position group (larger offset to prevent overlap)
-    const offset = room.sequence_order * 8;
-    return Math.min(95, basePosition + offset);
+  const getLeftRooms = (rooms: HallwayRoom[]) => rooms.filter(r => r.side === 'left');
+  const getRightRooms = (rooms: HallwayRoom[]) => rooms.filter(r => r.side === 'right');
+
+  const getBranchPosition = (position: 'start' | 'middle' | 'end') => {
+    if (position === 'start') return 10;
+    if (position === 'middle') return 50;
+    return 80;
   };
 
   // Calculate progress percentage for each landmark
@@ -112,20 +110,32 @@ export function RouteProgressIndicator({
           </div>
         )}
 
-        {/* Left Side Rooms */}
-        <div className="relative min-h-12">
-          {leftRooms.map((room) => (
-            <div
-              key={room.id}
-              className="absolute top-0"
-              style={{ left: `${getHorizontalPosition(room)}%`, transform: 'translateX(-50%)' }}
-            >
-              <CorridorRoomCard 
-                room={room} 
-                onClick={() => onRoomClick?.(room.room_id)}
-              />
-            </div>
-          ))}
+        {/* Branch Hallways with Rooms */}
+        <div className="relative flex justify-between px-4 mb-2 min-h-32">
+          <div style={{ position: 'absolute', left: `${getBranchPosition('start')}%`, transform: 'translateX(-50%)' }}>
+            <CorridorBranch
+              position="start"
+              leftRooms={getLeftRooms(startBranchRooms)}
+              rightRooms={getRightRooms(startBranchRooms)}
+              onRoomClick={(room) => onRoomClick?.(room.room_id)}
+            />
+          </div>
+          <div style={{ position: 'absolute', left: `${getBranchPosition('middle')}%`, transform: 'translateX(-50%)' }}>
+            <CorridorBranch
+              position="middle"
+              leftRooms={getLeftRooms(middleBranchRooms)}
+              rightRooms={getRightRooms(middleBranchRooms)}
+              onRoomClick={(room) => onRoomClick?.(room.room_id)}
+            />
+          </div>
+          <div style={{ position: 'absolute', left: `${getBranchPosition('end')}%`, transform: 'translateX(-50%)' }}>
+            <CorridorBranch
+              position="end"
+              leftRooms={getLeftRooms(endBranchRooms)}
+              rightRooms={getRightRooms(endBranchRooms)}
+              onRoomClick={(room) => onRoomClick?.(room.room_id)}
+            />
+          </div>
         </div>
 
         {/* Corridor Bar with Landmarks */}
@@ -173,21 +183,6 @@ export function RouteProgressIndicator({
           </div>
         </div>
 
-        {/* Right Side Rooms */}
-        <div className="relative min-h-12">
-          {rightRooms.map((room) => (
-            <div
-              key={room.id}
-              className="absolute top-0"
-              style={{ left: `${getHorizontalPosition(room)}%`, transform: 'translateX(-50%)' }}
-            >
-              <CorridorRoomCard 
-                room={room} 
-                onClick={() => onRoomClick?.(room.room_id)}
-              />
-            </div>
-          ))}
-        </div>
 
         {/* Context Text */}
         {context && (
