@@ -106,16 +106,16 @@ export function RouteProgressIndicator({
   };
 
   return (
-    <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+    <Card className="bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-700">
       <CardContent className="p-4 space-y-4">
         {/* Room badges by position */}
         {(roomsByPosition.start.length > 0 || roomsByPosition.middle.length > 0 || roomsByPosition.end.length > 0) && (
           <div className="grid grid-cols-3 gap-2 text-xs">
             {/* Start rooms */}
             <div className="space-y-1">
-              <div className="text-muted-foreground font-medium">START</div>
+              <div className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wide">START</div>
               {roomsByPosition.start.map(room => (
-                <Badge key={room.id} variant="secondary" className="text-xs block truncate">
+                <Badge key={room.id} variant="outline" className="text-xs block truncate bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600">
                   {getRoomIcon(room)} {room.room.room_number}
                 </Badge>
               ))}
@@ -123,9 +123,9 @@ export function RouteProgressIndicator({
 
             {/* Middle rooms */}
             <div className="space-y-1">
-              <div className="text-muted-foreground font-medium">MIDDLE</div>
+              <div className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wide">MIDDLE</div>
               {roomsByPosition.middle.map(room => (
-                <Badge key={room.id} variant="secondary" className="text-xs block truncate">
+                <Badge key={room.id} variant="outline" className="text-xs block truncate bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600">
                   {getRoomIcon(room)} {room.room.room_number}
                 </Badge>
               ))}
@@ -133,9 +133,9 @@ export function RouteProgressIndicator({
 
             {/* End rooms */}
             <div className="space-y-1">
-              <div className="text-muted-foreground font-medium">END</div>
+              <div className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wide">END</div>
               {roomsByPosition.end.map(room => (
-                <Badge key={room.id} variant="secondary" className="text-xs block truncate">
+                <Badge key={room.id} variant="outline" className="text-xs block truncate bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600">
                   {getRoomIcon(room)} {room.room.room_number}
                 </Badge>
               ))}
@@ -156,10 +156,10 @@ export function RouteProgressIndicator({
         )}
 
         {/* Visual Route Bar */}
-        <div className="relative h-12 bg-background/50 rounded-full overflow-hidden">
+        <div className="relative h-12 bg-slate-200 dark:bg-slate-800 rounded-full border border-slate-300 dark:border-slate-600">
           {/* Progress fill */}
           <div
-            className="absolute inset-y-0 left-0 bg-primary/20 transition-all duration-300"
+            className="absolute inset-y-0 left-0 bg-primary/40 transition-all duration-300"
             style={{ width: `${currentProgress}%` }}
           />
 
@@ -171,10 +171,10 @@ export function RouteProgressIndicator({
               style={{ left: `${getLandmarkPosition(landmark)}%` }}
             >
               <div className="relative -translate-x-1/2">
-                <div className="p-1 rounded-full bg-background shadow-sm border border-border">
+                <div className="p-1.5 rounded-full bg-white dark:bg-slate-800 shadow-md border-2 border-slate-300 dark:border-slate-500">
                   {getLandmarkIcon(landmark.type)}
                 </div>
-                <div className="absolute top-full mt-1 text-xs text-muted-foreground whitespace-nowrap -translate-x-1/2 left-1/2">
+                <div className="absolute top-full mt-1 text-xs font-medium text-slate-700 dark:text-slate-300 max-w-[80px] text-center -translate-x-1/2 left-1/2 truncate">
                   {landmark.name}
                 </div>
               </div>
@@ -187,7 +187,7 @@ export function RouteProgressIndicator({
             style={{ left: `${currentProgress}%` }}
           >
             <div className="relative -translate-x-1/2">
-              <MapPin className="h-6 w-6 text-primary fill-primary animate-pulse" />
+              <MapPin className="h-7 w-7 text-blue-600 fill-blue-500 animate-pulse drop-shadow-lg" />
             </div>
           </div>
         </div>
