@@ -38,8 +38,8 @@ export function RouteProgressIndicator({
     else if (room.position === 'middle') basePosition = 45;
     else if (room.position === 'end') basePosition = 80;
     
-    // Offset by sequence within position group (small offset to avoid overlap)
-    const offset = room.sequence_order * 2;
+    // Offset by sequence within position group (larger offset to prevent overlap)
+    const offset = room.sequence_order * 8;
     return Math.min(95, basePosition + offset);
   };
 
@@ -113,7 +113,7 @@ export function RouteProgressIndicator({
         )}
 
         {/* Left Side Rooms */}
-        <div className="relative h-10">
+        <div className="relative min-h-12">
           {leftRooms.map((room) => (
             <div
               key={room.id}
@@ -131,10 +131,10 @@ export function RouteProgressIndicator({
         {/* Corridor Bar with Landmarks */}
         <div className="relative">
           {/* START/MIDDLE/END Labels */}
-          <div className="absolute -top-5 left-0 right-0 flex justify-between px-2 text-xs font-semibold text-primary/60 uppercase tracking-wide">
-            <span>Start</span>
-            <span>Middle</span>
-            <span>End</span>
+          <div className="absolute -top-5 left-0 right-0 text-xs font-semibold text-primary/60 uppercase tracking-wide">
+            <span className="absolute left-[10%] -translate-x-1/2">Start</span>
+            <span className="absolute left-[50%] -translate-x-1/2">Middle</span>
+            <span className="absolute left-[80%] -translate-x-1/2">End</span>
           </div>
 
           {/* Visual Route Bar */}
@@ -174,7 +174,7 @@ export function RouteProgressIndicator({
         </div>
 
         {/* Right Side Rooms */}
-        <div className="relative h-10">
+        <div className="relative min-h-12">
           {rightRooms.map((room) => (
             <div
               key={room.id}
