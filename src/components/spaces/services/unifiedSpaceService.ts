@@ -4,21 +4,17 @@ import { formToDbRoom } from "../forms/room/roomFieldMapping";
 
 export interface SpaceServiceResult {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 
 export class UnifiedSpaceService {
   async createSpace(data: UnifiedSpaceFormData): Promise<SpaceServiceResult> {
     try {
-      console.log('=== UnifiedSpaceService.createSpace ===');
-      console.log('Input data:', data);
-
       if (!data.buildingId) {
         throw new Error("Building is required for creating spaces");
       }
 
-      // Route to appropriate table based on space type
       switch (data.type) {
         case "room":
           return await this.createRoom(data);
@@ -27,10 +23,9 @@ export class UnifiedSpaceService {
         case "door":
           return await this.createDoor(data);
         default:
-          throw new Error(`Unsupported space type: ${(data as any).type}`);
+          throw new Error(`Unsupported space type: ${(data as Record<string, unknown>).type}`);
       }
     } catch (error) {
-      console.error('Error in createSpace:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error occurred"
@@ -40,11 +35,6 @@ export class UnifiedSpaceService {
 
   async updateSpace(id: string, data: UnifiedSpaceFormData): Promise<SpaceServiceResult> {
     try {
-      console.log('=== UnifiedSpaceService.updateSpace ===');
-      console.log('ID:', id);
-      console.log('Input data:', data);
-
-      // Route to appropriate table based on space type
       switch (data.type) {
         case "room":
           return await this.updateRoom(id, data);
@@ -53,10 +43,9 @@ export class UnifiedSpaceService {
         case "door":
           return await this.updateDoor(id, data);
         default:
-          throw new Error(`Unsupported space type: ${(data as any).type}`);
+          throw new Error(`Unsupported space type: ${(data as Record<string, unknown>).type}`);
       }
     } catch (error) {
-      console.error('Error in updateSpace:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error occurred"
@@ -69,22 +58,15 @@ export class UnifiedSpaceService {
       throw new Error("Invalid data type for room creation");
     }
 
-    // Convert form data to database format
-    const dbData = formToDbRoom(data as any);
-    
-    console.log('Creating room with data:', dbData);
+    const dbData = formToDbRoom(data as Parameters<typeof formToDbRoom>[0]);
 
     const { data: result, error } = await supabase
       .from('rooms')
-      .insert(dbData as any)
+      .insert(dbData as Record<string, unknown>)
       .select()
       .single();
 
-    if (error) {
-      console.error('Database error creating room:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return { success: true, data: result };
   }
 
@@ -93,24 +75,16 @@ export class UnifiedSpaceService {
       throw new Error("Invalid data type for room update");
     }
 
-    // Convert form data to database format
-    const dbData = formToDbRoom(data as any);
-    
-    console.log('Updating room with ID:', id);
-    console.log('Update data:', dbData);
+    const dbData = formToDbRoom(data as Parameters<typeof formToDbRoom>[0]);
 
     const { data: result, error } = await supabase
       .from('rooms')
-      .update(dbData as any)
+      .update(dbData as Record<string, unknown>)
       .eq('id', id)
       .select()
       .single();
 
-    if (error) {
-      console.error('Database error updating room:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return { success: true, data: result };
   }
 
@@ -145,19 +119,13 @@ export class UnifiedSpaceService {
       rotation: data.rotation ?? 0
     } as any;
 
-    console.log('Creating hallway with data:', hallwayData);
-
     const { data: result, error } = await supabase
       .from('hallways')
       .insert(hallwayData)
       .select()
       .single();
 
-    if (error) {
-      console.error('Database error creating hallway:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return { success: true, data: result };
   }
 
@@ -190,9 +158,6 @@ export class UnifiedSpaceService {
       rotation: data.rotation ?? 0
     } as any;
 
-    console.log('Updating hallway with ID:', id);
-    console.log('Update data:', hallwayData);
-
     const { data: result, error } = await supabase
       .from('hallways')
       .update(hallwayData)
@@ -200,11 +165,7 @@ export class UnifiedSpaceService {
       .select()
       .single();
 
-    if (error) {
-      console.error('Database error updating hallway:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return { success: true, data: result };
   }
 
@@ -226,19 +187,13 @@ export class UnifiedSpaceService {
       rotation: data.rotation
     };
 
-    console.log('Creating door with data:', doorData);
-
     const { data: result, error } = await supabase
       .from('doors')
-      .insert(doorData as any)
+      .insert(doorData as Record<string, unknown>)
       .select()
       .single();
 
-    if (error) {
-      console.error('Database error creating door:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return { success: true, data: result };
   }
 
@@ -259,21 +214,14 @@ export class UnifiedSpaceService {
       rotation: data.rotation
     };
 
-    console.log('Updating door with ID:', id);
-    console.log('Update data:', doorData);
-
     const { data: result, error } = await supabase
       .from('doors')
-      .update(doorData as any)
+      .update(doorData as Record<string, unknown>)
       .eq('id', id)
       .select()
       .single();
 
-    if (error) {
-      console.error('Database error updating door:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return { success: true, data: result };
   }
 }
