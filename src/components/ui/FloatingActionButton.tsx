@@ -79,8 +79,8 @@ export function FloatingActionButton() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, []);
 
-  // Don't show on form pages or login
-  const hiddenPaths = ['/forms/', '/login', '/auth/', '/onboarding/'];
+  // Don't show on form pages, login, or pages with their own FABs
+  const hiddenPaths = ['/forms/', '/login', '/auth/', '/onboarding/', '/spaces', '/supply'];
   if (hiddenPaths.some(path => location.pathname.startsWith(path))) {
     return null;
   }
@@ -106,7 +106,7 @@ export function FloatingActionButton() {
       )}
 
       {/* FAB Container */}
-      <div className="fixed bottom-20 right-4 z-50 md:hidden flex flex-col-reverse items-end gap-3">
+      <div className="fixed bottom-24 right-4 z-50 md:hidden flex flex-col-reverse items-end gap-3 pb-safe">
         {/* Quick Action Buttons */}
         {isOpen && quickActions.map((action, index) => {
           const Icon = action.icon;

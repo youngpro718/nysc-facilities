@@ -61,7 +61,7 @@ export function OrderCart({
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button 
-          className="fixed bottom-6 right-6 h-14 rounded-full shadow-lg z-50 touch-manipulation"
+          className="fixed bottom-24 right-4 h-14 rounded-full shadow-lg z-50 touch-manipulation pb-safe"
           size="lg"
         >
           <ShoppingCart className="h-5 w-5 mr-2" />
