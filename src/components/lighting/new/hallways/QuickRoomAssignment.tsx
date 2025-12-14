@@ -72,7 +72,7 @@ export function QuickRoomAssignment({
       <DialogTrigger asChild>
         <Button 
           size="lg"
-          className="fixed bottom-6 right-6 shadow-lg z-50 rounded-full h-14 px-6"
+          className="fixed bottom-24 right-4 shadow-lg z-50 rounded-full h-14 px-6 pb-safe"
         >
           <MapPin className="h-5 w-5 mr-2" />
           Add Room Here
