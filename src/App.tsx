@@ -2,9 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import AdminDashboard from "@/pages/AdminDashboard";
-import CMCDashboard from "@/pages/CMCDashboard";
-import CourtAideDashboard from "@/pages/CourtAideDashboard";
-import PurchasingDashboard from "@/pages/PurchasingDashboard";
+import RoleDashboard from "@/pages/RoleDashboard";
 import LoginPage from "@/pages/LoginPage";
 import MFASetup from "@/pages/auth/MFASetup";
 import VerifyEmail from "@/pages/auth/VerifyEmail";
@@ -109,21 +107,21 @@ function AppContent() {
         <Route path="/cmc-dashboard" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Management">
-              <CMCDashboard />
+              <RoleDashboard />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="/court-aide-dashboard" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="inventory" moduleName="Supply Management">
-              <CourtAideDashboard />
+              <RoleDashboard />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="/purchasing-dashboard" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="inventory" moduleName="Purchasing">
-              <PurchasingDashboard />
+              <RoleDashboard />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
