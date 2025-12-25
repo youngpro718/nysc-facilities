@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, Shield, AlertTriangle, History as HistoryIcon } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, Shield, AlertTriangle, History as HistoryIcon, StickyNote, Layers, Ticket, Plus } from "lucide-react";
 import { useRoomAccess } from "@/hooks/useRoomAccess";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog } from "@/components/ui/dialog";
@@ -14,6 +14,9 @@ import { useNavigate } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { RoomHistoryTimeline } from "./history/RoomHistoryTimeline";
 import { RoomLightingManager } from "./lighting/RoomLightingManager";
+import { RoomNotesPanel } from "./notes/RoomNotesPanel";
+import { useChildRooms } from "@/hooks/useChildRooms";
+import { useLightingWithTickets } from "@/hooks/useLightingWithTickets";
 
 interface CardBackProps {
   room: EnhancedRoom;
@@ -22,13 +25,18 @@ interface CardBackProps {
 
 export function CardBack({ room, onFlip }: CardBackProps) {
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'access' | 'lighting' | 'history'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'access' | 'lighting' | 'notes' | 'history'>('info');
   const { data: roomAccess, isLoading: isAccessLoading } = useRoomAccess(room.id);
+  const { data: childRooms = [] } = useChildRooms(room.id);
+  const { data: lightingWithTickets = [] } = useLightingWithTickets(room.id);
   const navigate = useNavigate();
   const { getIssuesForRoom } = useCourtIssuesIntegration();
 
   const totalLights = useMemo(() => room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0, [room]);
   const functionalLights = useMemo(() => room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0, [room]);
+
+  const nonFunctionalFixtures = lightingWithTickets.filter(f => f.status !== 'functional');
+  const fixturesWithoutTickets = nonFunctionalFixtures.filter(f => !f.issue_id);
 
   return (
     <div className="p-5 flex flex-col h-full bg-card border rounded-md shadow-sm">
@@ -47,10 +55,10 @@ export function CardBack({ room, onFlip }: CardBackProps) {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 mb-4 p-1 bg-muted/50 rounded-lg">
+      <div className="flex gap-1 mb-4 p-1 bg-muted/50 rounded-lg overflow-x-auto">
         <button
           onClick={() => setActiveTab('info')}
-          className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition-all ${
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
             activeTab === 'info' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -59,7 +67,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
         </button>
         <button
           onClick={() => setActiveTab('access')}
-          className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition-all ${
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
             activeTab === 'access' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -68,16 +76,25 @@ export function CardBack({ room, onFlip }: CardBackProps) {
         </button>
         <button
           onClick={() => setActiveTab('lighting')}
-          className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition-all ${
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
             activeTab === 'lighting' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <Lightbulb className="h-3.5 w-3.5 inline mr-1" />
-          Lighting
+          Lights
+        </button>
+        <button
+          onClick={() => setActiveTab('notes')}
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
+            activeTab === 'notes' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <StickyNote className="h-3.5 w-3.5 inline mr-1" />
+          Notes
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition-all ${
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
             activeTab === 'history' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -106,6 +123,26 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             <div className="space-y-2">
               <ParentRoomHierarchy roomId={room.id} compact={false} />
             </div>
+
+            {/* Child Rooms */}
+            {childRooms.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium flex items-center gap-1">
+                  <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                  Sub-Rooms ({childRooms.length})
+                </h4>
+                <div className="bg-muted/30 p-2 rounded-lg space-y-1">
+                  {childRooms.map((child) => (
+                    <div key={child.id} className="flex items-center justify-between p-2 bg-background/50 rounded-md text-xs">
+                      <span className="font-medium">{child.name}</span>
+                      <Badge variant="outline" className="text-[10px] capitalize">
+                        {child.room_type.replace(/_/g, ' ')}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             
             {/* Type Information */}
             <div className="space-y-2">
@@ -332,34 +369,59 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                 />
               </div>
             </div>
+
+            {/* Warning for fixtures without tickets */}
+            {fixturesWithoutTickets.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-2 rounded-md">
+                <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span className="font-medium">{fixturesWithoutTickets.length} fixture(s) have no ticket submitted</span>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
-              {(room.lighting_fixtures ?? []).filter(f => f.status !== 'functional').map((fixture, index) => (
-                <button
-                  key={fixture.id || index}
-                  type="button"
-                  className="text-xs bg-amber-50 border border-amber-200 text-amber-700 p-2 rounded-md w-full text-left hover:bg-amber-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const base = `/lighting?room=${encodeURIComponent(room.name ?? room.room_number ?? room.id)}&status=out`;
-                    const url = fixture.id ? `${base}&fixtureId=${encodeURIComponent(fixture.id)}` : base;
-                    navigate(url);
-                  }}
+              {nonFunctionalFixtures.map((fixture) => (
+                <div
+                  key={fixture.id}
+                  className="text-xs bg-card border border-border p-3 rounded-md"
                 >
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
                       <Badge variant={fixture.status === 'flickering' ? 'secondary' : 'destructive'} className="text-[10px]">
                         {fixture.status}
                       </Badge>
-                      <span className="font-medium">{fixture.location ?? fixture.id}</span>
+                      <span className="font-medium">{fixture.position || fixture.name}</span>
                     </div>
                     {fixture.outage_duration_days && fixture.outage_duration_days > 0 && (
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <AlertTriangle className="h-3 w-3" />
-                        {fixture.outage_duration_days}d
+                        Out {fixture.outage_duration_days}d
                       </div>
                     )}
                   </div>
-                </button>
+                  {/* Ticket Status */}
+                  {fixture.ticket ? (
+                    <div className="flex items-center gap-2 p-2 bg-muted/50 rounded text-[10px]">
+                      <Ticket className="h-3 w-3 text-primary" />
+                      <span className="font-medium">Ticket: {fixture.ticket.status}</span>
+                      <span className="text-muted-foreground">• Submitted {fixture.ticket.days_since_submitted}d ago</span>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-7 text-[10px] text-amber-600 border-amber-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/operations?tab=issues&create=true&room_id=${room.id}&title=Lighting%20Issue%20-%20${encodeURIComponent(fixture.name)}`);
+                      }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Create Ticket
+                    </Button>
+                  )}
+                </div>
               ))}
             </div>
           </div>
