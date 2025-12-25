@@ -17,12 +17,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 
-// Import role-specific dashboards
+// Import dashboards
 import AdminDashboard from "@/pages/AdminDashboard";
 import UserDashboard from "@/pages/UserDashboard";
-import CMCDashboard from "@/pages/CMCDashboard";
-import CourtAideDashboard from "@/pages/CourtAideDashboard";
-import PurchasingDashboard from "@/pages/PurchasingDashboard";
+import RoleDashboard from "@/pages/RoleDashboard";
 
 import { Loader2 } from "lucide-react";
 
@@ -66,13 +64,9 @@ export default function SmartDashboard() {
       return <AdminDashboard />;
     
     case 'cmc':
-      return <CMCDashboard />;
-    
     case 'court_aide':
-      return <CourtAideDashboard />;
-    
     case 'purchasing_staff':
-      return <PurchasingDashboard />;
+      return <RoleDashboard />;
     
     default:
       // Standard users and any unrecognized roles
