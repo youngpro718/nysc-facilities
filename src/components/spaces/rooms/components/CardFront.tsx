@@ -2,12 +2,14 @@
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag, AlertTriangle, Phone, Building, Pencil } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag, AlertTriangle, Phone, Building, Pencil, Layers } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { RoomLightingManager } from "./lighting/RoomLightingManager";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { getNormalizedCurrentUse } from "../utils/currentUse";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RoomNotesPanel } from "./notes/RoomNotesPanel";
+import { useChildRoomCount } from "@/hooks/useChildRooms";
 
 interface CardFrontProps {
   room: EnhancedRoom;
@@ -23,6 +25,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
   const hasIssues = unresolvedIssues.length > 0;
   const highSeverityCount = unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())).length;
   const currentUse = getNormalizedCurrentUse(room);
+  const { data: childRoomCount = 0 } = useChildRoomCount(room.id);
   
   const totalLights = room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0;
   const functionalLights = room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0;
@@ -163,40 +166,26 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
             </div>
           )}
 
-          {/* Quick Notes / Sticky Info */}
+          {/* Child Rooms Count */}
+          {childRoomCount > 0 && (
+            <div className="bg-card border border-border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Sub-Rooms</span>
+              </div>
+              <div className="text-xl font-bold">{childRoomCount}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                nested spaces
+              </div>
+            </div>
+          )}
+
+          {/* Room Notes / Known Issues */}
           <div 
-            className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 relative cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-950/30 transition-colors active:scale-[0.98]"
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              onQuickNoteClick?.();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                e.stopPropagation();
-                onQuickNoteClick?.();
-              }
-            }}
+            className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 relative"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400">📝</div>
-              <span className="text-xs font-medium text-amber-800 dark:text-amber-300">Quick Notes</span>
-            </div>
-            <div className="space-y-1 min-h-[2rem]">
-              {room.description ? (
-                <p className="text-xs text-amber-900 dark:text-amber-200 line-clamp-2">
-                  {room.description}
-                </p>
-              ) : (
-                <p className="text-xs text-amber-600/60 dark:text-amber-400/60 italic">
-                  Tap to add notes...
-                </p>
-              )}
-            </div>
-            {/* Sticky note corner fold effect */}
-            <div className="absolute bottom-0 right-0 w-0 h-0 border-l-[12px] border-l-transparent border-b-[12px] border-b-amber-300 dark:border-b-amber-700 rounded-bl-sm" />
+            <RoomNotesPanel roomId={room.id} compact />
           </div>
 
           {/* Location */}
