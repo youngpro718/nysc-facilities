@@ -2,13 +2,7 @@
 import * as z from "zod";
 
 export const lightingFixtureSchema = z.object({
-  name: z.string()
-    .min(1, "Name is required")
-    .refine((name) => {
-      const roomPattern = /^Room \d+[A-Za-z]* - (ceiling|wall|floor) Light \d+$/;
-      const hallwayPattern = /^Hallway .+ - Light \d+$/;
-      return roomPattern.test(name) || hallwayPattern.test(name);
-    }, "Name must follow the format: 'Room {number} - {position} Light {sequence}' or 'Hallway {name} - Light {sequence}'"),
+  name: z.string().min(1, "Name is required"),
   type: z.enum(["standard", "emergency", "exit_sign", "decorative", "motion_sensor"]),
   status: z.enum([
     "functional",
@@ -17,7 +11,7 @@ export const lightingFixtureSchema = z.object({
     "pending_maintenance",
     "scheduled_replacement"
   ]).default("functional"),
-  space_id: z.string().uuid(),
+  space_id: z.string().min(1, "Please select a space"),
   space_type: z.enum(["room", "hallway"]),
   room_number: z.string().nullable(),
   position: z.enum(["ceiling", "wall", "floor", "desk"]),
@@ -36,7 +30,7 @@ export const lightingFixtureSchema = z.object({
   }),
   ballast_issue: z.boolean().default(false),
   ballast_check_notes: z.string().nullable(),
-  zone_id: z.string().uuid().nullable()
+  zone_id: z.string().uuid().nullable().optional()
 });
 
 export const lightingZoneSchema = z.object({
