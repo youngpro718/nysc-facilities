@@ -122,10 +122,10 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                     <div className="space-y-1">
                       <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
                         <img 
-                          src={courtroomPhotos.judge_view} 
+                          src={courtroomPhotos?.judge_view || ''} 
                           alt="Judge View" 
                           className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
-                          onClick={() => window.open(courtroomPhotos.judge_view!, '_blank')}
+                          onClick={() => courtroomPhotos?.judge_view && window.open(courtroomPhotos.judge_view, '_blank')}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground text-center">Judge View</p>
@@ -135,10 +135,10 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                     <div className="space-y-1">
                       <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
                         <img 
-                          src={courtroomPhotos.audience_view} 
+                          src={courtroomPhotos?.audience_view || ''} 
                           alt="Audience View" 
                           className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
-                          onClick={() => window.open(courtroomPhotos.audience_view!, '_blank')}
+                          onClick={() => courtroomPhotos?.audience_view && window.open(courtroomPhotos.audience_view, '_blank')}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground text-center">Audience View</p>
