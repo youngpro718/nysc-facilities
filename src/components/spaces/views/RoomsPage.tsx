@@ -8,7 +8,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { FilterBar } from "../rooms/components/FilterBar";
 import { MobileFilterBar } from "../rooms/components/MobileFilterBar";
 import { RoomsContent } from "../rooms/components/RoomsContent";
-import { RoomDetailsDialog } from "../rooms/components/RoomDetailsDialog";
+import { MobileRoomDrawer } from "../rooms/components/MobileRoomDrawer";
 import { MobileInventoryDialog } from "../rooms/components/MobileInventoryDialog";
 import { RoomsSidebarList } from "../rooms/components/RoomsSidebarList";
 import { RoomCard } from "../rooms/RoomCard";
@@ -238,7 +238,7 @@ const RoomsPage = () => {
         />
       )}
 
-      <RoomDetailsDialog
+      <MobileRoomDrawer
         room={selectedRoom}
         isOpen={isRoomDialogOpen}
         onClose={() => {
