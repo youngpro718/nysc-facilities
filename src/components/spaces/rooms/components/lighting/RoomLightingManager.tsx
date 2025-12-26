@@ -30,11 +30,19 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
   const [totalBulbs, setTotalBulbs] = useState(room.total_fixtures_count || 4);
   const [defaultBulbType, setDefaultBulbType] = useState<string>('LED');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasLoadedFromDb, setHasLoadedFromDb] = useState(false);
   const { toast } = useToast();
 
   const [fixtures, setFixtures] = useState<LightingFixture[]>([]);
 
-  // Fetch real lighting fixtures from database
+  // Reset loaded state when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setHasLoadedFromDb(false);
+    }
+  }, [isOpen]);
+
+  // Fetch real lighting fixtures from database - ONLY when dialog opens or room changes
   useEffect(() => {
     const fetchFixtures = async () => {
       try {
@@ -63,68 +71,71 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
         } else {
           // Create default fixtures if none exist
           const defaultFixtures: LightingFixture[] = [];
-          const initialCount = totalBulbs || 4;
+          const initialCount = 4;
           for (let i = 1; i <= initialCount; i++) {
             defaultFixtures.push({
               id: `temp-${i}`,
               name: `Light ${i}`,
               location: i <= 2 ? 'Ceiling Main' : 'Ceiling Corner',
-              bulbType: defaultBulbType,
+              bulbType: 'LED',
               status: 'functional',
               ballastIssue: false
             });
           }
           setFixtures(defaultFixtures);
+          setTotalBulbs(initialCount);
         }
+        setHasLoadedFromDb(true);
       } catch (error) {
         console.error('Error fetching fixtures:', error);
         // Fallback to default fixtures
         const defaultFixtures: LightingFixture[] = [];
-        const initialCount = totalBulbs || 4;
-        for (let i = 1; i <= initialCount; i++) {
+        for (let i = 1; i <= 4; i++) {
           defaultFixtures.push({
             id: `temp-${i}`,
             name: `Light ${i}`,
             location: 'Ceiling',
-            bulbType: defaultBulbType,
+            bulbType: 'LED',
             status: 'functional',
             ballastIssue: false
           });
         }
         setFixtures(defaultFixtures);
+        setTotalBulbs(4);
+        setHasLoadedFromDb(true);
       }
     };
 
-    if (isOpen && room.id) {
+    // Only fetch when dialog opens AND we haven't loaded yet
+    if (isOpen && room.id && !hasLoadedFromDb) {
       fetchFixtures();
     }
-  }, [isOpen, room.id, totalBulbs, defaultBulbType]);
+  }, [isOpen, room.id, hasLoadedFromDb]);
 
-  // Handle total fixtures count change
-  useEffect(() => {
-    if (totalBulbs && fixtures.length > 0) {
-      const currentCount = fixtures.length;
-      
-      if (totalBulbs > currentCount) {
-        // Add fixtures
-        const newFixtures = [...fixtures];
-        for (let i = currentCount + 1; i <= totalBulbs; i++) {
-          newFixtures.push({
-            id: `temp-${i}`,
-            name: `Light ${i}`,
-            location: 'Ceiling',
-            bulbType: defaultBulbType,
-            status: 'functional',
-            ballastIssue: false
-          });
-        }
-        setFixtures(newFixtures);
-      } else if (totalBulbs < currentCount) {
-        // Remove fixtures (keep existing ones, remove from end)
-        setFixtures(prev => prev.slice(0, totalBulbs));
+  // Handle total fixtures count change from input field only
+  const handleTotalBulbsChange = (newTotal: number) => {
+    const currentCount = fixtures.length;
+    setTotalBulbs(newTotal);
+    
+    if (newTotal > currentCount) {
+      // Add fixtures
+      const newFixtures = [...fixtures];
+      for (let i = currentCount + 1; i <= newTotal; i++) {
+        newFixtures.push({
+          id: `temp-${Date.now()}-${i}`,
+          name: `Light ${i}`,
+          location: 'Ceiling',
+          bulbType: defaultBulbType,
+          status: 'functional',
+          ballastIssue: false
+        });
       }
+      setFixtures(newFixtures);
+    } else if (newTotal < currentCount) {
+      // Remove fixtures (keep existing ones, remove from end)
+      setFixtures(prev => prev.slice(0, newTotal));
     }
-  }, [totalBulbs, defaultBulbType]);
+  };
 
   const statusStats = useMemo(() => {
     const functional = fixtures.filter(f => f.status === 'functional').length;
@@ -261,7 +272,7 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
 
   const addFixture = () => {
     const newFixture: LightingFixture = {
-      id: `temp-${fixtures.length + 1}`,
+      id: `temp-${Date.now()}`,
       name: `Light ${fixtures.length + 1}`,
       location: 'Ceiling',
       bulbType: defaultBulbType,
@@ -269,7 +280,7 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
       ballastIssue: false
     };
     setFixtures(prev => [...prev, newFixture]);
-    setTotalBulbs(prev => prev + 1);
+    setTotalBulbs(fixtures.length + 1);
   };
 
   return (
@@ -316,7 +327,7 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
                   id="totalBulbs"
                   type="number"
                   value={totalBulbs}
-                  onChange={(e) => setTotalBulbs(parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleTotalBulbsChange(parseInt(e.target.value) || 0)}
                   min="1"
                   max="20"
                 />
