@@ -20,8 +20,8 @@ interface UpdateSpaceData {
   current_function?: string;
   parent_room_id?: string | null;
   courtroom_photos?: {
-    judge_view?: string | null;
-    audience_view?: string | null;
+    judge_view?: string[] | null;
+    audience_view?: string[] | null;
   };
 }
 

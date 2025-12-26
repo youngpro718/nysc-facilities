@@ -11,7 +11,8 @@ import {
   Trash2,
   Pencil,
   ChevronRight,
-  MapPin
+  MapPin,
+  Camera
 } from "lucide-react";
 import { Room } from "../types/RoomTypes";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
@@ -46,6 +47,19 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
     enhancedRoom?.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0;
   const lightingPercentage = totalLights > 0 ? Math.round((functionalLights / totalLights) * 100) : 100;
   const hasLightingIssue = lightingPercentage < 80;
+  
+  // Courtroom photos - handle array and legacy string format
+  const isCourtroom = room.room_type === 'courtroom';
+  const courtroomPhotos = room.courtroom_photos;
+  const judgeViewPhotos = courtroomPhotos?.judge_view 
+    ? (Array.isArray(courtroomPhotos.judge_view) ? courtroomPhotos.judge_view : [courtroomPhotos.judge_view])
+    : [];
+  const audienceViewPhotos = courtroomPhotos?.audience_view 
+    ? (Array.isArray(courtroomPhotos.audience_view) ? courtroomPhotos.audience_view : [courtroomPhotos.audience_view])
+    : [];
+  const totalPhotos = judgeViewPhotos.length + audienceViewPhotos.length;
+  const hasPhotos = totalPhotos > 0;
+  const heroPhoto = judgeViewPhotos[0] || audienceViewPhotos[0];
   
   const occupantCount = room.current_occupants?.length ?? 0;
   
@@ -157,38 +171,33 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
             }}
           >
             <div className="p-4 flex items-center gap-4">
-              {/* Left: Status & Metrics Column */}
-              <div className="flex flex-col items-center gap-2 shrink-0">
-                {/* Status Indicator */}
-                <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
-                
-                {/* Lighting Mini Ring */}
-                <div className={`relative w-11 h-11 rounded-full flex items-center justify-center ${getLightingColor()}`}>
-                  <svg className="absolute inset-0 w-11 h-11 -rotate-90">
-                    <circle
-                      cx="22"
-                      cy="22"
-                      r="18"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      fill="none"
-                      className="opacity-20"
-                    />
-                    <circle
-                      cx="22"
-                      cy="22"
-                      r="18"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      fill="none"
-                      strokeDasharray={`${2 * Math.PI * 18}`}
-                      strokeDashoffset={`${2 * Math.PI * 18 * (1 - lightingPercentage / 100)}`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <Lightbulb className="h-4 w-4" />
-                </div>
+              {/* Left: Photo or Status & Metrics Column */}
+              {isCourtroom && hasPhotos && heroPhoto ? (
+                <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-border">
+                  <img src={heroPhoto} alt="Courtroom" className="w-full h-full object-cover" />
+                  {totalPhotos > 1 && (
+                    <div className="absolute bottom-0 right-0 bg-background/80 text-xs px-1 py-0.5 rounded-tl flex items-center gap-0.5">
+                      <Camera className="h-2.5 w-2.5" />
+                      {totalPhotos}
               </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 shrink-0">
+                  <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
+                  <div className={`relative w-11 h-11 rounded-full flex items-center justify-center ${getLightingColor()}`}>
+                    <svg className="absolute inset-0 w-11 h-11 -rotate-90">
+                      <circle cx="22" cy="22" r="18" stroke="currentColor" strokeWidth="3" fill="none" className="opacity-20" />
+                      <circle
+                        cx="22" cy="22" r="18" stroke="currentColor" strokeWidth="3" fill="none"
+                        strokeDasharray={`${2 * Math.PI * 18}`}
+                        strokeDashoffset={`${2 * Math.PI * 18 * (1 - lightingPercentage / 100)}`}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <Lightbulb className="h-4 w-4" />
+                  </div>
+                </div>
+              )}
 
               {/* Center: Room Info */}
               <div className="flex-1 min-w-0">
@@ -205,7 +214,8 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
                     Room {room.room_number}
                     {room.floor?.building?.name && ` · ${room.floor.building.name}`}
                   </span>
-                </div>
+              </div>
+              )}
                 
                 {/* Quick Stats Row */}
                 <div className="flex items-center gap-3 flex-wrap">

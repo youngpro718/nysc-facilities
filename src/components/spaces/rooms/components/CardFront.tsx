@@ -34,8 +34,15 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
   // Courtroom photos
   const isCourtroom = room.room_type === 'courtroom';
   const courtroomPhotos = room.courtroom_photos;
-  const hasPhotos = courtroomPhotos && (courtroomPhotos.judge_view || courtroomPhotos.audience_view);
-  const heroPhoto = courtroomPhotos?.judge_view || courtroomPhotos?.audience_view;
+  // Handle both array and legacy string format
+  const judgeViewPhotos = courtroomPhotos?.judge_view 
+    ? (Array.isArray(courtroomPhotos.judge_view) ? courtroomPhotos.judge_view : [courtroomPhotos.judge_view])
+    : [];
+  const audienceViewPhotos = courtroomPhotos?.audience_view 
+    ? (Array.isArray(courtroomPhotos.audience_view) ? courtroomPhotos.audience_view : [courtroomPhotos.audience_view])
+    : [];
+  const hasPhotos = judgeViewPhotos.length > 0 || audienceViewPhotos.length > 0;
+  const heroPhoto = judgeViewPhotos[0] || audienceViewPhotos[0];
   
   return (
     <div className="relative flex flex-col h-full bg-gradient-to-br from-background to-muted/20">
