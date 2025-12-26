@@ -179,7 +179,8 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
                     <div className="absolute bottom-0 right-0 bg-background/80 text-xs px-1 py-0.5 rounded-tl flex items-center gap-0.5">
                       <Camera className="h-2.5 w-2.5" />
                       {totalPhotos}
-              </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2 shrink-0">
@@ -214,8 +215,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
                     Room {room.room_number}
                     {room.floor?.building?.name && ` · ${room.floor.building.name}`}
                   </span>
-              </div>
-              )}
+                </div>
                 
                 {/* Quick Stats Row */}
                 <div className="flex items-center gap-3 flex-wrap">
