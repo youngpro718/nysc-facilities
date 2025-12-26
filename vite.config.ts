@@ -79,7 +79,6 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       // Let Vite determine the protocol/host/port automatically
       // This prevents issues where 'localhost' binding fails in tunneled environments
-      clientPort: 8080,
       overlay: false, // Disable error overlay that can trigger refreshes
     },
     watch: {
