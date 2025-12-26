@@ -1,12 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, AlertCircle, Settings, History, Lightbulb, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-import { format, differenceInDays, isAfter, isWithinInterval, subDays } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Clock, CheckCircle, AlertCircle, Settings, History, Lightbulb, ChevronDown, ChevronUp, ExternalLink, Filter, Shield, TrendingUp } from "lucide-react";
+import { format, differenceInDays, isAfter, subDays, subMonths, subYears } from "date-fns";
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RoomHistoryTimelineProps {
   room: EnhancedRoom;
@@ -24,18 +30,20 @@ interface HistoryEvent {
   status: string;
 }
 
+type TimeFilter = '30d' | '90d' | '1y' | 'all';
+
 export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
   const navigate = useNavigate();
   const [realEvents, setRealEvents] = useState<HistoryEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
 
   // Fetch real data from database
   useEffect(() => {
     const fetchRoomHistory = async () => {
       setIsLoading(true);
       try {
-        // Fetch ALL issues for this room, regardless of status
         const { data: roomIssues, error } = await supabase
           .from('issues')
           .select('*')
@@ -44,7 +52,6 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
 
         if (error) throw error;
         
-        // Convert issues to history events
         const events: HistoryEvent[] = (roomIssues || []).map((issue: any) => {
           const resolutionSpeed = issue.status === 'resolved' || issue.status === 'closed'
             ? getResolutionSpeed(issue.created_at, issue.updated_at)
@@ -63,7 +70,6 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
           };
         });
 
-        // Add room function changes from previous_functions
         if (room.previous_functions && Array.isArray(room.previous_functions)) {
           room.previous_functions.forEach((func: any) => {
             events.push({
@@ -112,6 +118,51 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
     return 'other';
   };
 
+  // Filter events by time
+  const filteredEvents = useMemo(() => {
+    if (timeFilter === 'all') return realEvents;
+    
+    const now = new Date();
+    let cutoffDate: Date;
+    
+    switch (timeFilter) {
+      case '30d':
+        cutoffDate = subDays(now, 30);
+        break;
+      case '90d':
+        cutoffDate = subDays(now, 90);
+        break;
+      case '1y':
+        cutoffDate = subYears(now, 1);
+        break;
+      default:
+        return realEvents;
+    }
+    
+    return realEvents.filter(e => isAfter(new Date(e.date), cutoffDate));
+  }, [realEvents, timeFilter]);
+
+  // Calculate category stats for year
+  const categoryStats = useMemo(() => {
+    const yearAgo = subYears(new Date(), 1);
+    const yearEvents = realEvents.filter(e => isAfter(new Date(e.date), yearAgo));
+    
+    const stats = {
+      lighting: yearEvents.filter(e => e.category === 'lighting').length,
+      maintenance: yearEvents.filter(e => e.category === 'maintenance').length,
+      safety: yearEvents.filter(e => e.category === 'safety').length,
+      access: yearEvents.filter(e => e.category === 'access').length,
+      other: yearEvents.filter(e => e.category === 'other').length,
+    };
+    
+    // Identify chronic issues (same category > 3 times this year)
+    const chronicCategories = Object.entries(stats)
+      .filter(([_, count]) => count >= 3)
+      .map(([cat]) => cat);
+    
+    return { stats, chronicCategories };
+  }, [realEvents]);
+
   const getResolutionBadge = (speed?: string) => {
     switch (speed) {
       case 'quick':
@@ -135,6 +186,8 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
         return <Settings className="h-3 w-3" />;
       case 'safety':
         return <AlertCircle className="h-3 w-3" />;
+      case 'access':
+        return <Shield className="h-3 w-3" />;
       default:
         return <History className="h-3 w-3" />;
     }
@@ -167,28 +220,61 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
     );
   }
 
-  // Generate summary insights
-  const quickFixes = realEvents.filter(e => e.resolutionSpeed === 'quick').length;
-  const ongoingIssues = realEvents.filter(e => e.resolutionSpeed === 'ongoing').length;
-  const recentIssues = realEvents.filter(e => 
+  const quickFixes = filteredEvents.filter(e => e.resolutionSpeed === 'quick').length;
+  const ongoingIssues = filteredEvents.filter(e => e.resolutionSpeed === 'ongoing').length;
+  const recentIssues = filteredEvents.filter(e => 
     isAfter(new Date(e.date), subDays(new Date(), 30))
   ).length;
 
-  const displayedEvents = showAll ? realEvents : realEvents.slice(0, 5);
+  const displayedEvents = showAll ? filteredEvents : filteredEvents.slice(0, 5);
 
   const handleEventClick = (event: HistoryEvent) => {
     if (event.type === 'quick_fix' && event.id.startsWith('func-')) {
-      // Room function changes aren't issues, so no detail view
       return;
     }
-    // Navigate to operations page with issue_id to open the dialog
     navigate(`/operations?tab=issues&issue_id=${event.id}`);
   };
 
   return (
     <div className="space-y-4">
+      {/* Time Filter */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Filter className="h-3 w-3" />
+          <span>Filter by time</span>
+        </div>
+        <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
+          <SelectTrigger className="h-7 w-28 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30d" className="text-xs">Last 30 days</SelectItem>
+            <SelectItem value="90d" className="text-xs">Last 90 days</SelectItem>
+            <SelectItem value="1y" className="text-xs">Last year</SelectItem>
+            <SelectItem value="all" className="text-xs">All time</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Category Summary (Issues by Type This Year) */}
+      {categoryStats.chronicCategories.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-2 rounded-md">
+          <div className="flex items-center gap-2 text-xs">
+            <TrendingUp className="h-3.5 w-3.5 text-amber-600" />
+            <span className="font-medium text-amber-700 dark:text-amber-400">Chronic Issues Detected</span>
+          </div>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {categoryStats.chronicCategories.map((cat) => (
+              <Badge key={cat} variant="outline" className="text-[10px] capitalize border-amber-400 text-amber-700 dark:text-amber-400">
+                {cat}: {categoryStats.stats[cat as keyof typeof categoryStats.stats]} this year
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Summary insights */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
+      <div className="grid grid-cols-3 gap-2">
         <div className="text-center p-2 bg-muted/30 rounded-md border">
           <div className="text-sm font-bold text-green-600">{quickFixes}</div>
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Quick Fixes</div>
@@ -203,46 +289,64 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
         </div>
       </div>
 
+      {/* Category Breakdown */}
+      <div className="flex flex-wrap gap-1.5">
+        {Object.entries(categoryStats.stats)
+          .filter(([_, count]) => count > 0)
+          .map(([cat, count]) => (
+            <Badge key={cat} variant="secondary" className="text-[10px] capitalize gap-1">
+              {getCategoryIcon(cat)}
+              {cat}: {count}
+            </Badge>
+          ))}
+      </div>
+
       {/* Timeline */}
       <div className="space-y-3 relative">
-        {displayedEvents.map((event, index) => (
-          <div 
-            key={event.id} 
-            className={`p-3 rounded-r-md border-l-4 transition-all hover:bg-muted/50 cursor-pointer group ${getSeverityColor(event.severity)}`}
-            onClick={() => handleEventClick(event)}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-start gap-2 flex-1">
-                <div className="flex items-center gap-1 text-muted-foreground mt-0.5">
-                  {getCategoryIcon(event.category)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h5 className="text-sm font-medium text-foreground truncate max-w-[150px] group-hover:text-primary transition-colors">
-                      {event.title}
-                    </h5>
-                    {getResolutionBadge(event.resolutionSpeed)}
-                    <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity ml-auto" />
+        {displayedEvents.length === 0 ? (
+          <div className="text-center py-4 text-xs text-muted-foreground">
+            No events in this time period
+          </div>
+        ) : (
+          displayedEvents.map((event) => (
+            <div 
+              key={event.id} 
+              className={`p-3 rounded-r-md border-l-4 transition-all hover:bg-muted/50 cursor-pointer group ${getSeverityColor(event.severity)}`}
+              onClick={() => handleEventClick(event)}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2 flex-1">
+                  <div className="flex items-center gap-1 text-muted-foreground mt-0.5">
+                    {getCategoryIcon(event.category)}
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-1.5">
-                    {event.description}
-                  </p>
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {format(new Date(event.date), 'MMM d, yyyy')}
-                    <span className="text-muted-foreground/60">
-                      • {differenceInDays(new Date(), new Date(event.date))} days ago
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h5 className="text-sm font-medium text-foreground truncate max-w-[150px] group-hover:text-primary transition-colors">
+                        {event.title}
+                      </h5>
+                      {getResolutionBadge(event.resolutionSpeed)}
+                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity ml-auto" />
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-1.5">
+                      {event.description}
+                    </p>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {format(new Date(event.date), 'MMM d, yyyy')}
+                      <span className="text-muted-foreground/60">
+                        • {differenceInDays(new Date(), new Date(event.date))} days ago
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
         
-        {realEvents.length > 5 && (
+        {filteredEvents.length > 5 && (
           <Button 
             variant="ghost" 
             size="sm" 
@@ -257,7 +361,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
             ) : (
               <>
                 <ChevronDown className="h-3 w-3 mr-1" />
-                View {realEvents.length - 5} More Events
+                View {filteredEvents.length - 5} More Events
               </>
             )}
           </Button>
