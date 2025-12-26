@@ -427,6 +427,13 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           </div>
         )}
 
+        {/* Notes Tab */}
+        {activeTab === 'notes' && (
+          <div className="space-y-3">
+            <RoomNotesPanel roomId={room.id} compact={false} />
+          </div>
+        )}
+
         {/* History Tab */}
         {activeTab === 'history' && (
           <div className="space-y-3">
