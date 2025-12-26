@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
-import { LockboxSlot } from "../types/LockboxTypes";
-import { Key, AlertTriangle, CheckCircle, Archive } from "lucide-react";
+import { LockboxSlot, getRoomLinkStatus } from "../types/LockboxTypes";
+import { Key, AlertTriangle, CheckCircle, Archive, Link2, Link2Off, CircleDashed } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LockboxSlotCardProps {
   slot: LockboxSlot;
@@ -25,6 +26,58 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
     }
   };
 
+  const roomLinkStatus = getRoomLinkStatus(slot);
+
+  const getRoomLinkIndicator = () => {
+    switch (roomLinkStatus) {
+      case 'linked':
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-500">
+                  <Link2 className="w-3.5 h-3.5" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Linked to room in database</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      case 'unlinked':
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-500">
+                  <Link2Off className="w-3.5 h-3.5" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Room not linked - click to fix</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      case 'no_room':
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <CircleDashed className="w-3.5 h-3.5" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>No room assigned</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+    }
+  };
+
   return (
     <div 
       className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
@@ -36,8 +89,16 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
         </div>
         <div>
           <h4 className="font-bold text-base">{slot.label}</h4>
-          <div className="text-sm text-muted-foreground flex gap-2">
-            {slot.room_number && <span>Room: {slot.room_number}</span>}
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            {(slot.room_number || slot.room_id) && (
+              <>
+                {getRoomLinkIndicator()}
+                <span>Room: {slot.room_number || 'Linked'}</span>
+              </>
+            )}
+            {!slot.room_number && !slot.room_id && (
+              <span className="text-muted-foreground/60 italic">No room</span>
+            )}
             {slot.quantity && slot.quantity > 1 && (
               <span className="text-primary font-semibold">
                 × {slot.quantity} keys
