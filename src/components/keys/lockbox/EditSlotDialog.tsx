@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, Edit3 } from "lucide-react";
-import { LockboxSlot, LockboxWithSlotCount } from "../types/LockboxTypes";
+import { LockboxSlot } from "../types/LockboxTypes";
 import { useQuery } from "@tanstack/react-query";
+import { RoomSelector } from "./RoomSelector";
 
 interface EditSlotDialogProps {
   slot: LockboxSlot | null;
@@ -19,7 +20,8 @@ interface EditSlotDialogProps {
 
 export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlotDialogProps) {
   const [label, setLabel] = useState("");
-  const [roomNumber, setRoomNumber] = useState("");
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [targetLockboxId, setTargetLockboxId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -41,11 +43,17 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
   useEffect(() => {
     if (slot) {
       setLabel(slot.label);
-      setRoomNumber(slot.room_number || "");
+      setRoomId(slot.room_id || null);
+      setRoomNumber(slot.room_number || null);
       setTargetLockboxId(slot.lockbox_id);
       setQuantity(slot.quantity || 1);
     }
   }, [slot]);
+
+  const handleRoomChange = (newRoomId: string | null, newRoomNumber: string | null) => {
+    setRoomId(newRoomId);
+    setRoomNumber(newRoomNumber);
+  };
 
   const handleUpdate = async () => {
     if (!slot || !label.trim()) {
@@ -57,7 +65,8 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
     try {
       const updates: any = {
         label: label.trim(),
-        room_number: roomNumber.trim() || null,
+        room_id: roomId,
+        room_number: roomNumber || null,
         quantity: quantity,
         updated_at: new Date().toISOString()
       };
@@ -77,6 +86,15 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
 
       // Log the activity
       const { data: { user } } = await supabase.auth.getUser();
+      
+      let noteText = `Updated label to "${label}"`;
+      if (isMoving) {
+        noteText = `Moved to different lockbox. ${noteText}`;
+      }
+      if (roomId !== slot.room_id) {
+        noteText += roomId ? `. Linked to room ${roomNumber}` : `. Unlinked from room`;
+      }
+
       const { error: logError } = await supabase
         .from('lockbox_activity_logs')
         .insert({
@@ -86,7 +104,7 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
           status_after: slot.status,
           actor_user_id: user?.id,
           actor_name: user?.email,
-          note: isMoving ? `Moved to different lockbox. Updated label to "${label}"` : `Updated label to "${label}"`
+          note: noteText
         });
 
       if (logError) console.error('Error logging activity:', logError);
@@ -124,13 +142,16 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
           </div>
 
           <div className="space-y-2">
-            <Label>Room Number (Optional)</Label>
-            <Input 
-              placeholder="e.g. 1701, A-205" 
-              value={roomNumber} 
-              onChange={(e) => setRoomNumber(e.target.value)}
+            <Label>Room</Label>
+            <RoomSelector
+              value={roomId || undefined}
+              roomNumber={roomNumber || undefined}
+              onChange={handleRoomChange}
               disabled={isUpdating}
             />
+            <p className="text-xs text-muted-foreground">
+              Link this key slot to a room in the system
+            </p>
           </div>
 
           <div className="space-y-2">
