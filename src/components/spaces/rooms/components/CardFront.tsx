@@ -31,10 +31,31 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
   const functionalLights = room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0;
   const lightingPercentage = totalLights > 0 ? Math.round((functionalLights / totalLights) * 100) : 100;
   
+  // Courtroom photos
+  const isCourtroom = room.room_type === 'courtroom';
+  const courtroomPhotos = room.courtroom_photos;
+  const hasPhotos = courtroomPhotos && (courtroomPhotos.judge_view || courtroomPhotos.audience_view);
+  const heroPhoto = courtroomPhotos?.judge_view || courtroomPhotos?.audience_view;
+  
   return (
     <div className="relative flex flex-col h-full bg-gradient-to-br from-background to-muted/20">
+      {/* Courtroom Hero Photo */}
+      {isCourtroom && hasPhotos && heroPhoto && (
+        <div className="relative h-32 w-full overflow-hidden">
+          <img 
+            src={heroPhoto} 
+            alt="Courtroom" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          <Badge className="absolute top-2 right-2 bg-background/80 text-foreground">
+            Courtroom
+          </Badge>
+        </div>
+      )}
+      
       {/* Hero Header with Room Info */}
-      <div className="relative p-6 border-b border-border/40 bg-gradient-to-r from-primary/5 to-transparent">
+      <div className={`relative p-6 border-b border-border/40 bg-gradient-to-r from-primary/5 to-transparent ${isCourtroom && hasPhotos ? '-mt-8 pt-2' : ''}`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h3 className="text-2xl font-bold text-foreground truncate mb-1">

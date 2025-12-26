@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, Shield, AlertTriangle, History as HistoryIcon, StickyNote, Layers, Ticket, Plus } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, Shield, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera } from "lucide-react";
 import { useRoomAccess } from "@/hooks/useRoomAccess";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog } from "@/components/ui/dialog";
@@ -15,7 +15,6 @@ import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { RoomHistoryTimeline } from "./history/RoomHistoryTimeline";
 import { RoomLightingManager } from "./lighting/RoomLightingManager";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
-import { useChildRooms } from "@/hooks/useChildRooms";
 import { useLightingWithTickets } from "@/hooks/useLightingWithTickets";
 
 interface CardBackProps {
@@ -27,8 +26,12 @@ export function CardBack({ room, onFlip }: CardBackProps) {
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'access' | 'lighting' | 'notes' | 'history'>('info');
   const { data: roomAccess, isLoading: isAccessLoading } = useRoomAccess(room.id);
-  const { data: childRooms = [] } = useChildRooms(room.id);
   const { data: lightingWithTickets = [] } = useLightingWithTickets(room.id);
+  
+  // Courtroom photos
+  const isCourtroom = room.room_type === 'courtroom';
+  const courtroomPhotos = room.courtroom_photos;
+  const hasPhotos = courtroomPhotos && (courtroomPhotos.judge_view || courtroomPhotos.audience_view);
   const navigate = useNavigate();
   const { getIssuesForRoom } = useCourtIssuesIntegration();
 
@@ -107,6 +110,44 @@ export function CardBack({ room, onFlip }: CardBackProps) {
         {/* Info Tab */}
         {activeTab === 'info' && (
           <div className="space-y-4">
+            {/* Courtroom Photos - Prominent Display */}
+            {isCourtroom && hasPhotos && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium flex items-center gap-1">
+                  <Camera className="h-3.5 w-3.5 text-muted-foreground" />
+                  Courtroom Photos
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {courtroomPhotos?.judge_view && (
+                    <div className="space-y-1">
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
+                        <img 
+                          src={courtroomPhotos.judge_view} 
+                          alt="Judge View" 
+                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                          onClick={() => window.open(courtroomPhotos.judge_view!, '_blank')}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">Judge View</p>
+                    </div>
+                  )}
+                  {courtroomPhotos?.audience_view && (
+                    <div className="space-y-1">
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
+                        <img 
+                          src={courtroomPhotos.audience_view} 
+                          alt="Audience View" 
+                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                          onClick={() => window.open(courtroomPhotos.audience_view!, '_blank')}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">Audience View</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Room Location */}
             <div className="space-y-2">
               <h4 className="text-sm font-medium flex items-center gap-1">
@@ -119,30 +160,10 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               </div>
             </div>
             
-            {/* Room Hierarchy */}
+            {/* Room Hierarchy - only show parent chain, not children */}
             <div className="space-y-2">
-              <ParentRoomHierarchy roomId={room.id} compact={false} />
+              <ParentRoomHierarchy roomId={room.id} showChildren={false} compact={false} />
             </div>
-
-            {/* Child Rooms */}
-            {childRooms.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium flex items-center gap-1">
-                  <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                  Sub-Rooms ({childRooms.length})
-                </h4>
-                <div className="bg-muted/30 p-2 rounded-lg space-y-1">
-                  {childRooms.map((child) => (
-                    <div key={child.id} className="flex items-center justify-between p-2 bg-background/50 rounded-md text-xs">
-                      <span className="font-medium">{child.name}</span>
-                      <Badge variant="outline" className="text-[10px] capitalize">
-                        {child.room_type.replace(/_/g, ' ')}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
             
             {/* Type Information */}
             <div className="space-y-2">
