@@ -259,9 +259,21 @@ export function CardFront({
   const fixtures = (roomFixtures && roomFixtures.length ? roomFixtures : [fixture]).slice(0, 4);
   const columns = Math.max(1, Math.min(4, fixtures.length || 1));
 
+  const statusBorderColor = 
+    fixture.status === 'functional' ? 'border-emerald-500/30' :
+    fixture.status === 'non_functional' ? 'border-destructive/30' :
+    'border-amber-500/30';
+
+  const statusBgGlow = 
+    fixture.status === 'functional' ? 'hover:shadow-emerald-500/10' :
+    fixture.status === 'non_functional' ? 'hover:shadow-destructive/10' :
+    'hover:shadow-amber-500/10';
+
   return (
     <Card className={cn(
-      "w-full h-[280px] flex flex-col rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:shadow-md",
+      "w-full h-[320px] flex flex-col rounded-2xl border-2 bg-card/95 backdrop-blur-sm shadow-sm transition-all duration-300 hover:shadow-lg",
+      statusBorderColor,
+      statusBgGlow,
       isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
     )}>
       <CardHeader className="pt-4 pb-1 px-4">
@@ -300,37 +312,47 @@ export function CardFront({
           <span className="truncate">{getMountLabel()}</span>
         </div>
 
-        {/* Middle row: bulb visual + status pill */}
+        {/* Middle row: visual bulb icons + status pill */}
         <div className="flex items-stretch gap-3">
-          <div className="flex-1 rounded-xl border border-border/50 bg-muted/10 p-3">
-            <div className="flex items-center gap-3">
-              {/* simple two-bar representation */}
-              <div className={`flex-1 grid gap-3`} style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
-                {fixtures.map((fx, idx) => {
-                  const override = localStatuses[fx.id];
-                  const statusNow = override?.status ?? fx.status;
-                  const reqElecNow = override?.requires_electrician ?? fx.requires_electrician;
-                  const isOut = statusNow === 'non_functional';
-                  const isSelected = barChoiceIndex === idx;
-                  return (
-                    <button
-                      key={fx.id}
-                      type="button"
-                      onClick={() => handleBarClick(idx)}
-                      disabled={isActing}
-                      title={`Select fixture #${idx + 1}`}
-                      className={`h-4 rounded-md relative overflow-hidden cursor-pointer focus:outline-none focus:ring-2 border border-border/60 ${isOut ? 'bg-muted/20 opacity-70' : 'bg-foreground/5'} focus:ring-ring ${isSelected ? 'ring-2 ring-primary' : ''}`}
-                    >
-                      {/* simple fill to mimic design - neutral only */}
-                      {!isOut && (
-                        <div className="absolute inset-0 flex items-center">
-                          <div className="h-4 w-[85%] rounded-md bg-foreground/60" />
-                        </div>
+          <div className="flex-1 rounded-xl border border-border/50 bg-gradient-to-br from-muted/20 to-muted/5 p-4">
+            <div className="flex items-center justify-center gap-2">
+              {fixtures.map((fx, idx) => {
+                const override = localStatuses[fx.id];
+                const statusNow = override?.status ?? fx.status;
+                const reqElecNow = override?.requires_electrician ?? fx.requires_electrician;
+                const isOut = statusNow === 'non_functional';
+                const isMaint = statusNow === 'maintenance_needed' || statusNow === 'pending_maintenance';
+                const isBarSelected = barChoiceIndex === idx;
+                
+                return (
+                  <button
+                    key={fx.id}
+                    type="button"
+                    onClick={() => handleBarClick(idx)}
+                    disabled={isActing}
+                    title={`Select fixture #${idx + 1}`}
+                    className={cn(
+                      "relative w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200",
+                      "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                      isBarSelected ? "ring-2 ring-primary scale-110" : "",
+                      isOut ? "bg-muted/30" : isMaint ? "bg-amber-500/20" : "bg-emerald-500/20"
+                    )}
+                  >
+                    <Lightbulb 
+                      className={cn(
+                        "h-5 w-5 transition-all",
+                        isOut ? "text-muted-foreground/50" : 
+                        isMaint ? "text-amber-500" : 
+                        "text-emerald-500"
                       )}
-                    </button>
-                  );
-                })}
-              </div>
+                      fill={isOut ? "none" : isMaint ? "rgba(245, 158, 11, 0.3)" : "rgba(16, 185, 129, 0.3)"}
+                    />
+                    {!isOut && !isMaint && (
+                      <div className="absolute inset-0 rounded-full bg-emerald-400/20 animate-pulse" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

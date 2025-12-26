@@ -83,6 +83,8 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
     if (spaceId && position && spaces) {
       const space = spaces.find(s => s.id === spaceId);
       if (space) {
+        let sequence = 1;
+        
         try {
           const { data: sequenceData, error } = await supabase
             .rpc('get_next_lighting_sequence', {
@@ -90,30 +92,29 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
             });
           
           if (error) {
-            console.error('Error getting sequence:', error);
-            return;
+            console.warn('Could not get sequence, using fallback:', error);
+          } else {
+            sequence = typeof sequenceData === 'number' ? sequenceData : 1;
           }
-
-          const sequence = typeof sequenceData === 'number' ? sequenceData : 1;
-          
-          const name = generateFixtureName(
-            space.type as 'room' | 'hallway',
-            space.name,
-            space.room_number,
-            position,
-            sequence
-          );
-
-          form.setValue('name', name, {
-            shouldValidate: true,
-            shouldDirty: true,
-            shouldTouch: true
-          });
-
-          onSpaceOrPositionChange?.();
         } catch (error) {
-          console.error('Error in updateName:', error);
+          console.warn('Error getting sequence, using fallback:', error);
         }
+        
+        const name = generateFixtureName(
+          space.type as 'room' | 'hallway',
+          space.name,
+          space.room_number,
+          position,
+          sequence
+        );
+
+        form.setValue('name', name, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true
+        });
+
+        onSpaceOrPositionChange?.();
       }
     }
   };
