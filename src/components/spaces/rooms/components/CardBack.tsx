@@ -118,32 +118,54 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                   Courtroom Photos
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {courtroomPhotos?.judge_view && (
-                    <div className="space-y-1">
-                      <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
-                        <img 
-                          src={courtroomPhotos?.judge_view || ''} 
-                          alt="Judge View" 
-                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
-                          onClick={() => courtroomPhotos?.judge_view && window.open(courtroomPhotos.judge_view, '_blank')}
-                        />
+                  {courtroomPhotos?.judge_view && (() => {
+                    const photos = Array.isArray(courtroomPhotos.judge_view) 
+                      ? courtroomPhotos.judge_view 
+                      : [courtroomPhotos.judge_view];
+                    const firstPhoto = photos[0];
+                    return firstPhoto ? (
+                      <div className="space-y-1">
+                        <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
+                          <img 
+                            src={firstPhoto} 
+                            alt="Judge View" 
+                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                            onClick={() => window.open(firstPhoto, '_blank')}
+                          />
+                          {photos.length > 1 && (
+                            <div className="absolute top-1 right-1 bg-background/80 px-1.5 py-0.5 rounded text-xs">
+                              +{photos.length - 1}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center">Judge View ({photos.length})</p>
                       </div>
-                      <p className="text-xs text-muted-foreground text-center">Judge View</p>
-                    </div>
-                  )}
-                  {courtroomPhotos?.audience_view && (
-                    <div className="space-y-1">
-                      <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
-                        <img 
-                          src={courtroomPhotos?.audience_view || ''} 
-                          alt="Audience View" 
-                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
-                          onClick={() => courtroomPhotos?.audience_view && window.open(courtroomPhotos.audience_view, '_blank')}
-                        />
+                    ) : null;
+                  })()}
+                  {courtroomPhotos?.audience_view && (() => {
+                    const photos = Array.isArray(courtroomPhotos.audience_view) 
+                      ? courtroomPhotos.audience_view 
+                      : [courtroomPhotos.audience_view];
+                    const firstPhoto = photos[0];
+                    return firstPhoto ? (
+                      <div className="space-y-1">
+                        <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
+                          <img 
+                            src={firstPhoto} 
+                            alt="Audience View" 
+                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                            onClick={() => window.open(firstPhoto, '_blank')}
+                          />
+                          {photos.length > 1 && (
+                            <div className="absolute top-1 right-1 bg-background/80 px-1.5 py-0.5 rounded text-xs">
+                              +{photos.length - 1}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center">Audience View ({photos.length})</p>
                       </div>
-                      <p className="text-xs text-muted-foreground text-center">Audience View</p>
-                    </div>
-                  )}
+                    ) : null;
+                  })()}
                 </div>
               </div>
             )}

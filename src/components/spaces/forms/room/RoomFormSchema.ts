@@ -130,8 +130,8 @@ export const RoomFormSchema = z.object({
   rotation: z.number().optional(),
   type: z.literal("room").default("room"),
   courtroom_photos: z.object({
-    judge_view: z.string().nullable().optional(),
-    audience_view: z.string().nullable().optional()
+    judge_view: z.array(z.string()).nullable().optional(),
+    audience_view: z.array(z.string()).nullable().optional()
   }).nullable().optional(),
   // Replace keyDoorConnections with new room access system
   roomAccess: z.array(RoomAccessSchema).optional(),

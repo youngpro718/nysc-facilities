@@ -20,10 +20,10 @@ export const UnifiedConnectionSchema = z.object({
   id: z.string().uuid().optional(),
 });
 
-// Courtroom photos schema
+// Courtroom photos schema - supports multiple photos per view
 const courtroomPhotosSchema = z.object({
-  judge_view: z.string().nullable().optional(),
-  audience_view: z.string().nullable().optional()
+  judge_view: z.array(z.string()).nullable().optional(),
+  audience_view: z.array(z.string()).nullable().optional()
 }).nullable().optional();
 
 // Base space schema with common fields

@@ -96,9 +96,13 @@ export function EditSpaceDialog({
         try {
           await storageService.ensureBucketsExist(['courtroom-photos']);
           if (data.courtroom_photos && roomId) {
-            const validUrls = Object.values(data.courtroom_photos).filter(Boolean) as string[];
-            if (validUrls.length > 0) {
-              await storageService.cleanupOrphanedFiles('courtroom-photos', roomId, validUrls);
+            // Handle array format - flatten all photo URLs
+            const allPhotos = [
+              ...(data.courtroom_photos.judge_view || []),
+              ...(data.courtroom_photos.audience_view || [])
+            ].filter(Boolean) as string[];
+            if (allPhotos.length > 0) {
+              await storageService.cleanupOrphanedFiles('courtroom-photos', roomId, allPhotos);
             }
           }
         } catch {

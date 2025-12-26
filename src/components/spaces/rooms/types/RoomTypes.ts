@@ -34,10 +34,10 @@ export interface RoomConnection {
   };
 }
 
-// Define the courtroom photos interface for reuse
+// Define the courtroom photos interface for reuse - now supports arrays for multiple photos per view
 export interface CourtroomPhotos {
-  judge_view?: string | null;
-  audience_view?: string | null;
+  judge_view?: string[] | null;
+  audience_view?: string[] | null;
 }
 
 export interface Room {

@@ -34,8 +34,8 @@ export interface DatabaseRoom {
   capacity_size_category?: string;
   temporary_storage_use?: boolean;
   courtroom_photos?: {
-    judge_view?: string;
-    audience_view?: string;
+    judge_view?: string[];
+    audience_view?: string[];
   };
   position?: { x: number; y: number };
   size?: { width: number; height: number };

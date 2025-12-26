@@ -23,8 +23,8 @@ export interface Room {
   parentRoomId?: string;
   parentRoomName?: string;
   courtroom_photos?: {
-    judge_view: string | null;
-    audience_view: string | null;
+    judge_view: string[] | null;
+    audience_view: string[] | null;
   } | null;
 }
 
