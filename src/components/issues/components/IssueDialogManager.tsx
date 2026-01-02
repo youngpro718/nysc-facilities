@@ -5,6 +5,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { IssueDetails } from "../details/IssueDetails";
 import { ResolutionForm } from "../forms/ResolutionForm";
 import { DialogState } from "@/hooks/useDialogManager";
@@ -45,6 +46,9 @@ export const IssueDialogManager = ({ dialogState, onClose }: IssueDialogManagerP
           onOpenChange={handleSheetOpenChange}
         >
           <SheetContent side="right" className="w-full sm:w-3/4 md:w-2/3 lg:w-1/2">
+            <VisuallyHidden>
+              <SheetTitle>Issue Details</SheetTitle>
+            </VisuallyHidden>
             <IssueDetails 
               issueId={dialogState.data?.issueId} 
               onClose={onClose}
