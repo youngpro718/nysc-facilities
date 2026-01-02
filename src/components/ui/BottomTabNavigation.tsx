@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Home, Key, AlertCircle, User, X } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { MoreTabContent } from "@/components/navigation/MoreTabContent";
 
 const TABS = [
@@ -42,15 +42,15 @@ export const BottomTabNavigation: React.FC = () => {
                 className="h-[85vh] p-0 rounded-t-xl"
                 onOpenAutoFocus={(e) => e.preventDefault()}
               >
-                <div className="flex items-center justify-between p-4 border-b">
-                  <h2 className="text-lg font-semibold">More Options</h2>
+                <SheetHeader className="flex flex-row items-center justify-between p-4 border-b space-y-0">
+                  <SheetTitle>More Options</SheetTitle>
                   <button
                     onClick={() => setIsMoreSheetOpen(false)}
                     className="p-2 hover:bg-muted rounded-full transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
-                </div>
+                </SheetHeader>
                 <MoreTabContent />
               </SheetContent>
             </Sheet>
