@@ -38,7 +38,9 @@ export function ParentRoomHierarchy({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  const handleChildRoomClick = (childId: string) => {
+  const handleChildRoomClick = (e: React.MouseEvent, childId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
     // Preserve current building/floor filters and navigate to the child room
     const currentBuilding = searchParams.get('building');
     const currentFloor = searchParams.get('floor');
@@ -149,7 +151,7 @@ export function ParentRoomHierarchy({
               {children.map((child: any) => (
                 <button
                   key={child.child_id}
-                  onClick={() => handleChildRoomClick(child.child_id)}
+                  onClick={(e) => handleChildRoomClick(e, child.child_id)}
                   className="w-full flex items-center justify-between p-2 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer text-left"
                 >
                   <div className="flex items-center gap-2">
