@@ -182,9 +182,9 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               </div>
             </div>
             
-            {/* Room Hierarchy - only show parent chain, not children */}
+            {/* Room Hierarchy - show parent chain and child rooms */}
             <div className="space-y-2">
-              <ParentRoomHierarchy roomId={room.id} showChildren={false} compact={false} />
+              <ParentRoomHierarchy roomId={room.id} showChildren={true} compact={false} />
             </div>
             
             {/* Type Information */}
@@ -313,20 +313,67 @@ export function CardBack({ room, onFlip }: CardBackProps) {
         )}
 
         {/* Access Tab */}
-        {activeTab === 'access' && roomAccess && (
+        {activeTab === 'access' && (
           <div className="space-y-4">
-            {/* Enhanced Key Holders Display */}
-            {roomAccess.key_holders.length > 0 && (
+            {/* Empty State */}
+            {(!roomAccess || (roomAccess.key_holders.length === 0 && roomAccess.access_doors.length === 0 && (!room.current_occupants || room.current_occupants.length === 0))) && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No access information available</p>
+              </div>
+            )}
+
+            {/* People with Access - Combined occupants and key holders */}
+            {roomAccess && (roomAccess.key_holders.length > 0 || (room.current_occupants && room.current_occupants.length > 0)) && (
               <div className="bg-muted/50 p-3 rounded-lg">
                 <div className="text-sm font-medium mb-3 flex items-center justify-between">
-                  <span>Key Holders</span>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    People with Access
+                  </span>
                   <Badge variant="secondary" className="text-xs">
-                    {roomAccess.key_holders.length} total
+                    {(room.current_occupants?.length || 0) + roomAccess.key_holders.length} total
                   </Badge>
                 </div>
                 <div className="space-y-2">
+                  {/* Occupants first */}
+                  {room.current_occupants?.map((occupant, index) => (
+                    <button
+                      key={`occupant-${index}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (occupant.id) {
+                          navigate(`/occupants/${encodeURIComponent(occupant.id)}`);
+                        }
+                      }}
+                      className="w-full flex items-center justify-between p-2 bg-background/50 rounded-md hover:bg-background/70 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-xs font-medium text-primary">
+                            {occupant.first_name?.[0]}{occupant.last_name?.[0]}
+                          </span>
+                        </div>
+                        <span className="text-sm font-medium">{occupant.first_name} {occupant.last_name}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {occupant.is_primary ? 'Primary Occupant' : 'Occupant'}
+                      </Badge>
+                    </button>
+                  ))}
+                  
+                  {/* Key holders */}
                   {roomAccess.key_holders.map((holder, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-background/50 rounded-md">
+                    <button
+                      key={`keyholder-${index}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (holder.id) {
+                          navigate(`/occupants/${encodeURIComponent(holder.id)}`);
+                        }
+                      }}
+                      className="w-full flex items-center justify-between p-2 bg-background/50 rounded-md hover:bg-background/70 transition-colors"
+                    >
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-xs font-medium text-primary">
@@ -342,16 +389,18 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                             Master
                           </Badge>
                         )}
-                        <span className="text-xs text-muted-foreground">{holder.key_name}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          Key: {holder.key_name}
+                        </Badge>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
             )}
             
             {/* Access Doors */}
-            {roomAccess.access_doors.length > 0 && (
+            {roomAccess && roomAccess.access_doors.length > 0 && (
               <div className="bg-muted/50 p-2 rounded-md">
                 <p className="text-xs font-medium mb-2">Access Points</p>
                 <div className="space-y-1">
@@ -368,11 +417,11 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             )}
             
             {/* Access Conflicts */}
-            {roomAccess.access_conflicts && roomAccess.access_conflicts.length > 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 p-2 rounded-md">
-                <p className="text-xs font-medium text-yellow-800 mb-1">Access Alerts</p>
+            {roomAccess && roomAccess.access_conflicts && roomAccess.access_conflicts.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-2 rounded-md">
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">Access Alerts</p>
                 {roomAccess.access_conflicts.map((conflict, index) => (
-                  <p key={index} className="text-xs text-yellow-700">
+                  <p key={index} className="text-xs text-amber-600 dark:text-amber-500">
                     {conflict.description}
                   </p>
                 ))}

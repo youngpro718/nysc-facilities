@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
-import { Users, ArrowRight, Building2 } from "lucide-react";
+import { Users, ArrowRight, Building2, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface ParentRoomHierarchyProps {
   roomId: string;
@@ -34,6 +35,20 @@ export function ParentRoomHierarchy({
   showParent = true, 
   compact = false 
 }: ParentRoomHierarchyProps) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  const handleChildRoomClick = (childId: string) => {
+    // Preserve current building/floor filters and navigate to the child room
+    const currentBuilding = searchParams.get('building');
+    const currentFloor = searchParams.get('floor');
+    const params = new URLSearchParams();
+    if (currentBuilding) params.set('building', currentBuilding);
+    if (currentFloor) params.set('floor', currentFloor);
+    params.set('room', childId);
+    navigate(`/spaces?${params.toString()}`);
+  };
+
   const { data: roomData } = useQuery({
     queryKey: ["room-hierarchy", roomId],
     queryFn: async () => {
@@ -132,9 +147,10 @@ export function ParentRoomHierarchy({
           <CardContent className="pt-0">
             <div className="grid gap-2">
               {children.map((child: any) => (
-                <div
+                <button
                   key={child.child_id}
-                  className="flex items-center justify-between p-2 bg-muted/50 rounded-lg"
+                  onClick={() => handleChildRoomClick(child.child_id)}
+                  className="w-full flex items-center justify-between p-2 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer text-left"
                 >
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">
@@ -144,12 +160,15 @@ export function ParentRoomHierarchy({
                       {child.child_name}
                     </span>
                   </div>
-                  {child.depth > 1 && (
-                    <Badge variant="secondary" className="text-xs">
-                      Level {child.depth}
-                    </Badge>
-                  )}
-                </div>
+                  <div className="flex items-center gap-2">
+                    {child.depth > 1 && (
+                      <Badge variant="secondary" className="text-xs">
+                        Level {child.depth}
+                      </Badge>
+                    )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </button>
               ))}
             </div>
           </CardContent>
