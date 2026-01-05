@@ -1,13 +1,17 @@
 // IMPORTANT: This is the ONLY file that should import directly from integrations
 // All other files should import from '@/lib/supabase'
 
-// Direct import from the actual supabase client - avoiding circular imports
 import { createClient } from '@supabase/supabase-js';
-// Types will be inferred from createClient
 
-// Supabase credentials - hardcoded for Lovable deployment
-const SUPABASE_URL = 'https://fmymhtuiqzhupjyopfvi.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
+// Supabase credentials from environment variables
+// VITE_ prefixed variables are safe for client-side use (anon/publishable keys only)
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+// Validate environment variables are present
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('Missing Supabase environment variables. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set.');
+}
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
