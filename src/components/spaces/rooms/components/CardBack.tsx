@@ -267,43 +267,32 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                 </div>
                 <div className="bg-muted/30 p-3 rounded-lg space-y-3">
                   {room.current_occupants.map((occupant, index) => (
-                    <div key={index} className="p-3 bg-background/50 rounded-md hover:bg-background/70 transition-colors">
-                      <button
-                        type="button"
-                        className="w-full text-left"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (occupant.id) {
-                            navigate(`/occupants/${encodeURIComponent(occupant.id)}`);
-                          }
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-sm font-medium text-primary">
-                                {occupant.first_name?.[0]}{occupant.last_name?.[0]}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="font-medium text-sm hover:underline">
-                                {occupant.first_name} {occupant.last_name}
-                              </div>
-                              {occupant.assignment_type && (
-                                <div className="text-xs text-muted-foreground capitalize">
-                                  {occupant.assignment_type.replace(/_/g, ' ')}
-                                  {occupant.is_primary && ' • Primary'}
-                                </div>
-                              )}
-                            </div>
+                    <div key={index} className="p-3 bg-background/50 rounded-md">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">
+                              {occupant.first_name?.[0]}{occupant.last_name?.[0]}
+                            </span>
                           </div>
-                          {occupant.is_primary && (
-                            <Badge variant="outline" className="text-xs">
-                              Primary
-                            </Badge>
-                          )}
+                          <div>
+                            <div className="font-medium text-sm">
+                              {occupant.first_name} {occupant.last_name}
+                            </div>
+                            {occupant.assignment_type && (
+                              <div className="text-xs text-muted-foreground capitalize">
+                                {occupant.assignment_type.replace(/_/g, ' ')}
+                                {occupant.is_primary && ' • Primary'}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </button>
+                        {occupant.is_primary && (
+                          <Badge variant="outline" className="text-xs">
+                            Primary
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -338,15 +327,9 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                 <div className="space-y-2">
                   {/* Occupants first */}
                   {room.current_occupants?.map((occupant, index) => (
-                    <button
+                    <div
                       key={`occupant-${index}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (occupant.id) {
-                          navigate(`/occupants/${encodeURIComponent(occupant.id)}`);
-                        }
-                      }}
-                      className="w-full flex items-center justify-between p-2 bg-background/50 rounded-md hover:bg-background/70 transition-colors"
+                      className="flex items-center justify-between p-2 bg-background/50 rounded-md"
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
@@ -359,20 +342,14 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                       <Badge variant="outline" className="text-xs">
                         {occupant.is_primary ? 'Primary Occupant' : 'Occupant'}
                       </Badge>
-                    </button>
+                    </div>
                   ))}
                   
                   {/* Key holders */}
                   {roomAccess.key_holders.map((holder, index) => (
-                    <button
+                    <div
                       key={`keyholder-${index}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (holder.id) {
-                          navigate(`/occupants/${encodeURIComponent(holder.id)}`);
-                        }
-                      }}
-                      className="w-full flex items-center justify-between p-2 bg-background/50 rounded-md hover:bg-background/70 transition-colors"
+                      className="flex items-center justify-between p-2 bg-background/50 rounded-md"
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
@@ -393,7 +370,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                           Key: {holder.key_name}
                         </Badge>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
