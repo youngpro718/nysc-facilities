@@ -41,12 +41,8 @@ export function ParentRoomHierarchy({
   const handleChildRoomClick = (e: React.MouseEvent, childId: string) => {
     e.stopPropagation();
     e.preventDefault();
-    // Preserve current building/floor filters and navigate to the child room
-    const currentBuilding = searchParams.get('building');
-    const currentFloor = searchParams.get('floor');
-    const params = new URLSearchParams();
-    if (currentBuilding) params.set('building', currentBuilding);
-    if (currentFloor) params.set('floor', currentFloor);
+    // Preserve ALL existing query params and update room
+    const params = new URLSearchParams(searchParams.toString());
     params.set('room', childId);
     navigate(`/spaces?${params.toString()}`);
   };

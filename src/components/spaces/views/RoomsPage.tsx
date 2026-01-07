@@ -18,6 +18,7 @@ import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { deleteSpace } from "../services/deleteSpace";
 import { Room } from "../rooms/types/RoomTypes";
+import { useSearchParams } from "react-router-dom";
 
 // Define a type for sort options to fix the TS error
 export type SortOption = 
@@ -35,6 +36,7 @@ export type SortOption =
 const RoomsPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -44,6 +46,9 @@ const RoomsPage = () => {
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedRoomForPanel, setSelectedRoomForPanel] = useState<Room | null>(null);
+  
+  // Read room ID from URL query parameter
+  const urlRoomId = searchParams.get('room');
   
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -80,9 +85,19 @@ const RoomsPage = () => {
     selectedFloor: "all",
     roomTypeFilter,
   });
-  // Ensure the selected panel room remains valid as filters/data change
+  // Sync selection with URL query parameter
   useEffect(() => {
     const list = filteredAndSortedRooms ?? [];
+    
+    // If URL has a room ID, try to select it
+    if (urlRoomId) {
+      const roomFromUrl = list.find((r: any) => r.id === urlRoomId);
+      if (roomFromUrl && roomFromUrl.id !== selectedRoomForPanel?.id) {
+        setSelectedRoomForPanel(roomFromUrl as Room);
+        return;
+      }
+    }
+    
     // If current selection exists and is still present in the list, keep it
     if (selectedRoomForPanel && list.some((r: any) => r.id === selectedRoomForPanel.id)) {
       return;
@@ -93,7 +108,7 @@ const RoomsPage = () => {
     } else {
       setSelectedRoomForPanel(null);
     }
-  }, [filteredAndSortedRooms, selectedRoomForPanel]);
+  }, [filteredAndSortedRooms, urlRoomId]);
 
   // Single source of truth for the panel room
   const panelRoom = useMemo(() => {
@@ -143,6 +158,10 @@ const RoomsPage = () => {
   const handleRoomSelect = (room: Room) => {
     console.log('Room selected for panel:', room.name, room.id);
     setSelectedRoomForPanel(room);
+    // Update URL with selected room ID (preserve other params)
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('room', room.id);
+    setSearchParams(newParams, { replace: true });
   };
 
   if (error) {
