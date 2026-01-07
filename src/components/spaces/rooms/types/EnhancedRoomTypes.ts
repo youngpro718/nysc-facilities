@@ -1,5 +1,19 @@
 import { Room } from "./RoomTypes";
 
+export interface CourtroomLayoutDetails {
+  defense_table?: {
+    length_in?: number;
+    depth_in?: number;
+    seats?: number;
+  };
+  prosecution_table?: {
+    length_in?: number;
+    depth_in?: number;
+    seats?: number;
+  };
+  notes?: string;
+}
+
 export interface CourtRoomData {
   id: string;
   room_id: string;
@@ -14,6 +28,7 @@ export interface CourtRoomData {
   };
   maintenance_status: string;
   is_active: boolean;
+  layout_details?: CourtroomLayoutDetails;
 }
 
 export interface LightingFixtureStatus {

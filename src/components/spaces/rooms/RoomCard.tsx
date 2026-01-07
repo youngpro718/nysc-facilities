@@ -35,6 +35,12 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  // Reset flip state when room changes
+  React.useEffect(() => {
+    setIsFlipped(false);
+    setShowQuickEdit(false);
+  }, [room.id]);
+
   const handleFlip = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsFlipped(prev => !prev);
