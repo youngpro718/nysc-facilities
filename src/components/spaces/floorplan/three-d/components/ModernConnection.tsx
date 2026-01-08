@@ -31,8 +31,9 @@ export function ModernConnection({
   ): { line: Line2; geom: LineGeometry; mat: LineMaterial } => {
     const geom = new LineGeometry();
     geom.setPositions([fromX, 0, fromY, toX, 0, toY]);
+    const colorValue = new THREE.Color(color).getHex();
     const mat = new LineMaterial({
-      color,
+      color: colorValue,
       transparent: true,
       opacity,
       linewidth,
