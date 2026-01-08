@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Settings, Database, Server, Shield, Activity, HardDrive, QrCode } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminSystemSettings } from "@/components/profile/AdminSystemSettings";
 import { DatabaseSection } from "@/components/profile/DatabaseSection";
@@ -11,6 +11,9 @@ import { useSystemSettings } from "@/hooks/admin/useSystemSettings";
 
 export default function SystemSettings() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'system';
+  
   const {
     systemStats,
     systemStatus,
@@ -164,7 +167,7 @@ export default function SystemSettings() {
         </Card>
       </div>
 
-      <Tabs defaultValue="system" className="space-y-6">
+      <Tabs defaultValue={defaultTab} className="space-y-6" onValueChange={(value) => setSearchParams({ tab: value })}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="system">System Settings</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>

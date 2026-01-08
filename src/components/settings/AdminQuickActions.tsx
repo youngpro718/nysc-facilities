@@ -2,9 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Settings, Shield, Package, FileText, Upload, GitFork } from 'lucide-react';
+import { Users, Settings, Shield, FileText, Upload, GitFork, Database, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 import { EnhancedUserManagementModal } from '@/components/profile/modals/EnhancedUserManagementModal';
+import { exportRoomsSummary } from '@/utils/roomsSummaryExport';
+import { useToast } from '@/hooks/use-toast';
 
 interface QuickAction {
   title: string;
@@ -13,11 +15,33 @@ interface QuickAction {
   action: () => void;
   badge?: string;
   variant?: 'default' | 'outline';
+  loading?: boolean;
 }
 
 export function AdminQuickActions() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [enhancedUserManagementOpen, setEnhancedUserManagementOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportRooms = async () => {
+    setIsExporting(true);
+    try {
+      await exportRoomsSummary();
+      toast({
+        title: "Export Complete",
+        description: "Rooms summary downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "Failed to export rooms",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const quickActions: QuickAction[] = [
     {
@@ -29,8 +53,23 @@ export function AdminQuickActions() {
       variant: 'default',
     },
     {
+      title: 'Quick Rooms Export',
+      description: 'Download Excel summary of all rooms and courtrooms',
+      icon: FileSpreadsheet,
+      action: handleExportRooms,
+      badge: 'Quick',
+      variant: 'default',
+    },
+    {
+      title: 'Database & Export',
+      description: 'Backup data, export tables, manage database',
+      icon: Database,
+      action: () => navigate('/system-settings?tab=database'),
+      variant: 'outline',
+    },
+    {
       title: 'System Settings',
-      description: 'Configure system-wide settings, database, and maintenance',
+      description: 'Configure system-wide settings and maintenance',
       icon: Settings,
       action: () => navigate('/system-settings'),
       variant: 'outline',
