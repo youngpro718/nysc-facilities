@@ -1,41 +1,42 @@
 import * as THREE from 'three';
 
-// Status-based colors for room outlines
+// Status-based colors for room outlines - vibrant and clear
 export const STATUS_COLORS = {
   active: '#22c55e',      // green-500
   operational: '#22c55e', // green-500
   maintenance: '#f59e0b', // amber-500
   inactive: '#ef4444',    // red-500
   reserved: '#8b5cf6',    // violet-500
-  default: '#0ea5e9'      // cyan-500 (blueprint blue)
+  available: '#06b6d4',   // cyan-500
+  default: '#0ea5e9'      // sky-500
 } as const;
 
-// Room type accent colors (subtle differentiation)
+// Room type accent colors (for floor fills)
 export const TYPE_COLORS = {
-  courtroom: '#6366f1',   // indigo-500
-  office: '#3b82f6',      // blue-500
-  storage: '#78716c',     // stone-500
-  hallway: '#8b5cf6',     // violet-500
-  conference: '#0ea5e9', // cyan-500
-  jury_room: '#ec4899',   // pink-500
+  courtroom: '#6366f1',       // indigo-500
+  office: '#3b82f6',          // blue-500
+  storage: '#78716c',         // stone-500
+  hallway: '#8b5cf6',         // violet-500
+  conference: '#0ea5e9',      // cyan-500
+  jury_room: '#ec4899',       // pink-500
   judges_chambers: '#f97316', // orange-500
-  default: '#0ea5e9'
+  default: '#0ea5e9'          // cyan-500
 } as const;
 
-// Blueprint grid colors
+// Blueprint grid colors - dark theme
 export const GRID_COLORS = {
-  background: '#f0f9ff',  // sky-50
-  minorLine: '#bae6fd',   // sky-200
-  majorLine: '#0284c7',   // sky-600
-  axis: '#0369a1'         // sky-700
+  background: '#0f172a',  // slate-900
+  minorLine: '#1e3a5f',   // blue-tinted dark
+  majorLine: '#0ea5e9',   // cyan-500
+  axis: '#22d3ee'         // cyan-400
 } as const;
 
 // Connection colors
 export const CONNECTION_COLORS = {
-  standard: '#0ea5e9',
-  emergency: '#22c55e',
-  highTraffic: '#f59e0b',
-  selected: '#6366f1'
+  standard: '#0ea5e9',    // cyan-500
+  emergency: '#22c55e',   // green-500
+  highTraffic: '#f59e0b', // amber-500
+  selected: '#a855f7'     // purple-500
 } as const;
 
 export function getStatusColor(status?: string): string {
@@ -83,6 +84,15 @@ export function createFloorMaterial(color: string, opacity: number = 0.15): THRE
   return new THREE.MeshBasicMaterial({
     color: new THREE.Color(color),
     opacity,
+    transparent: true,
+    side: THREE.DoubleSide,
+  });
+}
+
+export function createGlowMaterial(color: string, intensity: number = 0.5): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({
+    color: new THREE.Color(color),
+    opacity: intensity,
     transparent: true,
     side: THREE.DoubleSide,
   });

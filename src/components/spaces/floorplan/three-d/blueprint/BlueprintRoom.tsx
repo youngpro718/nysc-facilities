@@ -1,15 +1,15 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Text, Billboard } from '@react-three/drei';
+import { Text, Billboard, RoundedBox } from '@react-three/drei';
 import { getStatusColor, getTypeColor } from './blueprintMaterials';
-import { getIconTexture } from './iconTextures';
 
 interface BlueprintRoomProps {
   id: string;
   position: [number, number, number];
   size?: [number, number, number];
   name?: string;
+  roomNumber?: string;
   type?: string;
   status?: string;
   isSelected?: boolean;
@@ -23,8 +23,9 @@ interface BlueprintRoomProps {
 const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
   id,
   position,
-  size = [60, 30, 60],
+  size = [100, 35, 80],
   name = '',
+  roomNumber = '',
   type = 'default',
   status = 'active',
   isSelected = false,
@@ -35,71 +36,54 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
   labelScale = 1
 }) => {
   const groupRef = useRef<THREE.Group>(null);
-  const edgesRef = useRef<THREE.LineSegments>(null);
-  const iconRef = useRef<THREE.Sprite>(null);
-  const dashOffsetRef = useRef(0);
+  const glowRef = useRef<THREE.Mesh>(null);
 
   const statusColor = useMemo(() => getStatusColor(status), [status]);
   const typeColor = useMemo(() => getTypeColor(type), [type]);
 
-  // Create wireframe geometry
-  const { edgesGeometry, floorGeometry } = useMemo(() => {
-    const boxGeom = new THREE.BoxGeometry(size[0], size[1], size[2]);
-    const edges = new THREE.EdgesGeometry(boxGeom);
-    const floor = new THREE.PlaneGeometry(size[0], size[2]);
-    boxGeom.dispose();
-    return { edgesGeometry: edges, floorGeometry: floor };
-  }, [size]);
-
   // Create materials
-  const { edgeMaterial, floorMaterial, selectedMaterial } = useMemo(() => {
+  const materials = useMemo(() => {
     const baseColor = isSelected ? '#6366f1' : isHovered ? '#f59e0b' : statusColor;
     
+    // Main room material with gradient effect
+    const main = new THREE.MeshPhongMaterial({
+      color: new THREE.Color(typeColor),
+      opacity: isSelected ? 0.4 : isHovered ? 0.3 : 0.15,
+      transparent: true,
+      side: THREE.DoubleSide,
+      shininess: 50,
+    });
+
+    // Edge material
     const edge = new THREE.LineBasicMaterial({
       color: new THREE.Color(baseColor),
       linewidth: 2,
     });
 
-    const floor = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(typeColor),
-      opacity: isSelected ? 0.25 : isHovered ? 0.2 : 0.1,
+    // Glow material for selected/hovered state
+    const glow = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(baseColor),
       transparent: true,
+      opacity: isSelected ? 0.15 : isHovered ? 0.1 : 0,
       side: THREE.DoubleSide,
     });
 
-    const selected = new THREE.LineDashedMaterial({
-      color: new THREE.Color('#6366f1'),
-      dashSize: 4,
-      gapSize: 2,
-    });
-
-    return { edgeMaterial: edge, floorMaterial: floor, selectedMaterial: selected };
+    return { main, edge, glow };
   }, [statusColor, typeColor, isSelected, isHovered]);
 
-  // Icon texture
-  const iconTexture = useMemo(() => getIconTexture(type, statusColor), [type, statusColor]);
+  // Create wireframe geometry
+  const edgesGeometry = useMemo(() => {
+    const boxGeom = new THREE.BoxGeometry(size[0], size[1], size[2]);
+    const edges = new THREE.EdgesGeometry(boxGeom);
+    boxGeom.dispose();
+    return edges;
+  }, [size]);
 
-  // Compute line distances for dashed material
-  useEffect(() => {
-    if (edgesRef.current && isSelected) {
-      edgesRef.current.computeLineDistances();
-    }
-  }, [isSelected, edgesGeometry]);
-
-  // Animate dashed line when selected
-  useFrame((_, delta) => {
-    if (isSelected && edgesRef.current) {
-      dashOffsetRef.current -= delta * 10;
-      const mat = edgesRef.current.material as THREE.LineDashedMaterial;
-      if ('dashSize' in mat) {
-        (mat as any).dashOffset = dashOffsetRef.current;
-        mat.needsUpdate = true;
-      }
-    }
-
-    // Subtle icon bobbing
-    if (iconRef.current && showIcon) {
-      iconRef.current.position.y = size[1] + 25 + Math.sin(Date.now() * 0.002) * 2;
+  // Animate glow effect
+  useFrame((state) => {
+    if (glowRef.current && (isSelected || isHovered)) {
+      const pulse = Math.sin(state.clock.elapsedTime * 3) * 0.05 + 1;
+      glowRef.current.scale.setScalar(pulse);
     }
   });
 
@@ -120,6 +104,26 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
     onClick?.();
   };
 
+  // Display name - prefer actual name over room number
+  const displayName = name || roomNumber || '';
+  const hasRoomNumber = roomNumber && name && roomNumber !== name;
+
+  // Get type icon
+  const getTypeIcon = (roomType: string): string => {
+    const icons: Record<string, string> = {
+      courtroom: '⚖️',
+      office: '🏢',
+      conference: '🤝',
+      storage: '📦',
+      hallway: '🚶',
+      jury_room: '👥',
+      judges_chambers: '👨‍⚖️',
+      default: '🏠'
+    };
+    const normalized = roomType?.toLowerCase().replace(/[^a-z_]/g, '') || 'default';
+    return icons[normalized] || icons.default;
+  };
+
   return (
     <group
       ref={groupRef}
@@ -128,54 +132,97 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
       onPointerOut={handlePointerOut}
       onClick={handleClick}
     >
-      {/* Wireframe edges */}
-      <lineSegments
-        ref={edgesRef}
-        geometry={edgesGeometry}
-        material={isSelected ? selectedMaterial : edgeMaterial}
-      />
-
-      {/* Floor plane */}
-      <mesh
-        geometry={floorGeometry}
-        material={floorMaterial}
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -size[1] / 2 + 0.5, 0]}
-      />
-
-      {/* Room type icon */}
-      {showIcon && (
-        <sprite
-          ref={iconRef}
-          position={[0, size[1] + 25, 0]}
-          scale={[20 * labelScale, 20 * labelScale, 1]}
-        >
-          <spriteMaterial
-            map={iconTexture}
-            transparent
-            opacity={isHovered || isSelected ? 1 : 0.8}
-          />
-        </sprite>
+      {/* Glow effect for selected/hovered */}
+      {(isSelected || isHovered) && (
+        <mesh ref={glowRef} scale={1.05}>
+          <boxGeometry args={[size[0], size[1], size[2]]} />
+          <primitive object={materials.glow} attach="material" />
+        </mesh>
       )}
 
-      {/* Room label */}
-      <Billboard position={[0, size[1] / 2 + 8, 0]}>
-        <Text
-          fontSize={8 * labelScale}
-          color={isSelected ? '#6366f1' : isHovered ? '#f59e0b' : '#0f172a'}
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.5}
-          outlineColor="#ffffff"
-        >
-          {name || id}
-        </Text>
-      </Billboard>
+      {/* Main room box with rounded corners */}
+      <RoundedBox
+        args={[size[0], size[1], size[2]]}
+        radius={3}
+        smoothness={4}
+        material={materials.main}
+      />
 
-      {/* Status indicator dot */}
-      <mesh position={[size[0] / 2 - 5, size[1] / 2 + 2, size[2] / 2 - 5]}>
-        <sphereGeometry args={[3, 8, 8]} />
+      {/* Wireframe edges */}
+      <lineSegments geometry={edgesGeometry} material={materials.edge} />
+
+      {/* Floor accent line */}
+      <mesh position={[0, -size[1] / 2 + 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[size[0] - 4, size[2] - 4]} />
+        <meshBasicMaterial 
+          color={statusColor} 
+          opacity={0.3} 
+          transparent 
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Type icon */}
+      {showIcon && (
+        <Billboard position={[0, size[1] / 2 + 20, 0]}>
+          <Text
+            fontSize={16 * labelScale}
+            anchorX="center"
+            anchorY="middle"
+          >
+            {getTypeIcon(type)}
+          </Text>
+        </Billboard>
+      )}
+
+      {/* Room name label */}
+      {displayName && (
+        <Billboard position={[0, size[1] / 2 + 8, 0]}>
+          <Text
+            fontSize={Math.min(10, size[0] / 12) * labelScale}
+            color={isSelected ? '#a5b4fc' : isHovered ? '#fcd34d' : '#e2e8f0'}
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={size[0] * 0.9}
+            textAlign="center"
+            font="/fonts/inter-medium.woff"
+            outlineWidth={0.8}
+            outlineColor="#0f172a"
+          >
+            {displayName}
+          </Text>
+        </Billboard>
+      )}
+
+      {/* Room number badge (if different from name) */}
+      {hasRoomNumber && (
+        <Billboard position={[size[0] / 2 - 10, size[1] / 2 + 3, size[2] / 2 - 10]}>
+          <mesh>
+            <planeGeometry args={[20, 10]} />
+            <meshBasicMaterial color="#0f172a" opacity={0.9} transparent />
+          </mesh>
+          <Text
+            fontSize={6 * labelScale}
+            color="#94a3b8"
+            anchorX="center"
+            anchorY="middle"
+            position={[0, 0, 0.1]}
+          >
+            {roomNumber}
+          </Text>
+        </Billboard>
+      )}
+
+      {/* Status indicator */}
+      <mesh position={[size[0] / 2 - 6, size[1] / 2 - 6, size[2] / 2]}>
+        <sphereGeometry args={[4, 16, 16]} />
         <meshBasicMaterial color={statusColor} />
+      </mesh>
+
+      {/* Status glow */}
+      <mesh position={[size[0] / 2 - 6, size[1] / 2 - 6, size[2] / 2]}>
+        <sphereGeometry args={[6, 16, 16]} />
+        <meshBasicMaterial color={statusColor} transparent opacity={0.3} />
       </mesh>
     </group>
   );
