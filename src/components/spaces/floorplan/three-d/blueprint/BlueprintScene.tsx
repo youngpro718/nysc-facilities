@@ -1,5 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import { OrbitControls } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
+import * as THREE from 'three';
 import BlueprintRoom from './BlueprintRoom';
 import BlueprintGrid from './BlueprintGrid';
 import AnimatedConnection from './AnimatedConnection';
@@ -21,6 +23,13 @@ interface ConnectionData {
   type?: 'standard' | 'emergency' | 'highTraffic';
 }
 
+export interface SceneHandle {
+  resetCamera: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  fitToContent: () => void;
+}
+
 interface BlueprintSceneProps {
   rooms: RoomData[];
   connections: ConnectionData[];
@@ -34,7 +43,7 @@ interface BlueprintSceneProps {
   gridSize?: number;
 }
 
-const BlueprintScene: React.FC<BlueprintSceneProps> = ({
+const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
   rooms,
   connections,
   selectedRoomId,
@@ -44,34 +53,102 @@ const BlueprintScene: React.FC<BlueprintSceneProps> = ({
   showIcons = true,
   showConnections = true,
   labelScale = 1,
-  gridSize = 1000
-}) => {
-  // Normalize room positions to center the layout
-  const normalizedRooms = useMemo(() => {
-    if (!rooms.length) return [];
+  gridSize = 800
+}, ref) => {
+  const { camera } = useThree();
+  const controlsRef = useRef<any>(null);
+  const initialCameraPos = useRef<THREE.Vector3 | null>(null);
 
-    // Find bounds
+  // Store initial camera position
+  if (!initialCameraPos.current && camera) {
+    initialCameraPos.current = camera.position.clone();
+  }
+
+  // Expose imperative methods
+  useImperativeHandle(ref, () => ({
+    resetCamera: () => {
+      if (initialCameraPos.current && camera) {
+        camera.position.copy(initialCameraPos.current);
+        if (controlsRef.current) {
+          controlsRef.current.target.set(0, 0, 0);
+          controlsRef.current.update();
+        }
+      }
+    },
+    zoomIn: () => {
+      if (camera) {
+        const direction = new THREE.Vector3();
+        camera.getWorldDirection(direction);
+        camera.position.addScaledVector(direction, 50);
+      }
+    },
+    zoomOut: () => {
+      if (camera) {
+        const direction = new THREE.Vector3();
+        camera.getWorldDirection(direction);
+        camera.position.addScaledVector(direction, -50);
+      }
+    },
+    fitToContent: () => {
+      if (!rooms.length || !camera) return;
+      
+      // Calculate bounds
+      let minX = Infinity, maxX = -Infinity;
+      let minZ = Infinity, maxZ = -Infinity;
+      
+      rooms.forEach(room => {
+        const w = room.size?.width || 100;
+        const h = room.size?.height || 100;
+        minX = Math.min(minX, room.position.x - w / 2);
+        maxX = Math.max(maxX, room.position.x + w / 2);
+        minZ = Math.min(minZ, room.position.y - h / 2);
+        maxZ = Math.max(maxZ, room.position.y + h / 2);
+      });
+      
+      const centerX = (minX + maxX) / 2;
+      const centerZ = (minZ + maxZ) / 2;
+      const maxDim = Math.max(maxX - minX, maxZ - minZ);
+      const distance = maxDim * 1.5;
+      
+      camera.position.set(centerX + distance * 0.5, distance, centerZ + distance * 0.5);
+      if (controlsRef.current) {
+        controlsRef.current.target.set(centerX, 0, centerZ);
+        controlsRef.current.update();
+      }
+    },
+  }));
+
+  // Calculate bounds and center content
+  const { normalizedRooms, center } = useMemo(() => {
+    if (!rooms.length) return { normalizedRooms: [], center: { x: 0, z: 0 } };
+
+    // Find bounds including room sizes
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
 
     rooms.forEach(room => {
-      minX = Math.min(minX, room.position.x);
-      maxX = Math.max(maxX, room.position.x);
-      minY = Math.min(minY, room.position.y);
-      maxY = Math.max(maxY, room.position.y);
+      const w = room.size?.width || 100;
+      const h = room.size?.height || 100;
+      minX = Math.min(minX, room.position.x - w / 2);
+      maxX = Math.max(maxX, room.position.x + w / 2);
+      minY = Math.min(minY, room.position.y - h / 2);
+      maxY = Math.max(maxY, room.position.y + h / 2);
     });
 
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
 
-    return rooms.map(room => ({
+    // Normalize positions to center around origin, with less aggressive spacing
+    const normalized = rooms.map(room => ({
       ...room,
       normalizedPosition: {
-        x: (room.position.x - centerX) * 1.5,
+        x: room.position.x - centerX,
         y: room.position.z ?? 0,
-        z: (room.position.y - centerY) * 1.5
+        z: room.position.y - centerY
       }
     }));
+
+    return { normalizedRooms: normalized, center: { x: centerX, z: centerY } };
   }, [rooms]);
 
   // Normalize connection positions
@@ -82,10 +159,12 @@ const BlueprintScene: React.FC<BlueprintSceneProps> = ({
     let minY = Infinity, maxY = -Infinity;
 
     rooms.forEach(room => {
-      minX = Math.min(minX, room.position.x);
-      maxX = Math.max(maxX, room.position.x);
-      minY = Math.min(minY, room.position.y);
-      maxY = Math.max(maxY, room.position.y);
+      const w = room.size?.width || 100;
+      const h = room.size?.height || 100;
+      minX = Math.min(minX, room.position.x - w / 2);
+      maxX = Math.max(maxX, room.position.x + w / 2);
+      minY = Math.min(minY, room.position.y - h / 2);
+      maxY = Math.max(maxY, room.position.y + h / 2);
     });
 
     const centerX = (minX + maxX) / 2;
@@ -94,26 +173,37 @@ const BlueprintScene: React.FC<BlueprintSceneProps> = ({
     return connections.map(conn => ({
       ...conn,
       normalizedFrom: {
-        x: (conn.from.x - centerX) * 1.5,
-        y: 15,
-        z: (conn.from.y - centerY) * 1.5
+        x: conn.from.x - centerX,
+        y: 20,
+        z: conn.from.y - centerY
       },
       normalizedTo: {
-        x: (conn.to.x - centerX) * 1.5,
-        y: 15,
-        z: (conn.to.y - centerY) * 1.5
+        x: conn.to.x - centerX,
+        y: 20,
+        z: conn.to.y - centerY
       }
     }));
   }, [connections, rooms]);
 
   return (
     <>
-      {/* Lighting - bright ambient for flat blueprint look */}
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[100, 200, 100]} intensity={0.3} />
+      {/* Enhanced lighting for dramatic effect */}
+      <ambientLight intensity={0.4} color="#e0f2fe" />
+      <directionalLight 
+        position={[100, 200, 100]} 
+        intensity={0.6} 
+        color="#f0f9ff"
+        castShadow
+      />
+      <directionalLight 
+        position={[-100, 150, -100]} 
+        intensity={0.3} 
+        color="#22d3ee"
+      />
+      <pointLight position={[0, 100, 0]} intensity={0.3} color="#0ea5e9" />
 
       {/* Blueprint Grid */}
-      <BlueprintGrid size={gridSize} divisions={50} majorDivisions={10} />
+      <BlueprintGrid size={gridSize} divisions={40} majorDivisions={8} />
 
       {/* Rooms */}
       {normalizedRooms.map(room => (
@@ -126,11 +216,12 @@ const BlueprintScene: React.FC<BlueprintSceneProps> = ({
             room.normalizedPosition.z
           ]}
           size={[
-            room.size?.width ?? 60,
-            room.size?.height ?? 30,
-            room.size?.depth ?? 60
+            room.size?.width ?? 100,
+            room.size?.depth ?? 35,
+            room.size?.height ?? 80
           ]}
-          name={room.name || room.room_number || room.id}
+          name={room.name || room.room_number || ''}
+          roomNumber={room.room_number}
           type={room.type}
           status={room.status}
           isSelected={selectedRoomId === room.id}
@@ -159,16 +250,29 @@ const BlueprintScene: React.FC<BlueprintSceneProps> = ({
 
       {/* Camera Controls */}
       <OrbitControls
+        ref={controlsRef}
         enablePan={true}
         enableZoom={true}
         enableRotate={true}
-        minDistance={100}
-        maxDistance={1500}
-        maxPolarAngle={Math.PI / 2.2}
+        minDistance={50}
+        maxDistance={2000}
+        maxPolarAngle={Math.PI / 2.1}
+        minPolarAngle={0.1}
         target={[0, 0, 0]}
+        dampingFactor={0.05}
+        enableDamping={true}
       />
     </>
   );
-};
+});
+
+BlueprintSceneInner.displayName = 'BlueprintSceneInner';
+
+// Wrapper component that doesn't use hooks outside Canvas
+const BlueprintScene = forwardRef<SceneHandle, BlueprintSceneProps>((props, ref) => {
+  return <BlueprintSceneInner {...props} ref={ref} />;
+});
+
+BlueprintScene.displayName = 'BlueprintScene';
 
 export default BlueprintScene;

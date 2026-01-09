@@ -7,3 +7,4 @@ export { default as ConnectionParticles } from './ConnectionParticles';
 
 export * from './blueprintMaterials';
 export * from './iconTextures';
+export type { SceneHandle } from './BlueprintScene';

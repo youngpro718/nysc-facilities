@@ -1,7 +1,8 @@
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense, useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { BlueprintScene } from './blueprint';
 import { STATUS_COLORS, TYPE_COLORS } from './blueprint/blueprintMaterials';
+import type { SceneHandle } from './NewThreeDScene';
 
 interface RoomData {
   id: string;
@@ -35,32 +36,62 @@ interface BlueprintFloorPlanProps {
 }
 
 const LoadingFallback: React.FC = () => (
-  <div className="w-full h-full flex items-center justify-center bg-sky-50">
+  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
     <div className="text-center">
-      <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mx-auto mb-4" />
-      <p className="text-sky-700 font-medium">Loading Blueprint...</p>
+      <div className="w-16 h-16 border-4 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin mx-auto mb-4" />
+      <p className="text-cyan-300 font-medium text-lg">Loading Blueprint...</p>
+      <p className="text-slate-400 text-sm mt-1">Preparing 3D visualization</p>
     </div>
   </div>
 );
 
 const Legend: React.FC = () => (
-  <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 text-xs">
-    <h4 className="font-semibold text-slate-700 mb-2">Status</h4>
-    <div className="space-y-1">
-      {Object.entries(STATUS_COLORS).slice(0, 4).map(([key, color]) => (
-        <div key={key} className="flex items-center gap-2">
+  <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-md rounded-xl shadow-2xl p-4 text-sm border border-cyan-500/20">
+    <h4 className="font-semibold text-cyan-300 mb-3 flex items-center gap-2">
+      <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+      Room Status
+    </h4>
+    <div className="space-y-2">
+      {[
+        { key: 'active', label: 'Active', color: STATUS_COLORS.active },
+        { key: 'maintenance', label: 'Maintenance', color: STATUS_COLORS.maintenance },
+        { key: 'inactive', label: 'Inactive', color: STATUS_COLORS.inactive },
+        { key: 'reserved', label: 'Reserved', color: STATUS_COLORS.reserved },
+      ].map(({ key, label, color }) => (
+        <div key={key} className="flex items-center gap-3">
           <div 
-            className="w-3 h-3 rounded-full" 
-            style={{ backgroundColor: color }} 
+            className="w-4 h-4 rounded-md shadow-lg" 
+            style={{ 
+              backgroundColor: color,
+              boxShadow: `0 0 10px ${color}40`
+            }} 
           />
-          <span className="capitalize text-slate-600">{key}</span>
+          <span className="text-slate-300 font-medium">{label}</span>
         </div>
       ))}
+    </div>
+    <div className="mt-4 pt-3 border-t border-slate-700">
+      <h4 className="font-semibold text-cyan-300 mb-2">Room Types</h4>
+      <div className="space-y-2">
+        {[
+          { key: 'courtroom', label: 'Courtroom' },
+          { key: 'office', label: 'Office' },
+          { key: 'conference', label: 'Conference' },
+        ].map(({ key, label }) => (
+          <div key={key} className="flex items-center gap-3">
+            <div 
+              className="w-4 h-4 rounded-md opacity-60" 
+              style={{ backgroundColor: TYPE_COLORS[key as keyof typeof TYPE_COLORS] || TYPE_COLORS.default }} 
+            />
+            <span className="text-slate-400">{label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   </div>
 );
 
-const BlueprintFloorPlan: React.FC<BlueprintFloorPlanProps> = ({
+const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
   rooms,
   connections = [],
   selectedRoomId = null,
@@ -72,27 +103,55 @@ const BlueprintFloorPlan: React.FC<BlueprintFloorPlanProps> = ({
   showLegend = true,
   labelScale = 1,
   className = ''
-}) => {
-  // Calculate grid size based on room positions
-  const gridSize = useMemo(() => {
-    if (!rooms.length) return 1000;
+}, ref) => {
+  const sceneRef = useRef<SceneHandle>(null);
+
+  // Forward imperative methods
+  useImperativeHandle(ref, () => ({
+    resetCamera: () => sceneRef.current?.resetCamera(),
+    zoomIn: () => sceneRef.current?.zoomIn(),
+    zoomOut: () => sceneRef.current?.zoomOut(),
+    fitToContent: () => sceneRef.current?.fitToContent(),
+  }));
+
+  // Calculate optimal camera position based on content bounds
+  const { cameraPosition, gridSize } = useMemo(() => {
+    if (!rooms.length) {
+      return { cameraPosition: [200, 300, 200] as [number, number, number], gridSize: 800 };
+    }
     
-    let maxDist = 0;
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    
     rooms.forEach(room => {
-      const dist = Math.max(Math.abs(room.position.x), Math.abs(room.position.y));
-      maxDist = Math.max(maxDist, dist);
+      const w = room.size?.width || 100;
+      const h = room.size?.height || 100;
+      minX = Math.min(minX, room.position.x - w / 2);
+      maxX = Math.max(maxX, room.position.x + w / 2);
+      minY = Math.min(minY, room.position.y - h / 2);
+      maxY = Math.max(maxY, room.position.y + h / 2);
     });
     
-    return Math.max(1000, maxDist * 3);
+    const width = maxX - minX;
+    const height = maxY - minY;
+    const maxDimension = Math.max(width, height, 400);
+    
+    // Camera distance based on content size
+    const distance = maxDimension * 1.2;
+    
+    return { 
+      cameraPosition: [distance * 0.6, distance * 0.8, distance * 0.6] as [number, number, number],
+      gridSize: Math.max(800, maxDimension * 1.5)
+    };
   }, [rooms]);
 
   return (
-    <div className={`relative w-full h-full ${className}`}>
+    <div className={`relative w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 ${className}`}>
       <Suspense fallback={<LoadingFallback />}>
         <Canvas
           camera={{
-            position: [300, 400, 300],
-            fov: 50,
+            position: cameraPosition,
+            fov: 45,
             near: 1,
             far: 5000
           }}
@@ -100,6 +159,7 @@ const BlueprintFloorPlan: React.FC<BlueprintFloorPlanProps> = ({
           dpr={[1, 2]}
         >
           <BlueprintScene
+            ref={sceneRef}
             rooms={rooms}
             connections={connections}
             selectedRoomId={selectedRoomId}
@@ -118,11 +178,19 @@ const BlueprintFloorPlan: React.FC<BlueprintFloorPlanProps> = ({
       {showLegend && <Legend />}
 
       {/* Style indicator */}
-      <div className="absolute top-4 right-4 bg-sky-600 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+      <div className="absolute top-4 right-4 flex items-center gap-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-md text-cyan-300 px-4 py-2 rounded-full text-sm font-medium shadow-lg border border-cyan-500/30">
+        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
         Blueprint View
+      </div>
+
+      {/* Room count indicator */}
+      <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md text-slate-300 px-4 py-2 rounded-full text-sm font-medium shadow-lg border border-slate-700">
+        {rooms.length} {rooms.length === 1 ? 'Room' : 'Rooms'}
       </div>
     </div>
   );
-};
+});
+
+BlueprintFloorPlan.displayName = 'BlueprintFloorPlan';
 
 export default BlueprintFloorPlan;
