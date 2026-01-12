@@ -10,6 +10,19 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
+/**
+ * Fetch court sessions for a specific date, period, and building.
+ * 
+ * @param date - The date to fetch sessions for
+ * @param period - Session period (AM, PM, ALL_DAY)
+ * @param buildingCode - Building code (100 or 111)
+ * 
+ * @returns Query result with sessions including joined court_rooms data
+ * 
+ * @note Sessions use `court_room_id` which references `court_rooms.id`.
+ * The `court_rooms.room_id` field links to the base `rooms` table.
+ */
+
 export function useCourtSessions(date: Date, period: SessionPeriod, buildingCode: BuildingCode) {
   const dateStr = format(date, 'yyyy-MM-dd');
   

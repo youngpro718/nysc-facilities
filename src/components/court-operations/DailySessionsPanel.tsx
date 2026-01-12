@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCourtSessions, useCopyYesterdaySessions } from '@/hooks/useCourtSessions';
 import { useCoverageAssignments } from '@/hooks/useCoverageAssignments';
 import { useSessionConflicts } from '@/hooks/useSessionConflicts';
+import { useBulkCreateCourtSessions } from '@/hooks/useBulkCreateCourtSessions';
 import { SessionPeriod, BuildingCode } from '@/types/courtSessions';
 import { BUILDING_CODES, SESSION_PERIODS } from '@/constants/sessionStatuses';
 
@@ -50,6 +51,7 @@ export function DailySessionsPanel() {
   );
 
   const copyYesterday = useCopyYesterdaySessions();
+  const bulkCreateSessions = useBulkCreateCourtSessions();
 
   const handleCopyYesterday = () => {
     const yesterday = subDays(selectedDate, 1);
@@ -257,9 +259,12 @@ export function DailySessionsPanel() {
         period={selectedPeriod}
         buildingCode={selectedBuilding}
         onApprove={(approvedData) => {
-          // TODO: Implement bulk insert to court_sessions table
-          console.log('Approved data:', approvedData);
-          // This will be implemented with actual database insert
+          bulkCreateSessions.mutate({
+            sessions: approvedData,
+            date: selectedDate,
+            period: selectedPeriod,
+            buildingCode: selectedBuilding,
+          });
         }}
       />
     </div>

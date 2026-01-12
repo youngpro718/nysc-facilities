@@ -17,6 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { ConflictDetectionService } from '@/services/court/conflictDetectionService';
 
 interface TodaysStatusProps {
   onNavigateToTab?: (tab: string) => void;
@@ -44,18 +45,39 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
     },
   });
 
-  // Fetch active conflicts
+  // Fetch active conflicts using real conflict detection service
   const { data: conflicts } = useQuery({
-    queryKey: ['active-conflicts'],
+    queryKey: ['active-conflicts', today],
     queryFn: async () => {
-      // This would call your conflict detection service
-      // For now, returning mock structure
+      // Check conflicts for both AM and PM periods, both buildings
+      const [am100, pm100, am111, pm111] = await Promise.all([
+        ConflictDetectionService.detectDailySessionIssues(today, 'AM', '100'),
+        ConflictDetectionService.detectDailySessionIssues(today, 'PM', '100'),
+        ConflictDetectionService.detectDailySessionIssues(today, 'AM', '111'),
+        ConflictDetectionService.detectDailySessionIssues(today, 'PM', '111'),
+      ]);
+
+      // Combine all conflicts and warnings
+      const allConflicts = [
+        ...am100.conflicts,
+        ...pm100.conflicts,
+        ...am111.conflicts,
+        ...pm111.conflicts,
+      ];
+      const allWarnings = [
+        ...am100.warnings,
+        ...pm100.warnings,
+        ...am111.warnings,
+        ...pm111.warnings,
+      ];
+
       return {
-        hasConflicts: false,
-        conflicts: [],
-        warnings: []
+        hasConflicts: allConflicts.length > 0,
+        conflicts: allConflicts,
+        warnings: allWarnings,
       };
     },
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   // Fetch room shutdowns
