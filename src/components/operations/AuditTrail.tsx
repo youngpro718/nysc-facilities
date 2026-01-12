@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useAuditTrail } from '@/hooks/operations/useAuditTrail';
 import { DataState } from '@/ui/DataState';
+import type { AuditLogEntry } from '@/types/operations';
 
 interface AuditTrailProps {
   tableName: string;
@@ -34,16 +35,10 @@ interface AuditTrailProps {
   className?: string;
 }
 
-interface AuditEntry {
-  id: string;
-  table_name: string;
-  record_id: string;
-  action: 'INSERT' | 'UPDATE' | 'DELETE';
-  old_values?: Record<string, any>;
-  new_values?: Record<string, any>;
-  user_id?: string;
-  created_at: string;
-}
+// Helper to get action from entry (handles both 'action' and 'operation' fields)
+const getEntryAction = (entry: AuditLogEntry): 'INSERT' | 'UPDATE' | 'DELETE' => {
+  return entry.action || entry.operation;
+};
 
 export function AuditTrail({ 
   tableName, 
@@ -95,9 +90,10 @@ export function AuditTrail({
     });
   };
 
-  const getChangedFields = (entry: AuditEntry): string[] => {
-    if (entry.action === 'INSERT') return Object.keys(entry.new_values || {});
-    if (entry.action === 'DELETE') return Object.keys(entry.old_values || {});
+  const getChangedFields = (entry: AuditLogEntry): string[] => {
+    const action = getEntryAction(entry);
+    if (action === 'INSERT') return Object.keys(entry.new_values || {});
+    if (action === 'DELETE') return Object.keys(entry.old_values || {});
     
     // For UPDATE, find fields that changed
     const oldVals = entry.old_values || {};
@@ -109,15 +105,16 @@ export function AuditTrail({
     );
   };
 
-  const formatFieldChange = (entry: AuditEntry, field: string) => {
+  const formatFieldChange = (entry: AuditLogEntry, field: string) => {
     const oldVal = entry.old_values?.[field];
     const newVal = entry.new_values?.[field];
+    const action = getEntryAction(entry);
 
-    if (entry.action === 'INSERT') {
+    if (action === 'INSERT') {
       return <span className="text-green-600 dark:text-green-400">{JSON.stringify(newVal)}</span>;
     }
     
-    if (entry.action === 'DELETE') {
+    if (action === 'DELETE') {
       return <span className="text-red-600 dark:text-red-400 line-through">{JSON.stringify(oldVal)}</span>;
     }
 
@@ -164,9 +161,10 @@ export function AuditTrail({
           {(entries) => (
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-4">
-                {entries.map((entry: AuditEntry, index: number) => {
+                {entries.map((entry: AuditLogEntry, index: number) => {
                   const changedFields = getChangedFields(entry);
                   const isLast = index === entries.length - 1;
+                  const action = getEntryAction(entry);
 
                   return (
                     <div key={entry.id} className="relative">
@@ -178,15 +176,15 @@ export function AuditTrail({
                       <div className="flex gap-3">
                         {/* Action icon */}
                         <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 bg-background">
-                          {getActionIcon(entry.action)}
+                          {getActionIcon(action)}
                         </div>
 
                         {/* Entry content */}
                         <div className="flex-1 space-y-2 pb-4">
                           {/* Header */}
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant={getActionBadge(entry.action)}>
-                              {entry.action}
+                            <Badge variant={getActionBadge(action)}>
+                              {action}
                             </Badge>
                             <span className="text-sm text-muted-foreground flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -262,16 +260,19 @@ export function AuditTrailCompact({
 
   return (
     <div className="space-y-2">
-      {auditEntries.map((entry: AuditEntry) => (
-        <div key={entry.id} className="flex items-center gap-2 text-sm">
-          <Badge variant="outline" className="text-xs">
-            {entry.action}
-          </Badge>
-          <span className="text-muted-foreground">
-            {formatTimestamp(entry.created_at)}
-          </span>
-        </div>
-      ))}
+      {auditEntries.map((entry: AuditLogEntry) => {
+        const action = getEntryAction(entry);
+        return (
+          <div key={entry.id} className="flex items-center gap-2 text-sm">
+            <Badge variant="outline" className="text-xs">
+              {action}
+            </Badge>
+            <span className="text-muted-foreground">
+              {formatTimestamp(entry.created_at)}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
