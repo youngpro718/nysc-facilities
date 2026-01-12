@@ -8,6 +8,19 @@
  */
 
 import { db, handleSupabaseError, validateData } from '../core/supabaseClient';
+import type {
+  IssueWithRelations,
+  IssueFilters,
+  IssueInsert,
+  IssueUpdate,
+  IssueResolution,
+  AuditLogEntry,
+  RoomWithRelations,
+  KeyRequestFilters,
+  KeyRequestWithRelations,
+  SupplyRequestFilters,
+  SupplyRequestWithRelations,
+} from '@/types/operations';
 
 /**
  * Operations Service
@@ -16,10 +29,8 @@ import { db, handleSupabaseError, validateData } from '../core/supabaseClient';
 export const operationsService = {
   /**
    * Get all issues with optional filters
-   * @param filters - Optional filters for issues
-   * @returns Promise<any[]> - Array of issues
    */
-  async getIssues(filters?: any): Promise<any[]> {
+  async getIssues(filters?: IssueFilters): Promise<IssueWithRelations[]> {
     try {
       let query = db
         .from('issues')
@@ -32,7 +43,6 @@ export const operationsService = {
           assigned_to_user:profiles!issues_assigned_to_fkey(id, first_name, last_name)
         `);
 
-      // Apply filters
       if (filters?.status) {
         query = query.eq('status', filters.status);
       }
@@ -49,7 +59,7 @@ export const operationsService = {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) handleSupabaseError(error, 'Failed to fetch issues');
-      return data || [];
+      return (data || []) as IssueWithRelations[];
     } catch (error) {
       console.error('[operationsService.getIssues]:', error);
       throw error;
@@ -58,10 +68,8 @@ export const operationsService = {
 
   /**
    * Get single issue by ID
-   * @param id - Issue ID
-   * @returns Promise<any> - Issue data
    */
-  async getIssueById(id: string): Promise<any> {
+  async getIssueById(id: string): Promise<IssueWithRelations> {
     try {
       const { data, error } = await db
         .from('issues')
@@ -77,7 +85,7 @@ export const operationsService = {
         .single();
 
       if (error) handleSupabaseError(error, 'Failed to fetch issue');
-      return validateData(data, 'Issue not found');
+      return validateData(data, 'Issue not found') as IssueWithRelations;
     } catch (error) {
       console.error('[operationsService.getIssueById]:', error);
       throw error;
@@ -86,10 +94,8 @@ export const operationsService = {
 
   /**
    * Create new issue
-   * @param issueData - Issue data
-   * @returns Promise<any> - Created issue
    */
-  async createIssue(issueData: any): Promise<any> {
+  async createIssue(issueData: IssueInsert): Promise<IssueWithRelations> {
     try {
       const { data, error } = await db
         .from('issues')
@@ -98,7 +104,7 @@ export const operationsService = {
         .single();
 
       if (error) handleSupabaseError(error, 'Failed to create issue');
-      return validateData(data, 'Failed to create issue');
+      return validateData(data, 'Failed to create issue') as IssueWithRelations;
     } catch (error) {
       console.error('[operationsService.createIssue]:', error);
       throw error;
@@ -107,11 +113,8 @@ export const operationsService = {
 
   /**
    * Update existing issue
-   * @param id - Issue ID
-   * @param updates - Issue updates
-   * @returns Promise<any> - Updated issue
    */
-  async updateIssue(id: string, updates: any): Promise<any> {
+  async updateIssue(id: string, updates: IssueUpdate): Promise<IssueWithRelations> {
     try {
       const { data, error } = await db
         .from('issues')
@@ -121,7 +124,7 @@ export const operationsService = {
         .single();
 
       if (error) handleSupabaseError(error, 'Failed to update issue');
-      return validateData(data, 'Failed to update issue');
+      return validateData(data, 'Failed to update issue') as IssueWithRelations;
     } catch (error) {
       console.error('[operationsService.updateIssue]:', error);
       throw error;
@@ -130,18 +133,14 @@ export const operationsService = {
 
   /**
    * Resolve issue
-   * @param id - Issue ID
-   * @param resolution - Resolution data
-   * @returns Promise<any> - Resolved issue
    */
-  async resolveIssue(id: string, resolution: any): Promise<any> {
+  async resolveIssue(id: string, resolution: IssueResolution): Promise<IssueWithRelations> {
     try {
       const { data, error } = await db
         .from('issues')
         .update({
           status: 'resolved',
-          resolved_date: new Date().toISOString(),
-          resolution_type: resolution.type,
+          resolved_at: new Date().toISOString(),
           resolution_notes: resolution.notes,
           updated_at: new Date().toISOString(),
         })
@@ -150,7 +149,7 @@ export const operationsService = {
         .single();
 
       if (error) handleSupabaseError(error, 'Failed to resolve issue');
-      return validateData(data, 'Failed to resolve issue');
+      return validateData(data, 'Failed to resolve issue') as IssueWithRelations;
     } catch (error) {
       console.error('[operationsService.resolveIssue]:', error);
       throw error;
@@ -159,17 +158,14 @@ export const operationsService = {
 
   /**
    * Assign issue to user
-   * @param id - Issue ID
-   * @param userId - User ID to assign to
-   * @returns Promise<any> - Updated issue
    */
-  async assignIssue(id: string, userId: string): Promise<any> {
+  async assignIssue(id: string, userId: string): Promise<IssueWithRelations> {
     try {
       const { data, error } = await db
         .from('issues')
         .update({
           assigned_to: userId,
-          status: 'assigned',
+          status: 'in_progress',
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
@@ -177,7 +173,7 @@ export const operationsService = {
         .single();
 
       if (error) handleSupabaseError(error, 'Failed to assign issue');
-      return validateData(data, 'Failed to assign issue');
+      return validateData(data, 'Failed to assign issue') as IssueWithRelations;
     } catch (error) {
       console.error('[operationsService.assignIssue]:', error);
       throw error;
@@ -186,19 +182,13 @@ export const operationsService = {
 
   /**
    * Update room status with audit logging
-   * Complete Ops v1 flow: read → update → audit → return
-   * @param roomId - Room ID
-   * @param newStatus - New status
-   * @param notes - Optional notes for audit trail
-   * @param userId - User ID making the change
-   * @returns Promise<any> - Updated room
    */
   async updateRoomStatus(
     roomId: string,
     newStatus: string,
     notes?: string,
     userId?: string
-  ): Promise<any> {
+  ): Promise<RoomWithRelations> {
     try {
       // Step 1: Read current room state
       const { data: currentRoom, error: readError } = await db
@@ -229,7 +219,6 @@ export const operationsService = {
         .single();
 
       if (updateError) {
-        // Check for permission error
         if (updateError.code === 'PGRST301' || updateError.code === '42501') {
           throw new Error('Permission denied: You do not have access to update this room');
         }
@@ -253,11 +242,9 @@ export const operationsService = {
 
       if (auditError) {
         console.error('[operationsService.updateRoomStatus] Audit log failed:', auditError);
-        // Don't fail the operation if audit log fails, but log it
       }
 
-      // Step 4: Return updated room
-      return validateData(updatedRoom, 'Failed to update room status');
+      return validateData(updatedRoom, 'Failed to update room status') as RoomWithRelations;
     } catch (error) {
       console.error('[operationsService.updateRoomStatus]:', error);
       throw error;
@@ -266,16 +253,12 @@ export const operationsService = {
 
   /**
    * Get audit trail for a record
-   * @param tableName - Table name
-   * @param recordId - Record ID
-   * @param limit - Number of entries to fetch
-   * @returns Promise<any[]> - Audit trail entries
    */
   async getAuditTrail(
     tableName: string,
     recordId: string,
     limit: number = 20
-  ): Promise<any[]> {
+  ): Promise<AuditLogEntry[]> {
     try {
       const { data, error } = await db
         .from('audit_logs')
@@ -289,7 +272,7 @@ export const operationsService = {
         .limit(limit);
 
       if (error) handleSupabaseError(error, 'Failed to fetch audit trail');
-      return data || [];
+      return (data || []) as AuditLogEntry[];
     } catch (error) {
       console.error('[operationsService.getAuditTrail]:', error);
       throw error;
@@ -298,10 +281,8 @@ export const operationsService = {
 
   /**
    * Get key requests with optional filters
-   * @param filters - Optional filters
-   * @returns Promise<any[]> - Array of key requests
    */
-  async getKeyRequests(filters?: any): Promise<any[]> {
+  async getKeyRequests(filters?: KeyRequestFilters): Promise<KeyRequestWithRelations[]> {
     try {
       let query = db
         .from('key_requests')
@@ -319,7 +300,7 @@ export const operationsService = {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) handleSupabaseError(error, 'Failed to fetch key requests');
-      return data || [];
+      return (data || []) as KeyRequestWithRelations[];
     } catch (error) {
       console.error('[operationsService.getKeyRequests]:', error);
       throw error;
@@ -328,10 +309,8 @@ export const operationsService = {
 
   /**
    * Get supply requests with optional filters
-   * @param filters - Optional filters
-   * @returns Promise<any[]> - Array of supply requests
    */
-  async getSupplyRequests(filters?: any): Promise<any[]> {
+  async getSupplyRequests(filters?: SupplyRequestFilters): Promise<SupplyRequestWithRelations[]> {
     try {
       let query = db
         .from('supply_requests')
@@ -347,7 +326,7 @@ export const operationsService = {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) handleSupabaseError(error, 'Failed to fetch supply requests');
-      return data || [];
+      return (data || []) as SupplyRequestWithRelations[];
     } catch (error) {
       console.error('[operationsService.getSupplyRequests]:', error);
       throw error;

@@ -1,11 +1,19 @@
 import { supabase } from '@/lib/supabase';
 import { submitKeyRequest } from '@/services/keyRequestService';
+import type {
+  FormSubmissionResult,
+  KeyRequestFormData,
+  SupplyRequestFormData,
+  MaintenanceRequestFormData,
+  IssueReportFormData,
+  UserProfileRef,
+} from '@/types/forms';
 
 export async function createKeyRequestFromForm(
-  formData: any,
+  formData: KeyRequestFormData,
   userId: string,
   submissionId: string
-): Promise<{ success: boolean; requestId?: string; error?: string }> {
+): Promise<FormSubmissionResult> {
   try {
     // Try to find or create user profile
     let userProfile = await findUserByEmail(formData.requestor_email);
@@ -54,10 +62,10 @@ export async function createKeyRequestFromForm(
 }
 
 export async function createSupplyRequestFromForm(
-  formData: any,
+  formData: SupplyRequestFormData,
   userId: string,
   submissionId: string
-): Promise<{ success: boolean; requestId?: string; error?: string }> {
+): Promise<FormSubmissionResult> {
   try {
     let userProfile = await findUserByEmail(formData.requestor_email);
     const targetUserId = userProfile?.id || userId;
@@ -116,10 +124,10 @@ export async function createSupplyRequestFromForm(
 }
 
 export async function createMaintenanceRequestFromForm(
-  formData: any,
+  formData: MaintenanceRequestFormData,
   userId: string,
   submissionId: string
-): Promise<{ success: boolean; requestId?: string; error?: string }> {
+): Promise<FormSubmissionResult> {
   try {
     let userProfile = await findUserByEmail(formData.requestor_email);
     const targetUserId = userProfile?.id || userId;
@@ -172,10 +180,10 @@ export async function createMaintenanceRequestFromForm(
 }
 
 export async function createIssueFromForm(
-  formData: any,
+  formData: IssueReportFormData,
   userId: string,
   submissionId: string
-): Promise<{ success: boolean; requestId?: string; error?: string }> {
+): Promise<FormSubmissionResult> {
   try {
     let userProfile = await findUserByEmail(formData.requestor_email);
     const targetUserId = userProfile?.id || userId;
@@ -215,7 +223,7 @@ export async function createIssueFromForm(
   }
 }
 
-async function findUserByEmail(email: string) {
+async function findUserByEmail(email: string): Promise<UserProfileRef | null> {
   if (!email) return null;
   
   const { data } = await supabase
