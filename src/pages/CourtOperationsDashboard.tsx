@@ -97,9 +97,9 @@ export const CourtOperationsDashboard = () => {
             )}
             <Users className="h-4 w-4 flex-shrink-0" />
             Full Assignments
-            {counts.assignments > 0 && (
-              <Badge variant="destructive" className="ml-1">
-                {counts.assignments}
+            {counts.assignmentsNeedingAttention > 0 && (
+              <Badge variant="destructive" className="ml-1" title={counts.tooltips.assignments}>
+                {counts.assignmentsNeedingAttention}
               </Badge>
             )}
           </TabsTrigger>
