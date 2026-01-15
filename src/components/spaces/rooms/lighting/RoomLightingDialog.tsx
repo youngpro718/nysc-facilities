@@ -141,59 +141,49 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
         </Button>
       }
     >
-      <div className="space-y-6">
-        <StandardFormSection
-          title="Basic Configuration"
-          description="Configure the primary lighting settings and room assignment for this fixture."
-          icon={<Home className="h-4 w-4 text-primary" />}
-        >
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <BasicConfigSection form={form as FormProps} />
-            </form>
-          </Form>
-        </StandardFormSection>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <StandardFormSection
+            title="Basic Configuration"
+            description="Configure the primary lighting settings and room assignment for this fixture."
+            icon={<Home className="h-4 w-4 text-primary" />}
+          >
+            <BasicConfigSection form={form as FormProps} />
+          </StandardFormSection>
 
-        <StandardFormSection
-          title="Additional Settings"
-          description="Configure advanced features and special lighting requirements."
-          icon={<Settings2 className="h-4 w-4 text-primary" />}
-          variant="muted"
-        >
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <AdditionalSettingsSection form={form as FormProps} />
-            </form>
-          </Form>
-        </StandardFormSection>
+          <StandardFormSection
+            title="Additional Settings"
+            description="Configure advanced features and special lighting requirements."
+            icon={<Settings2 className="h-4 w-4 text-primary" />}
+            variant="muted"
+          >
+            <AdditionalSettingsSection form={form as FormProps} />
+          </StandardFormSection>
 
-        <StandardFormSection
-          title="Electrical Issues"
-          description="Report and track any electrical problems or maintenance needs."
-          icon={<Lightbulb className="h-4 w-4 text-amber-600" />}
-          variant="accent"
-        >
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <ElectricalIssuesSection form={form as FormProps} />
-              
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex items-center gap-2">
-                  <Settings2 className="h-4 w-4" />
-                  {fixture ? 'Update Configuration' : 'Add Configuration'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </StandardFormSection>
-      </div>
+          <StandardFormSection
+            title="Electrical Issues"
+            description="Report and track any electrical problems or maintenance needs."
+            icon={<Lightbulb className="h-4 w-4 text-amber-600" />}
+            variant="accent"
+          >
+            <ElectricalIssuesSection form={form as FormProps} />
+          </StandardFormSection>
+            
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4" />
+              {fixture ? 'Update Configuration' : 'Add Configuration'}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </BaseLightingDialog>
   );
 }
