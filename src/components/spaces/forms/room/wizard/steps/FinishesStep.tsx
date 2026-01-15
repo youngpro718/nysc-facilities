@@ -126,7 +126,7 @@ export function FinishesStep({ roomId }: FinishesStepProps) {
             Track painting, flooring, blinds, and furniture history
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} size="sm">
+        <Button type="button" onClick={() => setIsDialogOpen(true)} size="sm">
           <Plus className="h-4 w-4 mr-1" />
           Add Entry
         </Button>
@@ -252,6 +252,7 @@ export function FinishesStep({ roomId }: FinishesStepProps) {
                     </div>
                     <div className="flex gap-1">
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
@@ -260,6 +261,7 @@ export function FinishesStep({ roomId }: FinishesStepProps) {
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive"
