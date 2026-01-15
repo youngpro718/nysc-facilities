@@ -11,7 +11,7 @@ import { OccupancyAccessStep } from "./steps/OccupancyAccessStep";
 import { CurrentIssuesStep } from "./steps/CurrentIssuesStep";
 import { PhotosStep } from "./steps/PhotosStep";
 import { MaintenanceStep } from "./steps/MaintenanceStep";
-import { EnrichmentStep } from "./steps/EnrichmentStep";
+import { FinishesStep } from "./steps/FinishesStep";
 import { cn } from "@/lib/utils";
 
 interface RoomEditWizardProps {
@@ -29,7 +29,7 @@ const steps = [
   { id: 4, name: "Current Issues", optional: true },
   { id: 5, name: "Photos", optional: true },
   { id: 6, name: "Maintenance", optional: true },
-  { id: 7, name: "Enrichment", optional: true },
+  { id: 7, name: "Finishes & Furnishings", optional: true },
 ];
 
 export function RoomEditWizard({
@@ -87,7 +87,7 @@ export function RoomEditWizard({
       case 6:
         return <MaintenanceStep form={form} roomId={roomId} />;
       case 7:
-        return <EnrichmentStep form={form} />;
+        return <FinishesStep roomId={roomId} />;
       default:
         return null;
     }
