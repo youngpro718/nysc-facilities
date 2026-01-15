@@ -5,18 +5,80 @@
  * @module types/operations
  */
 
-import type { Database } from '@/integrations/supabase/types';
+// ============================================================================
+// Database Types (inline definitions to avoid dependency on auto-generated types)
+// ============================================================================
+
+type IssuePriorityEnum = "low" | "medium" | "high" | "critical";
+type IssueStatusEnum = "open" | "in_progress" | "resolved" | "closed";
+
+interface IssueRowType {
+  id: string;
+  title: string;
+  description: string | null;
+  status: IssueStatusEnum;
+  priority: IssuePriorityEnum;
+  issue_type: string | null;
+  building_id: string | null;
+  floor_id: string | null;
+  room_id: string | null;
+  reported_by: string | null;
+  assigned_to: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  resolved_at: string | null;
+  resolution_type: string | null;
+  resolution_notes: string | null;
+}
+
+interface IssueInsertType {
+  id?: string;
+  title: string;
+  description?: string | null;
+  status?: IssueStatusEnum;
+  priority?: IssuePriorityEnum;
+  issue_type?: string | null;
+  building_id?: string | null;
+  floor_id?: string | null;
+  room_id?: string | null;
+  reported_by?: string | null;
+  assigned_to?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  resolved_at?: string | null;
+  resolution_type?: string | null;
+  resolution_notes?: string | null;
+}
+
+interface IssueUpdateType {
+  id?: string;
+  title?: string;
+  description?: string | null;
+  status?: IssueStatusEnum;
+  priority?: IssuePriorityEnum;
+  issue_type?: string | null;
+  building_id?: string | null;
+  floor_id?: string | null;
+  room_id?: string | null;
+  reported_by?: string | null;
+  assigned_to?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  resolved_at?: string | null;
+  resolution_type?: string | null;
+  resolution_notes?: string | null;
+}
 
 // ============================================================================
 // Base Types from Database
 // ============================================================================
 
-export type IssueRow = Database['public']['Tables']['issues']['Row'];
-export type IssueInsert = Database['public']['Tables']['issues']['Insert'];
-export type IssueUpdate = Database['public']['Tables']['issues']['Update'];
+export type IssueRow = IssueRowType;
+export type IssueInsert = IssueInsertType;
+export type IssueUpdate = IssueUpdateType;
 
-export type IssuePriority = Database['public']['Enums']['issue_priority_enum'];
-export type IssueStatus = Database['public']['Enums']['issue_status_enum'];
+export type IssuePriority = IssuePriorityEnum;
+export type IssueStatus = IssueStatusEnum;
 
 // ============================================================================
 // Extended Types with Relations
