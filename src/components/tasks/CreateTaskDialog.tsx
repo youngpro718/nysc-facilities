@@ -249,14 +249,17 @@ export function CreateTaskDialog({ trigger }: CreateTaskDialogProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assign To (optional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <Select 
+                    onValueChange={(val) => field.onChange(val === '__none__' ? undefined : val)} 
+                    value={field.value || '__none__'}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Leave unassigned" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="__none__">Unassigned</SelectItem>
                       {staffMembers.map((staff) => (
                         <SelectItem key={staff.id} value={staff.id}>
                           {staff.full_name || staff.email}
@@ -276,14 +279,17 @@ export function CreateTaskDialog({ trigger }: CreateTaskDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Inventory Item (optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <Select 
+                      onValueChange={(val) => field.onChange(val === '__none__' ? undefined : val)} 
+                      value={field.value || '__none__'}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select item" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="__none__">None</SelectItem>
                         {inventoryItems.map((item) => (
                           <SelectItem key={item.id} value={item.id}>
                             {item.name} {item.sku && `(${item.sku})`}
@@ -305,14 +311,17 @@ export function CreateTaskDialog({ trigger }: CreateTaskDialogProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>From Room</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <Select 
+                        onValueChange={(val) => field.onChange(val === '__none__' ? undefined : val)} 
+                        value={field.value || '__none__'}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select room" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="__none__">None</SelectItem>
                           {rooms.map((room) => (
                             <SelectItem key={room.id} value={room.id}>
                               {room.room_number} - {room.name}
@@ -331,14 +340,17 @@ export function CreateTaskDialog({ trigger }: CreateTaskDialogProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>To Room</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <Select 
+                        onValueChange={(val) => field.onChange(val === '__none__' ? undefined : val)} 
+                        value={field.value || '__none__'}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select room" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="__none__">None</SelectItem>
                           {rooms.map((room) => (
                             <SelectItem key={room.id} value={room.id}>
                               {room.room_number} - {room.name}
