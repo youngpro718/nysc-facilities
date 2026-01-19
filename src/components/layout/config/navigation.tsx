@@ -249,6 +249,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   // Standard user navigation
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
+    { title: 'New Request', icon: Package },
     { title: 'My Activity', icon: FileText },
     { type: "separator" },
     { title: 'Profile', icon: User },
@@ -345,6 +346,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   // Standard user routes
   return [
     '/dashboard', // User Dashboard
+    '/request', // New Request hub
     '/my-activity',
     '', // Separator
     '/profile',

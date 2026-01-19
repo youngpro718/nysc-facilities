@@ -74,6 +74,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
 function getNavigationPath(title: string, isAdmin?: boolean): string {
   const pathMap: Record<string, string> = {
     Dashboard: isAdmin ? "/" : "/dashboard",
+    "New Request": "/request",
     Spaces: "/spaces",
     Operations: "/operations",
     Issues: "/operations?tab=issues",

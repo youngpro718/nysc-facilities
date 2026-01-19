@@ -124,7 +124,7 @@ export default function MyActivity() {
         <div className="flex gap-2">
           <Button 
             size="sm" 
-            onClick={() => navigate('/forms/supply-request')}
+            onClick={() => navigate('/request')}
             className="hidden sm:flex"
           >
             <Plus className="h-4 w-4 mr-1" />
