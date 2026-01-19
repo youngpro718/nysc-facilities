@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Building } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { FilterBar } from "../rooms/components/FilterBar";
 import { MobileFilterBar } from "../rooms/components/MobileFilterBar";
@@ -12,10 +12,8 @@ import { MobileRoomDrawer } from "../rooms/components/MobileRoomDrawer";
 import { MobileInventoryDialog } from "../rooms/components/MobileInventoryDialog";
 import { RoomsSidebarList } from "../rooms/components/RoomsSidebarList";
 import { RoomCard } from "../rooms/RoomCard";
-import { Building } from "lucide-react";
 import { useRoomFilters } from "../hooks/useRoomFilters";
-import { supabase } from "@/lib/supabase";
-import { useQuery } from "@tanstack/react-query";
+import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
 import { deleteSpace } from "../services/deleteSpace";
 import { Room } from "../rooms/types/RoomTypes";
 import { useSearchParams } from "react-router-dom";
@@ -62,20 +60,7 @@ const RoomsPage = () => {
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
-  const { data: rooms, isLoading, error, refetch } = useQuery({
-    queryKey: ['rooms'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('rooms')
-        .select(`
-          *,
-          floors!inner(*)
-        `)
-        .order('room_number');
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-  });
+  const { data: rooms, isLoading, error, refetch } = useRoomsQuery({});
   const { filteredAndSortedRooms } = useRoomFilters({
     rooms,
     searchQuery,

@@ -33,11 +33,11 @@ export function useRoomFilters({
     
     let filtered = rooms.filter(room => {
       const searchFields = [
-        room.name.toLowerCase(),
+        room.name?.toLowerCase() || '',
         room.room_number?.toLowerCase() || '',
         room.floor?.building?.name?.toLowerCase() || '',
         room.floor?.name?.toLowerCase() || '',
-        room.room_type.toLowerCase(),
+        room.room_type?.toLowerCase() || '',
         room.description?.toLowerCase() || ''
       ].join(' ');
 
