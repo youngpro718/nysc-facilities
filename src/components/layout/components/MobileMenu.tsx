@@ -76,6 +76,7 @@ export const MobileMenu = ({
 function getNavigationPath(title: string, isAdmin?: boolean): string {
   const pathMap: Record<string, string> = {
     'Dashboard': isAdmin ? '/' : '/dashboard',
+    'New Request': '/request',
     'Spaces': '/spaces',
     'Operations': '/operations', // Contains Issues, Maintenance, Supply Requests
     'Issues': '/issues',
@@ -92,6 +93,7 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     'Court Operations': '/court-operations',
     'My Requests': '/my-requests',
     'My Issues': '/my-issues',
+    'My Activity': '/my-activity',
     'Admin Profile': '/admin-profile',
     'Profile': '/profile',
   };
@@ -106,6 +108,7 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
 function getNavigationDescription(title: string): string {
   const descriptionMap: Record<string, string> = {
     'Dashboard': 'Overview & stats',
+    'New Request': 'Supplies, help, issues, keys',
     'Spaces': 'Manage buildings',
     'Operations': 'Issues, Maintenance, Supplies',
     'Issues': 'Track problems',
@@ -122,6 +125,7 @@ function getNavigationDescription(title: string): string {
     'Court Operations': 'Manage court schedules',
     'My Requests': 'View your submitted requests',
     'My Issues': 'Track your reported issues',
+    'My Activity': 'Track all your requests',
     'Admin Profile': 'Admin settings',
     'Profile': 'Your account',
   };

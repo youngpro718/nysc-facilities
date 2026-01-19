@@ -190,16 +190,16 @@ export default function UserDashboard() {
               onClearAllNotifications={clearAllNotifications}
             />
             <Button
-              variant="outline"
+              variant="default"
               size={isMobile ? "sm" : "default"}
-              onClick={() => navigate('/forms/supply-request')}
+              onClick={() => navigate('/request')}
               className="touch-manipulation"
             >
               <Package className="h-4 w-4 mr-1" />
-              {isMobile ? "Supply" : "Request Supplies"}
+              {isMobile ? "Request" : "New Request"}
             </Button>
             <QuickIssueReportButton 
-              variant="default"
+              variant="outline"
               size={isMobile ? "sm" : "default"}
               label={isMobile ? "Report" : "Report Issue"}
               showIcon={!isMobile}
