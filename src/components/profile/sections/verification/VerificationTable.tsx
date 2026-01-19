@@ -14,8 +14,8 @@ interface VerificationTableProps {
   onSelectAll: (selected: boolean) => void;
   onSelectOne: (requestId: string, userId: string, name: string, selected: boolean) => void;
   onVerify: (id: string, approved: boolean) => void;
-  onAssignRooms: (userId: string) => void;
-  onAssignKeys: (userId: string) => void;
+  onAssignRooms?: (userId: string) => void;
+  onAssignKeys?: (userId: string) => void;
   onToggleAdmin: (userId: string, isAdmin: boolean) => void;
   onDeleteUser?: (userId: string) => void;
 }

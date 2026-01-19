@@ -87,27 +87,11 @@ export const secondaryNavigationItems: NavigationItem[] = [
     moduleKey: undefined,
   },
   {
-    title: 'People',
-    href: '/people',
-    icon: Users,
+    title: 'Access & Assignments',
+    href: '/access-assignments',
+    icon: UserCheck,
     adminOnly: true,
     moduleKey: 'occupants',
-    children: [
-      {
-        title: 'Occupants',
-        href: '/occupants',
-        icon: Users,
-        adminOnly: true,
-        moduleKey: 'occupants',
-      },
-      {
-        title: 'Room Assignments',
-        href: '/room-assignments',
-        icon: UserCheck,
-        adminOnly: true,
-        moduleKey: 'occupants',
-      },
-    ],
   },
   {
     title: 'Assets',
@@ -204,7 +188,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Spaces', icon: Building2 },
       { title: 'Issues', icon: AlertTriangle },
-      { title: 'Occupants', icon: Users },
+      { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Lighting', icon: Zap },
@@ -220,7 +204,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Spaces', icon: Building2 },
       { title: 'Issues', icon: AlertTriangle },
-      { title: 'Occupants', icon: Users },
+      { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Lighting', icon: Zap },
@@ -301,7 +285,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/', // Admin Dashboard
       '/spaces',
       '/operations', // Contains Issues, Maintenance, Supply Requests
-      '/occupants',
+      '/access-assignments',
       '/keys',
       '/inventory',
       '/lighting',
@@ -316,7 +300,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/', // Facilities Dashboard
       '/spaces',
       '/operations',
-      '/occupants',
+      '/access-assignments',
       '/keys',
       '/inventory',
       '/lighting',
