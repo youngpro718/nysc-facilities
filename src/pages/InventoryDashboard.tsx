@@ -7,11 +7,10 @@ import { InventoryTransactionsPanel } from "@/components/inventory/InventoryTran
 import { LowStockPanel } from "@/components/inventory/LowStockPanel";
 import { InventoryAuditsPanel } from "@/components/inventory/InventoryAuditsPanel";
 import { StorageRoomsPanel } from "@/components/inventory/StorageRoomsPanel";
-import { AdminTasksPanel } from "@/components/inventory/AdminTasksPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { Package, Plus, History, BarChart3, MapPin, AlertTriangle, Search, Warehouse, ClipboardList } from "lucide-react";
+import { Package, Plus, History, BarChart3, MapPin, AlertTriangle, Search, Warehouse } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
 import { FORCED_MINIMUM } from "@/constants/inventory";
@@ -32,7 +31,6 @@ export const InventoryDashboard = () => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [newRequestsCount, setNewRequestsCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
-  const [pendingTasksCount, setPendingTasksCount] = useState(0);
   const [globalSearch, setGlobalSearch] = useState('');
   const navigate = useNavigate();
 
@@ -61,13 +59,6 @@ export const InventoryDashboard = () => {
         .gt('quantity', 0)
         .lte('quantity', FORCED_MINIMUM);
       if (typeof lowCount === 'number') setLowStockCount(lowCount);
-
-      // Pending tasks count
-      const { count: taskCount } = await supabase
-        .from('staff_tasks')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending_approval');
-      if (typeof taskCount === 'number') setPendingTasksCount(taskCount);
     };
 
     fetchCounts();
@@ -76,7 +67,6 @@ export const InventoryDashboard = () => {
       .channel('inventory-dashboard-watch')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'supply_requests' }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, fetchCounts)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_tasks' }, fetchCounts)
       .subscribe();
 
     return () => {
@@ -122,15 +112,6 @@ export const InventoryDashboard = () => {
       shortLabel: "History",
       icon: <History className="h-4 w-4" />,
       tooltip: "Transaction logs and audit trail"
-    },
-    {
-      id: "tasks",
-      label: "Tasks",
-      shortLabel: "Tasks",
-      icon: <ClipboardList className="h-4 w-4" />,
-      tooltip: "Manage staff tasks and approvals",
-      badge: pendingTasksCount > 0 ? pendingTasksCount : undefined,
-      badgeVariant: "default"
     }
   ];
 
@@ -215,7 +196,7 @@ export const InventoryDashboard = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full grid grid-cols-6 h-auto p-1">
+          <TabsList className="w-full grid grid-cols-5 h-auto p-1">
             {tabs.map((tab) => (
               <Tooltip key={tab.id}>
                 <TooltipTrigger asChild>
@@ -264,10 +245,6 @@ export const InventoryDashboard = () => {
               <InventoryTransactionsPanel />
               <InventoryAuditsPanel />
             </div>
-          </TabsContent>
-
-          <TabsContent value="tasks" className="mt-4 space-y-4">
-            <AdminTasksPanel />
           </TabsContent>
         </Tabs>
       </div>

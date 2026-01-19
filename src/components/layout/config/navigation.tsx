@@ -191,7 +191,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
-      { title: 'Supplies', icon: Package },
+      { title: 'Tasks', icon: Package },
       { title: 'Lighting', icon: Zap },
       { title: 'Court Operations', icon: Gavel },
       { type: "separator" },
@@ -208,7 +208,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
-      { title: 'Supplies', icon: Package },
+      { title: 'Tasks', icon: Package },
       { title: 'Lighting', icon: Zap },
       { type: "separator" },
       { title: 'Profile', icon: User },
@@ -230,7 +230,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'court_aide') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
-      { title: 'Supplies', icon: Package },
+      { title: 'Tasks', icon: Package },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
@@ -240,7 +240,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'purchasing_staff') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
-      { title: 'Supplies', icon: Package },
+      { title: 'Tasks', icon: Package },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
@@ -326,7 +326,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   if (userRole === 'court_aide') {
     return [
       '/court-aide-dashboard',
-      '/supplies',
+      '/tasks',
       '', // Separator
       '/profile',
     ];
@@ -336,7 +336,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   if (userRole === 'purchasing_staff') {
     return [
       '/purchasing-dashboard',
-      '/supplies',
+      '/tasks',
       '', // Separator
       '/profile',
     ];
