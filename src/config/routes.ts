@@ -117,6 +117,13 @@ export const routes: Record<string, RouteConfig> = {
     icon: Package2,
     parent: '/dashboard',
   },
+  '/tasks': {
+    path: '/tasks',
+    title: 'Task Management',
+    breadcrumbLabel: 'Tasks',
+    icon: Package,
+    parent: '/',
+  },
   
   // Operations
   '/operations': {
