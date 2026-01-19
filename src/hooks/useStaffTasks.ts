@@ -312,7 +312,7 @@ export function useTaskHistory(taskId: string) {
         .from('staff_task_history')
         .select(`
           *,
-          performer:profiles!staff_task_history_performed_by_fkey(full_name)
+          performer:profiles!staff_task_history_performed_by_profiles_fkey(full_name)
         `)
         .eq('task_id', taskId)
         .order('created_at', { ascending: false });
