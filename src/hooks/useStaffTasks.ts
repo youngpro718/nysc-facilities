@@ -33,11 +33,11 @@ export function useStaffTasks(options?: {
         .from('staff_tasks')
         .select(`
           *,
-          requester:profiles!staff_tasks_requested_by_fkey(full_name, email),
-          creator:profiles!staff_tasks_created_by_fkey(full_name),
-          assignee:profiles!staff_tasks_assigned_to_fkey(full_name),
-          claimer:profiles!staff_tasks_claimed_by_fkey(full_name),
-          approver:profiles!staff_tasks_approved_by_fkey(full_name),
+          requester:profiles!staff_tasks_requested_by_profiles_fkey(full_name, email),
+          creator:profiles!staff_tasks_created_by_profiles_fkey(full_name),
+          assignee:profiles!staff_tasks_assigned_to_profiles_fkey(full_name),
+          claimer:profiles!staff_tasks_claimed_by_profiles_fkey(full_name),
+          approver:profiles!staff_tasks_approved_by_profiles_fkey(full_name),
           inventory_item:inventory_items(name, sku),
           from_room:rooms!staff_tasks_from_room_id_fkey(room_number, name),
           to_room:rooms!staff_tasks_to_room_id_fkey(room_number, name)
