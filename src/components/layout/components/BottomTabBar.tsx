@@ -77,6 +77,7 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     Spaces: "/spaces",
     Operations: "/operations",
     Issues: "/operations?tab=issues",
+    "Access & Assignments": "/access-assignments",
     Occupants: "/occupants",
     Inventory: "/inventory",
     "Supply Requests": "/admin/supply-requests",
