@@ -3,10 +3,9 @@
  * 
  * Consolidates all supply-related functionality:
  * - My Requests (for all users)
- * - All Requests (for staff/admin)
- * - Inventory Management (for staff/admin)
  * - Fulfillment (for supply staff)
- * - Staff Tasks (for supply staff)
+ * - Tasks (for supply staff)
+ * - Inventory Management (for staff/admin)
  */
 
 import { useState, useEffect } from "react";
@@ -28,12 +27,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 // Import existing components
 import MySupplyRequests from "@/pages/MySupplyRequests";
 import { InventoryDashboard } from "@/pages/InventoryDashboard";
 import { ImprovedSupplyStaffDashboard } from "@/components/supply/ImprovedSupplyStaffDashboard";
 import { StaffTasksTab } from "@/components/tasks/StaffTasksTab";
+
+interface TabConfig {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  tooltip: string;
+  showForRoles: ('all' | 'staff' | 'admin')[];
+}
 
 export default function SuppliesHub() {
   const navigate = useNavigate();
@@ -63,181 +71,202 @@ export default function SuppliesHub() {
     !['completed', 'cancelled', 'rejected'].includes(r.status)
   ).length;
 
+  // Build available tabs based on user role
+  const getVisibleTabs = () => {
+    const tabs: TabConfig[] = [
+      {
+        id: 'my-requests',
+        label: 'My Requests',
+        icon: <ClipboardList className="h-4 w-4" />,
+        tooltip: 'Your submitted supply requests',
+        showForRoles: ['all']
+      },
+      {
+        id: 'fulfillment',
+        label: 'Fulfillment',
+        icon: <Truck className="h-4 w-4" />,
+        tooltip: 'Process and fulfill incoming orders',
+        showForRoles: ['staff', 'admin']
+      },
+      {
+        id: 'tasks',
+        label: 'Tasks',
+        icon: <ClipboardList className="h-4 w-4" />,
+        tooltip: 'Staff tasks and assignments',
+        showForRoles: ['staff', 'admin']
+      },
+      {
+        id: 'inventory',
+        label: 'Inventory',
+        icon: <Boxes className="h-4 w-4" />,
+        tooltip: 'Manage stock levels and items',
+        showForRoles: ['staff', 'admin']
+      }
+    ];
+
+    return tabs.filter(tab => {
+      if (tab.showForRoles.includes('all')) return true;
+      if (tab.showForRoles.includes('admin') && isAdmin) return true;
+      if (tab.showForRoles.includes('staff') && (isSupplyStaff || isAdmin)) return true;
+      return false;
+    });
+  };
+
+  const visibleTabs = getVisibleTabs();
+
   return (
-    <div className="space-y-6 pb-20 md:pb-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-9 w-9"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Package className="h-6 w-6" />
-              Supplies
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {canManageInventory 
-                ? 'Manage inventory, requests, and fulfillment'
-                : 'Request and track office supplies'
-              }
-            </p>
-          </div>
-        </div>
-        
-        <Button onClick={() => navigate('/forms/supply-request')}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Request
-        </Button>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleTabChange('my-requests')}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <ClipboardList className="h-5 w-5 text-blue-600" />
-              <Badge variant={activeRequestCount > 0 ? "default" : "secondary"}>
-                {activeRequestCount}
-              </Badge>
+    <TooltipProvider>
+      <div className="space-y-6 pb-20 md:pb-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="h-9 w-9"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Package className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold">Supplies</h1>
+                <p className="text-sm text-muted-foreground">
+                  {canManageInventory 
+                    ? 'Manage inventory, requests, and fulfillment'
+                    : 'Request and track office supplies'
+                  }
+                </p>
+              </div>
             </div>
-            <p className="text-sm font-medium mt-2">My Requests</p>
-            <p className="text-xs text-muted-foreground">{myRequests.length} total</p>
-          </CardContent>
-        </Card>
-
-        {canFulfillOrders && (
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleTabChange('fulfillment')}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <Truck className="h-5 w-5 text-green-600" />
-                <Badge variant="outline">Staff</Badge>
-              </div>
-              <p className="text-sm font-medium mt-2">Fulfillment</p>
-              <p className="text-xs text-muted-foreground">Process orders</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {canManageInventory && (
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleTabChange('inventory')}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <Boxes className="h-5 w-5 text-purple-600" />
-                <Badge variant="outline">Staff</Badge>
-              </div>
-              <p className="text-sm font-medium mt-2">Inventory</p>
-              <p className="text-xs text-muted-foreground">Manage stock</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {isAdmin && (
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleTabChange('all-requests')}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <Package className="h-5 w-5 text-orange-600" />
-                <Badge variant="outline">Admin</Badge>
-              </div>
-              <p className="text-sm font-medium mt-2">All Requests</p>
-              <p className="text-xs text-muted-foreground">Admin view</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className={`w-full grid ${
-          isAdmin ? 'grid-cols-4' : 
-          canFulfillOrders ? 'grid-cols-3' : 
-          'grid-cols-1'
-        }`}>
-          <TabsTrigger value="my-requests">
-            <ClipboardList className="h-4 w-4 mr-2" />
-            My Requests
-          </TabsTrigger>
+          </div>
           
+          <Button onClick={() => navigate('/forms/supply-request')}>
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">New Request</span>
+            <span className="sm:hidden">New</span>
+          </Button>
+        </div>
+
+        {/* Quick Stats */}
+        <div className={`grid gap-4 ${canManageInventory ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'}`}>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+            onClick={() => handleTabChange('my-requests')}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <ClipboardList className="h-5 w-5 text-blue-600" />
+                <Badge variant={activeRequestCount > 0 ? "default" : "secondary"}>
+                  {activeRequestCount}
+                </Badge>
+              </div>
+              <p className="text-sm font-medium mt-2">My Requests</p>
+              <p className="text-xs text-muted-foreground">{myRequests.length} total</p>
+            </CardContent>
+          </Card>
+
           {canFulfillOrders && (
-            <TabsTrigger value="fulfillment">
-              <Truck className="h-4 w-4 mr-2" />
-              Fulfillment
-            </TabsTrigger>
+            <Card 
+              className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+              onClick={() => handleTabChange('fulfillment')}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <Truck className="h-5 w-5 text-green-600" />
+                  <Badge variant="outline">Staff</Badge>
+                </div>
+                <p className="text-sm font-medium mt-2">Fulfillment</p>
+                <p className="text-xs text-muted-foreground">Process orders</p>
+              </CardContent>
+            </Card>
           )}
 
           {canFulfillOrders && (
-            <TabsTrigger value="tasks">
-              <ClipboardList className="h-4 w-4 mr-2" />
-              Tasks
-            </TabsTrigger>
+            <Card 
+              className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+              onClick={() => handleTabChange('tasks')}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <ClipboardList className="h-5 w-5 text-amber-600" />
+                  <Badge variant="outline">Staff</Badge>
+                </div>
+                <p className="text-sm font-medium mt-2">Tasks</p>
+                <p className="text-xs text-muted-foreground">Assignments</p>
+              </CardContent>
+            </Card>
           )}
-          
+
           {canManageInventory && (
-            <TabsTrigger value="inventory">
-              <Boxes className="h-4 w-4 mr-2" />
-              Inventory
-            </TabsTrigger>
+            <Card 
+              className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+              onClick={() => handleTabChange('inventory')}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <Boxes className="h-5 w-5 text-purple-600" />
+                  <Badge variant="outline">Staff</Badge>
+                </div>
+                <p className="text-sm font-medium mt-2">Inventory</p>
+                <p className="text-xs text-muted-foreground">Manage stock</p>
+              </CardContent>
+            </Card>
           )}
-          
-          {isAdmin && (
-            <TabsTrigger value="all-requests">
-              <Package className="h-4 w-4 mr-2" />
-              All Requests
-            </TabsTrigger>
+        </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className={`w-full grid grid-cols-${visibleTabs.length} h-auto p-1`}>
+            {visibleTabs.map((tab) => (
+              <Tooltip key={tab.id}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger 
+                    value={tab.id}
+                    className="flex items-center gap-2 py-2"
+                  >
+                    {tab.icon}
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  {tab.tooltip}
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </TabsList>
+
+          {/* My Requests Tab */}
+          <TabsContent value="my-requests" className="mt-6">
+            <MySupplyRequestsContent />
+          </TabsContent>
+
+          {/* Fulfillment Tab (Supply Staff) */}
+          {canFulfillOrders && (
+            <TabsContent value="fulfillment" className="mt-6">
+              <ImprovedSupplyStaffDashboard />
+            </TabsContent>
           )}
-        </TabsList>
 
-        {/* My Requests Tab */}
-        <TabsContent value="my-requests" className="mt-6">
-          <MySupplyRequestsContent />
-        </TabsContent>
+          {/* Tasks Tab (Supply Staff) */}
+          {canFulfillOrders && (
+            <TabsContent value="tasks" className="mt-6">
+              <StaffTasksTab />
+            </TabsContent>
+          )}
 
-        {/* Fulfillment Tab (Supply Staff) */}
-        {canFulfillOrders && (
-          <TabsContent value="fulfillment" className="mt-6">
-            <ImprovedSupplyStaffDashboard />
-          </TabsContent>
-        )}
-
-        {/* Tasks Tab (Supply Staff) */}
-        {canFulfillOrders && (
-          <TabsContent value="tasks" className="mt-6">
-            <StaffTasksTab />
-          </TabsContent>
-        )}
-
-        {/* Inventory Tab */}
-        {canManageInventory && (
-          <TabsContent value="inventory" className="mt-6">
-            <InventoryContent />
-          </TabsContent>
-        )}
-
-        {/* All Requests Tab (Admin) */}
-        {isAdmin && (
-          <TabsContent value="all-requests" className="mt-6">
-            <AllRequestsContent />
-          </TabsContent>
-        )}
-      </Tabs>
-    </div>
+          {/* Inventory Tab */}
+          {canManageInventory && (
+            <TabsContent value="inventory" className="mt-6">
+              <InventoryDashboard />
+            </TabsContent>
+          )}
+        </Tabs>
+      </div>
+    </TooltipProvider>
   );
 }
 
@@ -257,7 +286,7 @@ function MySupplyRequestsContent() {
 
   if (requests.length === 0) {
     return (
-      <Card className="p-8 text-center">
+      <Card className="p-8 text-center border-dashed">
         <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-semibold mb-2">No Supply Requests</h3>
         <p className="text-sm text-muted-foreground mb-4">
@@ -283,61 +312,29 @@ function MySupplyRequestsContent() {
       
       <div className="space-y-3">
         {requests.map((request: any) => (
-          <Card key={request.id} className="hover:shadow-md transition-shadow">
+          <Card key={request.id} className="hover:shadow-md transition-all hover:border-primary/30">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
-                <div>
+                <div className="space-y-1">
                   <h3 className="font-medium">{request.title || 'Supply Request'}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {request.supply_request_items?.length || 0} items • Status: {request.status}
+                    {request.supply_request_items?.length || 0} items
                   </p>
                 </div>
-                <Badge variant="outline">{request.status}</Badge>
+                <Badge 
+                  variant={
+                    request.status === 'completed' ? 'default' :
+                    request.status === 'rejected' || request.status === 'cancelled' ? 'destructive' :
+                    'secondary'
+                  }
+                >
+                  {request.status}
+                </Badge>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-    </div>
-  );
-}
-
-function InventoryContent() {
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory Management</CardTitle>
-          <CardDescription>
-            View and manage supply inventory levels
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <InventoryDashboard />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function AllRequestsContent() {
-  const navigate = useNavigate();
-  
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>All Supply Requests</CardTitle>
-          <CardDescription>
-            Administrative view of all supply requests across the organization
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={() => navigate('/admin/supply-requests')}>
-            Open Full Admin View
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }
