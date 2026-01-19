@@ -12,8 +12,8 @@ import ProfileOnboarding from "@/pages/onboarding/ProfileOnboarding";
 import NotFound from "@/pages/NotFound";
 import Spaces from "@/pages/Spaces";
 import Operations from "@/pages/Operations";
-import Occupants from "@/pages/Occupants";
-import RoomAssignments from "@/pages/RoomAssignments";
+import AccessAssignments from "@/pages/AccessAssignments";
+
 import Keys from "@/pages/Keys";
 import Profile from "@/pages/Profile";
 import Lighting from "@/pages/Lighting";
@@ -146,20 +146,16 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="occupants" element={
+        <Route path="access-assignments" element={
           <ProtectedRoute requireAdmin>
-            <ModuleProtectedRoute moduleKey="occupants" moduleName="Occupants Management">
-              <Occupants />
+            <ModuleProtectedRoute moduleKey="occupants" moduleName="Access & Assignments">
+              <AccessAssignments />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="occupants/room-assignments" element={
-          <ProtectedRoute requireAdmin>
-            <ModuleProtectedRoute moduleKey="occupants" moduleName="Occupants Management">
-              <RoomAssignments />
-            </ModuleProtectedRoute>
-          </ProtectedRoute>
-        } />
+        {/* Legacy routes - redirect to new Access & Assignments */}
+        <Route path="occupants" element={<Navigate to="/access-assignments" replace />} />
+        <Route path="occupants/room-assignments" element={<Navigate to="/access-assignments" replace />} />
         <Route path="inventory" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="inventory" moduleName="Inventory Management">
