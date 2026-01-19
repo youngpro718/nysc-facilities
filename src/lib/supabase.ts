@@ -67,10 +67,6 @@ export const getSupplyRequests = async (userId?: string) => {
         first_name,
         last_name
       ),
-      completed_by:profiles!fulfilled_by (
-        first_name,
-        last_name
-      ),
       supply_request_items (
         *,
         inventory_items (
@@ -93,6 +89,27 @@ export const getSupplyRequests = async (userId?: string) => {
 
   const { data, error } = await query;
   if (error) throw error;
+
+  // Fetch fulfilled_by profiles separately (no FK exists)
+  if (data && data.length > 0) {
+    const fulfilledByIds = [...new Set(data.map((r: any) => r.fulfilled_by).filter(Boolean))] as string[];
+    
+    if (fulfilledByIds.length > 0) {
+      const { data: fulfillerProfiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', fulfilledByIds);
+      
+      const fulfillerMap = new Map((fulfillerProfiles || []).map((p: any) => [p.id, p]));
+      
+      // Attach completed_by to each request
+      return data.map((request: any) => ({
+        ...request,
+        completed_by: request.fulfilled_by ? fulfillerMap.get(request.fulfilled_by) || null : null
+      }));
+    }
+  }
+
   return data;
 };
 
