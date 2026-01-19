@@ -50,10 +50,12 @@ export default function SuppliesHub() {
   const { permissions, userRole } = useRolePermissions();
   
   // Determine user access level
+  // Check permissions for supply-related features
   const isSupplyStaff = userRole === 'court_aide' || userRole === 'purchasing_staff';
   const isAdmin = userRole === 'admin' || userRole === 'facilities_manager';
-  const canManageInventory = isSupplyStaff || isAdmin;
-  const canFulfillOrders = isSupplyStaff || isAdmin;
+  // Use permission system for access control
+  const canManageInventory = permissions.inventory === 'admin' || permissions.inventory === 'write' || isAdmin;
+  const canFulfillOrders = permissions.supply_requests === 'admin' || isSupplyStaff || isAdmin;
   
   // Get tab from URL or default based on role
   const defaultTab = canFulfillOrders ? 'fulfillment' : 'my-requests';
