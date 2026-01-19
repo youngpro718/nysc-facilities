@@ -8,9 +8,10 @@ import { InventoryTransactionsPanel } from "@/components/inventory/InventoryTran
 import { LowStockPanel } from "@/components/inventory/LowStockPanel";
 import { InventoryAuditsPanel } from "@/components/inventory/InventoryAuditsPanel";
 import { StorageRoomsPanel } from "@/components/inventory/StorageRoomsPanel";
+import { StaffTasksPanel } from "@/components/inventory/StaffTasksPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, TrendingDown, History, Boxes, BarChart3, MapPin, AlertTriangle, Search } from "lucide-react";
+import { Package, Plus, TrendingDown, History, Boxes, BarChart3, MapPin, AlertTriangle, Search, ClipboardList } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
 import { FORCED_MINIMUM } from "@/constants/inventory";
@@ -135,7 +136,7 @@ export const InventoryDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 bg-muted">
+        <TabsList className="grid w-full grid-cols-7 bg-muted">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>
@@ -161,6 +162,10 @@ export const InventoryDashboard = () => {
             <Boxes className="h-4 w-4" />
             <span className="hidden sm:inline">Supplies</span>
           </TabsTrigger>
+          <TabsTrigger value="staff-tasks" className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            <span className="hidden sm:inline">Staff Tasks</span>
+          </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">History</span>
@@ -185,6 +190,10 @@ export const InventoryDashboard = () => {
 
         <TabsContent value="supplies" className="space-y-4">
           <EnhancedSupplyManagement />
+        </TabsContent>
+
+        <TabsContent value="staff-tasks" className="space-y-4">
+          <StaffTasksPanel />
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
