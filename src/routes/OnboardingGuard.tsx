@@ -28,6 +28,22 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
     let authSubscription: { data: { subscription: { unsubscribe: () => void } } } | null = null;
 
     const check = async () => {
+      const withTimeout = async <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+        let timeoutId: number | undefined;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = window.setTimeout(
+            () => reject(new Error(`[OnboardingGuard] Timeout while ${label}`)),
+            ms
+          );
+        });
+
+        try {
+          return await Promise.race([promise, timeoutPromise]);
+        } finally {
+          if (timeoutId) window.clearTimeout(timeoutId);
+        }
+      };
+
       // Prevent concurrent checks
       if (isCheckingRef.current) {
         logger.debug('[OnboardingGuard] Check already in progress, skipping');
@@ -46,7 +62,11 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
         }
 
         // 1) Check authentication
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await withTimeout(
+          supabase.auth.getSession(),
+          10000,
+          'getting session'
+        );
         if (!session) {
           logger.debug('[OnboardingGuard] No session found, redirecting to sign-in');
           navigate('/login', { replace: true });
@@ -62,7 +82,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
 
         // 3) Check profile completeness and approval status
         try {
-          const profile = await getMyProfile();
+          const profile = await withTimeout(getMyProfile(), 10000, 'loading profile');
           
           // Check required profile fields
           const needsProfile = !profile?.first_name || !profile?.last_name;
@@ -91,22 +111,32 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
 
           // 5) MFA enforcement for privileged roles
           // Fetch user's role from user_roles table
-          const { data: userRoleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
+          const { data: userRoleData, error: userRoleError } = await withTimeout(
+            supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle(),
+            10000,
+            'loading role'
+          );
+          if (userRoleError) throw userRoleError;
           
           const privilegedRoles = ['admin', 'cmc', 'coordinator', 'sergeant', 'facilities_manager'];
           const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
           const enforceMfa = profile.mfa_enforced === true || isPrivileged;
 
           if (enforceMfa) {
-            // Check if user has verified TOTP factor
-            const { data: { user } } = await supabase.auth.getUser();
-            const factors = (user as any)?.factors || [];
-            const hasVerifiedTotp = Array.isArray(factors) && 
-              factors.some((f: any) => f.factor_type === 'totp' && f.status === 'verified');
+            const { data: factorData, error: factorError } = await withTimeout(
+              supabase.auth.mfa.listFactors(),
+              10000,
+              'checking MFA factors'
+            );
+            if (factorError) throw factorError;
+
+            const hasVerifiedTotp =
+              Array.isArray(factorData?.totp) &&
+              factorData.totp.some((f: any) => f.status === 'verified');
 
             if (!hasVerifiedTotp) {
               logger.debug('[OnboardingGuard] MFA required but not enabled, redirecting to MFA setup');
