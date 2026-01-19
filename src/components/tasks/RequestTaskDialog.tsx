@@ -196,14 +196,17 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>From Room</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <Select 
+                        onValueChange={(val) => field.onChange(val === '__none__' ? undefined : val)} 
+                        value={field.value || '__none__'}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select room" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Not specified</SelectItem>
+                          <SelectItem value="__none__">Not specified</SelectItem>
                           {rooms.map((room) => (
                             <SelectItem key={room.id} value={room.id}>
                               {room.room_number}
@@ -222,14 +225,17 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>To Room</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <Select 
+                        onValueChange={(val) => field.onChange(val === '__none__' ? undefined : val)} 
+                        value={field.value || '__none__'}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select room" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Not specified</SelectItem>
+                          <SelectItem value="__none__">Not specified</SelectItem>
                           {rooms.map((room) => (
                             <SelectItem key={room.id} value={room.id}>
                               {room.room_number}
