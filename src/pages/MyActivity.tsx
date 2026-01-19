@@ -5,7 +5,7 @@
  * - Supply Requests
  * - Key Requests  
  * - Issues Reported
- * - Activity Timeline
+ * - Task Requests
  */
 
 import { useState, useEffect } from "react";
@@ -23,13 +23,15 @@ import {
   XCircle,
   Loader2,
   FileText,
-  Wrench
+  Wrench,
+  ClipboardList
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupplyRequests } from "@/hooks/useSupplyRequests";
 import { useKeyRequests } from "@/hooks/useKeyRequests";
 import { useUserIssues } from "@/hooks/dashboard/useUserIssues";
+import { useStaffTasks } from "@/hooks/useStaffTasks";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +40,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UserTasksTab } from "@/components/tasks/UserTasksTab";
 
 // Status configurations
 const supplyStatusConfig: Record<string, { icon: any; label: string; color: string }> = {
@@ -78,21 +81,23 @@ export default function MyActivity() {
   const { data: supplyRequests = [], isLoading: supplyLoading, refetch: refetchSupply } = useSupplyRequests(user?.id);
   const { data: keyRequests = [], isLoading: keyLoading, refetch: refetchKeys } = useKeyRequests(user?.id);
   const { userIssues: issues = [], isLoading: issuesLoading, refetchIssues } = useUserIssues(user?.id);
+  const { tasks: taskRequests = [], isLoading: tasksLoading, refetch: refetchTasks } = useStaffTasks({ userId: user?.id });
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
   };
 
   const handleRefresh = async () => {
-    await Promise.all([refetchSupply(), refetchKeys(), refetchIssues()]);
+    await Promise.all([refetchSupply(), refetchKeys(), refetchIssues(), refetchTasks()]);
   };
 
   // Calculate counts for badges
   const activeSupplyCount = supplyRequests.filter(r => !['completed', 'cancelled', 'rejected'].includes(r.status)).length;
   const activeKeyCount = keyRequests.filter(r => !['fulfilled', 'rejected'].includes(r.status)).length;
   const activeIssueCount = issues.filter(i => !['resolved', 'closed'].includes(i.status)).length;
+  const activeTaskCount = taskRequests.filter(t => !['completed', 'cancelled', 'rejected'].includes(t.status)).length;
 
-  const isLoading = supplyLoading || keyLoading || issuesLoading;
+  const isLoading = supplyLoading || keyLoading || issuesLoading || tasksLoading;
 
   const content = (
     <div className="space-y-4 pb-20 md:pb-8">
@@ -129,7 +134,7 @@ export default function MyActivity() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <Card 
           className={`cursor-pointer transition-all ${activeTab === 'supplies' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
           onClick={() => handleTabChange('supplies')}
@@ -141,8 +146,7 @@ export default function MyActivity() {
                 {activeSupplyCount}
               </Badge>
             </div>
-            <p className="text-sm font-medium mt-2">Supply Requests</p>
-            <p className="text-xs text-muted-foreground">{supplyRequests.length} total</p>
+            <p className="text-sm font-medium mt-2">Supplies</p>
           </CardContent>
         </Card>
 
@@ -157,8 +161,7 @@ export default function MyActivity() {
                 {activeKeyCount}
               </Badge>
             </div>
-            <p className="text-sm font-medium mt-2">Key Requests</p>
-            <p className="text-xs text-muted-foreground">{keyRequests.length} total</p>
+            <p className="text-sm font-medium mt-2">Keys</p>
           </CardContent>
         </Card>
 
@@ -174,40 +177,43 @@ export default function MyActivity() {
               </Badge>
             </div>
             <p className="text-sm font-medium mt-2">Issues</p>
-            <p className="text-xs text-muted-foreground">{issues.length} total</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className={`cursor-pointer transition-all ${activeTab === 'tasks' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+          onClick={() => handleTabChange('tasks')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <ClipboardList className="h-5 w-5 text-purple-600" />
+              <Badge variant={activeTaskCount > 0 ? "default" : "secondary"}>
+                {activeTaskCount}
+              </Badge>
+            </div>
+            <p className="text-sm font-medium mt-2">Tasks</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabs Content */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="w-full grid grid-cols-3">
+        <TabsList className="w-full grid grid-cols-4">
           <TabsTrigger value="supplies" className="relative">
-            <Package className="h-4 w-4 mr-2" />
+            <Package className="h-4 w-4 mr-1" />
             Supplies
-            {activeSupplyCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center">
-                {activeSupplyCount}
-              </span>
-            )}
           </TabsTrigger>
           <TabsTrigger value="keys" className="relative">
-            <Key className="h-4 w-4 mr-2" />
+            <Key className="h-4 w-4 mr-1" />
             Keys
-            {activeKeyCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center">
-                {activeKeyCount}
-              </span>
-            )}
           </TabsTrigger>
           <TabsTrigger value="issues" className="relative">
-            <AlertTriangle className="h-4 w-4 mr-2" />
+            <AlertTriangle className="h-4 w-4 mr-1" />
             Issues
-            {activeIssueCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] text-destructive-foreground flex items-center justify-center">
-                {activeIssueCount}
-              </span>
-            )}
+          </TabsTrigger>
+          <TabsTrigger value="tasks" className="relative">
+            <ClipboardList className="h-4 w-4 mr-1" />
+            Tasks
           </TabsTrigger>
         </TabsList>
 
@@ -417,6 +423,11 @@ export default function MyActivity() {
               })}
             </div>
           )}
+        </TabsContent>
+
+        {/* Tasks Tab */}
+        <TabsContent value="tasks" className="mt-4">
+          <UserTasksTab />
         </TabsContent>
       </Tabs>
     </div>
