@@ -6,6 +6,7 @@
  * - All Requests (for staff/admin)
  * - Inventory Management (for staff/admin)
  * - Fulfillment (for supply staff)
+ * - Staff Tasks (for supply staff)
  */
 
 import { useState, useEffect } from "react";
@@ -32,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import MySupplyRequests from "@/pages/MySupplyRequests";
 import { InventoryDashboard } from "@/pages/InventoryDashboard";
 import { ImprovedSupplyStaffDashboard } from "@/components/supply/ImprovedSupplyStaffDashboard";
+import { StaffTasksTab } from "@/components/tasks/StaffTasksTab";
 
 export default function SuppliesHub() {
   const navigate = useNavigate();
@@ -179,6 +181,13 @@ export default function SuppliesHub() {
               Fulfillment
             </TabsTrigger>
           )}
+
+          {canFulfillOrders && (
+            <TabsTrigger value="tasks">
+              <ClipboardList className="h-4 w-4 mr-2" />
+              Tasks
+            </TabsTrigger>
+          )}
           
           {canManageInventory && (
             <TabsTrigger value="inventory">
@@ -204,6 +213,13 @@ export default function SuppliesHub() {
         {canFulfillOrders && (
           <TabsContent value="fulfillment" className="mt-6">
             <ImprovedSupplyStaffDashboard />
+          </TabsContent>
+        )}
+
+        {/* Tasks Tab (Supply Staff) */}
+        {canFulfillOrders && (
+          <TabsContent value="tasks" className="mt-6">
+            <StaffTasksTab />
           </TabsContent>
         )}
 
