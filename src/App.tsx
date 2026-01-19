@@ -65,6 +65,8 @@ import IssueReportFormPage from "@/pages/forms/IssueReportFormPage";
 import PublicForms from "@/pages/PublicForms";
 import PublicFormSubmission from "@/pages/PublicFormSubmission";
 import TermSheet from "@/pages/TermSheet";
+import RequestHub from "@/pages/RequestHub";
+import HelpRequestPage from "@/pages/request/HelpRequestPage";
 
 
 // Create a client
@@ -289,6 +291,16 @@ function AppContent() {
         <Route path="profile/settings" element={<Navigate to="/profile?tab=settings" replace />} />
 
         {/* User Routes */}
+        <Route path="request" element={
+          <ProtectedRoute>
+            <RequestHub />
+          </ProtectedRoute>
+        } />
+        <Route path="request/help" element={
+          <ProtectedRoute>
+            <HelpRequestPage />
+          </ProtectedRoute>
+        } />
         <Route path="dashboard" element={
           <ProtectedRoute>
             <UserDashboard />
