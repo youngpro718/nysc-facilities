@@ -63,6 +63,14 @@ export const getSupplyRequests = async (userId?: string) => {
         email,
         department
       ),
+      assigned_fulfiller:profiles!assigned_fulfiller_id (
+        first_name,
+        last_name
+      ),
+      completed_by:profiles!fulfilled_by (
+        first_name,
+        last_name
+      ),
       supply_request_items (
         *,
         inventory_items (

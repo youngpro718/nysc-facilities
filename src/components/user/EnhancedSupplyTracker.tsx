@@ -19,9 +19,11 @@ import {
   X,
   Archive,
   EyeOff,
-  Eye
+  Eye,
+  Bell,
+  User
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { QuickOrderGrid } from '@/components/supply/QuickOrderGrid';
 import { ReceiptDialog } from '@/components/supply/ReceiptDialog';
@@ -42,6 +44,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+interface StaffProfile {
+  first_name: string | null;
+  last_name: string | null;
+}
+
 interface SupplyRequest {
   id: string;
   title: string;
@@ -49,13 +56,26 @@ interface SupplyRequest {
   priority: string;
   created_at: string;
   updated_at: string;
+  fulfilled_at?: string;
   supply_request_items?: any[];
   notes?: string;
+  assigned_fulfiller?: StaffProfile | null;
+  completed_by?: StaffProfile | null;
   metadata?: {
     archived?: boolean;
     archived_at?: string;
   };
 }
+
+// Helper to format staff name (First Name + Last Initial)
+const formatStaffName = (profile: StaffProfile | null | undefined, full = false): string => {
+  if (!profile?.first_name) return 'Staff';
+  if (full) {
+    return `${profile.first_name}${profile.last_name ? ` ${profile.last_name}` : ''}`;
+  }
+  const lastInitial = profile.last_name ? ` ${profile.last_name.charAt(0)}.` : '';
+  return `${profile.first_name}${lastInitial}`;
+};
 
 interface EnhancedSupplyTrackerProps {
   requests: SupplyRequest[];
@@ -247,20 +267,48 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
           const isActive = !['fulfilled', 'rejected', 'cancelled'].includes(request.status);
           const itemCount = request.supply_request_items?.length || 0;
 
+          const staffName = request.assigned_fulfiller ? formatStaffName(request.assigned_fulfiller) : null;
+          const isReadyForPickup = request.status === 'ready';
+
           return (
             <div
               key={request.id}
               className={`border rounded-lg transition-all touch-manipulation ${
-                request.status === 'completed'
-                  ? 'border-success bg-success/5'
-                  : isActive 
-                    ? 'border-primary/30 bg-primary/5' 
-                    : 'border-border'
+                isReadyForPickup
+                  ? 'border-warning bg-warning/10 ring-2 ring-warning/50'
+                  : request.status === 'completed'
+                    ? 'border-success bg-success/5'
+                    : isActive 
+                      ? 'border-primary/30 bg-primary/5' 
+                      : 'border-border'
               }`}
             >
+              {/* ACTION REQUIRED BANNER - Prominent for ready status */}
+              {isReadyForPickup && (
+                <div className="bg-warning text-warning-foreground p-3 rounded-t-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Bell className="h-5 w-5 animate-pulse" />
+                    <span className="font-bold text-sm">ACTION REQUIRED: Ready for Pickup!</span>
+                  </div>
+                  <p className="text-xs opacity-90 mb-3">Your supplies are waiting at the Supply Room</p>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      confirmPickupMutation.mutate(request.id);
+                    }}
+                    disabled={confirmPickupMutation.isPending}
+                    size="sm"
+                    className="w-full bg-background text-foreground hover:bg-background/90"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Confirm I Picked This Up
+                  </Button>
+                </div>
+              )}
+
               {/* Header - iPhone Optimized with larger touch targets */}
               <div
-                className="p-4 cursor-pointer active:bg-accent/70 transition-all duration-150 touch-manipulation"
+                className={`p-4 cursor-pointer active:bg-accent/70 transition-all duration-150 touch-manipulation ${isReadyForPickup ? 'rounded-t-none' : ''}`}
                 onClick={() => toggleExpand(request.id)}
               >
                 <div className="space-y-3">
@@ -295,6 +343,14 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                       {itemCount} {itemCount === 1 ? 'item' : 'items'}
                     </Badge>
                     
+                    {/* Staff handling badge - shows who is working on it */}
+                    {staffName && isActive && !isReadyForPickup && request.status !== 'completed' && (
+                      <Badge variant="outline" className="bg-info/10 text-info-foreground border-info/30 text-xs px-2 py-1">
+                        <User className="h-3 w-3 mr-1" />
+                        {staffName} handling
+                      </Badge>
+                    )}
+                    
                     {/* Completed badge */}
                     {request.status === 'completed' && (
                       <Badge className="bg-success text-success-foreground border-success text-xs px-2 py-1">
@@ -303,7 +359,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                       </Badge>
                     )}
                     
-                    {isActive && request.status !== 'completed' && (
+                    {isActive && request.status !== 'completed' && !isReadyForPickup && (
                       <Badge variant="outline" className="bg-success/10 text-success-foreground border-success/30 text-xs px-2 py-1">
                         Active
                       </Badge>
@@ -326,14 +382,32 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
               {/* Expanded Details */}
               {isExpanded && (
                 <div className="border-t px-4 py-4 space-y-4 bg-muted/30">
-                  {/* Vertical Timeline - iPhone Optimized */}
+                  {/* Vertical Timeline - iPhone Optimized with Staff Info */}
                   <div>
                     <h4 className="font-medium mb-4 text-sm">Request Progress</h4>
                     <div className="space-y-3">
                       {SUPPLY_STAGES.map((stage, index) => {
                         const StageIcon = stage.icon;
-                        const isCompleted = index <= currentStageIndex;
+                        const isStageCompleted = index <= currentStageIndex;
                         const isCurrent = index === currentStageIndex;
+                        
+                        // Determine staff info for each stage
+                        let stageStaffInfo: string | null = null;
+                        if (isStageCompleted && staffName) {
+                          if (stage.key === 'received') {
+                            stageStaffInfo = `Assigned to ${staffName}`;
+                          } else if (stage.key === 'picking') {
+                            stageStaffInfo = `Being picked by ${staffName}`;
+                          } else if (stage.key === 'ready') {
+                            stageStaffInfo = `Prepared by ${staffName}`;
+                          } else if (stage.key === 'completed' && request.completed_by) {
+                            const fulfillerName = formatStaffName(request.completed_by, true);
+                            const completedDate = request.fulfilled_at 
+                              ? format(new Date(request.fulfilled_at), 'MMM d, yyyy')
+                              : null;
+                            stageStaffInfo = `Fulfilled by ${fulfillerName}${completedDate ? ` on ${completedDate}` : ''}`;
+                          }
+                        }
 
                         return (
                           <div key={stage.key} className="flex items-center gap-3">
@@ -341,7 +415,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                             <div
                               className={`
                                 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all
-                                ${isCompleted 
+                                ${isStageCompleted 
                                   ? 'bg-primary text-primary-foreground' 
                                   : 'bg-muted text-muted-foreground'
                                 }
@@ -351,18 +425,24 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                               <StageIcon className="h-5 w-5" />
                             </div>
                             
-                            {/* Label */}
+                            {/* Label and Staff Info */}
                             <div className="flex-1">
-                              <div className={`text-sm ${isCurrent ? 'font-semibold' : 'text-muted-foreground'}`}>
+                              <div className={`text-sm ${isCurrent ? 'font-semibold' : isStageCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
                                 {stage.label}
                               </div>
-                              {isCurrent && (
+                              {isCurrent && !stageStaffInfo && (
                                 <div className="text-xs text-primary mt-0.5">Current Status</div>
+                              )}
+                              {stageStaffInfo && (
+                                <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  {stageStaffInfo}
+                                </div>
                               )}
                             </div>
                             
                             {/* Checkmark for completed */}
-                            {isCompleted && !isCurrent && (
+                            {isStageCompleted && !isCurrent && (
                               <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
                             )}
                           </div>
@@ -401,44 +481,38 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                     </div>
                   )}
 
-                  {/* Status Message */}
-                  {isActive && request.status === 'ready' && (
+                  {/* Completed Summary with Fulfiller Info */}
+                  {request.status === 'completed' && (
                     <div className="bg-success/10 border border-success/30 rounded-lg p-4 space-y-3">
-                      <div className="flex items-center gap-2 text-success-foreground">
-                        <CheckCircle className="h-5 w-5" />
-                        <div>
-                          <div className="font-semibold">Ready for Pickup!</div>
-                          <div className="text-sm">
-                            Your supplies are ready. Please visit the supply room to collect them.
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2 text-success-foreground">
+                          <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <div className="font-semibold">Request Completed</div>
+                            {request.completed_by && (
+                              <div className="text-sm mt-1 flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                <span>Fulfilled by: {formatStaffName(request.completed_by, true)}</span>
+                              </div>
+                            )}
+                            {request.fulfilled_at && (
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                {format(new Date(request.fulfilled_at), 'MMM d, yyyy \'at\' h:mm a')}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => confirmPickupMutation.mutate(request.id)}
-                        disabled={confirmPickupMutation.isPending}
-                        className="w-full touch-target"
-                        size="lg"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Confirm I Picked This Up
-                      </Button>
-                    </div>
-                  )}
-
-                   {request.status === 'completed' && (
-                    <div className="bg-success/10 border border-success/30 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-success-foreground">
-                          <CheckCircle className="h-5 w-5" />
-                          <div className="font-semibold">Request Completed</div>
                         </div>
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => setSelectedReceiptRequestId(request.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedReceiptRequestId(request.id);
+                          }}
+                          className="flex-shrink-0"
                         >
                           <Receipt className="h-4 w-4 mr-2" />
-                          View Receipt
+                          Receipt
                         </Button>
                       </div>
                     </div>
