@@ -7,7 +7,8 @@
 
 import { 
   Gavel, Package, Warehouse, AlertCircle, TrendingUp, Calendar, 
-  Clock, FileText, Wrench, DollarSign, LucideIcon 
+  Clock, FileText, Wrench, DollarSign, LucideIcon, ClipboardList,
+  CheckCircle, User
 } from 'lucide-react';
 
 export type DashboardRole = 'cmc' | 'court_aide' | 'purchasing_staff';
@@ -89,24 +90,31 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
     showPendingRequests: false,
   },
   court_aide: {
-    title: 'Supply Staff Dashboard',
+    title: 'Court Aide Dashboard',
     greeting: 'Court Aide',
     primaryAction: {
+      label: 'My Tasks',
+      path: '/tasks',
+      icon: ClipboardList,
+    },
+    secondaryAction: {
       label: 'Supply Room',
       path: '/supply-room',
       icon: Package,
     },
     statsConfig: [
-      { id: 'pendingRequests', label: 'Pending Requests', icon: Clock, description: 'Awaiting fulfillment' },
-      { id: 'lowStockItems', label: 'Low Stock Items', icon: AlertCircle, description: 'Need reordering' },
-      { id: 'activeOrders', label: 'Active Requests', icon: Package, description: 'In progress' },
-      { id: 'itemsFulfilled', label: 'Items Fulfilled', icon: TrendingUp, description: 'This month' },
+      { id: 'availableTasks', label: 'Available Tasks', icon: Clock, description: 'Ready to claim', clickable: true, clickPath: '/tasks' },
+      { id: 'myActiveTasks', label: 'My Active Tasks', icon: ClipboardList, description: 'In progress', clickable: true, clickPath: '/tasks' },
+      { id: 'pendingRequests', label: 'Supply Requests', icon: Package, description: 'Awaiting fulfillment', clickable: true, clickPath: '/supply-room' },
+      { id: 'lowStockItems', label: 'Low Stock', icon: AlertCircle, description: 'Need attention', clickable: true, clickPath: '/inventory' },
     ],
     quickActions: [
-      { id: 'supply-room', title: 'Supply Room', description: 'Fulfill and manage supply requests', icon: Package, path: '/supply-room', color: 'text-blue-600', bgColor: 'bg-blue-50' },
+      { id: 'view-tasks', title: 'View Tasks', description: 'See and claim available tasks', icon: ClipboardList, path: '/tasks', color: 'text-green-600', bgColor: 'bg-green-50' },
+      { id: 'supply-room', title: 'Supply Room', description: 'Fulfill supply requests', icon: Package, path: '/supply-room', color: 'text-blue-600', bgColor: 'bg-blue-50' },
       { id: 'inventory', title: 'Inventory', description: 'Manage stock levels and items', icon: Warehouse, path: '/inventory', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+      { id: 'my-completed', title: 'My Completed', description: 'View your completed work', icon: CheckCircle, path: '/tasks?tab=completed', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
     ],
-    showTermSheet: true,
+    showTermSheet: false,
     showPerformanceMetrics: true,
     showInventoryAlerts: true,
     showPendingRequests: true,
