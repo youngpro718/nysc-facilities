@@ -226,11 +226,13 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
   
-  // Court Aide (Supply Staff) navigation
+  // Court Aide (Supply Staff) navigation - task-focused with supply/inventory access
   if (userRole === 'court_aide') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Tasks', icon: Package },
+      { title: 'Supply Room', icon: Package2 },
+      { title: 'Inventory', icon: Boxes },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
@@ -323,11 +325,13 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
   
-  // Court Aide (Supply Staff) routes
+  // Court Aide (Supply Staff) routes - task-focused with supply/inventory access
   if (userRole === 'court_aide') {
     return [
       '/court-aide-dashboard',
       '/tasks',
+      '/supply-room',
+      '/inventory',
       '', // Separator
       '/profile',
     ];

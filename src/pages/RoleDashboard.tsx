@@ -114,6 +114,37 @@ export default function RoleDashboard() {
     enabled: userRole === 'court_aide',
   });
 
+  // Court Aide specific: Available tasks (approved but unclaimed)
+  const { data: availableTasksCount = 0 } = useQuery({
+    queryKey: ['role-dashboard-available-tasks'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('staff_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'approved')
+        .is('claimed_by', null);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: userRole === 'court_aide',
+  });
+
+  // Court Aide specific: My active tasks (claimed by or assigned to me)
+  const { data: myActiveTasksCount = 0 } = useQuery({
+    queryKey: ['role-dashboard-my-active-tasks', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      const { count, error } = await supabase
+        .from('staff_tasks')
+        .select('*', { count: 'exact', head: true })
+        .or(`claimed_by.eq.${user.id},assigned_to.eq.${user.id}`)
+        .in('status', ['claimed', 'in_progress']);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: userRole === 'court_aide' && !!user?.id,
+  });
+
   const { data: courtroomStats } = useQuery({
     queryKey: ['role-dashboard-courtrooms'],
     queryFn: async () => {
@@ -210,7 +241,16 @@ export default function RoleDashboard() {
     lowStockItems: { value: lowStockCount },
     activeOrders: { value: activeOrdersCount },
     itemsFulfilled: { value: itemsFulfilledCount },
-    reorderRecommendations: { value: lowStockCount }, // Same as low stock for now
+    reorderRecommendations: { value: lowStockCount },
+    // Court Aide specific stats
+    availableTasks: { 
+      value: availableTasksCount, 
+      badge: availableTasksCount > 0 ? 'Available' : undefined 
+    },
+    myActiveTasks: { 
+      value: myActiveTasksCount, 
+      badge: myActiveTasksCount > 0 ? 'In Progress' : undefined 
+    },
   };
 
   if (roleLoading) {
