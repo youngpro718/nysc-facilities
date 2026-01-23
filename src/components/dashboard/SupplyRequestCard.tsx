@@ -2,17 +2,15 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useSupplyRequests } from '@/hooks/useSupplyRequests';
 import { useAuth } from '@/hooks/useAuth';
-import { SupplyRequestForm } from '@/components/supply-requests/SupplyRequestForm';
 import { Package, Plus, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 
 export function SupplyRequestCard() {
   const { user } = useAuth();
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
   const { data: requests = [], isLoading } = useSupplyRequests(user?.id);
 
   const getStatusIcon = (status: string) => {
@@ -93,20 +91,14 @@ export function SupplyRequestCard() {
             <Package className="h-5 w-5" />
             Supply Requests
           </div>
-          <Dialog open={showForm} onOpenChange={setShowForm}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                New Request
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Submit Supply Request</DialogTitle>
-              </DialogHeader>
-              <SupplyRequestForm onSuccess={() => setShowForm(false)} />
-            </DialogContent>
-          </Dialog>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => navigate('/request/supplies')}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Request
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent>
