@@ -69,7 +69,7 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
     },
     secondaryAction: {
       label: 'Request Supplies',
-      path: '/forms/supply-request',
+      path: '/request/supplies',
       icon: Package,
     },
     statsConfig: [
@@ -81,7 +81,7 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
     quickActions: [
       { id: 'court-ops', title: 'Court Operations', description: 'Manage courtroom assignments and terms', icon: Gavel, path: '/court-operations', color: 'text-blue-600', bgColor: 'bg-blue-50' },
       { id: 'report-issue', title: 'Report Issue', description: 'Report a facility or maintenance issue', icon: Wrench, path: '/my-issues', color: 'text-orange-600', bgColor: 'bg-orange-50' },
-      { id: 'request-supplies', title: 'Request Supplies', description: 'Order office supplies and materials', icon: Package, path: '/forms/supply-request', color: 'text-green-600', bgColor: 'bg-green-50' },
+      { id: 'request-supplies', title: 'Request Supplies', description: 'Order office supplies and materials', icon: Package, path: '/request/supplies', color: 'text-green-600', bgColor: 'bg-green-50' },
       { id: 'my-supplies', title: 'My Supply Requests', description: 'Track your supply request status', icon: FileText, path: '/my-supply-requests', color: 'text-purple-600', bgColor: 'bg-purple-50' },
     ],
     showTermSheet: true,
