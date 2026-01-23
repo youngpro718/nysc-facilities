@@ -23,7 +23,7 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
   },
   court_aide: {
     path: '/court-aide-dashboard',
-    name: 'Court Aide Dashboard',
+    name: 'Work Center',
   },
   standard: {
     path: '/dashboard',
