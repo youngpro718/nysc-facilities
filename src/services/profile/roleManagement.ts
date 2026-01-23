@@ -10,7 +10,8 @@
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '../profile';
 
-export type UserRole = 'administrator' | 'manager' | 'facilities_staff' | 'staff' | 'user' | 'coordinator' | 'sergeant' | 'it_dcas' | 'viewer';
+// Simplified 4-role hierarchy that matches the user_role enum in the database
+export type UserRole = 'admin' | 'cmc' | 'court_aide' | 'standard';
 
 /**
  * Profile data with role information from user_roles table

@@ -122,7 +122,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           };
           const userRoleData = await withTimeout(userRoleQuery(), 10000, 'loading role');
           
-          const privilegedRoles = ['admin', 'cmc', 'coordinator', 'sergeant', 'facilities_manager'];
+          const privilegedRoles = ['admin', 'cmc'];
           const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
           const enforceMfa = profile.mfa_enforced === true || isPrivileged;
 

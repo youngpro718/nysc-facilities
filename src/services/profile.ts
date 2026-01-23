@@ -19,12 +19,9 @@ export {
  * User roles in the system
  * @deprecated Roles are now stored in user_roles table, not in profiles
  * Use user_roles table directly for role management
- * - coordinator: Full access (read/write all profiles, assign roles)
- * - sergeant: Limited updates (to be implemented)
- * - it_dcas: Read + targeted updates (to be implemented)
- * - viewer: Read-only (own profile only)
+ * Simplified 4-role hierarchy: admin, cmc, court_aide, standard
  */
-export type Role = 'coordinator' | 'sergeant' | 'it_dcas' | 'viewer';
+export type Role = 'admin' | 'cmc' | 'court_aide' | 'standard';
 
 /**
  * Profile data structure matching the database schema
