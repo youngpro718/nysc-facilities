@@ -12,6 +12,7 @@ export interface CartItem {
   item_name: string;
   item_unit?: string;
   item_sku?: string;
+  requires_justification?: boolean;
 }
 
 export function useOrderCart() {
@@ -22,7 +23,7 @@ export function useOrderCart() {
   const { mutateAsync: generateReceipt } = useGenerateReceipt();
   const { user } = useAuth();
 
-  const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string }, quantity: number = 1) => {
+  const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string; requires_justification?: boolean }, quantity: number = 1) => {
     setCartItems(prev => {
       const existingIndex = prev.findIndex(i => i.item_id === item.id);
       if (existingIndex >= 0) {
@@ -36,6 +37,7 @@ export function useOrderCart() {
         item_name: item.name,
         item_unit: item.unit,
         item_sku: item.sku,
+        requires_justification: item.requires_justification,
       }];
     });
   }, []);
@@ -144,6 +146,7 @@ export function useOrderCart() {
   }, [cartItems, toast, queryClient, clearCart, user]);
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const hasRestrictedItems = cartItems.some(item => item.requires_justification === true);
 
   return {
     cartItems,
@@ -154,5 +157,6 @@ export function useOrderCart() {
     submitOrder,
     totalItems,
     isSubmitting,
+    hasRestrictedItems,
   };
 }

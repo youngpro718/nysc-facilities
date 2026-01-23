@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Minus, Plus, Package } from 'lucide-react';
+import { Star, Minus, Plus, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InlineItemRowProps {
@@ -11,6 +11,7 @@ interface InlineItemRowProps {
     unit?: string;
     quantity?: number;
     categoryName?: string;
+    requires_justification?: boolean;
   };
   cartQuantity: number;
   isFavorite?: boolean;
@@ -40,6 +41,7 @@ export function InlineItemRow({
         inCart 
           ? "bg-primary/5 border-primary/20" 
           : "bg-card hover:bg-accent/50",
+        item.requires_justification && "border-l-4 border-l-amber-500",
         compact && "p-2"
       )}
     >
@@ -57,6 +59,9 @@ export function InlineItemRow({
           )}>
             {item.name}
           </span>
+          {item.requires_justification && (
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+          )}
         </div>
         {!compact && (
           <div className="flex items-center gap-2 mt-1">
@@ -66,6 +71,11 @@ export function InlineItemRow({
             {item.categoryName && (
               <Badge variant="secondary" className="text-xs">
                 {item.categoryName}
+              </Badge>
+            )}
+            {item.requires_justification && (
+              <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
+                Requires approval
               </Badge>
             )}
           </div>

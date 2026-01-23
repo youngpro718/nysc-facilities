@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { InventoryLite, requiresApprovalForItems } from '@/constants/supplyOrders';
+import { InventoryItemWithFlag, requiresApprovalForItems } from '@/constants/supplyOrders';
 
 export interface SubmitOrderItem {
   item_id: string;
@@ -24,18 +24,19 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     throw new Error('Authentication required. Please refresh and try again.');
   }
 
-  // Fetch minimal inventory details to evaluate approval policy
+  // Fetch minimal inventory details including requires_justification flag
   const itemIds = Array.from(new Set(payload.items.map(i => i.item_id)));
   const { data: inv, error: invErr } = await supabase
     .from('inventory_items')
-    .select('id, name, inventory_categories(name)')
+    .select('id, name, requires_justification, inventory_categories(name)')
     .in('id', itemIds);
   if (invErr) throw invErr;
 
-  const liteItems: InventoryLite[] = (inv || []).map((i: any) => ({
+  const liteItems: InventoryItemWithFlag[] = (inv || []).map((i: any) => ({
     id: i.id,
     name: i.name,
     categoryName: i.inventory_categories?.name ?? null,
+    requires_justification: i.requires_justification ?? false,
   }));
 
   const approvalRequired = requiresApprovalForItems(liteItems);
