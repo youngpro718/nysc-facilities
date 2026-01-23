@@ -29,6 +29,7 @@ export function QuickSupplyRequest() {
     submitOrder,
     totalItems,
     isSubmitting,
+    hasRestrictedItems,
   } = useOrderCart();
 
   // Filter items based on search and category
@@ -60,6 +61,7 @@ export function QuickSupplyRequest() {
         name: item.name,
         unit: item.unit,
         sku: item.sku,
+        requires_justification: item.requires_justification,
       },
       1
     );
@@ -146,6 +148,7 @@ export function QuickSupplyRequest() {
                   unit: item.unit,
                   quantity: item.quantity,
                   categoryName: item.inventory_categories?.name,
+                  requires_justification: item.requires_justification,
                 }}
                 cartQuantity={getCartQuantity(item.id)}
                 isFavorite={isFavorite(item.id)}
@@ -168,6 +171,7 @@ export function QuickSupplyRequest() {
         onSubmit={submitOrder}
         onClear={clearCart}
         isSubmitting={isSubmitting}
+        hasRestrictedItems={hasRestrictedItems}
       />
     </div>
   );

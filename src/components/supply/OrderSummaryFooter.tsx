@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Sheet, 
@@ -12,8 +13,9 @@ import {
   SheetTrigger,
   SheetFooter 
 } from '@/components/ui/sheet';
-import { ShoppingCart, Send, Trash2, X, ChevronUp, MapPin } from 'lucide-react';
+import { ShoppingCart, Send, Trash2, X, ChevronUp, MapPin, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 import type { CartItem } from '@/hooks/useOrderCart';
 
 interface OrderSummaryFooterProps {
@@ -24,6 +26,7 @@ interface OrderSummaryFooterProps {
   onSubmit: (options?: any) => Promise<any>;
   onClear: () => void;
   isSubmitting: boolean;
+  hasRestrictedItems?: boolean;
 }
 
 export function OrderSummaryFooter({
@@ -34,21 +37,43 @@ export function OrderSummaryFooter({
   onSubmit,
   onClear,
   isSubmitting,
+  hasRestrictedItems = false,
 }: OrderSummaryFooterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [priority, setPriority] = useState('medium');
+  const [justification, setJustification] = useState('');
+  const { profile } = useAuth();
+
+  // Pre-fill delivery location from user profile metadata
+  useEffect(() => {
+    const meta = profile?.metadata as Record<string, any> | undefined;
+    const roomFromProfile = meta?.room_number || meta?.office || '';
+    if (roomFromProfile && !deliveryLocation) {
+      setDeliveryLocation(roomFromProfile);
+    }
+  }, [profile?.metadata]);
 
   const handleSubmit = async () => {
     await onSubmit({
       priority,
       delivery_location: deliveryLocation,
-      justification: 'Standard supply request',
+      justification: hasRestrictedItems && justification 
+        ? justification 
+        : 'Standard supply request',
     });
     setIsOpen(false);
-    setDeliveryLocation('');
+    const meta = profile?.metadata as Record<string, any> | undefined;
+    const roomFromProfile = meta?.room_number || meta?.office || '';
+    setDeliveryLocation(roomFromProfile);
     setPriority('medium');
+    setJustification('');
   };
+
+  // Get restricted item names for display
+  const restrictedItemNames = items
+    .filter(i => i.requires_justification)
+    .map(i => i.item_name);
 
   if (items.length === 0) {
     return null;
@@ -84,11 +109,11 @@ export function OrderSummaryFooter({
               </button>
             </SheetTrigger>
 
-            {/* Quick Submit */}
+            {/* Quick Submit - disabled if restricted items require justification */}
             <Button
               size="lg"
               className="shrink-0 gap-2"
-              onClick={handleSubmit}
+              onClick={hasRestrictedItems ? () => setIsOpen(true) : handleSubmit}
               disabled={isSubmitting}
             >
               <Send className="h-4 w-4" />
@@ -115,10 +140,20 @@ export function OrderSummaryFooter({
             {items.map((item) => (
               <div
                 key={item.item_id}
-                className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-lg",
+                  item.requires_justification 
+                    ? "bg-amber-500/10 border border-amber-500/30" 
+                    : "bg-muted/50"
+                )}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{item.item_name}</p>
+                  <p className="font-medium text-sm truncate flex items-center gap-2">
+                    {item.item_name}
+                    {item.requires_justification && (
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                    )}
+                  </p>
                   {item.item_sku && (
                     <Badge variant="outline" className="text-xs font-mono mt-1">
                       {item.item_sku}
@@ -153,6 +188,26 @@ export function OrderSummaryFooter({
 
           {/* Order Options */}
           <div className="border-t pt-4 space-y-4">
+            {/* Justification - only shown for restricted items */}
+            {hasRestrictedItems && (
+              <div className="space-y-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                <Label htmlFor="justification" className="text-sm flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-4 w-4" />
+                  Justification Required
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Items requiring approval: {restrictedItemNames.join(', ')}
+                </p>
+                <Textarea
+                  id="justification"
+                  placeholder="Please explain why you need these items..."
+                  value={justification}
+                  onChange={(e) => setJustification(e.target.value)}
+                  className="min-h-[80px]"
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="location" className="text-sm flex items-center gap-1">
@@ -195,7 +250,7 @@ export function OrderSummaryFooter({
             <Button
               className="flex-1"
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || (hasRestrictedItems && !justification.trim())}
             >
               <Send className="h-4 w-4 mr-2" />
               {isSubmitting ? 'Submitting...' : 'Submit Order'}

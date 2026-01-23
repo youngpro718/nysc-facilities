@@ -19,46 +19,20 @@ export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   rejected: [],
 };
 
-// Simple heuristic rules for approvals without requiring DB schema changes.
-// We derive from category names and item names.
-const HIGH_TICKET_CATEGORIES = new Set<string>([
-  'Furniture',
-  'Electronics',
-]);
-
-const HIGH_TICKET_KEYWORDS = [
-  'chair',
-  'couch',
-  'sofa',
-  'desk',
-  'table',
-  'cabinet',
-  'printer',
-  'monitor',
-];
-
-const RESTRICTED_CATEGORIES = new Set<string>([
-  'Electronics',
-  'IT Equipment',
-]);
-
-export interface InventoryLite {
+// Extended inventory item interface with justification flag
+export interface InventoryItemWithFlag {
   id: string;
   name: string;
   categoryName?: string | null;
+  requires_justification?: boolean;
 }
 
-export function isHighTicketItem(item: InventoryLite): boolean {
-  const name = (item.name || '').toLowerCase();
-  const inHighTicketCategory = item.categoryName ? HIGH_TICKET_CATEGORIES.has(item.categoryName) : false;
-  const hasKeyword = HIGH_TICKET_KEYWORDS.some(k => name.includes(k));
-  return inHighTicketCategory || hasKeyword;
+// Check if any cart items require justification (uses DB flag)
+export function requiresJustificationForItems(items: InventoryItemWithFlag[]): boolean {
+  return items.some(item => item.requires_justification === true);
 }
 
-export function isRestrictedItem(item: InventoryLite): boolean {
-  return item.categoryName ? RESTRICTED_CATEGORIES.has(item.categoryName) : false;
-}
-
-export function requiresApprovalForItems(items: InventoryLite[]): boolean {
-  return items.some(it => isHighTicketItem(it) || isRestrictedItem(it));
+// Legacy function - now checks the DB flag primarily
+export function requiresApprovalForItems(items: InventoryItemWithFlag[]): boolean {
+  return requiresJustificationForItems(items);
 }
