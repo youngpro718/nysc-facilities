@@ -33,6 +33,7 @@ export interface UserSignupData {
   department_id?: string;
   court_position?: string;
   room_number?: string; // Office/room number for delivery location
+  requested_role?: string; // Role requested during signup, pending admin approval
   emergency_contact?: {
     name?: string;
     phone?: string;

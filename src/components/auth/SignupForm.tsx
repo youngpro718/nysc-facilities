@@ -3,12 +3,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, Lock, Building2, Loader2, User, Users, Phone, Camera } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Mail, Building2, Loader2, User, Phone, Camera, ShieldCheck } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useSecureAuth } from '@/hooks/security/useSecureAuth';
 import { UserSignupData } from "@/types/auth";
+import { SIGNUP_ROLE_OPTIONS } from "@/config/roles";
 import { 
   Accordion, 
   AccordionContent, 
@@ -51,6 +53,7 @@ export const SignupForm = ({
     relationship: ""
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [requestedRole, setRequestedRole] = useState<string>('standard');
 
   const { uploadAvatar } = useAvatarUpload();
 
@@ -85,6 +88,7 @@ export const SignupForm = ({
         department_id: departmentId || undefined,
         court_position: courtPosition || undefined,
         room_number: roomNumber || undefined,
+        requested_role: requestedRole,
         emergency_contact: Object.values(emergencyContact).some(Boolean) ? emergencyContact : undefined
       };
       
@@ -285,6 +289,33 @@ export const SignupForm = ({
             onChange={(e) => setEmergencyContact(prev => ({ ...prev, relationship: e.target.value }))}
             className=""
           />
+        </div>
+      )
+    },
+    {
+      id: "account-type",
+      icon: <ShieldCheck className="h-5 w-5 text-slate-500" />,
+      title: "Account Type",
+      children: (
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">
+            Select the type of account that best describes your role. An administrator will review and approve your role selection.
+          </p>
+          <RadioGroup value={requestedRole} onValueChange={setRequestedRole}>
+            <div className="space-y-3">
+              {SIGNUP_ROLE_OPTIONS.map((role) => (
+                <div key={role.value} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-slate-50 transition-colors">
+                  <RadioGroupItem value={role.value} id={role.value} className="mt-1" />
+                  <div className="flex-1">
+                    <Label htmlFor={role.value} className="font-medium cursor-pointer text-slate-700">
+                      {role.label}
+                    </Label>
+                    <p className="text-sm text-slate-500">{role.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </RadioGroup>
         </div>
       )
     },

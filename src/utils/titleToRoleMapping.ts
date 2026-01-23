@@ -23,29 +23,15 @@ const CACHE_DURATION = 60000; // 1 minute
 /**
  * Comprehensive title-to-role mapping
  * Titles are matched case-insensitively against keywords
+ * Simplified to 4 roles: admin, cmc, court_aide, standard
  */
 export const TITLE_ROLE_MAPPINGS: TitleRoleMapping[] = [
   // ADMIN - Full system access
   {
-    keywords: ["administrator", "admin", "system admin", "it admin", "director"],
+    keywords: ["administrator", "admin", "system admin", "it admin", "director", "facilities manager", "facility manager", "building manager", "facilities director", "facilities coordinator", "facility coordinator"],
     role: "admin",
     description: "System Administrator",
     accessDescription: "Full access to all features and settings"
-  },
-
-  // FACILITIES MANAGER - Building management
-  {
-    keywords: [
-      "facilities manager",
-      "facility manager",
-      "building manager",
-      "facilities director",
-      "facilities coordinator",
-      "facility coordinator"
-    ],
-    role: "facilities_manager",
-    description: "Facilities Manager",
-    accessDescription: "Full access to spaces, issues, maintenance, keys, and lighting"
   },
 
   // CMC - Court Management Coordinator  
@@ -61,7 +47,7 @@ export const TITLE_ROLE_MAPPINGS: TitleRoleMapping[] = [
     accessDescription: "Access to court operations, scheduling, and key management"
   },
 
-  // SUPPLY/INVENTORY STAFF
+  // COURT AIDE - Supply/Inventory/Purchasing Staff
   {
     keywords: [
       "supply",
@@ -75,27 +61,19 @@ export const TITLE_ROLE_MAPPINGS: TitleRoleMapping[] = [
       "inventory clerk",
       "warehouse clerk",
       "supply room",
-      "storekeeper"
+      "storekeeper",
+      "purchasing",
+      "buyer",
+      "procurement specialist",
+      "purchasing agent",
+      "court aide"
     ],
     role: "court_aide",
     description: "Court Aide / Supply Staff",
     accessDescription: "Full access to inventory and supply requests"
   },
 
-  // PURCHASING STAFF
-  {
-    keywords: [
-      "purchasing",
-      "buyer",
-      "procurement specialist",
-      "purchasing agent"
-    ],
-    role: "purchasing_staff",
-    description: "Purchasing Staff",
-    accessDescription: "Handles purchasing and procurement operations"
-  },
-
-  // COURT OPERATIONS - Judges and court personnel mapped to CMC or standard
+  // STANDARD - Court operations and all other personnel
   {
     keywords: [
       "judge",
@@ -103,7 +81,6 @@ export const TITLE_ROLE_MAPPINGS: TitleRoleMapping[] = [
       "magistrate",
       "judicial",
       "honorable",
-      "court aide",
       "judicial aide",
       "court assistant",
       "clerk",
@@ -127,16 +104,13 @@ export const TITLE_ROLE_MAPPINGS: TitleRoleMapping[] = [
       "admin assistant",
       "executive assistant",
       "secretary",
-      "office manager"
+      "office manager",
+      "staff",
+      "employee",
+      "worker",
+      "personnel",
+      "member"
     ],
-    role: "standard",
-    description: "Court Personnel",
-    accessDescription: "Access to issues and supply requests"
-  },
-
-  // DEFAULT - Standard user
-  {
-    keywords: ["staff", "employee", "worker", "personnel", "member"],
     role: "standard",
     description: "Standard User",
     accessDescription: "Basic access to issues and supply requests"
@@ -283,12 +257,6 @@ export function titleGrantsRole(title: string | null | undefined, requiredRole: 
   
   // Exact match
   if (assignedRole === requiredRole) return true;
-  
-  // Facilities manager has elevated permissions
-  if (assignedRole === "facilities_manager" && 
-      ["standard", "clerk", "bailiff", "court_reporter"].includes(requiredRole)) {
-    return true;
-  }
   
   return false;
 }

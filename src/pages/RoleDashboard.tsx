@@ -71,7 +71,7 @@ export default function RoleDashboard() {
       if (error) throw error;
       return count || 0;
     },
-    enabled: userRole === 'court_aide' || userRole === 'purchasing_staff',
+    enabled: userRole === 'court_aide',
   });
 
   const { data: lowStockCount = 0 } = useQuery({
@@ -83,7 +83,7 @@ export default function RoleDashboard() {
       if (error) throw error;
       return data?.filter(item => item.quantity < item.reorder_level).length || 0;
     },
-    enabled: userRole === 'court_aide' || userRole === 'purchasing_staff',
+    enabled: userRole === 'court_aide',
   });
 
   const { data: activeOrdersCount = 0 } = useQuery({

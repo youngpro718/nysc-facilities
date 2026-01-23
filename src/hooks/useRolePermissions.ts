@@ -53,7 +53,7 @@ export function useRolePermissions() {
   const isFetchingRef = useRef(false);
   const hasFetchedRef = useRef(false);
   
-  // Define role permissions mapping - 6 ALLOWED ROLES
+  // Define role permissions mapping - 4 SIMPLIFIED ROLES
   const rolePermissionsMap: Record<CourtRole, RolePermissions> = {
     admin: {
       spaces: 'admin',
@@ -66,20 +66,6 @@ export function useRolePermissions() {
       lighting: 'admin',
       maintenance: 'admin',
       court_operations: 'admin',
-      operations: 'admin',
-      dashboard: 'admin',
-    },
-    facilities_manager: {
-      spaces: 'admin',
-      issues: 'admin',
-      occupants: 'admin',
-      inventory: 'write',
-      supply_requests: 'write',
-      supply_orders: null,
-      keys: 'admin',
-      lighting: 'admin',
-      maintenance: 'admin',
-      court_operations: null,
       operations: 'admin',
       dashboard: 'admin',
     },
@@ -98,20 +84,6 @@ export function useRolePermissions() {
       dashboard: 'read',
     },
     court_aide: {
-      spaces: null,
-      issues: 'write',
-      occupants: 'read',
-      inventory: 'admin',
-      supply_requests: 'admin',
-      supply_orders: 'admin',
-      keys: null,
-      lighting: null,
-      maintenance: null,
-      court_operations: null,
-      operations: 'read',
-      dashboard: 'read',
-    },
-    purchasing_staff: {
       spaces: null,
       issues: 'write',
       occupants: 'read',
@@ -250,7 +222,7 @@ export function useRolePermissions() {
       // Admin-only preview role override, limited to Admin Profile page
       try {
         const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-        const validRoles: CourtRole[] = ['admin', 'facilities_manager', 'cmc', 'court_aide', 'purchasing_staff', 'standard'];
+        const validRoles: CourtRole[] = ['admin', 'cmc', 'court_aide', 'standard'];
         const onAdminProfile = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin-profile');
         if (role === 'admin' && preview && validRoles.includes(preview) && onAdminProfile) {
           logger.info('[useRolePermissions] Applying preview role override');
@@ -355,10 +327,11 @@ export function useRolePermissions() {
   const canAdmin = (feature: keyof RolePermissions): boolean => hasPermission(feature, 'admin');
 
   const isAdmin = userRole === 'admin';
-  const isFacilitiesManager = userRole === 'facilities_manager';
   const isCMC = userRole === 'cmc';
   const isCourtAide = userRole === 'court_aide';
-  const isPurchasingStaff = userRole === 'purchasing_staff';
+  // Legacy compatibility - map deprecated roles to current ones
+  const isFacilitiesManager = userRole === 'admin'; // Facilities manager now maps to admin
+  const isPurchasingStaff = userRole === 'court_aide'; // Purchasing staff now maps to court_aide
 
   useEffect(() => {
     logger.debug('[useRolePermissions] Initial mount - setting up');
