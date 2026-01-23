@@ -3,15 +3,22 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Package, User, MapPin, Clock, AlertTriangle } from 'lucide-react';
+import { Package, User, MapPin, Clock, AlertTriangle, Truck, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface SimpleOrderCardProps {
   order: any;
   onFulfill: () => void;
+  showDeliveryConfirm?: boolean;
+  onConfirmDelivered?: () => void;
 }
 
-export function SimpleOrderCard({ order, onFulfill }: SimpleOrderCardProps) {
+export function SimpleOrderCard({ 
+  order, 
+  onFulfill,
+  showDeliveryConfirm,
+  onConfirmDelivered 
+}: SimpleOrderCardProps) {
   const requesterName = order.profiles 
     ? `${order.profiles.first_name} ${order.profiles.last_name}`
     : 'Unknown';
@@ -27,6 +34,12 @@ export function SimpleOrderCard({ order, onFulfill }: SimpleOrderCardProps) {
     : 0;
   const isStuckInPicking = order.status === 'picking' && pickingDuration > 5;
 
+  // Check delivery method from metadata
+  const deliveryMethod = order.metadata?.delivery_method || 'pickup';
+  const isPartialFulfillment = order.metadata?.partial_fulfillment;
+  const isReady = order.status === 'ready';
+  const isCompleted = order.status === 'completed';
+
   // Determine priority badge
   const getPriorityBadge = () => {
     switch (order.priority) {
@@ -39,15 +52,35 @@ export function SimpleOrderCard({ order, onFulfill }: SimpleOrderCardProps) {
     }
   };
 
+  // Status badge
+  const getStatusBadge = () => {
+    if (isCompleted) {
+      return <Badge className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
+    }
+    if (isReady) {
+      if (deliveryMethod === 'delivery') {
+        return <Badge className="bg-blue-600"><Truck className="h-3 w-3 mr-1" />For Delivery</Badge>;
+      }
+      return <Badge variant="secondary"><Package className="h-3 w-3 mr-1" />Ready for Pickup</Badge>;
+    }
+    if (isPartialFulfillment) {
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-600">Partial</Badge>;
+    }
+    return null;
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader>
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <Package className="h-5 w-5" />
             Order #{order.id.slice(0, 8).toUpperCase()}
           </CardTitle>
-          {getPriorityBadge()}
+          <div className="flex items-center gap-1 flex-wrap justify-end">
+            {getPriorityBadge()}
+            {getStatusBadge()}
+          </div>
         </div>
       </CardHeader>
       
@@ -62,7 +95,7 @@ export function SimpleOrderCard({ order, onFulfill }: SimpleOrderCardProps) {
           
           <div className="flex items-center gap-2 text-sm">
             <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span>Delivery to: <span className="font-medium">{deliveryRoom}</span></span>
+            <span>Deliver to: <span className="font-medium">{deliveryRoom}</span></span>
           </div>
           
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -86,15 +119,28 @@ export function SimpleOrderCard({ order, onFulfill }: SimpleOrderCardProps) {
         <div className="border-t pt-3">
           <p className="text-sm font-semibold mb-2">Items Requested ({itemCount}):</p>
           <div className="space-y-1.5">
-            {order.supply_request_items?.slice(0, 3).map((item: any) => (
-              <div key={item.id} className="flex items-center gap-2 text-sm">
-                <Checkbox disabled className="opacity-50" />
-                <span>
-                  {item.inventory_items?.name || 'Unknown Item'} - 
-                  <span className="font-medium ml-1">Qty: {item.quantity_requested}</span>
-                </span>
-              </div>
-            ))}
+            {order.supply_request_items?.slice(0, 3).map((item: any) => {
+              const fulfilled = item.quantity_fulfilled || 0;
+              const requested = item.quantity_requested;
+              const isPartial = fulfilled > 0 && fulfilled < requested;
+              const isUnfulfilled = fulfilled === 0 && isReady;
+
+              return (
+                <div key={item.id} className="flex items-center gap-2 text-sm">
+                  <Checkbox disabled checked={fulfilled >= requested} className="opacity-50" />
+                  <span className={isUnfulfilled ? 'line-through text-muted-foreground' : ''}>
+                    {item.inventory_items?.name || 'Unknown Item'}
+                    {isPartial ? (
+                      <span className="text-yellow-600 ml-1">
+                        ({fulfilled}/{requested})
+                      </span>
+                    ) : (
+                      <span className="font-medium ml-1">Qty: {requested}</span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
             {itemCount > 3 && (
               <p className="text-xs text-muted-foreground ml-6">
                 +{itemCount - 3} more item{itemCount - 3 > 1 ? 's' : ''}
@@ -103,15 +149,40 @@ export function SimpleOrderCard({ order, onFulfill }: SimpleOrderCardProps) {
           </div>
         </div>
 
-        {/* Action Button */}
-        <Button 
-          onClick={onFulfill} 
-          className="w-full"
-          size="lg"
-        >
-          <Package className="mr-2 h-4 w-4" />
-          Start Fulfilling Order
-        </Button>
+        {/* Action Buttons */}
+        {!isCompleted && (
+          <div className="flex gap-2">
+            {isReady && deliveryMethod === 'delivery' && showDeliveryConfirm ? (
+              <Button 
+                onClick={onConfirmDelivered} 
+                className="w-full"
+                size="lg"
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Mark as Delivered
+              </Button>
+            ) : isReady ? (
+              <Button 
+                onClick={onFulfill} 
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                <Package className="mr-2 h-4 w-4" />
+                View Order
+              </Button>
+            ) : (
+              <Button 
+                onClick={onFulfill} 
+                className="w-full"
+                size="lg"
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Fulfill Order
+              </Button>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
