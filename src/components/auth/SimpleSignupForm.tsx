@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// Removed Select import: using a checkbox instead for admin request
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, UserPlus } from "lucide-react";
 import { useSecureAuth } from "@/hooks/security/useSecureAuth";
 import { toast } from "sonner";
-import { Checkbox } from "@/components/ui/checkbox";
+import { SIGNUP_ROLE_OPTIONS } from "@/config/roles";
 
 interface SimpleSignupFormProps {
   onToggleForm: () => void;
@@ -25,7 +25,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
     title: "",
     email: "",
     password: "",
-    requestedAccessLevel: "standard"
+    requestedRole: "standard"
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // Prevent double submissions
@@ -64,7 +64,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
         title: formData.title.trim() || null,
-        requested_access_level: formData.requestedAccessLevel
+        requested_role: formData.requestedRole
       };
 
       const data = await secureSignUp(formData.email, formData.password, userData);
@@ -201,25 +201,31 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
             />
           </div>
 
-          {/* Request Administrative Access (optional) */}
-          <div className="flex items-start gap-3">
-            <Checkbox
-              id="request-admin"
-              checked={formData.requestedAccessLevel === "administrative"}
-              onCheckedChange={(checked) =>
-                handleInputChange(
-                  "requestedAccessLevel",
-                  checked ? "administrative" : "standard"
-                )
-              }
+          {/* Account Type Selection */}
+          <div className="space-y-3">
+            <Label className="font-medium">Account Type</Label>
+            <p className="text-xs text-muted-foreground">
+              Select the type of account that best describes your role. An administrator will review and approve your selection.
+            </p>
+            <RadioGroup 
+              value={formData.requestedRole} 
+              onValueChange={(value) => handleInputChange("requestedRole", value)}
               disabled={isLoading || isProcessing}
-            />
-            <div className="space-y-1">
-              <Label htmlFor="request-admin" className="font-medium">Request Administrative Access</Label>
-              <p className="text-xs text-muted-foreground max-w-prose">
-                Leave unchecked for Standard access. If checked, an administrator will review and approve administrative privileges.
-              </p>
-            </div>
+            >
+              <div className="space-y-2">
+                {SIGNUP_ROLE_OPTIONS.map((role) => (
+                  <div key={role.value} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <RadioGroupItem value={role.value} id={`role-${role.value}`} className="mt-0.5" />
+                    <div className="flex-1 space-y-0.5">
+                      <Label htmlFor={`role-${role.value}`} className="font-medium cursor-pointer">
+                        {role.label}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">{role.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </RadioGroup>
           </div>
 
           <Button 
