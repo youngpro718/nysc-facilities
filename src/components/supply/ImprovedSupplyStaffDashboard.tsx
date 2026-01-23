@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { SimpleOrderCard } from './SimpleOrderCard';
-import { SimpleFulfillmentDialog } from './SimpleFulfillmentDialog';
+import { PartialFulfillmentDialog } from './PartialFulfillmentDialog';
 import { LiveIndicator } from '@/components/common/LiveIndicator';
 import { InventoryManagementTab } from './InventoryManagementTab';
 import { LowStockPanel } from '@/components/inventory/LowStockPanel';
@@ -415,7 +415,7 @@ export function ImprovedSupplyStaffDashboard() {
 
       {/* Fulfillment Dialog */}
       {selectedOrder && (
-        <SimpleFulfillmentDialog
+        <PartialFulfillmentDialog
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
         />

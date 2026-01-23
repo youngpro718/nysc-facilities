@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -18,10 +18,17 @@ import * as z from "zod";
 import { CreateKeyOrderData } from "../types/OrderTypes";
 import { cn } from "@/lib/utils";
 
+// Custom refinement to handle "general" as valid non-UUID value
 const formSchema = z.object({
   key_id: z.string().uuid({ message: "Please select a key" }),
   quantity: z.coerce.number().int().positive({ message: "Quantity must be positive" }),
-  recipient_id: z.string().uuid().optional(),
+  recipient_id: z.string().optional().transform((val) => {
+    // Convert "general" or empty string to undefined (no recipient)
+    if (!val || val === "general" || val === "") return undefined;
+    return val;
+  }),
+  request_type: z.enum(['new', 'replacement', 'spare', 'temporary']).default('new'),
+  for_room: z.string().optional(),
   expected_delivery_date: z.date().optional(),
   notes: z.string().optional(),
 });
@@ -45,6 +52,8 @@ export function CreateKeyOrderDialog({
       key_id: "",
       quantity: 1,
       recipient_id: undefined,
+      request_type: 'new',
+      for_room: "",
       expected_delivery_date: undefined,
       notes: "",
     },
@@ -88,9 +97,11 @@ export function CreateKeyOrderDialog({
     const orderData: CreateKeyOrderData = {
       key_id: values.key_id,
       quantity: values.quantity,
-      recipient_id: values.recipient_id,
+      recipient_id: values.recipient_id, // Already transformed by zod - undefined if "general"
       expected_delivery_date: values.expected_delivery_date ? values.expected_delivery_date.toISOString() : undefined,
-      notes: values.notes,
+      notes: values.notes 
+        ? `[${values.request_type?.toUpperCase() || 'NEW'}] ${values.for_room ? `For: ${values.for_room}. ` : ''}${values.notes}`
+        : `[${values.request_type?.toUpperCase() || 'NEW'}]${values.for_room ? ` For: ${values.for_room}` : ''}`,
     };
 
     const result = await onSubmit(orderData);
@@ -135,6 +146,30 @@ export function CreateKeyOrderDialog({
                           </SelectItem>
                         ))
                       )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="request_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Request Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="new">New Key Request</SelectItem>
+                      <SelectItem value="replacement">Replacement (lost/broken)</SelectItem>
+                      <SelectItem value="spare">Spare Key</SelectItem>
+                      <SelectItem value="temporary">Temporary Access</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
