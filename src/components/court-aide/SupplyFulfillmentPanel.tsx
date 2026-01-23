@@ -1,0 +1,290 @@
+/**
+ * SupplyFulfillmentPanel Component
+ * 
+ * Shows supply requests that need fulfillment for Court Aides
+ */
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2, Package, User, Clock, CheckCircle, PackageCheck, AlertCircle } from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+
+interface SupplyRequest {
+  id: string;
+  status: string;
+  created_at: string;
+  urgency: string;
+  notes: string | null;
+  requester_id: string;
+  profiles: {
+    first_name: string;
+    last_name: string;
+    department: string | null;
+  } | null;
+  supply_request_items: {
+    quantity_requested: number;
+    inventory_items: {
+      name: string;
+      unit: string;
+    } | null;
+  }[];
+}
+
+export function SupplyFulfillmentPanel() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Fetch pending/in-progress supply requests
+  const { data: requests, isLoading } = useQuery({
+    queryKey: ['supply-fulfillment-queue'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('supply_requests')
+        .select(`
+          id,
+          status,
+          created_at,
+          urgency,
+          notes,
+          requester_id,
+          profiles!requester_id (
+            first_name,
+            last_name,
+            department
+          ),
+          supply_request_items (
+            quantity_requested,
+            inventory_items (
+              name,
+              unit
+            )
+          )
+        `)
+        .in('status', ['approved', 'in_progress', 'ready'])
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      // Transform the data to match our interface (profiles comes as array from supabase)
+      return (data || []).map((item: any) => ({
+        ...item,
+        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
+        supply_request_items: item.supply_request_items?.map((sri: any) => ({
+          ...sri,
+          inventory_items: Array.isArray(sri.inventory_items) ? sri.inventory_items[0] : sri.inventory_items,
+        })) || [],
+      })) as SupplyRequest[];
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Mark request as ready for pickup
+  const markReady = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { error } = await supabase
+        .from('supply_requests')
+        .update({ 
+          status: 'ready',
+          fulfilled_by: user?.id,
+          fulfilled_at: new Date().toISOString(),
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Request marked as ready for pickup');
+      queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update request', { description: error.message });
+    },
+  });
+
+  // Start fulfillment
+  const startFulfillment = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { error } = await supabase
+        .from('supply_requests')
+        .update({ 
+          status: 'in_progress',
+          assigned_fulfiller_id: user?.id,
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Started fulfilling request');
+      queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update request', { description: error.message });
+    },
+  });
+
+  const toFulfill = requests?.filter(r => r.status === 'approved' || r.status === 'in_progress') || [];
+  const readyForPickup = requests?.filter(r => r.status === 'ready') || [];
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
+      case 'urgent': return 'bg-red-500 text-white';
+      case 'high': return 'bg-orange-500 text-white';
+      case 'normal': return 'bg-blue-500 text-white';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  return (
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-primary" />
+            Supply Fulfillment
+          </CardTitle>
+          {!isLoading && requests && requests.length > 0 && (
+            <Badge variant="secondary">
+              {requests.length} pending
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <ScrollArea className="h-[400px]">
+          <div className="px-4 pb-4 space-y-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : requests?.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <PackageCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p className="font-medium">All caught up!</p>
+                <p className="text-sm">No supply requests to fulfill</p>
+              </div>
+            ) : (
+              <>
+                {/* To Fulfill Section */}
+                {toFulfill.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      To Prepare ({toFulfill.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {toFulfill.map((request) => (
+                        <div 
+                          key={request.id}
+                          className="border rounded-lg p-3 bg-card hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="font-medium text-sm truncate">
+                                  {request.profiles?.first_name} {request.profiles?.last_name}
+                                </span>
+                                <Badge className={`text-xs ${getUrgencyColor(request.urgency)}`}>
+                                  {request.urgency}
+                                </Badge>
+                              </div>
+                              <div className="text-xs text-muted-foreground mb-2">
+                                {request.supply_request_items.map((item, i) => (
+                                  <span key={i}>
+                                    {item.quantity_requested}x {item.inventory_items?.name || 'Unknown item'}
+                                    {i < request.supply_request_items.length - 1 ? ', ' : ''}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                {format(new Date(request.created_at), 'MMM d, h:mm a')}
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              {request.status === 'approved' && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => startFulfillment.mutate(request.id)}
+                                  disabled={startFulfillment.isPending}
+                                >
+                                  {startFulfillment.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : 'Start'}
+                                </Button>
+                              )}
+                              {request.status === 'in_progress' && (
+                                <Button 
+                                  size="sm"
+                                  onClick={() => markReady.mutate(request.id)}
+                                  disabled={markReady.isPending}
+                                >
+                                  {markReady.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Ready
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Ready for Pickup Section */}
+                {readyForPickup.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                      <PackageCheck className="h-4 w-4 text-green-500" />
+                      Ready for Pickup ({readyForPickup.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {readyForPickup.map((request) => (
+                        <div 
+                          key={request.id}
+                          className="border rounded-lg p-3 bg-green-500/5 border-green-500/20"
+                        >
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-medium text-sm">
+                              {request.profiles?.first_name} {request.profiles?.last_name}
+                            </span>
+                            <Badge variant="outline" className="text-green-600 border-green-500/30">
+                              Awaiting pickup
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {request.supply_request_items.map((item, i) => (
+                              <span key={i}>
+                                {item.quantity_requested}x {item.inventory_items?.name || 'Unknown'}
+                                {i < request.supply_request_items.length - 1 ? ', ' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}

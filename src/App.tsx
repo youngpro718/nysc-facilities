@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import AdminDashboard from "@/pages/AdminDashboard";
 import RoleDashboard from "@/pages/RoleDashboard";
+import CourtAideWorkCenter from "@/pages/CourtAideWorkCenter";
 import LoginPage from "@/pages/LoginPage";
 import MFASetup from "@/pages/auth/MFASetup";
 import VerifyEmail from "@/pages/auth/VerifyEmail";
@@ -116,7 +117,7 @@ function AppContent() {
         <Route path="/court-aide-dashboard" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="inventory" moduleName="Supply Management">
-              <RoleDashboard />
+              <CourtAideWorkCenter />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
