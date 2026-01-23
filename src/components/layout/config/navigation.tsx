@@ -199,22 +199,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
   
-  // Facilities Manager navigation (similar to admin but slightly restricted)
-  if (userRole === 'facilities_manager') {
-    return [
-      { title: 'Dashboard', icon: LayoutDashboard },
-      { title: 'Spaces', icon: Building2 },
-      { title: 'Issues', icon: AlertTriangle },
-      { title: 'Access & Assignments', icon: UserCheck },
-      { title: 'Keys', icon: KeyRound },
-      { title: 'Inventory', icon: Package2 },
-      { title: 'Tasks', icon: Package },
-      { title: 'Lighting', icon: Zap },
-      { type: "separator" },
-      { title: 'Profile', icon: User },
-    ];
-  }
-  
   // CMC (Court Management Coordinator) navigation
   if (userRole === 'cmc') {
     return [
@@ -233,16 +217,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Tasks', icon: Package },
       { title: 'Supply Room', icon: Package2 },
       { title: 'Inventory', icon: Boxes },
-      { type: "separator" },
-      { title: 'Profile', icon: User },
-    ];
-  }
-  
-  // Purchasing Staff navigation
-  if (userRole === 'purchasing_staff') {
-    return [
-      { title: 'Dashboard', icon: LayoutDashboard },
-      { title: 'Tasks', icon: Package },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
@@ -299,21 +273,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
   
-  // Facilities Manager routes (similar to admin)
-  if (userRole === 'facilities_manager') {
-    return [
-      '/', // Facilities Dashboard
-      '/spaces',
-      '/operations',
-      '/access-assignments',
-      '/keys',
-      '/inventory',
-      '/lighting',
-      '', // Separator
-      '/profile',
-    ];
-  }
-  
   // CMC (Court Management Coordinator) routes
   if (userRole === 'cmc') {
     return [
@@ -332,16 +291,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/tasks',
       '/supply-room',
       '/inventory',
-      '', // Separator
-      '/profile',
-    ];
-  }
-  
-  // Purchasing Staff routes
-  if (userRole === 'purchasing_staff') {
-    return [
-      '/purchasing-dashboard',
-      '/tasks',
       '', // Separator
       '/profile',
     ];

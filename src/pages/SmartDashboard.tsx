@@ -3,13 +3,11 @@
  * 
  * A single dashboard that adapts its content based on user role:
  * - Admin: Full facility overview, all modules
- * - Facilities Manager: Similar to admin
  * - CMC: Court operations focus
  * - Court Aide: Supply fulfillment focus
- * - Purchasing Staff: Inventory and purchasing focus
  * - Standard User: Personal requests and issues
  * 
- * This replaces the need for 5+ separate dashboard pages.
+ * This replaces the need for multiple separate dashboard pages.
  */
 
 import { useEffect } from "react";
@@ -60,12 +58,10 @@ export default function SmartDashboard() {
   // Render role-specific dashboard
   switch (userRole) {
     case 'admin':
-    case 'facilities_manager':
       return <AdminDashboard />;
     
     case 'cmc':
     case 'court_aide':
-    case 'purchasing_staff':
       return <RoleDashboard />;
     
     default:
@@ -83,14 +79,11 @@ export function useDashboardPath() {
   
   switch (userRole) {
     case 'admin':
-    case 'facilities_manager':
       return '/';
     case 'cmc':
       return '/cmc-dashboard';
     case 'court_aide':
       return '/court-aide-dashboard';
-    case 'purchasing_staff':
-      return '/purchasing-dashboard';
     default:
       return '/dashboard';
   }

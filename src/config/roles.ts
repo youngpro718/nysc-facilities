@@ -7,14 +7,12 @@
  * DO NOT create role arrays anywhere else in the codebase.
  */
 
-// The 6 allowed role values (matches database enum)
+// The 4 simplified role values (matches database enum)
 export type UserRole = 
-  | 'standard'
-  | 'cmc'
-  | 'court_aide'
-  | 'purchasing_staff'
-  | 'facilities_manager'
-  | 'admin';
+  | 'standard'      // "User" in UI
+  | 'court_aide'    // "Court Aide" in UI
+  | 'cmc'           // "Management" in UI
+  | 'admin';        // "Admin" in UI
 
 // Role configuration with labels and descriptions
 export interface RoleConfig {
@@ -28,33 +26,21 @@ export interface RoleConfig {
 export const SYSTEM_ROLES: readonly RoleConfig[] = [
   {
     value: 'standard',
-    label: 'Standard User',
-    description: 'Basic access - can report issues and make requests',
+    label: 'User',
+    description: 'Basic access - can submit requests and report issues',
     color: 'gray',
-  },
-  {
-    value: 'cmc',
-    label: 'Court Management Coordinator',
-    description: 'Manages court operations and scheduling',
-    color: 'purple',
   },
   {
     value: 'court_aide',
     label: 'Court Aide',
-    description: 'Manages inventory and fulfills supply requests',
+    description: 'Manages inventory, fulfills supply requests, completes tasks',
     color: 'green',
   },
   {
-    value: 'purchasing_staff',
-    label: 'Purchasing Staff',
-    description: 'Handles purchasing and procurement operations',
-    color: 'orange',
-  },
-  {
-    value: 'facilities_manager',
-    label: 'Facility Coordinator',
-    description: 'Manages building facilities and operations',
-    color: 'blue',
+    value: 'cmc',
+    label: 'Management',
+    description: 'Court management, scheduling, and operations oversight',
+    color: 'purple',
   },
   {
     value: 'admin',
@@ -63,6 +49,13 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
     color: 'red',
   },
 ] as const;
+
+// Signup role options (for the signup form)
+export const SIGNUP_ROLE_OPTIONS = SYSTEM_ROLES.map(r => ({
+  value: r.value,
+  label: r.label,
+  description: r.description,
+}));
 
 // Helper functions
 export function getRoleLabel(roleValue: UserRole | string | null | undefined): string {
@@ -91,6 +84,7 @@ export function getRoleBadgeClasses(roleValue: UserRole | string | null | undefi
     blue: 'bg-blue-500/10 text-blue-700 border-blue-500/20',
     green: 'bg-green-500/10 text-green-700 border-green-500/20',
     purple: 'bg-purple-500/10 text-purple-700 border-purple-500/20',
+    orange: 'bg-orange-500/10 text-orange-700 border-orange-500/20',
     gray: 'bg-gray-500/10 text-gray-700 border-gray-500/20',
   };
   

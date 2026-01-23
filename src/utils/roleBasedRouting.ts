@@ -1,7 +1,7 @@
 /**
  * Role-Based Dashboard Routing
  * 
- * Maps each of the 5 roles to their appropriate dashboard
+ * Maps each of the 4 roles to their appropriate dashboard
  */
 
 import type { UserRole } from '@/config/roles';
@@ -17,10 +17,6 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
     path: '/',
     name: 'Admin Dashboard',
   },
-  facilities_manager: {
-    path: '/',
-    name: 'Facilities Dashboard',
-  },
   cmc: {
     path: '/cmc-dashboard',
     name: 'Court Management Dashboard',
@@ -28,10 +24,6 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
   court_aide: {
     path: '/court-aide-dashboard',
     name: 'Court Aide Dashboard',
-  },
-  purchasing_staff: {
-    path: '/purchasing-dashboard',
-    name: 'Purchasing Dashboard',
   },
   standard: {
     path: '/dashboard',
@@ -63,7 +55,7 @@ export function getDashboardNameForRole(role: UserRole | string | null | undefin
  * Check if a role has admin-level access
  */
 export function isAdminRole(role: UserRole | string | null | undefined): boolean {
-  return role === 'admin' || role === 'facilities_manager';
+  return role === 'admin';
 }
 
 /**
@@ -72,21 +64,21 @@ export function isAdminRole(role: UserRole | string | null | undefined): boolean
 export function hasModuleAccess(role: UserRole | string | null | undefined, moduleKey: string): boolean {
   if (!role) return false;
   
-  // Admin and facilities_manager have access to everything
+  // Admin has access to everything
   if (isAdminRole(role)) return true;
   
   // Role-specific module access
   const moduleAccess: Record<string, UserRole[]> = {
-    spaces: ['admin', 'facilities_manager'],
-    operations: ['admin', 'facilities_manager', 'cmc'],
-    occupants: ['admin', 'facilities_manager', 'cmc'],
-    inventory: ['admin', 'facilities_manager', 'court_aide', 'purchasing_staff'],
-    supply_requests: ['admin', 'facilities_manager', 'court_aide', 'purchasing_staff', 'cmc'],
-    keys: ['admin', 'facilities_manager', 'cmc'],
-    lighting: ['admin', 'facilities_manager'],
-    maintenance: ['admin', 'facilities_manager'],
-    court_operations: ['admin', 'facilities_manager', 'cmc'],
-    dashboard: ['admin', 'facilities_manager', 'cmc', 'court_aide', 'purchasing_staff', 'standard'],
+    spaces: ['admin'],
+    operations: ['admin', 'cmc'],
+    occupants: ['admin', 'cmc'],
+    inventory: ['admin', 'court_aide'],
+    supply_requests: ['admin', 'court_aide', 'cmc', 'standard'],
+    keys: ['admin', 'cmc'],
+    lighting: ['admin'],
+    maintenance: ['admin'],
+    court_operations: ['admin', 'cmc'],
+    dashboard: ['admin', 'cmc', 'court_aide', 'standard'],
   };
   
   const allowedRoles = moduleAccess[moduleKey] || [];
