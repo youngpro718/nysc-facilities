@@ -68,6 +68,7 @@ import PublicFormSubmission from "@/pages/PublicFormSubmission";
 import TermSheet from "@/pages/TermSheet";
 import RequestHub from "@/pages/RequestHub";
 import HelpRequestPage from "@/pages/request/HelpRequestPage";
+import SupplyOrderPage from "@/pages/request/SupplyOrderPage";
 
 
 // Create a client
@@ -300,6 +301,11 @@ function AppContent() {
         <Route path="request/help" element={
           <ProtectedRoute>
             <HelpRequestPage />
+          </ProtectedRoute>
+        } />
+        <Route path="request/supplies" element={
+          <ProtectedRoute>
+            <SupplyOrderPage />
           </ProtectedRoute>
         } />
         <Route path="dashboard" element={

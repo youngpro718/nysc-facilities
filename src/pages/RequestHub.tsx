@@ -28,7 +28,7 @@ const quickActions: QuickAction[] = [
     title: 'Order Supplies',
     description: 'Office supplies & materials',
     icon: Package,
-    path: '/forms/supply-request',
+    path: '/request/supplies', // New streamlined path
     bgClass: 'bg-green-500/10 hover:bg-green-500/20 border-green-500/30',
     iconClass: 'text-green-600 dark:text-green-400',
   },
