@@ -81,37 +81,47 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
         }
 
         // 3) Check profile completeness and approval status
+        let profile: any = null;
         try {
-          const profile = await withTimeout(getMyProfile(), 10000, 'loading profile');
+          profile = await withTimeout(getMyProfile(), 10000, 'loading profile');
+        } catch (profileError) {
+          logger.error('[OnboardingGuard] Profile fetch failed:', profileError);
+          // If profile fetch fails, redirect to sign-in for safety
+          navigate('/login', { replace: true });
+          isCheckingRef.current = false;
+          return;
+        }
           
-          // Check required profile fields
-          const needsProfile = !profile?.first_name || !profile?.last_name;
-          if (needsProfile) {
-            logger.debug('[OnboardingGuard] Profile incomplete, redirecting to onboarding');
-            navigate('/onboarding/profile', { replace: true });
-            return;
-          }
+        // Check required profile fields
+        const needsProfile = !profile?.first_name || !profile?.last_name;
+        if (needsProfile) {
+          logger.debug('[OnboardingGuard] Profile incomplete, redirecting to onboarding');
+          navigate('/onboarding/profile', { replace: true });
+          return;
+        }
 
-          // 4) Check if user is approved (skip for admins)
-          const isAdmin = profile?.access_level === 'admin';
-          const isPending = profile?.verification_status === 'pending' || profile?.is_approved === false;
-          
-          if (!isAdmin && isPending) {
-            logger.debug('[OnboardingGuard] User pending approval, redirecting to pending page');
-            navigate('/auth/pending-approval', { replace: true });
-            return;
-          }
+        // 4) Check if user is approved (skip for admins)
+        const isAdmin = profile?.access_level === 'admin';
+        const isPending = profile?.verification_status === 'pending' || profile?.is_approved === false;
+        
+        if (!isAdmin && isPending) {
+          logger.debug('[OnboardingGuard] User pending approval, redirecting to pending page');
+          navigate('/auth/pending-approval', { replace: true });
+          return;
+        }
 
-          // Check if user was rejected
-          if (profile?.verification_status === 'rejected') {
-            logger.debug('[OnboardingGuard] User rejected, redirecting to rejected page');
-            navigate('/auth/account-rejected', { replace: true });
-            return;
-          }
+        // Check if user was rejected
+        if (profile?.verification_status === 'rejected') {
+          logger.debug('[OnboardingGuard] User rejected, redirecting to rejected page');
+          navigate('/auth/account-rejected', { replace: true });
+          return;
+        }
 
-          // 5) MFA enforcement for privileged roles
-          // Fetch user's role from user_roles table
-          const userRoleQuery = async () => {
+        // 5) MFA enforcement for privileged roles
+        // Fetch user's role from user_roles table
+        let userRoleData: { role: string } | null = null;
+        try {
+          const roleQuery = async () => {
             const { data, error } = await supabase
               .from('user_roles')
               .select('role')
@@ -120,13 +130,18 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
             if (error) throw error;
             return data;
           };
-          const userRoleData = await withTimeout(userRoleQuery(), 10000, 'loading role');
-          
-          const privilegedRoles = ['admin', 'cmc'];
-          const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
-          const enforceMfa = profile.mfa_enforced === true || isPrivileged;
+          userRoleData = await withTimeout(roleQuery(), 10000, 'loading role');
+        } catch (roleError) {
+          logger.warn('[OnboardingGuard] Role fetch failed, proceeding without MFA check:', roleError);
+          // Continue without MFA check if role fetch fails
+        }
+        
+        const privilegedRoles = ['admin', 'cmc'];
+        const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
+        const enforceMfa = profile?.mfa_enforced === true || isPrivileged;
 
-          if (enforceMfa) {
+        if (enforceMfa) {
+          try {
             const { data: factorData, error: factorError } = await withTimeout(
               supabase.auth.mfa.listFactors(),
               10000,
@@ -143,16 +158,13 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
               navigate('/auth/mfa', { replace: true });
               return;
             }
+          } catch (mfaError) {
+            logger.warn('[OnboardingGuard] MFA check failed:', mfaError);
+            // Continue without MFA requirement if check fails
           }
-
-          logger.debug('[OnboardingGuard] All checks passed, user is fully onboarded');
-        } catch (profileError) {
-          logger.error('[OnboardingGuard] Profile fetch failed:', profileError);
-          // If profile fetch fails, redirect to sign-in for safety
-          navigate('/login', { replace: true });
-          isCheckingRef.current = false;
-          return;
         }
+
+        logger.debug('[OnboardingGuard] All checks passed, user is fully onboarded');
       } catch (error) {
         logger.error('[OnboardingGuard] Check failed:', error);
         navigate('/login', { replace: true });
