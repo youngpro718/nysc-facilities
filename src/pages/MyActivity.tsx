@@ -221,7 +221,7 @@ export default function MyActivity() {
         <TabsContent value="supplies" className="mt-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Supply Requests</h2>
-            <Button size="sm" onClick={() => navigate('/forms/supply-request')}>
+            <Button size="sm" onClick={() => navigate('/request/supplies')}>
               <Plus className="h-4 w-4 mr-1" />
               New Request
             </Button>
@@ -238,7 +238,7 @@ export default function MyActivity() {
               <p className="text-sm text-muted-foreground mb-4">
                 You haven't made any supply requests yet
               </p>
-              <Button onClick={() => navigate('/forms/supply-request')}>
+              <Button onClick={() => navigate('/request/supplies')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Request
               </Button>

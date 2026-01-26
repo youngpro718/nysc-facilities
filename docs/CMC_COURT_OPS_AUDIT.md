@@ -14,7 +14,7 @@
 **Quick Actions (4 total):**
 1. **Court Operations** → `/court-operations`
 2. **Report Issue** → `/my-issues`
-3. **Request Supplies** → `/forms/supply-request`
+3. **Request Supplies** → `/request/supplies`
 4. **My Supply Requests** → `/my-supply-requests`
 
 **Stats Cards:**
