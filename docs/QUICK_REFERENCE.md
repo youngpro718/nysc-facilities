@@ -43,7 +43,7 @@
 /login ...................... Authentication
 /public-forms ............... Public Form Directory
 /forms/key-request .......... Key Request Form
-/forms/supply-request ....... Supply Request Form
+/request/supplies ........... Supply Request Form (streamlined)
 /forms/maintenance-request .. Maintenance Request Form
 /forms/issue-report ......... Issue Report Form
 ```

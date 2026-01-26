@@ -113,8 +113,8 @@ Keep /admin only for admin-specific management
 ### 5. Form Pages Outside App Layout
 
 **Current State:**
-- `/forms/supply-request` - No sidebar, no header, standalone
-- `/forms/key-request` - Same
+- `/request/supplies` - Supply request form (streamlined)
+- `/forms/key-request` - No sidebar, no header, standalone
 - `/forms/issue-report` - Same
 
 **Problem:**

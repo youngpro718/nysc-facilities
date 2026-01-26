@@ -60,7 +60,7 @@ import FormTemplates from "@/pages/FormTemplates";
 import RoutingRules from "@/pages/admin/RoutingRules";
 import FormTemplatesAdmin from "@/pages/admin/FormTemplatesAdmin";
 import KeyRequestFormPage from "@/pages/forms/KeyRequestFormPage";
-import SupplyRequestFormPage from "@/pages/forms/SupplyRequestFormPage";
+// SupplyRequestFormPage removed - now redirects to /request/supplies
 import MaintenanceRequestFormPage from "@/pages/forms/MaintenanceRequestFormPage";
 import IssueReportFormPage from "@/pages/forms/IssueReportFormPage";
 import PublicForms from "@/pages/PublicForms";
@@ -90,7 +90,7 @@ function AppContent() {
       
       {/* Public Interactive Form Pages - No Layout, No Auth */}
       <Route path="/forms/key-request" element={<KeyRequestFormPage />} />
-      <Route path="/forms/supply-request" element={<SupplyRequestFormPage />} />
+      <Route path="/forms/supply-request" element={<Navigate to="/request/supplies" replace />} />
       <Route path="/forms/maintenance-request" element={<MaintenanceRequestFormPage />} />
       <Route path="/forms/issue-report" element={<IssueReportFormPage />} />
       

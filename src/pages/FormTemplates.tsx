@@ -65,7 +65,7 @@ const formTemplates = [
     description: 'Request office supplies and materials',
     icon: ClipboardList,
     color: 'text-green-500',
-    interactiveForm: '/forms/supply-request',
+    interactiveForm: '/request/supplies',
     fields: [
       'Items Needed',
       'Quantities',
@@ -142,7 +142,7 @@ export default function FormTemplates() {
     // Navigate to specific form page
     const formRoutes: Record<string, string> = {
       'key-request': '/forms/key-request',
-      'supply-request': '/forms/supply-request',
+      'supply-request': '/request/supplies',
       'maintenance-request': '/forms/maintenance-request',
       'issue-report': '/forms/issue-report',
     };

@@ -18,7 +18,7 @@ const formTypes = [
   { id: 'key-request', name: 'Key & Elevator Pass Request', path: '/forms/key-request' },
   { id: 'issue-report', name: 'Issue Report', path: '/forms/issue-report' },
   { id: 'maintenance-request', name: 'Maintenance Request', path: '/forms/maintenance-request' },
-  { id: 'supply-request', name: 'Supply Request', path: '/forms/supply-request' },
+  { id: 'supply-request', name: 'Supply Request', path: '/request/supplies' },
 ];
 
 export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
