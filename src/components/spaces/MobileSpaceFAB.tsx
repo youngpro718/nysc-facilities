@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { QuickSpaceBottomSheet } from './QuickSpaceBottomSheet';
 import { useSpaceContext } from '@/hooks/useSpaceContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MobileSpaceFABProps {
   preselectedBuilding?: string;
@@ -32,21 +33,37 @@ export function MobileSpaceFAB({
 
   return (
     <>
-      <Button
-        size="lg"
-        className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg z-50 md:hidden group pb-safe"
-        onClick={() => setIsOpen(true)}
-      >
-        <Plus className="h-6 w-6" />
-        {hasContext && (
-          <Badge 
-            variant="secondary" 
-            className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
+      <AnimatePresence>
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 400, 
+            damping: 25,
+            delay: 0.2 
+          }}
+          className="fixed bottom-24 right-4 z-50 md:hidden pb-safe"
+        >
+          <Button
+            size="lg"
+            className="h-14 w-14 rounded-full shadow-lg group active:scale-95 transition-transform touch-manipulation"
+            onClick={() => setIsOpen(true)}
+            aria-label="Add new space"
           >
-            ✓
-          </Badge>
-        )}
-      </Button>
+            <Plus className="h-6 w-6" />
+            {hasContext && (
+              <Badge 
+                variant="secondary" 
+                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+              >
+                ✓
+              </Badge>
+            )}
+          </Button>
+        </motion.div>
+      </AnimatePresence>
 
       <QuickSpaceBottomSheet
         open={isOpen}

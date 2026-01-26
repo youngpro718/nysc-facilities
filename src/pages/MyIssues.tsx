@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { Plus, AlertCircle, Clock, CheckCircle, Settings, ArrowUpCircle } from "lucide-react";
+import { useState } from "react";
+import { Plus, AlertCircle, CheckCircle, Settings, ArrowUpCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserIssues } from "@/hooks/dashboard/useUserIssues";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,21 +50,10 @@ const priorityConfig = {
 export default function MyIssues() {
   const [showIssueWizard, setShowIssueWizard] = useState(false);
   const [showMobileForm, setShowMobileForm] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const { user } = useAuth();
   const { userIssues: issues = [], isLoading, refetchIssues } = useUserIssues(user?.id);
-
-  // Check if device is mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   const handleIssueCreated = () => {
     setShowIssueWizard(false);

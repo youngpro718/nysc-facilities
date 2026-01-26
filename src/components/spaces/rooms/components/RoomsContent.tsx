@@ -1,9 +1,10 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Room } from "../types/RoomTypes";
 import { RoomCard } from "../RoomCard";
 import { RoomTable } from "../RoomTable";
 import { MobileRoomCard } from "./MobileRoomCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface RoomsContentProps {
   isLoading: boolean;
@@ -24,14 +25,7 @@ export function RoomsContent({
   searchQuery,
   onRoomClick,
 }: RoomsContentProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkIsMobile = () => setIsMobile(window.innerWidth < 768);
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   // Calculate room type counts for the filtered rooms
   const roomTypeCounts = useMemo(() => {

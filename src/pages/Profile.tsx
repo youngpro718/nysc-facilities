@@ -1,4 +1,4 @@
-import { User, Shield, ChevronLeft, Bell, Settings2 } from "lucide-react";
+import { User, ChevronLeft, Settings2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
@@ -6,13 +6,13 @@ import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHe
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
 import { EnhancedUserSettings } from "@/components/profile/EnhancedUserSettings";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Profile() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   
   // Get active tab from URL or default to 'profile'
   const activeTab = searchParams.get('tab') || 'profile';
@@ -21,63 +21,43 @@ export default function Profile() {
     setSearchParams({ tab: value });
   };
 
-  useEffect(() => {
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const checkMobile = () => {
-    setIsMobile(window.innerWidth < 768);
-  };
-
-
-  const notificationSettings = [
-    {
-      id: 'manage-notifications',
-      title: 'Manage Notifications',
-      description: 'Configure email and desktop alerts in Settings',
-      icon: Bell,
-      type: 'navigation' as const,
-      action: () => navigate('/settings?tab=notifications')
-    }
-  ];
-
   if (isMobile) {
     return (
-      <div className="space-y-4 pb-20">
-        <div className="flex items-center gap-3">
+      <div className="space-y-4 pb-24">
+        {/* Header with back button */}
+        <div className="flex items-center gap-3 px-1">
           <Button 
             variant="ghost" 
             size="icon"
             onClick={() => navigate(-1)}
-            className="h-9 w-9"
+            className="h-11 w-11 touch-manipulation active:scale-95"
+            aria-label="Go back"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-semibold">Profile & Settings</h1>
+          <h1 className="text-xl font-semibold">Profile & Settings</h1>
         </div>
         
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full grid grid-cols-2">
-            <TabsTrigger value="profile">
+          <TabsList className="w-full grid grid-cols-2 h-12">
+            <TabsTrigger value="profile" className="h-10 text-sm touch-manipulation">
               <User className="h-4 w-4 mr-2" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="settings">
+            <TabsTrigger value="settings" className="h-10 text-sm touch-manipulation">
               <Settings2 className="h-4 w-4 mr-2" />
               Settings
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="profile" className="mt-4 space-y-4">
+          <TabsContent value="profile" className="mt-4 space-y-4 animate-in fade-in-50 duration-200">
             <MobileProfileHeader />
             <Card className="p-4">
               <PersonalInfoForm />
             </Card>
           </TabsContent>
           
-          <TabsContent value="settings" className="mt-4">
+          <TabsContent value="settings" className="mt-4 animate-in fade-in-50 duration-200">
             <EnhancedUserSettings />
           </TabsContent>
         </Tabs>

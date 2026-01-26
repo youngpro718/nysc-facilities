@@ -86,7 +86,48 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      // Safe area spacing utilities
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
+      },
     },
+  },
+  plugins: [
+    require("tailwindcss-animate"),
+    // Safe area plugin
+    function({ addUtilities }: { addUtilities: (utilities: Record<string, Record<string, string>>) => void }) {
+      addUtilities({
+        '.pt-safe': {
+          'padding-top': 'env(safe-area-inset-top)',
+        },
+        '.pb-safe': {
+          'padding-bottom': 'env(safe-area-inset-bottom)',
+        },
+        '.pl-safe': {
+          'padding-left': 'env(safe-area-inset-left)',
+        },
+        '.pr-safe': {
+          'padding-right': 'env(safe-area-inset-right)',
+        },
+        '.mt-safe': {
+          'margin-top': 'env(safe-area-inset-top)',
+        },
+        '.mb-safe': {
+          'margin-bottom': 'env(safe-area-inset-bottom)',
+        },
+        '.h-screen-safe': {
+          'height': 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+        },
+        '.min-h-screen-safe': {
+          'min-height': 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+        },
+      });
+    },
+  ],
+} satisfies Config;
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
