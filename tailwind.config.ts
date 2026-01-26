@@ -128,6 +128,3 @@ export default {
     },
   ],
 } satisfies Config;
-  },
-  plugins: [require("tailwindcss-animate")],
-} satisfies Config;
