@@ -36,10 +36,10 @@ export const MobileNavigationGrid: React.FC<MobileNavigationGridProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-6 h-full overflow-y-auto">
+    <div className="p-4 space-y-6 h-full overflow-y-auto pb-safe">
       {/* Navigation Grid */}
       <div className="grid grid-cols-2 gap-3">
-        {items.map((item) => {
+        {items.map((item, index) => {
           const Icon = item.icon;
           const isRoot = item.path === "/";
           const isActive = isRoot
@@ -55,37 +55,40 @@ export const MobileNavigationGrid: React.FC<MobileNavigationGridProps> = ({
               aria-current={isActive ? "page" : undefined}
               onClick={() => handleNavigation(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[96px]",
+                "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+                "active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                "min-h-[88px] touch-manipulation",
                 isActive
-                  ? "border-primary bg-primary/5 text-primary"
-                  : "border-border hover:border-primary/20 hover:bg-muted/50"
+                  ? "border-primary bg-primary/5 text-primary shadow-sm"
+                  : "border-border hover:border-primary/30 hover:bg-muted/50"
               )}
+              style={{ animationDelay: `${index * 30}ms` }}
             >
               <div
                 className={cn(
-                  "p-3 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center",
+                  "p-2.5 rounded-lg transition-colors",
                   isActive ? "bg-primary/10" : "bg-muted"
                 )}
                 aria-hidden="true"
               >
                 <Icon
                   className={cn(
-                    "h-6 w-6 transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground"
+                    "h-5 w-5 transition-colors",
+                    isActive ? "text-primary stroke-[2.5]" : "text-muted-foreground"
                   )}
                 />
               </div>
               <div className="text-center">
                 <p
                   className={cn(
-                    "text-sm font-medium",
+                    "text-sm font-medium leading-tight",
                     isActive ? "text-primary" : "text-foreground"
                   )}
                 >
                   {item.title}
                 </p>
                 {item.description && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">
                     {item.description}
                   </p>
                 )}
@@ -100,7 +103,7 @@ export const MobileNavigationGrid: React.FC<MobileNavigationGridProps> = ({
         <Button
           onClick={handleSignOut}
           variant="destructive"
-          className="w-full h-12 text-base"
+          className="w-full h-12 text-base touch-manipulation active:scale-[0.98]"
         >
           <LogOut className="mr-2 h-5 w-5" />
           Sign Out

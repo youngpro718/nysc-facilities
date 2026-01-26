@@ -17,7 +17,12 @@ export const BottomTabNavigation: React.FC = () => {
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border flex justify-around items-center shadow-lg md:hidden" style={{ height: `calc(4rem + env(safe-area-inset-bottom))`, paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <nav 
+      className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border flex justify-around items-center shadow-lg md:hidden" 
+      style={{ height: `calc(4rem + env(safe-area-inset-bottom))`, paddingBottom: 'env(safe-area-inset-bottom)' }}
+      role="navigation"
+      aria-label="Primary navigation"
+    >
       {TABS.map(({ label, icon: Icon, path }) => {
         const isActive = location.pathname === path || (label === "More" && location.pathname.startsWith("/profile"));
         
@@ -27,14 +32,17 @@ export const BottomTabNavigation: React.FC = () => {
               <SheetTrigger asChild>
                 <button
                   aria-label={label}
-                  className={`flex flex-col items-center justify-center gap-0.5 text-xs px-2 py-2 focus:outline-none transition-colors min-w-0 flex-1 ${
+                  aria-expanded={isMoreSheetOpen}
+                  className={`flex flex-col items-center justify-center gap-0.5 text-xs px-2 py-2 min-h-[48px] min-w-[48px] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors active:scale-95 ${
                     isActive 
                       ? "text-primary font-medium" 
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? "stroke-2" : "stroke-1.5"}`} />
-                  <span className="truncate max-w-full">{label}</span>
+                  <div className={`p-1 rounded-lg transition-colors ${isActive ? "bg-primary/10" : ""}`}>
+                    <Icon className={`w-5 h-5 ${isActive ? "stroke-2" : "stroke-1.5"}`} />
+                  </div>
+                  <span className="truncate max-w-full text-[10px] xs:text-xs">{label}</span>
                 </button>
               </SheetTrigger>
               <SheetContent 
@@ -46,7 +54,8 @@ export const BottomTabNavigation: React.FC = () => {
                   <SheetTitle>More Options</SheetTitle>
                   <button
                     onClick={() => setIsMoreSheetOpen(false)}
-                    className="p-2 hover:bg-muted rounded-full transition-colors"
+                    className="p-2 hover:bg-muted rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    aria-label="Close menu"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -61,15 +70,18 @@ export const BottomTabNavigation: React.FC = () => {
           <button
             key={label}
             aria-label={label}
-            className={`flex flex-col items-center justify-center gap-0.5 text-xs px-2 py-2 focus:outline-none transition-colors min-w-0 flex-1 ${
+            aria-current={isActive ? "page" : undefined}
+            className={`flex flex-col items-center justify-center gap-0.5 text-xs px-2 py-2 min-h-[48px] min-w-[48px] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors active:scale-95 ${
               isActive 
                 ? "text-primary font-medium" 
                 : "text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => navigate(path)}
           >
-            <Icon className={`w-5 h-5 ${isActive ? "stroke-2" : "stroke-1.5"}`} />
-            <span className="truncate max-w-full">{label}</span>
+            <div className={`p-1 rounded-lg transition-colors ${isActive ? "bg-primary/10" : ""}`}>
+              <Icon className={`w-5 h-5 ${isActive ? "stroke-2" : "stroke-1.5"}`} />
+            </div>
+            <span className="truncate max-w-full text-[10px] xs:text-xs">{label}</span>
           </button>
         );
       })}

@@ -18,7 +18,11 @@ export function PersonalInfoForm() {
         <PreferencesFields form={form} />
         <EmergencyContactFields form={form} />
         
-        <Button type="submit" disabled={isLoading}>
+        <Button 
+          type="submit" 
+          disabled={isLoading}
+          className="w-full sm:w-auto h-11 touch-manipulation active:scale-[0.98]"
+        >
           {isLoading ? "Saving..." : "Save Changes"}
         </Button>
       </form>

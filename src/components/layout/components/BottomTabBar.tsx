@@ -33,7 +33,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
         paddingBottom: 'max(env(safe-area-inset-bottom), 0px)',
       }}
     >
-      <div className="mx-auto max-w-7xl px-2">
+      <div className="mx-auto max-w-7xl px-1 xs:px-2">
         <div className={cn("grid", hasMore ? "grid-cols-5" : "grid-cols-4")}>
           {primary.map((item) => {
             const Icon = item.icon;
@@ -44,13 +44,28 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                 key={item.title}
                 onClick={() => handleNav(item.title)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2.5 min-h-[58px] touch-target focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  "flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-2 min-h-[56px] touch-target touch-manipulation",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  "active:scale-95 transition-transform duration-100",
+                  isActive 
+                    ? "text-primary" 
+                    : "text-muted-foreground hover:text-foreground"
                 )}
                 aria-current={isActive ? "page" : undefined}
+                aria-label={item.title}
               >
-                <Icon className="h-5 w-5" aria-hidden="true" />
-                <span className="text-[11px] leading-none font-medium">{item.title}</span>
+                <div className={cn(
+                  "p-1 rounded-lg transition-colors",
+                  isActive && "bg-primary/10"
+                )}>
+                  <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} aria-hidden="true" />
+                </div>
+                <span className={cn(
+                  "text-[10px] xs:text-[11px] leading-none font-medium truncate max-w-full",
+                  isActive && "font-semibold"
+                )}>
+                  {item.title}
+                </span>
               </button>
             );
           })}
@@ -58,11 +73,18 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
           {hasMore && (
             <button
               onClick={onOpenMobileMenu}
-              className="flex flex-col items-center justify-center gap-1 py-2.5 min-h-[58px] touch-target text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              aria-label="More"
+              className={cn(
+                "flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-2 min-h-[56px] touch-target touch-manipulation",
+                "text-muted-foreground hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                "active:scale-95 transition-transform duration-100"
+              )}
+              aria-label="More options"
             >
-              <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
-              <span className="text-[11px] leading-none font-medium">More</span>
+              <div className="p-1">
+                <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <span className="text-[10px] xs:text-[11px] leading-none font-medium">More</span>
             </button>
           )}
         </div>
