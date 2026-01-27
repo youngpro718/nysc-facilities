@@ -1,261 +1,171 @@
 
-# Supply Request Flow Complete Fix Plan
+# Supply Request Refinement Plan
 
-## Problem Summary
+## Overview
 
-When submitting a supply request, nothing happens because the database is rejecting the insert due to **Row Level Security (RLS) policy violations**. Additionally, the inventory deduction and history tracking mechanisms have schema mismatches.
+This plan addresses your feedback to clean up old test data, make supply request tracking more accessible, improve fulfillment visibility, and optionally add a quick alert system for stock issues.
 
 ---
 
-## Issue Breakdown
+## Changes Summary
 
-### Issue 1: Supply Request Insert Fails (CRITICAL)
+### 1. Clean Up Old Test Requests
 
-**Location**: `src/services/supplyOrdersService.ts`, line 45-56
+**Action**: Delete the 5 old test supply requests from July-August 2025 that are cluttering the system.
 
-**Problem**: The insert payload is missing `requester_id`, but the RLS policy requires `auth.uid() = requester_id`
+| ID (Partial) | Title | Status | Created |
+|--------------|-------|--------|---------|
+| b87f1061 | furniture request | picking | Jul 17 |
+| 65e816f1 | furniture request | rejected | Jul 17 |
+| 20ce3263 | furniture request | picking | Jul 18 |
+| 7a3db4d6 | Office supply | completed | Jul 19 |
+| 00db92a8 | office supplies | picking | Aug 17 |
 
-**RLS Policy**:
+This will be done via a database delete operation (not a schema migration).
+
+---
+
+### 2. Add Supply Orders Tab to Tasks Page
+
+**File**: `src/pages/Tasks.tsx`
+
+Add a new "Supply Orders" tab that integrates the `SupplyRequestTracking` component directly into the Tasks page, making it the central hub for staff work.
+
+```text
+Tab Layout for Managers/Admins:
+┌─────────┬─────────┬───────────┬──────────┬────────────────┐
+│ Pending │ Active  │ Completed │ Rejected │ Supply Orders  │
+└─────────┴─────────┴───────────┴──────────┴────────────────┘
+                                                   ▲
+                                           NEW TAB
+```
+
+**Benefits**:
+- One place to see all work: tasks AND supply orders
+- Staff can easily switch between task work and supply fulfillment
+- Managers see the full picture at a glance
+
+---
+
+### 3. Enhance Fulfillment Visibility
+
+**File**: `src/components/supply/SupplyRequestTracking.tsx`
+
+Add fulfiller information display to show WHO is working on each order:
+
+- Show assigned fulfiller name when order is accepted
+- Display progress stage badges (Received → Picking → Ready → Complete)
+- Show completion timestamp and fulfiller on completed orders
+
+Current rendering only shows basic status - we will add:
+```text
+┌──────────────────────────────────────────────────────┐
+│ 📦 Order Title                                       │
+│ Requester: John Doe • IT Department                  │
+│ ───────────────────────────────────────────────────  │
+│ 👤 Assigned to: Jane Smith                           │ ← NEW
+│ 📊 Progress: 3/5 items picked                        │ ← NEW
+│ ⏱ Started: 10 minutes ago                           │ ← NEW
+└──────────────────────────────────────────────────────┘
+```
+
+---
+
+### 4. Add Admin Delete Capability
+
+**File**: New component `src/components/supply/SupplyRequestActions.tsx`
+
+Add ability for admins to delete old or stuck supply requests:
+
+- Delete button visible only to admin role
+- Confirmation dialog to prevent accidents
+- Deletes request AND related items (cascade)
+
+This will also require:
+- Database: Add RLS DELETE policy for admins
+
+---
+
+### 5. Quick Stock Alert System (Optional but Recommended)
+
+**File**: `src/components/supply/PickingInterface.tsx`
+
+When supply staff are picking and encounter issues, give them quick alert options:
+
+**UI Addition**:
+```text
+Stock Issue Buttons (per item):
+┌────────────────┐ ┌────────────────┐
+│ 🚫 Out of Stock│ │ ⚠️ Low Stock   │
+└────────────────┘ └────────────────┘
+```
+
+**Behavior**:
+- Clicking "Out of Stock" sets picked quantity to 0 and flags the item
+- Clicking "Low Stock" creates a notification to admin
+- Both record the issue in the status history table for audit trail
+
+This keeps staff moving quickly without needing to open separate forms.
+
+---
+
+## Technical Implementation
+
+### Database Changes
+
+1. **Delete old test data** (SQL statement, not migration):
 ```sql
--- Policy: "Users can create supply requests"
-WITH CHECK (auth.uid() = requester_id)
+DELETE FROM supply_requests 
+WHERE created_at < '2026-01-01' 
+AND requester_id = '4fbaf107-c81b-4442-af1d-cbe965736fe3';
 ```
 
-**Current Code** (missing `requester_id`):
-```typescript
-const insertData: any = {
-  title: payload.title,
-  description: payload.description || '',
-  justification: ...,
-  priority: payload.priority,
-  // Missing: requester_id: session.user.id
-};
-```
-
-**Fix**: Add `requester_id: session.user.id` to the insert payload
-
----
-
-### Issue 2: Status History Table Doesn't Exist
-
-**Location**: `src/services/supplyOrdersService.ts`, lines 80-88
-
-**Problem**: The service inserts into `supply_request_status_history` which doesn't exist. The actual table is `supply_request_fulfillment_log`.
-
-**Fix**: Either:
-- Option A: Create the missing `supply_request_status_history` table
-- Option B: Update the service to use `supply_request_fulfillment_log`
-
-**Recommendation**: Create the status history table for proper audit tracking
-
----
-
-### Issue 3: Inventory Transaction Schema Mismatch
-
-**Location**: Database function `adjust_inventory_quantity`
-
-**Problem**: The function tries to insert columns that don't exist in `inventory_item_transactions`:
-
-| Function Inserts | Actual Column |
-|-----------------|---------------|
-| `quantity_change` | `quantity` |
-| `reference_id` | (doesn't exist) |
-| `created_by` | `performed_by` |
-
-**Fix**: Update the function to match the actual schema
-
----
-
-### Issue 4: Court Aides Can't View Completed Tasks
-
-**Location**: `src/components/court-aide/TaskWorkQueue.tsx`
-
-**Problem**: Only fetches active tasks (`claimed`, `in_progress`). No tab for viewing completed work history.
-
-**Fix**: Add a "Completed" or "History" tab to show the Court Aide's past work
-
----
-
-## Implementation Plan
-
-### Phase 1: Fix Supply Request Submission (CRITICAL)
-
-**File**: `src/services/supplyOrdersService.ts`
-
-1. Add `requester_id` to the insert payload:
-```typescript
-const insertData: any = {
-  requester_id: session.user.id,  // ADD THIS
-  title: payload.title,
-  description: payload.description || '',
-  ...
-};
-```
-
-2. Remove the status history insert (since table doesn't exist) or make it optional with error handling
-
-3. Add better error handling so users see meaningful error messages
-
----
-
-### Phase 2: Create Status History Table
-
-**Database Migration**:
-
+2. **Add DELETE policy for admins** (migration):
 ```sql
-CREATE TABLE IF NOT EXISTS supply_request_status_history (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  request_id UUID NOT NULL REFERENCES supply_requests(id) ON DELETE CASCADE,
-  status TEXT NOT NULL,
-  notes TEXT,
-  changed_by UUID REFERENCES auth.users(id),
-  changed_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- RLS Policies
-ALTER TABLE supply_request_status_history ENABLE ROW LEVEL SECURITY;
-
--- Users can view history of their own requests
-CREATE POLICY "Users can view own request history"
-ON supply_request_status_history FOR SELECT
+CREATE POLICY "Admins can delete supply requests"
+ON supply_requests FOR DELETE
 USING (
-  EXISTS (
-    SELECT 1 FROM supply_requests sr 
-    WHERE sr.id = request_id AND sr.requester_id = auth.uid()
-  )
+  public.has_role(auth.uid(), 'admin'::user_role)
 );
-
--- Authenticated users can insert history
-CREATE POLICY "Auth users can insert history"
-ON supply_request_status_history FOR INSERT
-WITH CHECK (auth.uid() IS NOT NULL);
 ```
 
----
+### Files to Create/Modify
 
-### Phase 3: Fix Inventory Adjustment Function
-
-**Database Migration**:
-
-```sql
-CREATE OR REPLACE FUNCTION adjust_inventory_quantity(
-  p_item_id UUID,
-  p_quantity_change INTEGER,
-  p_transaction_type TEXT,
-  p_reference_id UUID DEFAULT NULL,
-  p_notes TEXT DEFAULT NULL
-)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_prev_qty INTEGER;
-  v_new_qty INTEGER;
-BEGIN
-  -- Get current quantity
-  SELECT quantity INTO v_prev_qty 
-  FROM inventory_items 
-  WHERE id = p_item_id;
-
-  v_new_qty := v_prev_qty + p_quantity_change;
-
-  -- Update inventory
-  UPDATE inventory_items
-  SET quantity = v_new_qty, updated_at = NOW()
-  WHERE id = p_item_id;
-
-  -- Record transaction with correct column names
-  INSERT INTO inventory_item_transactions (
-    item_id,
-    transaction_type,
-    quantity,
-    previous_quantity,
-    new_quantity,
-    performed_by,
-    notes
-  ) VALUES (
-    p_item_id,
-    p_transaction_type,
-    ABS(p_quantity_change),
-    v_prev_qty,
-    v_new_qty,
-    auth.uid(),
-    COALESCE(p_notes, 'Inventory adjustment')
-  );
-END;
-$$;
-```
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/pages/Tasks.tsx` | Modify | Add "Supply Orders" tab |
+| `src/components/supply/SupplyRequestTracking.tsx` | Modify | Add fulfiller visibility, delete action |
+| `src/components/supply/PickingInterface.tsx` | Modify | Add stock alert buttons |
+| `src/hooks/useStockAlert.ts` | Create | Hook for triggering stock issue notifications |
+| Database | Migrate | Add DELETE policy for supply_requests |
+| Database | Execute | Delete old test requests |
 
 ---
 
-### Phase 4: Add Court Aide History View
+## User Experience Flow
 
-**File**: `src/components/court-aide/TaskWorkQueue.tsx`
+### For Managers/Admins
 
-Add a third tab "Completed" that fetches tasks with status `completed` claimed by the current user:
+1. Navigate to `/tasks`
+2. Click "Supply Orders" tab to see all pending supply work
+3. View who is assigned to each order and their progress
+4. Delete old/stuck orders if needed via action menu
 
-```typescript
-// Add new hook call
-const { tasks: completedTasks, isLoading: completedLoading } = useStaffTasks({
-  onlyMyTasks: true,
-  status: 'completed',
-});
+### For Supply Staff
 
-// Add third tab
-<TabsTrigger value="completed" className="flex items-center gap-2">
-  <CheckCircle className="h-4 w-4" />
-  Completed
-  {completedTasks.length > 0 && (
-    <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-      {completedTasks.length}
-    </Badge>
-  )}
-</TabsTrigger>
-```
+1. Accept order from "New Orders"
+2. Start picking - see stock levels inline
+3. If stock issue: tap "Out of Stock" or "Low Stock" button
+4. System auto-notifies admin and records issue
+5. Complete picking and mark ready
 
 ---
 
-### Phase 5: Improve Error Handling
-
-**File**: `src/hooks/useOrderCart.ts`
-
-Ensure errors from the service are properly caught and displayed:
-
-```typescript
-catch (error: any) {
-  const message = error?.message || 'Failed to submit order';
-  toast({
-    title: 'Submission Failed',
-    description: message.includes('row-level security') 
-      ? 'Permission error. Please try logging in again.'
-      : message,
-    variant: 'destructive',
-  });
-  throw error;
-}
-```
-
----
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/services/supplyOrdersService.ts` | Add `requester_id`, fix history insert, improve error handling |
-| Database | Create `supply_request_status_history` table |
-| Database | Fix `adjust_inventory_quantity` function |
-| `src/components/court-aide/TaskWorkQueue.tsx` | Add "Completed" tab for history |
-| `src/hooks/useOrderCart.ts` | Improve error messaging |
-
----
-
-## Expected Outcome
+## Outcome
 
 After implementation:
-1. Supply requests will submit successfully
-2. Users will see proper error messages if something fails
-3. Status changes will be tracked in history
-4. Inventory will be deducted correctly when orders are fulfilled
-5. Court Aides can view their completed work history
+- No more old test data cluttering the view
+- Supply orders accessible from the Tasks page
+- Clear visibility into who is fulfilling and their progress
+- Staff can quickly flag stock issues without leaving the picking flow
+- Full audit trail maintained in status history
