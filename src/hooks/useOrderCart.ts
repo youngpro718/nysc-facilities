@@ -134,9 +134,12 @@ export function useOrderCart() {
       clearCart();
       return result;
     } catch (error: any) {
+      const message = error?.message || 'Failed to submit order';
       toast({
-        title: 'Error',
-        description: error?.message || 'Failed to submit order',
+        title: 'Submission Failed',
+        description: message.includes('row-level security') || message.includes('Permission')
+          ? 'Permission error. Please try logging in again.'
+          : message,
         variant: 'destructive',
       });
       throw error;
