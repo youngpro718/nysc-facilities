@@ -7,12 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle, CheckCircle, Loader2, MapPin, Package } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Loader2, MapPin, Package, XCircle, AlertCircle } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { useGenerateReceipt } from '@/hooks/useSupplyReceipts';
 import { createReceiptData } from '@/lib/receiptUtils';
+import { useStockAlert } from '@/hooks/useStockAlert';
 
 interface PickingInterfaceProps {
   request: any;
@@ -29,6 +30,7 @@ interface PickedItem {
 export function PickingInterface({ request, onComplete, onCancel }: PickingInterfaceProps) {
   const queryClient = useQueryClient();
   const { mutateAsync: generateReceipt } = useGenerateReceipt();
+  const { reportOutOfStock, reportLowStock, isAlertPending } = useStockAlert();
   
   const [pickedItems, setPickedItems] = useState<Record<string, PickedItem>>({});
 
@@ -289,6 +291,45 @@ export function PickingInterface({ request, onComplete, onCancel }: PickingInter
                     </AlertDescription>
                   </Alert>
                 )}
+
+                {/* Quick Stock Alert Buttons - NEW */}
+                <div className="ml-7 flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                    disabled={isAlertPending}
+                    onClick={() => {
+                      updateQuantity(item.item_id, 0);
+                      reportOutOfStock({
+                        itemId: item.item_id,
+                        itemName: item.inventory_items?.name || 'Unknown item',
+                        requestId: request.id,
+                        currentStock,
+                      });
+                    }}
+                  >
+                    <XCircle className="h-3 w-3 mr-1" />
+                    Out of Stock
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-amber-600 border-amber-500/50 hover:bg-amber-500/10"
+                    disabled={isAlertPending}
+                    onClick={() => {
+                      reportLowStock({
+                        itemId: item.item_id,
+                        itemName: item.inventory_items?.name || 'Unknown item',
+                        requestId: request.id,
+                        currentStock,
+                      });
+                    }}
+                  >
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Low Stock
+                  </Button>
+                </div>
               </div>
             );
           })}
