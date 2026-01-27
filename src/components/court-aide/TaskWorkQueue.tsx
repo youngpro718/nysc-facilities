@@ -2,7 +2,7 @@
  * TaskWorkQueue Component
  * 
  * Displays tasks for Court Aides in a work-focused layout
- * Shows active tasks and available tasks to claim
+ * Shows active tasks, available tasks to claim, and completed history
  */
 
 import { useState } from 'react';
@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Inbox, ClipboardList, Play } from 'lucide-react';
+import { Loader2, Inbox, ClipboardList, Play, CheckCircle } from 'lucide-react';
 import type { StaffTask } from '@/types/staffTasks';
 
 export function TaskWorkQueue() {
@@ -42,6 +42,15 @@ export function TaskWorkQueue() {
     status: 'approved',
   });
 
+  // Fetch completed tasks (my completed work)
+  const { 
+    tasks: completedTasks, 
+    isLoading: completedLoading,
+  } = useStaffTasks({
+    onlyMyTasks: true,
+    status: 'completed',
+  });
+
   // Filter available tasks to show only unclaimed ones
   const unclaimedTasks = availableTasks.filter(t => !t.claimed_by);
 
@@ -61,7 +70,7 @@ export function TaskWorkQueue() {
     cancelTask.mutate(taskId);
   };
 
-  const isLoading = myTasksLoading || availableLoading;
+  const isLoading = myTasksLoading || availableLoading || completedLoading;
 
   return (
     <Card className="h-full">
@@ -89,7 +98,7 @@ export function TaskWorkQueue() {
       </CardHeader>
       <CardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mx-4 mb-2" style={{ width: 'calc(100% - 2rem)' }}>
+          <TabsList className="grid w-full grid-cols-3 mx-4 mb-2" style={{ width: 'calc(100% - 2rem)' }}>
             <TabsTrigger value="my-tasks" className="flex items-center gap-2">
               <Play className="h-4 w-4" />
               My Tasks
@@ -105,6 +114,15 @@ export function TaskWorkQueue() {
               {unclaimedTasks.length > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 px-1.5">
                   {unclaimedTasks.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Completed
+              {completedTasks.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                  {completedTasks.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -159,6 +177,30 @@ export function TaskWorkQueue() {
                       variant="compact"
                       onClaim={handleClaim}
                       isLoading={claimTask.isPending || claimAvailable.isPending}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="completed" className="m-0 px-4 pb-4">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : completedTasks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <p className="font-medium">No completed tasks</p>
+                  <p className="text-sm">Tasks you complete will appear here</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {completedTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      variant="compact"
                     />
                   ))}
                 </div>

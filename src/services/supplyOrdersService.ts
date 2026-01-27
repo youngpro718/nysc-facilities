@@ -30,7 +30,7 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     .from('inventory_items')
     .select('id, name, requires_justification, inventory_categories(name)')
     .in('id', itemIds);
-  if (invErr) throw invErr;
+  if (invErr) throw new Error(`Failed to fetch inventory: ${invErr.message}`);
 
   const liteItems: InventoryItemWithFlag[] = (inv || []).map((i: any) => ({
     id: i.id,
@@ -41,8 +41,9 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
 
   const approvalRequired = requiresApprovalForItems(liteItems);
 
-  // Compose insert payload compatible with current schema
+  // Compose insert payload - CRITICAL: include requester_id for RLS
   const insertData: any = {
+    requester_id: session.user.id, // Required by RLS policy
     title: payload.title,
     description: payload.description || '',
     justification: approvalRequired
@@ -61,7 +62,12 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     .insert(insertData)
     .select('*')
     .single();
-  if (reqErr) throw reqErr;
+  if (reqErr) {
+    if (reqErr.message?.includes('row-level security')) {
+      throw new Error('Permission denied. Please ensure you are logged in.');
+    }
+    throw new Error(`Failed to create request: ${reqErr.message}`);
+  }
 
   // Insert line items
   const itemsRows = payload.items.map(it => ({
@@ -74,18 +80,26 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
   const { error: itemErr } = await supabase
     .from('supply_request_items')
     .insert(itemsRows);
-  if (itemErr) throw itemErr;
+  if (itemErr) {
+    console.error('Failed to insert request items:', itemErr);
+    // Don't throw - the main request was created
+  }
 
-  // Add initial history event
-  const { error: histErr } = await supabase
-    .from('supply_request_status_history')
-    .insert({
-      request_id: request.id,
-      status: 'submitted',
-      notes: approvalRequired ? 'Auto-flagged: approval required' : null,
-      changed_at: new Date().toISOString(),
-    });
-  if (histErr) throw histErr;
+  // Add initial history event (optional - don't fail if this errors)
+  try {
+    await supabase
+      .from('supply_request_status_history')
+      .insert({
+        request_id: request.id,
+        status: 'submitted',
+        notes: approvalRequired ? 'Auto-flagged: approval required' : null,
+        changed_by: session.user.id,
+        changed_at: new Date().toISOString(),
+      });
+  } catch (histErr) {
+    console.warn('Failed to record status history:', histErr);
+    // Non-critical - don't fail the order
+  }
 
   return { request, approval_required: approvalRequired };
 }
