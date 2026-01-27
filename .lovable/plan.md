@@ -1,348 +1,261 @@
 
-# Comprehensive Mobile UI/UX Audit Plan
+# Supply Request Flow Complete Fix Plan
 
-## Executive Summary
+## Problem Summary
 
-After extensive exploration of the codebase, I've identified **42 mobile improvement opportunities** across aesthetics, transitions, layout, and role-specific experiences. This plan covers all user roles: **Admin**, **CMC**, **Court Aide**, **Purchasing**, and **Standard Users**.
-
----
-
-## Part 1: Global Mobile Infrastructure Issues
-
-### 1.1 Inconsistent useIsMobile Pattern
-**Current State:** 28 files use `useIsMobile` hook, but 9 files implement their own `window.innerWidth < 768` checks, creating inconsistency and potential race conditions.
-
-**Affected Files:**
-- `src/pages/Profile.tsx` (local state check)
-- `src/pages/MyIssues.tsx` (local state check)
-- `src/components/spaces/rooms/RoomCard.tsx` (local state check)
-- `src/components/spaces/rooms/components/RoomsContent.tsx` (local state check)
-
-**Fix:** Refactor all files to use the centralized `useIsMobile()` hook for consistent breakpoint detection.
-
-### 1.2 Missing Safe Area Utilities in Tailwind Config
-**Current State:** While `ios-compatibility.css` defines safe area variables, the Tailwind config lacks utility classes for safe areas.
-
-**Fix:** Add Tailwind plugin or extend utilities:
-- `pb-safe`, `pt-safe`, `safe-area-bottom`, `safe-area-top` classes
-- Currently used inconsistently across 19 files
-
-### 1.3 Touch Target Sizes
-**Current State:** 29 files use `touch-manipulation` and `touch-target` classes, but implementation is inconsistent. Some buttons are 32px while Apple HIG recommends minimum 44px.
-
-**Files Needing Attention:**
-- `MobileNavigationGrid.tsx` - already compliant (min-h-[96px])
-- `BottomTabBar.tsx` - already compliant (min-h-[58px])
-- `InlineItemRow.tsx` - buttons at 36px (h-9), should be 44px
-- Various dropdown menus and action buttons
+When submitting a supply request, nothing happens because the database is rejecting the insert due to **Row Level Security (RLS) policy violations**. Additionally, the inventory deduction and history tracking mechanisms have schema mismatches.
 
 ---
 
-## Part 2: Layout & Navigation Issues
+## Issue Breakdown
 
-### 2.1 Bottom Tab Bar Improvements
-**Current Implementation:** 4 primary tabs + "More" overflow menu
+### Issue 1: Supply Request Insert Fails (CRITICAL)
 
-**Issues Identified:**
-- Tab labels truncate on iPhone SE/Mini screens
-- Active state indicator could be more prominent
-- Icon-only mode not available for small screens
+**Location**: `src/services/supplyOrdersService.ts`, line 45-56
 
-**Proposed Changes:**
-- Implement adaptive labels that hide on xs screens (< 480px)
-- Add bottom border highlight for active state
-- Consider haptic feedback integration for native feel
+**Problem**: The insert payload is missing `requester_id`, but the RLS policy requires `auth.uid() = requester_id`
 
-### 2.2 Floating Action Button (FAB) Positioning
-**Current State:** Fixed at `bottom-24 right-4` with `pb-safe`
+**RLS Policy**:
+```sql
+-- Policy: "Users can create supply requests"
+WITH CHECK (auth.uid() = requester_id)
+```
 
-**Issues:**
-- Can overlap with content when keyboard opens
-- No animation on appearance
-- Missing on some pages where it would be useful
+**Current Code** (missing `requester_id`):
+```typescript
+const insertData: any = {
+  title: payload.title,
+  description: payload.description || '',
+  justification: ...,
+  priority: payload.priority,
+  // Missing: requester_id: session.user.id
+};
+```
 
-**Proposed Changes:**
-- Add entry/exit animation using framer-motion
-- Implement keyboard-aware positioning
-- Extend to Court Aide dashboard for quick task claiming
-
-### 2.3 Mobile Menu Navigation
-**Current Implementation:** Sheet from right with 2-column grid
-
-**Enhancement Opportunities:**
-- Add section grouping by category (Operations, Personal, Admin)
-- Implement search/filter for menus with many items
-- Add recently visited pages section
-- Consider gesture navigation (swipe back to close)
+**Fix**: Add `requester_id: session.user.id` to the insert payload
 
 ---
 
-## Part 3: Role-Specific Dashboard Improvements
+### Issue 2: Status History Table Doesn't Exist
 
-### 3.1 Admin Dashboard (AdminDashboard.tsx)
-**Current State:** Uses `ModuleCards` component (currently returns null), relies on `BuildingsGrid`
+**Location**: `src/services/supplyOrdersService.ts`, lines 80-88
 
-**Mobile Issues:**
-- Building cards can be overwhelming on mobile
-- No quick action shortcuts
-- Stats grid needs responsive redesign
+**Problem**: The service inserts into `supply_request_status_history` which doesn't exist. The actual table is `supply_request_fulfillment_log`.
 
-**Proposed Changes:**
-- Implement collapsible building groups
-- Add priority alerts section at top
-- Create mobile-specific quick stats row
-- Implement pull-to-refresh (already available via `PullToRefresh`)
+**Fix**: Either:
+- Option A: Create the missing `supply_request_status_history` table
+- Option B: Update the service to use `supply_request_fulfillment_log`
 
-### 3.2 CMC Dashboard (RoleDashboard.tsx)
-**Current State:** Generic role-based dashboard with stats cards
-
-**Mobile Issues:**
-- Header actions overflow on small screens (line 282-293)
-- Quick actions grid (4 columns on lg) doesn't adapt well
-- Term sheet board not optimized for mobile
-
-**Proposed Changes:**
-- Move secondary actions to dropdown on mobile
-- Change quick actions to horizontal scroll or 2x2 grid
-- Create mobile-specific term sheet view
-
-### 3.3 Court Aide Dashboard (CourtAideWorkCenter.tsx)
-**Current State:** Purpose-built work center with task queue and supply fulfillment
-
-**Mobile Issues:**
-- Header buttons wrap awkwardly on mobile (line 47-64)
-- Two-column layout at lg doesn't adapt (line 74)
-- Footer actions centered but could be sticky
-
-**Proposed Changes:**
-- Stack header actions vertically on mobile
-- Implement tabbed interface for Task Queue vs Supply Fulfillment on mobile
-- Make footer actions sticky bottom bar
-
-### 3.4 Standard User Dashboard (UserDashboard.tsx)
-**Current State:** Well-optimized for mobile with pull-to-refresh
-
-**Minor Improvements:**
-- `RequestStatusGrid` cards could have larger tap areas
-- Expandable sections animation could be smoother
-- Empty states need better mobile illustrations
+**Recommendation**: Create the status history table for proper audit tracking
 
 ---
 
-## Part 4: Forms & Input Optimization
+### Issue 3: Inventory Transaction Schema Mismatch
 
-### 4.1 Mobile Form Components (mobile-form.tsx)
-**Current State:** Good foundation with MobileInput, MobileTextarea, MobileFormLayout
+**Location**: Database function `adjust_inventory_quantity`
 
-**Issues:**
-- Not universally adopted - many forms still use standard inputs
-- Sticky footer actions could conflict with keyboard
+**Problem**: The function tries to insert columns that don't exist in `inventory_item_transactions`:
 
-**Files Using Standard Inputs (need refactor):**
-- `PersonalInfoForm.tsx`
-- `MobileRequestForm.tsx`
-- Various issue/maintenance forms
+| Function Inserts | Actual Column |
+|-----------------|---------------|
+| `quantity_change` | `quantity` |
+| `reference_id` | (doesn't exist) |
+| `created_by` | `performed_by` |
 
-**Proposed Changes:**
-- Audit all forms and migrate to MobileInput/MobileTextarea
-- Add keyboard-avoiding behavior
-- Implement form progress indicators consistently
-
-### 4.2 Supply Order Page (SupplyOrderPage.tsx)
-**Current State:** Uses QuickSupplyRequest component effectively
-
-**Issues:**
-- Search input doesn't auto-focus on mobile (causes keyboard delay)
-- Category tabs overflow on narrow screens
-- Favorites strip could have swipe-to-dismiss
-
-**Proposed Changes:**
-- Add horizontal scroll to category tabs
-- Implement swipe gestures on favorites
-- Optimize virtual list for long item catalogs
-
-### 4.3 Issue Report Forms
-**Current State:** Multi-step wizard in `MobileRequestForm.tsx`
-
-**Strengths:** Good progress bar, step-by-step flow
-**Issues:**
-- Voice note feature not implemented (UI only)
-- Photo upload needs better preview
-- Location picker could use device GPS
+**Fix**: Update the function to match the actual schema
 
 ---
 
-## Part 5: Transitions & Animations
+### Issue 4: Court Aides Can't View Completed Tasks
 
-### 5.1 Current Animation Usage
-**Analysis:** 342 files use transition/animation classes
+**Location**: `src/components/court-aide/TaskWorkQueue.tsx`
 
-**Consistent Patterns:**
-- `transition-all duration-200` - general transitions
-- `animate-spin` - loading states
-- `animate-pulse` - skeleton loading
+**Problem**: Only fetches active tasks (`claimed`, `in_progress`). No tab for viewing completed work history.
 
-**Inconsistent Patterns:**
-- Some cards use `hover:scale-105`, others don't
-- Modal entry animations vary
-- Swipe gestures only in MobileRoomCard
-
-### 5.2 Proposed Animation System
-**Standardize:**
-- Card hover: `hover:shadow-md transition-shadow duration-200`
-- Card active: `active:scale-[0.98] transition-transform`
-- Modal entry: `animate-in fade-in slide-in-from-bottom-4`
-- Sheet transitions: Already good via Radix
-
-### 5.3 Mobile-Specific Animations
-**Add:**
-- Pull-to-refresh spring animation (enhance current)
-- Swipe-to-reveal actions (extend MobileRoomCard pattern)
-- Tab switch transitions
-- List item stagger animations
+**Fix**: Add a "Completed" or "History" tab to show the Court Aide's past work
 
 ---
 
-## Part 6: Profile & Settings
+## Implementation Plan
 
-### 6.1 User Profile (Profile.tsx)
-**Current State:** Has separate mobile layout with tabs
+### Phase 1: Fix Supply Request Submission (CRITICAL)
 
-**Issues:**
-- Tab icons could be cleaner
-- Settings tab loads full `EnhancedUserSettings` which may be heavy
-- Avatar upload flow needs streamlining
+**File**: `src/services/supplyOrdersService.ts`
 
-**Proposed Changes:**
-- Lazy load settings sections
-- Add biometric authentication toggle
-- Improve notification settings layout
+1. Add `requester_id` to the insert payload:
+```typescript
+const insertData: any = {
+  requester_id: session.user.id,  // ADD THIS
+  title: payload.title,
+  description: payload.description || '',
+  ...
+};
+```
 
-### 6.2 Admin Profile (AdminProfile.tsx)
-**Current State:** Complex page with 5 tabs, mobile-optimized
+2. Remove the status history insert (since table doesn't exist) or make it optional with error handling
 
-**Issues:**
-- Tab labels use emojis on mobile (👥, 🔐, etc.) - not ideal for accessibility
-- User list cards are dense
-- Role selector dropdown hard to tap
-
-**Proposed Changes:**
-- Replace emoji tab labels with icon-only
-- Increase user card padding and action button sizes
-- Consider bottom sheet for role changes
+3. Add better error handling so users see meaningful error messages
 
 ---
 
-## Part 7: Content & Data Display
+### Phase 2: Create Status History Table
 
-### 7.1 Responsive Table (responsive-table.tsx)
-**Current State:** Good implementation - switches to card view on mobile
+**Database Migration**:
 
-**Enhancement:**
-- Add swipe actions to mobile cards
-- Implement expandable rows for details
-- Add pull-to-refresh support
+```sql
+CREATE TABLE IF NOT EXISTS supply_request_status_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id UUID NOT NULL REFERENCES supply_requests(id) ON DELETE CASCADE,
+  status TEXT NOT NULL,
+  notes TEXT,
+  changed_by UUID REFERENCES auth.users(id),
+  changed_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-### 7.2 My Activity Page (MyActivity.tsx)
-**Current State:** Well-structured with tabs and pull-to-refresh
+-- RLS Policies
+ALTER TABLE supply_request_status_history ENABLE ROW LEVEL SECURITY;
 
-**Issues:**
-- Stats grid (4 columns) cramped on mobile
-- Tab labels could overflow
+-- Users can view history of their own requests
+CREATE POLICY "Users can view own request history"
+ON supply_request_status_history FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM supply_requests sr 
+    WHERE sr.id = request_id AND sr.requester_id = auth.uid()
+  )
+);
 
-**Proposed Changes:**
-- Change stats to 2x2 grid on mobile
-- Use icon-only tabs on xs screens
-- Add swipe between tabs gesture
-
-### 7.3 Empty States
-**Audit Needed:** Many pages have text-only empty states
-
-**Standardize:**
-- Centered illustration + message + CTA pattern
-- Mobile-appropriate illustration sizes
-- Consistent spacing
-
----
-
-## Part 8: Accessibility & iOS Compatibility
-
-### 8.1 Current iOS Support (ios-compatibility.css)
-**Comprehensive coverage for:**
-- Safe area insets
-- Input zoom prevention
-- Touch improvements
-- Standalone mode
-- Scroll behavior
-
-### 8.2 Missing Accessibility Features
-**Add:**
-- `aria-label` on icon-only buttons (partial coverage)
-- Screen reader announcements for loading states
-- Focus management in modals
-- Reduced motion support
-
-### 8.3 Dark Mode Mobile Issues
-**Current:** Global dark mode support exists
-
-**Issues:**
-- Some component-specific colors don't adapt (e.g., alert banners)
-- Warning/pickup banners use hardcoded colors
+-- Authenticated users can insert history
+CREATE POLICY "Auth users can insert history"
+ON supply_request_status_history FOR INSERT
+WITH CHECK (auth.uid() IS NOT NULL);
+```
 
 ---
 
-## Implementation Roadmap
+### Phase 3: Fix Inventory Adjustment Function
 
-### Phase 1: Critical Fixes (Week 1)
-1. Standardize `useIsMobile` hook usage across all files
-2. Fix touch target sizes on critical action buttons
-3. Add safe area utilities to Tailwind config
-4. Fix bottom tab bar for xs screens
+**Database Migration**:
 
-### Phase 2: Dashboard Optimization (Week 2)
-1. Optimize RoleDashboard for all roles on mobile
-2. Create mobile-specific Court Aide task interface
-3. Enhance Admin dashboard stats grid
-4. Add missing pull-to-refresh where needed
+```sql
+CREATE OR REPLACE FUNCTION adjust_inventory_quantity(
+  p_item_id UUID,
+  p_quantity_change INTEGER,
+  p_transaction_type TEXT,
+  p_reference_id UUID DEFAULT NULL,
+  p_notes TEXT DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_prev_qty INTEGER;
+  v_new_qty INTEGER;
+BEGIN
+  -- Get current quantity
+  SELECT quantity INTO v_prev_qty 
+  FROM inventory_items 
+  WHERE id = p_item_id;
 
-### Phase 3: Forms & Inputs (Week 3)
-1. Migrate all forms to MobileInput/MobileTextarea
-2. Add keyboard-avoiding behavior
-3. Implement GPS location picker for issues
-4. Optimize QuickSupplyRequest for mobile
+  v_new_qty := v_prev_qty + p_quantity_change;
 
-### Phase 4: Animations & Polish (Week 4)
-1. Standardize animation patterns
-2. Add swipe-to-reveal to more components
-3. Implement tab switch transitions
-4. Add stagger animations to lists
+  -- Update inventory
+  UPDATE inventory_items
+  SET quantity = v_new_qty, updated_at = NOW()
+  WHERE id = p_item_id;
 
-### Phase 5: Accessibility & Testing (Week 5)
-1. Complete accessibility audit
-2. Add missing ARIA labels
-3. Test with VoiceOver/TalkBack
-4. Address reduced motion preferences
+  -- Record transaction with correct column names
+  INSERT INTO inventory_item_transactions (
+    item_id,
+    transaction_type,
+    quantity,
+    previous_quantity,
+    new_quantity,
+    performed_by,
+    notes
+  ) VALUES (
+    p_item_id,
+    p_transaction_type,
+    ABS(p_quantity_change),
+    v_prev_qty,
+    v_new_qty,
+    auth.uid(),
+    COALESCE(p_notes, 'Inventory adjustment')
+  );
+END;
+$$;
+```
 
 ---
 
-## Summary of Files to Modify
+### Phase 4: Add Court Aide History View
 
-| Category | File Count | Priority |
-|----------|------------|----------|
-| Hook Standardization | 9 files | High |
-| Touch Targets | 15+ files | High |
-| Dashboard Layouts | 5 files | Medium |
-| Form Optimization | 12+ files | Medium |
-| Animation Consistency | 20+ files | Low |
-| Accessibility | 30+ files | Medium |
+**File**: `src/components/court-aide/TaskWorkQueue.tsx`
 
-**Total Estimated Changes:** 90+ file modifications across the codebase
+Add a third tab "Completed" that fetches tasks with status `completed` claimed by the current user:
+
+```typescript
+// Add new hook call
+const { tasks: completedTasks, isLoading: completedLoading } = useStaffTasks({
+  onlyMyTasks: true,
+  status: 'completed',
+});
+
+// Add third tab
+<TabsTrigger value="completed" className="flex items-center gap-2">
+  <CheckCircle className="h-4 w-4" />
+  Completed
+  {completedTasks.length > 0 && (
+    <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+      {completedTasks.length}
+    </Badge>
+  )}
+</TabsTrigger>
+```
 
 ---
 
-## Technical Debt Notes
+### Phase 5: Improve Error Handling
 
-1. **ModuleCards.tsx** returns null - either implement or remove
-2. **MobileRequestForm.tsx** voice recording UI exists but not functional
-3. Some type casts like `(profile as any)` should be properly typed
-4. Unused imports in several mobile components
+**File**: `src/hooks/useOrderCart.ts`
+
+Ensure errors from the service are properly caught and displayed:
+
+```typescript
+catch (error: any) {
+  const message = error?.message || 'Failed to submit order';
+  toast({
+    title: 'Submission Failed',
+    description: message.includes('row-level security') 
+      ? 'Permission error. Please try logging in again.'
+      : message,
+    variant: 'destructive',
+  });
+  throw error;
+}
+```
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/services/supplyOrdersService.ts` | Add `requester_id`, fix history insert, improve error handling |
+| Database | Create `supply_request_status_history` table |
+| Database | Fix `adjust_inventory_quantity` function |
+| `src/components/court-aide/TaskWorkQueue.tsx` | Add "Completed" tab for history |
+| `src/hooks/useOrderCart.ts` | Improve error messaging |
+
+---
+
+## Expected Outcome
+
+After implementation:
+1. Supply requests will submit successfully
+2. Users will see proper error messages if something fails
+3. Status changes will be tracked in history
+4. Inventory will be deducted correctly when orders are fulfilled
+5. Court Aides can view their completed work history
