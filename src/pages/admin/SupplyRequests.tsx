@@ -187,6 +187,8 @@ export default function AdminSupplyRequests() {
     switch (status) {
       case 'pending':
         return ['review', 'approve', 'reject'];
+      case 'pending_approval':
+        return ['approve', 'reject'];
       case 'under_review':
         return ['approve', 'reject'];
       case 'approved':
@@ -272,6 +274,57 @@ export default function AdminSupplyRequests() {
           </Select>
         </div>
       </PageHeader>
+
+      {/* Pending Approvals Section - Prominently displayed at top */}
+      {!isLoading && filteredRequests.filter(r => r.status === 'pending_approval').length > 0 && filterStatus === 'all' && (
+        <Card className="border-orange-500/50 bg-orange-500/5 mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+              <AlertTriangle className="h-5 w-5" />
+              Pending Approvals ({filteredRequests.filter(r => r.status === 'pending_approval').length})
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              These requests contain restricted items (e.g., Furniture, Chairs) and require your approval before fulfillment.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {filteredRequests.filter(r => r.status === 'pending_approval').map((request) => (
+              <div 
+                key={`pending-${request.id}`} 
+                className="flex items-center justify-between p-3 bg-background border rounded-lg"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{request.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {request.profiles?.first_name} {request.profiles?.last_name} • {request.supply_request_items?.length || 0} items
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {request.justification?.slice(0, 100)}{request.justification?.length > 100 ? '...' : ''}
+                  </p>
+                </div>
+                <div className="flex gap-2 ml-3">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => openActionDialog(request, 'approve')}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => openActionDialog(request, 'reject')}
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
@@ -408,13 +461,13 @@ export default function AdminSupplyRequests() {
                       {request.approval_notes && (
                         <div>
                           <p className="font-medium text-sm text-muted-foreground mb-1">Approval Notes</p>
-                          <p className="text-sm bg-green-50 p-2 rounded">{request.approval_notes}</p>
+                          <p className="text-sm bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-100 p-2 rounded">{request.approval_notes}</p>
                         </div>
                       )}
                       {request.fulfillment_notes && (
                         <div>
                           <p className="font-medium text-sm text-muted-foreground mb-1">Fulfillment Notes</p>
-                          <p className="text-sm bg-blue-50 p-2 rounded">{request.fulfillment_notes}</p>
+                          <p className="text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 rounded">{request.fulfillment_notes}</p>
                         </div>
                       )}
                     </div>

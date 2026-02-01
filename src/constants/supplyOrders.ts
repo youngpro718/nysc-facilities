@@ -1,16 +1,20 @@
 // Unified supply orders constants and approval rules
 
 export type OrderStatus =
-  | 'submitted'    // User submitted order
-  | 'received'     // Supply room accepted order
-  | 'picking'      // Worker is pulling items from shelves
-  | 'ready'        // Packed and ready for pickup (inventory deducted)
-  | 'completed'    // User received order
-  | 'cancelled'    // Order cancelled
-  | 'rejected';    // Order rejected
+  | 'submitted'        // User submitted order (standard items)
+  | 'pending_approval' // Awaiting admin approval (restricted items)
+  | 'approved'         // Admin approved, ready for supply room
+  | 'received'         // Supply room accepted order
+  | 'picking'          // Worker is pulling items from shelves
+  | 'ready'            // Packed and ready for pickup (inventory deducted)
+  | 'completed'        // User received order
+  | 'cancelled'        // Order cancelled
+  | 'rejected';        // Order rejected
 
 export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   submitted: ['received', 'cancelled', 'rejected'],
+  pending_approval: ['approved', 'rejected'],
+  approved: ['received', 'cancelled'],
   received: ['picking', 'cancelled', 'rejected'],
   picking: ['ready', 'cancelled'],
   ready: ['completed', 'cancelled'],

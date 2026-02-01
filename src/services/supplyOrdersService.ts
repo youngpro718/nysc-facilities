@@ -52,7 +52,7 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     priority: payload.priority,
     requested_delivery_date: payload.requested_delivery_date || null,
     delivery_location: payload.delivery_location || '',
-    status: 'submitted',
+    status: approvalRequired ? 'pending_approval' : 'submitted',
     approval_notes: approvalRequired ? 'approval_required:auto' : null,
   };
 
