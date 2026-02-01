@@ -10,12 +10,14 @@ import { FavoritesStrip } from './FavoritesStrip';
 import { OrderSummaryFooter } from './OrderSummaryFooter';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const ALLOWED_CATEGORIES = ['Office Supplies', 'Furniture'];
 
 export function QuickSupplyRequest() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const isMobile = useIsMobile();
 
   const { data: inventoryItems = [], isLoading } = useInventoryItems();
   const { isFavorite, toggleFavorite } = useFavoriteItems();
@@ -90,9 +92,9 @@ export function QuickSupplyRequest() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-x-hidden">
       {/* Search Bar */}
-      <div className="sticky top-0 z-10 bg-background pb-4 space-y-4">
+      <div className="sticky top-0 z-10 bg-background pb-3 space-y-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -125,7 +127,7 @@ export function QuickSupplyRequest() {
       </div>
 
       {/* Items List */}
-      <ScrollArea className="flex-1 -mx-4 px-4">
+      <ScrollArea className={isMobile ? "flex-1 -mx-2 px-2" : "flex-1 -mx-4 px-4"}>
         <div className="space-y-2 pb-32">
           {isLoading ? (
             // Loading skeletons

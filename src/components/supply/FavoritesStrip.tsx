@@ -5,6 +5,7 @@ import { Star, Plus, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFavoriteItems } from '@/hooks/useFavoriteItems';
 import { useInventoryItems } from '@/hooks/useInventoryItems';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { CartItem } from '@/hooks/useOrderCart';
 
 interface FavoritesStripProps {
@@ -22,6 +23,7 @@ export function FavoritesStrip({
 }: FavoritesStripProps) {
   const { favorites, isLoading: favoritesLoading } = useFavoriteItems();
   const { data: inventoryItems = [], isLoading: itemsLoading } = useInventoryItems();
+  const isMobile = useIsMobile();
 
   // Get favorite items with their full details
   const favoriteItems = favorites
@@ -58,7 +60,8 @@ export function FavoritesStrip({
               <div
                 key={item.id}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-lg border min-w-[100px] transition-all",
+                  "flex flex-col items-center gap-1 p-2 rounded-lg border transition-all",
+                  isMobile ? "min-w-[110px]" : "min-w-[100px]",
                   inCart
                     ? "bg-primary/10 border-primary/30"
                     : "bg-card hover:bg-accent/50"
@@ -73,10 +76,13 @@ export function FavoritesStrip({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 rounded-full"
+                      className={cn(
+                        "rounded-full touch-manipulation",
+                        isMobile ? "h-9 w-9" : "h-7 w-7"
+                      )}
                       onClick={() => onDecrement(item)}
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className={isMobile ? "h-4 w-4" : "h-3 w-3"} />
                     </Button>
                     <Badge variant="secondary" className="min-w-[24px] justify-center">
                       {quantity}
@@ -84,20 +90,26 @@ export function FavoritesStrip({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 rounded-full"
+                      className={cn(
+                        "rounded-full touch-manipulation",
+                        isMobile ? "h-9 w-9" : "h-7 w-7"
+                      )}
                       onClick={() => onIncrement(item)}
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className={isMobile ? "h-4 w-4" : "h-3 w-3"} />
                     </Button>
                   </div>
                 ) : (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs"
+                    className={cn(
+                      "text-xs touch-manipulation",
+                      isMobile ? "h-9 px-3" : "h-7"
+                    )}
                     onClick={() => onAdd(item)}
                   >
-                    <Plus className="h-3 w-3 mr-1" />
+                    <Plus className={isMobile ? "h-4 w-4 mr-1" : "h-3 w-3 mr-1"} />
                     Add
                   </Button>
                 )}
