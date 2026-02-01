@@ -186,11 +186,11 @@ submitted → pending_approval → approved → received → picking → ready �
 
 ## Implementation Phases
 
-### Phase 1: Critical Fixes (Immediate)
-1. Fix approval notes color for dark mode
-2. Update supplyOrdersService to route restricted items to `pending_approval`
-3. Update admin page to show pending approvals prominently
-4. Add approve/reject functionality that works correctly
+### Phase 1: Critical Fixes (Immediate) ✅ COMPLETED
+1. ✅ Fix approval notes color for dark mode
+2. ✅ Update supplyOrdersService to route restricted items to `pending_approval`
+3. ✅ Update admin page to show pending approvals prominently
+4. ✅ Add approve/reject functionality that works correctly
 
 ### Phase 2: Speed Optimization
 1. Add inline justification to footer (not hidden in sheet)
