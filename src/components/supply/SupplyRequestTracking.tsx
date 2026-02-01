@@ -4,12 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Package, CheckCircle2, XCircle, AlertCircle, Clock, Inbox, User, Gift, UserCheck } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, Package, CheckCircle2, XCircle, AlertCircle, Clock, Inbox, User, Gift, UserCheck, ChevronDown, History } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ReceiveCompleteDialog } from './ReceiveCompleteDialog';
 import { PickingInterface } from './PickingInterface';
 import { InventoryPreviewCard } from './InventoryPreviewCard';
 import { SupplyRequestActions } from './SupplyRequestActions';
+import { StatusHistoryTimeline } from './StatusHistoryTimeline';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -148,10 +150,13 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
   };
 
   // Filter requests by status
-  const newOrders = requests.filter((r: any) => r.status === 'submitted') || [];
+  const pendingApprovalOrders = requests.filter((r: any) => r.status === 'pending_approval') || [];
+  const approvedOrders = requests.filter((r: any) => r.status === 'approved') || [];
+  const newOrders = requests.filter((r: any) => ['submitted', 'approved'].includes(r.status)) || [];
   const activeOrders = requests.filter((r: any) => ['received', 'picking'].includes(r.status)) || [];
   const readyOrders = requests.filter((r: any) => r.status === 'ready') || [];
   const completedRequests = requests.filter((r: any) => r.status === 'completed') || [];
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
 
   const handleAcceptOrder = async (request: any) => {
     try {
@@ -299,6 +304,23 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
             <div className="text-sm text-muted-foreground">
               Submitted {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
             </div>
+
+            {/* Status History Toggle */}
+            <Collapsible 
+              open={expandedHistoryId === request.id} 
+              onOpenChange={(open) => setExpandedHistoryId(open ? request.id : null)}
+            >
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                  <History className="h-4 w-4" />
+                  View Status History
+                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedHistoryId === request.id ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3">
+                <StatusHistoryTimeline requestId={request.id} />
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
           {isSupplyStaff && showActions && (
@@ -444,26 +466,134 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
             </TabsContent>
           </Tabs>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                My Supply Requests
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {requests.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                  <p>No supply requests</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {requests.map((request: any) => renderOrderCard(request, false))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          /* Requester View with tabs for better organization */
+          <Tabs defaultValue="active" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="active" className="relative">
+                <Package className="h-4 w-4 mr-2" />
+                Active
+                {(activeOrders.length + readyOrders.length) > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1">
+                    {activeOrders.length + readyOrders.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="relative">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Awaiting Approval
+                {pendingApprovalOrders.length > 0 && (
+                  <Badge variant="destructive" className="ml-2 h-5 min-w-5 px-1">
+                    {pendingApprovalOrders.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="ready">
+                <Gift className="h-4 w-4 mr-2" />
+                Ready
+                {readyOrders.length > 0 && (
+                  <Badge variant="default" className="ml-2 h-5 min-w-5 px-1">
+                    {readyOrders.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="history">
+                <History className="h-4 w-4 mr-2" />
+                History
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="active" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Active Orders</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(activeOrders.length === 0 && requests.filter(r => r.status === 'submitted').length === 0) ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>No active orders</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {[...requests.filter(r => r.status === 'submitted'), ...activeOrders].map((request: any) => renderOrderCard(request, false))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="pending" className="space-y-4">
+              <Card className="border-orange-500/30 bg-orange-500/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                    <AlertCircle className="h-5 w-5" />
+                    Awaiting Approval
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    These orders contain restricted items and are waiting for admin approval.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {pendingApprovalOrders.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle2 className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>No orders awaiting approval</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {pendingApprovalOrders.map((request: any) => renderOrderCard(request, false))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="ready" className="space-y-4">
+              <Card className="border-green-500/30 bg-green-500/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                    <Gift className="h-5 w-5" />
+                    Ready for Pickup
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {readyOrders.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Gift className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>No orders ready for pickup</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {readyOrders.map((request: any) => renderOrderCard(request, false))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="history" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <History className="h-5 w-5" />
+                    Order History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {completedRequests.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <History className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p>No completed orders yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {completedRequests.map((request: any) => renderOrderCard(request, false))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         )}
 
         {/* Completed Orders (Collapsible) */}

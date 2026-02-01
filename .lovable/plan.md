@@ -197,10 +197,10 @@ submitted → pending_approval → approved → received → picking → ready �
 2. ✅ Add quick submit button for non-restricted orders
 3. ✅ Pre-select delivery location from room assignments (not just profile metadata)
 
-### Phase 3: Polish
-1. Add user notifications when approval is needed/completed
-2. Add status history display for transparency
-3. Add "track my order" view for requesters
+### Phase 3: Polish ✅ COMPLETED
+1. ✅ Add user notifications when approval is needed/completed (DB trigger created)
+2. ✅ Add status history display for transparency (StatusHistoryTimeline component)
+3. ✅ Add "track my order" view for requesters (tabs with Awaiting Approval, Ready, History)
 
 ---
 
