@@ -1,37 +1,94 @@
-# Access & Assignments FK Constraint Fix - COMPLETED
 
-## Summary
+# Fix Room Assignments Display Issue
 
-The foreign key constraint issue on `occupant_room_assignments` has been fully resolved. The system now correctly uses:
-- `profile_id` for registered users (from `profiles` table)
-- `personnel_profile_id` for non-user staff (from `personnel_profiles` table)
-- `occupant_id` for legacy occupants (backwards compatible)
+## Problem Summary
 
-## Changes Made
+Room assignments are successfully saved to the database (using `profile_id`), but the "Report an Issue" wizard and other features still show "No assigned room yet" because they use an outdated hook that queries by `occupant_id`.
 
-### Database
-- Updated `personnel_access_view` to count room/key assignments using the correct columns
-- Added performance indexes on `profile_id` and `personnel_profile_id` columns
+## Root Cause
 
-### Code Updates
+There are **two different hooks** with the same name in different locations:
 
-| File | Changes |
-|------|---------|
-| `useRoomAssignment.ts` | Accepts `source_type`, uses correct ID column based on person type |
-| `useOccupantAssignments.ts` | Accepts `sourceType` parameter, queries correct column |
-| `PersonnelQuickAssignDialog.tsx` | Passes `source_type` from person, uses correct column for all operations |
-| `CreateAssignmentDialog.tsx` | Uses `personnel_access_view`, inserts with correct ID column |
-| `AssignRoomBulkDialog.tsx` | Uses `personnel_access_view`, inserts with correct ID column |
-| `useRoomAssignmentsList.ts` | Fetches and joins data from all three ID columns |
-| `MyRoomCard.tsx` | Passes `'profile'` as source type for user room lookup |
+| Hook Location | Used By | Current Behavior |
+|---------------|---------|------------------|
+| `src/hooks/occupants/useOccupantAssignments.ts` | SimpleReportWizard, QuickIssueReportButton, MyIssues, MyActivity, SetupRequestForm | Looks up assignments by `occupant_id` (returns empty for profile users) |
+| `src/components/occupants/hooks/useOccupantAssignments.ts` | MyRoomSection, MyRoomCard | Updated to use `profile_id` (works correctly) |
 
-## How It Works Now
+The first hook has complex legacy logic that:
+1. Tries to find an occupant by direct ID match in `occupants` table
+2. Falls back to email-based lookup
+3. Then queries `occupant_room_assignments.occupant_id`
 
-1. **Assigning a Room**: When a user selects a person from the Access & Assignments page, the system checks `source_type`:
-   - `'profile'` → inserts with `profile_id`
-   - `'personnel_profile'` → inserts with `personnel_profile_id`
-   - `'occupant'` → inserts with `occupant_id` (legacy)
+Since regular users don't exist in the legacy `occupants` table, and assignments now use `profile_id`, this returns nothing.
 
-2. **Querying Assignments**: All queries now check the correct column based on person type.
+## Solution
 
-3. **View Counts**: The `personnel_access_view` now shows accurate room/key counts.
+Update `src/hooks/occupants/useOccupantAssignments.ts` to:
+1. Query `occupant_room_assignments` by `profile_id` for authenticated users (primary)
+2. Keep fallback to legacy `occupant_id` lookup for backward compatibility
+3. Query `key_assignments` by `profile_id` as well
+
+## Files to Update
+
+| File | Change |
+|------|--------|
+| `src/hooks/occupants/useOccupantAssignments.ts` | Rewrite to query by `profile_id` first, then fallback to legacy occupant lookup |
+
+## Technical Implementation
+
+```typescript
+// Updated logic for useOccupantAssignments
+export const useOccupantAssignments = (authUserId: string) => {
+  return useQuery<OccupantAssignments>({
+    queryKey: ['occupantAssignments', authUserId],
+    queryFn: async () => {
+      if (!authUserId) throw new Error('No user ID provided');
+
+      // STRATEGY: Query directly by profile_id first (new assignments)
+      // Then fallback to legacy occupant_id lookup for backward compatibility
+      
+      // 1. Try profile_id first (for users with auth accounts)
+      const { data: profileRoomAssignments, error: profileRoomError } = await supabase
+        .from('occupant_room_assignments')
+        .select(`...full query...`)
+        .eq('profile_id', authUserId);
+
+      // 2. Try profile_id for key assignments  
+      const { data: profileKeyAssignments } = await supabase
+        .from('key_assignments')
+        .select(`...`)
+        .eq('profile_id', authUserId)
+        .is('returned_at', null);
+
+      // 3. If profile_id query found results, use those
+      if (profileRoomAssignments?.length > 0 || profileKeyAssignments?.length > 0) {
+        return formatAssignments(profileRoomAssignments, profileKeyAssignments);
+      }
+
+      // 4. Fallback: Legacy occupant_id lookup for backward compatibility
+      const occupantId = await resolveOccupantId(authUserId);
+      if (occupantId) {
+        // Query by occupant_id...
+      }
+
+      return emptyResult;
+    }
+  });
+};
+```
+
+## Expected Results After Fix
+
+- Settings page "My Room" section shows assigned room (already works via updated hook)
+- "Report an Issue" wizard shows assigned rooms for selection
+- MyIssues and MyActivity pages can access room data
+- QuickIssueReportButton shows room options
+- SetupRequestForm can pre-select user's rooms
+
+## Components That Will Start Working
+
+1. **SimpleReportWizard** - Will show room selection instead of "No assigned room yet"
+2. **QuickIssueReportButton** - Will pass correct room data to wizard
+3. **MyIssues page** - Room context will be available
+4. **MyActivity page** - Room assignments accessible
+5. **SetupRequestForm** - Room dropdown will populate
