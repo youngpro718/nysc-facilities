@@ -40,6 +40,10 @@ export function SimpleOrderCard({
   const isReady = order.status === 'ready';
   const isCompleted = order.status === 'completed';
 
+  // Check if order needs admin approval
+  const needsApproval = order.status === 'pending_approval' || 
+    order.justification?.includes('[APPROVAL REQUIRED]');
+
   // Determine priority badge
   const getPriorityBadge = () => {
     switch (order.priority) {
@@ -54,6 +58,9 @@ export function SimpleOrderCard({
 
   // Status badge
   const getStatusBadge = () => {
+    if (needsApproval && !isCompleted) {
+      return <Badge variant="outline" className="border-orange-500 text-orange-600 bg-orange-50"><AlertTriangle className="h-3 w-3 mr-1" />Needs Approval</Badge>;
+    }
     if (isCompleted) {
       return <Badge className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
     }
@@ -62,6 +69,15 @@ export function SimpleOrderCard({
         return <Badge className="bg-blue-600"><Truck className="h-3 w-3 mr-1" />For Delivery</Badge>;
       }
       return <Badge variant="secondary"><Package className="h-3 w-3 mr-1" />Ready for Pickup</Badge>;
+    }
+    if (order.status === 'picking') {
+      return <Badge variant="outline" className="border-blue-500 text-blue-600">Picking</Badge>;
+    }
+    if (order.status === 'received') {
+      return <Badge variant="outline" className="border-purple-500 text-purple-600">Received</Badge>;
+    }
+    if (order.status === 'submitted') {
+      return <Badge variant="outline" className="border-blue-400 text-blue-500">New</Badge>;
     }
     if (isPartialFulfillment) {
       return <Badge variant="outline" className="border-yellow-500 text-yellow-600">Partial</Badge>;

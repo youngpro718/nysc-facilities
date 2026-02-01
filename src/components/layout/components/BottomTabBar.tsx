@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { NavigationTab } from "../types";
 import { useAuth } from "@/hooks/useAuth";
 import { MoreHorizontal } from "lucide-react";
+import { useSupplyPendingCounts } from "@/hooks/useSupplyPendingCounts";
+import { Badge } from "@/components/ui/badge";
 
 interface BottomTabBarProps {
   navigation: NavigationTab[];
@@ -14,10 +16,33 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const { data: supplyCounts } = useSupplyPendingCounts();
 
   const items = navigation.filter((i) => (i as any).title) as Array<{ title: string; icon: any }>;
   const primary = items.slice(0, 4);
   const hasMore = items.length > 4;
+
+  // Get badge count for navigation items
+  const getBadgeCount = (title: string): number => {
+    if (!supplyCounts) return 0;
+    
+    // Admin sees pending approvals on Supply Requests
+    if (title === 'Supply Requests' && isAdmin) {
+      return supplyCounts.pendingApprovals;
+    }
+    
+    // Court Aides see pending orders on Supply Room
+    if (title === 'Supply Room') {
+      return supplyCounts.pendingOrders;
+    }
+    
+    // Show Tasks badge for supply staff with pending orders
+    if (title === 'Tasks') {
+      return supplyCounts.pendingOrders;
+    }
+    
+    return 0;
+  };
 
   const handleNav = (title: string) => {
     const path = getNavigationPath(title, isAdmin);
@@ -39,12 +64,14 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
             const Icon = item.icon;
             const path = getNavigationPath(item.title, isAdmin);
             const isActive = path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+            const badgeCount = getBadgeCount(item.title);
+            
             return (
               <button
                 key={item.title}
                 onClick={() => handleNav(item.title)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-2 min-h-[56px] touch-target touch-manipulation",
+                  "relative flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-2 min-h-[56px] touch-target touch-manipulation",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   "active:scale-95 transition-transform duration-100",
                   isActive 
@@ -55,10 +82,18 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                 aria-label={item.title}
               >
                 <div className={cn(
-                  "p-1 rounded-lg transition-colors",
+                  "relative p-1 rounded-lg transition-colors",
                   isActive && "bg-primary/10"
                 )}>
                   <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} aria-hidden="true" />
+                  {badgeCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-2 h-4 min-w-[16px] px-1 text-[10px] font-bold"
+                    >
+                      {badgeCount > 99 ? '99+' : badgeCount}
+                    </Badge>
+                  )}
                 </div>
                 <span className={cn(
                   "text-[10px] xs:text-[11px] leading-none font-medium truncate max-w-full",

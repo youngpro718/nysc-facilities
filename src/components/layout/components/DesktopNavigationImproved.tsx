@@ -6,6 +6,8 @@ import { NavigationTab } from "../types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { useSupplyPendingCounts } from "@/hooks/useSupplyPendingCounts";
+import { Badge } from "@/components/ui/badge";
 
 interface DesktopNavigationImprovedProps {
   navigation: NavigationTab[];
@@ -20,6 +22,7 @@ export const DesktopNavigationImproved = ({
   const location = useLocation();
   const { isAdmin, user } = useAuth();
   const { data: adminNotifications = [] } = useAdminNotifications();
+  const { data: supplyCounts } = useSupplyPendingCounts();
   // Real-time notifications are set up at app level via useConditionalNotifications
   // Use a simple "last seen" timestamp to compute new notifications
   const [lastSeenAt, setLastSeenAt] = React.useState<string>(() => {
@@ -48,6 +51,28 @@ export const DesktopNavigationImproved = ({
     }
   };
 
+  // Get badge count for navigation items
+  const getBadgeCount = (title: string): number => {
+    if (!supplyCounts) return 0;
+    
+    // Admin sees pending approvals on Supply Requests
+    if (title === 'Supply Requests' && isAdmin) {
+      return supplyCounts.pendingApprovals;
+    }
+    
+    // Court Aides see pending orders on Supply Room
+    if (title === 'Supply Room') {
+      return supplyCounts.pendingOrders;
+    }
+    
+    // Show Tasks badge for supply staff with pending orders
+    if (title === 'Tasks') {
+      return supplyCounts.pendingOrders;
+    }
+    
+    return 0;
+  };
+
   return (
     <TooltipProvider>
       <nav className="hidden md:flex items-center gap-2">
@@ -66,6 +91,7 @@ export const DesktopNavigationImproved = ({
           const Icon = navItem.icon;
           const path = getNavigationPath(navItem.title, isAdmin);
           const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+          const badgeCount = getBadgeCount(navItem.title);
           
           return (
             <Tooltip key={navItem.title}>
@@ -73,7 +99,7 @@ export const DesktopNavigationImproved = ({
                 <button
                   onClick={() => handleNavigation(navItem.title)}
                   className={cn(
-                    "group flex items-center gap-1 px-2 h-10 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                    "group relative flex items-center gap-1 px-2 h-10 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -92,6 +118,17 @@ export const DesktopNavigationImproved = ({
                   >
                     {navItem.title}
                   </span>
+                  {badgeCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className={cn(
+                        "absolute -top-1 -right-1 h-5 min-w-[20px] px-1.5 text-xs font-bold",
+                        isActive && "bg-white text-primary"
+                      )}
+                    >
+                      {badgeCount > 99 ? '99+' : badgeCount}
+                    </Badge>
+                  )}
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-sm">
