@@ -1,216 +1,173 @@
 
-Goal: make the Standard User experience consistent and fast everywhere (“Report Issue” always opens the 2‑step Simple Report flow), always shows already-assigned rooms when they exist, and gracefully handles “no room assigned yet” with a clear “sign up/request assignment” prompt (without routing users to the public /forms pages that say “You’re already logged in”).
+# Complete User Flow Audit & Fix Plan
 
-## 1) In-depth audit (what’s happening today)
+## What I Found
 
-### A. Entry points that a Standard user uses (and what they do right now)
-
-1) **Standard Dashboard (/dashboard)**
-- Uses `QuickIssueReportButton` → opens `ResponsiveDialog` → `SimpleReportWizard`.
-- This is the correct direction, but users still report:
-  - “It looks like the same steps”
-  - “Doesn’t show already assigned rooms”
-
-2) **My Issues (/my-issues)**
-- Desktop: opens `SimpleReportWizard` in `ResponsiveDialog`.
-- Mobile: **does NOT use SimpleReportWizard**; it uses `MobileRequestForm` (`type="issue_report"`) which is a **4-step UI** and (critically) does not actually insert into `issues` at all (it just calls `onSubmit(formData)`).
-- Result: on mobile it still feels like the old multi-step flow, and can also silently fail to create a real issue.
-
-3) **My Activity (/my-activity)**
-- In the “Issues” tab, the “Report Issue” button navigates to **`/forms/issue-report`**.
-- `/forms/issue-report` is a “public form page” and for logged-in users it shows **“You’re already logged in!”**
-- Result: user perceives routing is broken / inconsistent.
-
-4) **New Request Hub (/request)**
-- The “Report Issue” card navigates to **`/forms/issue-report`** (same problem as above).
-- The “Request Key” card navigates to **`/forms/key-request`** (same “You’re already logged in!” behavior).
-- Result: “New Request pops up old page” and “already logged in” messages.
-
-### B. Why “assigned rooms” aren’t reliably showing
-
-There are multiple contributing issues:
-
-1) **`SimpleReportWizard` primary-room auto-select logic is wrong for your real data**
-- It currently does:
-  - `assignedRooms.find(r => r.assignment_type === 'primary')`
-- But in your database `occupant_room_assignments.assignment_type` is constrained to:
-  - `primary_office`, `work_location`, `support_space`
-- Also the table has a separate boolean `is_primary`.
-- So the wizard’s “auto-select primary room” can fail and selection UX can feel broken.
-
-2) **Occupant ID vs Auth User ID mismatch**
-- `useOccupantAssignments` is called with `user.id`, and queries:
-  - `.eq('occupant_id', occupantId)`
-- But `occupant_room_assignments.occupant_id` references the `occupants` table (not `profiles`), and in your RLS you already have patterns that map “my occupant record” by **email**.
-- For some users, their `occupants.id` may not equal `auth.uid()`. In that case:
-  - they can have room assignments in the system, but the query using `occupant_id = auth.uid()` returns empty.
-- That’s consistent with: “I have a room but it doesn’t show.”
-
-3) **The “no room assigned” path isn’t implemented in the Simple wizard**
-- `SimpleReportWizard` has a `useDifferentRoom` state but no UI to toggle it.
-- If `assignedRooms` is empty, the current wizard effectively blocks progress (and doesn’t present the “sign up / request assignment” guidance you want).
-
-### C. Why it still “looks like the old steps”
-Even if Dashboard is using `SimpleReportWizard`, users are still frequently routed into older multi-step flows because:
-- `MyActivity` and `RequestHub` still route into `/forms/*`
-- `MyIssues` on mobile uses `MobileRequestForm` which is multi-step and not wired to insert issues
-
-So the overall journey feels inconsistent even if one entry point was updated.
+I traced through every entry point a standard user can access and identified **5 key issues** that are causing the inconsistent experience.
 
 ---
 
-## 2) Implementation strategy (what we’ll change)
+## Issue 1: `/request/help` is a Separate Page (Not a Wizard)
 
-### Principle: one canonical “Standard user issue-report flow”
-- Standard user should always get `SimpleReportWizard` (Drawer on mobile, Dialog on desktop).
-- No authenticated UI route should navigate to `/forms/issue-report` anymore.
-- `/forms/*` remains for anonymous / QR / public use only.
+**Current Behavior:**
+- UserDashboard "Request Help" button → navigates to `/request/help`
+- RequestHub "Request Help" card → navigates to `/request/help`  
+- SimpleReportWizard "Request Room Assignment" CTA → navigates to `/request/help`
 
----
+**The Problem:**
+`/request/help` is the `HelpRequestPage.tsx` - a full-page 2-step form for creating staff tasks (move furniture, deliveries, etc.). This is working correctly and is a **different feature** from issue reporting.
 
-## 3) Concrete code changes (files + what will change)
-
-### (1) Fix assigned-room fetching so it works for all users
-**Target file:**
-- `src/hooks/occupants/useOccupantAssignments.ts`
-
-**Changes:**
-- Add a “resolve occupant id” step inside the hook:
-  1) Try to find an `occupants` row where `id = authUserId` (works for your current admin sample)
-  2) If not found, fetch the user’s email (from `profiles` or from `useAuth()`’s `user.email`) and look up `occupants.id` by `occupants.email = myEmail`
-  3) Use the resolved `occupantId` to query:
-     - `occupant_room_assignments`
-     - `key_assignments`
-- Keep the return shape (`roomAssignments`, `keyAssignments`, `primaryRoom`, `storageAssignments`) so existing UI doesn’t break.
-
-**Outcome:**
-- Users with assignments linked to an `occupants` record by email will now see their assigned rooms.
-
-### (2) Make `SimpleReportWizard` correctly recognize “primary” and handle “no rooms yet”
-**Target file:**
-- `src/components/issues/wizard/SimpleReportWizard.tsx`
-
-**Changes:**
-1) Fix primary-room auto-select:
-   - Prefer `is_primary === true`
-   - Fall back to `assignment_type === 'primary_office'`
-   - Else pick first room
-
-2) Ensure inserts are compatible with RLS and querying:
-   - Insert both:
-     - `created_by: user.id`
-     - `reported_by: user.id`
-   - (This prevents subtle policy mismatches and keeps future-proofing.)
-
-3) Add an explicit “No assigned rooms” UX:
-   - When `assignedRooms.length === 0`:
-     - Show a clear card:
-       - “No assigned room yet”
-       - Explanation: “To show your room automatically, please request assignment.”
-     - Provide actions:
-       - Primary CTA: **“Request Room Assignment”**
-         - This will route to an existing supported flow (`/request/help`) and prefill a “general” help request template (or create a staff_task directly—see note below).
-       - Secondary CTA: **“Continue without a room”**
-         - Allow user to proceed by asking for a short “Where is it?” field (one input), saved into `issues.location_description`, with `room_id = null`.
-         - This maintains “fast reporting” even when assignments are missing.
-
-4) Remove/replace the unused `useDifferentRoom` state:
-   - Either implement it fully (manual room browsing) or remove it to reduce dead paths.
-   - Given your “fast + assigned room” goal, we’ll bias toward:
-     - “Request assignment” + “Continue without room” (no heavy manual browsing UI).
-
-### (3) Eliminate the mobile-only old multi-step issue form
-**Target file:**
-- `src/pages/MyIssues.tsx`
-
-**Changes:**
-- Remove the `MobileRequestForm` path for `type="issue_report"`.
-- Always use `ResponsiveDialog + SimpleReportWizard` for both mobile and desktop.
-- Add optional deep-link support:
-  - If URL has `?new=1`, auto-open the dialog.
-
-**Outcome:**
-- On mobile, “Report Issue” is 2 steps, not 4, and actually creates `issues` rows.
-
-### (4) Fix “You’re already logged in!” routing from My Activity
-**Target file:**
-- `src/pages/MyActivity.tsx`
-
-**Changes:**
-- Replace all `navigate('/forms/issue-report')` uses with the in-app issue wizard flow.
-Two options:
-1) Open `SimpleReportWizard` directly from MyActivity using `ResponsiveDialog` + `useOccupantAssignments`
-2) Or navigate to `/my-issues?new=1` (and MyIssues auto-opens wizard)
-
-We will implement option (2) if you prefer minimal UI changes in MyActivity; option (1) if you want the absolute fastest “no navigation” experience.
-
-Given your “fast and consistent” requirement, I recommend **option (1)** (open wizard in-place). It makes MyActivity feel seamless.
-
-### (5) Fix “New Request → old page” from Request Hub
-**Target file:**
-- `src/pages/RequestHub.tsx`
-
-**Changes:**
-- Update the quick action routes:
-  - Report Issue: from `'/forms/issue-report'` → `'/my-issues?new=1'` (or open modal in RequestHub)
-  - Request Key: from `'/forms/key-request'` → `'/my-requests?new=1'` (and MyRequests auto-opens its “New Request” dialog)
-- Keep supplies and help on `/request/supplies` and `/request/help` as-is (those are already correct).
-
-### (6) Add “auto-open new request” support for key requests
-**Target file:**
-- `src/pages/MyRequests.tsx`
-
-**Changes:**
-- Read `?new=1` from URL and auto-open the new request form:
-  - Desktop: `setShowRequestForm(true)`
-  - Mobile: `setShowMobileForm(true)` (key request flow is currently implemented there)
-- Optional: after opening, clean the query param (so refresh doesn’t keep reopening).
+**However**, when `SimpleReportWizard` says "Request Room Assignment" and sends users to `/request/help`, it's confusing because:
+1. Users expect to get a room assigned, not request help moving furniture
+2. This breaks the flow - user has to start over after navigating away
 
 ---
 
-## 4) Acceptance criteria (what “done” looks like)
+## Issue 2: Room Assignment Data Not Reaching Wizard
 
-1) Standard user Dashboard → “Report Issue”:
-- Shows 2-step wizard
-- If user has room assignment, “Your Room” appears with their room(s)
-- If user does not have a room assignment:
-  - Sees “Request Room Assignment”
-  - Can still submit issue with a simple “Where is it?” location input
+**Current Behavior in `useOccupantAssignments.ts`:**
+- Resolves occupant by email matching
+- Returns `roomAssignments` with `room_id`, `room_number`, `building_name`, `floor_name`, etc.
 
-2) My Issues page:
-- Mobile and desktop both use the same 2-step Simple wizard
-- Reporting creates a real row in `public.issues`
+**Current Behavior in `SimpleReportWizard.tsx`:**
+- Receives `assignedRooms` prop
+- Uses helper functions `getRoomId(room)` and `getRoomNumber(room)`
 
-3) My Activity:
-- “Report Issue” no longer routes to `/forms/issue-report`
-- No “You’re already logged in!” message from authenticated flows
+**The Problem:**
+The data shape from `useOccupantAssignments` uses `room_id` as the ID field, and the wizard correctly uses `getRoomId()` which tries `room.room_id || room.id`. This should work.
 
-4) Request Hub:
-- “Report Issue” and “Request Key” no longer route to `/forms/*`
-- No “old page” / public form pages inside authenticated flows
+BUT - let me verify the actual data flow:
+1. `MyIssues.tsx` passes `occupantData?.roomAssignments`
+2. `MyActivity.tsx` passes `occupantData?.roomAssignments`
+3. `QuickIssueReportButton.tsx` passes `occupantData?.roomAssignments`
 
----
-
-## 5) Testing checklist (end-to-end)
-
-Test in Preview with two test accounts:
-- Account A: has an `occupants` record and at least one `occupant_room_assignments` row
-- Account B: no assignments (and ideally no occupant record)
-
-Scenarios:
-1) /dashboard → Report Issue (desktop + mobile)
-2) /my-issues → Report Issue (desktop + mobile)
-3) /my-activity → Issues tab → Report Issue (desktop + mobile)
-4) /request → Report Issue (desktop + mobile)
-5) /request → Request Key → ensure it opens the correct in-app flow (not /forms/key-request)
-6) Submit an issue in each entry point and confirm:
-   - it appears under /my-issues
-   - it appears under dashboard’s issues list (if applicable)
+All three pass the same data. The issue might be that `roomAssignments` is empty because:
+- The user's email doesn't match any `occupants.email` record
+- Or the occupant has no `occupant_room_assignments` rows
 
 ---
 
-## 6) Notes / risks
-- RLS: we will set both `created_by` and `reported_by` on insert to avoid policy drift.
-- Occupant resolution by email relies on `profiles.email` being populated and matching `occupants.email`. If there are formatting mismatches (case/whitespace), we’ll normalize with lowercase/trim in queries.
-- There are two different `useOccupantAssignments` hooks in the repo (one under `src/components/occupants/hooks/`). We will standardize usage for user-facing flows on the `src/hooks/occupants/useOccupantAssignments.ts` one to avoid confusion.
+## Issue 3: "Request Room Assignment" Navigates Away
 
+**Current Code (SimpleReportWizard.tsx line 196-199):**
+```typescript
+const handleRequestRoomAssignment = () => {
+  onCancel?.();
+  navigate('/request/help');
+};
+```
+
+**The Problem:**
+This closes the wizard and sends users to a different feature (staff task requests). Users expect to request a room assignment, not request help with moving.
+
+**Should Instead:**
+- Either create a proper "room assignment request" (which could be a staff task of type `general` with a specific title)
+- Or navigate to a proper room assignment request flow
+- Or allow users to continue with manual location input (which exists but isn't the primary CTA)
+
+---
+
+## Issue 4: MyRequests Mobile Still Uses Old Form
+
+**Current Behavior (MyRequests.tsx line 215-220):**
+```typescript
+<MobileRequestForm 
+  open={showMobileForm}
+  onClose={() => setShowMobileForm(false)}
+  onSubmit={handleSubmitRequest}
+  type="key_request"
+/>
+```
+
+This is for **key requests**, not issues, so it's actually correct. The `MobileRequestForm` for keys is a separate flow.
+
+---
+
+## Issue 5: Confirming All Entry Points Are Correct
+
+Let me verify each entry point is now using the correct component:
+
+| Entry Point | Component Used | Status |
+|-------------|----------------|--------|
+| UserDashboard → "Report Issue" | `QuickIssueReportButton` → `SimpleReportWizard` | Correct |
+| MyIssues → "Report Issue" | `ResponsiveDialog` → `SimpleReportWizard` | Correct |
+| MyActivity → Issues Tab → "Report Issue" | `ResponsiveDialog` → `SimpleReportWizard` | Correct |
+| RequestHub → "Report Issue" | Navigates to `/my-issues?new=1` | Correct |
+
+All issue reporting entry points appear to be wired correctly to `SimpleReportWizard`.
+
+---
+
+## Root Cause Analysis
+
+The actual problems are:
+
+### A. Assigned Rooms Not Showing
+Users with room assignments aren't seeing them because:
+1. Their `profiles.email` doesn't match `occupants.email` (case sensitivity, formatting)
+2. OR they genuinely have no `occupant_room_assignments` rows
+
+**Fix:** Add debug logging to trace the exact failure point, and ensure case-insensitive email matching is working.
+
+### B. "Request Room Assignment" UX is Wrong
+The CTA sends users to `/request/help` which is a completely different feature. 
+
+**Fix:** Change this to either:
+- Create a staff task with type `general` and a specific room-assignment-request template
+- Or just emphasize the "Continue without a room" option as primary when no rooms are assigned
+
+### C. Potential Race Condition
+The `useOccupantAssignments` hook might not be loaded when the wizard renders, causing an empty `assignedRooms` prop initially.
+
+---
+
+## Implementation Plan
+
+### Step 1: Fix "Request Room Assignment" Flow
+**File: `src/components/issues/wizard/SimpleReportWizard.tsx`**
+
+Change the "no assigned rooms" handling:
+- Remove the navigation to `/request/help`
+- Instead, create a staff task directly with type `general` and title "Room Assignment Request"
+- Show a success message and let user continue with manual location input
+
+### Step 2: Add Loading State for Room Assignments
+**Files: `SimpleReportWizard.tsx`, `QuickIssueReportButton.tsx`, `MyIssues.tsx`, `MyActivity.tsx`**
+
+Pass a loading state to the wizard so it can show a skeleton while fetching room assignments instead of immediately showing "No assigned rooms".
+
+### Step 3: Improve Email Matching in Hook
+**File: `src/hooks/occupants/useOccupantAssignments.ts`**
+
+The current code already uses `.ilike()` for case-insensitive matching, but add `.trim()` on both sides and normalize the email format.
+
+### Step 4: Add Debug Logging (Temporarily)
+Add console logs to trace:
+- What email is being looked up
+- Whether an occupant was found
+- How many room assignments were returned
+
+This will help identify if the issue is data-related or code-related.
+
+---
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/components/issues/wizard/SimpleReportWizard.tsx` | Fix "Request Room Assignment" to create a staff task instead of navigating away; add loading state support |
+| `src/components/user/QuickIssueReportButton.tsx` | Pass `isLoading` from useOccupantAssignments to wizard |
+| `src/pages/MyIssues.tsx` | Pass `isLoading` from useOccupantAssignments to wizard |
+| `src/pages/MyActivity.tsx` | Pass `isLoading` from useOccupantAssignments to wizard |
+| `src/hooks/occupants/useOccupantAssignments.ts` | Add debug logging to trace resolution failures |
+
+---
+
+## Expected Outcome After Fix
+
+1. **Users with assigned rooms:** See their room(s) pre-selected, can report in 3-4 taps
+2. **Users without assigned rooms:** See a clear "No room assigned" state with:
+   - Primary: "Request Room Assignment" (creates a staff task, shows confirmation)
+   - Secondary: "Continue without a room" (allows manual location entry)
+3. **No navigation away:** User stays in the wizard throughout the entire flow
+4. **Proper loading:** Skeleton shown while fetching room data, not a premature "no rooms" message
