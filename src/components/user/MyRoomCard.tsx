@@ -8,7 +8,8 @@ interface MyRoomCardProps {
 }
 
 export function MyRoomCard({ userId }: MyRoomCardProps) {
-  const { data: assignments, isLoading } = useOccupantAssignments(userId);
+  // Users are always 'profile' type (they have auth accounts)
+  const { data: assignments, isLoading } = useOccupantAssignments(userId, 'profile');
   
   // Find primary room or first assigned room
   const primaryAssignment = assignments?.roomDetails?.find(a => a.is_primary) 

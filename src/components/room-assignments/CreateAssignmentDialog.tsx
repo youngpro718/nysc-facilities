@@ -25,13 +25,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { CalendarIcon, Plus, AlertTriangle } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ConflictDetectionAlert, type AssignmentConflict } from './ConflictDetectionAlert';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+
+interface PersonnelOption {
+  id: string;
+  name: string;
+  email: string;
+  department: string | null;
+  source_type: 'profile' | 'personnel_profile';
+}
 
 interface CreateAssignmentDialogProps {
   open: boolean;
@@ -44,7 +52,7 @@ export function CreateAssignmentDialog({
   onOpenChange,
   onSuccess,
 }: CreateAssignmentDialogProps) {
-  const [selectedOccupant, setSelectedOccupant] = useState("");
+  const [selectedPerson, setSelectedPerson] = useState<PersonnelOption | null>(null);
   const [selectedRoom, setSelectedRoom] = useState("");
   const [assignmentType, setAssignmentType] = useState("work_location");
   const [isPrimary, setIsPrimary] = useState(false);
@@ -59,21 +67,23 @@ export function CreateAssignmentDialog({
     const newConflicts: AssignmentConflict[] = [];
 
     // Check for primary office conflicts
-    if (assignmentType === 'work_location' && isPrimary && selectedOccupant) {
+    if (assignmentType === 'work_location' && isPrimary && selectedPerson) {
       try {
+        const idColumn = selectedPerson.source_type === 'profile' ? 'profile_id' : 'personnel_profile_id';
+        
         const { data: existingPrimary } = await supabase
           .from('occupant_room_assignments')
           .select('id')
-          .eq('occupant_id', selectedOccupant)
+          .eq(idColumn, selectedPerson.id)
           .eq('assignment_type', 'work_location')
           .eq('is_primary', true);
 
         if (existingPrimary && existingPrimary.length > 0) {
           newConflicts.push({
             type: 'primary_office',
-            message: 'This occupant already has a primary work location assigned',
+            message: 'This person already has a primary work location assigned',
             severity: 'error',
-            details: 'Each occupant can only have one primary work location. Please remove the existing primary assignment first.'
+            details: 'Each person can only have one primary work location. Please remove the existing primary assignment first.'
           });
         }
       } catch (error) {
@@ -108,23 +118,22 @@ export function CreateAssignmentDialog({
 
   // Check conflicts when key fields change
   React.useEffect(() => {
-    if (selectedOccupant && selectedRoom && assignmentType) {
+    if (selectedPerson && selectedRoom && assignmentType) {
       checkConflicts();
     }
-  }, [selectedOccupant, selectedRoom, assignmentType, isPrimary]);
+  }, [selectedPerson, selectedRoom, assignmentType, isPrimary]);
 
-  // Fetch occupants
-  const { data: occupants } = useQuery({
-    queryKey: ["occupants-for-assignment"],
+  // Fetch personnel from personnel_access_view
+  const { data: personnel } = useQuery({
+    queryKey: ["personnel-for-assignment"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("occupants")
-        .select("id, first_name, last_name, email, department")
-        .eq("status", "active")
-        .order("last_name");
+        .from("personnel_access_view")
+        .select("id, name, email, department, source_type")
+        .order("name");
 
       if (error) throw error;
-      return data;
+      return data as PersonnelOption[];
     },
   });
 
@@ -152,6 +161,11 @@ export function CreateAssignmentDialog({
     },
   });
 
+  const handlePersonChange = (personId: string) => {
+    const person = personnel?.find(p => p.id === personId) || null;
+    setSelectedPerson(person);
+  };
+
   const handleCreate = async () => {
     // Block submission if there are error conflicts
     const errorConflicts = conflicts.filter(c => c.severity === 'error');
@@ -159,24 +173,33 @@ export function CreateAssignmentDialog({
       return;
     }
 
-    if (!selectedOccupant || !selectedRoom) {
-      toast.error("Please select both occupant and room");
+    if (!selectedPerson || !selectedRoom) {
+      toast.error("Please select both person and room");
       return;
     }
 
     setIsCreating(true);
     try {
+      // Build the insert object with the correct ID column
+      const insertData: Record<string, any> = {
+        room_id: selectedRoom,
+        assignment_type: assignmentType,
+        is_primary: isPrimary,
+        schedule: schedule.trim() || null,
+        notes: notes.trim() || null,
+        expiration_date: expirationDate?.toISOString() || null,
+      };
+
+      // Set the correct ID column based on source_type
+      if (selectedPerson.source_type === 'profile') {
+        insertData.profile_id = selectedPerson.id;
+      } else {
+        insertData.personnel_profile_id = selectedPerson.id;
+      }
+
       const { error } = await supabase
         .from("occupant_room_assignments")
-        .insert({
-          occupant_id: selectedOccupant,
-          room_id: selectedRoom,
-          assignment_type: assignmentType,
-          is_primary: isPrimary,
-          schedule: schedule.trim() || null,
-          notes: notes.trim() || null,
-          expiration_date: expirationDate?.toISOString() || null,
-        });
+        .insert(insertData);
 
       if (error) throw error;
 
@@ -185,7 +208,7 @@ export function CreateAssignmentDialog({
       onOpenChange(false);
       
       // Reset form
-      setSelectedOccupant("");
+      setSelectedPerson(null);
       setSelectedRoom("");
       setAssignmentType("work_location");
       setIsPrimary(false);
@@ -208,7 +231,7 @@ export function CreateAssignmentDialog({
         <DialogHeader>
           <DialogTitle>Create Room Assignment</DialogTitle>
           <DialogDescription>
-            Assign an occupant to a room with specific details.
+            Assign a person to a room with specific details.
           </DialogDescription>
         </DialogHeader>
         
@@ -219,15 +242,15 @@ export function CreateAssignmentDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="occupant">Occupant</Label>
-            <Select value={selectedOccupant} onValueChange={setSelectedOccupant}>
+            <Label htmlFor="person">Person</Label>
+            <Select value={selectedPerson?.id || ""} onValueChange={handlePersonChange}>
               <SelectTrigger>
-                <SelectValue placeholder="Select occupant" />
+                <SelectValue placeholder="Select person" />
               </SelectTrigger>
               <SelectContent>
-                {occupants?.map((occupant) => (
-                  <SelectItem key={occupant.id} value={occupant.id}>
-                    {occupant.first_name} {occupant.last_name} ({occupant.email})
+                {personnel?.map((person) => (
+                  <SelectItem key={person.id} value={person.id}>
+                    {person.name} ({person.email})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -259,6 +282,8 @@ export function CreateAssignmentDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="work_location">Work Location</SelectItem>
+                <SelectItem value="primary_office">Primary Office</SelectItem>
+                <SelectItem value="secondary_office">Secondary Office</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -327,7 +352,7 @@ export function CreateAssignmentDialog({
           </Button>
           <Button 
             onClick={handleCreate} 
-            disabled={!selectedOccupant || !selectedRoom || isCreating || conflicts.some(c => c.severity === 'error')}
+            disabled={!selectedPerson || !selectedRoom || isCreating || conflicts.some(c => c.severity === 'error')}
           >
             {isCreating ? "Creating..." : "Create Assignment"}
           </Button>

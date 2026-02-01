@@ -5,7 +5,9 @@ import { toast } from "sonner";
 
 export interface RoomAssignmentWithDetails {
   id: string;
-  occupant_id: string;
+  occupant_id: string | null;
+  profile_id: string | null;
+  personnel_profile_id: string | null;
   room_id: string;
   assignment_type: string;
   is_primary: boolean;
@@ -21,6 +23,7 @@ export interface RoomAssignmentWithDetails {
   room_name: string;
   floor_name: string;
   building_name: string;
+  source_type: 'profile' | 'personnel_profile' | 'occupant';
 }
 
 export function useRoomAssignmentsList() {
@@ -34,17 +37,22 @@ export function useRoomAssignmentsList() {
   const { data: assignments, isLoading, error, refetch } = useQuery({
     queryKey: ["room-assignments", searchQuery, departmentFilter, assignmentTypeFilter, statusFilter],
     queryFn: async () => {
-      // Try a simple query without joins first
-      const { data: simpleData, error: simpleError } = await supabase
+      // Fetch all assignments
+      const { data: assignmentsData, error: assignmentsError } = await supabase
         .from("occupant_room_assignments")
         .select("*");
 
-      if (simpleError) {
-        console.error("Simple query failed:", simpleError);
-        throw simpleError;
+      if (assignmentsError) {
+        console.error("Assignments query failed:", assignmentsError);
+        throw assignmentsError;
       }
 
-      // Fetch data separately to avoid relationship issues
+      // Fetch personnel from the view (includes both profiles and personnel_profiles)
+      const { data: personnelData, error: personnelError } = await supabase
+        .from("personnel_access_view")
+        .select("id, name, email, department, source_type");
+
+      // Fetch legacy occupants
       const { data: occupantsData, error: occupantsError } = await supabase
         .from("occupants")
         .select("id, first_name, last_name, email, department, status");
@@ -63,27 +71,34 @@ export function useRoomAssignmentsList() {
           )
         `);
 
+      if (personnelError) throw personnelError;
       if (occupantsError) throw occupantsError;
       if (roomsError) throw roomsError;
 
       // Create lookup maps
+      const personnelMap = new Map(personnelData?.map(p => [p.id, p]) || []);
       const occupantsMap = new Map(occupantsData?.map(o => [o.id, o]) || []);
       const roomsMap = new Map(roomsData?.map(r => [r.id, r]) || []);
 
       // Combine the data manually
-      let filteredData = simpleData || [];
+      let filteredData = assignmentsData || [];
 
       // Apply filters on the raw data
       if (searchQuery) {
         filteredData = filteredData.filter(assignment => {
-          const occupant = occupantsMap.get(assignment.occupant_id);
+          // Look up person from all possible sources
+          const person = personnelMap.get(assignment.profile_id) || 
+                        personnelMap.get(assignment.personnel_profile_id) ||
+                        occupantsMap.get(assignment.occupant_id);
           const room = roomsMap.get(assignment.room_id);
           const searchTerm = searchQuery.toLowerCase();
           
+          const personName = (person as any)?.name || 
+            ((person as any)?.first_name ? `${(person as any).first_name} ${(person as any).last_name}` : '');
+          
           return (
-            (occupant as any)?.first_name?.toLowerCase().includes(searchTerm) ||
-            (occupant as any)?.last_name?.toLowerCase().includes(searchTerm) ||
-            (occupant as any)?.email?.toLowerCase().includes(searchTerm) ||
+            personName?.toLowerCase().includes(searchTerm) ||
+            (person as any)?.email?.toLowerCase().includes(searchTerm) ||
             (room as any)?.room_number?.toLowerCase().includes(searchTerm) ||
             (room as any)?.name?.toLowerCase().includes(searchTerm)
           );
@@ -92,8 +107,10 @@ export function useRoomAssignmentsList() {
 
       if (departmentFilter && departmentFilter !== "all") {
         filteredData = filteredData.filter(assignment => {
-          const occupant = occupantsMap.get(assignment.occupant_id);
-          return (occupant as any)?.department === departmentFilter;
+          const person = personnelMap.get(assignment.profile_id) || 
+                        personnelMap.get(assignment.personnel_profile_id) ||
+                        occupantsMap.get(assignment.occupant_id);
+          return (person as any)?.department === departmentFilter;
         });
       }
 
@@ -115,12 +132,32 @@ export function useRoomAssignmentsList() {
 
       // Transform the data to flatten the structure
       return filteredData.map((assignment: any): RoomAssignmentWithDetails => {
-        const occupant = occupantsMap.get(assignment.occupant_id);
+        // Determine which source the person comes from
+        let person: any = null;
+        let sourceType: 'profile' | 'personnel_profile' | 'occupant' = 'occupant';
+        
+        if (assignment.profile_id) {
+          person = personnelMap.get(assignment.profile_id);
+          sourceType = 'profile';
+        } else if (assignment.personnel_profile_id) {
+          person = personnelMap.get(assignment.personnel_profile_id);
+          sourceType = 'personnel_profile';
+        } else if (assignment.occupant_id) {
+          person = occupantsMap.get(assignment.occupant_id);
+          sourceType = 'occupant';
+        }
+        
         const room = roomsMap.get(assignment.room_id);
+        
+        // Get person name - handle both view format and occupants format
+        const personName = person?.name || 
+          (person?.first_name ? `${person.first_name} ${person.last_name}` : 'Unknown');
         
         return {
           id: assignment.id,
           occupant_id: assignment.occupant_id,
+          profile_id: assignment.profile_id,
+          personnel_profile_id: assignment.personnel_profile_id,
           room_id: assignment.room_id,
           assignment_type: assignment.assignment_type,
           is_primary: assignment.is_primary,
@@ -128,13 +165,14 @@ export function useRoomAssignmentsList() {
           schedule: assignment.schedule,
           notes: assignment.notes,
           updated_at: assignment.updated_at,
-          occupant_name: occupant ? `${(occupant as any).first_name} ${(occupant as any).last_name}` : 'Unknown',
-          occupant_email: (occupant as any)?.email || '',
-          department: (occupant as any)?.department,
-          room_number: (room as any)?.room_number || '',
-          room_name: (room as any)?.name || '',
+          occupant_name: personName,
+          occupant_email: person?.email || '',
+          department: person?.department,
+          room_number: room?.room_number || '',
+          room_name: room?.name || '',
           floor_name: (room as any)?.floors?.name || '',
           building_name: (room as any)?.floors?.buildings?.name || '',
+          source_type: sourceType,
         };
       });
     },

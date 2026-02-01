@@ -1,15 +1,25 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import type { PersonSourceType } from "./useRoomAssignment";
 
-export function useOccupantAssignments(occupantId: string | undefined) {
+export function useOccupantAssignments(
+  personId: string | undefined,
+  sourceType: PersonSourceType = 'profile'
+) {
   return useQuery({
-    queryKey: ["occupant-assignments", occupantId],
-    enabled: !!occupantId,
+    queryKey: ["occupant-assignments", personId, sourceType],
+    enabled: !!personId,
     queryFn: async () => {
-      if (!occupantId) return { rooms: [], keys: [] };
+      if (!personId) return { rooms: [], keys: [] };
 
-        const [roomAssignments, keyAssignments] = await Promise.all([
+      // Determine which column to query based on source type
+      const idColumn = sourceType === 'profile' 
+        ? 'profile_id' 
+        : sourceType === 'personnel_profile' 
+          ? 'personnel_profile_id' 
+          : 'occupant_id';
+
+      const [roomAssignments, keyAssignments] = await Promise.all([
         supabase
           .from("occupant_room_assignments")
           .select(`
@@ -30,7 +40,7 @@ export function useOccupantAssignments(occupantId: string | undefined) {
               )
             )
           `)
-          .eq("occupant_id", occupantId),
+          .eq(idColumn, personId),
         supabase
           .from("key_assignments")
           .select(`
@@ -41,7 +51,7 @@ export function useOccupantAssignments(occupantId: string | undefined) {
               type
             )
           `)
-          .eq("occupant_id", occupantId)
+          .eq(idColumn, personId)
           .is("returned_at", null),
       ]);
 
