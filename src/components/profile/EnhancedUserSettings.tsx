@@ -42,6 +42,7 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
+import { MyRoomSection } from './MyRoomSection';
 
 interface UserSettings {
   // Notification Settings
@@ -391,6 +392,9 @@ export function EnhancedUserSettings() {
 
         {/* Notifications Tab (trimmed) */}
         <TabsContent value="notifications" className="space-y-6">
+          {/* My Room Section - at the top */}
+          <MyRoomSection />
+          
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

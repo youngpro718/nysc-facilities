@@ -10,8 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Users, UserCheck, Key, DoorOpen, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PersonnelAccessRecord } from "@/hooks/usePersonnelAccess";
+import { PersonnelQuickAssignDialog } from "@/components/access-assignments/PersonnelQuickAssignDialog";
 
-function PersonnelCard({ person }: { person: PersonnelAccessRecord }) {
+interface PersonnelCardProps {
+  person: PersonnelAccessRecord;
+  onClick?: () => void;
+}
+
+function PersonnelCard({ person, onClick }: PersonnelCardProps) {
   const initials = person.name
     ?.split(' ')
     .map(n => n[0])
@@ -20,7 +26,10 @@ function PersonnelCard({ person }: { person: PersonnelAccessRecord }) {
     .slice(0, 2) || '??';
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card 
+      className="hover:shadow-md transition-shadow cursor-pointer hover:border-primary/50"
+      onClick={onClick}
+    >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <Avatar className="h-10 w-10">
@@ -74,7 +83,13 @@ function PersonnelCard({ person }: { person: PersonnelAccessRecord }) {
   );
 }
 
-function PersonnelGrid({ personnel, isLoading }: { personnel: PersonnelAccessRecord[]; isLoading: boolean }) {
+interface PersonnelGridProps {
+  personnel: PersonnelAccessRecord[];
+  isLoading: boolean;
+  onPersonClick: (person: PersonnelAccessRecord) => void;
+}
+
+function PersonnelGrid({ personnel, isLoading, onPersonClick }: PersonnelGridProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -97,7 +112,11 @@ function PersonnelGrid({ personnel, isLoading }: { personnel: PersonnelAccessRec
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {personnel.map(person => (
-        <PersonnelCard key={person.id} person={person} />
+        <PersonnelCard 
+          key={person.id} 
+          person={person} 
+          onClick={() => onPersonClick(person)}
+        />
       ))}
     </div>
   );
@@ -134,6 +153,8 @@ function StatsCard({
 function AccessAssignmentsContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [selectedPerson, setSelectedPerson] = useState<PersonnelAccessRecord | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   const { 
     personnel, 
@@ -142,6 +163,11 @@ function AccessAssignmentsContent() {
     stats, 
     isLoading 
   } = usePersonnelAccess();
+
+  const handlePersonClick = (person: PersonnelAccessRecord) => {
+    setSelectedPerson(person);
+    setDialogOpen(true);
+  };
 
   const getFilteredPersonnel = () => {
     let filtered = personnel;
@@ -215,17 +241,23 @@ function AccessAssignmentsContent() {
         </div>
 
         <TabsContent value="all" className="mt-6">
-          <PersonnelGrid personnel={filteredPersonnel} isLoading={isLoading} />
+          <PersonnelGrid personnel={filteredPersonnel} isLoading={isLoading} onPersonClick={handlePersonClick} />
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
-          <PersonnelGrid personnel={filteredPersonnel} isLoading={isLoading} />
+          <PersonnelGrid personnel={filteredPersonnel} isLoading={isLoading} onPersonClick={handlePersonClick} />
         </TabsContent>
 
         <TabsContent value="personnel" className="mt-6">
-          <PersonnelGrid personnel={filteredPersonnel} isLoading={isLoading} />
+          <PersonnelGrid personnel={filteredPersonnel} isLoading={isLoading} onPersonClick={handlePersonClick} />
         </TabsContent>
       </Tabs>
+
+      <PersonnelQuickAssignDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        person={selectedPerson}
+      />
     </div>
   );
 }

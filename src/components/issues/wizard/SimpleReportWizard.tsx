@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Loader2, MapPin, Mic, MicOff, Check, AlertCircle, Building2 } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Mic, MicOff, Check, AlertCircle, Building2, Star, Settings } from "lucide-react";
+import { Link } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { SIMPLE_CATEGORIES, SimpleCategory, getBackendIssueType } from "./constants/simpleCategories";
@@ -193,42 +194,6 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
     createIssueMutation.mutate();
   };
 
-  // Create a staff task for room assignment request (stays in wizard)
-  const requestRoomAssignmentMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error('Not authenticated');
-      
-      const { error } = await supabase
-        .from('staff_tasks')
-        .insert({
-          title: 'Room Assignment Request',
-          description: 'User is requesting to be assigned a room/office location.',
-          task_type: 'general',
-          priority: 'medium',
-          status: 'pending_approval',
-          is_request: true,
-          requested_by: user.id,
-          created_by: user.id,
-        });
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Room assignment request submitted! You can continue reporting the issue.");
-      // Don't close the wizard - let user continue with manual location
-      setContinueWithoutRoom(true);
-    },
-    onError: (error: any) => {
-      console.error('Error requesting room assignment:', error);
-      toast.error("Failed to submit request. You can still continue with manual location.");
-      setContinueWithoutRoom(true);
-    }
-  });
-
-  const handleRequestRoomAssignment = () => {
-    requestRoomAssignmentMutation.mutate();
-  };
-
   const handleContinueWithoutRoom = () => {
     setContinueWithoutRoom(true);
     setSelectedRoomId(null);
@@ -263,6 +228,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
               {assignedRooms.map((room) => {
                   const roomId = getRoomId(room);
                   const roomNumber = getRoomNumber(room);
+                  const isPrimary = room.is_primary || room.assignment_type === 'primary_office';
                   return (
                     <div key={roomId} className="relative">
                       <RadioGroupItem
@@ -280,11 +246,16 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
                             : "border-border"
                         )}
                       >
-                        <div>
-                          <p className="font-medium">{roomNumber}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {room.floor_name} • {room.building_name}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          {isPrimary && (
+                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                          )}
+                          <div>
+                            <p className="font-medium">{roomNumber}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {room.floor_name} • {room.building_name}
+                            </p>
+                          </div>
                         </div>
                         {selectedRoomId === roomId && (
                           <Check className="h-5 w-5 text-primary" />
@@ -316,7 +287,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
               </div>
             </div>
           ) : !hasAssignedRooms && !continueWithoutRoom ? (
-            /* No assigned rooms - show guidance */
+            /* No assigned rooms - show guidance to go to Settings */
             <Card className="p-4 border-dashed border-2 border-muted">
               <div className="flex flex-col items-center text-center space-y-3">
                 <div className="p-3 rounded-full bg-muted">
@@ -325,26 +296,18 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
                 <div>
                   <p className="font-medium">No assigned room yet</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    You can request a room assignment or describe the location manually.
+                    Request a room from Settings, or describe the location manually.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 w-full">
                   <Button 
-                    onClick={handleRequestRoomAssignment} 
+                    asChild
                     className="w-full"
-                    disabled={requestRoomAssignmentMutation.isPending}
                   >
-                    {requestRoomAssignmentMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <Building2 className="h-4 w-4 mr-2" />
-                        Request Room Assignment
-                      </>
-                    )}
+                    <Link to="/profile?tab=settings">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Go to Settings
+                    </Link>
                   </Button>
                   <Button 
                     variant="outline" 
