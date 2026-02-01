@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRecentRooms, RecentRoom } from '@/hooks/useRecentRooms';
 import { usePhotoUpload } from '@/components/issues/hooks/usePhotoUpload';
-import { IssuePhotoForm } from '@/components/issues/create/wizard/IssuePhotoForm';
+import { IssuePhotoGrid } from '@/components/issues/card/IssuePhotoGrid';
 import { cn } from '@/lib/utils';
 import {
   Search,
@@ -29,6 +29,7 @@ import {
   MapPin,
   Clock,
   CheckCircle,
+  Camera,
 } from 'lucide-react';
 
 interface AdminQuickReportDialogProps {
@@ -356,11 +357,36 @@ export function AdminQuickReportDialog({ open, onOpenChange }: AdminQuickReportD
 
         {/* Photo Upload - Only show after room and type selected */}
         {selectedRoom && selectedIssueType && (
-          <IssuePhotoForm
-            selectedPhotos={selectedPhotos}
-            uploading={uploading}
-            onPhotoUpload={handlePhotoUpload}
-          />
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Add Photos</label>
+            <div className="flex flex-col items-center justify-center w-full">
+              <label className="w-full cursor-pointer">
+                <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg border-border bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <div className="flex flex-col items-center justify-center py-4">
+                    {uploading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    ) : (
+                      <>
+                        <Camera className="w-6 h-6 mb-2 text-primary" />
+                        <p className="text-sm text-muted-foreground">
+                          Tap to take photo or upload
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoUpload}
+                    disabled={uploading}
+                    className="hidden"
+                  />
+                </div>
+              </label>
+            </div>
+            <IssuePhotoGrid photos={selectedPhotos} />
+          </div>
         )}
 
         {/* Description */}
