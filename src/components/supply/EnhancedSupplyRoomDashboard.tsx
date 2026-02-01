@@ -34,17 +34,6 @@ export function EnhancedSupplyRoomDashboard() {
   const role = getSupplyRole();
   const isSupplyStaff = role === 'supply_staff' || role === 'supply_manager';
 
-  console.log('EnhancedSupplyRoomDashboard:', {
-    user: user?.id,
-    userRole,
-    permissions,
-    department: (profile as any)?.department,
-    calculatedRole: role,
-    isSupplyStaff,
-    isLoading,
-    permissionsLoading
-  });
-
   // Show loading state
   if (isLoading || permissionsLoading) {
     return (

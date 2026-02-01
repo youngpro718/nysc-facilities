@@ -37,16 +37,10 @@ export function QuickOrderGrid() {
   } = useOrderCart();
 
   const filteredItems = useMemo(() => {
-    console.log('QuickOrderGrid - Total inventory items:', inventoryItems?.length);
-    console.log('QuickOrderGrid - First item:', inventoryItems?.[0]);
-    
     const filtered = (inventoryItems as any[]).filter(item => {
       // Only show allowed categories
       const isAllowedCategory = ALLOWED_CATEGORIES.includes(item.inventory_categories?.name || '');
-      if (!isAllowedCategory) {
-        console.log('Item filtered out - not allowed category:', item.name, item.inventory_categories?.name);
-        return false;
-      }
+      if (!isAllowedCategory) return false;
 
       const matchesSearch = !searchTerm || 
         item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,7 +53,6 @@ export function QuickOrderGrid() {
       return matchesSearch && matchesCategory;
     });
     
-    console.log('QuickOrderGrid - Filtered items:', filtered.length);
     return filtered;
   }, [inventoryItems, searchTerm, selectedCategory]);
 

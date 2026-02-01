@@ -50,7 +50,6 @@ export function FulfillmentSuccessScreen({
   
   const handleEmailReceipt = () => {
     // TODO: Implement email receipt functionality
-    console.log('Email receipt:', receiptNumber);
   };
 
   const handlePrint = () => {

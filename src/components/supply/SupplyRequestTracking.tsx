@@ -57,13 +57,10 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
       setLoading(true);
       
       if (!user?.id) {
-        console.warn('No user ID available for fetching supply requests');
         setRequests([]);
         setLoading(false);
         return;
       }
-
-      console.log('Fetching supply requests for:', { userId: user.id, userRole });
       
       let query = supabase
         .from('supply_requests')
@@ -97,16 +94,11 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
 
       const { data, error } = await query;
       
-      if (error) {
-        console.error('Supabase error fetching requests:', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('Fetched supply requests:', { count: data?.length, data });
       setRequests(data || []);
       
     } catch (error: any) {
-      console.error('Error fetching requests:', error);
       toast({
         title: "Error Loading Requests",
         description: error?.message || "Failed to load supply requests. Please try again.",

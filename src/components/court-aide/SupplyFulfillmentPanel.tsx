@@ -66,7 +66,7 @@ export function SupplyFulfillmentPanel() {
             )
           )
         `)
-        .in('status', ['approved', 'in_progress', 'ready'])
+        .in('status', ['submitted', 'received', 'picking', 'ready'])
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -129,7 +129,7 @@ export function SupplyFulfillmentPanel() {
     },
   });
 
-  const toFulfill = requests?.filter(r => r.status === 'approved' || r.status === 'in_progress') || [];
+  const toFulfill = requests?.filter(r => ['submitted', 'received', 'picking'].includes(r.status)) || [];
   const readyForPickup = requests?.filter(r => r.status === 'ready') || [];
 
   const getUrgencyColor = (urgency: string) => {
@@ -209,7 +209,7 @@ export function SupplyFulfillmentPanel() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1">
-                              {request.status === 'approved' && (
+                              {(request.status === 'submitted' || request.status === 'received') && (
                                 <Button 
                                   size="sm" 
                                   variant="outline"
@@ -221,7 +221,7 @@ export function SupplyFulfillmentPanel() {
                                   ) : 'Start'}
                                 </Button>
                               )}
-                              {request.status === 'in_progress' && (
+                              {request.status === 'picking' && (
                                 <Button 
                                   size="sm"
                                   onClick={() => markReady.mutate(request.id)}

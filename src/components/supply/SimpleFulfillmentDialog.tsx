@@ -62,10 +62,11 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
     setIsCompleting(true);
 
     try {
-      console.log('Starting order fulfillment for order:', order.id);
-
       // Track inventory changes for success screen
+
       const changes: InventoryChange[] = [];
+
+      // 1. Update order status to picking
 
       // 1. Update order status to picking
       const { error: pickingError } = await supabase
@@ -80,8 +81,6 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
 
       // 2. For each item, mark as fulfilled and subtract from inventory
       for (const item of order.supply_request_items) {
-        console.log('Fulfilling item:', item.inventory_items?.name, 'Qty:', item.quantity_requested);
-
         const beforeStock = item.inventory_items?.quantity || 0;
         const subtracted = item.quantity_requested;
         const afterStock = beforeStock - subtracted;
@@ -104,10 +103,7 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
           })
           .eq('id', item.id);
 
-        if (itemError) {
-          console.error('Error updating item:', itemError);
-          throw itemError;
-        }
+        if (itemError) throw itemError;
 
         // Subtract from inventory using RPC function
         const { error: invError } = await supabase.rpc('adjust_inventory_quantity', {
@@ -118,12 +114,7 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
           p_notes: `Order #${order.id.slice(0, 8)} fulfilled for ${requesterName}`,
         });
 
-        if (invError) {
-          console.error('Error adjusting inventory:', invError);
-          throw invError;
-        }
-
-        console.log('✓ Item fulfilled and inventory updated');
+        if (invError) throw invError;
       }
 
       // Store changes for success screen
@@ -166,12 +157,7 @@ export function SimpleFulfillmentDialog({ order, onClose }: SimpleFulfillmentDia
           pdf_data: receiptData,
         });
 
-      if (receiptError) {
-        console.error('Error generating receipt:', receiptError);
-        // Don't throw - receipt is nice to have but not critical
-      }
-
-      console.log('✅ Order fulfilled successfully!');
+      // Receipt is non-critical, don't throw if it fails
 
       // Store receipt number for success screen
       setReceiptNumber(receiptNum);
