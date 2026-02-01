@@ -41,6 +41,7 @@ import { IssueDialogManager } from "@/components/issues/components/IssueDialogMa
 import { useDialogManager } from "@/hooks/useDialogManager";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/ScheduleMaintenanceDialog";
 import { ReportIssueDialog } from "@/components/maintenance/ReportIssueDialog";
+import { AdminQuickReportDialog } from "@/components/issues/admin/AdminQuickReportDialog";
 
 
 
@@ -129,6 +130,7 @@ export default function Operations() {
   const [showCreateIssue, setShowCreateIssue] = useState(false);
   const [showScheduleMaintenance, setShowScheduleMaintenance] = useState(false);
   const [showReportIssue, setShowReportIssue] = useState(false);
+  const [showQuickReport, setShowQuickReport] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Keep URL `tab` param in sync when switching tabs
@@ -301,9 +303,9 @@ export default function Operations() {
                 Clear Filter
               </Button>
             )}
-            <Button onClick={() => setShowCreateIssue(true)} variant="outline" size="sm" className="touch-target">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Report Issue</span>
+            <Button onClick={() => setShowQuickReport(true)} size="sm" className="touch-target bg-primary">
+              <Zap className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Quick Report</span>
               <span className="sm:hidden">Report</span>
             </Button>
             <Button onClick={() => setShowScheduleMaintenance(true)} size="sm" className="touch-target">
@@ -907,6 +909,11 @@ export default function Operations() {
       <ReportIssueDialog 
         open={showReportIssue} 
         onOpenChange={setShowReportIssue}
+      />
+      
+      <AdminQuickReportDialog
+        open={showQuickReport}
+        onOpenChange={setShowQuickReport}
       />
     </div>
   );
