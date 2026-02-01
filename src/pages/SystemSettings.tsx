@@ -1,191 +1,81 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Settings, Database, Server, Shield, Activity, HardDrive, QrCode } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AdminSystemSettings } from "@/components/profile/AdminSystemSettings";
+import { ChevronLeft, Settings, QrCode } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { DatabaseSection } from "@/components/profile/DatabaseSection";
-import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
-import { Badge } from "@/components/ui/badge";
-import { useSystemSettings } from "@/hooks/admin/useSystemSettings";
+import { ModuleManagement } from "@/components/profile/ModuleManagement";
 
 export default function SystemSettings() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'system';
-  
-  const {
-    systemStats,
-    systemStatus,
-    modules,
-    isLoading,
-    runHealthCheck,
-    backupDatabase,
-    clearCache,
-    isRunningHealthCheck,
-    isBackingUp,
-    isClearingCache
-  } = useSystemSettings();
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-nav-safe">
-      <div className="flex items-center justify-between gap-3 sm:gap-4">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-9 w-9 sm:h-10 sm:w-10"
-          >
-            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold">System Settings</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Configure system-wide settings and administrative tools
-            </p>
-          </div>
-        </div>
+    <div className="space-y-6 pb-nav-safe px-3 sm:px-0">
+      {/* Header */}
+      <div className="flex items-center gap-3 pt-2">
         <Button
-          onClick={() => navigate('/install')}
-          variant="outline"
-          size="sm"
-          className="gap-2"
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(-1)}
+          className="h-9 w-9"
         >
-          <QrCode className="h-4 w-4" />
-          <span className="hidden sm:inline">App Install</span>
+          <ChevronLeft className="h-4 w-4" />
         </Button>
+        <div className="flex items-center gap-2">
+          <Settings className="h-5 w-5 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-semibold">System Settings</h1>
+        </div>
       </div>
 
-      {/* App Install Card - Prominent */}
+      {/* App Install Card */}
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <QrCode className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Install App on Phones</h3>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Share QR code or link to install the app on staff phones
-              </p>
-              <Button
-                onClick={() => navigate('/install')}
-                size="sm"
-                className="w-full sm:w-auto"
-              >
-                View Install Page
-              </Button>
+              <div>
+                <h3 className="font-semibold">Install App on Phones</h3>
+                <p className="text-sm text-muted-foreground">
+                  Share QR code or link to install the app on staff phones
+                </p>
+              </div>
             </div>
+            <Button
+              onClick={() => navigate('/install')}
+              size="sm"
+            >
+              View QR Code
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* System Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">System Status</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className={`h-2 w-2 rounded-full ${
-                    systemStatus?.system === 'online' ? 'bg-green-500' :
-                    systemStatus?.system === 'maintenance' ? 'bg-orange-500' : 'bg-red-500'
-                  }`}></div>
-                  <span className="text-sm font-medium capitalize">
-                    {systemStatus?.system || 'Loading...'}
-                  </span>
-                </div>
-              </div>
-              <Server className={`h-8 w-8 ${
-                systemStatus?.system === 'online' ? 'text-green-500' :
-                systemStatus?.system === 'maintenance' ? 'text-orange-500' : 'text-red-500'
-              }`} />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Database</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className={`h-2 w-2 rounded-full ${
-                    systemStatus?.database === 'connected' ? 'bg-green-500' :
-                    systemStatus?.database === 'disconnected' ? 'bg-red-500' : 'bg-orange-500'
-                  }`}></div>
-                  <span className="text-sm font-medium capitalize">
-                    {systemStatus?.database || 'Loading...'}
-                  </span>
-                </div>
-              </div>
-              <Database className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Security</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className={`h-2 w-2 rounded-full ${
-                    systemStatus?.security === 'secure' ? 'bg-green-500' :
-                    systemStatus?.security === 'warning' ? 'bg-orange-500' : 'bg-red-500'
-                  }`}></div>
-                  <span className="text-sm font-medium capitalize">
-                    {systemStatus?.security || 'Loading...'}
-                  </span>
-                </div>
-              </div>
-              <Shield className={`h-8 w-8 ${
-                systemStatus?.security === 'secure' ? 'text-green-500' :
-                systemStatus?.security === 'warning' ? 'text-orange-500' : 'text-red-500'
-              }`} />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Maintenance</p>
-                <Badge variant={systemStatus?.maintenance === 'active' ? 'destructive' : 'secondary'}>
-                  {systemStatus?.maintenance || 'Loading...'}
-                </Badge>
-              </div>
-              <Settings className={`h-8 w-8 ${
-                systemStatus?.maintenance === 'active' ? 'text-red-500' :
-                systemStatus?.maintenance === 'scheduled' ? 'text-orange-500' : 'text-gray-500'
-              }`} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Module Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Module Management</CardTitle>
+          <CardDescription>
+            Enable or disable features across the application
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ModuleManagement />
+        </CardContent>
+      </Card>
 
-      <Tabs defaultValue={defaultTab} className="space-y-6" onValueChange={(value) => setSearchParams({ tab: value })}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="system">System Settings</TabsTrigger>
-          <TabsTrigger value="database">Database</TabsTrigger>
-          <TabsTrigger value="security">Security Audit</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="system" className="space-y-6">
-          <AdminSystemSettings />
-        </TabsContent>
-        
-        <TabsContent value="database" className="space-y-6">
+      {/* Database Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Database Management</CardTitle>
+          <CardDescription>
+            Export data, create backups, and manage database operations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <DatabaseSection />
-        </TabsContent>
-        
-        <TabsContent value="security" className="space-y-6">
-          <SecurityAuditPanel />
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
