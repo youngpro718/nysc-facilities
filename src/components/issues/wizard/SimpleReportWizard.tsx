@@ -229,35 +229,39 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
                   setContinueWithoutRoom(false);
                 }}
               >
-                {assignedRooms.map((room) => (
-                  <div key={room.room_id} className="relative">
-                    <RadioGroupItem
-                      value={room.room_id}
-                      id={`room-${room.room_id}`}
-                      className="peer sr-only"
-                    />
-                    <Label
-                      htmlFor={`room-${room.room_id}`}
-                      className={cn(
-                        "flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all",
-                        "hover:border-primary/50 hover:bg-primary/5",
-                        selectedRoomId === room.room_id
-                          ? "border-primary bg-primary/10"
-                          : "border-border"
-                      )}
-                    >
-                      <div>
-                        <p className="font-medium">{room.room_number}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {room.floor_name} • {room.building_name}
-                        </p>
-                      </div>
-                      {selectedRoomId === room.room_id && (
-                        <Check className="h-5 w-5 text-primary" />
-                      )}
-                    </Label>
-                  </div>
-                ))}
+              {assignedRooms.map((room) => {
+                  const roomId = getRoomId(room);
+                  const roomNumber = getRoomNumber(room);
+                  return (
+                    <div key={roomId} className="relative">
+                      <RadioGroupItem
+                        value={roomId}
+                        id={`room-${roomId}`}
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor={`room-${roomId}`}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all",
+                          "hover:border-primary/50 hover:bg-primary/5",
+                          selectedRoomId === roomId
+                            ? "border-primary bg-primary/10"
+                            : "border-border"
+                        )}
+                      >
+                        <div>
+                          <p className="font-medium">{roomNumber}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {room.floor_name} • {room.building_name}
+                          </p>
+                        </div>
+                        {selectedRoomId === roomId && (
+                          <Check className="h-5 w-5 text-primary" />
+                        )}
+                      </Label>
+                    </div>
+                  );
+                })}
               </RadioGroup>
               <Button 
                 variant="ghost" 
@@ -314,7 +318,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
                       const primaryRoom = assignedRooms?.find(r => r.is_primary) 
                         || assignedRooms?.find(r => r.assignment_type === 'primary_office')
                         || assignedRooms?.[0];
-                      if (primaryRoom) setSelectedRoomId(primaryRoom.room_id);
+                      if (primaryRoom) setSelectedRoomId(getRoomId(primaryRoom));
                     }}
                   >
                     Use my room
