@@ -38,7 +38,6 @@ export function InlineItemRow({
     <div
       className={cn(
         "rounded-lg border transition-all overflow-hidden",
-        // Mobile: stacked layout, Desktop: single row
         "flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-3",
         inCart 
           ? "bg-primary/5 border-primary/20" 
@@ -47,32 +46,67 @@ export function InlineItemRow({
         compact && "p-2"
       )}
     >
-      {/* Mobile Row 1 / Desktop: Item Info */}
-      <div className="flex items-center justify-between gap-2 sm:flex-1 sm:min-w-0">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {/* SKU - hidden on mobile, shown on desktop */}
+      {/* Mobile Row 1: Item Name + Warning Icon */}
+      <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
+        <span className={cn(
+          "font-medium truncate flex-1",
+          compact ? "text-sm" : "text-sm sm:text-base"
+        )}>
+          {item.name}
+        </span>
+        {item.requires_justification && (
+          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 sm:hidden" />
+        )}
+        
+        {/* Desktop: Show all metadata inline */}
+        <div className="hidden sm:flex items-center gap-2">
           {item.sku && (
-            <Badge variant="outline" className="font-mono text-xs shrink-0 hidden sm:inline-flex">
+            <Badge variant="outline" className="font-mono text-xs shrink-0">
               {item.sku}
             </Badge>
           )}
-          <span className={cn(
-            "font-medium truncate",
-            compact ? "text-sm" : "text-sm sm:text-base"
-          )}>
-            {item.name}
-          </span>
           {item.requires_justification && (
             <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
           )}
         </div>
-        
-        {/* Favorite button - shown inline on mobile */}
+      </div>
+
+      {/* Desktop: Additional metadata */}
+      {!compact && (
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
+          <span className="text-xs text-muted-foreground">
+            Stock: {item.quantity ?? 0} {item.unit || 'units'}
+          </span>
+          {item.categoryName && (
+            <Badge variant="secondary" className="text-xs">
+              {item.categoryName}
+            </Badge>
+          )}
+          {item.requires_justification && (
+            <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
+              Requires approval
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {/* Mobile Row 2: SKU + Stock + Favorite Star */}
+      <div className="flex items-center justify-between sm:hidden">
+        <div className="flex items-center gap-2 min-w-0">
+          {item.sku && (
+            <Badge variant="outline" className="font-mono text-xs shrink-0">
+              {item.sku}
+            </Badge>
+          )}
+          <span className="text-xs text-muted-foreground shrink-0">
+            Stock: {item.quantity ?? 0}
+          </span>
+        </div>
         {onToggleFavorite && (
           <Button
             variant="ghost"
             size="icon"
-            className="shrink-0 h-10 w-10 sm:hidden touch-manipulation"
+            className="shrink-0 h-10 w-10 touch-manipulation"
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite();
@@ -86,47 +120,60 @@ export function InlineItemRow({
             />
           </Button>
         )}
-        
-        {/* Desktop: metadata below name */}
-        {!compact && (
-          <div className="hidden sm:flex items-center gap-2 mt-1">
-            <span className="text-xs text-muted-foreground">
-              Stock: {item.quantity ?? 0} {item.unit || 'units'}
+      </div>
+
+      {/* Mobile Row 3: Quantity Controls (centered, full width) */}
+      <div className="flex justify-center pt-1 sm:hidden">
+        {inCart ? (
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-full touch-manipulation"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDecrement();
+              }}
+            >
+              <Minus className="h-5 w-5" />
+            </Button>
+            <span className="w-12 text-center font-bold text-xl">
+              {cartQuantity}
             </span>
-            {item.categoryName && (
-              <Badge variant="secondary" className="text-xs">
-                {item.categoryName}
-              </Badge>
-            )}
-            {item.requires_justification && (
-              <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
-                Requires approval
-              </Badge>
-            )}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-full touch-manipulation"
+              onClick={(e) => {
+                e.stopPropagation();
+                onIncrement();
+              }}
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
           </div>
+        ) : (
+          <Button
+            variant="secondary"
+            className="h-12 px-8 touch-manipulation"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdd();
+            }}
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Add to Cart
+          </Button>
         )}
       </div>
 
-      {/* Mobile Row 2: Stock + Controls */}
-      <div className="flex items-center justify-between gap-2 sm:contents">
-        {/* Mobile: Stock info on left */}
-        <div className="flex items-center gap-2 min-w-0 sm:hidden">
-          {item.sku && (
-            <Badge variant="outline" className="font-mono text-xs shrink-0">
-              {item.sku}
-            </Badge>
-          )}
-          <span className="text-xs text-muted-foreground shrink-0">
-            Stock: {item.quantity ?? 0}
-          </span>
-        </div>
-
-        {/* Desktop: Favorite button */}
+      {/* Desktop: Favorite + Controls inline */}
+      <div className="hidden sm:flex items-center gap-2 shrink-0">
         {onToggleFavorite && (
           <Button
             variant="ghost"
             size="icon"
-            className="shrink-0 h-8 w-8 hidden sm:inline-flex"
+            className="shrink-0 h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite();
@@ -141,50 +188,47 @@ export function InlineItemRow({
           </Button>
         )}
 
-        {/* Quantity Controls - ALWAYS visible and never cut off */}
-        <div className="flex items-center gap-1 shrink-0">
-          {inCart ? (
-            <>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-11 w-11 sm:h-9 sm:w-9 rounded-full touch-manipulation"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDecrement();
-                }}
-              >
-                <Minus className="h-5 w-5 sm:h-4 sm:w-4" />
-              </Button>
-              <span className="w-10 sm:w-8 text-center font-semibold text-lg">
-                {cartQuantity}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-11 w-11 sm:h-9 sm:w-9 rounded-full touch-manipulation"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onIncrement();
-                }}
-              >
-                <Plus className="h-5 w-5 sm:h-4 sm:w-4" />
-              </Button>
-            </>
-          ) : (
+        {inCart ? (
+          <div className="flex items-center gap-1">
             <Button
-              variant="secondary"
-              className="h-11 px-6 sm:h-9 sm:px-4 touch-manipulation"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-full"
               onClick={(e) => {
                 e.stopPropagation();
-                onAdd();
+                onDecrement();
               }}
             >
-              <Plus className="h-5 w-5 sm:h-4 sm:w-4 mr-1" />
-              Add
+              <Minus className="h-4 w-4" />
             </Button>
-          )}
-        </div>
+            <span className="w-8 text-center font-semibold">
+              {cartQuantity}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                onIncrement();
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="secondary"
+            className="h-9 px-4"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdd();
+            }}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add
+          </Button>
+        )}
       </div>
     </div>
   );
