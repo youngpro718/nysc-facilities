@@ -42,6 +42,7 @@ import { PickupAlertBanner } from "@/components/user/PickupAlertBanner";
 import { TermSheetPreview } from "@/components/user/TermSheetPreview";
 import { CompactActivitySection } from "@/components/user/CompactActivitySection";
 import { KeyRequestDialog } from "@/components/requests/KeyRequestDialog";
+import { MyRoomCard } from "@/components/user/MyRoomCard";
 import { Package, HelpCircle, Key } from "lucide-react";
 
 export default function UserDashboard() {
@@ -167,6 +168,9 @@ export default function UserDashboard() {
             />
           </div>
         </div>
+
+        {/* My Room Card - Shows primary assigned room */}
+        <MyRoomCard userId={user.id} />
 
         {/* Pickup Alert Banner - Prominent when supplies are ready */}
         <PickupAlertBanner 
