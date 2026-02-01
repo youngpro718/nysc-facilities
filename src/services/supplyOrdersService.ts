@@ -221,6 +221,38 @@ export async function confirmPickup(requestId: string) {
 }
 
 /**
+ * Staff marks a supply request as completed (picked up by requester)
+ * This allows supply staff/admins to complete orders on behalf of requesters
+ */
+export async function staffCompletePickup(requestId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  // Check if user has appropriate role (admin, court_aide, or cmc)
+  const { data: roleData } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const allowedRoles = ['admin', 'court_aide', 'cmc'];
+  if (!roleData || !allowedRoles.includes(roleData.role)) {
+    throw new Error('Only supply staff can complete pickup on behalf of others');
+  }
+
+  const { error } = await supabase
+    .from('supply_requests')
+    .update({
+      status: 'completed',
+      fulfilled_at: new Date().toISOString(),
+      fulfilled_by: user.id,
+    })
+    .eq('id', requestId);
+
+  if (error) throw error;
+}
+
+/**
  * Cancel a supply request (only requester can cancel)
  */
 export async function cancelSupplyRequest(requestId: string, reason?: string) {

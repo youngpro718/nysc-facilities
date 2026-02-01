@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,13 +23,30 @@ import { PartialFulfillmentDialog } from './PartialFulfillmentDialog';
 import { LiveIndicator } from '@/components/common/LiveIndicator';
 import { InventoryManagementTab } from './InventoryManagementTab';
 import { LowStockPanel } from '@/components/inventory/LowStockPanel';
+import { staffCompletePickup } from '@/services/supplyOrdersService';
+import { toast } from 'sonner';
 
 export function ImprovedSupplyStaffDashboard() {
+  const queryClient = useQueryClient();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('new');
   const [completedLastUpdated, setCompletedLastUpdated] = useState(new Date());
+
+  // Mutation for confirming pickup
+  const confirmPickupMutation = useMutation({
+    mutationFn: staffCompletePickup,
+    onSuccess: () => {
+      toast.success('Order marked as picked up');
+      queryClient.invalidateQueries({ queryKey: ['supply-staff-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['supply-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['completed-orders'] });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to confirm pickup', { description: error.message });
+    },
+  });
 
   // Fetch all orders
   const { data: allOrders, isLoading, refetch, isFetching } = useQuery({
@@ -354,6 +371,8 @@ export function ImprovedSupplyStaffDashboard() {
                   key={order.id}
                   order={order}
                   onFulfill={() => setSelectedOrder(order)}
+                  onConfirmPickup={() => confirmPickupMutation.mutate(order.id)}
+                  isConfirmingPickup={confirmPickupMutation.isPending}
                 />
               ))}
             </div>

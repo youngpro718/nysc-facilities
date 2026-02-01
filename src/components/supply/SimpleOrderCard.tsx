@@ -9,15 +9,19 @@ import { formatDistanceToNow } from 'date-fns';
 interface SimpleOrderCardProps {
   order: any;
   onFulfill: () => void;
+  onConfirmPickup?: () => void;
   showDeliveryConfirm?: boolean;
   onConfirmDelivered?: () => void;
+  isConfirmingPickup?: boolean;
 }
 
 export function SimpleOrderCard({ 
   order, 
   onFulfill,
+  onConfirmPickup,
   showDeliveryConfirm,
-  onConfirmDelivered 
+  onConfirmDelivered,
+  isConfirmingPickup = false,
 }: SimpleOrderCardProps) {
   const requesterName = order.profiles 
     ? `${order.profiles.first_name} ${order.profiles.last_name}`
@@ -176,6 +180,25 @@ export function SimpleOrderCard({
               >
                 <CheckCircle className="mr-2 h-4 w-4" />
                 Mark as Delivered
+              </Button>
+            ) : isReady && deliveryMethod !== 'delivery' && onConfirmPickup ? (
+              <Button 
+                onClick={onConfirmPickup}
+                className="w-full bg-green-600 hover:bg-green-700"
+                size="lg"
+                disabled={isConfirmingPickup}
+              >
+                {isConfirmingPickup ? (
+                  <>
+                    <Package className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Confirm Picked Up
+                  </>
+                )}
               </Button>
             ) : isReady ? (
               <Button 
