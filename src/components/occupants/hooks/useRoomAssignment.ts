@@ -1,20 +1,35 @@
-
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+
+export type PersonSourceType = 'profile' | 'personnel_profile' | 'occupant';
+
+export interface PersonForAssignment {
+  id: string;
+  source_type: PersonSourceType;
+}
 
 export function useRoomAssignment(onSuccess: () => void) {
   const [isAssigning, setIsAssigning] = useState(false);
 
   const handleAssignRoom = async (
     selectedRoom: string,
-    selectedOccupants: string[],
+    selectedPersons: PersonForAssignment[] | string[],
     assignmentType: string,
     isPrimaryAssignment: boolean
   ) => {
+    // Normalize to PersonForAssignment[] - backwards compatible with string[]
+    const persons: PersonForAssignment[] = selectedPersons.map((p) => {
+      if (typeof p === 'string') {
+        // Legacy: assume occupant if just string ID passed
+        return { id: p, source_type: 'occupant' as PersonSourceType };
+      }
+      return p;
+    });
+
     console.log('[useRoomAssignment] Function called with:', {
       selectedRoom,
-      selectedOccupants,
+      persons,
       assignmentType,
       isPrimaryAssignment
     });
@@ -31,15 +46,15 @@ export function useRoomAssignment(onSuccess: () => void) {
       toast.error("Invalid room id format");
       return false;
     }
-    if (!selectedOccupants?.length) {
-      console.log('[useRoomAssignment] No occupants provided');
-      toast.error("No occupants selected");
+    if (!persons?.length) {
+      console.log('[useRoomAssignment] No persons provided');
+      toast.error("No persons selected");
       return false;
     }
-    const invalidOcc = selectedOccupants.filter((id) => !uuidRe.test(id));
-    if (invalidOcc.length) {
-      console.log('[useRoomAssignment] Invalid occupant UUIDs:', invalidOcc);
-      toast.error(`Invalid occupant id(s): ${invalidOcc.join(", ")}`);
+    const invalidIds = persons.filter((p) => !uuidRe.test(p.id));
+    if (invalidIds.length) {
+      console.log('[useRoomAssignment] Invalid person UUIDs:', invalidIds);
+      toast.error(`Invalid person id(s): ${invalidIds.map(p => p.id).join(", ")}`);
       return false;
     }
 
@@ -56,35 +71,72 @@ export function useRoomAssignment(onSuccess: () => void) {
         return false;
       }
 
-      const assignments = selectedOccupants.map((occupantId) => ({
-        occupant_id: occupantId,
-        room_id: selectedRoom,
-        assignment_type: assignmentType,
-        assigned_at: new Date().toISOString(),
-        is_primary: isPrimaryAssignment
-      }));
+      // Build assignments using the correct ID column based on source_type
+      const assignments = persons.map((person) => {
+        const base = {
+          room_id: selectedRoom,
+          assignment_type: assignmentType,
+          assigned_at: new Date().toISOString(),
+          is_primary: isPrimaryAssignment
+        };
+
+        switch (person.source_type) {
+          case 'profile':
+            return { ...base, profile_id: person.id };
+          case 'personnel_profile':
+            return { ...base, personnel_profile_id: person.id };
+          case 'occupant':
+          default:
+            return { ...base, occupant_id: person.id };
+        }
+      });
 
       console.log('Creating room assignments:', assignments);
 
       // Check for existing primary assignments if this is a primary assignment
       if (isPrimaryAssignment) {
-        for (const occupantId of selectedOccupants) {
-          const { data: existingPrimary } = await supabase
+        for (const person of persons) {
+          let query = supabase
             .from("occupant_room_assignments")
             .select("id")
-            .eq("occupant_id", occupantId)
             .eq("assignment_type", assignmentType)
             .eq("is_primary", true)
             .limit(1);
 
+          // Query using the correct column
+          switch (person.source_type) {
+            case 'profile':
+              query = query.eq("profile_id", person.id);
+              break;
+            case 'personnel_profile':
+              query = query.eq("personnel_profile_id", person.id);
+              break;
+            default:
+              query = query.eq("occupant_id", person.id);
+          }
+
+          const { data: existingPrimary } = await query;
+
           if (existingPrimary && existingPrimary.length > 0) {
             // Update existing primary to non-primary
-            await supabase
+            let updateQuery = supabase
               .from("occupant_room_assignments")
               .update({ is_primary: false })
-              .eq("occupant_id", occupantId)
               .eq("assignment_type", assignmentType)
               .eq("is_primary", true);
+
+            switch (person.source_type) {
+              case 'profile':
+                updateQuery = updateQuery.eq("profile_id", person.id);
+                break;
+              case 'personnel_profile':
+                updateQuery = updateQuery.eq("personnel_profile_id", person.id);
+                break;
+              default:
+                updateQuery = updateQuery.eq("occupant_id", person.id);
+            }
+
+            await updateQuery;
           }
         }
       }
@@ -100,7 +152,7 @@ export function useRoomAssignment(onSuccess: () => void) {
           assignments,
           context: {
             selectedRoom,
-            selectedOccupants,
+            persons,
             assignmentType,
             isPrimaryAssignment,
           },
@@ -110,7 +162,7 @@ export function useRoomAssignment(onSuccess: () => void) {
 
       console.log('Room assignment successful:', data);
 
-      toast.success(`Room${selectedOccupants.length > 1 ? 's' : ''} assigned successfully`);
+      toast.success(`Room${persons.length > 1 ? 's' : ''} assigned successfully`);
       onSuccess();
       return true;
     } catch (error: any) {

@@ -22,6 +22,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
+interface PersonnelOption {
+  id: string;
+  name: string;
+  email: string;
+  department: string | null;
+  source_type: 'profile' | 'personnel_profile';
+}
+
 interface AssignRoomBulkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -33,7 +41,7 @@ export function AssignRoomBulkDialog({
   onOpenChange,
   onSuccess,
 }: AssignRoomBulkDialogProps) {
-  const [selectedOccupants, setSelectedOccupants] = useState<string[]>([]);
+  const [selectedPersonnel, setSelectedPersonnel] = useState<PersonnelOption[]>([]);
   const [selectedRoom, setSelectedRoom] = useState("");
   const [assignmentType, setAssignmentType] = useState("");
   const [isPrimary, setIsPrimary] = useState(false);
@@ -41,18 +49,17 @@ export function AssignRoomBulkDialog({
   const [notes, setNotes] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
 
-  // Fetch occupants
-  const { data: occupants } = useQuery({
-    queryKey: ["occupants-for-bulk-assign"],
+  // Fetch personnel from personnel_access_view
+  const { data: personnel } = useQuery({
+    queryKey: ["personnel-for-bulk-assign"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("occupants")
-        .select("id, first_name, last_name, email, department")
-        .eq("status", "active")
-        .order("first_name");
+        .from("personnel_access_view")
+        .select("id, name, email, department, source_type")
+        .order("name");
 
       if (error) throw error;
-      return data;
+      return data as PersonnelOption[];
     },
   });
 
@@ -82,7 +89,7 @@ export function AssignRoomBulkDialog({
   });
 
   const handleAssign = async () => {
-    if (!selectedRoom || !assignmentType || selectedOccupants.length === 0) {
+    if (!selectedRoom || !assignmentType || selectedPersonnel.length === 0) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -90,16 +97,26 @@ export function AssignRoomBulkDialog({
     setIsAssigning(true);
 
     try {
-      // Create assignments for all selected occupants
-      const assignments = selectedOccupants.map(occupantId => ({
-        occupant_id: occupantId,
-        room_id: selectedRoom,
-        assignment_type: assignmentType,
-        is_primary: isPrimary,
-        assigned_at: new Date().toISOString(),
-        schedule: schedule.trim() || null,
-        notes: notes.trim() || null,
-      }));
+      // Create assignments for all selected personnel using the correct ID column
+      const assignments = selectedPersonnel.map(person => {
+        const base: Record<string, any> = {
+          room_id: selectedRoom,
+          assignment_type: assignmentType,
+          is_primary: isPrimary,
+          assigned_at: new Date().toISOString(),
+          schedule: schedule.trim() || null,
+          notes: notes.trim() || null,
+        };
+
+        // Set the correct ID column based on source_type
+        if (person.source_type === 'profile') {
+          base.profile_id = person.id;
+        } else {
+          base.personnel_profile_id = person.id;
+        }
+
+        return base;
+      });
 
       const { error } = await supabase
         .from("occupant_room_assignments")
@@ -107,12 +124,12 @@ export function AssignRoomBulkDialog({
 
       if (error) throw error;
 
-      toast.success(`Successfully assigned ${selectedOccupants.length} occupants to room`);
+      toast.success(`Successfully assigned ${selectedPersonnel.length} people to room`);
       onSuccess();
       onOpenChange(false);
       
       // Reset form
-      setSelectedOccupants([]);
+      setSelectedPersonnel([]);
       setSelectedRoom("");
       setAssignmentType("");
       setIsPrimary(false);
@@ -126,12 +143,18 @@ export function AssignRoomBulkDialog({
     }
   };
 
-  const toggleOccupant = (occupantId: string) => {
-    setSelectedOccupants(prev =>
-      prev.includes(occupantId)
-        ? prev.filter(id => id !== occupantId)
-        : [...prev, occupantId]
-    );
+  const togglePerson = (person: PersonnelOption) => {
+    setSelectedPersonnel(prev => {
+      const exists = prev.find(p => p.id === person.id);
+      if (exists) {
+        return prev.filter(p => p.id !== person.id);
+      }
+      return [...prev, person];
+    });
+  };
+
+  const isPersonSelected = (personId: string) => {
+    return selectedPersonnel.some(p => p.id === personId);
   };
 
   return (
@@ -141,27 +164,27 @@ export function AssignRoomBulkDialog({
         <DialogHeader>
           <DialogTitle>Bulk Room Assignment</DialogTitle>
           <DialogDescription>
-            Assign multiple occupants to a room at once
+            Assign multiple people to a room at once
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Select Occupants */}
+          {/* Select Personnel */}
           <div className="space-y-3">
-            <Label>Select Occupants ({selectedOccupants.length} selected)</Label>
+            <Label>Select Personnel ({selectedPersonnel.length} selected)</Label>
             <div className="border rounded-lg p-3 max-h-48 overflow-y-auto">
-              {occupants?.map((occupant) => (
-                <div key={occupant.id} className="flex items-center space-x-2 py-2">
+              {personnel?.map((person) => (
+                <div key={person.id} className="flex items-center space-x-2 py-2">
                   <Checkbox
-                    checked={selectedOccupants.includes(occupant.id)}
-                    onCheckedChange={() => toggleOccupant(occupant.id)}
+                    checked={isPersonSelected(person.id)}
+                    onCheckedChange={() => togglePerson(person)}
                   />
                   <div className="flex-1">
                     <div className="font-medium">
-                      {occupant.first_name} {occupant.last_name}
+                      {person.name}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {occupant.email} • {occupant.department}
+                      {person.email} • {person.department || 'No department'}
                     </div>
                   </div>
                 </div>
@@ -182,7 +205,7 @@ export function AssignRoomBulkDialog({
                     {room.room_number} - {room.name}
                     {room.floors && (
                       <span className="text-muted-foreground">
-                        {" "} ({(room.floors as any)?.[0]?.buildings?.[0]?.name || 'Unknown Building'}, {(room.floors as any)?.[0]?.name || 'Unknown Floor'})
+                        {" "} ({(room.floors as any)?.buildings?.name || 'Unknown Building'}, {(room.floors as any)?.name || 'Unknown Floor'})
                       </span>
                     )}
                   </SelectItem>

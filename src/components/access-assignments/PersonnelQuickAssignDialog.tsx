@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { DoorOpen, Star, Trash2, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOccupantAssignments } from '@/components/occupants/hooks/useOccupantAssignments';
-import { useRoomAssignment } from '@/components/occupants/hooks/useRoomAssignment';
+import { useRoomAssignment, PersonSourceType } from '@/components/occupants/hooks/useRoomAssignment';
 import { useRooms } from '@/features/facilities/hooks/useFacilities';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,7 +34,18 @@ export function PersonnelQuickAssignDialog({
   
   const queryClient = useQueryClient();
   
-  const { data: assignments, isLoading: isLoadingAssignments, refetch: refetchAssignments } = useOccupantAssignments(person?.id);
+  // Determine the source type for this person
+  const sourceType: PersonSourceType = person?.source_type === 'personnel_profile' 
+    ? 'personnel_profile' 
+    : 'profile';
+  
+  // Get the correct ID column name for queries
+  const idColumn = sourceType === 'profile' ? 'profile_id' : 'personnel_profile_id';
+  
+  const { data: assignments, isLoading: isLoadingAssignments, refetch: refetchAssignments } = useOccupantAssignments(
+    person?.id,
+    sourceType
+  );
   const { data: allRooms, isLoading: isLoadingRooms } = useRooms();
   const { handleAssignRoom, isAssigning } = useRoomAssignment(() => {
     refetchAssignments();
@@ -64,9 +75,10 @@ export function PersonnelQuickAssignDialog({
   const handleAddRoom = async () => {
     if (!selectedRoomId || !person) return;
     
+    // Pass the person with their correct source_type
     await handleAssignRoom(
       selectedRoomId,
-      [person.id],
+      [{ id: person.id, source_type: sourceType }],
       'primary_office',
       isPrimary
     );
@@ -78,10 +90,11 @@ export function PersonnelQuickAssignDialog({
     try {
       setIsRemoving(roomId);
       
+      // Use the correct ID column based on source_type
       const { error } = await supabase
         .from('occupant_room_assignments')
         .delete()
-        .eq('occupant_id', person.id)
+        .eq(idColumn, person.id)
         .eq('room_id', roomId);
       
       if (error) throw error;
@@ -105,13 +118,13 @@ export function PersonnelQuickAssignDialog({
       await supabase
         .from('occupant_room_assignments')
         .update({ is_primary: false })
-        .eq('occupant_id', person.id);
+        .eq(idColumn, person.id);
       
       // Then set the new primary
       const { error } = await supabase
         .from('occupant_room_assignments')
         .update({ is_primary: true })
-        .eq('occupant_id', person.id)
+        .eq(idColumn, person.id)
         .eq('room_id', roomId);
       
       if (error) throw error;
