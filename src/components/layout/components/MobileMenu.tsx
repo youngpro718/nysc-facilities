@@ -78,7 +78,7 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     'Dashboard': isAdmin ? '/' : '/dashboard',
     'New Request': '/request',
     'Spaces': '/spaces',
-    'Operations': '/operations', // Contains Issues, Maintenance, Supply Requests
+    'Operations': '/operations',
     'Issues': '/issues',
     'Access & Assignments': '/access-assignments',
     'Occupants': '/occupants',
@@ -94,8 +94,10 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     'My Requests': '/my-requests',
     'My Issues': '/my-issues',
     'My Activity': '/my-activity',
-    'Admin Profile': '/admin-profile',
+    'Admin Center': '/admin',
+    'Admin Profile': '/admin', // Legacy fallback
     'Profile': '/profile',
+    'System Settings': '/system-settings',
   };
   const path = pathMap[title];
   if (!path) {
@@ -126,8 +128,10 @@ function getNavigationDescription(title: string): string {
     'My Requests': 'View your submitted requests',
     'My Issues': 'Track your reported issues',
     'My Activity': 'Track all your requests',
-    'Admin Profile': 'Admin settings',
+    'Admin Center': 'Team & user management',
+    'Admin Profile': 'Team & user management',
     'Profile': 'Your account',
+    'System Settings': 'System configuration',
   };
   return descriptionMap[title] || '';
 }
