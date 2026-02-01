@@ -41,6 +41,7 @@ import { CompactHeader } from "@/components/user/CompactHeader";
 import { PickupAlertBanner } from "@/components/user/PickupAlertBanner";
 import { TermSheetPreview } from "@/components/user/TermSheetPreview";
 import { CompactActivitySection } from "@/components/user/CompactActivitySection";
+import { KeyRequestDialog } from "@/components/requests/KeyRequestDialog";
 import { Package, HelpCircle, Key } from "lucide-react";
 
 export default function UserDashboard() {
@@ -64,6 +65,7 @@ export default function UserDashboard() {
 
   const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
   const [avatarPromptDismissed, setAvatarPromptDismissed] = useState(false);
+  const [showKeyRequestDialog, setShowKeyRequestDialog] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -202,13 +204,20 @@ export default function UserDashboard() {
           <Button
             variant="outline"
             size="lg"
-            onClick={() => navigate('/forms/key-request')}
+            onClick={() => setShowKeyRequestDialog(true)}
             className="h-14 touch-manipulation"
           >
             <Key className="h-5 w-5 mr-2" />
             Request Key
           </Button>
         </div>
+
+        {/* Key Request Dialog */}
+        <KeyRequestDialog
+          open={showKeyRequestDialog}
+          onOpenChange={setShowKeyRequestDialog}
+          onSuccess={() => refetchKeyRequests()}
+        />
 
         {/* Court Term Sheet Preview */}
         <TermSheetPreview 

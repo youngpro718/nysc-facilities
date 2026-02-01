@@ -29,9 +29,7 @@ import SystemSettings from "@/pages/SystemSettings";
 import VerificationPending from "@/pages/VerificationPending";
 import FeaturesPreview from "@/pages/FeaturesPreview";
 import AccessManagement from "@/pages/AccessManagement";
-import ThemeSettings from "@/pages/settings/ThemeSettings";
-import SettingsPage from '@/pages/SettingsPage';
-// Legacy settings pages (2FA, Session) are consolidated under Security tab
+// ThemeSettings and SettingsPage removed - consolidated into Profile
 import AdminKeyRequests from "@/pages/admin/KeyRequests";
 import SupplyRoom from "@/pages/SupplyRoom";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
@@ -280,11 +278,8 @@ function AppContent() {
 
 
         {/* Settings Routes */}
-        <Route path="settings/theme" element={
-          <ProtectedRoute requireAdmin>
-            <ThemeSettings />
-          </ProtectedRoute>
-        } />
+        {/* Theme settings now in Profile */}
+        <Route path="settings/theme" element={<Navigate to="/profile?tab=settings" replace />} />
         {/* Legacy routes redirected to Profile settings tab */}
         <Route path="settings/security/2fa" element={<Navigate to="/profile?tab=settings" replace />} />
         <Route path="settings/security/session" element={<Navigate to="/profile?tab=settings" replace />} />
