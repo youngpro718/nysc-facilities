@@ -1,265 +1,121 @@
 
+# Developer Mode: Role Switching & Dashboard Testing
 
-# Comprehensive Application Audit - Phase 2
+## Overview
 
-## Executive Summary
+You want a way to quickly switch between roles and test different dashboards/features without repeatedly logging in and out. This is a very common need for development and QA testing.
 
-After thorough investigation of the codebase, database, console logs, and network requests, I identified several critical issues and areas for improvement. The most urgent is a **broken database view** that causes the Access & Assignments page to show zero users/personnel.
+## What Already Exists
 
----
+The codebase already has a `preview_role` mechanism built into `useRolePermissions.ts`:
+- Admins can set `localStorage.setItem('preview_role', 'court_aide')` to preview other roles
+- **Current limitation**: This only works on the `/admin-profile` page (line 227 checks `window.location.pathname.startsWith('/admin-profile')`)
+- When you sign out, the preview role is automatically cleared
 
-## CRITICAL ISSUES
+## Proposed Solution
 
-### 1. Access & Assignments Page - View Column Mismatch (BROKEN)
+Create a **Developer Mode Panel** that:
+1. Is only accessible to admin users
+2. Can be toggled via keyboard shortcut (Ctrl+Shift+D)
+3. Shows a floating panel with quick role switching
+4. Extends the existing `preview_role` mechanism to work **site-wide** (not just Admin Profile)
+5. Provides quick links to test key pages for each role
 
-**Root Cause**: The `personnel_access_view` database view doesn't match what the application expects.
+## How It Will Work
 
-**Evidence**:
-- Network request returns: `{"code":"42703","message":"column personnel_access_view.name does not exist"}`
-- Query: `GET /rest/v1/personnel_access_view?select=*&order=name.asc` → 400 Error
+1. **Activation**: Press `Ctrl+Shift+D` (or tap a hidden spot 5 times on mobile) to toggle Developer Mode
+2. **Panel Position**: Fixed bottom-right floating panel (draggable)
+3. **Features**:
+   - Quick role switcher (Admin → CMC → Court Aide → Standard User)
+   - Current role indicator with visual badge
+   - Quick links to role-specific dashboards and pages
+   - "Reset to Real Role" button to exit preview mode
+   - Warning banner when viewing as a different role
 
-**Current view columns**:
-```
-id, first_name, last_name, full_name, display_name, title, department, 
-email, phone, extension, room_number, floor, building, is_active, 
-created_at, updated_at
-```
+## Visual Design
 
-**Expected by hook** (`usePersonnelAccess.ts`):
-```typescript
-interface PersonnelAccessRecord {
-  id: string;
-  source_type: 'profile' | 'personnel_profile';  // MISSING
-  name: string;                                   // MISSING (has full_name/display_name)
-  email: string | null;
-  department: string | null;
-  title: string | null;
-  avatar_url: string | null;                      // MISSING
-  user_role: string | null;                       // MISSING
-  is_registered_user: boolean;                    // MISSING
-  room_count: number;                             // MISSING
-  key_count: number;                              // MISSING
-}
-```
-
-**Data exists**: Verified 9 profiles and 10+ personnel_profiles in database.
-
-**Fix**: Recreate the `personnel_access_view` to:
-1. UNION profiles (registered users) with personnel_profiles (non-users)
-2. Add computed `name` column (using COALESCE of full_name, display_name, or first_name || ' ' || last_name)
-3. Add `source_type` discriminator
-4. Add `is_registered_user` boolean
-5. Add counts for room assignments and key assignments
-6. Include `avatar_url` from profiles
-
----
-
-### 2. Realtime Connection Errors (Non-Critical but Noisy)
-
-**Symptom**: Console shows `[AdminRealtime] Connection failed: CLOSED` on page navigation.
-
-**Cause**: When navigating between pages, realtime channels are being closed before cleanup completes, causing error logs.
-
-**Location**: `src/hooks/realtime/useAdminRealtimeNotifications.ts` line 257
-
-**Impact**: No functional impact, but creates noise in console and may confuse developers.
-
-**Fix**: Add connection state check before logging error.
-
----
-
-## MOBILE UX AUDIT
-
-### What's Working Well ✓
-
-| Feature | Implementation | Notes |
-|---------|----------------|-------|
-| **Bottom Tab Bar** | `BottomTabBar.tsx` | 4-5 items + "More", proper safe-area-bottom |
-| **Floating Action Button** | `FloatingActionButton.tsx` | Navigates to /request, positioned bottom-24 |
-| **iOS Safe Areas** | `ios-compatibility.css` | Comprehensive safe-area handling |
-| **Touch Targets** | CSS | 44px minimum enforced via media query |
-| **Pull to Refresh** | `PullToRefresh` component | Used on UserDashboard, MyActivity |
-| **Input Zoom Prevention** | CSS | Font-size: 16px on inputs |
-| **Mobile Forms** | `mobile-form.tsx` | MobileInput, MobileTextarea with proper sizing |
-| **Mobile Drawer** | `ModalFrame.tsx` | Auto-converts dialogs to drawers on mobile |
-
-### Mobile Issues to Fix
-
-#### 3.1 Request Hub - Action Cards Too Wide on iPhone SE
-
-**File**: `src/pages/RequestHub.tsx`
-**Issue**: Grid is `grid-cols-1 sm:grid-cols-2` but cards are full width on mobile with lots of padding.
-**Fix**: Reduce card padding on mobile, or keep 2-column on small screens with narrower cards.
-
-#### 3.2 User Dashboard - Expandable Sections on Mobile
-
-**File**: `src/pages/UserDashboard.tsx`
-**Issue**: Three expandable sections (Supplies, Issues, Keys) are good but:
-- Default expanded section is "supplies" - should be based on what has items
-- ChevronUp/Down icons are small for touch targets
-- Section headers could be taller for easier tapping
-
-**Fix**: 
-- Auto-expand the section with the most relevant data (ready-for-pickup first)
-- Increase header tap area with min-h-[52px]
-
-#### 3.3 Mobile Menu Title Alignment
-
-**File**: `src/components/layout/components/MobileMenu.tsx`
-**Issue**: Navigation sheet opens from right but has "Navigation" title centered, feels off.
-**Fix**: Left-align title or make it more contextual.
-
-#### 3.4 Drawer Title Centering in ModalFrame
-
-**File**: `src/components/common/ModalFrame.tsx` line 149
-**Issue**: Mobile drawer has `text-center flex-1` on title wrapper, which works unless there's a headerRight element.
-**Fix**: Remove `text-center` to left-align titles (more standard on iOS).
-
-#### 3.5 Missing Safe Area on Some Dialogs
-
-**Issue**: Some dialogs using raw `DialogContent` don't have `safe-area-bottom` for iPhone home indicator.
-**Impact**: Form buttons can be partially covered on iPhone X+ devices.
-**Fix**: Phase 3 bulk migration will address this when dialogs move to ModalFrame.
-
----
-
-## ROUTING AUDIT
-
-### Verified Working Routes ✓
-- `/` → Admin Dashboard (admin only)
-- `/dashboard` → User Dashboard
-- `/request` → Request Hub
-- `/request/help` → Help Request Page
-- `/request/supplies` → Supply Order Page
-- `/my-activity` → My Activity (unified tracking)
-- `/access-assignments` → Access & Assignments (broken view, but routing works)
-- `/operations` → Operations hub (Issues, Maintenance, Supplies tabs)
-- `/supply-room` → Supply Room (Court Aide fulfillment)
-- `/tasks` → Tasks page (correctly shows 4 tabs now after removal)
-
-### Legacy Redirects Verified ✓
-- `/occupants` → redirects to `/access-assignments`
-- `/issues` → redirects to `/operations?tab=issues`
-- `/maintenance` → redirects to `/operations?tab=maintenance`
-- `/settings` → redirects to `/profile?tab=settings`
-- `/forms/supply-request` → redirects to `/request/supplies`
-
----
-
-## FORM CONSISTENCY (Post-Phase 1)
-
-### Forms Updated in Phase 1 ✓
-- `QuickIssueDialog.tsx` - Now uses react-hook-form + ModalFrame
-- `ReportIssueDialog.tsx` - Now uses react-hook-form + ModalFrame  
-- `EditKeyDialog.tsx` - Removed AlertDialog nesting
-- `EditIssueForm.tsx` - Uses unified FormButtons
-
-### Remaining Forms for Phase 3 (100+ files)
-These still use raw `DialogContent` and need migration:
-- Inventory dialogs: `EditItemDialog.tsx`, `CreateItemDialog.tsx`
-- Court operations: `CoverageAssignmentDialog.tsx`
-- Form builder: `FormPreviewDialog.tsx`, `FormTemplateBuilderDialog.tsx`
-- Room assignments: Various dialogs in `/room-assignments`
-- Keys: `CreateKeyForm.tsx` (already good pattern, reference)
-
----
-
-## IMPLEMENTATION PLAN
-
-### Phase 1: Critical Database Fix (Do First)
-
-Create new SQL migration to recreate `personnel_access_view`:
-
-```sql
-DROP VIEW IF EXISTS personnel_access_view;
-
-CREATE OR REPLACE VIEW personnel_access_view AS
-WITH profile_counts AS (
-  SELECT 
-    p.id,
-    (SELECT COUNT(*) FROM occupant_room_assignments ora WHERE ora.occupant_id = p.id) as room_count,
-    (SELECT COUNT(*) FROM key_assignments ka WHERE ka.occupant_id = p.id AND ka.returned_at IS NULL) as key_count
-  FROM profiles p
-),
-personnel_counts AS (
-  SELECT 
-    pp.id,
-    (SELECT COUNT(*) FROM occupant_room_assignments ora WHERE ora.occupant_id = pp.id) as room_count,
-    (SELECT COUNT(*) FROM key_assignments ka WHERE ka.occupant_id = pp.id AND ka.returned_at IS NULL) as key_count
-  FROM personnel_profiles pp
-)
--- Registered users from profiles
-SELECT 
-  p.id,
-  'profile'::text as source_type,
-  COALESCE(p.first_name || ' ' || p.last_name, p.email) as name,
-  p.email,
-  p.department,
-  p.title,
-  p.avatar_url,
-  p.access_level as user_role,
-  true as is_registered_user,
-  COALESCE(pc.room_count, 0)::integer as room_count,
-  COALESCE(pc.key_count, 0)::integer as key_count
-FROM profiles p
-LEFT JOIN profile_counts pc ON pc.id = p.id
-WHERE p.is_approved = true
-
-UNION ALL
-
--- Non-registered personnel from personnel_profiles
-SELECT 
-  pp.id,
-  'personnel_profile'::text as source_type,
-  COALESCE(pp.display_name, pp.full_name, pp.first_name || ' ' || pp.last_name) as name,
-  pp.email,
-  pp.department,
-  pp.title,
-  NULL as avatar_url,
-  NULL as user_role,
-  false as is_registered_user,
-  COALESCE(ppc.room_count, 0)::integer as room_count,
-  COALESCE(ppc.key_count, 0)::integer as key_count
-FROM personnel_profiles pp
-LEFT JOIN personnel_counts ppc ON ppc.id = pp.id
-WHERE pp.is_active = true;
+```text
+┌─────────────────────────────────────────┐
+│ 🔧 DEV MODE                         ✕   │
+├─────────────────────────────────────────┤
+│ Current: [Admin] → Viewing as: [CMC]    │
+├─────────────────────────────────────────┤
+│ Switch Role:                            │
+│  ○ Admin     ○ CMC                      │
+│  ○ Court Aide  ○ Standard               │
+├─────────────────────────────────────────┤
+│ Quick Links:                            │
+│  [Dashboard] [Tasks] [Operations]       │
+│  [Supply Room] [Inventory]              │
+├─────────────────────────────────────────┤
+│        [Reset to Real Role]             │
+└─────────────────────────────────────────┘
 ```
 
-### Phase 2: Mobile UX Improvements
+## Technical Details
+
+### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/dev/DevModePanel.tsx` | Main floating panel component |
+| `src/hooks/useDevMode.ts` | Hook for managing dev mode state and keyboard shortcuts |
+
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/RequestHub.tsx` | Adjust card padding for mobile |
-| `src/pages/UserDashboard.tsx` | Smart default expansion, larger touch targets |
-| `src/components/common/ModalFrame.tsx` | Left-align drawer titles |
-| `src/components/layout/components/MobileMenu.tsx` | Improve title alignment |
+| `src/hooks/useRolePermissions.ts` | Remove the `/admin-profile` path restriction (line 227) so preview_role works everywhere |
+| `src/App.tsx` | Add DevModePanel at root level (only renders for admins) |
+| `src/components/layout/Layout.tsx` | Add warning banner when in preview role mode |
 
-### Phase 3: Console Cleanup (Minor)
+### Key Implementation Points
 
-| File | Change |
-|------|--------|
-| `src/hooks/realtime/useAdminRealtimeNotifications.ts` | Check connection state before error log |
+1. **Security**: 
+   - DevModePanel only renders if `isAdmin === true` (from database role, not preview)
+   - Preview role is stored in localStorage only (no server-side changes)
+   - RLS policies still enforce real role at database level
+   - Clear indicator that you're in "preview mode" to prevent confusion
 
----
+2. **User Experience**:
+   - Panel remembers its position
+   - Keyboard shortcut `Ctrl+Shift+D` for quick toggle
+   - Mobile: 5 taps on bottom-right corner to activate
+   - Panel is draggable to reposition
 
-## Expected Outcomes
+3. **Integration**:
+   - Uses existing `preview_role` localStorage key
+   - Dispatches `preview_role_changed` event (already listened for in useRolePermissions)
+   - Automatic cleanup on sign out (already implemented)
 
-After implementation:
-1. **Access & Assignments page shows users and personnel** - Critical fix
-2. **Mobile experience is polished** - Consistent touch targets, proper drawer behavior
-3. **Console is cleaner** - No false error logs on navigation
-4. **Routing is verified working** - All paths tested and documented
+### Quick Links by Role
 
----
+| Role | Primary Pages to Test |
+|------|----------------------|
+| **Admin** | `/` (Admin Dashboard), `/spaces`, `/keys`, `/access-assignments`, `/admin-profile` |
+| **CMC** | `/cmc-dashboard`, `/court-operations`, `/tasks`, `/operations` |
+| **Court Aide** | `/court-aide-dashboard`, `/supply-room`, `/inventory`, `/tasks` |
+| **Standard** | `/dashboard`, `/request`, `/my-activity`, `/profile` |
 
-## Files to Change
+## Benefits
 
-| Priority | File | Change Type |
-|----------|------|-------------|
-| Critical | Database migration | Create new `personnel_access_view` |
-| High | `src/pages/RequestHub.tsx` | Mobile card padding |
-| High | `src/pages/UserDashboard.tsx` | Smart section expansion |
-| Medium | `src/components/common/ModalFrame.tsx` | Drawer title alignment |
-| Medium | `src/components/layout/components/MobileMenu.tsx` | Title styling |
-| Low | `src/hooks/realtime/useAdminRealtimeNotifications.ts` | Connection state check |
+1. **Fast testing**: Switch roles in 1 click instead of logging in/out
+2. **All-in-one**: Test any page as any role from a single panel
+3. **Safe**: Doesn't change your actual database role
+4. **Clear UX**: Warning banner prevents confusion about current view
+5. **Production-safe**: Only visible to authenticated admins
 
+## Security Note
+
+This is a **client-side preview only**. The database RLS policies still enforce the user's real role. This means:
+- You can see what the UI looks like for other roles
+- You cannot actually perform actions restricted by RLS (database will block them)
+- Good for visual testing, but database operations will still use your real permissions
+
+## Implementation Order
+
+1. Create `useDevMode.ts` hook with keyboard listener and state management
+2. Create `DevModePanel.tsx` component with role switcher and quick links
+3. Update `useRolePermissions.ts` to remove path restriction
+4. Add panel to `App.tsx` (conditionally for admins)
+5. Add warning banner to `Layout.tsx`
