@@ -1,162 +1,104 @@
 
-# Mobile Supply Ordering Audit
+# Mobile Supply Ordering - Relocated Controls Layout
 
-## Problem Statement
+## Problem Identified
 
-On mobile devices at `/request/supplies`, the quantity controls (add/subtract buttons and quantity display) are not visible or are being cut off. This prevents users from adding items to their cart on narrow screens.
+After analyzing the code, the current mobile layout for `InlineItemRow` has a structural issue where even in the "stacked" 2-row layout, the second row still has too many elements competing for horizontal space:
 
-## Root Cause Analysis
-
-After examining the code, the issue stems from the `InlineItemRow` component's flex layout combined with container constraints on narrow mobile screens:
-
-### Layout Breakdown
-
-```text
-Container width: 320-390px
-- Container padding (px-4): -32px
-- Row padding (p-3): -24px  
-- Flex gaps (gap-3 x2): -24px
-= Available: ~230-300px
-
-Fixed-width elements:
-- Favorite button: 32px
-- Quantity controls: 110px (when item in cart)
-- Total fixed: ~142px
-
-Remaining for item info: ~88-158px
-
-Problem: Item info section contains:
-- SKU badge (variable width)
-- Item name (can be long)
-- Warning icons
-- Stock info + category badges
+**Current Mobile Row 2:**
+```
+[SKU Badge] [Stock: X units] ← Takes variable width    [- ] [Qty] [+] ← Fixed 110px
 ```
 
-The combination of badges, long item names, and multiple metadata elements in the info section creates horizontal overflow on narrow screens, pushing quantity controls out of view.
+On narrow screens (320-375px), if the SKU badge is wide (e.g., "FURN-001") plus stock text, the quantity controls can still be pushed off-screen or compressed.
 
 ---
 
-## Solution Overview
+## Proposed Solution: 3-Row Mobile Layout
 
-1. **Optimize InlineItemRow for Mobile** - Stack layout vertically on narrow screens
-2. **Add Mobile-Specific Compact Mode** - Reduce metadata shown on mobile
-3. **Increase Touch Target Sizes** - Ensure 44px minimum for buttons
-4. **Fix Container Overflow** - Ensure horizontal scrolling doesn't hide controls
+Reorganize the mobile layout into **3 distinct rows** to ensure quantity controls have a dedicated, full-width row:
+
+### New Mobile Layout:
+
+| Row | Content | Alignment |
+|-----|---------|-----------|
+| **Row 1** | Item Name + Warning Icon | Left |
+| **Row 2** | SKU Badge + Stock Info + Favorite Star | Left + Right |
+| **Row 3** | Quantity Controls (full width) | Center |
+
+Visual representation:
+```
+┌────────────────────────────────────┐
+│ Ballpoint Pens (Box of 12)      ⚠ │  ← Row 1: Name
+│ [OFF-001]  Stock: 50     ⭐       │  ← Row 2: Metadata
+│        [ - ]  5  [ + ]            │  ← Row 3: Controls (centered)
+└────────────────────────────────────┘
+```
 
 ---
 
-## Implementation Plan
+## Benefits
 
-### Phase 1: Mobile-Responsive InlineItemRow
+1. **Guaranteed Visibility**: Quantity controls get their own row, never competing for space
+2. **Larger Touch Targets**: Full-width row allows for bigger, more accessible buttons
+3. **Clear Visual Hierarchy**: Name → Info → Action, top to bottom
+4. **Thumb-Friendly**: Controls at the bottom of the card, within easy thumb reach
 
-**File: `src/components/supply/InlineItemRow.tsx`**
+---
 
-Transform the single-row layout into a responsive design:
+## Technical Implementation
 
-| Screen Size | Layout |
-|-------------|--------|
-| Mobile (less than 640px) | 2-row stacked layout |
-| Tablet/Desktop | Current single-row layout |
-
-Mobile layout structure:
-- **Row 1**: Item name + favorite star (right-aligned)
-- **Row 2**: Stock info (left) + quantity controls (right)
+### File: `src/components/supply/InlineItemRow.tsx`
 
 Key changes:
-- Add `useIsMobile()` hook for responsive behavior
-- Stack content vertically on mobile using `flex-col`
-- Hide secondary badges (category, approval) on mobile to save space
-- Increase button sizes to 44px for touch targets
-- Add `overflow-x-hidden` to prevent horizontal scroll
+- Restructure mobile layout to use 3 rows instead of 2
+- Move quantity controls to a dedicated third row on mobile
+- Center the controls in the third row for better ergonomics
+- Keep desktop layout unchanged (single row with inline controls)
 
-### Phase 2: QuickSupplyRequest Mobile Optimization
-
-**File: `src/components/supply/QuickSupplyRequest.tsx`**
-
-- Reduce gap spacing on mobile
-- Add explicit `overflow-x-hidden` to prevent horizontal scrolling
-- Adjust padding for tighter mobile layout
-
-### Phase 3: FavoritesStrip Touch Optimization
-
-**File: `src/components/supply/FavoritesStrip.tsx`**
-
-- Increase favorite item card touch targets
-- Larger buttons for increment/decrement within favorites
-
-### Phase 4: OrderSummaryFooter Mobile Polish
-
-**File: `src/components/supply/OrderSummaryFooter.tsx`**
-
-- Verify sticky positioning works with iPhone safe areas
-- Ensure footer doesn't overlap scrollable content
-
----
-
-## Technical Details
-
-### InlineItemRow Changes
-
-Current structure:
-```text
-[SKU] [Name] [Warning] | [Star] | [-] [Qty] [+]
-```
-
-Mobile structure:
-```text
-[Name truncated...]        [Star]
-Stock: X units    [-] [Qty] [+]
-```
-
-Proposed code approach:
-```typescript
-const isMobile = useIsMobile();
-
-// Conditional layout
-<div className={cn(
-  "p-3 rounded-lg border transition-all",
-  isMobile ? "flex flex-col gap-2" : "flex items-center gap-3",
-  // ... other classes
-)}>
-  {/* Row 1 on mobile, inline on desktop */}
-  <div className={cn(
-    isMobile ? "flex items-center justify-between" : "flex-1 min-w-0"
-  )}>
-    {/* Item name - larger touch area on mobile */}
-    <div className={isMobile ? "flex-1 min-w-0" : undefined}>
-      <span className="font-medium truncate block">{item.name}</span>
-      {!isMobile && /* Show full metadata on desktop */}
-    </div>
-    
-    {/* Favorite button - stays with name on mobile */}
-    {isMobile && onToggleFavorite && <StarButton />}
+```tsx
+// Mobile layout structure
+<div className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-3">
+  {/* Mobile Row 1: Item Name + Warning */}
+  <div className="flex items-center gap-2 sm:flex-1">
+    <span className="font-medium truncate">{item.name}</span>
+    {item.requires_justification && <AlertTriangle />}
   </div>
   
-  {/* Row 2 on mobile: stock + controls */}
-  <div className={cn(
-    "flex items-center justify-between",
-    isMobile ? "w-full" : "shrink-0"
-  )}>
-    {isMobile && <StockInfo />}
-    {!isMobile && onToggleFavorite && <StarButton />}
-    <QuantityControls size={isMobile ? "lg" : "default"} />
+  {/* Mobile Row 2: SKU + Stock + Favorite Star */}
+  <div className="flex items-center justify-between sm:hidden">
+    <div className="flex items-center gap-2">
+      <Badge>{item.sku}</Badge>
+      <span>Stock: {item.quantity}</span>
+    </div>
+    <Button onClick={onToggleFavorite}><Star /></Button>
+  </div>
+  
+  {/* Mobile Row 3: Quantity Controls (centered, full width) */}
+  <div className="flex justify-center gap-2 pt-1 sm:hidden">
+    {inCart ? (
+      <div className="flex items-center gap-3">
+        <Button className="h-12 w-12">-</Button>
+        <span className="text-xl font-bold w-12 text-center">{qty}</span>
+        <Button className="h-12 w-12">+</Button>
+      </div>
+    ) : (
+      <Button className="h-12 px-8">+ Add to Cart</Button>
+    )}
+  </div>
+  
+  {/* Desktop: Favorite + Controls inline (unchanged) */}
+  <div className="hidden sm:flex items-center gap-2">
+    <Button onClick={onToggleFavorite}><Star /></Button>
+    <QuantityControls />
   </div>
 </div>
 ```
 
-### Button Size Updates
-
-For mobile, increase touch targets:
-```typescript
-// Current
-className="h-9 w-9 rounded-full"
-
-// Mobile
-className={cn(
-  "rounded-full touch-manipulation",
-  isMobile ? "h-11 w-11" : "h-9 w-9"
-)}
-```
+### Additional Optimizations:
+- Increase button size to 48px (`h-12 w-12`) on mobile for better touch targets
+- Add subtle visual separation (padding or border) above the controls row
+- Use larger quantity text (`text-xl`) for better readability
 
 ---
 
@@ -164,21 +106,14 @@ className={cn(
 
 | File | Changes |
 |------|---------|
-| `src/components/supply/InlineItemRow.tsx` | Mobile-responsive stacked layout |
-| `src/components/supply/QuickSupplyRequest.tsx` | Overflow handling, tighter mobile padding |
-| `src/components/supply/FavoritesStrip.tsx` | Larger touch targets on mobile |
-| `src/components/supply/OrderSummaryFooter.tsx` | Verify safe area padding |
+| `src/components/supply/InlineItemRow.tsx` | Restructure to 3-row mobile layout with dedicated controls row |
 
 ---
 
-## Testing Checklist
+## Expected Result
 
-After implementation, verify on mobile devices:
-- [ ] Quantity controls visible on 320px width
-- [ ] Quantity controls visible on 375px width (iPhone SE/Mini)
-- [ ] Quantity controls visible on 390px width (iPhone 14)
-- [ ] Add button is tappable and responds correctly
-- [ ] Increment/decrement buttons work when item in cart
-- [ ] Favorites strip scrolls horizontally properly
-- [ ] Order footer doesn't overlap content
-- [ ] Safe area padding works on notched iPhones
+After this change:
+- Quantity controls will always be visible on all mobile screen sizes (320px+)
+- The "Add" button and +/- controls will be centered and prominent
+- Touch targets will be large enough for easy mobile use
+- Desktop view remains unchanged
