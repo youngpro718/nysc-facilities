@@ -18,10 +18,10 @@ export function SettingsNavigation() {
       return [{ label: 'Settings' }];
     }
     
-    if (path === '/admin-profile') {
+    if (path === '/admin') {
       return [
         { label: 'Settings', path: '/settings' },
-        { label: 'Admin Profile' }
+        { label: 'Admin Center' }
       ];
     }
     

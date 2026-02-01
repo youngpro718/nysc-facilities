@@ -112,10 +112,12 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     Maintenance: "/operations?tab=maintenance",
     "Court Operations": "/court-operations",
     "My Activity": "/my-activity",
-    "My Requests": "/my-activity?tab=keys", // Legacy - redirect to activity
-    "My Issues": "/my-activity?tab=issues", // Legacy - redirect to activity
-    "Admin Profile": "/admin-profile",
+    "My Requests": "/my-activity?tab=keys",
+    "My Issues": "/my-activity?tab=issues",
+    "Admin Center": "/admin",
+    "Admin Profile": "/admin", // Legacy fallback
     Profile: "/profile",
+    "System Settings": "/system-settings",
   };
   return pathMap[title] || "/";
 }

@@ -147,8 +147,10 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     'My Requests': '/my-requests',
     'My Issues': '/my-issues',
     'My Activity': '/my-activity',
-    'Admin Profile': '/admin-profile',
+    'Admin Center': '/admin',
+    'Admin Profile': '/admin', // Legacy fallback
     'Profile': '/profile',
+    'System Settings': '/system-settings',
   };
   return pathMap[title] || '/';
 }
