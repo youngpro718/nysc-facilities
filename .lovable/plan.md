@@ -1,130 +1,186 @@
 
-# Fix User Dashboard Display & Add Term Sheet Button for Supply Team
+# Fix User Dashboard Display & Consolidate Request Actions
 
-## Problem Summary
+## Problem Analysis
 
-### Issue 1: User Dashboard Not Showing
-When using Developer Mode to preview the "Standard" user role, you're still seeing the Admin Dashboard instead of the User Dashboard.
+### Issue 1: User Dashboard Not Displaying in Dev Mode
 
-**Root Cause**: The DevModePanel correctly navigates to `/dashboard` when you select "Standard", but if you're currently on `/` and the navigation doesn't happen (or you click the "Dashboard" quick link which goes to `/`), you stay on the Admin Dashboard route which is hardcoded to show `AdminDashboard`.
+**Root Cause Identified**: When you switch to "Standard" role in Dev Mode, the code correctly navigates to `/dashboard`. However, you're still seeing the admin dashboard because:
 
-**Also**: The quick links in DevModePanel update dynamically based on the *effective* role, so when you switch to "Standard", the Dashboard link should point to `/dashboard`. However, if something is caching or not refreshing properly, it might still show admin links.
+1. The sidebar navigation is dynamically determined by `getRoleBasedNavigation()` which uses `userRole` from `useRolePermissions()`
+2. `useRolePermissions()` DOES respect the `preview_role` (lines 221-229 of the hook)
+3. BUT the initial navigation may be cached or there's a race condition between setting the preview role and the navigation updating
 
-### Issue 2: Term Sheet Access for Supply Team
-The Court Aide (supply team) dashboard doesn't have a button to access the Term Sheet, which is important for them to see court assignments at a glance.
+**Additional Finding**: The DevModePanel already calls `navigate(getDashboardForRole(value))` after setting preview role. The issue is likely that:
+- The permissions cache (30-second TTL for non-admin) may be stale
+- The `preview_role_changed` event needs to trigger a permission refetch AND re-navigation
 
----
+### Issue 2: "New Requests" Page Consolidation
 
-## Solution
+You're asking: "Is the dedicated /request page needed, or can those actions be on the dashboard?"
 
-### Fix 1: Ensure DevMode Quick Links Navigate Correctly
+**Current State**: 
+- Standard user navigation includes: Dashboard, **New Request**, My Activity, Profile
+- The `/request` page (RequestHub) shows 4 large action cards: Order Supplies, Request Help, Report Issue, Request Key
 
-Update the DevModePanel's "Dashboard" quick link behavior to always use the role-specific dashboard path rather than the hardcoded links.
-
-**File: `src/components/dev/DevModePanel.tsx`**
-
-Currently the quick links are defined with static paths. When the preview role changes, the `effectiveRole` from `useRolePermissions` should update, and the quick links should reflect the new role's paths. Need to verify this is working and add a useEffect to force re-render.
-
-### Fix 2: Add Term Sheet Button to Court Aide Work Center
-
-**File: `src/pages/CourtAideWorkCenter.tsx`**
-
-Add a "Term Sheet" button to the action buttons section so Court Aides can quickly access the term sheet.
-
-```
-Current buttons: Inventory | All Tasks | Settings
-New buttons: Inventory | Term Sheet | All Tasks | Settings
-```
-
-### Fix 3: Add Term Sheet to Court Aide Quick Links in DevMode
-
-**File: `src/components/dev/DevModePanel.tsx`**
-
-Add Term Sheet to the court_aide quick links for easier testing access.
+**Your Request**: Put these actions directly on the user dashboard so users don't need a separate page.
 
 ---
 
-## Technical Implementation
+## Proposed Solution
 
-### File 1: `src/pages/CourtAideWorkCenter.tsx`
+### Fix 1: Force Dashboard Refresh on Role Switch
 
-Add a Term Sheet button in the action buttons section (lines 48-66):
+Modify the DevModePanel to:
+1. Clear the permissions cache before setting preview role
+2. Trigger a hard page reload OR force useRolePermissions to refetch
+3. Ensure navigation happens AFTER the role/permissions update is complete
 
+**File**: `src/components/dev/DevModePanel.tsx`
+
+Changes:
+- Add a small delay after setting preview role before navigating
+- Clear any cached permissions when switching roles
+- Force the `preview_role_changed` event to propagate fully
+
+### Fix 2: Integrate Quick Actions into User Dashboard
+
+Instead of linking to `/request`, put the 4 action buttons directly on the dashboard.
+
+**Current Quick Actions Section** (lines 175-193):
 ```tsx
-// Add after the existing Inventory button
-<Button variant="outline" size="sm" asChild className="shrink-0">
-  <Link to="/term-sheet">
-    <Scale className="h-4 w-4 mr-2" />
-    Term Sheet
-  </Link>
-</Button>
-```
-
-Also add `Scale` to the imports from `lucide-react`.
-
-### File 2: `src/components/dev/DevModePanel.tsx`
-
-Update the `court_aide` quick links array to include Term Sheet:
-
-```tsx
-court_aide: [
-  { label: 'Work Center', path: '/court-aide-dashboard' },
-  { label: 'Term Sheet', path: '/term-sheet' },  // NEW
-  { label: 'Supply Room', path: '/supply-room' },
-  { label: 'Inventory', path: '/inventory' },
-  { label: 'Tasks', path: '/tasks' },
-],
-```
-
-### File 3: Verify DevMode Role Switching
-
-The DevModePanel already uses `getDashboardForRole()` for navigation when switching roles. Verify that:
-
-1. When switching to "Standard", it navigates to `/dashboard`
-2. The quick links update to show `standard` role links (Dashboard → `/dashboard`)
-
-If the quick links aren't updating, add a key prop to force re-render:
-
-```tsx
-<div key={effectiveRole} className="flex flex-wrap gap-1.5">
-  {quickLinks.map((link) => (
-    // ...
-  ))}
+<div className="grid grid-cols-2 gap-3">
+  <Button onClick={() => navigate('/request')}>Request Supplies</Button>
+  <QuickIssueReportButton />
 </div>
 ```
+
+**Proposed Expanded Quick Actions**:
+```tsx
+<div className="grid grid-cols-2 gap-3">
+  <Button onClick={() => navigate('/request/supplies')}>Order Supplies</Button>
+  <Button onClick={() => navigate('/request/help')}>Request Help</Button>
+  <QuickIssueReportButton />
+  <Button onClick={() => navigate('/forms/key-request')}>Request Key</Button>
+</div>
+```
+
+This gives users **direct access to all 4 actions** from their dashboard, eliminating the need for the intermediate `/request` page.
+
+### Fix 3: Update Standard User Navigation
+
+Remove "New Request" from navigation since actions are now on dashboard.
+
+**File**: `src/components/layout/config/navigation.tsx`
+
+Change standard user navigation from:
+```tsx
+return [
+  { title: 'Dashboard', icon: LayoutDashboard },
+  { title: 'New Request', icon: Package },  // REMOVE
+  { title: 'My Activity', icon: FileText },
+  { type: "separator" },
+  { title: 'Profile', icon: User },
+];
+```
+
+To:
+```tsx
+return [
+  { title: 'Dashboard', icon: LayoutDashboard },
+  { title: 'My Activity', icon: FileText },
+  { type: "separator" },
+  { title: 'Profile', icon: User },
+];
+```
+
+And update routes accordingly.
+
+---
+
+## Implementation Summary
+
+| File | Change |
+|------|--------|
+| `src/components/dev/DevModePanel.tsx` | Force cache clear + add delay before navigation on role switch |
+| `src/pages/UserDashboard.tsx` | Expand quick actions grid to include all 4 request types |
+| `src/components/layout/config/navigation.tsx` | Remove "New Request" from standard user nav, keep `/request` route as backup |
+
+---
+
+## Updated User Dashboard Layout
+
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│  Header: Compact greeting + Date + Notifications                    │
+├─────────────────────────────────────────────────────────────────────┤
+│  PICKUP ALERT BANNER (if supplies ready)                           │
+├─────────────────────────────────────────────────────────────────────┤
+│  QUICK ACTIONS (4 buttons, 2x2 grid)                               │
+│  ┌─────────────┐ ┌─────────────┐                                   │
+│  │ 📦 Order    │ │ 🆘 Request  │                                   │
+│  │  Supplies   │ │    Help     │                                   │
+│  └─────────────┘ └─────────────┘                                   │
+│  ┌─────────────┐ ┌─────────────┐                                   │
+│  │ ⚠️ Report   │ │ 🔑 Request  │                                   │
+│  │   Issue     │ │    Key      │                                   │
+│  └─────────────┘ └─────────────┘                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│  COURT TERM SHEET (searchable, collapsible)                        │
+├─────────────────────────────────────────────────────────────────────┤
+│  MY ACTIVITY (tabbed: Supplies | Issues | Keys)                    │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Technical Details
+
+### DevModePanel Role Switch Fix
+
+```tsx
+onValueChange={(value) => {
+  // Clear permissions cache first
+  localStorage.removeItem(`permissions_cache_${userId}`);
+  
+  if (value === realRole) {
+    clearPreviewRole();
+  } else {
+    setPreviewRole(value as UserRole);
+  }
+  
+  // Dispatch event for permission refresh
+  window.dispatchEvent(new CustomEvent('preview_role_changed'));
+  
+  // Small delay to let permissions update before navigating
+  setTimeout(() => {
+    navigate(getDashboardForRole(value as UserRole));
+  }, 100);
+}}
+```
+
+### Dashboard Quick Actions Expansion
+
+Replace the current 2-button grid with a 4-button grid, each going directly to the action form:
+
+- **Order Supplies** → `/request/supplies`
+- **Request Help** → `/request/help`
+- **Report Issue** → `/forms/issue-report` (existing QuickIssueReportButton)
+- **Request Key** → `/forms/key-request`
+
+---
+
+## Benefits
+
+1. **Dashboard becomes the true hub** - Everything accessible from one place
+2. **One less click** - Users go directly to forms instead of through /request
+3. **Cleaner navigation** - Only 3 items: Dashboard, My Activity, Profile
+4. **Dev Mode works correctly** - Role switches show the correct dashboard
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/pages/CourtAideWorkCenter.tsx` | Add Term Sheet button to action buttons |
-| `src/components/dev/DevModePanel.tsx` | Add Term Sheet to court_aide quick links; add key prop for re-render |
-
----
-
-## Expected Behavior After Fix
-
-1. **DevMode Role Switching**: 
-   - Clicking "Standard" → Navigates to `/dashboard` → Shows the new User Dashboard with Term Sheet
-   - Quick links update to show Standard user links
-
-2. **Court Aide Dashboard**:
-   - New "Term Sheet" button visible in the header action buttons
-   - Clicking it navigates to `/term-sheet` for full term view
-
-3. **DevMode Testing for Court Aide**:
-   - Term Sheet appears in quick links for faster access during testing
-
----
-
-## How to Test
-
-1. Open DevMode (Ctrl+Shift+D)
-2. Click "Standard" radio button
-3. Verify you're taken to `/dashboard` and see the User Dashboard with Term Sheet
-4. Switch back to "Court Aide"
-5. Verify you're taken to `/court-aide-dashboard`
-6. Verify new "Term Sheet" button is visible in the action bar
-7. Click Term Sheet button and verify navigation to `/term-sheet`
+1. `src/components/dev/DevModePanel.tsx` - Fix role switch + navigation timing
+2. `src/pages/UserDashboard.tsx` - Expand quick actions to 4 buttons
+3. `src/components/layout/config/navigation.tsx` - Remove "New Request" from standard nav; update routes
