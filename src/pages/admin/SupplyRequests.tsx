@@ -184,11 +184,17 @@ export default function AdminSupplyRequests() {
   });
 
   const getAvailableActions = (status: string, request: any) => {
+    // Check if request needs approval (pending_approval status OR has [APPROVAL REQUIRED] in justification)
+    const needsApproval = status === 'pending_approval' || 
+      (request?.justification?.includes('[APPROVAL REQUIRED]') && !['approved', 'rejected', 'completed', 'cancelled'].includes(status));
+    
+    if (needsApproval) {
+      return ['approve', 'reject'];
+    }
+    
     switch (status) {
       case 'pending':
         return ['review', 'approve', 'reject'];
-      case 'pending_approval':
-        return ['approve', 'reject'];
       case 'under_review':
         return ['approve', 'reject'];
       case 'approved':
@@ -276,55 +282,71 @@ export default function AdminSupplyRequests() {
       </PageHeader>
 
       {/* Pending Approvals Section - Prominently displayed at top */}
-      {!isLoading && filteredRequests.filter(r => r.status === 'pending_approval').length > 0 && filterStatus === 'all' && (
-        <Card className="border-orange-500/50 bg-orange-500/5 mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
-              <AlertTriangle className="h-5 w-5" />
-              Pending Approvals ({filteredRequests.filter(r => r.status === 'pending_approval').length})
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              These requests contain restricted items (e.g., Furniture, Chairs) and require your approval before fulfillment.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {filteredRequests.filter(r => r.status === 'pending_approval').map((request) => (
-              <div 
-                key={`pending-${request.id}`} 
-                className="flex items-center justify-between p-3 bg-background border rounded-lg"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{request.title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {request.profiles?.first_name} {request.profiles?.last_name} • {request.supply_request_items?.length || 0} items
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {request.justification?.slice(0, 100)}{request.justification?.length > 100 ? '...' : ''}
-                  </p>
+      {/* Show requests that need approval: either pending_approval status OR [APPROVAL REQUIRED] in justification */}
+      {!isLoading && (() => {
+        const needsApprovalRequests = filteredRequests.filter(r => 
+          r.status === 'pending_approval' || 
+          (r.justification?.includes('[APPROVAL REQUIRED]') && !['approved', 'rejected', 'completed', 'cancelled'].includes(r.status))
+        );
+        
+        if (needsApprovalRequests.length === 0 || filterStatus !== 'all') return null;
+        
+        return (
+          <Card className="border-orange-500/50 bg-orange-500/5 mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                <AlertTriangle className="h-5 w-5" />
+                Pending Approvals ({needsApprovalRequests.length})
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                These requests contain restricted items (e.g., Furniture, Chairs) and require your approval before fulfillment.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {needsApprovalRequests.map((request) => (
+                <div 
+                  key={`pending-${request.id}`} 
+                  className="flex items-center justify-between p-3 bg-background border rounded-lg"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{request.title}</p>
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {request.status === 'pending_approval' ? 'Pending' : 'Submitted'}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {request.profiles?.first_name} {request.profiles?.last_name} • {request.supply_request_items?.length || 0} items
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {request.justification?.replace('[APPROVAL REQUIRED] ', '').slice(0, 100)}
+                      {request.justification?.length > 100 ? '...' : ''}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 ml-3 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => openActionDialog(request, 'approve')}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => openActionDialog(request, 'reject')}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Reject
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2 ml-3">
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={() => openActionDialog(request, 'approve')}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => openActionDialog(request, 'reject')}
-                  >
-                    <XCircle className="h-4 w-4 mr-1" />
-                    Reject
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">

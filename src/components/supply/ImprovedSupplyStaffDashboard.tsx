@@ -57,8 +57,14 @@ export function ImprovedSupplyStaffDashboard() {
             )
           )
         `)
-        // FIXED: Don't include 'completed' - those are done!
-        .in('status', ['pending', 'approved', 'ready'])
+        // FIXED: Use actual statuses from the workflow
+        // 'submitted' = new orders (standard items)
+        // 'approved' = admin-approved orders (restricted items)
+        // 'received' = supply room accepted
+        // 'picking' = currently being fulfilled
+        // 'ready' = packed and ready for pickup
+        // Note: 'pending_approval' orders need admin approval first, not shown to supply staff
+        .in('status', ['submitted', 'approved', 'received', 'picking', 'ready'])
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -139,7 +145,8 @@ export function ImprovedSupplyStaffDashboard() {
   const filteredOrders = ordersToFilter.filter(order => {
     // Filter by tab (completed tab uses separate query, so skip this filter)
     if (activeTab !== 'completed') {
-      if (activeTab === 'new' && !['pending', 'approved'].includes(order.status)) return false;
+      // 'new' tab: orders waiting to be fulfilled (submitted, approved, received, picking)
+      if (activeTab === 'new' && !['submitted', 'approved', 'received', 'picking'].includes(order.status)) return false;
       if (activeTab === 'ready' && order.status !== 'ready') return false;
     }
 
@@ -156,8 +163,8 @@ export function ImprovedSupplyStaffDashboard() {
     return true;
   });
 
-  // Calculate counts
-  const newCount = (allOrders || []).filter(o => ['pending', 'approved'].includes(o.status)).length;
+  // Calculate counts - use actual statuses
+  const newCount = (allOrders || []).filter(o => ['submitted', 'approved', 'received', 'picking'].includes(o.status)).length;
   const readyCount = (allOrders || []).filter(o => o.status === 'ready').length;
   const completedTodayCount = (allOrders || []).filter(o => {
     if (o.status !== 'completed') return false;
