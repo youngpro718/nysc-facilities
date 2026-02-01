@@ -1,186 +1,262 @@
 
-# Fix User Dashboard Display & Consolidate Request Actions
 
-## Problem Analysis
+# Comprehensive Page & Form Audit - Cleanup and Consolidation Plan
 
-### Issue 1: User Dashboard Not Displaying in Dev Mode
+## Executive Summary
 
-**Root Cause Identified**: When you switch to "Standard" role in Dev Mode, the code correctly navigates to `/dashboard`. However, you're still seeing the admin dashboard because:
+After thoroughly reviewing the codebase, I've identified several significant navigation and architectural issues that make the app feel fragmented and hard to navigate. This plan addresses:
 
-1. The sidebar navigation is dynamically determined by `getRoleBasedNavigation()` which uses `userRole` from `useRolePermissions()`
-2. `useRolePermissions()` DOES respect the `preview_role` (lines 221-229 of the hook)
-3. BUT the initial navigation may be cached or there's a race condition between setting the preview role and the navigation updating
-
-**Additional Finding**: The DevModePanel already calls `navigate(getDashboardForRole(value))` after setting preview role. The issue is likely that:
-- The permissions cache (30-second TTL for non-admin) may be stale
-- The `preview_role_changed` event needs to trigger a permission refetch AND re-navigation
-
-### Issue 2: "New Requests" Page Consolidation
-
-You're asking: "Is the dedicated /request page needed, or can those actions be on the dashboard?"
-
-**Current State**: 
-- Standard user navigation includes: Dashboard, **New Request**, My Activity, Profile
-- The `/request` page (RequestHub) shows 4 large action cards: Order Supplies, Request Help, Report Issue, Request Key
-
-**Your Request**: Put these actions directly on the user dashboard so users don't need a separate page.
+1. **Form pages opening as full pages instead of modals** (poor UX for logged-in users)
+2. **The Public Forms page** and whether it's still needed
+3. **Orphaned/disconnected pages** that serve little purpose
+4. **Profile/Settings page overlap** and confusion
+5. **Overall navigation streamlining**
 
 ---
 
-## Proposed Solution
+## Current Issues Found
 
-### Fix 1: Force Dashboard Refresh on Role Switch
+### Issue 1: Form Pages Open as Full Pages (Not Modals)
 
-Modify the DevModePanel to:
-1. Clear the permissions cache before setting preview role
-2. Trigger a hard page reload OR force useRolePermissions to refetch
-3. Ensure navigation happens AFTER the role/permissions update is complete
+**The Problem:**
+When a logged-in user clicks "Request Key" on their dashboard, they're taken to `/forms/key-request` which:
+- Opens as a completely new page (no Layout wrapper)
+- Has a "Back to Forms" button that goes to `/public-forms`
+- Treats them like a public anonymous user
+- Asks for their name/email even though they're logged in
 
-**File**: `src/components/dev/DevModePanel.tsx`
+**Root Cause:** These form pages (`KeyRequestFormPage.tsx`, `IssueReportFormPage.tsx`, `MaintenanceRequestFormPage.tsx`) were designed for **public/anonymous** users who don't have accounts. The routing incorrectly sends logged-in users to these public form pages instead of modal-based forms.
 
-Changes:
-- Add a small delay after setting preview role before navigating
-- Clear any cached permissions when switching roles
-- Force the `preview_role_changed` event to propagate fully
+**Affected Files:**
+- `src/pages/forms/KeyRequestFormPage.tsx`
+- `src/pages/forms/IssueReportFormPage.tsx`
+- `src/pages/forms/MaintenanceRequestFormPage.tsx`
 
-### Fix 2: Integrate Quick Actions into User Dashboard
+### Issue 2: Public Forms Page - Is It Needed?
 
-Instead of linking to `/request`, put the 4 action buttons directly on the dashboard.
+**The Public Forms System:**
+| Page | Purpose | Status |
+|------|---------|--------|
+| `/public-forms` | Landing page for anonymous users to download PDFs | **KEEP** (legitimate use case) |
+| `/submit-form` | Upload completed PDF forms | **KEEP** (for PDF upload flow) |
+| `/forms/key-request` | Interactive key request form | **MODIFY** (dual-purpose issue) |
+| `/forms/issue-report` | Interactive issue report form | **MODIFY** (dual-purpose issue) |
+| `/forms/maintenance-request` | Interactive maintenance form | **MODIFY** (dual-purpose issue) |
 
-**Current Quick Actions Section** (lines 175-193):
-```tsx
-<div className="grid grid-cols-2 gap-3">
-  <Button onClick={() => navigate('/request')}>Request Supplies</Button>
-  <QuickIssueReportButton />
-</div>
-```
+**Verdict:** The public forms system IS needed for anonymous users (visitors without accounts who need to download PDFs). However, **logged-in users should NOT be routed to these pages**. They should use modal-based forms within the app.
 
-**Proposed Expanded Quick Actions**:
-```tsx
-<div className="grid grid-cols-2 gap-3">
-  <Button onClick={() => navigate('/request/supplies')}>Order Supplies</Button>
-  <Button onClick={() => navigate('/request/help')}>Request Help</Button>
-  <QuickIssueReportButton />
-  <Button onClick={() => navigate('/forms/key-request')}>Request Key</Button>
-</div>
-```
+### Issue 3: Orphaned/Disconnected Pages
 
-This gives users **direct access to all 4 actions** from their dashboard, eliminating the need for the intermediate `/request` page.
+| Page | Path | Issue | Recommendation |
+|------|------|-------|----------------|
+| `FacilitiesExample.tsx` | N/A (not routed) | Example/demo code, not in routes | **DELETE** |
+| `SmartDashboard.tsx` | N/A (not routed) | Unused experiment | **DELETE** or integrate |
+| `FeaturesPreview.tsx` | `/features-preview` | Only for pending verification users | **KEEP** (serves a purpose) |
+| `MaintenanceDashboard.tsx` | N/A (not routed) | Never implemented | **DELETE** |
+| `RequestHub.tsx` | `/request` | Was the "New Request" hub, now bypassed | **EVALUATE** (actions moved to dashboard) |
 
-### Fix 3: Update Standard User Navigation
+### Issue 4: Profile/Settings Page Overlap
 
-Remove "New Request" from navigation since actions are now on dashboard.
+**Current State:**
+| Page | Path | Purpose |
+|------|------|---------|
+| `Profile.tsx` | `/profile` | User profile + settings tabs |
+| `AdminProfile.tsx` | `/admin-profile` | Admin profile + user management + settings |
+| `SettingsPage.tsx` | `/settings` | Redirects to `/profile?tab=settings` |
+| `SystemSettings.tsx` | `/system-settings` | System-wide admin settings |
+| `ThemeSettings.tsx` | `/settings/theme` | Just theme selection |
 
-**File**: `src/components/layout/config/navigation.tsx`
+**Issues:**
+1. `SettingsPage.tsx` exists but just redirects - can be removed
+2. `ThemeSettings.tsx` is a dedicated page for 3 theme options - should be consolidated
+3. `AdminProfile.tsx` is 787 lines and does too much (profile + users + security + audit + settings)
+4. Standard users have a clean Profile page; admins have an overcrowded one
 
-Change standard user navigation from:
-```tsx
-return [
-  { title: 'Dashboard', icon: LayoutDashboard },
-  { title: 'New Request', icon: Package },  // REMOVE
-  { title: 'My Activity', icon: FileText },
-  { type: "separator" },
-  { title: 'Profile', icon: User },
-];
-```
+### Issue 5: Admin Page Duplication
 
-To:
-```tsx
-return [
-  { title: 'Dashboard', icon: LayoutDashboard },
-  { title: 'My Activity', icon: FileText },
-  { type: "separator" },
-  { title: 'Profile', icon: User },
-];
-```
-
-And update routes accordingly.
+| Feature | Appears In |
+|---------|-----------|
+| User Management | `AdminProfile.tsx` (Users tab), `Users.tsx` page |
+| Security Audit | `AdminProfile.tsx` (Audit tab), `SystemSettings.tsx` (Security tab) |
+| QR Code/Install | `AdminProfile.tsx`, `SystemSettings.tsx`, `InstallApp.tsx` |
+| Role/Access Management | `AdminProfile.tsx` (Access tab), `AccessManagement.tsx` page |
 
 ---
 
-## Implementation Summary
+## Proposed Solutions
 
-| File | Change |
+### Solution 1: Fix Form Navigation for Logged-In Users
+
+**Strategy:** When a logged-in user clicks "Request Key" or similar actions, open a **modal dialog** instead of navigating to the public form page.
+
+**Implementation:**
+1. Create modal wrappers for each form type
+2. Update dashboard buttons to open modals (not navigate to `/forms/*`)
+3. Keep public form pages for anonymous users only
+
+**Files to Create:**
+- `src/components/requests/KeyRequestDialog.tsx` - Modal wrapper around key request form
+- Update existing `IssueDialog.tsx` pattern for consistency
+
+**Files to Modify:**
+- `src/pages/UserDashboard.tsx` - Change button actions from navigate to open dialog
+- `src/pages/forms/KeyRequestFormPage.tsx` - Add check: if user is logged in, redirect to `/dashboard` with modal open
+
+### Solution 2: Clean Up Orphaned Pages
+
+**Delete these files:**
+- `src/pages/FacilitiesExample.tsx` (example code, not used)
+- `src/pages/MaintenanceDashboard.tsx` (if not routed)
+- `src/pages/SmartDashboard.tsx` (unused experiment)
+
+**Keep but improve:**
+- `src/pages/RequestHub.tsx` - Keep as fallback entry point
+
+### Solution 3: Consolidate Settings/Profile Pages
+
+**Current:** 4 settings-related pages with significant overlap
+
+**Proposed:**
+1. **Keep** `Profile.tsx` - for all users (profile + personal settings)
+2. **Keep** `AdminProfile.tsx` - but simplify (move system settings out)
+3. **Keep** `SystemSettings.tsx` - for system-wide configuration
+4. **Remove** `SettingsPage.tsx` - just redirects, unnecessary
+5. **Remove** `ThemeSettings.tsx` - consolidate into Profile settings
+
+**Route changes:**
+- `/settings` → Already redirects to `/profile?tab=settings` (keep redirect)
+- `/settings/theme` → Redirect to `/profile?tab=settings` (theme is in settings)
+
+### Solution 4: Streamline Admin Profile
+
+**Current AdminProfile.tsx has 5 tabs:**
+1. Users - User management
+2. Access - Title access management
+3. Security - Security panel
+4. Audit - Security audit
+5. Settings - Admin settings
+
+**Recommendation:** Keep this consolidated structure BUT:
+- Remove duplicate functionality that exists elsewhere
+- Make tabs load content lazily for performance
+- Add better navigation hints
+
+---
+
+## Implementation Plan
+
+### Phase 1: Fix Logged-In User Form Experience
+
+**Step 1.1:** Create `KeyRequestDialog.tsx`
+- Modal-based key request form for logged-in users
+- Uses existing `KeyRequestForm.tsx` component inside `ResponsiveDialog`
+- Pre-fills user info from auth context
+
+**Step 1.2:** Update `UserDashboard.tsx` Quick Actions
+- Change "Request Key" button from `navigate('/forms/key-request')` to opening `KeyRequestDialog`
+- Issue Report already uses `QuickIssueReportButton` which opens a dialog
+- Supply request correctly goes to `/request/supplies` (uses Layout, good UX)
+
+**Step 1.3:** Update public form pages to redirect logged-in users
+- Add check at top of `KeyRequestFormPage.tsx`: if user is logged in, show a message directing them to dashboard
+- Same for other public form pages
+
+### Phase 2: Remove Orphaned Pages
+
+**Step 2.1:** Remove unused page files
+- Delete `FacilitiesExample.tsx`
+- Delete `SmartDashboard.tsx`
+- Verify `MaintenanceDashboard.tsx` is not routed before deleting
+
+**Step 2.2:** Clean up imports in `App.tsx`
+- Remove any imports for deleted pages
+
+### Phase 3: Consolidate Settings
+
+**Step 3.1:** Remove `SettingsPage.tsx`
+- It only redirects, the redirect is already in `App.tsx`
+
+**Step 3.2:** Merge `ThemeSettings.tsx` functionality
+- Theme selection is already in `EnhancedUserSettings`
+- Remove dedicated page, keep redirect
+
+**Step 3.3:** Clean up routes
+- Ensure all legacy settings routes redirect properly
+
+---
+
+## Files Summary
+
+### Files to DELETE
+| File | Reason |
 |------|--------|
-| `src/components/dev/DevModePanel.tsx` | Force cache clear + add delay before navigation on role switch |
-| `src/pages/UserDashboard.tsx` | Expand quick actions grid to include all 4 request types |
-| `src/components/layout/config/navigation.tsx` | Remove "New Request" from standard user nav, keep `/request` route as backup |
+| `src/pages/FacilitiesExample.tsx` | Example code, not routed |
+| `src/pages/SmartDashboard.tsx` | Unused experiment |
+| `src/pages/SettingsPage.tsx` | Just redirects, handled in routes |
+| `src/pages/settings/ThemeSettings.tsx` | Functionality exists in Profile settings |
 
----
+### Files to CREATE
+| File | Purpose |
+|------|---------|
+| `src/components/requests/KeyRequestDialog.tsx` | Modal wrapper for key requests |
 
-## Updated User Dashboard Layout
-
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│  Header: Compact greeting + Date + Notifications                    │
-├─────────────────────────────────────────────────────────────────────┤
-│  PICKUP ALERT BANNER (if supplies ready)                           │
-├─────────────────────────────────────────────────────────────────────┤
-│  QUICK ACTIONS (4 buttons, 2x2 grid)                               │
-│  ┌─────────────┐ ┌─────────────┐                                   │
-│  │ 📦 Order    │ │ 🆘 Request  │                                   │
-│  │  Supplies   │ │    Help     │                                   │
-│  └─────────────┘ └─────────────┘                                   │
-│  ┌─────────────┐ ┌─────────────┐                                   │
-│  │ ⚠️ Report   │ │ 🔑 Request  │                                   │
-│  │   Issue     │ │    Key      │                                   │
-│  └─────────────┘ └─────────────┘                                   │
-├─────────────────────────────────────────────────────────────────────┤
-│  COURT TERM SHEET (searchable, collapsible)                        │
-├─────────────────────────────────────────────────────────────────────┤
-│  MY ACTIVITY (tabbed: Supplies | Issues | Keys)                    │
-└─────────────────────────────────────────────────────────────────────┘
-```
+### Files to MODIFY
+| File | Changes |
+|------|---------|
+| `src/pages/UserDashboard.tsx` | Use dialogs instead of navigation for forms |
+| `src/pages/forms/KeyRequestFormPage.tsx` | Add logged-in user redirect |
+| `src/pages/forms/IssueReportFormPage.tsx` | Add logged-in user redirect |
+| `src/pages/forms/MaintenanceRequestFormPage.tsx` | Add logged-in user redirect |
+| `src/App.tsx` | Remove deleted page imports, update routes |
 
 ---
 
 ## Technical Details
 
-### DevModePanel Role Switch Fix
+### KeyRequestDialog Component Structure
 
-```tsx
-onValueChange={(value) => {
-  // Clear permissions cache first
-  localStorage.removeItem(`permissions_cache_${userId}`);
-  
-  if (value === realRole) {
-    clearPreviewRole();
-  } else {
-    setPreviewRole(value as UserRole);
-  }
-  
-  // Dispatch event for permission refresh
-  window.dispatchEvent(new CustomEvent('preview_role_changed'));
-  
-  // Small delay to let permissions update before navigating
-  setTimeout(() => {
-    navigate(getDashboardForRole(value as UserRole));
-  }, 100);
-}}
+```text
+KeyRequestDialog
+├── ResponsiveDialog (mobile drawer / desktop dialog)
+│   ├── DialogHeader
+│   │   └── Title: "Request a Key"
+│   └── DialogContent
+│       ├── Request Type (radio: new/spare/replacement)
+│       ├── Room Selection (from user assignments)
+│       ├── Quantity Select
+│       ├── Reason Textarea
+│       └── Submit/Cancel Buttons
 ```
 
-### Dashboard Quick Actions Expansion
+### Public Form Page Redirect Logic
 
-Replace the current 2-button grid with a 4-button grid, each going directly to the action form:
-
-- **Order Supplies** → `/request/supplies`
-- **Request Help** → `/request/help`
-- **Report Issue** → `/forms/issue-report` (existing QuickIssueReportButton)
-- **Request Key** → `/forms/key-request`
-
----
-
-## Benefits
-
-1. **Dashboard becomes the true hub** - Everything accessible from one place
-2. **One less click** - Users go directly to forms instead of through /request
-3. **Cleaner navigation** - Only 3 items: Dashboard, My Activity, Profile
-4. **Dev Mode works correctly** - Role switches show the correct dashboard
+```text
+if (user is authenticated) {
+  show banner: "You're logged in! Please use the dashboard to submit requests."
+  show button: "Go to Dashboard"
+  hide the form
+}
+```
 
 ---
 
-## Files to Modify
+## Expected Outcomes
 
-1. `src/components/dev/DevModePanel.tsx` - Fix role switch + navigation timing
-2. `src/pages/UserDashboard.tsx` - Expand quick actions to 4 buttons
-3. `src/components/layout/config/navigation.tsx` - Remove "New Request" from standard nav; update routes
+1. **Better UX for logged-in users** - Forms open as modals, feel integrated
+2. **Cleaner navigation** - Fewer orphaned pages, clearer paths
+3. **Less confusion** - No more "Back to Forms" leading to public page
+4. **Reduced code** - 4+ files removed, less maintenance burden
+5. **Consistent patterns** - All request forms work the same way (modal-based)
+
+---
+
+## Summary of Recommendations
+
+| Category | Keep | Remove | Modify |
+|----------|------|--------|--------|
+| Form Pages | `/forms/*` for public | - | Add logged-in redirect |
+| Public Forms | `/public-forms`, `/submit-form` | - | - |
+| Settings | Profile, SystemSettings | SettingsPage, ThemeSettings | - |
+| Admin | AdminProfile | - | Consider splitting long-term |
+| Examples | - | FacilitiesExample, SmartDashboard | - |
+
