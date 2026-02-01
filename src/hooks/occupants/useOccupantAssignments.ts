@@ -214,46 +214,52 @@ export const useOccupantAssignments = (authUserId: string) => {
 
       console.log('[useOccupantAssignments] Fetching assignments for user:', authUserId);
 
-      // STRATEGY: Query by profile_id first (new system)
-      // Then fallback to legacy occupant_id lookup for backward compatibility
+      // STRATEGY:
+      // 1) Try direct match against all supported identity columns using the auth user id.
+      //    This covers:
+      //    - New assignments: profile_id = auth user id
+      //    - Legacy assignments where occupant_id was set to auth user id
+      //    - Personnel assignments: personnel_profile_id = auth user id
+      // 2) If still nothing, fallback to legacy occupant lookup (by id/email) and query occupant_id.
 
-      // 1. Try profile_id first (for users with auth accounts - this is the new way)
-      const [profileRoomResult, profileKeyResult] = await Promise.all([
+      const directIdentityFilter = `profile_id.eq.${authUserId},occupant_id.eq.${authUserId},personnel_profile_id.eq.${authUserId}`;
+
+      const [directRoomResult, directKeyResult] = await Promise.all([
         supabase
           .from('occupant_room_assignments')
           .select(ROOM_ASSIGNMENT_SELECT)
-          .eq('profile_id', authUserId),
+          .or(directIdentityFilter),
         supabase
           .from('key_assignments')
           .select(KEY_ASSIGNMENT_SELECT)
-          .eq('profile_id', authUserId)
+          .or(directIdentityFilter)
           .is('returned_at', null)
       ]);
 
-      if (profileRoomResult.error) {
-        console.error('[useOccupantAssignments] Error fetching profile room assignments:', profileRoomResult.error);
+      if (directRoomResult.error) {
+        console.error('[useOccupantAssignments] Error fetching direct room assignments:', directRoomResult.error);
       }
-      if (profileKeyResult.error) {
-        console.error('[useOccupantAssignments] Error fetching profile key assignments:', profileKeyResult.error);
+      if (directKeyResult.error) {
+        console.error('[useOccupantAssignments] Error fetching direct key assignments:', directKeyResult.error);
       }
 
-      const profileRoomAssignments = profileRoomResult.data || [];
-      const profileKeyAssignments = profileKeyResult.data || [];
+      const directRoomAssignments = directRoomResult.data || [];
+      const directKeyAssignments = directKeyResult.data || [];
 
-      console.log('[useOccupantAssignments] Profile-based results:', {
-        rooms: profileRoomAssignments.length,
-        keys: profileKeyAssignments.length
+      console.log('[useOccupantAssignments] Direct identity results:', {
+        rooms: directRoomAssignments.length,
+        keys: directKeyAssignments.length
       });
 
-      // 2. If profile_id query found results, use those
-      if (profileRoomAssignments.length > 0 || profileKeyAssignments.length > 0) {
-        const formattedRooms = formatRoomAssignments(profileRoomAssignments);
-        const formattedKeys = formatKeyAssignments(profileKeyAssignments);
+      // If we got anything via direct identity match, return it.
+      if (directRoomAssignments.length > 0 || directKeyAssignments.length > 0) {
+        const formattedRooms = formatRoomAssignments(directRoomAssignments);
+        const formattedKeys = formatKeyAssignments(directKeyAssignments);
         return buildResult(formattedRooms, formattedKeys);
       }
 
-      // 3. Fallback: Legacy occupant_id lookup for backward compatibility
-      console.log('[useOccupantAssignments] No profile-based assignments, trying legacy occupant lookup...');
+      // 2. Fallback: Legacy occupant_id lookup for backward compatibility (when occupant_id != auth user id)
+      console.log('[useOccupantAssignments] No direct identity assignments, trying legacy occupant lookup...');
       
       const occupantId = await resolveOccupantId(authUserId);
 
