@@ -6,7 +6,7 @@ import { logger } from "@/utils/logger";
 
 export interface Notification {
   id: string;
-  type: 'issue_update' | 'new_assignment' | 'maintenance' | 'key_request_approved' | 'key_request_denied' | 'key_request_fulfilled';
+  type: 'issue_update' | 'new_assignment' | 'maintenance' | 'key_request_approved' | 'key_request_denied' | 'key_request_fulfilled' | 'staff_task_pending' | 'staff_task_update';
   title: string;
   message: string;
   read: boolean;

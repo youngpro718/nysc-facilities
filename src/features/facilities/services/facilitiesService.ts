@@ -42,8 +42,7 @@ export const facilitiesService = {
             name,
             building:buildings!floors_building_id_fkey(id, name)
           )
-        `)
-        .is('deleted_at', null);
+        `);
 
       // Apply filters
       if (filters?.buildingId) {
@@ -102,7 +101,6 @@ export const facilitiesService = {
           occupants(id, first_name, last_name, title, email)
         `)
         .eq('id', id)
-        .is('deleted_at', null)
         .single();
 
       if (error) handleSupabaseError(error, 'Failed to fetch room');
