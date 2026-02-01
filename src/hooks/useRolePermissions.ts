@@ -219,16 +219,13 @@ export function useRolePermissions() {
       // rolePermissionsMap moved above
 
       let effectiveRole: CourtRole = role;
-      // Admin-only preview role override, limited to Admin Profile page
+      // Admin-only preview role override - now works site-wide for Dev Mode
       try {
         const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
         const validRoles: CourtRole[] = ['admin', 'cmc', 'court_aide', 'standard'];
-        const onAdminProfile = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin-profile');
-        if (role === 'admin' && preview && validRoles.includes(preview) && onAdminProfile) {
-          logger.info('[useRolePermissions] Applying preview role override');
+        if (role === 'admin' && preview && validRoles.includes(preview)) {
+          logger.info('[useRolePermissions] Applying preview role override (Dev Mode)');
           effectiveRole = preview;
-        } else if (role === 'admin' && preview && !onAdminProfile) {
-          logger.info('[useRolePermissions] Ignoring preview role outside Admin Profile');
         }
       } catch (e) {
         // ignore preview errors

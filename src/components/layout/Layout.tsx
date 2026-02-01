@@ -1,4 +1,3 @@
-
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -11,13 +10,15 @@ import { DesktopNavigationImproved } from "./components/DesktopNavigationImprove
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@/components/admin/NotificationBox";
-import { Loader2, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { Button } from "@/components/ui/button";
 import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { logger } from "@/lib/logger";
+import { DevModeBanner } from "@/components/dev/DevModeBanner";
+import type { UserRole } from "@/config/roles";
 
 const Layout = () => {
   const location = useLocation();
@@ -82,8 +83,17 @@ const Layout = () => {
 
   // Let AuthProvider handle loading state - no additional loading here
 
+  // Check for preview role to show banner
+  const previewRole = typeof window !== 'undefined' ? localStorage.getItem('preview_role') as UserRole | null : null;
+  const isPreviewActive = isAdmin && previewRole && previewRole !== 'admin';
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Dev Mode Preview Banner */}
+      {!isLoginPage && isAuthenticated && isPreviewActive && (
+        <DevModeBanner realRole="admin" previewRole={previewRole!} />
+      )}
+      
       {!isLoginPage && isAuthenticated && (
         <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
