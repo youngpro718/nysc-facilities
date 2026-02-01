@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus, AlertCircle, CheckCircle, Settings, ArrowUpCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +14,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SimpleReportWizard } from "@/components/issues/wizard/SimpleReportWizard";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { MobileIssueCard } from "@/components/issues/mobile/MobileIssueCard";
-import { MobileRequestForm } from "@/components/mobile/MobileRequestForm";
 import { UserIssueDetailDialog } from "@/components/issues/UserIssueDetailDialog";
 import { DataState } from "@/ui";
 import { supabase } from "@/lib/supabase";
@@ -50,17 +50,25 @@ const priorityConfig = {
 };
 
 export default function MyIssues() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showIssueWizard, setShowIssueWizard] = useState(false);
-  const [showMobileForm, setShowMobileForm] = useState(false);
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const { user } = useAuth();
   const { userIssues: issues = [], isLoading, refetchIssues } = useUserIssues(user?.id);
   const { data: occupantData } = useOccupantAssignments(user?.id || '');
   const isMobile = useIsMobile();
 
+  // Auto-open wizard if ?new=1 in URL
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setShowIssueWizard(true);
+      // Clean the URL
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
   const handleIssueCreated = () => {
     setShowIssueWizard(false);
-    setShowMobileForm(false);
     refetchIssues();
   };
 
@@ -97,12 +105,13 @@ export default function MyIssues() {
         title="My Issues" 
         description="Track issues you've reported"
       >
-        <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowIssueWizard(true)}>
+        <Button onClick={() => setShowIssueWizard(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Report Issue
         </Button>
       </PageHeader>
 
+      {/* Always use ResponsiveDialog + SimpleReportWizard for both mobile and desktop */}
       <ResponsiveDialog open={showIssueWizard} onOpenChange={setShowIssueWizard} title="">
         <SimpleReportWizard
           onSuccess={handleIssueCreated}
@@ -110,13 +119,6 @@ export default function MyIssues() {
           assignedRooms={occupantData?.roomAssignments || []}
         />
       </ResponsiveDialog>
-
-      <MobileRequestForm 
-        open={showMobileForm}
-        onClose={() => setShowMobileForm(false)}
-        onSubmit={handleIssueCreated}
-        type="issue_report"
-      />
 
       <DataState
         data={issues}
@@ -129,7 +131,7 @@ export default function MyIssues() {
           icon: <AlertCircle className="h-6 w-6 text-muted-foreground" />,
           action: {
             label: 'Report Your First Issue',
-            onClick: () => isMobile ? setShowMobileForm(true) : setShowIssueWizard(true),
+            onClick: () => setShowIssueWizard(true),
           },
         }}
       >

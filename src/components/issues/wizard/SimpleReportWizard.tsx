@@ -1,23 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, MapPin, Mic, MicOff, Check } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Mic, MicOff, Check, AlertCircle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { UserAssignment } from "@/types/dashboard";
 import { SIMPLE_CATEGORIES, SimpleCategory, getBackendIssueType } from "./constants/simpleCategories";
+
+// Flexible room assignment type that works with both UserAssignment and DetailedRoomAssignment
+interface RoomAssignment {
+  id?: string;
+  room_id?: string;
+  room_name?: string;
+  room_number?: string;
+  building_id?: string;
+  building_name?: string;
+  floor_id?: string;
+  floor_name?: string;
+  is_primary?: boolean;
+  assignment_type?: string;
+}
 
 export interface SimpleReportWizardProps {
   onSuccess?: () => void;
   onCancel?: () => void;
-  assignedRooms?: UserAssignment[];
+  assignedRooms?: RoomAssignment[];
 }
 
 type Step = 'select' | 'describe';
@@ -26,7 +41,8 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
   const [step, setStep] = useState<Step>('select');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [useDifferentRoom, setUseDifferentRoom] = useState(false);
+  const [continueWithoutRoom, setContinueWithoutRoom] = useState(false);
+  const [locationDescription, setLocationDescription] = useState('');
   const [description, setDescription] = useState('');
   
   // Voice dictation state
@@ -34,19 +50,29 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
   const [recognition, setRecognition] = useState<any>(null);
   
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const hasAssignedRooms = assignedRooms && assignedRooms.length > 0;
+
+  // Normalize room ID getter (handles both room_id and id)
+  const getRoomId = (room: RoomAssignment): string => room.room_id || room.id || '';
+  const getRoomNumber = (room: RoomAssignment): string => room.room_number || room.room_name || 'Unknown';
 
   // Auto-select primary room on mount
   useEffect(() => {
-    if (assignedRooms && assignedRooms.length > 0) {
-      const primaryRoom = assignedRooms.find(r => r.assignment_type === 'primary') || assignedRooms[0];
+    if (hasAssignedRooms) {
+      // Priority: is_primary boolean → primary_office type → first room
+      const primaryRoom = assignedRooms.find(r => r.is_primary) 
+        || assignedRooms.find(r => r.assignment_type === 'primary_office')
+        || assignedRooms[0];
       if (primaryRoom) {
-        setSelectedRoomId(primaryRoom.room_id);
+        setSelectedRoomId(getRoomId(primaryRoom));
       }
     }
-  }, [assignedRooms]);
+  }, [assignedRooms, hasAssignedRooms]);
 
-  const selectedRoom = assignedRooms?.find(r => r.room_id === selectedRoomId);
+  const selectedRoom = assignedRooms?.find(r => getRoomId(r) === selectedRoomId);
   const selectedCategoryData = SIMPLE_CATEGORIES.find(c => c.id === selectedCategory);
 
   const createIssueMutation = useMutation({
@@ -68,9 +94,11 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
           building_id: selectedRoom?.building_id || null,
           floor_id: selectedRoom?.floor_id || null,
           room_id: selectedRoomId || null,
+          location_description: continueWithoutRoom ? locationDescription.trim() : null,
           photos: [],
           seen: false,
           created_by: user.id,
+          reported_by: user.id,
         });
       
       if (error) throw error;
@@ -145,8 +173,13 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
       toast.error("Please select an issue type");
       return;
     }
-    if (!selectedRoomId && !useDifferentRoom) {
-      toast.error("Please select a room");
+    // Allow proceeding if room selected OR continuing without room (with location description)
+    if (!selectedRoomId && !continueWithoutRoom) {
+      toast.error("Please select a room or continue without one");
+      return;
+    }
+    if (continueWithoutRoom && !locationDescription.trim()) {
+      toast.error("Please describe where the issue is located");
       return;
     }
     setStep('describe');
@@ -160,7 +193,17 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
     createIssueMutation.mutate();
   };
 
-  const canProceed = selectedCategory && (selectedRoomId || useDifferentRoom);
+  const handleRequestRoomAssignment = () => {
+    onCancel?.();
+    navigate('/request/help');
+  };
+
+  const handleContinueWithoutRoom = () => {
+    setContinueWithoutRoom(true);
+    setSelectedRoomId(null);
+  };
+
+  const canProceed = selectedCategory && (selectedRoomId || (continueWithoutRoom && locationDescription.trim()));
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -172,8 +215,8 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
             <p className="text-sm text-muted-foreground">Quick and easy - just 2 steps</p>
           </div>
 
-          {/* Room Selection */}
-          {assignedRooms && assignedRooms.length > 0 && (
+          {/* Room Selection - Show assigned rooms OR no-room handling */}
+          {hasAssignedRooms && !continueWithoutRoom ? (
             <div className="space-y-3">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
@@ -183,7 +226,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
                 value={selectedRoomId || ''}
                 onValueChange={(value) => {
                   setSelectedRoomId(value);
-                  setUseDifferentRoom(false);
+                  setContinueWithoutRoom(false);
                 }}
               >
                 {assignedRooms.map((room) => (
@@ -216,6 +259,74 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
                   </div>
                 ))}
               </RadioGroup>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full text-muted-foreground"
+                onClick={handleContinueWithoutRoom}
+              >
+                Report for a different location
+              </Button>
+            </div>
+          ) : !hasAssignedRooms && !continueWithoutRoom ? (
+            /* No assigned rooms - show guidance */
+            <Card className="p-4 border-dashed border-2 border-muted">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="p-3 rounded-full bg-muted">
+                  <AlertCircle className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-medium">No assigned room yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    To show your room automatically, request an assignment or continue without one.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 w-full">
+                  <Button onClick={handleRequestRoomAssignment} className="w-full">
+                    <HelpCircle className="h-4 w-4 mr-2" />
+                    Request Room Assignment
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleContinueWithoutRoom}
+                    className="w-full"
+                  >
+                    Continue without a room
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            /* Continue without room - show location input */
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Where is the issue?
+                </Label>
+                {hasAssignedRooms && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setContinueWithoutRoom(false);
+                      // Re-select primary room
+                      const primaryRoom = assignedRooms?.find(r => r.is_primary) 
+                        || assignedRooms?.find(r => r.assignment_type === 'primary_office')
+                        || assignedRooms?.[0];
+                      if (primaryRoom) setSelectedRoomId(primaryRoom.room_id);
+                    }}
+                  >
+                    Use my room
+                  </Button>
+                )}
+              </div>
+              <Input
+                placeholder="e.g., 5th floor hallway near elevator"
+                value={locationDescription}
+                onChange={(e) => setLocationDescription(e.target.value)}
+                className="w-full"
+              />
             </div>
           )}
 
@@ -273,6 +384,12 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
                 <Badge variant="secondary" className="gap-1">
                   <MapPin className="h-3 w-3" />
                   {selectedRoom.room_number}
+                </Badge>
+              )}
+              {continueWithoutRoom && locationDescription && (
+                <Badge variant="secondary" className="gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {locationDescription.length > 20 ? locationDescription.slice(0, 20) + '...' : locationDescription}
                 </Badge>
               )}
               {selectedCategoryData && (
@@ -348,7 +465,7 @@ function CategoryCard({ category, selected, onSelect }: CategoryCardProps) {
     <Card
       onClick={onSelect}
       className={cn(
-        "p-4 cursor-pointer transition-all duration-200",
+        "p-4 cursor-pointer transition-all duration-200 relative",
         "flex flex-col items-center text-center gap-2",
         "hover:border-primary/50 hover:bg-primary/5 hover:scale-[1.02]",
         selected

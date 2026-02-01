@@ -28,7 +28,7 @@ const quickActions: QuickAction[] = [
     title: 'Order Supplies',
     description: 'Office supplies & materials',
     icon: Package,
-    path: '/request/supplies', // New streamlined path
+    path: '/request/supplies',
     bgClass: 'bg-green-500/10 hover:bg-green-500/20 border-green-500/30',
     iconClass: 'text-green-600 dark:text-green-400',
   },
@@ -46,7 +46,7 @@ const quickActions: QuickAction[] = [
     title: 'Report Issue',
     description: 'Problems, safety, maintenance',
     icon: AlertTriangle,
-    path: '/forms/issue-report',
+    path: '/my-issues?new=1', // Opens SimpleReportWizard in-app
     bgClass: 'bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30',
     iconClass: 'text-orange-600 dark:text-orange-400',
   },
@@ -55,7 +55,7 @@ const quickActions: QuickAction[] = [
     title: 'Request Key',
     description: 'New key or replacement',
     icon: Key,
-    path: '/forms/key-request',
+    path: '/my-requests?new=1', // Opens key request form in-app
     bgClass: 'bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30',
     iconClass: 'text-purple-600 dark:text-purple-400',
   },

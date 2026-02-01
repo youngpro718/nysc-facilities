@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Package, Truck, Key, Eye, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -87,6 +88,7 @@ const getRequestTypeLabel = (type: string) => {
 };
 
 export default function MyRequests() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showMobileForm, setShowMobileForm] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
@@ -108,6 +110,19 @@ export default function MyRequests() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Auto-open form if ?new=1 in URL
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      if (isMobileDevice) {
+        setShowMobileForm(true);
+      } else {
+        setShowRequestForm(true);
+      }
+      // Clean the URL
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, isMobileDevice]);
 
   // Handle refresh for pull-to-refresh
   const handleRefresh = async () => {
