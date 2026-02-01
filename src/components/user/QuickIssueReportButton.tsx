@@ -23,7 +23,7 @@ export function QuickIssueReportButton({
 }: QuickIssueReportButtonProps) {
   const [showWizard, setShowWizard] = useState(false);
   const { user } = useAuth();
-  const { data: occupantData } = useOccupantAssignments(user?.id || '');
+  const { data: occupantData, isLoading: isLoadingRooms } = useOccupantAssignments(user?.id || '');
 
   return (
     <>
@@ -42,6 +42,7 @@ export function QuickIssueReportButton({
           onSuccess={() => setShowWizard(false)}
           onCancel={() => setShowWizard(false)}
           assignedRooms={occupantData?.roomAssignments || []}
+          isLoadingRooms={isLoadingRooms}
         />
       </ResponsiveDialog>
     </>

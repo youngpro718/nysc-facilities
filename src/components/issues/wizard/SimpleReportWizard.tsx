@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, MapPin, Mic, MicOff, Check, AlertCircle, HelpCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, Loader2, MapPin, Mic, MicOff, Check, AlertCircle, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { SIMPLE_CATEGORIES, SimpleCategory, getBackendIssueType } from "./constants/simpleCategories";
@@ -33,11 +33,12 @@ export interface SimpleReportWizardProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   assignedRooms?: RoomAssignment[];
+  isLoadingRooms?: boolean;
 }
 
 type Step = 'select' | 'describe';
 
-export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: SimpleReportWizardProps) {
+export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadingRooms }: SimpleReportWizardProps) {
   const [step, setStep] = useState<Step>('select');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -50,7 +51,6 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
   const [recognition, setRecognition] = useState<any>(null);
   
   const { user } = useAuth();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const hasAssignedRooms = assignedRooms && assignedRooms.length > 0;
@@ -193,9 +193,40 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
     createIssueMutation.mutate();
   };
 
+  // Create a staff task for room assignment request (stays in wizard)
+  const requestRoomAssignmentMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('Not authenticated');
+      
+      const { error } = await supabase
+        .from('staff_tasks')
+        .insert({
+          title: 'Room Assignment Request',
+          description: 'User is requesting to be assigned a room/office location.',
+          task_type: 'general',
+          priority: 'medium',
+          status: 'pending_approval',
+          is_request: true,
+          requested_by: user.id,
+          created_by: user.id,
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Room assignment request submitted! You can continue reporting the issue.");
+      // Don't close the wizard - let user continue with manual location
+      setContinueWithoutRoom(true);
+    },
+    onError: (error: any) => {
+      console.error('Error requesting room assignment:', error);
+      toast.error("Failed to submit request. You can still continue with manual location.");
+      setContinueWithoutRoom(true);
+    }
+  });
+
   const handleRequestRoomAssignment = () => {
-    onCancel?.();
-    navigate('/request/help');
+    requestRoomAssignmentMutation.mutate();
   };
 
   const handleContinueWithoutRoom = () => {
@@ -272,6 +303,18 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
                 Report for a different location
               </Button>
             </div>
+          ) : isLoadingRooms ? (
+            /* Loading state */
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Your Room
+              </Label>
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full rounded-lg" />
+                <Skeleton className="h-16 w-full rounded-lg" />
+              </div>
+            </div>
           ) : !hasAssignedRooms && !continueWithoutRoom ? (
             /* No assigned rooms - show guidance */
             <Card className="p-4 border-dashed border-2 border-muted">
@@ -282,13 +325,26 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms }: Simpl
                 <div>
                   <p className="font-medium">No assigned room yet</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    To show your room automatically, request an assignment or continue without one.
+                    You can request a room assignment or describe the location manually.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 w-full">
-                  <Button onClick={handleRequestRoomAssignment} className="w-full">
-                    <HelpCircle className="h-4 w-4 mr-2" />
-                    Request Room Assignment
+                  <Button 
+                    onClick={handleRequestRoomAssignment} 
+                    className="w-full"
+                    disabled={requestRoomAssignmentMutation.isPending}
+                  >
+                    {requestRoomAssignmentMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Building2 className="h-4 w-4 mr-2" />
+                        Request Room Assignment
+                      </>
+                    )}
                   </Button>
                   <Button 
                     variant="outline" 

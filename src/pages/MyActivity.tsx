@@ -79,7 +79,7 @@ export default function MyActivity() {
   
   // Issue wizard state
   const [showIssueWizard, setShowIssueWizard] = useState(false);
-  const { data: occupantData } = useOccupantAssignments(user?.id || '');
+  const { data: occupantData, isLoading: isLoadingRooms } = useOccupantAssignments(user?.id || '');
   
   // Get tab from URL or default to 'supplies'
   const activeTab = searchParams.get('tab') || 'supplies';
@@ -449,6 +449,7 @@ export default function MyActivity() {
           onSuccess={handleIssueCreated}
           onCancel={() => setShowIssueWizard(false)}
           assignedRooms={occupantData?.roomAssignments || []}
+          isLoadingRooms={isLoadingRooms}
         />
       </ResponsiveDialog>
     </div>
