@@ -13,9 +13,10 @@ import {
   SheetTrigger,
   SheetFooter 
 } from '@/components/ui/sheet';
-import { ShoppingCart, Send, Trash2, X, ChevronUp, MapPin, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Send, Trash2, X, ChevronUp, MapPin, AlertTriangle, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRoomAssignments } from '@/hooks/useUserRoomAssignments';
 import type { CartItem } from '@/hooks/useOrderCart';
 
 interface OrderSummaryFooterProps {
@@ -43,18 +44,59 @@ export function OrderSummaryFooter({
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [priority, setPriority] = useState('medium');
   const [justification, setJustification] = useState('');
-  const { profile } = useAuth();
+  const [isQuickSubmitting, setIsQuickSubmitting] = useState(false);
+  const { profile, user } = useAuth();
+  
+  // Fetch user's room assignments for auto-fill
+  const { data: roomAssignments } = useUserRoomAssignments(user?.id);
 
-  // Pre-fill delivery location from user profile metadata
+  // Pre-fill delivery location from room assignments or profile metadata
   useEffect(() => {
+    if (deliveryLocation) return; // Don't override if already set
+    
+    // Try room assignments first (more accurate)
+    const primaryRoom = roomAssignments?.find(a => a.is_primary);
+    const firstRoom = roomAssignments?.[0];
+    const roomFromAssignment = primaryRoom?.rooms?.room_number || firstRoom?.rooms?.room_number;
+    
+    if (roomFromAssignment) {
+      setDeliveryLocation(roomFromAssignment);
+      return;
+    }
+    
+    // Fallback to profile metadata
     const meta = profile?.metadata as Record<string, any> | undefined;
     const roomFromProfile = meta?.room_number || meta?.office || '';
-    if (roomFromProfile && !deliveryLocation) {
+    if (roomFromProfile) {
       setDeliveryLocation(roomFromProfile);
     }
-  }, [profile?.metadata]);
+  }, [roomAssignments, profile?.metadata, deliveryLocation]);
 
-  const handleSubmit = async () => {
+  // Quick submit for non-restricted items (no sheet needed)
+  const handleQuickSubmit = async () => {
+    if (hasRestrictedItems) {
+      setIsOpen(true);
+      return;
+    }
+    
+    setIsQuickSubmitting(true);
+    try {
+      await onSubmit({
+        priority: 'medium',
+        delivery_location: deliveryLocation,
+        justification: 'Standard supply request',
+      });
+      // Reset form
+      const meta = profile?.metadata as Record<string, any> | undefined;
+      const roomFromProfile = meta?.room_number || meta?.office || '';
+      setDeliveryLocation(roomFromProfile);
+      setPriority('medium');
+    } finally {
+      setIsQuickSubmitting(false);
+    }
+  };
+
+  const handleFullSubmit = async () => {
     await onSubmit({
       priority,
       delivery_location: deliveryLocation,
@@ -63,9 +105,10 @@ export function OrderSummaryFooter({
         : 'Standard supply request',
     });
     setIsOpen(false);
-    const meta = profile?.metadata as Record<string, any> | undefined;
-    const roomFromProfile = meta?.room_number || meta?.office || '';
-    setDeliveryLocation(roomFromProfile);
+    // Reset form
+    const primaryRoom = roomAssignments?.find(a => a.is_primary);
+    const firstRoom = roomAssignments?.[0];
+    setDeliveryLocation(primaryRoom?.rooms?.room_number || firstRoom?.rooms?.room_number || '');
     setPriority('medium');
     setJustification('');
   };
@@ -75,6 +118,9 @@ export function OrderSummaryFooter({
     .filter(i => i.requires_justification)
     .map(i => i.item_name);
 
+  // Can quick submit: non-restricted items with 1-3 items
+  const canQuickSubmit = !hasRestrictedItems && items.length <= 3;
+
   if (items.length === 0) {
     return null;
   }
@@ -83,8 +129,37 @@ export function OrderSummaryFooter({
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg pb-safe">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <div className="container mx-auto px-4 py-3">
+          {/* Inline Justification for Restricted Items */}
+          {hasRestrictedItems && (
+            <div className="mb-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                  Approval Required for: {restrictedItemNames.join(', ')}
+                </span>
+              </div>
+              <Textarea
+                placeholder="Please explain why you need these items (required for approval)..."
+                value={justification}
+                onChange={(e) => setJustification(e.target.value)}
+                className="min-h-[60px] text-sm"
+              />
+              <div className="flex justify-between mt-2">
+                <span className="text-xs text-muted-foreground">
+                  {justification.length}/200 characters
+                </span>
+                {deliveryLocation && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    Deliver to: {deliveryLocation}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between gap-4">
-            {/* Summary */}
+            {/* Summary - opens full sheet */}
             <SheetTrigger asChild>
               <button className="flex items-center gap-3 flex-1 min-w-0 text-left">
                 <div className="relative">
@@ -109,21 +184,52 @@ export function OrderSummaryFooter({
               </button>
             </SheetTrigger>
 
-            {/* Quick Submit - disabled if restricted items require justification */}
-            <Button
-              size="lg"
-              className="shrink-0 gap-2"
-              onClick={hasRestrictedItems ? () => setIsOpen(true) : handleSubmit}
-              disabled={isSubmitting}
-            >
-              <Send className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {isSubmitting ? 'Submitting...' : 'Submit Order'}
-              </span>
-              <span className="sm:hidden">
-                {isSubmitting ? '...' : 'Submit'}
-              </span>
-            </Button>
+            {/* Submit Button */}
+            {hasRestrictedItems ? (
+              // Restricted items: submit with justification
+              <Button
+                size="lg"
+                className="shrink-0 gap-2"
+                onClick={handleFullSubmit}
+                disabled={isSubmitting || !justification.trim()}
+              >
+                <Send className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {isSubmitting ? 'Submitting...' : 'Request Approval'}
+                </span>
+                <span className="sm:hidden">
+                  {isSubmitting ? '...' : 'Submit'}
+                </span>
+              </Button>
+            ) : canQuickSubmit ? (
+              // Simple orders: quick submit
+              <Button
+                size="lg"
+                className="shrink-0 gap-2 bg-green-600 hover:bg-green-700"
+                onClick={handleQuickSubmit}
+                disabled={isSubmitting || isQuickSubmitting}
+              >
+                <Zap className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {isQuickSubmitting ? 'Submitting...' : 'Quick Submit'}
+                </span>
+                <span className="sm:hidden">
+                  {isQuickSubmitting ? '...' : 'Submit'}
+                </span>
+              </Button>
+            ) : (
+              // More than 3 items: review first
+              <Button
+                size="lg"
+                className="shrink-0 gap-2"
+                onClick={() => setIsOpen(true)}
+                disabled={isSubmitting}
+              >
+                <Send className="h-4 w-4" />
+                <span className="hidden sm:inline">Review & Submit</span>
+                <span className="sm:hidden">Review</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -249,7 +355,7 @@ export function OrderSummaryFooter({
             </Button>
             <Button
               className="flex-1"
-              onClick={handleSubmit}
+              onClick={handleFullSubmit}
               disabled={isSubmitting || (hasRestrictedItems && !justification.trim())}
             >
               <Send className="h-4 w-4 mr-2" />
