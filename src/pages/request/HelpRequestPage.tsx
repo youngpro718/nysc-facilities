@@ -1,13 +1,15 @@
 /**
  * HelpRequestPage - Simple help request flow
  * 
- * Replaces complex task dialog with a simple 2-step flow:
+ * Flow:
  * 1. What do you need? (4 big buttons)
- * 2. Describe it (single text area)
+ * 2. Describe it OR structured setup form (for "setup" type)
+ * 3. Success confirmation with auto-redirect
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { 
   ArrowLeft, 
   Sofa, 
@@ -20,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useStaffTasks } from '@/hooks/useStaffTasks';
+import { SetupRequestForm, SetupRequestData } from '@/components/request/SetupRequestForm';
 import type { TaskType } from '@/types/staffTasks';
 
 interface HelpOption {
@@ -61,33 +64,96 @@ const helpOptions: HelpOption[] = [
   },
 ];
 
+// Submitted request details for success screen
+interface SubmittedRequest {
+  title: string;
+  roomDisplay?: string;
+  dateNeeded?: Date;
+  setupType?: string;
+  attendeeCount?: number;
+}
+
 export default function HelpRequestPage() {
   const navigate = useNavigate();
   const { requestTask } = useStaffTasks();
   
-  const [step, setStep] = useState<'select' | 'describe' | 'success'>('select');
+  const [step, setStep] = useState<'select' | 'describe' | 'setup' | 'success'>('select');
   const [selectedType, setSelectedType] = useState<HelpOption | null>(null);
   const [description, setDescription] = useState('');
+  const [submittedRequest, setSubmittedRequest] = useState<SubmittedRequest | null>(null);
+
+  // Auto-redirect to My Activity after success
+  useEffect(() => {
+    if (step === 'success') {
+      const timer = setTimeout(() => {
+        navigate('/my-activity?tab=tasks');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [step, navigate]);
 
   const handleTypeSelect = (option: HelpOption) => {
     setSelectedType(option);
-    setStep('describe');
+    // Use structured form for setup requests
+    if (option.id === 'setup') {
+      setStep('setup');
+    } else {
+      setStep('describe');
+    }
   };
 
-  const handleSubmit = async () => {
+  const handleDescriptionSubmit = async () => {
     if (!selectedType || !description.trim()) return;
 
     await requestTask.mutateAsync({
-      title: description.slice(0, 100), // First 100 chars as title
+      title: description.slice(0, 100),
       description: description,
       task_type: selectedType.id,
     });
 
+    setSubmittedRequest({ title: description.slice(0, 100) });
     setStep('success');
   };
 
-  const handleDone = () => {
-    navigate('/my-activity?tab=tasks');
+  const handleSetupSubmit = async (data: SetupRequestData) => {
+    const setupTypeLabel = data.setupType.charAt(0).toUpperCase() + data.setupType.slice(1);
+    const title = `${data.roomDisplay} - ${setupTypeLabel} for ${data.attendeeCount} people`;
+    
+    const descriptionParts = [
+      `Room: ${data.roomDisplay}`,
+      `Date: ${data.dateNeeded ? format(data.dateNeeded, 'EEEE, MMMM d, yyyy') : 'Not specified'}`,
+      `Setup type: ${setupTypeLabel}`,
+      `Attendees: ${data.attendeeCount}`,
+    ];
+    
+    if (data.additionalNotes) {
+      descriptionParts.push(`\nNotes: ${data.additionalNotes}`);
+    }
+
+    await requestTask.mutateAsync({
+      title: title.slice(0, 100),
+      description: descriptionParts.join('\n'),
+      task_type: 'setup',
+      to_room_id: data.roomId || undefined,
+    });
+
+    setSubmittedRequest({
+      title,
+      roomDisplay: data.roomDisplay,
+      dateNeeded: data.dateNeeded,
+      setupType: setupTypeLabel,
+      attendeeCount: data.attendeeCount,
+    });
+    setStep('success');
+  };
+
+  const handleBack = () => {
+    if (step === 'describe' || step === 'setup') {
+      setStep('select');
+      setDescription('');
+    } else {
+      navigate(-1); // Go back to previous page
+    }
   };
 
   // Step 1: Select type
@@ -98,7 +164,7 @@ export default function HelpRequestPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/request')}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -132,7 +198,18 @@ export default function HelpRequestPage() {
     );
   }
 
-  // Step 2: Describe
+  // Step 2a: Setup structured form
+  if (step === 'setup') {
+    return (
+      <SetupRequestForm
+        onSubmit={handleSetupSubmit}
+        onBack={handleBack}
+        isSubmitting={requestTask.isPending}
+      />
+    );
+  }
+
+  // Step 2b: Describe (for non-setup requests)
   if (step === 'describe' && selectedType) {
     return (
       <div className="container max-w-2xl mx-auto px-4 py-6">
@@ -140,7 +217,7 @@ export default function HelpRequestPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setStep('select')}
+            onClick={handleBack}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -167,13 +244,13 @@ export default function HelpRequestPage() {
           <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
-              onClick={() => setStep('select')}
+              onClick={handleBack}
               className="flex-1"
             >
               Back
             </Button>
             <Button
-              onClick={handleSubmit}
+              onClick={handleDescriptionSubmit}
               disabled={!description.trim() || requestTask.isPending}
               className="flex-1"
             >
@@ -200,14 +277,36 @@ export default function HelpRequestPage() {
           <CheckCircle className="h-8 w-8 text-green-600" />
         </div>
         <h1 className="text-2xl font-bold">Request Submitted!</h1>
-        <p className="text-muted-foreground max-w-sm mx-auto">
-          Your request has been sent to the facilities team. You can track its progress in My Activity.
+        
+        {/* Show structured summary for setup requests */}
+        {submittedRequest?.roomDisplay ? (
+          <div className="bg-muted/50 rounded-lg p-4 text-left max-w-sm mx-auto space-y-2">
+            <p className="text-sm"><span className="text-muted-foreground">Room:</span> {submittedRequest.roomDisplay}</p>
+            {submittedRequest.dateNeeded && (
+              <p className="text-sm"><span className="text-muted-foreground">Date:</span> {format(submittedRequest.dateNeeded, 'EEEE, MMMM d, yyyy')}</p>
+            )}
+            <p className="text-sm"><span className="text-muted-foreground">Setup:</span> {submittedRequest.setupType} for {submittedRequest.attendeeCount} people</p>
+          </div>
+        ) : (
+          <p className="text-muted-foreground max-w-sm mx-auto">
+            Your request has been sent to the facilities team.
+          </p>
+        )}
+        
+        <p className="text-sm text-muted-foreground">
+          Redirecting to My Activity in 3 seconds...
         </p>
+        
         <div className="pt-4 flex flex-col gap-2">
-          <Button onClick={handleDone}>
+          <Button onClick={() => navigate('/my-activity?tab=tasks')}>
             View My Requests
           </Button>
-          <Button variant="ghost" onClick={() => navigate('/request')}>
+          <Button variant="ghost" onClick={() => {
+            setStep('select');
+            setSelectedType(null);
+            setDescription('');
+            setSubmittedRequest(null);
+          }}>
             Submit Another Request
           </Button>
         </div>
