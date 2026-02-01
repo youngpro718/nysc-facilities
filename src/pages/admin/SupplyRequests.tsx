@@ -1,22 +1,15 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Package, Clock, CheckCircle, XCircle, User, Calendar, AlertTriangle } from "lucide-react";
+import { Package, Clock, CheckCircle, XCircle, User, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { FulfillmentWorkflow } from "@/components/supply/FulfillmentWorkflow";
 import { useToast } from "@/hooks/use-toast";
-import { getSupplyRequests, updateSupplyRequestStatus, updateSupplyRequestItems } from "@/lib/supabase";
-import { normalizeSupabaseError } from "@/lib/supabaseErrors";
+import { getSupplyRequests } from "@/lib/supabase";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 interface SupplyRequestWithUser {
@@ -84,16 +77,10 @@ const priorityConfig = {
 
 export default function AdminSupplyRequests() {
   const [requests, setRequests] = useState<SupplyRequestWithUser[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<SupplyRequestWithUser | null>(null);
-  const [actionType, setActionType] = useState<'review' | 'approve' | 'reject' | null>(null);
-  const [fulfillmentWorkflowOpen, setFulfillmentWorkflowOpen] = useState(false);
-  const [fulfillmentRequest, setFulfillmentRequest] = useState<SupplyRequestWithUser | null>(null);
-  const [notes, setNotes] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [itemQuantities, setItemQuantities] = useState<Record<string, { approved?: number; fulfilled?: number }>>({});
   
   const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('id');
@@ -118,85 +105,6 @@ export default function AdminSupplyRequests() {
     }
   };
 
-  const handleStatusUpdate = async () => {
-    if (!selectedRequest || !actionType) return;
-
-    try {
-      let newStatus = selectedRequest.status;
-      
-      switch (actionType) {
-        case 'review':
-          newStatus = 'under_review';
-          break;
-        case 'approve':
-          newStatus = 'approved';
-          break;
-        case 'reject':
-          newStatus = 'rejected';
-          break;
-      }
-
-      // If approving, only persist quantity changes (default = requested)
-      if (actionType === 'approve' && (selectedRequest.supply_request_items || []).length > 0) {
-        const itemUpdates = (selectedRequest.supply_request_items || [])
-          .map((item) => ({
-            id: item.id,
-            quantity_approved: itemQuantities[item.id]?.approved ?? item.quantity_requested,
-            notes: item.notes ?? null,
-          }))
-          .filter((u) => {
-            const original = (selectedRequest.supply_request_items || []).find((i) => i.id === u.id);
-            if (!original) return true;
-            return (u.quantity_approved ?? original.quantity_requested) !== original.quantity_requested;
-          });
-
-        if (itemUpdates.length > 0) {
-          await updateSupplyRequestItems(selectedRequest.id, itemUpdates);
-        }
-      }
-
-      // Persist request status + related admin fields
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error('Authentication required');
-
-      const statusUpdates: Record<string, any> = {};
-      if (actionType === 'approve') {
-        statusUpdates.approved_by = user.id;
-        statusUpdates.approved_at = new Date().toISOString();
-        statusUpdates.approval_notes = notes.trim() || null;
-        statusUpdates.rejection_reason = null;
-      }
-      if (actionType === 'reject') {
-        statusUpdates.rejection_reason = notes.trim();
-        statusUpdates.approval_notes = null;
-        statusUpdates.approved_by = null;
-        statusUpdates.approved_at = null;
-      }
-
-      await updateSupplyRequestStatus(selectedRequest.id, newStatus, statusUpdates);
-
-      toast({
-        title: "Success",
-        description: `Request ${newStatus.replace('_', ' ')} successfully`,
-      });
-
-      fetchRequests();
-      setSelectedRequest(null);
-      setActionType(null);
-      setNotes("");
-      setItemQuantities({});
-
-    } catch (error) {
-      const normalized = normalizeSupabaseError(error);
-      toast({
-        title: normalized.isPermission ? 'Not allowed' : 'Error',
-        description: normalized.userMessage,
-        variant: 'destructive',
-      });
-      console.error('Failed to update supply request:', normalized.message);
-    }
-  };
-
   const filteredRequests = requests.filter(request => {
     const matchesStatus = filterStatus === "all" || request.status === filterStatus;
     const matchesPriority = filterPriority === "all" || request.priority === filterPriority;
@@ -212,66 +120,12 @@ export default function AdminSupplyRequests() {
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
-  const getAvailableActions = (status: string, request: any) => {
-    // Check if request needs approval (pending_approval status OR has [APPROVAL REQUIRED] in justification)
-    const needsApproval = status === 'pending_approval' || 
-      (request?.justification?.includes('[APPROVAL REQUIRED]') && !['approved', 'rejected', 'completed', 'cancelled'].includes(status));
-    
-    if (needsApproval) {
-      return ['approve', 'reject'];
-    }
-    
-    switch (status) {
-      case 'pending':
-        return ['review', 'approve', 'reject'];
-      case 'under_review':
-        return ['approve', 'reject'];
-      case 'approved':
-        if (request?.work_started_at && !request?.work_completed_at) {
-          return ['complete']; // Work in progress
-        } else if (!request?.work_started_at) {
-          return ['start']; // Ready to start
-        }
-        return []; // Already completed
-      default:
-        return [];
-    }
-  };
-
-  const openActionDialog = (request: SupplyRequestWithUser, action: string) => {
-    if (action === 'start' || action === 'complete') {
-      setFulfillmentRequest(request);
-      setFulfillmentWorkflowOpen(true);
-      return;
-    }
-
-    setSelectedRequest(request);
-    setActionType(action as 'review' | 'approve' | 'reject');
-    
-    // Initialize item quantities for approval
-    if (action === 'approve') {
-      const quantities: Record<string, { approved?: number; fulfilled?: number }> = {};
-      (request.supply_request_items || []).forEach(item => {
-        quantities[item.id] = {
-          approved: item.quantity_requested,
-        };
-      });
-      setItemQuantities(quantities);
-    }
-  };
-
-  const handleFulfillmentSuccess = () => {
-    fetchRequests();
-    setFulfillmentWorkflowOpen(false);
-    setFulfillmentRequest(null);
-  };
-
   return (
     <PageContainer>
       <Breadcrumb />
       <PageHeader
-        title="Supply Requests Overview" 
-        description="View all supply requests and approve big-ticket items. Fulfillment is handled by Supply Room staff."
+        title="Supply Request History" 
+        description="View and audit all supply requests. Approvals are handled from the Admin Dashboard."
       >
         <div className="flex gap-2">
           <Input
@@ -288,11 +142,13 @@ export default function AdminSupplyRequests() {
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="submitted">Submitted</SelectItem>
               <SelectItem value="pending_approval">Pending Approval</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="received">Received</SelectItem>
               <SelectItem value="processing">Processing</SelectItem>
               <SelectItem value="ready">Ready</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterPriority} onValueChange={setFilterPriority}>
@@ -309,73 +165,6 @@ export default function AdminSupplyRequests() {
           </Select>
         </div>
       </PageHeader>
-
-      {/* Pending Approvals Section - Prominently displayed at top */}
-      {/* Show requests that need approval: either pending_approval status OR [APPROVAL REQUIRED] in justification */}
-      {!isLoading && (() => {
-        const needsApprovalRequests = filteredRequests.filter(r => 
-          r.status === 'pending_approval' || 
-          (r.justification?.includes('[APPROVAL REQUIRED]') && !['approved', 'rejected', 'completed', 'cancelled'].includes(r.status))
-        );
-        
-        if (needsApprovalRequests.length === 0 || filterStatus !== 'all') return null;
-        
-        return (
-          <Card className="border-orange-500/50 bg-orange-500/5 mb-6">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
-                <AlertTriangle className="h-5 w-5" />
-                Pending Approvals ({needsApprovalRequests.length})
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                These requests contain restricted items (e.g., Furniture, Chairs) and require your approval before fulfillment.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {needsApprovalRequests.map((request) => (
-                <div 
-                  key={`pending-${request.id}`} 
-                  className="flex items-center justify-between p-3 bg-background border rounded-lg"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium truncate">{request.title}</p>
-                      <Badge variant="outline" className="text-xs shrink-0">
-                        {request.status === 'pending_approval' ? 'Pending' : 'Submitted'}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {request.profiles?.first_name} {request.profiles?.last_name} • {request.supply_request_items?.length || 0} items
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {request.justification?.replace('[APPROVAL REQUIRED] ', '').slice(0, 100)}
-                      {request.justification?.length > 100 ? '...' : ''}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 ml-3 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={() => openActionDialog(request, 'approve')}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => openActionDialog(request, 'reject')}
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        );
-      })()}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
@@ -400,7 +189,6 @@ export default function AdminSupplyRequests() {
             const statusStyle = statusConfig[request.status as keyof typeof statusConfig]?.color || "text-gray-600 bg-gray-50";
             const priorityStyle = priorityConfig[request.priority as keyof typeof priorityConfig]?.color || "text-gray-600 bg-gray-50";
             const isHighlighted = request.id === highlightedId;
-            const availableActions = getAvailableActions(request.status, request);
 
             return (
               <Card 
@@ -467,19 +255,16 @@ export default function AdminSupplyRequests() {
                           </div>
                           <div className="text-sm text-muted-foreground">
                             Requested: {item.quantity_requested} {item.inventory_items.unit || 'units'}
-                            {item.quantity_approved && (
+                            {item.quantity_approved !== undefined && item.quantity_approved !== null && (
                               <span className="ml-2 text-green-600">
                                 | Approved: {item.quantity_approved}
                               </span>
                             )}
-                            {item.quantity_fulfilled && (
+                            {item.quantity_fulfilled !== undefined && item.quantity_fulfilled !== null && (
                               <span className="ml-2 text-blue-600">
                                 | Fulfilled: {item.quantity_fulfilled}
                               </span>
                             )}
-                            <span className="ml-2 text-gray-500">
-                              (Available: {item.inventory_items.quantity})
-                            </span>
                           </div>
                         </div>
                       ))}
@@ -524,34 +309,13 @@ export default function AdminSupplyRequests() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p>Submitted: {format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a")}</p>
-                      {request.approved_at && (
-                        <p>Approved: {format(new Date(request.approved_at), "MMM d, yyyy 'at' h:mm a")}</p>
-                      )}
-                      {request.fulfilled_at && (
-                        <p>Fulfilled: {format(new Date(request.fulfilled_at), "MMM d, yyyy 'at' h:mm a")}</p>
-                      )}
-                    </div>
-
-                    {availableActions.length > 0 && (
-                      <div className="flex space-x-2">
-                        {availableActions.map((action) => (
-                          <Button
-                            key={action}
-                            size="sm"
-                            variant={action === 'reject' ? 'destructive' : action === 'review' ? 'outline' : 'default'}
-                            onClick={() => openActionDialog(request, action)}
-                          >
-                            {action === 'review' && <AlertTriangle className="h-4 w-4 mr-1" />}
-                            {action === 'approve' && <CheckCircle className="h-4 w-4 mr-1" />}
-                            {action === 'reject' && <XCircle className="h-4 w-4 mr-1" />}
-                            {action === 'fulfill' && <Package className="h-4 w-4 mr-1" />}
-                            {action.charAt(0).toUpperCase() + action.slice(1)}
-                          </Button>
-                        ))}
-                      </div>
+                  <div className="pt-3 border-t text-sm text-muted-foreground space-y-1">
+                    <p>Submitted: {format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a")}</p>
+                    {request.approved_at && (
+                      <p>Approved: {format(new Date(request.approved_at), "MMM d, yyyy 'at' h:mm a")}</p>
+                    )}
+                    {request.fulfilled_at && (
+                      <p>Fulfilled: {format(new Date(request.fulfilled_at), "MMM d, yyyy 'at' h:mm a")}</p>
                     )}
                   </div>
                 </CardContent>
@@ -560,115 +324,6 @@ export default function AdminSupplyRequests() {
           })}
         </div>
       )}
-
-      {/* Action Dialog */}
-      <Dialog open={!!selectedRequest && !!actionType} onOpenChange={() => {
-        setSelectedRequest(null);
-        setActionType(null);
-        setNotes("");
-        setItemQuantities({});
-      }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {actionType && actionType.charAt(0).toUpperCase() + actionType.slice(1)} Supply Request
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <p>
-              Are you sure you want to {actionType} this supply request from{' '}
-              {(selectedRequest?.profiles?.first_name || 'Unknown')} {(selectedRequest?.profiles?.last_name || '')}?
-            </p>
-
-            {/* Item quantities for approve actions */}
-            {actionType === 'approve' && selectedRequest && (
-              <div>
-                <Label className="text-base font-medium">
-                  Approve Quantities
-                </Label>
-                <div className="space-y-3 mt-2">
-                  {(selectedRequest.supply_request_items || []).map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 border rounded">
-                      <div>
-                        <p className="font-medium">{item.inventory_items.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Requested: {item.quantity_requested} {item.inventory_items.unit || 'units'}
-                          <span className="ml-2">| Available: {item.inventory_items.quantity}</span>
-                        </p>
-                      </div>
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          min="0"
-                          max={Math.min(item.quantity_requested, item.inventory_items.quantity)}
-                          value={itemQuantities[item.id]?.approved || item.quantity_requested}
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value) || 0;
-                            setItemQuantities(prev => ({
-                              ...prev,
-                              [item.id]: {
-                                ...prev[item.id],
-                                approved: value
-                              }
-                            }));
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <div>
-              <Label htmlFor="notes">
-                {actionType === 'reject' ? 'Rejection Reason (Required)' : 'Notes (Optional)'}
-              </Label>
-              <Textarea
-                id="notes"
-                placeholder={
-                  actionType === 'reject' 
-                    ? "Please provide a reason for rejection..."
-                    : "Add any additional notes..."
-                }
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                required={actionType === 'reject'}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setSelectedRequest(null);
-              setActionType(null);
-              setNotes("");
-              setItemQuantities({});
-            }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleStatusUpdate}
-              variant={actionType === 'reject' ? 'destructive' : 'default'}
-              disabled={actionType === 'reject' && !notes.trim()}
-            >
-              {actionType && actionType.charAt(0).toUpperCase() + actionType.slice(1)} Request
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Fulfillment Workflow Dialog */}
-      <FulfillmentWorkflow
-        request={fulfillmentRequest}
-        isOpen={fulfillmentWorkflowOpen}
-        onClose={() => {
-          setFulfillmentWorkflowOpen(false);
-          setFulfillmentRequest(null);
-        }}
-        onSuccess={handleFulfillmentSuccess}
-      />
     </PageContainer>
   );
 }
