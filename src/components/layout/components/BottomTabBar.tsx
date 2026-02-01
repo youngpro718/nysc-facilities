@@ -5,6 +5,7 @@ import { NavigationTab } from "../types";
 import { useAuth } from "@/hooks/useAuth";
 import { MoreHorizontal } from "lucide-react";
 import { useSupplyPendingCounts } from "@/hooks/useSupplyPendingCounts";
+import { useStaffTasksPendingCounts } from "@/hooks/useStaffTasksPendingCounts";
 import { Badge } from "@/components/ui/badge";
 
 interface BottomTabBarProps {
@@ -17,6 +18,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { data: supplyCounts } = useSupplyPendingCounts();
+  const { data: staffTaskCounts } = useStaffTasksPendingCounts();
 
   const items = navigation.filter((i) => (i as any).title) as Array<{ title: string; icon: any }>;
   const primary = items.slice(0, 4);
@@ -24,21 +26,23 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
 
   // Get badge count for navigation items
   const getBadgeCount = (title: string): number => {
-    if (!supplyCounts) return 0;
-    
-    // Admin sees pending approvals on Supply Requests
-    if (title === 'Supply Requests' && isAdmin) {
-      return supplyCounts.pendingApprovals;
-    }
-    
-    // Court Aides see pending orders on Supply Room
-    if (title === 'Supply Room') {
-      return supplyCounts.pendingOrders;
-    }
-    
-    // Show Tasks badge for supply staff with pending orders
+    // Tasks: show staff tasks counts (NOT supply orders)
     if (title === 'Tasks') {
-      return supplyCounts.pendingOrders;
+      if (!staffTaskCounts) return 0;
+      if (isAdmin) {
+        return staffTaskCounts.pendingApproval;
+      }
+      return staffTaskCounts.availableToClaim;
+    }
+    
+    // Supply Room: show supply orders to fulfill (for fulfillment staff)
+    if (title === 'Supply Room') {
+      return supplyCounts?.pendingOrders || 0;
+    }
+    
+    // Supply Requests (Admin): show orders needing approval
+    if (title === 'Supply Requests' && isAdmin) {
+      return supplyCounts?.pendingApprovals || 0;
     }
     
     return 0;
