@@ -1,6 +1,5 @@
-
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { ReportIssueWizard } from "./wizard/ReportIssueWizard";
+import { SimpleReportWizard } from "./wizard/SimpleReportWizard";
 import type { UserAssignment } from "@/types/dashboard";
 
 export interface IssueDialogProps {
@@ -17,7 +16,7 @@ export function IssueDialog({ open, onOpenChange, onSuccess, assignedRooms }: Is
       onOpenChange={onOpenChange}
       title=""
     >
-      <ReportIssueWizard 
+      <SimpleReportWizard 
         onSuccess={() => {
           onSuccess?.();
           onOpenChange(false);
