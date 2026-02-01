@@ -1,112 +1,108 @@
 
-# Simplify Admin Supply Requests Experience
+# Supply Request Flow - Court Aide Visibility Fix
 
-## Current Problems
+## Problem Summary
 
-After auditing the system, I found these issues:
+A supply request was submitted but Court Aides are not seeing it in their dashboard. After investigation, I found multiple issues preventing the supply request from appearing to Court Aides.
 
-| Problem | Root Cause |
-|---------|------------|
-| Page feels unnecessary | When no approvals pending, it's just a read-only list |
-| Hard to find | Not in main admin navigation tabs |
-| Overwhelming | 674 lines trying to do too much (view, approve, fulfill) |
-| Badge confusion | No "Supply Requests" badge visible to admins |
+## Issues Identified
 
-## Recommended Approach: Consolidate, Don't Remove
+### 1. Database Column Mismatch (Critical)
+The `SupplyFulfillmentPanel` (used on Court Aide Work Center) queries for a column called `urgency` that does not exist in the database. The actual column is `priority`. This causes the query to fail silently, resulting in an empty list and the message "All caught up! No supply requests to fulfill."
 
-Rather than removing the page entirely, I recommend **consolidating** the approval workflow into the Admin Dashboard while keeping the detailed view for historical/reporting purposes.
+**Location**: `src/components/court-aide/SupplyFulfillmentPanel.tsx` line 53-54
 
-### Option A: Minimal Change (Recommended)
+### 2. Wrong Status Filter in Alerts
+The `AlertsBar` component counts pending supplies using statuses `['approved', 'in_progress']`, but new supply requests have status `submitted`. This means newly submitted requests are not reflected in the alert badge count.
 
-**Add "Pending Approvals" alert to Admin Dashboard**
+**Location**: `src/components/court-aide/AlertsBar.tsx` line 45
 
-When there are supply requests needing approval:
-- Show an alert card on the Admin Dashboard with approve/reject actions inline
-- One click to approve right from the dashboard
-- No need to navigate to a separate page for quick approvals
+### 3. Invalid Status in Start Fulfillment Mutation
+The `SupplyFulfillmentPanel` updates requests to `in_progress` status, but this status is not in the valid status flow. The correct status should be `received` or `picking` based on the workflow.
 
-**Simplify the /admin/supply-requests page**
-- Remove the fulfillment workflow (that's for Supply Room staff)
-- Make it a pure "audit log" / report view
-- Rename to "Supply History" or similar
+**Location**: `src/components/court-aide/SupplyFulfillmentPanel.tsx` line 116
 
-### Option B: Full Removal
-
-If you don't need the detailed view at all:
-- Remove `/admin/supply-requests` route entirely
-- Move pending approvals to Admin Dashboard only
-- Remove "Supply Requests" from all navigation configs
+### 4. RLS Policy Issue (Potential)
+Court Aides need to be in the "Supply Department" to see all supply requests. Some Court Aide users have no department assigned, which may block their access due to the RLS policy.
 
 ---
 
-## Technical Changes for Option A
+## Solution
 
-### 1. Add Dashboard Alert Component
+### Phase 1: Fix Column Name Mismatch
 
-Create a small component for the Admin Dashboard that shows pending approvals:
+**File**: `src/components/court-aide/SupplyFulfillmentPanel.tsx`
 
-```text
-File: src/components/dashboard/PendingSupplyApprovals.tsx
-
-Features:
-- Query for requests where justification includes [APPROVAL REQUIRED] 
-  and status NOT in (approved, rejected, completed, cancelled)
-- Show compact cards with requester, items summary, approve/reject buttons
-- Auto-refresh when approvals are made
+Change the query from:
+```typescript
+urgency,
+```
+To:
+```typescript
+priority,
 ```
 
-### 2. Update Admin Dashboard
+And update all references from `urgency` to `priority` throughout the component.
 
-Add the new component to `AdminDashboard.tsx`:
+### Phase 2: Fix Status Filters
 
-```text
-Current structure:
-- DashboardHeader
-- ProductionSecurityGuard
-- ModuleCards  
-- BuildingsGrid
+**File**: `src/components/court-aide/AlertsBar.tsx`
 
-New structure:
-- DashboardHeader
-- ProductionSecurityGuard
-- PendingSupplyApprovals  <-- NEW (only shows when there are pending)
-- ModuleCards
-- BuildingsGrid
+Update the pending supplies query from:
+```typescript
+.in('status', ['approved', 'in_progress']);
+```
+To:
+```typescript
+.in('status', ['submitted', 'approved', 'received', 'picking']);
 ```
 
-### 3. Simplify /admin/supply-requests
+**File**: `src/components/court-aide/SupplyFulfillmentPanel.tsx`
 
-Remove the fulfillment workflow and keep only:
-- Status filters
-- Request cards (read-only)
-- Historical data for reporting
+Update the start fulfillment mutation from:
+```typescript
+status: 'in_progress',
+```
+To:
+```typescript
+status: 'received',
+```
 
-Alternatively, we can just hide this from navigation and only link to it from the Supply Dashboard card for "View All History".
+### Phase 3: Add RLS Policy Enhancement
 
-### 4. Navigation Updates
+Add an RLS policy to allow users with the `court_aide` role to view supply requests regardless of department assignment. This ensures Court Aides can always see supply requests.
 
-Either:
-- Add "Supply Requests" to admin main nav with badge
-- OR remove from nav and rely on Dashboard card link
-
----
-
-## Summary
-
-| Change | Purpose |
-|--------|---------|
-| Add `PendingSupplyApprovals` to Admin Dashboard | Quick approval without navigation |
-| Simplify `/admin/supply-requests` | Make it a history/report view |
-| Update navigation | Either add to main nav or hide completely |
-
-This keeps the approval workflow accessible while reducing the feeling that the separate page is "pointless."
+**SQL Migration**:
+```sql
+-- Allow court_aide role to view all supply requests
+DROP POLICY IF EXISTS "court_aides_view_all_requests" ON supply_requests;
+CREATE POLICY "court_aides_view_all_requests"
+  ON supply_requests FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'court_aide'::user_role
+    )
+  );
+```
 
 ---
 
 ## Files to Modify
 
-1. **Create** `src/components/dashboard/PendingSupplyApprovals.tsx` - Dashboard alert component
-2. **Edit** `src/pages/AdminDashboard.tsx` - Add the new component
-3. **Edit** `src/pages/admin/SupplyRequests.tsx` - Simplify to history view
-4. **Edit** `src/components/dashboard/ModuleCards.tsx` - Update link text/description
-5. **Optionally edit** navigation config - Add to main nav or remove from secondary
+| File | Change |
+|------|--------|
+| `src/components/court-aide/SupplyFulfillmentPanel.tsx` | Fix `urgency` to `priority`, fix status updates |
+| `src/components/court-aide/AlertsBar.tsx` | Fix status filter for pending supplies |
+| Database migration | Add RLS policy for court_aide role |
+
+---
+
+## Expected Outcome
+
+After these changes:
+1. Court Aides will see newly submitted supply requests in their Work Center dashboard
+2. The alerts bar will correctly show the count of pending supply requests
+3. Court Aides without department assignments will still be able to view and fulfill supply requests
+4. The fulfillment workflow will use correct status values matching the database schema
