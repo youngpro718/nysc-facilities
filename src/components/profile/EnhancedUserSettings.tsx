@@ -128,10 +128,14 @@ export function EnhancedUserSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const rawTab = searchParams.get('tab') ?? 'notifications';
+  
+  // Use 'settingsTab' to avoid conflict with Profile page's 'tab' parameter
+  const rawTab = searchParams.get('settingsTab') ?? 'notifications';
   const mapToCanonical = (t: string) => {
     if (t === 'appearance' || t === 'language') return 'display';
     if (t === 'privacy') return 'security';
+    // Return 'notifications' as default for invalid values
+    if (!['notifications', 'display', 'security', 'accessibility'].includes(t)) return 'notifications';
     return t;
   };
   const initialTab = mapToCanonical(rawTab);
@@ -142,7 +146,7 @@ export function EnhancedUserSettings() {
   }, [user?.id]);
 
   useEffect(() => {
-    const nextRaw = searchParams.get('tab') ?? 'notifications';
+    const nextRaw = searchParams.get('settingsTab') ?? 'notifications';
     setActiveTab(mapToCanonical(nextRaw));
   }, [searchParams]);
 
@@ -319,7 +323,7 @@ export function EnhancedUserSettings() {
         </Card>
       )}
 
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams({ tab: v }, { replace: true } as any); }} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams(prev => { prev.set('settingsTab', v); return prev; }, { replace: true }); }} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
