@@ -44,8 +44,8 @@ export const MoreTabContent: React.FC = () => {
     },
     {
       icon: Shield,
-      label: "Admin Panel",
-      action: () => navigate("/admin-profile"),
+      label: "Admin Center",
+      action: () => navigate("/admin"),
       adminOnly: true,
     },
     {

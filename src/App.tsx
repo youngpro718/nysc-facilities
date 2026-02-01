@@ -24,7 +24,7 @@ import MyIssues from "@/pages/MyIssues";
 import MySupplyRequests from "@/pages/MySupplyRequests";
 import MyActivity from "@/pages/MyActivity";
 import Tasks from "@/pages/Tasks";
-import AdminProfile from "@/pages/AdminProfile";
+import AdminCenter from "@/pages/AdminCenter";
 import SystemSettings from "@/pages/SystemSettings";
 import VerificationPending from "@/pages/VerificationPending";
 import FeaturesPreview from "@/pages/FeaturesPreview";
@@ -182,11 +182,14 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="admin-profile" element={
+        {/* Admin Center - Team & User Management */}
+        <Route path="admin" element={
           <ProtectedRoute requireAdmin>
-            <AdminProfile />
+            <AdminCenter />
           </ProtectedRoute>
         } />
+        {/* Legacy redirect from old admin-profile path */}
+        <Route path="admin-profile" element={<Navigate to="/admin" replace />} />
         <Route path="system-settings" element={
           <ProtectedRoute requireAdmin>
             <SystemSettings />
