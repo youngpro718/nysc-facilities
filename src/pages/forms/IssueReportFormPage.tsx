@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function IssueReportFormPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
@@ -27,6 +27,40 @@ export default function IssueReportFormPage() {
     reporter_email: '',
     reporter_phone: '',
   });
+
+  // Redirect logged-in users to dashboard
+  if (!isLoading && isAuthenticated && user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="bg-primary text-primary-foreground py-6">
+          <div className="container mx-auto px-4">
+            <h1 className="text-2xl font-bold">NYSC Facilities Hub</h1>
+          </div>
+        </div>
+        <div className="container mx-auto py-8 px-4 max-w-2xl">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">You're already logged in!</CardTitle>
+              <CardDescription>
+                Please use your dashboard to report issues.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                As a registered user, you can report issues directly from your dashboard 
+                using the "Report Issue" button.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button onClick={() => navigate('/dashboard')}>
+                  Go to Dashboard
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
