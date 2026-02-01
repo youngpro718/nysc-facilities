@@ -28,6 +28,7 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
   ],
   court_aide: [
     { label: 'Work Center', path: '/court-aide-dashboard' },
+    { label: 'Term Sheet', path: '/term-sheet' },
     { label: 'Supply Room', path: '/supply-room' },
     { label: 'Inventory', path: '/inventory' },
     { label: 'Tasks', path: '/tasks' },
@@ -214,7 +215,7 @@ export function DevModePanel({ realRole }: DevModePanelProps) {
         <Label className="text-xs font-medium text-muted-foreground mb-2 block">
           Quick Links:
         </Label>
-        <div className="flex flex-wrap gap-1.5">
+        <div key={effectiveRole} className="flex flex-wrap gap-1.5">
           {quickLinks.map((link) => (
             <Button
               key={link.path}

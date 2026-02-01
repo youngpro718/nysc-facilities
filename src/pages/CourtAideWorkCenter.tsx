@@ -15,7 +15,7 @@ import { WorkCenterStats } from '@/components/court-aide/WorkCenterStats';
 import { Button } from '@/components/ui/button';
 
 import { Link } from 'react-router-dom';
-import { Package, ClipboardList, AlertTriangle, Settings } from 'lucide-react';
+import { Package, ClipboardList, AlertTriangle, Settings, Scale } from 'lucide-react';
 
 export default function CourtAideWorkCenter() {
   const { profile } = useAuth();
@@ -50,6 +50,12 @@ export default function CourtAideWorkCenter() {
             <Link to="/inventory">
               <Package className="h-4 w-4 mr-2" />
               Inventory
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="shrink-0">
+            <Link to="/term-sheet">
+              <Scale className="h-4 w-4 mr-2" />
+              Term Sheet
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild className="shrink-0">
