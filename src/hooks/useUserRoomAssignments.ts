@@ -20,6 +20,8 @@ export const useUserRoomAssignments = (userId?: string) => {
     queryFn: async () => {
       if (!userId) return [];
 
+      const identityFilter = `profile_id.eq.${userId},occupant_id.eq.${userId},personnel_profile_id.eq.${userId}`;
+
       const { data, error } = await supabase
         .from('occupant_room_assignments')
         .select(`
@@ -34,7 +36,7 @@ export const useUserRoomAssignments = (userId?: string) => {
             floor_id
           )
         `)
-        .eq('occupant_id', userId)
+        .or(identityFilter)
         .order('is_primary', { ascending: false });
 
       if (error) throw error;

@@ -8,6 +8,8 @@ export const useRoomAssignments = (userId?: string) => {
     queryKey: ['assignedRooms', userId],
     queryFn: async () => {
       if (!userId) throw new Error('No user ID available');
+
+      const identityFilter = `profile_id.eq.${userId},occupant_id.eq.${userId},personnel_profile_id.eq.${userId}`;
       
       console.log('Fetching room assignments for user:', userId);
       
@@ -22,7 +24,7 @@ export const useRoomAssignments = (userId?: string) => {
             assignment_type,
             room_id
           `)
-          .eq('occupant_id', userId);
+          .or(identityFilter);
 
         if (assignmentsError) {
           console.error('Error fetching room assignments:', assignmentsError);

@@ -7,6 +7,8 @@ export const useEnhancedRoomAssignments = (userId?: string) => {
     queryKey: ['enhancedRoomAssignments', userId],
     queryFn: async () => {
       if (!userId) throw new Error('No user ID available');
+
+      const identityFilter = `profile_id.eq.${userId},occupant_id.eq.${userId},personnel_profile_id.eq.${userId}`;
       
       console.log('Fetching enhanced room assignments for user:', userId);
       
@@ -21,7 +23,7 @@ export const useEnhancedRoomAssignments = (userId?: string) => {
             assignment_type,
             room_id
           `)
-          .eq('occupant_id', userId)
+          .or(identityFilter)
           .order('is_primary', { ascending: false }) // Primary rooms first
           .order('assigned_at', { ascending: false });
 
