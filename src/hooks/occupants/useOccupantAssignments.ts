@@ -40,13 +40,66 @@ export interface OccupantAssignments {
   storageAssignments: DetailedRoomAssignment[];
 }
 
-export const useOccupantAssignments = (occupantId: string) => {
+/**
+ * Resolves the occupant ID for a given auth user ID.
+ * Strategy:
+ * 1. Try to find occupant by direct ID match (occupants.id = authUserId)
+ * 2. If not found, get user's email from profiles and match by email
+ */
+async function resolveOccupantId(authUserId: string): Promise<string | null> {
+  // First try: direct ID match
+  const { data: directMatch } = await supabase
+    .from('occupants')
+    .select('id')
+    .eq('id', authUserId)
+    .maybeSingle();
+
+  if (directMatch?.id) {
+    return directMatch.id;
+  }
+
+  // Second try: match by email
+  // Get user's email from profiles
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', authUserId)
+    .maybeSingle();
+
+  if (!profile?.email) {
+    return null;
+  }
+
+  // Find occupant by email (case-insensitive)
+  const { data: emailMatch } = await supabase
+    .from('occupants')
+    .select('id')
+    .ilike('email', profile.email.trim().toLowerCase())
+    .maybeSingle();
+
+  return emailMatch?.id || null;
+}
+
+export const useOccupantAssignments = (authUserId: string) => {
   return useQuery<OccupantAssignments>({
-    queryKey: ['occupantAssignments', occupantId],
+    queryKey: ['occupantAssignments', authUserId],
     queryFn: async () => {
-      if (!occupantId) throw new Error('No occupant ID provided');
+      if (!authUserId) throw new Error('No user ID provided');
 
       try {
+        // Resolve the actual occupant ID
+        const occupantId = await resolveOccupantId(authUserId);
+
+        if (!occupantId) {
+          // No occupant record found - return empty assignments
+          return {
+            roomAssignments: [],
+            keyAssignments: [],
+            primaryRoom: undefined,
+            storageAssignments: []
+          };
+        }
+
         // Fetch room assignments with full details
         const { data: roomAssignments, error: roomError } = await supabase
           .from('occupant_room_assignments')
@@ -140,8 +193,10 @@ export const useOccupantAssignments = (occupantId: string) => {
           building_name: undefined
         }));
 
-        // Find primary room
-        const primaryRoom = formattedRoomAssignments.find(room => room.is_primary);
+        // Find primary room - prioritize is_primary boolean, then primary_office type, else first
+        const primaryRoom = formattedRoomAssignments.find(room => room.is_primary) 
+          || formattedRoomAssignments.find(room => room.assignment_type === 'primary_office')
+          || formattedRoomAssignments[0];
         
         // Separate storage room assignments
         const storageAssignments = formattedRoomAssignments.filter(room => room.is_storage);
@@ -157,7 +212,7 @@ export const useOccupantAssignments = (occupantId: string) => {
         throw error;
       }
     },
-    enabled: !!occupantId,
+    enabled: !!authUserId,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 };

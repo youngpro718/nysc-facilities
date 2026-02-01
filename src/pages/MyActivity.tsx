@@ -32,6 +32,7 @@ import { useSupplyRequests } from "@/hooks/useSupplyRequests";
 import { useKeyRequests } from "@/hooks/useKeyRequests";
 import { useUserIssues } from "@/hooks/dashboard/useUserIssues";
 import { useStaffTasks } from "@/hooks/useStaffTasks";
+import { useOccupantAssignments } from "@/hooks/occupants/useOccupantAssignments";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { UserTasksTab } from "@/components/tasks/UserTasksTab";
+import { SimpleReportWizard } from "@/components/issues/wizard/SimpleReportWizard";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 // Status configurations
 const supplyStatusConfig: Record<string, { icon: any; label: string; color: string }> = {
@@ -74,6 +77,10 @@ export default function MyActivity() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   
+  // Issue wizard state
+  const [showIssueWizard, setShowIssueWizard] = useState(false);
+  const { data: occupantData } = useOccupantAssignments(user?.id || '');
+  
   // Get tab from URL or default to 'supplies'
   const activeTab = searchParams.get('tab') || 'supplies';
   
@@ -89,6 +96,11 @@ export default function MyActivity() {
 
   const handleRefresh = async () => {
     await Promise.all([refetchSupply(), refetchKeys(), refetchIssues(), refetchTasks()]);
+  };
+
+  const handleIssueCreated = () => {
+    setShowIssueWizard(false);
+    refetchIssues();
   };
 
   // Calculate counts for badges
@@ -287,7 +299,7 @@ export default function MyActivity() {
         <TabsContent value="keys" className="mt-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Key Requests</h2>
-            <Button size="sm" onClick={() => navigate('/forms/key-request')}>
+            <Button size="sm" onClick={() => navigate('/my-requests?new=1')}>
               <Plus className="h-4 w-4 mr-1" />
               New Request
             </Button>
@@ -304,7 +316,7 @@ export default function MyActivity() {
               <p className="text-sm text-muted-foreground mb-4">
                 You haven't made any key requests yet
               </p>
-              <Button onClick={() => navigate('/forms/key-request')}>
+              <Button onClick={() => navigate('/my-requests?new=1')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Request a Key
               </Button>
@@ -357,7 +369,7 @@ export default function MyActivity() {
         <TabsContent value="issues" className="mt-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Reported Issues</h2>
-            <Button size="sm" onClick={() => navigate('/forms/issue-report')}>
+            <Button size="sm" onClick={() => setShowIssueWizard(true)}>
               <Plus className="h-4 w-4 mr-1" />
               Report Issue
             </Button>
@@ -374,7 +386,7 @@ export default function MyActivity() {
               <p className="text-sm text-muted-foreground mb-4">
                 Everything looks good! Report an issue if you find something.
               </p>
-              <Button onClick={() => navigate('/forms/issue-report')}>
+              <Button onClick={() => setShowIssueWizard(true)}>
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Report an Issue
               </Button>
@@ -412,7 +424,7 @@ export default function MyActivity() {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => navigate(`/my-issues?id=${issue.id}`)}
+                          onClick={() => navigate(`/my-issues`)}
                         >
                           View
                         </Button>
@@ -430,17 +442,31 @@ export default function MyActivity() {
           <UserTasksTab />
         </TabsContent>
       </Tabs>
+
+      {/* Issue Wizard Dialog - opened in-place */}
+      <ResponsiveDialog open={showIssueWizard} onOpenChange={setShowIssueWizard} title="">
+        <SimpleReportWizard
+          onSuccess={handleIssueCreated}
+          onCancel={() => setShowIssueWizard(false)}
+          assignedRooms={occupantData?.roomAssignments || []}
+        />
+      </ResponsiveDialog>
     </div>
   );
 
-  // Wrap with pull-to-refresh on mobile
   if (isMobile) {
     return (
       <PullToRefresh onRefresh={handleRefresh}>
-        {content}
+        <div className="container max-w-2xl mx-auto px-4 py-4">
+          {content}
+        </div>
       </PullToRefresh>
     );
   }
 
-  return content;
+  return (
+    <div className="container max-w-4xl mx-auto px-4 py-6">
+      {content}
+    </div>
+  );
 }
