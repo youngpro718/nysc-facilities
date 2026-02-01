@@ -44,7 +44,7 @@ import SimpleDashboardProvider from "@/providers/SimpleDashboardProvider";
 import { Toaster } from "@/components/ui/sonner";
 import RealtimeProvider from "@/providers/RealtimeProvider";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ModuleProtectedRoute } from "@/components/ModuleProtectedRoute";
 import OnboardingGuard from "@/routes/OnboardingGuard";
@@ -69,6 +69,9 @@ import TermSheet from "@/pages/TermSheet";
 import RequestHub from "@/pages/RequestHub";
 import HelpRequestPage from "@/pages/request/HelpRequestPage";
 import SupplyOrderPage from "@/pages/request/SupplyOrderPage";
+import { DevModePanel } from "@/components/dev/DevModePanel";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
+import type { UserRole } from "@/config/roles";
 
 
 // Create a client
@@ -361,6 +364,22 @@ function NotificationsWrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// DevMode wrapper - renders panel only for real admins
+function DevModeWrapper() {
+  const { isAdmin } = useAuth();
+  const { userRole } = useRolePermissions();
+  
+  // Only show DevModePanel for actual admins (not preview admins)
+  // We need the real role from the database, which we get by checking if preview is active
+  const previewRole = typeof window !== 'undefined' ? localStorage.getItem('preview_role') : null;
+  const realRole = previewRole && isAdmin ? 'admin' : (userRole as UserRole);
+  
+  // Only render for actual admins
+  if (!isAdmin) return null;
+  
+  return <DevModePanel realRole="admin" />;
+}
+
 function App() {
   return (
     <ErrorBoundary onError={(error) => console.error('App: Global error caught:', error)}>
@@ -374,6 +393,7 @@ function App() {
                     <AuthProvider>
                       <NotificationsWrapper>
                         <AppContent />
+                        <DevModeWrapper />
                       </NotificationsWrapper>
                     </AuthProvider>
                   </AuthErrorBoundary>
