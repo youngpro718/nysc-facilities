@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { usePersonnelAccess } from "@/hooks/usePersonnelAccess";
 import { RoleBasedRoute } from "@/components/layout/RoleBasedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -151,10 +152,12 @@ function StatsCard({
 }
 
 function AccessAssignmentsContent() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [selectedPerson, setSelectedPerson] = useState<PersonnelAccessRecord | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [autoOpenProcessed, setAutoOpenProcessed] = useState(false);
   
   const { 
     personnel, 
@@ -163,6 +166,22 @@ function AccessAssignmentsContent() {
     stats, 
     isLoading 
   } = usePersonnelAccess();
+
+  // Auto-open dialog when assign_user param is present (from notification deep link)
+  const assignUserId = searchParams.get('assign_user');
+  
+  useEffect(() => {
+    if (assignUserId && personnel.length > 0 && !autoOpenProcessed && !isLoading) {
+      const personToAssign = personnel.find(p => p.id === assignUserId);
+      if (personToAssign) {
+        setSelectedPerson(personToAssign);
+        setDialogOpen(true);
+        setAutoOpenProcessed(true);
+        // Clear the URL parameter after opening dialog
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [assignUserId, personnel, isLoading, autoOpenProcessed, setSearchParams]);
 
   const handlePersonClick = (person: PersonnelAccessRecord) => {
     setSelectedPerson(person);
