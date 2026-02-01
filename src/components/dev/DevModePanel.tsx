@@ -35,7 +35,6 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
   ],
   standard: [
     { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Request', path: '/request' },
     { label: 'My Activity', path: '/my-activity' },
     { label: 'Profile', path: '/profile' },
   ],
@@ -180,15 +179,30 @@ export function DevModePanel({ realRole }: DevModePanelProps) {
         <RadioGroup
           value={previewRole || realRole}
           onValueChange={(value) => {
+            // Clear any cached permissions to force fresh fetch
+            const userId = localStorage.getItem('sb-fmymhtuiqzhupjyopfvi-auth-token');
+            if (userId) {
+              // Clear permission cache keys
+              Object.keys(localStorage).forEach(key => {
+                if (key.includes('permissions_cache')) {
+                  localStorage.removeItem(key);
+                }
+              });
+            }
+            
             if (value === realRole) {
               clearPreviewRole();
-              // Navigate to real role's dashboard
-              navigate(getDashboardForRole(realRole));
             } else {
               setPreviewRole(value as UserRole);
-              // Auto-navigate to the new role's dashboard
-              navigate(getDashboardForRole(value as UserRole));
             }
+            
+            // Dispatch event for permission refresh
+            window.dispatchEvent(new CustomEvent('preview_role_changed'));
+            
+            // Small delay to let permissions update before navigating
+            setTimeout(() => {
+              navigate(getDashboardForRole(value as UserRole));
+            }, 100);
           }}
           className="grid grid-cols-2 gap-2"
         >

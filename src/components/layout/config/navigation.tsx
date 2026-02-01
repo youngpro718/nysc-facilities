@@ -222,10 +222,9 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
   
-  // Standard user navigation
+  // Standard user navigation - actions are on dashboard, no separate request page needed
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
-    { title: 'New Request', icon: Package },
     { title: 'My Activity', icon: FileText },
     { type: "separator" },
     { title: 'Profile', icon: User },
@@ -296,10 +295,9 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
   
-  // Standard user routes
+  // Standard user routes - actions are on dashboard
   return [
     '/dashboard', // User Dashboard
-    '/request', // New Request hub
     '/my-activity',
     '', // Separator
     '/profile',
