@@ -47,37 +47,64 @@ export interface OccupantAssignments {
  * 2. If not found, get user's email from profiles and match by email
  */
 async function resolveOccupantId(authUserId: string): Promise<string | null> {
+  console.log('[useOccupantAssignments] Resolving occupant for authUserId:', authUserId);
+  
   // First try: direct ID match
-  const { data: directMatch } = await supabase
+  const { data: directMatch, error: directError } = await supabase
     .from('occupants')
     .select('id')
     .eq('id', authUserId)
     .maybeSingle();
 
+  if (directError) {
+    console.log('[useOccupantAssignments] Direct match query error:', directError);
+  }
+
   if (directMatch?.id) {
+    console.log('[useOccupantAssignments] Found occupant by direct ID match:', directMatch.id);
     return directMatch.id;
   }
 
+  console.log('[useOccupantAssignments] No direct ID match, trying email lookup...');
+
   // Second try: match by email
   // Get user's email from profiles
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('email')
     .eq('id', authUserId)
     .maybeSingle();
 
+  if (profileError) {
+    console.log('[useOccupantAssignments] Profile query error:', profileError);
+  }
+
   if (!profile?.email) {
+    console.log('[useOccupantAssignments] No email found in profiles for user:', authUserId);
     return null;
   }
 
-  // Find occupant by email (case-insensitive)
-  const { data: emailMatch } = await supabase
+  const normalizedEmail = profile.email.trim().toLowerCase();
+  console.log('[useOccupantAssignments] Looking up occupant by email:', normalizedEmail);
+
+  // Find occupant by email (case-insensitive with wildcards for trimming)
+  const { data: emailMatch, error: emailError } = await supabase
     .from('occupants')
-    .select('id')
-    .ilike('email', profile.email.trim().toLowerCase())
+    .select('id, email')
+    .ilike('email', normalizedEmail)
     .maybeSingle();
 
-  return emailMatch?.id || null;
+  if (emailError) {
+    console.log('[useOccupantAssignments] Email match query error:', emailError);
+  }
+
+  if (emailMatch?.id) {
+    console.log('[useOccupantAssignments] Found occupant by email match:', emailMatch.id, 'email:', emailMatch.email);
+    return emailMatch.id;
+  }
+
+  console.log('[useOccupantAssignments] No occupant found for this user');
+  return null;
 }
 
 export const useOccupantAssignments = (authUserId: string) => {
@@ -133,9 +160,11 @@ export const useOccupantAssignments = (authUserId: string) => {
           .eq('occupant_id', occupantId);
 
         if (roomError) {
-          console.error('Error fetching room assignments:', roomError);
+          console.error('[useOccupantAssignments] Error fetching room assignments:', roomError);
           throw roomError;
         }
+
+        console.log('[useOccupantAssignments] Raw room assignments:', roomAssignments?.length || 0, roomAssignments);
 
         // Fetch key assignments with room details
         const { data: keyAssignments, error: keyError } = await supabase

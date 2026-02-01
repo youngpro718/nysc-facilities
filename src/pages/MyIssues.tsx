@@ -55,7 +55,7 @@ export default function MyIssues() {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const { user } = useAuth();
   const { userIssues: issues = [], isLoading, refetchIssues } = useUserIssues(user?.id);
-  const { data: occupantData } = useOccupantAssignments(user?.id || '');
+  const { data: occupantData, isLoading: isLoadingRooms } = useOccupantAssignments(user?.id || '');
   const isMobile = useIsMobile();
 
   // Auto-open wizard if ?new=1 in URL
@@ -117,6 +117,7 @@ export default function MyIssues() {
           onSuccess={handleIssueCreated}
           onCancel={() => setShowIssueWizard(false)}
           assignedRooms={occupantData?.roomAssignments || []}
+          isLoadingRooms={isLoadingRooms}
         />
       </ResponsiveDialog>
 
