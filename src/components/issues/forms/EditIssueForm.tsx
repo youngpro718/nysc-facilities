@@ -1,4 +1,3 @@
-
 import { Form } from "@/components/ui/form";
 import { Issue } from "../types/IssueTypes";
 import { BasicIssueFields } from "../form-sections/BasicIssueFields";
@@ -9,7 +8,7 @@ import { usePhotoUpload } from "../hooks/usePhotoUpload";
 import { IssuePhotoForm } from "../wizard/IssuePhotoForm";
 import { useEditIssueForm } from "../hooks/useEditIssueForm";
 import { DateFields } from "../form-sections/DateFields";
-import { FormButtons } from "../form-sections/FormButtons";
+import { FormButtons } from "@/components/ui/form-buttons";
 import { AdvancedFields } from "../form-sections/AdvancedFields";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
@@ -91,8 +90,10 @@ export function EditIssueForm({ issue, onClose, onSave }: EditIssueFormProps) {
         </Tabs>
 
         <FormButtons 
-          onClose={onClose}
-          updateIssueMutation={updateIssueMutation}
+          onCancel={onClose}
+          isSubmitting={updateIssueMutation.isPending}
+          submitLabel="Update Issue"
+          sticky
         />
       </form>
     </Form>

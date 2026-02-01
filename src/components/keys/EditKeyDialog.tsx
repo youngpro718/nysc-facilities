@@ -1,31 +1,13 @@
-
-import React, { useEffect } from 'react';
-import { useQuery } from "@tanstack/react-query";
+import React, { useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { KeyData, KeyType, KeyStatus } from "./types/KeyTypes";
+import { KeyData } from "./types/KeyTypes";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@/components/common/ModalFrame";
+import { FormButtons } from "@/components/ui/form-buttons";
 import {
   Form,
   FormControl,
@@ -47,9 +29,7 @@ import { toast } from "sonner";
 
 const editKeySchema = z.object({
   id: z.string(),
-  name: z.string().min(2, {
-    message: "Key name must be at least 2 characters.",
-  }),
+  name: z.string().min(2, "Key name must be at least 2 characters."),
   type: z.enum(["physical_key", "elevator_pass", "room_key"]),
   status: z.enum(["available", "assigned", "lost", "decommissioned"]),
   is_passkey: z.boolean(),
@@ -73,6 +53,7 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
       type: keyData.type,
       status: keyData.status,
       is_passkey: keyData.is_passkey,
+      door_locations: [],
     },
   });
 
@@ -84,11 +65,10 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
         .select("*")
         .eq("status", "active")
         .order("name");
-
       if (error) throw error;
       return data;
     },
-    enabled: !keyData.is_passkey, // Only fetch if not a passkey
+    enabled: !keyData.is_passkey,
   });
 
   useEffect(() => {
@@ -100,12 +80,11 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
 
       if (error) {
         console.error("Error fetching door locations:", error.message);
-        // Set empty array if no relations exist
         form.setValue("door_locations", []);
         return;
       }
 
-      const locations = data?.map(d => d.room_id) || [];
+      const locations = data?.map((d) => d.room_id) || [];
       form.setValue("door_locations", locations);
     };
 
@@ -114,9 +93,9 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
     }
   }, [open, keyData.id, keyData.is_passkey, form]);
 
-  const onSubmit = async (data: EditKeyFormData) => {
-    try {
-      // Handle key update
+  const updateMutation = useMutation({
+    mutationFn: async (data: EditKeyFormData) => {
+      // Update key record
       const { error: keyError } = await supabase
         .from("keys")
         .update({
@@ -131,7 +110,6 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
 
       // Handle room locations if not a passkey
       if (!data.is_passkey && data.door_locations && data.door_locations.length > 0) {
-        // Delete existing locations
         const { error: deleteError } = await supabase
           .from("room_key_access")
           .delete()
@@ -139,11 +117,10 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
 
         if (deleteError) throw deleteError;
 
-        // Insert new locations
-        const locationsToInsert = data.door_locations.map(roomId => ({
+        const locationsToInsert = data.door_locations.map((roomId) => ({
           key_id: keyData.id,
           room_id: roomId,
-          access_type: 'standard' // Add required access_type field
+          access_type: "standard",
         }));
 
         const { error: locationError } = await supabase
@@ -152,154 +129,139 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
 
         if (locationError) throw locationError;
       }
-
+    },
+    onSuccess: () => {
       toast.success("Key updated successfully");
       onOpenChange(false);
-    } catch (error: any) {
+    },
+    onError: (error: Error) => {
       toast.error("Error updating key: " + error.message);
-    }
+    },
+  });
+
+  const onSubmit = (data: EditKeyFormData) => {
+    updateMutation.mutate(data);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Edit Key</DialogTitle>
-          <DialogDescription>
-            Make changes to the key here. Click save when you're done.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Edit Key"
+      description="Make changes to the key here. Click save when you're done."
+      size="sm"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Key Name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <Input placeholder="Key Name" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    <SelectItem value="physical_key">Physical Key</SelectItem>
+                    <SelectItem value="elevator_pass">Elevator Pass</SelectItem>
+                    <SelectItem value="room_key">Room Key</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="physical_key">Physical Key</SelectItem>
-                      <SelectItem value="elevator_pass">Elevator Pass</SelectItem>
-                      <SelectItem value="room_key">Room Key</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="available">Available</SelectItem>
-                      <SelectItem value="assigned">Assigned</SelectItem>
-                      <SelectItem value="lost">Lost</SelectItem>
-                      <SelectItem value="decommissioned">Decommissioned</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="is_passkey"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Passkey</FormLabel>
-                  </div>
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a status" />
+                    </SelectTrigger>
                   </FormControl>
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="assigned">Assigned</SelectItem>
+                    <SelectItem value="lost">Lost</SelectItem>
+                    <SelectItem value="decommissioned">Decommissioned</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            {!keyData.is_passkey && (
-              <FormField
-                control={form.control}
-                name="door_locations"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Door Locations</FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        options={doors?.map((door) => ({
+          <FormField
+            control={form.control}
+            name="is_passkey"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Passkey</FormLabel>
+                </div>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          {!form.watch("is_passkey") && (
+            <FormField
+              control={form.control}
+              name="door_locations"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Door Locations</FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      options={
+                        doors?.map((door) => ({
                           label: door.name,
                           value: door.id,
-                        })) || []}
-                        onChange={(values) => field.onChange(values)}
-                        selected={field.value || []}
-                        isLoading={isLoadingDoors}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                        })) || []
+                      }
+                      onChange={(values) => field.onChange(values)}
+                      selected={field.value || []}
+                      isLoading={isLoadingDoors}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
-            <div className="flex justify-end">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button className="px-4 py-2 bg-primary text-white rounded-md">
-                    Update Key
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action will update the key information. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={form.handleSubmit(onSubmit)}>
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <FormButtons
+            onCancel={() => onOpenChange(false)}
+            isSubmitting={updateMutation.isPending}
+            submitLabel="Update Key"
+          />
+        </form>
+      </Form>
+    </ModalFrame>
   );
 }
