@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { useToast } from "@/hooks/use-toast";
 import { getSupplyRequests } from "@/lib/supabase";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
-
+import { SupplyRequestActions } from "@/components/supply/SupplyRequestActions";
 interface SupplyRequestWithUser {
   id: string;
   title: string;
@@ -216,6 +216,11 @@ export default function AdminSupplyRequests() {
                       <Badge variant="secondary">
                         {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
                       </Badge>
+                      <SupplyRequestActions
+                        requestId={request.id}
+                        requestTitle={request.title}
+                        onDeleted={fetchRequests}
+                      />
                     </div>
                   </div>
                 </CardHeader>
