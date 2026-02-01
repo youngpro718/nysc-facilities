@@ -1,76 +1,151 @@
 
 
-# Complete Audit: UUID vs TEXT Type Mismatch
+# Fix RLS Policy for Admin Notifications + Add Favorite Room Display
 
-## Problem Identified
+## Problems Identified
 
-The Postgres error `column "related_id" is of type uuid but expression is of type text` is caused by the database trigger function `notify_admin_on_staff_task_request()` which was deployed in the recent migration.
+### 1. RLS Policy Blocking Trigger Inserts
 
-### Root Cause
+**Root Cause**: The `notify_admin_on_staff_task_request()` trigger function tries to INSERT into `admin_notifications`, but the only INSERT policy requires the user to be an admin:
 
-In the trigger function at line 138:
 ```sql
-related_id: NEW.id::text
+-- Current policy (FOR ALL requires admin role)
+"Admins can manage notifications" 
+USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'))
 ```
 
-This casts the UUID `NEW.id` to TEXT, but the `admin_notifications.related_id` column is of type UUID. PostgreSQL cannot implicitly convert text back to UUID during INSERT.
+When a regular user submits a room assignment request, the trigger runs in their context (not admin), so the INSERT fails with "violates row-level security policy".
+
+**Solution**: Make the trigger function `SECURITY DEFINER` so it runs with elevated privileges (the function owner's permissions), bypassing RLS when inserting notifications. This is the standard pattern for system-generated notifications.
+
+### 2. Favorite Room Display
+
+**Current State**: 
+- Users can see their assigned room in the Settings page (`MyRoomSection.tsx`)
+- The dashboard header (`CompactHeader.tsx`) shows room number if available
+- But there's no prominent "My Room" quick-access display on the main dashboard
+
+**User's Request**: Make the user's assigned room appear prominently as a "favorite" - similar to how favorite supply items appear in `FavoritesStrip`.
+
+**Solution**: Add a "My Room" card to the user dashboard that shows their primary room assignment with quick navigation to view room details.
 
 ---
 
-## Audit Results
+## Part 1: Fix the RLS Policy Issue
 
-### Database Schema Analysis
+### Option A: Make Trigger SECURITY DEFINER (Recommended)
 
-| Table | Column | Type |
-|-------|--------|------|
-| `admin_notifications` | `related_id` | **UUID** |
-| `user_notifications` | `related_id` | **UUID** |
-| `staff_tasks` | `id` | **UUID** |
-
-### Affected Database Functions
-
-**1. `notify_admin_on_staff_task_request()` - BROKEN**
-- Line 138: `NEW.id::text` - Incorrectly casts UUID to TEXT
-- **Fix**: Remove `::text` cast, use `NEW.id` directly
-
-**2. Other Functions (VERIFIED CORRECT)**
-- `emit_admin_notification()` - Parameter is already UUID type
-- `handle_issue_notifications()` - Uses `NEW.id` directly (correct)
-- `notify_admin_on_issue_insert()` - Uses `NEW.id` directly (correct)
-- `notify_admin_on_key_request_insert()` - Uses `NEW.id` directly (correct)
-- `notify_admin_on_supply_request_insert()` - Uses `NEW.id` directly (correct)
-- `notify_admins_of_key_request()` - Uses `NEW.id` directly (correct)
-- `notify_court_assignment_changes()` - Uses `COALESCE(NEW.id, OLD.id)` (correct)
-- `notify_role_change()` - Uses `NEW.user_id::uuid` (correct)
-- `trg_emit_new_user_pending_admin_notification()` - Uses `NEW.id` directly (correct)
-- `trg_emit_profile_approval_change()` - Uses `NEW.id::uuid` (correct)
-- `auto_complete_room_request()` - Does NOT insert `related_id` (correct)
-
-### Application Code Analysis
-
-All TypeScript code uses string types for `related_id`, which is correct because:
-- Supabase client converts UUIDs to strings in JavaScript
-- The mismatch only occurs at the database trigger level
-
-| File | Usage | Status |
-|------|-------|--------|
-| `src/hooks/useNotifications.ts` | `related_id?: string` | Correct |
-| `src/hooks/useAdminNotifications.ts` | `related_id: string \| null` | Correct |
-| `src/components/dashboard/NotificationCard.tsx` | `related_id?: string` | Correct |
-| `src/pages/admin/KeyRequests.tsx` | Passes UUID string | Correct |
-| `src/components/profile/reorganized/AdminManagementTab.tsx` | Uses RPC with UUID param | Correct |
-
----
-
-## Fix Required
-
-### Database Migration
-
-Update the `notify_admin_on_staff_task_request()` function to remove the incorrect `::text` cast:
+Add `SECURITY DEFINER` to the trigger function so it can insert notifications regardless of who triggers it:
 
 ```sql
 CREATE OR REPLACE FUNCTION public.notify_admin_on_staff_task_request()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER          -- ADD THIS LINE
+SET search_path = public
+AS $function$
+DECLARE
+  requester_name TEXT;
+BEGIN
+  -- ... existing logic unchanged ...
+END;
+$function$;
+```
+
+### Option B: Add Service Role Policy (Alternative)
+
+Add an INSERT policy that allows the trigger to insert. However, triggers run as the invoking user unless `SECURITY DEFINER` is set, so this won't work without Option A.
+
+**Recommendation**: Use Option A - it's the cleanest and follows the same pattern used by other notification triggers in the system.
+
+---
+
+## Part 2: Add "My Room" Favorite Display
+
+### Create MyRoomCard Component
+
+A compact card for the user dashboard showing their primary room assignment:
+
+```typescript
+// src/components/user/MyRoomCard.tsx
+
+interface MyRoomCardProps {
+  userId: string;
+}
+
+export function MyRoomCard({ userId }: MyRoomCardProps) {
+  const { data: assignments } = useOccupantAssignments(userId);
+  
+  // Find primary room or first assigned room
+  const primaryRoom = assignments?.roomDetails?.find(a => a.is_primary) 
+    || assignments?.roomDetails?.[0];
+  
+  if (!primaryRoom?.rooms) {
+    return null; // Don't show card if no room assigned
+  }
+  
+  const room = primaryRoom.rooms;
+  
+  return (
+    <Card className="border-primary/20 bg-primary/5">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <MapPin className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">
+                Room {room.room_number || room.name}
+              </span>
+              <Badge variant="secondary" className="text-xs gap-1">
+                <Star className="h-3 w-3 fill-current" />
+                My Room
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {room.floors?.name} • {room.floors?.buildings?.name}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### Add to User Dashboard
+
+Insert the MyRoomCard after the header section in UserDashboard.tsx:
+
+```typescript
+// After CompactHeader, before PickupAlertBanner
+<MyRoomCard userId={user.id} />
+```
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| Database trigger | Add `SECURITY DEFINER` to `notify_admin_on_staff_task_request()` |
+| `src/components/user/MyRoomCard.tsx` | **New file** - Compact room display card |
+| `src/pages/UserDashboard.tsx` | Import and add `<MyRoomCard />` component |
+
+---
+
+## Database Migration
+
+```sql
+-- Make the notification trigger run with elevated privileges
+-- so it can insert admin notifications regardless of who triggers it
+CREATE OR REPLACE FUNCTION public.notify_admin_on_staff_task_request()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $function$
 DECLARE
   requester_name TEXT;
 BEGIN
@@ -85,7 +160,7 @@ BEGIN
       urgency, 
       metadata,
       related_table,
-      related_id         -- Column is UUID type
+      related_id
     )
     VALUES (
       'new_issue',
@@ -108,28 +183,27 @@ BEGIN
         'requester_name', requester_name
       ),
       'staff_tasks',
-      NEW.id              -- FIXED: Removed ::text cast
+      NEW.id
     );
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SET search_path = public;
+$function$;
 ```
 
 ---
 
 ## Summary
 
-| Component | Issue Found | Fix |
-|-----------|-------------|-----|
-| `notify_admin_on_staff_task_request()` trigger | `NEW.id::text` inserted into UUID column | Remove `::text` cast |
-| All other DB functions | None | No changes needed |
-| All TypeScript code | None | No changes needed |
+| Issue | Fix |
+|-------|-----|
+| RLS blocks trigger inserts | Add `SECURITY DEFINER` to trigger function |
+| No favorite room display | Create `MyRoomCard` component for dashboard |
 
-### Impact
+### Expected Results
 
-After the fix:
-- Room assignment requests will successfully create admin notifications
-- Deep linking from notifications to `/access-assignments?assign_user=X` will work
-- The workflow implemented in the previous plan will function correctly
+1. Users can successfully request a room assignment without RLS errors
+2. Admin receives notification with deep link to assignment page
+3. Users see their primary room prominently on the dashboard with a "star" badge
+4. Room info appears even more visibly (currently only in header badge on desktop)
 
