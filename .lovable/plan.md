@@ -1,60 +1,147 @@
 
-# Fix Foreign Key Constraint Error on User Notifications
+# Simplify Room Assignment Workflow
 
-## Problem Identified
+## Overview
+This plan addresses three key improvements to make room assignments easier:
+1. **Admin side**: Add direct room assignment from the Access & Assignments page
+2. **User side**: Let users request room assignments from their Settings
+3. **Issue reporting**: Users can quickly select from their assigned ("favorited") rooms
 
-When submitting a "Set up a room" request (or any staff task), the database throws:
+---
+
+## Part 1: Admin Room Assignment from Access & Assignments
+
+### Current Problem
+The `/access-assignments` page shows personnel cards with room counts, but clicking a card does nothing. Admins must navigate to a separate Room Assignments page to make changes.
+
+### Solution
+Add a "Manage" action when clicking a personnel card that opens a simple assignment dialog.
+
+### Changes
+
+**1. Create `PersonnelQuickAssignDialog.tsx`**
+A new dialog component that appears when admin clicks a personnel card:
+- Shows the person's name and current assignments
+- "Add Room" button with room selector dropdown
+- Toggle to set as "Primary" room
+- Quick remove buttons for existing assignments
+- Single-click workflow: Select room → Check "Primary" → Done
+
+**2. Update `AccessAssignments.tsx`**
+- Add `onClick` handler to `PersonnelCard` 
+- Open `PersonnelQuickAssignDialog` with selected person's data
+- Add visual affordance (cursor pointer, hover effect) to indicate cards are clickable
+
+**3. Update `PersonnelCard` component**
+- Add subtle "Manage" button or make card itself clickable
+- Show visual feedback on hover
+
+### User Flow (Admin)
 ```
-insert or update on table "user_notifications" violates foreign key constraint "user_notifications_user_id_fkey"
+1. Go to Access & Assignments
+2. Click on "John Smith" card
+3. Dialog opens showing:
+   - Current rooms: Room 1300 (Primary), Room 1205
+   - "Add Room" dropdown
+4. Select "Room 1400" → Check "Primary" → Click "Add"
+5. Room 1400 becomes primary, Room 1300 becomes secondary
+6. Done
 ```
 
-### Root Cause
+---
 
-The `user_notifications.user_id` column has a **foreign key pointing to the wrong table**:
+## Part 2: User Self-Service Room Request
 
-| Current Setup | Correct Setup |
-|--------------|---------------|
-| `user_notifications.user_id` → `occupants.id` | `user_notifications.user_id` → `profiles.id` |
+### Current Problem
+Users can only request a room during the issue reporting flow, which is confusing. The message "Room assignment request submitted! You can continue reporting the issue." appears mid-flow.
 
-This causes failures because:
-1. The notification trigger queries `user_roles.user_id` (which stores `auth.users.id` / `profiles.id`)
-2. It tries to insert notifications for admins
-3. **3 out of 5 admins don't have `occupants` records** (they only have `profiles` records)
-4. The insert fails the foreign key check
+### Solution
+Add a "My Room" section to the Settings page where users can:
+- See their current room assignments
+- Request a room assignment (if none)
+- Request a change to their primary room
 
-### Data Verification
-- **Profiles table:** 10 authenticated users
-- **Occupants table:** 101 records (mostly building personnel, not authenticated users)
-- **Admins with occupant records:** 2 out of 5
-- **Admins missing from occupants:** 3 (these cause the FK error)
+### Changes
 
-## Solution
+**1. Create `MyRoomSection.tsx`**
+New component for the Settings page:
+- Shows current room assignments with "Primary" badge
+- If no assignments: "Request Room Assignment" button
+- If has assignments: "Request Change" button for switching primary
+- Status indicators for pending requests
 
-Change the foreign key to reference `profiles.id` instead of `occupants.id`. This makes sense because:
-- Only authenticated users (in `profiles`) should receive notifications
-- `profiles.id` = `auth.users.id` = `user_roles.user_id`
-- All 10 authenticated users have `profiles` records
+**2. Update `EnhancedUserSettings.tsx`**
+- Add new "My Room" section at the top (before Notifications)
+- Uses `useOccupantAssignments` hook to show current state
+- Request button creates a `staff_task` with type "room_assignment_request"
 
-## Database Migration
+**3. Remove redundant request from `SimpleReportWizard.tsx`**
+- Keep the "No assigned room" state but change the messaging
+- Instead of inline request, show: "Go to Settings to request a room"
+- Link directly to `/profile?tab=settings`
 
-```sql
--- Drop the incorrect foreign key
-ALTER TABLE user_notifications 
-DROP CONSTRAINT user_notifications_user_id_fkey;
-
--- Add the correct foreign key referencing profiles
-ALTER TABLE user_notifications 
-ADD CONSTRAINT user_notifications_user_id_fkey 
-FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
+### User Flow (Standard User)
+```
+1. Go to Profile → Settings
+2. See "My Room" section at top:
+   - "You have no room assigned"
+   - [Request Room Assignment] button
+3. Click button → Confirmation toast
+4. Admin approves → User gets notification
+5. Room appears in "My Room" section
 ```
 
-## Files Modified
+---
 
-None - this is a database-only fix.
+## Part 3: Improved Issue Reporting with Room Favorites
 
-## Expected Outcome
+### Current State (Already Good)
+The SimpleReportWizard already:
+- Shows user's assigned rooms
+- Auto-selects primary room
+- Allows selecting other assigned rooms
 
-After running the migration:
-1. Task submissions will succeed without FK errors
-2. All admins will receive notifications (not just the 2 with occupant records)
-3. The notification system will work correctly for all authenticated users
+### Minor Enhancement
+- Add visual "star" or "primary" indicator on the primary room
+- Improve the room card design to show building/floor info more clearly
+- No major changes needed - this flow already works well
+
+---
+
+## Technical Details
+
+### Database
+No schema changes needed. The existing `occupant_room_assignments` table and `staff_tasks` table handle all requirements.
+
+### New Files
+| File | Purpose |
+|------|---------|
+| `src/components/access-assignments/PersonnelQuickAssignDialog.tsx` | Dialog for quick room assignment from personnel card |
+| `src/components/profile/MyRoomSection.tsx` | User's room assignments in settings |
+
+### Modified Files
+| File | Changes |
+|------|---------|
+| `src/pages/AccessAssignments.tsx` | Add click handler to personnel cards, import dialog |
+| `src/components/profile/EnhancedUserSettings.tsx` | Add MyRoomSection to settings tabs |
+| `src/components/issues/wizard/SimpleReportWizard.tsx` | Update no-room message, remove inline request |
+
+### Hooks Used
+- `useOccupantAssignments` - Get user's current assignments
+- `usePersonnelAccess` - Get personnel list (admin view)
+- Existing `useRoomAssignment` hook for creating assignments
+
+---
+
+## Summary
+
+| Who | What They Can Do | Where |
+|-----|-----------------|-------|
+| Admin | Click personnel card → Assign room | /access-assignments |
+| User | See assigned rooms, request changes | /profile → Settings |
+| User | Select from assigned rooms when reporting | Issue Report dialog |
+
+This makes the workflow:
+- **Simpler**: Admin clicks card, picks room, done
+- **Self-service**: Users manage room requests from one place (Settings)
+- **Cleaner**: Issue reporting stays focused on reporting issues
