@@ -92,7 +92,6 @@ export function InventoryManagement() {
 
       if (inventoryError) {
         // If inventory_items table doesn't exist, create mock data
-        console.log('Using mock inventory data:', inventoryError);
         const mockData = [
           {
             id: '1',

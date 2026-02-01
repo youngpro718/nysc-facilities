@@ -38,12 +38,9 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange, userId }: R
 
   const completeMutation = useMutation({
     mutationFn: async () => {
-      console.log('Starting order completion...', { requestId: request.id, fulfilledQuantities });
-      
       if (!userId) throw new Error('Not authenticated');
 
       // Update request status
-      console.log('Updating request status to completed...');
       const { error: requestError } = await supabase
         .from('supply_requests')
         .update({
@@ -54,10 +51,7 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange, userId }: R
         })
         .eq('id', request.id);
 
-      if (requestError) {
-        console.error('Request update error:', requestError);
-        throw requestError;
-      }
+      if (requestError) throw requestError;
 
       // Note: Inventory was already deducted when order was marked as "ready"
       // Just confirm the quantities were actually delivered
@@ -93,12 +87,10 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange, userId }: R
             receiptType: 'final',
             receiptData,
           });
-        } catch (receiptError) {
-          console.error('Failed to generate final receipt:', receiptError);
+        } catch {
+          // Receipt generation is non-critical
         }
       }
-      
-      console.log('Order completion successful');
     },
     onSuccess: () => {
       toast({
@@ -111,8 +103,7 @@ export function ReceiveCompleteDialog({ request, open, onOpenChange, userId }: R
       setNotes('');
       setFulfilledQuantities({});
     },
-    onError: (error) => {
-      console.error('Completion mutation error:', error);
+    onError: (error: Error) => {
       toast({
         title: "Error Completing Order",
         description: error.message,

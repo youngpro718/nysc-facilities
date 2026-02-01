@@ -263,7 +263,7 @@ export default function Tasks() {
       {/* Tabs - Different for Court Aides */}
       {isCourtAide ? (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="my-tasks" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">My Tasks</span>
@@ -289,6 +289,10 @@ export default function Tasks() {
             <TabsTrigger value="completed" className="gap-2">
               <CheckCircle2 className="h-4 w-4" />
               <span className="hidden sm:inline">Completed</span>
+            </TabsTrigger>
+            <TabsTrigger value="supply-orders" className="gap-2">
+              <Package className="h-4 w-4" />
+              <span className="hidden sm:inline">Supply Orders</span>
             </TabsTrigger>
           </TabsList>
 
@@ -358,6 +362,10 @@ export default function Tasks() {
                 {renderTaskList(completedTasks, "No completed tasks yet")}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="supply-orders" className="mt-6">
+            <SupplyRequestTracking userRole="supply_staff" />
           </TabsContent>
         </Tabs>
       ) : (
