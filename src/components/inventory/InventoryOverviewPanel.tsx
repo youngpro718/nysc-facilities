@@ -36,9 +36,6 @@ export const InventoryOverviewPanel = () => {
   const [range, setRange] = useState<"7d" | "30d" | "90d" | "ytd">("30d");
   const [typeFilter, setTypeFilter] = useState<"all" | "add" | "remove" | "adjustment">("all");
 
-  // TEMP: Force minimum threshold to 3 for testing across overview
-  const FORCED_MINIMUM = 3;
-
 
   const startDate = useMemo(() => {
     const now = new Date();
@@ -72,19 +69,24 @@ export const InventoryOverviewPanel = () => {
         txCountQuery,
       ]);
 
-      // Count low stock items directly in the database (0 < quantity <= threshold)
-      const { count: lowStockCount, error: lowStockError } = await supabase
+      // Count low stock items: quantity > 0 AND quantity < minimum_quantity
+      // We need to fetch all items and filter client-side since Supabase doesn't support column-to-column comparison
+      const { data: allItems, error: lowStockError } = await supabase
         .from("inventory_items")
-        .select("id", { count: "exact", head: true })
-        .gt("quantity", 0)
-        .lte("quantity", FORCED_MINIMUM);
+        .select("id, quantity, minimum_quantity")
+        .gt("quantity", 0);
       if (lowStockError) {
         console.error('Error counting low stock items:', lowStockError);
       }
+      // Filter items where quantity < minimum_quantity (and minimum_quantity > 0)
+      const lowStockCount = (allItems || []).filter(
+        item => item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
+      ).length;
+      
       return {
         total_items: itemsResult.count || 0,
         total_categories: categoriesResult.count || 0,
-        low_stock_count: lowStockCount || 0,
+        low_stock_count: lowStockCount,
         recent_transactions: transactionsResult.count || 0
       } as InventoryStats;
     },
@@ -278,13 +280,17 @@ export const InventoryOverviewPanel = () => {
           id,
           name,
           quantity,
+          minimum_quantity,
           category_id
         `)
+        .gt("quantity", 0)
         .order("quantity", { ascending: true });
       if (error) throw error;
 
-      // Filter items that are below FORCED_MINIMUM
-      const filteredItems = (data || []).filter(item => (item?.quantity || 0) > 0 && (item?.quantity || 0) <= FORCED_MINIMUM);
+      // Filter items where quantity < minimum_quantity (actual low stock)
+      const filteredItems = (data || []).filter(
+        item => item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
+      );
 
       // Enrich with category names
       const categoryIds = Array.from(new Set(filteredItems.map((i: any) => i.category_id).filter(Boolean)));
@@ -302,7 +308,7 @@ export const InventoryOverviewPanel = () => {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        minimum_quantity: FORCED_MINIMUM,
+        minimum_quantity: item.minimum_quantity,
         // Only include a category name if we have one; otherwise leave undefined/null
         category_name: categoriesById.get(item.category_id) ?? null
       })) as LowStockItem[];
