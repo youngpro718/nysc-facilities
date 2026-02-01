@@ -9,6 +9,7 @@ import { useDevMode } from '@/hooks/useDevMode';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useNavigate } from 'react-router-dom';
 import { SYSTEM_ROLES, getRoleLabel, type UserRole } from '@/config/roles';
+import { getDashboardForRole } from '@/utils/roleBasedRouting';
 
 // Quick links organized by role
 const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>> = {
@@ -180,8 +181,12 @@ export function DevModePanel({ realRole }: DevModePanelProps) {
           onValueChange={(value) => {
             if (value === realRole) {
               clearPreviewRole();
+              // Navigate to real role's dashboard
+              navigate(getDashboardForRole(realRole));
             } else {
               setPreviewRole(value as UserRole);
+              // Auto-navigate to the new role's dashboard
+              navigate(getDashboardForRole(value as UserRole));
             }
           }}
           className="grid grid-cols-2 gap-2"
