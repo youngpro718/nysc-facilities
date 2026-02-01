@@ -192,10 +192,10 @@ submitted → pending_approval → approved → received → picking → ready �
 3. ✅ Update admin page to show pending approvals prominently
 4. ✅ Add approve/reject functionality that works correctly
 
-### Phase 2: Speed Optimization
-1. Add inline justification to footer (not hidden in sheet)
-2. Add quick submit button for non-restricted orders
-3. Pre-select delivery location from room assignments (not just profile metadata)
+### Phase 2: Speed Optimization ✅ COMPLETED
+1. ✅ Add inline justification to footer (not hidden in sheet)
+2. ✅ Add quick submit button for non-restricted orders
+3. ✅ Pre-select delivery location from room assignments (not just profile metadata)
 
 ### Phase 3: Polish
 1. Add user notifications when approval is needed/completed
