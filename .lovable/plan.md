@@ -1,192 +1,177 @@
 
+# Issue Management Audit & Admin Quick Report Plan
 
-# User Management Page - Simplification Plan
+## Part 1: Database Cleanup
 
-## What's Wrong Right Now
+### Current Test Issues Found
+I found 12+ test issues in the database. Here's what they look like:
 
-After auditing the current state:
+| Title | Description | Status | Created |
+|-------|-------------|--------|---------|
+| PLUMBING_NEEDS Issue | bathroom | open | Oct 30, 2025 |
+| Lighting Issue - ballast_issue | LED bulb | open | Aug 31, 2025 |
+| CLEANING_REQUEST Issue - Deep Clean | (empty) | open | Aug 19, 2025 |
+| ACCESS_REQUEST Issue - Key Issues | (empty) | open | Aug 17, 2025 |
+| ELECTRICAL_NEEDS Issue - Lighting | bulb replacement | open | Aug 17, 2025 |
+| ...and 7 more similar test entries |
 
-### 1. Role Assignment on New User Approval is Broken
-In `AdminCenter.tsx` line 119-122, when approving a user:
-```typescript
-const { error } = await supabase.rpc('approve_user_verification', {
-  p_user_id: userId,
-  p_role: 'standard',  // ← HARDCODED! No way to pick a different role
-  p_admin_notes: 'Approved via admin panel'
-});
-```
-The admin can't choose what role to assign - everyone gets "standard" automatically.
-
-### 2. Current Admin's Info Not Shown
-The page shows all users but doesn't display who YOU are as the logged-in admin at the top. This makes it feel disconnected - "whose view is this?"
-
-### 3. Page Still Feels Cluttered
-- 5 statistics cards across the top (Total, Pending, Verified, Suspended, Admins)
-- Clicking them filters - but this isn't obvious
-- The role dropdown exists per-user but only works for already-approved users
-- Need to click "⋮ menu → Approve User" then separately change their role
-
-### 4. Approval Workflow is Awkward
-Current flow:
-1. Click ⋮ menu → Approve User (assigns "standard" role automatically)
-2. Then find them again and change their role with the dropdown
-3. Two separate actions for what should be one
+To clean these up, you have two options:
+1. **I can provide a SQL query** to delete all test issues in one go
+2. **Delete them manually** through the Operations page (one by one)
 
 ---
 
-## The Simpler Solution
+## Part 2: Admin Quick Issue Report
 
-### Redesigned User Management Page
+### Current Problem
+As a facility coordinator, you currently have to:
+1. Navigate to Operations → Report Issue
+2. Fill out: Title, Description, Space Type, Room (dropdown of ALL rooms), Issue Type, Severity
+3. No recent rooms, no photo upload, no quick actions
 
-**Goal**: One simple page to manage all users with a clear approval + role assignment flow
+**That's 6+ taps/clicks minimum**, and no photos.
 
-### Visual Layout
+### Proposed Solution: Admin Quick Report
+
+A streamlined reporting flow designed for facility coordinators who need to report issues on the go:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│ ← User Management                                           │
-├─────────────────────────────────────────────────────────────┤
-│ Logged in as: John Smith (Administrator)         [Refresh]  │
-├─────────────────────────────────────────────────────────────┤
-│ 3 users awaiting approval                     [Clear filter]│
-├─────────────────────────────────────────────────────────────┤
-│ 🔍 Search users...                    Filter: [All Users ▼] │
+│ Quick Report                                       [×] Close│
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│ ┌──────────────────────────────────────────────────────────┐│
-│ │ 🟡 PENDING APPROVAL                                      ││
-│ │ ┌────────────────────────────────────────────────────┐  ││
-│ │ │ Jane Doe                              Requested:    │  ││
-│ │ │ jane@court.gov                        Court Aide    │  ││
-│ │ │                                                     │  ││
-│ │ │        Role: [User ▼]    [Approve] [Reject]        │  ││
-│ │ └────────────────────────────────────────────────────┘  ││
-│ └──────────────────────────────────────────────────────────┘│
+│  RECENT ROOMS                                                │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐        │
+│  │ 1609     │ │ 1616     │ │ Lobby    │ │ 1109A    │        │
+│  │ Jury Rm  │ │ Courtroom│ │ Main     │ │ Office   │        │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘        │
 │                                                              │
-│ ┌──────────────────────────────────────────────────────────┐│
-│ │ ACTIVE USERS                                             ││
-│ │ ┌────────────────────────────────────────────────────┐  ││
-│ │ │ Bob Wilson                         Role: [User ▼]   │  ││
-│ │ │ bob@court.gov                                       │  ││
-│ │ └────────────────────────────────────────────────────┘  ││
-│ │ ┌────────────────────────────────────────────────────┐  ││
-│ │ │ Alice Chen                   Role: [Administrator ▼]│  ││
-│ │ │ alice@court.gov                         (You)       │  ││
-│ │ └────────────────────────────────────────────────────┘  ││
-│ └──────────────────────────────────────────────────────────┘│
+│  Or search: [🔍 Type room number...           ]              │
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│  ISSUE TYPE (tap to select)                                  │
+│                                                              │
+│  ⚡ Electrical    🔧 Maintenance    ❄️ HVAC                   │
+│  🚿 Plumbing      🧹 Cleaning       ⚠️ Safety                 │
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│  📷 Add Photos (tap or drag)                                 │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │              [Camera icon]                               ││
+│  │         Tap to take photo or upload                      ││
+│  └─────────────────────────────────────────────────────────┘│
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│  DESCRIPTION (optional)                                      │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ Quick notes about the issue...                          ││
+│  └─────────────────────────────────────────────────────────┘│
+│                                                              │
+│                           [Submit Report]                    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
----
+### The 4-5 Tap Flow
 
-## Key Changes
+1. **Tap** recent room OR search and tap room result
+2. **Tap** issue type (Electrical, HVAC, etc.)
+3. **Tap** camera button (optional - take photo)
+4. **Tap** Submit
 
-### 1. Add "Logged in as" Header
-Show the current admin at the top so they know whose view this is:
-```text
-Logged in as: John Smith (Administrator)
-```
-
-### 2. Replace 5 Stats Cards with Simple Alert
-Instead of 5 clickable cards, show a simple alert when there are pending users:
-```text
-⚠️ 3 users awaiting approval
-```
-Much cleaner and more actionable.
-
-### 3. Fix Approval Flow - Add Role Selection BEFORE Approving
-For pending users, show:
-- The role they requested (for context)
-- A dropdown to select their actual role
-- Approve button (uses selected role)
-- Reject button
-
-This makes it ONE action instead of two.
-
-### 4. Simplify Filter Options
-Replace 5 stat card filters with one dropdown:
-- All Users
-- Pending Approval
-- Active
-- Suspended
-- Administrators
-
-### 5. Remove Menu Dots for Approve/Reject
-The ⋮ menu is awkward. For pending users, show buttons directly on the card.
+That's 3-4 taps minimum (5 if adding a photo).
 
 ---
 
 ## Technical Implementation
 
-### File: `src/pages/AdminCenter.tsx`
+### New Component: `AdminQuickReportDialog.tsx`
 
-**Changes:**
+A new dialog component with:
 
-1. **Add current admin info at top**
-   - Use existing `currentUserId` to display admin's name from `users` list
-   
-2. **Replace stats cards with pending alert**
-   - Remove the 5 statistics Card components
-   - Add simple Alert component if `pendingCount > 0`
+| Feature | Implementation |
+|---------|----------------|
+| **Recent Rooms** | Track last 8 rooms used in localStorage, show as quick-select chips |
+| **Room Search** | Autocomplete searching all rooms (room_number, name) |
+| **Quick Issue Types** | 6 large tap targets with icons (same as user flow) |
+| **Photo Upload** | Reuse existing `IssuePhotoForm` component |
+| **Description** | Single textarea, optional |
+| **Auto-fill** | building_id, floor_id auto-filled from room selection |
 
-3. **Fix `handleApproveUser` function**
-   - Accept role parameter: `handleApproveUser(userId: string, role: UserRole)`
-   - Pass the selected role to the RPC instead of hardcoded 'standard'
+### Files to Create/Modify
 
-4. **Redesign user cards for pending users**
-   - Show "Requested: [their requested role]" badge
-   - Show role selector dropdown (default to requested role or 'standard')
-   - Show inline Approve/Reject buttons (not in menu)
+1. **Create**: `src/components/issues/admin/AdminQuickReportDialog.tsx`
+   - New streamlined dialog for admins
+   - Recent rooms from localStorage
+   - Room search with autocomplete
+   - Quick issue type selector
+   - Photo upload
+   - Description field
 
-5. **Simplify verified user cards**
-   - Keep role dropdown
-   - Keep menu for Unlock Account, Edit Profile, etc.
+2. **Create**: `src/hooks/useRecentRooms.ts`
+   - Track last 8 rooms reported for in localStorage
+   - `addRecentRoom(roomId, roomName, roomNumber)` 
+   - `getRecentRooms()` returns last 8
 
-6. **Replace stats card filtering with dropdown**
-   - Add Select component for filter (All, Pending, Active, Suspended, Admins)
+3. **Modify**: `src/pages/Operations.tsx`
+   - Replace "Report Issue" button to open new `AdminQuickReportDialog`
 
----
+4. **Modify**: `src/pages/AdminDashboard.tsx` (optional)
+   - Add floating action button for quick reporting
 
-## Code Changes Summary
+### Room Search Component
 
-### `src/pages/AdminCenter.tsx`
+```text
+Search behavior:
+- Type "16" → Shows: 1609, 1616, 1617, etc.
+- Type "jury" → Shows: Jury Room 1, Jury Room 2
+- Type "court" → Shows: All courtrooms
+- Tap result → Auto-selects room + fills building/floor
+```
 
-| Section | Change |
-|---------|--------|
-| Header | Add "Logged in as: [name]" display |
-| Stats | Remove 5 Card stats, add simple "X pending" badge/alert |
-| Filter | Replace stat card clicks with single Select dropdown |
-| Pending user card | Add role selector + inline Approve/Reject buttons |
-| `handleApproveUser` | Accept `role` parameter, pass to RPC |
-| Active user card | Keep role dropdown, simplify layout |
+### Photo Upload
 
-### Estimated Line Reduction
-Current: ~490 lines
-After: ~350 lines
-
----
-
-## What We're Removing
-
-- 5 separate statistic cards (replaced with badge/alert)
-- Stat card click handlers for filtering
-- Menu-based approve/reject (moved to inline buttons)
-- Confusion about two-step approval process
-
-## What We're Adding
-
-- "Logged in as" header with current admin info
-- Simple pending count badge
-- Role selector integrated with approval workflow
-- Clearer visual separation (Pending vs Active sections)
+Reuse the existing photo upload infrastructure:
+- Same `issue-photos` storage bucket (already exists and is public)
+- Same upload logic from `ReportIssueWizard`
+- Support camera access on mobile
 
 ---
 
-## Expected Result
+## User Permissions
 
-The User Management page will:
-1. Show who's logged in at a glance
-2. Highlight pending approvals clearly
-3. Allow one-step approval WITH role assignment
-4. Feel less cluttered and more focused
+| User Type | Can Use Admin Quick Report? |
+|-----------|------------------------------|
+| Regular User | No - uses existing wizard with assigned rooms |
+| Court Aide | No - uses existing wizard |
+| Facility Coordinator | Yes - can report for any room |
+| Administrator | Yes - can report for any room |
 
+The quick report will check `isAdmin` or `role === 'facilities_manager'` before showing.
+
+---
+
+## What Regular Users Keep
+
+Their existing flow remains unchanged:
+- Dashboard → Quick Report widget → Their assigned rooms only
+- 4-step wizard with contact info pre-filled
+- They report for their room(s), no need to search
+
+---
+
+## Summary
+
+### For You (Admin/Facility Coordinator)
+- New "Quick Report" button in Operations
+- Recent rooms shown first (no scrolling through dropdowns)
+- Room search by number or name
+- Photo upload built in
+- **3-5 taps to report an issue**
+
+### For Regular Users
+- Same flow as before
+- Report for their assigned room(s)
+- No photo requirement (you mentioned this isn't necessary for them)
+
+### Database Cleanup
+I'll provide a SQL query or handle deletion through the app once you confirm you want the test data removed.
