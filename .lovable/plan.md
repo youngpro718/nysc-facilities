@@ -1,260 +1,265 @@
 
-# Forms UI/UX Consistency Audit
+
+# Comprehensive Application Audit - Phase 2
 
 ## Executive Summary
 
-After auditing 130+ form components across the application, I found significant inconsistencies in dialog wrappers, button placement, form validation patterns, and overall UX. These inconsistencies make the app feel disjointed - users have to relearn form behavior in each section of the app.
+After thorough investigation of the codebase, database, console logs, and network requests, I identified several critical issues and areas for improvement. The most urgent is a **broken database view** that causes the Access & Assignments page to show zero users/personnel.
 
 ---
 
-## Critical Findings
+## CRITICAL ISSUES
 
-### 1. Five Different Dialog Wrapper Components (Chaos)
+### 1. Access & Assignments Page - View Column Mismatch (BROKEN)
 
-The codebase uses **5 different components** for form dialogs, each with different sizing, scrolling, and mobile behavior:
+**Root Cause**: The `personnel_access_view` database view doesn't match what the application expects.
 
-| Component | Files Using It | Sizing Approach | Mobile Behavior |
-|-----------|----------------|-----------------|-----------------|
-| `DialogContent` (raw) | 115+ files | Inconsistent `max-w-*` classes | No mobile optimization |
-| `ModalFrame` | ~10 files | Standardized sizes (sm/md/lg/xl) | Basic responsive |
-| `ResponsiveDialog` | ~8 files | `max-w-4xl` fixed | Drawer on mobile |
-| `MobileOptimizedDialog` | ~5 files | Configurable maxWidth prop | Good mobile support |
-| `MobileDetailsDialog` | ~3 files | Fixed `max-w-lg` | Good mobile support |
+**Evidence**:
+- Network request returns: `{"code":"42703","message":"column personnel_access_view.name does not exist"}`
+- Query: `GET /rest/v1/personnel_access_view?select=*&order=name.asc` → 400 Error
 
-**Problem**: Users experience inconsistent dialog behavior. Some dialogs become drawers on mobile, others don't. Some scroll internally, others overflow. Sizing is unpredictable.
-
-**Recommendation**: Standardize on `ModalFrame` as the primary wrapper with mobile-responsive enhancements.
-
----
-
-### 2. Button Placement Inconsistencies
-
-Discovered **three different patterns** for form button placement:
-
-| Pattern | Gap | Position | Files |
-|---------|-----|----------|-------|
-| `flex justify-end gap-2` | 8px | Right-aligned | 30+ files |
-| `flex justify-end gap-4` | 16px | Right-aligned | 15+ files |
-| `DialogFooter` | Component default | Component standard | 60 files |
-| Inline with content | Various | Mixed | ~20 files |
-
-**Problem**: Button spacing varies between 8px and 16px. Some dialogs use `DialogFooter`, others manually create button rows. Order of Cancel/Submit buttons is inconsistent.
-
-**Files needing standardization** (examples):
-- `src/components/maintenance/ReportIssueDialog.tsx` - uses `gap-2`, no DialogFooter
-- `src/components/ui/form-buttons.tsx` - uses `gap-4`
-- `src/components/issues/form-sections/FormButtons.tsx` - uses `gap-2` with sticky positioning
-- `src/components/tasks/CreateTaskDialog.tsx` - uses DialogFooter
-- `src/components/court/QuickIssueDialog.tsx` - uses inline buttons with `gap-2`
-
----
-
-### 3. Two Duplicate FormButtons Components
-
-There are **two completely different** `FormButtons` components with incompatible APIs:
-
-| Component | Location | Props |
-|-----------|----------|-------|
-| `FormButtons` | `src/components/ui/form-buttons.tsx` | `onCancel`, `isSubmitting`, `submitLabel`, `cancelLabel` |
-| `FormButtons` | `src/components/issues/form-sections/FormButtons.tsx` | `onClose`, `updateIssueMutation` (expects mutation object) |
-
-**Problem**: Developers don't know which to use. The issues version is tightly coupled to mutation objects instead of a simple `isSubmitting` boolean.
-
-**Recommendation**: Delete the issues-specific version and use the generic one, or merge into a single unified component.
-
----
-
-### 4. Form Validation Approach Inconsistencies
-
-Three different form patterns coexist:
-
-| Pattern | Example File | Usage |
-|---------|--------------|-------|
-| **react-hook-form + Zod** | `CreateTaskDialog.tsx`, `EditIssueForm.tsx` | Modern, validated |
-| **useState + manual validation** | `ReportIssueDialog.tsx`, `QuickIssueDialog.tsx` | No schema validation |
-| **Hybrid (both)** | Some room forms | Confusing mix |
-
-**Problem**: The maintenance `ReportIssueDialog.tsx` uses raw `useState` for form data while `CreateTaskDialog.tsx` (similar complexity) uses proper react-hook-form. This creates:
-- Inconsistent error display
-- No field-level validation feedback
-- Different submission patterns
-
----
-
-### 5. Specific Dialog Sizing Chaos
-
-Sampling of actual `max-w-*` values found across dialogs:
-
-```text
-max-w-lg        - 21 files (512px)
-max-w-2xl       - 18 files (672px)  
-max-w-3xl       - 12 files (768px)
-max-w-4xl       - 8 files (896px)
-max-w-xl        - 7 files (576px)
-max-w-md        - 6 files (448px)
-max-w-6xl       - 2 files (1152px)
-sm:max-w-[425px] - 5 files (custom)
-sm:max-w-[500px] - 3 files (custom)
-sm:max-w-[600px] - 2 files (custom)
+**Current view columns**:
+```
+id, first_name, last_name, full_name, display_name, title, department, 
+email, phone, extension, room_number, floor, building, is_active, 
+created_at, updated_at
 ```
 
-**Problem**: No consistent sizing strategy. Similar forms have wildly different widths.
-
----
-
-### 6. Label/Input Patterns
-
-Two patterns found for form field labeling:
-
-| Pattern | Usage | Accessibility |
-|---------|-------|---------------|
-| `<Label htmlFor="x"><Input id="x">` | 91 files | Manual linking |
-| `<FormLabel>` + `<FormControl>` | 130 files | Auto-linked via context |
-
-The second pattern (shadcn/ui Form components) is preferred but not universally used.
-
----
-
-## Recommended Standardization
-
-### Standard Dialog Pattern
-```tsx
-<Dialog open={open} onOpenChange={onOpenChange}>
-  <ModalFrame title="Form Title" description="Optional description" size="md">
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Form fields using FormField, FormItem, FormLabel, FormControl, FormMessage */}
-        
-        <DialogFooter className="pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : 'Save'}
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
-  </ModalFrame>
-</Dialog>
+**Expected by hook** (`usePersonnelAccess.ts`):
+```typescript
+interface PersonnelAccessRecord {
+  id: string;
+  source_type: 'profile' | 'personnel_profile';  // MISSING
+  name: string;                                   // MISSING (has full_name/display_name)
+  email: string | null;
+  department: string | null;
+  title: string | null;
+  avatar_url: string | null;                      // MISSING
+  user_role: string | null;                       // MISSING
+  is_registered_user: boolean;                    // MISSING
+  room_count: number;                             // MISSING
+  key_count: number;                              // MISSING
+}
 ```
 
-### Standard Modal Sizes
-| Size | Max Width | Use Case |
-|------|-----------|----------|
-| `sm` | 480px | Confirmations, simple inputs |
-| `md` | 700px | Standard forms (default) |
-| `lg` | 840px | Complex forms with tabs |
-| `xl` | 1024px | Wizards, data-heavy forms |
+**Data exists**: Verified 9 profiles and 10+ personnel_profiles in database.
+
+**Fix**: Recreate the `personnel_access_view` to:
+1. UNION profiles (registered users) with personnel_profiles (non-users)
+2. Add computed `name` column (using COALESCE of full_name, display_name, or first_name || ' ' || last_name)
+3. Add `source_type` discriminator
+4. Add `is_registered_user` boolean
+5. Add counts for room assignments and key assignments
+6. Include `avatar_url` from profiles
 
 ---
 
-## Implementation Plan
+### 2. Realtime Connection Errors (Non-Critical but Noisy)
 
-### Phase 1: Foundation (Immediate)
+**Symptom**: Console shows `[AdminRealtime] Connection failed: CLOSED` on page navigation.
 
-1. **Enhance ModalFrame** - Add mobile drawer behavior from ResponsiveDialog
-2. **Create unified FormButtons** - Merge the two versions into `src/components/ui/form-buttons.tsx`
-3. **Create FormFooter wrapper** - Standardize sticky footer with border-t pattern
+**Cause**: When navigating between pages, realtime channels are being closed before cleanup completes, causing error logs.
 
-**Files to modify:**
-- `src/components/common/ModalFrame.tsx` - Add mobile drawer support
-- `src/components/ui/form-buttons.tsx` - Enhance with loading state display
-- Delete or deprecate: `src/components/issues/form-sections/FormButtons.tsx`
+**Location**: `src/hooks/realtime/useAdminRealtimeNotifications.ts` line 257
 
-### Phase 2: High-Priority Form Fixes
+**Impact**: No functional impact, but creates noise in console and may confuse developers.
 
-Migrate these **most-used forms** to the standard pattern:
-
-| Form | Current Issues | Priority |
-|------|---------------|----------|
-| `ReportIssueDialog.tsx` | useState, no DialogFooter, gap-2 | High |
-| `QuickIssueDialog.tsx` | useState, inline buttons | High |
-| `EditKeyDialog.tsx` | AlertDialog for submit (confusing), raw Dialog | High |
-| `CreateKeyForm.tsx` | Correct pattern, can be template | Reference |
-| `ScheduleMaintenanceDialog.tsx` | Manual buttons, gap-2 | Medium |
-
-### Phase 3: Bulk Migration
-
-Systematic migration of remaining forms using search/replace patterns:
-
-1. Replace `DialogContent className="max-w-*"` with `ModalFrame size="*"`
-2. Replace manual button divs with `DialogFooter`
-3. Standardize gap to `gap-2` (the Radix default)
-4. Convert useState forms to react-hook-form where practical
+**Fix**: Add connection state check before logging error.
 
 ---
 
-## Files to Change
+## MOBILE UX AUDIT
 
-### Critical (Phase 1)
+### What's Working Well ✓
+
+| Feature | Implementation | Notes |
+|---------|----------------|-------|
+| **Bottom Tab Bar** | `BottomTabBar.tsx` | 4-5 items + "More", proper safe-area-bottom |
+| **Floating Action Button** | `FloatingActionButton.tsx` | Navigates to /request, positioned bottom-24 |
+| **iOS Safe Areas** | `ios-compatibility.css` | Comprehensive safe-area handling |
+| **Touch Targets** | CSS | 44px minimum enforced via media query |
+| **Pull to Refresh** | `PullToRefresh` component | Used on UserDashboard, MyActivity |
+| **Input Zoom Prevention** | CSS | Font-size: 16px on inputs |
+| **Mobile Forms** | `mobile-form.tsx` | MobileInput, MobileTextarea with proper sizing |
+| **Mobile Drawer** | `ModalFrame.tsx` | Auto-converts dialogs to drawers on mobile |
+
+### Mobile Issues to Fix
+
+#### 3.1 Request Hub - Action Cards Too Wide on iPhone SE
+
+**File**: `src/pages/RequestHub.tsx`
+**Issue**: Grid is `grid-cols-1 sm:grid-cols-2` but cards are full width on mobile with lots of padding.
+**Fix**: Reduce card padding on mobile, or keep 2-column on small screens with narrower cards.
+
+#### 3.2 User Dashboard - Expandable Sections on Mobile
+
+**File**: `src/pages/UserDashboard.tsx`
+**Issue**: Three expandable sections (Supplies, Issues, Keys) are good but:
+- Default expanded section is "supplies" - should be based on what has items
+- ChevronUp/Down icons are small for touch targets
+- Section headers could be taller for easier tapping
+
+**Fix**: 
+- Auto-expand the section with the most relevant data (ready-for-pickup first)
+- Increase header tap area with min-h-[52px]
+
+#### 3.3 Mobile Menu Title Alignment
+
+**File**: `src/components/layout/components/MobileMenu.tsx`
+**Issue**: Navigation sheet opens from right but has "Navigation" title centered, feels off.
+**Fix**: Left-align title or make it more contextual.
+
+#### 3.4 Drawer Title Centering in ModalFrame
+
+**File**: `src/components/common/ModalFrame.tsx` line 149
+**Issue**: Mobile drawer has `text-center flex-1` on title wrapper, which works unless there's a headerRight element.
+**Fix**: Remove `text-center` to left-align titles (more standard on iOS).
+
+#### 3.5 Missing Safe Area on Some Dialogs
+
+**Issue**: Some dialogs using raw `DialogContent` don't have `safe-area-bottom` for iPhone home indicator.
+**Impact**: Form buttons can be partially covered on iPhone X+ devices.
+**Fix**: Phase 3 bulk migration will address this when dialogs move to ModalFrame.
+
+---
+
+## ROUTING AUDIT
+
+### Verified Working Routes ✓
+- `/` → Admin Dashboard (admin only)
+- `/dashboard` → User Dashboard
+- `/request` → Request Hub
+- `/request/help` → Help Request Page
+- `/request/supplies` → Supply Order Page
+- `/my-activity` → My Activity (unified tracking)
+- `/access-assignments` → Access & Assignments (broken view, but routing works)
+- `/operations` → Operations hub (Issues, Maintenance, Supplies tabs)
+- `/supply-room` → Supply Room (Court Aide fulfillment)
+- `/tasks` → Tasks page (correctly shows 4 tabs now after removal)
+
+### Legacy Redirects Verified ✓
+- `/occupants` → redirects to `/access-assignments`
+- `/issues` → redirects to `/operations?tab=issues`
+- `/maintenance` → redirects to `/operations?tab=maintenance`
+- `/settings` → redirects to `/profile?tab=settings`
+- `/forms/supply-request` → redirects to `/request/supplies`
+
+---
+
+## FORM CONSISTENCY (Post-Phase 1)
+
+### Forms Updated in Phase 1 ✓
+- `QuickIssueDialog.tsx` - Now uses react-hook-form + ModalFrame
+- `ReportIssueDialog.tsx` - Now uses react-hook-form + ModalFrame  
+- `EditKeyDialog.tsx` - Removed AlertDialog nesting
+- `EditIssueForm.tsx` - Uses unified FormButtons
+
+### Remaining Forms for Phase 3 (100+ files)
+These still use raw `DialogContent` and need migration:
+- Inventory dialogs: `EditItemDialog.tsx`, `CreateItemDialog.tsx`
+- Court operations: `CoverageAssignmentDialog.tsx`
+- Form builder: `FormPreviewDialog.tsx`, `FormTemplateBuilderDialog.tsx`
+- Room assignments: Various dialogs in `/room-assignments`
+- Keys: `CreateKeyForm.tsx` (already good pattern, reference)
+
+---
+
+## IMPLEMENTATION PLAN
+
+### Phase 1: Critical Database Fix (Do First)
+
+Create new SQL migration to recreate `personnel_access_view`:
+
+```sql
+DROP VIEW IF EXISTS personnel_access_view;
+
+CREATE OR REPLACE VIEW personnel_access_view AS
+WITH profile_counts AS (
+  SELECT 
+    p.id,
+    (SELECT COUNT(*) FROM occupant_room_assignments ora WHERE ora.occupant_id = p.id) as room_count,
+    (SELECT COUNT(*) FROM key_assignments ka WHERE ka.occupant_id = p.id AND ka.returned_at IS NULL) as key_count
+  FROM profiles p
+),
+personnel_counts AS (
+  SELECT 
+    pp.id,
+    (SELECT COUNT(*) FROM occupant_room_assignments ora WHERE ora.occupant_id = pp.id) as room_count,
+    (SELECT COUNT(*) FROM key_assignments ka WHERE ka.occupant_id = pp.id AND ka.returned_at IS NULL) as key_count
+  FROM personnel_profiles pp
+)
+-- Registered users from profiles
+SELECT 
+  p.id,
+  'profile'::text as source_type,
+  COALESCE(p.first_name || ' ' || p.last_name, p.email) as name,
+  p.email,
+  p.department,
+  p.title,
+  p.avatar_url,
+  p.access_level as user_role,
+  true as is_registered_user,
+  COALESCE(pc.room_count, 0)::integer as room_count,
+  COALESCE(pc.key_count, 0)::integer as key_count
+FROM profiles p
+LEFT JOIN profile_counts pc ON pc.id = p.id
+WHERE p.is_approved = true
+
+UNION ALL
+
+-- Non-registered personnel from personnel_profiles
+SELECT 
+  pp.id,
+  'personnel_profile'::text as source_type,
+  COALESCE(pp.display_name, pp.full_name, pp.first_name || ' ' || pp.last_name) as name,
+  pp.email,
+  pp.department,
+  pp.title,
+  NULL as avatar_url,
+  NULL as user_role,
+  false as is_registered_user,
+  COALESCE(ppc.room_count, 0)::integer as room_count,
+  COALESCE(ppc.key_count, 0)::integer as key_count
+FROM personnel_profiles pp
+LEFT JOIN personnel_counts ppc ON ppc.id = pp.id
+WHERE pp.is_active = true;
+```
+
+### Phase 2: Mobile UX Improvements
 
 | File | Change |
 |------|--------|
-| `src/components/common/ModalFrame.tsx` | Add mobile drawer behavior |
-| `src/components/ui/form-buttons.tsx` | Keep and enhance |
-| `src/components/issues/form-sections/FormButtons.tsx` | Deprecate, update EditIssueForm to use generic |
+| `src/pages/RequestHub.tsx` | Adjust card padding for mobile |
+| `src/pages/UserDashboard.tsx` | Smart default expansion, larger touch targets |
+| `src/components/common/ModalFrame.tsx` | Left-align drawer titles |
+| `src/components/layout/components/MobileMenu.tsx` | Improve title alignment |
 
-### High Priority (Phase 2)
+### Phase 3: Console Cleanup (Minor)
 
 | File | Change |
 |------|--------|
-| `src/components/maintenance/ReportIssueDialog.tsx` | Convert to react-hook-form, use ModalFrame |
-| `src/components/court/QuickIssueDialog.tsx` | Convert to react-hook-form, use ModalFrame |
-| `src/components/keys/EditKeyDialog.tsx` | Remove AlertDialog nesting, use standard submit |
-| `src/components/tasks/RequestTaskDialog.tsx` | Already good, minor footer standardization |
-
-### Medium Priority (Phase 3 - batch)
-
-Forms using raw DialogContent that need ModalFrame:
-- `src/components/inventory/EditItemDialog.tsx`
-- `src/components/inventory/CreateItemDialog.tsx`
-- `src/components/court-operations/CoverageAssignmentDialog.tsx`
-- `src/components/forms/FormPreviewDialog.tsx`
-- `src/components/forms/FormTemplateBuilderDialog.tsx`
-- ~100+ other dialog files
+| `src/hooks/realtime/useAdminRealtimeNotifications.ts` | Check connection state before error log |
 
 ---
 
 ## Expected Outcomes
 
 After implementation:
-
-1. **Consistent sizing** - All dialogs use 4 standard sizes
-2. **Mobile-friendly** - All forms work as drawers on mobile devices
-3. **Predictable buttons** - Cancel left, Submit right, consistent gap
-4. **Proper validation** - All forms use react-hook-form + Zod
-5. **Single source of truth** - One FormButtons, one ModalFrame pattern
-6. **Reduced cognitive load** - Users know how forms behave everywhere
+1. **Access & Assignments page shows users and personnel** - Critical fix
+2. **Mobile experience is polished** - Consistent touch targets, proper drawer behavior
+3. **Console is cleaner** - No false error logs on navigation
+4. **Routing is verified working** - All paths tested and documented
 
 ---
 
-## Technical Notes
+## Files to Change
 
-### Dialog Wrapper Decision
+| Priority | File | Change Type |
+|----------|------|-------------|
+| Critical | Database migration | Create new `personnel_access_view` |
+| High | `src/pages/RequestHub.tsx` | Mobile card padding |
+| High | `src/pages/UserDashboard.tsx` | Smart section expansion |
+| Medium | `src/components/common/ModalFrame.tsx` | Drawer title alignment |
+| Medium | `src/components/layout/components/MobileMenu.tsx` | Title styling |
+| Low | `src/hooks/realtime/useAdminRealtimeNotifications.ts` | Connection state check |
 
-Use `ModalFrame` enhanced with mobile drawer behavior rather than `ResponsiveDialog` because:
-- ModalFrame already has standardized sizing
-- ModalFrame supports headerRight slot
-- ModalFrame has proper padding/scrolling
-- Adding drawer behavior is straightforward
-
-### Button Order
-
-Standard order (following macOS/Windows conventions):
-- Cancel (left, outline variant)
-- Primary action (right, default variant)
-
-This matches the existing pattern in 80% of forms.
-
-### Form Validation
-
-For new forms, always use:
-```tsx
-const form = useForm<FormData>({
-  resolver: zodResolver(formSchema),
-  defaultValues: {...}
-});
-```
-
-Never use raw useState for form data except for very simple single-field forms.
