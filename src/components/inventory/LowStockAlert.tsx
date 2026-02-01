@@ -22,28 +22,30 @@ export function LowStockAlert({
   roomName,
   onManageItem,
 }: LowStockAlertProps) {
-  // Temporary forced minimum for consistent low stock UI across app
-  const FORCED_MINIMUM = 3;
-  // Low stock: 0 < quantity <= FORCED_MINIMUM (exclude 0 which is out of stock)
+  // Low stock: 0 < quantity < minimum_quantity (use actual minimum, not forced)
   const lowStockItems = items.filter(item =>
-    item.quantity > 0 && item.quantity <= FORCED_MINIMUM
+    item.quantity > 0 && 
+    (item.minimum_quantity || 0) > 0 && 
+    item.quantity < (item.minimum_quantity || 0)
   );
 
   const outOfStockItems = items.filter(item => item.quantity === 0);
 
   const getStockStatus = (item: InventoryItem) => {
+    const minQty = item.minimum_quantity || 0;
     if (item.quantity === 0) return { label: "Out of Stock", color: "bg-red-500" };
-    if (item.quantity > 0 && item.quantity <= FORCED_MINIMUM) return { label: "Low Stock", color: "bg-yellow-500" };
+    if (minQty > 0 && item.quantity < minQty) return { label: "Low Stock", color: "bg-yellow-500" };
     return { label: "Normal", color: "bg-green-500" };
   };
 
   const getUrgencyBadge = (item: InventoryItem) => {
+    const minQty = item.minimum_quantity || 0;
     if (item.quantity === 0) return { label: "Critical", variant: "destructive" as const };
-    if (item.quantity < FORCED_MINIMUM / 2) return { label: "High", variant: "destructive" as const };
+    if (minQty > 0 && item.quantity < minQty / 2) return { label: "High", variant: "destructive" as const };
     return { label: "Medium", variant: "secondary" as const };
   };
 
-  if (lowStockItems.length === 0) {
+  if (lowStockItems.length === 0 && outOfStockItems.length === 0) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md">
@@ -143,7 +145,7 @@ export function LowStockAlert({
                         
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                           <span>Current: {item.quantity} {item.unit || 'units'}</span>
-                          <span>Minimum: {FORCED_MINIMUM} {item.unit || 'units'}</span>
+                          <span>Minimum: {item.minimum_quantity || 0} {item.unit || 'units'}</span>
                         </div>
 
                         {item.category && (
