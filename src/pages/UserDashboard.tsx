@@ -41,7 +41,7 @@ import { CompactHeader } from "@/components/user/CompactHeader";
 import { PickupAlertBanner } from "@/components/user/PickupAlertBanner";
 import { TermSheetPreview } from "@/components/user/TermSheetPreview";
 import { CompactActivitySection } from "@/components/user/CompactActivitySection";
-import { Package } from "lucide-react";
+import { Package, HelpCircle, Key } from "lucide-react";
 
 export default function UserDashboard() {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
@@ -172,16 +172,25 @@ export default function UserDashboard() {
           onClick={() => navigate('/my-activity')}
         />
 
-        {/* Quick Actions */}
+        {/* Quick Actions - All 4 request types accessible directly */}
         <div className="grid grid-cols-2 gap-3">
           <Button
             variant="default"
             size="lg"
-            onClick={() => navigate('/request')}
+            onClick={() => navigate('/request/supplies')}
             className="h-14 touch-manipulation"
           >
             <Package className="h-5 w-5 mr-2" />
-            Request Supplies
+            Order Supplies
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => navigate('/request/help')}
+            className="h-14 touch-manipulation"
+          >
+            <HelpCircle className="h-5 w-5 mr-2" />
+            Request Help
           </Button>
           <QuickIssueReportButton 
             variant="outline"
@@ -190,6 +199,15 @@ export default function UserDashboard() {
             showIcon={true}
             className="h-14 touch-manipulation"
           />
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => navigate('/forms/key-request')}
+            className="h-14 touch-manipulation"
+          >
+            <Key className="h-5 w-5 mr-2" />
+            Request Key
+          </Button>
         </div>
 
         {/* Court Term Sheet Preview */}
