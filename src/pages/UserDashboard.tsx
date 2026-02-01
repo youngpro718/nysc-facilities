@@ -1,26 +1,24 @@
 /**
- * USER DASHBOARD - EMPLOYEE WORK PORTAL
+ * USER DASHBOARD - PRACTICAL WORK PORTAL
  * 
- * Redesigned as a personalized daily work hub:
+ * Redesigned as a practical daily work hub:
  * 
- * 1. PERSONALIZED GREETING
+ * 1. COMPACT HEADER
  *    - Time-aware greeting with date
- *    - User's workspace info (room, department)
+ *    - Quick action buttons
  * 
  * 2. PICKUP ALERT BANNER
  *    - Prominent notification when supplies are ready
  * 
- * 3. REQUEST STATUS GRID
- *    - At-a-glance view of supplies, issues, keys
- *    - Click to expand details
+ * 3. TERM SHEET PREVIEW
+ *    - Searchable court assignments at a glance
+ *    - Who's where, contact info
  * 
  * 4. QUICK ACTIONS
- *    - Request Supplies, Report Issue always visible
+ *    - Request Supplies, Report Issue
  * 
- * 5. DETAILED SECTIONS
- *    - Expandable supply tracker
- *    - Issue list
- *    - Key assignments
+ * 5. TABBED ACTIVITY SECTION
+ *    - Supplies, Issues, Keys in one place
  */
 
 import React, { useState, useEffect } from "react";
@@ -32,43 +30,37 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useSupplyRequests } from "@/hooks/useSupplyRequests";
 import { useKeyRequests } from "@/hooks/useKeyRequests";
 import { useUserIssues } from "@/hooks/dashboard/useUserIssues";
-import { KeyAssignmentCard } from "@/components/dashboard/KeyAssignmentCard";
-import { EnhancedSupplyTracker } from "@/components/user/EnhancedSupplyTracker";
 import { QuickIssueReportButton } from "@/components/user/QuickIssueReportButton";
 import { NotificationDropdown } from "@/components/user/NotificationDropdown";
 import { useUserPersonnelInfo } from "@/hooks/user/useUserPersonnelInfo";
 import { AvatarPromptModal } from "@/components/auth/AvatarPromptModal";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserWorkspaceCard } from "@/components/user/UserWorkspaceCard";
-import { RequestStatusGrid } from "@/components/user/RequestStatusGrid";
+import { CompactHeader } from "@/components/user/CompactHeader";
 import { PickupAlertBanner } from "@/components/user/PickupAlertBanner";
-import { 
-  Package, 
-  AlertTriangle, 
-  Wrench,
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
+import { TermSheetPreview } from "@/components/user/TermSheetPreview";
+import { CompactActivitySection } from "@/components/user/CompactActivitySection";
+import { Package } from "lucide-react";
 
 export default function UserDashboard() {
-  const { user, profile, isLoading, isAuthenticated, isAdmin } = useAuth();
+  const { user, profile, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // Expanded section state - will be set smartly based on data
-  const [expandedSection, setExpandedSection] = useState<'supplies' | 'issues' | 'keys' | null>(null);
-  const [hasSetInitialExpansion, setHasSetInitialExpansion] = useState(false);
-  
   // Data hooks
-  const { notifications = [], isLoading: notificationsLoading, markAsRead, markAllAsRead, clearNotification, clearAllNotifications, refetch: refetchNotifications } = useNotifications(user?.id);
-  const { data: supplyRequests = [], refetch: refetchSupplyRequests, isLoading: supplyLoading } = useSupplyRequests(user?.id);
-  const { data: keyRequests = [], refetch: refetchKeyRequests, isLoading: keyLoading } = useKeyRequests(user?.id);
-  const { userIssues = [], refetchIssues, isLoading: issuesLoading } = useUserIssues(user?.id);
-  const { data: personnelInfo, isLoading: personnelLoading } = useUserPersonnelInfo(user?.id);
+  const { 
+    notifications = [], 
+    markAsRead, 
+    markAllAsRead, 
+    clearNotification, 
+    clearAllNotifications, 
+    refetch: refetchNotifications 
+  } = useNotifications(user?.id);
+  const { data: supplyRequests = [], refetch: refetchSupplyRequests } = useSupplyRequests(user?.id);
+  const { data: keyRequests = [], refetch: refetchKeyRequests } = useKeyRequests(user?.id);
+  const { userIssues = [], refetchIssues } = useUserIssues(user?.id);
+  const { data: personnelInfo } = useUserPersonnelInfo(user?.id);
 
   const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
   const [avatarPromptDismissed, setAvatarPromptDismissed] = useState(false);
@@ -144,41 +136,26 @@ export default function UserDashboard() {
   const lastName = profile?.last_name || user?.user_metadata?.last_name || '';
 
   // Calculate stats
-  const activeSupplyRequests = supplyRequests.filter(r => !['fulfilled', 'rejected', 'cancelled', 'completed'].includes(r.status)).length;
   const readyForPickup = supplyRequests.filter(r => r.status === 'ready').length;
   const pendingKeyRequests = keyRequests.filter(r => r.status === 'pending').length;
-  const openIssues = userIssues.filter(i => i.status === 'open').length;
-  const inProgressIssues = userIssues.filter(i => i.status === 'in_progress').length;
   const keysHeld = keyAssignments.length;
-
-  // Smart initial expansion - prioritize ready-for-pickup, then open issues, then supplies
-  useEffect(() => {
-    if (!hasSetInitialExpansion && !supplyLoading && !issuesLoading && !keyLoading) {
-      if (readyForPickup > 0) {
-        setExpandedSection('supplies');
-      } else if (openIssues > 0) {
-        setExpandedSection('issues');
-      } else if (activeSupplyRequests > 0) {
-        setExpandedSection('supplies');
-      } else if (keysHeld > 0 || pendingKeyRequests > 0) {
-        setExpandedSection('keys');
-      } else {
-        setExpandedSection('supplies'); // Default fallback
-      }
-      setHasSetInitialExpansion(true);
-    }
-  }, [hasSetInitialExpansion, supplyLoading, issuesLoading, keyLoading, readyForPickup, openIssues, activeSupplyRequests, keysHeld, pendingKeyRequests]);
-
-  const toggleSection = (section: 'supplies' | 'issues' | 'keys') => {
-    setExpandedSection(expandedSection === section ? null : section);
-  };
 
   return (
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
       <div className="space-y-4 sm:space-y-6 pb-20 px-3 sm:px-0">
-        {/* Header with Actions */}
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2">
+        {/* Header Row: Greeting + Actions */}
+        <div className="flex items-start justify-between gap-3 pt-2">
+          <CompactHeader
+            firstName={firstName}
+            lastName={lastName}
+            title={(profile as any)?.title || personnelInfo?.title}
+            department={(profile as any)?.department || (personnelInfo as any)?.department}
+            roomNumber={(profile as any)?.room_number || personnelInfo?.roomNumber}
+            avatarUrl={profile?.avatar_url}
+            role={personnelInfo?.role}
+          />
+          
+          <div className="flex items-center gap-2 flex-shrink-0">
             <NotificationDropdown
               notifications={notifications}
               onMarkAsRead={markAsRead}
@@ -187,210 +164,48 @@ export default function UserDashboard() {
               onClearAllNotifications={clearAllNotifications}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="default"
-              size={isMobile ? "sm" : "default"}
-              onClick={() => navigate('/request')}
-              className="touch-manipulation"
-            >
-              <Package className="h-4 w-4 mr-1" />
-              {isMobile ? "Request" : "New Request"}
-            </Button>
-            <QuickIssueReportButton 
-              variant="outline"
-              size={isMobile ? "sm" : "default"}
-              label={isMobile ? "Report" : "Report Issue"}
-              showIcon={!isMobile}
-              className="touch-manipulation"
-            />
-          </div>
         </div>
 
-        {/* Personalized Workspace Card */}
-        <UserWorkspaceCard
-          firstName={firstName}
-          lastName={lastName}
-          title={(profile as any)?.title || personnelInfo?.title}
-          department={(profile as any)?.department || (personnelInfo as any)?.department}
-          roomNumber={(profile as any)?.room_number || personnelInfo?.roomNumber}
-          extension={(profile as any)?.extension || personnelInfo?.extension}
-          avatarUrl={profile?.avatar_url}
-          role={personnelInfo?.role}
-        />
-
-        {/* Pickup Alert Banner */}
+        {/* Pickup Alert Banner - Prominent when supplies are ready */}
         <PickupAlertBanner 
           count={readyForPickup} 
-          onClick={() => toggleSection('supplies')}
+          onClick={() => navigate('/my-activity')}
         />
 
-        {/* Request Status Grid */}
-        <RequestStatusGrid
-          activeSupplyRequests={activeSupplyRequests}
-          readyForPickup={readyForPickup}
-          openIssues={openIssues}
-          inProgressIssues={inProgressIssues}
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            variant="default"
+            size="lg"
+            onClick={() => navigate('/request')}
+            className="h-14 touch-manipulation"
+          >
+            <Package className="h-5 w-5 mr-2" />
+            Request Supplies
+          </Button>
+          <QuickIssueReportButton 
+            variant="outline"
+            size="lg"
+            label="Report Issue"
+            showIcon={true}
+            className="h-14 touch-manipulation"
+          />
+        </div>
+
+        {/* Court Term Sheet Preview */}
+        <TermSheetPreview 
+          maxItems={6}
+          defaultExpanded={false}
+        />
+
+        {/* Tabbed Activity Section */}
+        <CompactActivitySection
+          supplyRequests={supplyRequests}
+          issues={userIssues}
           keysHeld={keysHeld}
           pendingKeyRequests={pendingKeyRequests}
-          onViewSupplies={() => toggleSection('supplies')}
-          onViewIssues={() => toggleSection('issues')}
-          onViewKeys={() => toggleSection('keys')}
+          userId={user.id}
         />
-
-        {/* Expandable Sections */}
-        <div className="space-y-3">
-          {/* Supply Requests Section */}
-          <Card className={expandedSection === 'supplies' ? 'ring-2 ring-primary/20' : ''}>
-            <CardHeader 
-              className="cursor-pointer py-3 min-h-[52px] touch-manipulation"
-              onClick={() => toggleSection('supplies')}
-            >
-              <CardTitle className="flex items-center justify-between text-base">
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  Supply Requests
-                  {activeSupplyRequests > 0 && (
-                    <Badge variant="secondary">{activeSupplyRequests} active</Badge>
-                  )}
-                </div>
-                <div className="p-1.5 -mr-1.5 rounded-md hover:bg-accent/50">
-                  {expandedSection === 'supplies' ? (
-                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            {expandedSection === 'supplies' && (
-              <CardContent className="pt-0">
-                <EnhancedSupplyTracker 
-                  requests={supplyRequests}
-                  featured={false}
-                />
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Issues Section */}
-          <Card className={expandedSection === 'issues' ? 'ring-2 ring-primary/20' : ''}>
-            <CardHeader 
-              className="cursor-pointer py-3 min-h-[52px] touch-manipulation"
-              onClick={() => toggleSection('issues')}
-            >
-              <CardTitle className="flex items-center justify-between text-base">
-                <div className="flex items-center gap-2">
-                  <Wrench className="h-5 w-5 text-orange-600" />
-                  Reported Issues
-                  {openIssues > 0 && (
-                    <Badge variant="destructive">{openIssues} open</Badge>
-                  )}
-                </div>
-                <div className="p-1.5 -mr-1.5 rounded-md hover:bg-accent/50">
-                  {expandedSection === 'issues' ? (
-                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            {expandedSection === 'issues' && (
-              <CardContent className="pt-0">
-                {userIssues.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No issues reported</p>
-                    <p className="text-sm mt-1">Click "Report Issue" to submit a new request</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {userIssues.slice(0, 5).map((issue) => (
-                      <div key={issue.id} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium truncate">{issue.title}</h4>
-                              <Badge 
-                                variant={
-                                  issue.priority === 'urgent' || issue.priority === 'high' 
-                                    ? 'destructive' 
-                                    : 'outline'
-                                }
-                                className="text-xs"
-                              >
-                                {issue.priority}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {issue.description}
-                            </p>
-                            {(issue.unified_spaces?.name || issue.buildings?.name) && (
-                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                <span>📍</span>
-                                {issue.buildings?.name}
-                                {issue.unified_spaces?.name && ` - ${issue.unified_spaces.name}`}
-                              </p>
-                            )}
-                          </div>
-                          <Badge 
-                            variant={
-                              issue.status === 'open' ? 'destructive' : 
-                              issue.status === 'in_progress' ? 'secondary' : 
-                              'outline'
-                            }
-                          >
-                            {issue.status === 'in_progress' ? 'In Progress' : issue.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                    {userIssues.length > 5 && (
-                      <Button 
-                        variant="ghost" 
-                        className="w-full" 
-                        onClick={() => navigate('/my-issues')}
-                      >
-                        View {userIssues.length - 5} more issues
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Keys Section */}
-          <Card className={expandedSection === 'keys' ? 'ring-2 ring-primary/20' : ''}>
-            <CardHeader 
-              className="cursor-pointer py-3 min-h-[52px] touch-manipulation"
-              onClick={() => toggleSection('keys')}
-            >
-              <CardTitle className="flex items-center justify-between text-base">
-                <div className="flex items-center gap-2">
-                  <span className="text-green-600">🔑</span>
-                  Keys & Access
-                  {keysHeld > 0 && (
-                    <Badge variant="secondary">{keysHeld} held</Badge>
-                  )}
-                </div>
-                <div className="p-1.5 -mr-1.5 rounded-md hover:bg-accent/50">
-                  {expandedSection === 'keys' ? (
-                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            {expandedSection === 'keys' && (
-              <CardContent className="pt-0">
-                <KeyAssignmentCard userId={user.id} />
-              </CardContent>
-            )}
-          </Card>
-        </div>
       </div>
       
       <AvatarPromptModal
