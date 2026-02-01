@@ -36,14 +36,19 @@ export const facilitiesService = {
         .from('rooms')
         .select(`
           *,
-          building:buildings(id, name),
-          floor:floors(id, floor_number, name)
+          floor:floors!rooms_floor_id_fkey(
+            id, 
+            floor_number, 
+            name,
+            building:buildings!floors_building_id_fkey(id, name)
+          )
         `)
         .is('deleted_at', null);
 
       // Apply filters
       if (filters?.buildingId) {
-        query = query.eq('building_id', filters.buildingId);
+        // Filter by building through floors
+        query = query.eq('floor.building_id', filters.buildingId);
       }
       if (filters?.floorId) {
         query = query.eq('floor_id', filters.floorId);
@@ -56,14 +61,21 @@ export const facilitiesService = {
       }
       if (filters?.search) {
         query = query.or(
-          `room_number.ilike.%${filters.search}%,room_name.ilike.%${filters.search}%`
+          `room_number.ilike.%${filters.search}%,name.ilike.%${filters.search}%`
         );
       }
 
       const { data, error } = await query.order('room_number');
 
       if (error) handleSupabaseError(error, 'Failed to fetch rooms');
-      return data || [];
+      
+      // Transform to add building at top level for convenience
+      const rooms = (data || []).map((room: any) => ({
+        ...room,
+        building: room.floor?.building || null,
+      }));
+      
+      return rooms;
     } catch (error) {
       console.error('[facilitiesService.getRooms]:', error);
       throw error;
@@ -81,8 +93,12 @@ export const facilitiesService = {
         .from('rooms')
         .select(`
           *,
-          building:buildings(id, name, address),
-          floor:floors(id, floor_number, name),
+          floor:floors!rooms_floor_id_fkey(
+            id, 
+            floor_number, 
+            name,
+            building:buildings!floors_building_id_fkey(id, name, address)
+          ),
           occupants(id, first_name, last_name, title, email)
         `)
         .eq('id', id)
@@ -90,7 +106,14 @@ export const facilitiesService = {
         .single();
 
       if (error) handleSupabaseError(error, 'Failed to fetch room');
-      return validateData(data, 'Room not found');
+      
+      // Transform to add building at top level
+      const room = {
+        ...data,
+        building: data?.floor?.building || null,
+      };
+      
+      return validateData(room, 'Room not found');
     } catch (error) {
       console.error('[facilitiesService.getRoomById]:', error);
       throw error;
