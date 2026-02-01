@@ -3,10 +3,11 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase credentials from environment variables with fallbacks for preview
-// VITE_ prefixed variables are safe for client-side use (anon/publishable keys only)
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://fmymhtuiqzhupjyopfvi.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
+// Lovable projects should not rely on VITE_* env vars; use the project ref directly.
+// (Anon key is safe to ship client-side.)
+const SUPABASE_URL = 'https://fmymhtuiqzhupjyopfvi.supabase.co';
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -113,14 +114,46 @@ export const getSupplyRequests = async (userId?: string) => {
   return data;
 };
 
-export const updateSupplyRequestStatus = async (id: string, status: string) => {
-  const { error } = await supabase.from('supply_requests').update({ status }).eq('id', id);
+export const updateSupplyRequestStatus = async (
+  id: string,
+  status: string,
+  updates: Record<string, any> = {}
+) => {
+  const { error } = await supabase
+    .from('supply_requests')
+    .update({ status, ...updates })
+    .eq('id', id);
   if (error) throw error;
 };
 
-export const updateSupplyRequestItems = async (id: string, items: any[]) => {
-  const { error } = await supabase.from('supply_requests').update({ items }).eq('id', id);
-  if (error) throw error;
+// Update one or more supply request line items (used by Admin approval quantity edits)
+export const updateSupplyRequestItems = async (
+  requestId: string,
+  items: Array<{
+    id: string;
+    quantity_approved?: number | null;
+    quantity_fulfilled?: number | null;
+    notes?: string | null;
+  }>
+) => {
+  if (!items.length) return;
+
+  const results = await Promise.all(
+    items.map((item) =>
+      supabase
+        .from('supply_request_items')
+        .update({
+          quantity_approved: item.quantity_approved ?? null,
+          quantity_fulfilled: item.quantity_fulfilled ?? null,
+          notes: item.notes ?? null,
+        })
+        .eq('request_id', requestId)
+        .eq('id', item.id)
+    )
+  );
+
+  const firstError = results.find((r: any) => r?.error)?.error;
+  if (firstError) throw firstError;
 };
 
 export const startSupplyRequestWork = async (id: string) => {
