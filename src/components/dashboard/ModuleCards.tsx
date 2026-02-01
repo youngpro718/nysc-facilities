@@ -319,7 +319,7 @@ export const SupplyDashboardCard = () => {
 
   return (
     <ModuleCard
-      title="Supply Requests"
+      title="Supply History"
       icon={<Package className="h-5 w-5 text-orange-500" />}
       count={supply?.length || 0}
       description={`${submitted} new, ${processing} processing, ${ready} ready`}

@@ -1,6 +1,7 @@
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
 import { ModuleCards } from "@/components/dashboard/ModuleCards";
+import { PendingSupplyApprovals } from "@/components/dashboard/PendingSupplyApprovals";
 import { ProductionSecurityGuard } from "@/components/security/ProductionSecurityGuard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useEffect } from "react";
@@ -50,6 +51,8 @@ const AdminDashboard = () => {
       <DashboardHeader onRefresh={refreshData} isLoading={isLoading || buildingsLoading} />
       
       <ProductionSecurityGuard />
+      
+      <PendingSupplyApprovals />
       
       <ModuleCards />
       
