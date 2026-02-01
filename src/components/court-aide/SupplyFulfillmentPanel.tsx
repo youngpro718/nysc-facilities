@@ -19,7 +19,7 @@ interface SupplyRequest {
   id: string;
   status: string;
   created_at: string;
-  urgency: string;
+  priority: string;
   notes: string | null;
   requester_id: string;
   profiles: {
@@ -50,7 +50,7 @@ export function SupplyFulfillmentPanel() {
           id,
           status,
           created_at,
-          urgency,
+          priority,
           notes,
           requester_id,
           profiles!requester_id (
@@ -113,7 +113,7 @@ export function SupplyFulfillmentPanel() {
       const { error } = await supabase
         .from('supply_requests')
         .update({ 
-          status: 'in_progress',
+          status: 'picking',
           assigned_fulfiller_id: user?.id,
         })
         .eq('id', requestId);
@@ -132,11 +132,12 @@ export function SupplyFulfillmentPanel() {
   const toFulfill = requests?.filter(r => ['submitted', 'received', 'picking'].includes(r.status)) || [];
   const readyForPickup = requests?.filter(r => r.status === 'ready') || [];
 
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
       case 'urgent': return 'bg-red-500 text-white';
       case 'high': return 'bg-orange-500 text-white';
-      case 'normal': return 'bg-blue-500 text-white';
+      case 'medium': return 'bg-blue-500 text-white';
+      case 'low': return 'bg-muted text-muted-foreground';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -191,8 +192,8 @@ export function SupplyFulfillmentPanel() {
                                 <span className="font-medium text-sm truncate">
                                   {request.profiles?.first_name} {request.profiles?.last_name}
                                 </span>
-                                <Badge className={`text-xs ${getUrgencyColor(request.urgency)}`}>
-                                  {request.urgency}
+                                <Badge className={`text-xs ${getPriorityColor(request.priority)}`}>
+                                  {request.priority}
                                 </Badge>
                               </div>
                               <div className="text-xs text-muted-foreground mb-2">
