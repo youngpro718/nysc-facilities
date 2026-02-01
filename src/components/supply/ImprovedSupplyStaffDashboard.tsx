@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { SimpleOrderCard } from './SimpleOrderCard';
+import { OrderTableView } from './OrderTableView';
+import { SupplyViewToggle, SupplyViewMode } from './SupplyViewToggle';
 import { PartialFulfillmentDialog } from './PartialFulfillmentDialog';
 import { LiveIndicator } from '@/components/common/LiveIndicator';
 import { InventoryManagementTab } from './InventoryManagementTab';
@@ -33,6 +35,7 @@ export function ImprovedSupplyStaffDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('new');
   const [completedLastUpdated, setCompletedLastUpdated] = useState(new Date());
+  const [viewMode, setViewMode] = useState<SupplyViewMode>('cards');
 
   // Mutation for confirming pickup
   const confirmPickupMutation = useMutation({
@@ -276,7 +279,7 @@ export function ImprovedSupplyStaffDashboard() {
         </div>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search and View Toggle */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -287,6 +290,7 @@ export function ImprovedSupplyStaffDashboard() {
             className="pl-9"
           />
         </div>
+        <SupplyViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
       </div>
 
       {/* Tabbed Content */}
@@ -341,6 +345,11 @@ export function ImprovedSupplyStaffDashboard() {
                 {searchQuery ? 'No orders match your search.' : 'All caught up! No pending orders at the moment.'}
               </p>
             </div>
+          ) : viewMode === 'list' ? (
+            <OrderTableView
+              orders={filteredOrders}
+              onFulfill={(order) => setSelectedOrder(order)}
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredOrders.map((order) => (
@@ -364,6 +373,13 @@ export function ImprovedSupplyStaffDashboard() {
                 No orders are currently ready for pickup.
               </p>
             </div>
+          ) : viewMode === 'list' ? (
+            <OrderTableView
+              orders={filteredOrders}
+              onFulfill={(order) => setSelectedOrder(order)}
+              onConfirmPickup={(orderId) => confirmPickupMutation.mutate(orderId)}
+              isConfirmingPickup={confirmPickupMutation.isPending}
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredOrders.map((order) => (
@@ -389,6 +405,11 @@ export function ImprovedSupplyStaffDashboard() {
                 No orders have been completed yet.
               </p>
             </div>
+          ) : viewMode === 'list' ? (
+            <OrderTableView
+              orders={filteredOrders}
+              onFulfill={(order) => setSelectedOrder(order)}
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredOrders.map((order) => (
