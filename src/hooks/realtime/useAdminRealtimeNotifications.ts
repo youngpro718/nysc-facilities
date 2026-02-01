@@ -217,7 +217,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         console.log('[AdminRealtime] Channel status:', status);
         setIsConnected(status === 'SUBSCRIBED');
 
-        if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
+        // Only log errors for actual failures, not cleanup-related closures
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           console.error('[AdminRealtime] Connection failed:', status);
         }
       });

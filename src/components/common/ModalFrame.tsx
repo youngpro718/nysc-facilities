@@ -146,10 +146,10 @@ export function ModalFrame(props: ModalFrameProps) {
         <DrawerContent className={cn("max-h-[92vh] flex flex-col", className)}>
           <DrawerHeader className="pb-3 flex-shrink-0 sticky top-0 bg-background z-10 border-b safe-area-top">
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 text-center flex-1">
-                <DrawerTitle className="text-base">{title}</DrawerTitle>
+              <div className="min-w-0 flex-1">
+                <DrawerTitle className="text-base text-left">{title}</DrawerTitle>
                 {description && (
-                  <DrawerDescription className="text-sm mt-1">{description}</DrawerDescription>
+                  <DrawerDescription className="text-sm mt-1 text-left">{description}</DrawerDescription>
                 )}
               </div>
               {headerRight && <div className="shrink-0">{headerRight}</div>}

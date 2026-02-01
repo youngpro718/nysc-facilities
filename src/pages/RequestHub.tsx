@@ -82,8 +82,8 @@ export default function RequestHub() {
         </div>
       </div>
 
-      {/* Action Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Action Cards Grid - 2 columns on mobile for quick access */}
+      <div className="grid grid-cols-2 gap-3">
         {quickActions.map((action) => {
           const Icon = action.icon;
           return (
@@ -91,17 +91,17 @@ export default function RequestHub() {
               key={action.id}
               onClick={() => navigate(action.path)}
               className={`
-                flex items-center gap-4 p-5 rounded-xl border-2 transition-all
-                text-left w-full
+                flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
+                text-center w-full min-h-[100px] touch-manipulation active:scale-[0.98]
                 ${action.bgClass}
               `}
             >
-              <div className={`p-3 rounded-full bg-background/80 ${action.iconClass}`}>
-                <Icon className="h-6 w-6" />
+              <div className={`p-2.5 rounded-full bg-background/80 ${action.iconClass}`}>
+                <Icon className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground">{action.title}</h3>
-                <p className="text-sm text-muted-foreground truncate">{action.description}</p>
+                <h3 className="font-semibold text-foreground text-sm leading-tight">{action.title}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{action.description}</p>
               </div>
             </button>
           );
