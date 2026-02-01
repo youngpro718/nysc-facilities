@@ -13,14 +13,13 @@ import {
   Search,
   AlertCircle,
   User,
-  Package
 } from "lucide-react";
 import { useStaffTasks } from "@/hooks/useStaffTasks";
 import { useAuth } from "@/hooks/useAuth";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
-import { SupplyRequestTracking } from "@/components/supply/SupplyRequestTracking";
+
 
 export default function Tasks() {
   const [searchParams] = useSearchParams();
@@ -263,7 +262,7 @@ export default function Tasks() {
       {/* Tabs - Different for Court Aides */}
       {isCourtAide ? (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="my-tasks" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">My Tasks</span>
@@ -289,10 +288,6 @@ export default function Tasks() {
             <TabsTrigger value="completed" className="gap-2">
               <CheckCircle2 className="h-4 w-4" />
               <span className="hidden sm:inline">Completed</span>
-            </TabsTrigger>
-            <TabsTrigger value="supply-orders" className="gap-2">
-              <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">Supply Orders</span>
             </TabsTrigger>
           </TabsList>
 
@@ -364,14 +359,11 @@ export default function Tasks() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="supply-orders" className="mt-6">
-            <SupplyRequestTracking userRole="supply_staff" />
-          </TabsContent>
         </Tabs>
       ) : (
         // Default tabs for managers/admins
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="pending" className="gap-2">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">Pending</span>
@@ -397,10 +389,6 @@ export default function Tasks() {
             <TabsTrigger value="rejected" className="gap-2">
               <XCircle className="h-4 w-4" />
               <span className="hidden sm:inline">Rejected</span>
-            </TabsTrigger>
-            <TabsTrigger value="supply-orders" className="gap-2">
-              <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">Supply Orders</span>
             </TabsTrigger>
           </TabsList>
 
@@ -470,10 +458,6 @@ export default function Tasks() {
                 {renderTaskList(rejectedTasks, "No rejected or cancelled tasks")}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="supply-orders" className="mt-6">
-            <SupplyRequestTracking userRole="supply_manager" />
           </TabsContent>
         </Tabs>
       )}
