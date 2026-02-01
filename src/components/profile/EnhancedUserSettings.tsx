@@ -12,6 +12,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useEnhancedTheme } from '@/providers/EnhancedThemeProvider';
 import {
   Bell,
   Mail,
@@ -123,6 +125,8 @@ const defaultSettings: UserSettings = {
 export function EnhancedUserSettings() {
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
+  const { setTheme } = useTheme();
+  const { updateSettings: updateEnhancedTheme } = useEnhancedTheme();
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -150,8 +154,41 @@ export function EnhancedUserSettings() {
     setActiveTab(mapToCanonical(nextRaw));
   }, [searchParams]);
 
+  // Apply display-related settings immediately (theme/font size/density/accessibility)
+  // so the Settings tab isn't just "placeholders".
+  useEffect(() => {
+    if (isLoading) return;
+
+    updateEnhancedTheme({
+      variant: settings.theme,
+      fontSize: settings.font_size,
+      layoutDensity: settings.compact_mode ? 'compact' : 'comfortable',
+      reducedMotion: settings.motion_reduced,
+      highContrast: settings.high_contrast,
+    });
+
+    const resolvedTheme =
+      settings.theme === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : settings.theme;
+    setTheme(resolvedTheme);
+  }, [
+    isLoading,
+    settings.theme,
+    settings.font_size,
+    settings.compact_mode,
+    settings.motion_reduced,
+    settings.high_contrast,
+    setTheme,
+    updateEnhancedTheme,
+  ]);
+
   const loadSettings = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      // Prevent an infinite loading state if auth isn't available yet.
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -299,7 +336,7 @@ export function EnhancedUserSettings() {
           >
             {isSaving ? (
               <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
                 Saving...
               </div>
             ) : (
@@ -313,17 +350,26 @@ export function EnhancedUserSettings() {
       </div>
 
       {hasChanges && (
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-border bg-muted/40">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-yellow-800">
+            <div className="flex items-center gap-2 text-foreground">
               <AlertTriangle className="h-4 w-4" />
-              <span className="text-sm">You have unsaved changes</span>
+              <span className="text-sm text-muted-foreground">You have unsaved changes</span>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams(prev => { prev.set('settingsTab', v); return prev; }, { replace: true }); }} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => {
+          setActiveTab(v);
+          const next = new URLSearchParams(searchParams);
+          next.set('settingsTab', v);
+          setSearchParams(next, { replace: true });
+        }}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
