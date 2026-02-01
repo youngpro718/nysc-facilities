@@ -1,149 +1,130 @@
 
-# Enhanced Standard User Dashboard - Practical Work Portal
+# Fix User Dashboard Display & Add Term Sheet Button for Supply Team
 
-## Overview
+## Problem Summary
 
-Redesigning the Standard User Dashboard to be a **practical daily work hub** with:
-1. **Term Sheet at the top** - See courtroom assignments at a glance (who's where, contact info)
-2. **Activity status summary** - Quick view of pending requests/issues
-3. **Pickup alerts** - Prominent notification when supplies are ready
-4. **Quick actions** - Easy access to common tasks
+### Issue 1: User Dashboard Not Showing
+When using Developer Mode to preview the "Standard" user role, you're still seeing the Admin Dashboard instead of the User Dashboard.
 
-## Design Philosophy
+**Root Cause**: The DevModePanel correctly navigates to `/dashboard` when you select "Standard", but if you're currently on `/` and the navigation doesn't happen (or you click the "Dashboard" quick link which goes to `/`), you stay on the Admin Dashboard route which is hardcoded to show `AdminDashboard`.
 
-A standard user logging in should immediately see:
-1. **What's happening in court today** (Term Sheet)
-2. **What needs my attention** (Pickup alerts, pending items)
-3. **What can I do** (Quick actions - request supplies, report issues)
+**Also**: The quick links in DevModePanel update dynamically based on the *effective* role, so when you switch to "Standard", the Dashboard link should point to `/dashboard`. However, if something is caching or not refreshing properly, it might still show admin links.
 
-## Current State vs. Proposed
+### Issue 2: Term Sheet Access for Supply Team
+The Court Aide (supply team) dashboard doesn't have a button to access the Term Sheet, which is important for them to see court assignments at a glance.
 
-| Section | Current | Proposed |
-|---------|---------|----------|
-| **Top of page** | Notification bell + action buttons | **Term Sheet Summary** (collapsed by default, expandable) |
-| **Hero area** | UserWorkspaceCard (greeting + avatar) | Compact greeting + **Pickup Alert Banner** |
-| **Main content** | Request Status Grid + expandable sections | **Tab-based activity view** (more scannable) |
-| **Term info** | Not on page | **Always visible Term Sheet card** at top |
+---
 
-## Detailed Layout
+## Solution
 
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│  Header: Compact greeting + Date + Notifications                    │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌───────────────────────────────────────────────────────────────┐  │
-│  │ 📱 PICKUP ALERT BANNER (if any supplies ready)                │  │
-│  │ "You have 2 orders ready for pickup at the Supply Room"       │  │
-│  └───────────────────────────────────────────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌───────────────────────────────────────────────────────────────┐  │
-│  │ ⚖️ COURT TERM SHEET (expandable card)                        │  │
-│  │                                                               │  │
-│  │  Part 37  │ J. SMITH      │ Rm 1234 │ Ext 64081 │ [Expand ▼] │  │
-│  │  Part 51  │ A. NEWBAUER   │ Rm 1324 │ ...       │            │  │
-│  │  Part 81  │ C. FARBER     │ Rm 1317 │ ...       │            │  │
-│  │  ... (scrollable, searchable)                                │  │
-│  │                                                               │  │
-│  │  [View Full Term Sheet →]                                     │  │
-│  └───────────────────────────────────────────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐ ┌─────────────┐                                    │
-│  │ 📦 Request  │ │ 🔧 Report   │   QUICK ACTIONS                    │
-│  │  Supplies   │ │   Issue     │                                    │
-│  └─────────────┘ └─────────────┘                                    │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌───────────────────────────────────────────────────────────────┐  │
-│  │ MY ACTIVITY                                                   │  │
-│  │ [Supplies (2)] [Issues (1)] [Keys (0)]                       │  │
-│  │                                                               │  │
-│  │  Request #123 - Office Supplies      [Picking Items] 60%     │  │
-│  │  Request #124 - Printer Toner        [Ready] ← ACTION NEEDED │  │
-│  │                                                               │  │
-│  │  [View All Activity →]                                        │  │
-│  └───────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
+### Fix 1: Ensure DevMode Quick Links Navigate Correctly
+
+Update the DevModePanel's "Dashboard" quick link behavior to always use the role-specific dashboard path rather than the hardcoded links.
+
+**File: `src/components/dev/DevModePanel.tsx`**
+
+Currently the quick links are defined with static paths. When the preview role changes, the `effectiveRole` from `useRolePermissions` should update, and the quick links should reflect the new role's paths. Need to verify this is working and add a useEffect to force re-render.
+
+### Fix 2: Add Term Sheet Button to Court Aide Work Center
+
+**File: `src/pages/CourtAideWorkCenter.tsx`**
+
+Add a "Term Sheet" button to the action buttons section so Court Aides can quickly access the term sheet.
+
+```
+Current buttons: Inventory | All Tasks | Settings
+New buttons: Inventory | Term Sheet | All Tasks | Settings
 ```
 
-## Key Components to Create/Modify
+### Fix 3: Add Term Sheet to Court Aide Quick Links in DevMode
 
-### 1. NEW: `TermSheetPreview` Component
+**File: `src/components/dev/DevModePanel.tsx`**
 
-A compact, mobile-friendly preview of the term sheet with:
-- Collapsible rows showing Part, Justice, Room, Extension
-- Search/filter capability
-- Link to full `/term-sheet` page
-- Highlights user's own assignment (if applicable)
+Add Term Sheet to the court_aide quick links for easier testing access.
 
-### 2. MODIFY: `UserDashboard.tsx`
-
-Reorganize the layout:
-1. Move `UserWorkspaceCard` to a more compact header format
-2. Add `TermSheetPreview` as the first major section
-3. Keep `PickupAlertBanner` prominent
-4. Simplify activity section with inline tabs instead of expandable cards
-
-### 3. ENHANCE: Activity Section
-
-Instead of 3 expandable cards, use:
-- Horizontal scrolling tab buttons (Supplies | Issues | Keys)
-- Single content area that switches based on active tab
-- Cleaner, more scannable layout
+---
 
 ## Technical Implementation
 
-### Files to Create
+### File 1: `src/pages/CourtAideWorkCenter.tsx`
 
-| File | Purpose |
-|------|---------|
-| `src/components/user/TermSheetPreview.tsx` | Compact term sheet viewer for dashboard |
-| `src/components/user/CompactActivitySection.tsx` | Tab-based activity viewer |
-| `src/components/user/CompactHeader.tsx` | Streamlined greeting header |
+Add a Term Sheet button in the action buttons section (lines 48-66):
 
-### Files to Modify
+```tsx
+// Add after the existing Inventory button
+<Button variant="outline" size="sm" asChild className="shrink-0">
+  <Link to="/term-sheet">
+    <Scale className="h-4 w-4 mr-2" />
+    Term Sheet
+  </Link>
+</Button>
+```
+
+Also add `Scale` to the imports from `lucide-react`.
+
+### File 2: `src/components/dev/DevModePanel.tsx`
+
+Update the `court_aide` quick links array to include Term Sheet:
+
+```tsx
+court_aide: [
+  { label: 'Work Center', path: '/court-aide-dashboard' },
+  { label: 'Term Sheet', path: '/term-sheet' },  // NEW
+  { label: 'Supply Room', path: '/supply-room' },
+  { label: 'Inventory', path: '/inventory' },
+  { label: 'Tasks', path: '/tasks' },
+],
+```
+
+### File 3: Verify DevMode Role Switching
+
+The DevModePanel already uses `getDashboardForRole()` for navigation when switching roles. Verify that:
+
+1. When switching to "Standard", it navigates to `/dashboard`
+2. The quick links update to show `standard` role links (Dashboard → `/dashboard`)
+
+If the quick links aren't updating, add a key prop to force re-render:
+
+```tsx
+<div key={effectiveRole} className="flex flex-wrap gap-1.5">
+  {quickLinks.map((link) => (
+    // ...
+  ))}
+</div>
+```
+
+---
+
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/UserDashboard.tsx` | Complete layout reorganization |
+| `src/pages/CourtAideWorkCenter.tsx` | Add Term Sheet button to action buttons |
+| `src/components/dev/DevModePanel.tsx` | Add Term Sheet to court_aide quick links; add key prop for re-render |
 
-### Data Requirements
+---
 
-The Term Sheet data already exists via `court_assignments` table:
-- `part` - Court part number
-- `justice` - Justice name
-- `room_number` - Courtroom number  
-- `tel` - Phone extension
-- `clerks` - Array of clerk names
-- `sergeant` - Sergeant name
+## Expected Behavior After Fix
 
-We can reuse the query pattern from `TermSheetBoard.tsx`.
+1. **DevMode Role Switching**: 
+   - Clicking "Standard" → Navigates to `/dashboard` → Shows the new User Dashboard with Term Sheet
+   - Quick links update to show Standard user links
 
-## Mobile Considerations
+2. **Court Aide Dashboard**:
+   - New "Term Sheet" button visible in the header action buttons
+   - Clicking it navigates to `/term-sheet` for full term view
 
-- Term Sheet: Horizontal scroll for table on mobile, or card-based view
-- Activity tabs: Scrollable horizontally on small screens
-- Quick actions: 2-column grid on mobile
-- Touch targets: Minimum 44px for all interactive elements
+3. **DevMode Testing for Court Aide**:
+   - Term Sheet appears in quick links for faster access during testing
 
-## User Experience Flow
+---
 
-1. **Login** → Land on Dashboard
-2. **Immediately see** → Pickup alert (if any) + Term Sheet
-3. **Know where everyone is** → Scan term sheet for room/extension info
-4. **Check my requests** → Activity section shows status
-5. **Take action** → Quick action buttons for new requests
+## How to Test
 
-## Benefits
-
-1. **Practical**: Term sheet is what employees actually need daily
-2. **Actionable**: Clear pickup alerts and quick actions
-3. **Scannable**: Less expandable sections, more inline content
-4. **Mobile-first**: Optimized for quick checks on phone
-5. **Unified**: All activity in one scrollable section
-
-## Implementation Order
-
-1. Create `TermSheetPreview` component (reuses existing query)
-2. Create `CompactHeader` component  
-3. Create `CompactActivitySection` component (tabs instead of accordions)
-4. Update `UserDashboard.tsx` with new layout
-5. Test mobile responsiveness
+1. Open DevMode (Ctrl+Shift+D)
+2. Click "Standard" radio button
+3. Verify you're taken to `/dashboard` and see the User Dashboard with Term Sheet
+4. Switch back to "Court Aide"
+5. Verify you're taken to `/court-aide-dashboard`
+6. Verify new "Term Sheet" button is visible in the action bar
+7. Click Term Sheet button and verify navigation to `/term-sheet`
