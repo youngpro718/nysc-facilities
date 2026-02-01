@@ -140,8 +140,8 @@ export const userNavigationItems: NavigationItem[] = [
     adminOnly: false,
   },
   {
-    title: 'Admin Profile',
-    href: '/admin-profile',
+    title: 'Admin Center',
+    href: '/admin',
     icon: UserCog,
     adminOnly: true,
   },
@@ -195,7 +195,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Lighting', icon: Zap },
       { title: 'Court Operations', icon: Gavel },
       { type: "separator" },
-      { title: 'Admin Profile', icon: UserCog },
+      { title: 'Admin Center', icon: UserCog },
     ];
   }
   
@@ -238,7 +238,7 @@ export function getAdminNavigation(): NavigationTab[] {
     { title: 'Spaces', icon: Building2 },
     { title: 'Issues Management', icon: AlertTriangle },
     { type: "separator" },
-    { title: 'Admin Profile', icon: UserCog },
+    { title: 'Admin Center', icon: UserCog },
   ];
 }
 
@@ -268,7 +268,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/inventory',
       '/lighting',
       '/court-operations',
-      '/admin-profile',
+      '/admin',
     ];
   }
   

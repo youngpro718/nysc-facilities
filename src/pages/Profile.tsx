@@ -1,18 +1,20 @@
-import { User, ChevronLeft, Settings2 } from "lucide-react";
+import { User, ChevronLeft, Settings2, ArrowRight, Shield, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { EnhancedUserSettings } from "@/components/profile/EnhancedUserSettings";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Profile() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
+  const { isAdmin } = useAuth();
   
   // Get active tab from URL or default to 'profile'
   const activeTab = searchParams.get('tab') || 'profile';
@@ -51,6 +53,30 @@ export default function Profile() {
           </TabsList>
           
           <TabsContent value="profile" className="mt-4 space-y-4 animate-in fade-in-50 duration-200">
+            {/* Admin Navigation Hint */}
+            {isAdmin && (
+              <Card className="bg-muted/50 border-muted p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    Looking for team management?
+                  </p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to="/admin">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Admin Center
+                      </Link>
+                    </Button>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to="/system-settings">
+                        <Settings className="h-3 w-3 mr-1" />
+                        System
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
             <MobileProfileHeader />
             <Card className="p-4">
               <PersonalInfoForm />
@@ -99,6 +125,36 @@ export default function Profile() {
         </TabsList>
         
         <TabsContent value="profile" className="mt-6 space-y-6">
+          {/* Admin Navigation Hint */}
+          {isAdmin && (
+            <Card className="bg-muted/50 border-muted p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium">Administrator</p>
+                  <p className="text-sm text-muted-foreground">
+                    Looking for user management or system configuration?
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/admin">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Admin Center
+                      <ArrowRight className="h-3 w-3 ml-1" />
+                    </Link>
+                  </Button>
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/system-settings">
+                      <Settings className="h-4 w-4 mr-2" />
+                      System Settings
+                      <ArrowRight className="h-3 w-3 ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+          
           <Card className="border-0 sm:border sm:shadow-sm">
             <div className="p-4 sm:p-6">
               <ProfileHeader />

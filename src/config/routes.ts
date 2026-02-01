@@ -176,10 +176,10 @@ export const routes: Record<string, RouteConfig> = {
     breadcrumbLabel: 'Profile',
     icon: User,
   },
-  '/admin-profile': {
-    path: '/admin-profile',
-    title: 'Admin Profile',
-    breadcrumbLabel: 'Admin Profile',
+  '/admin': {
+    path: '/admin',
+    title: 'Admin Center',
+    breadcrumbLabel: 'Admin Center',
     icon: UserCog,
     parent: '/',
   },

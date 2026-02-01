@@ -78,7 +78,7 @@ export function AdminQuickActions() {
       title: 'Security Audit',
       description: 'View security logs and audit sensitive access',
       icon: Shield,
-      action: () => navigate('/admin-profile?tab=security'),
+      action: () => navigate('/admin?tab=security'),
       variant: 'outline',
     },
     {
