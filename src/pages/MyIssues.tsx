@@ -3,13 +3,15 @@ import { Plus, AlertCircle, CheckCircle, Settings, ArrowUpCircle } from "lucide-
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserIssues } from "@/hooks/dashboard/useUserIssues";
+import { useOccupantAssignments } from "@/hooks/occupants/useOccupantAssignments";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { ReportIssueWizard } from "@/components/issues/wizard/ReportIssueWizard";
+import { SimpleReportWizard } from "@/components/issues/wizard/SimpleReportWizard";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { MobileIssueCard } from "@/components/issues/mobile/MobileIssueCard";
 import { MobileRequestForm } from "@/components/mobile/MobileRequestForm";
 import { UserIssueDetailDialog } from "@/components/issues/UserIssueDetailDialog";
@@ -53,6 +55,7 @@ export default function MyIssues() {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const { user } = useAuth();
   const { userIssues: issues = [], isLoading, refetchIssues } = useUserIssues(user?.id);
+  const { data: occupantData } = useOccupantAssignments(user?.id || '');
   const isMobile = useIsMobile();
 
   const handleIssueCreated = () => {
@@ -100,12 +103,13 @@ export default function MyIssues() {
         </Button>
       </PageHeader>
 
-      {showIssueWizard && (
-        <ReportIssueWizard
+      <ResponsiveDialog open={showIssueWizard} onOpenChange={setShowIssueWizard} title="">
+        <SimpleReportWizard
           onSuccess={handleIssueCreated}
           onCancel={() => setShowIssueWizard(false)}
+          assignedRooms={occupantData?.roomAssignments || []}
         />
-      )}
+      </ResponsiveDialog>
 
       <MobileRequestForm 
         open={showMobileForm}

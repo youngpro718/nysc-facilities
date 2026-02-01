@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle, Plus } from 'lucide-react';
-import { ReportIssueWizard } from '@/components/issues/wizard/ReportIssueWizard';
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
+import { AlertTriangle } from 'lucide-react';
+import { SimpleReportWizard } from '@/components/issues/wizard/SimpleReportWizard';
 import { useOccupantAssignments } from '@/hooks/occupants/useOccupantAssignments';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -37,16 +37,13 @@ export function QuickIssueReportButton({
         {label}
       </Button>
 
-      <Dialog open={showWizard} onOpenChange={setShowWizard}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogTitle className="sr-only">Report an Issue</DialogTitle>
-          <ReportIssueWizard
-            onSuccess={() => setShowWizard(false)}
-            onCancel={() => setShowWizard(false)}
-            assignedRooms={occupantData?.roomAssignments || []}
-          />
-        </DialogContent>
-      </Dialog>
+      <ResponsiveDialog open={showWizard} onOpenChange={setShowWizard} title="">
+        <SimpleReportWizard
+          onSuccess={() => setShowWizard(false)}
+          onCancel={() => setShowWizard(false)}
+          assignedRooms={occupantData?.roomAssignments || []}
+        />
+      </ResponsiveDialog>
     </>
   );
 }
