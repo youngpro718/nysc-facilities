@@ -222,7 +222,10 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
         }
       )
       .subscribe((status) => {
-        console.log('[UserRealtime] Channel status:', status);
+        // Only log non-cleanup status changes
+        if (status !== 'CLOSED') {
+          console.log('[UserRealtime] Channel status:', status);
+        }
         setIsConnected(status === 'SUBSCRIBED');
       });
 

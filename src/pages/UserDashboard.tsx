@@ -59,8 +59,9 @@ export default function UserDashboard() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // Expanded section state
-  const [expandedSection, setExpandedSection] = useState<'supplies' | 'issues' | 'keys' | null>('supplies');
+  // Expanded section state - will be set smartly based on data
+  const [expandedSection, setExpandedSection] = useState<'supplies' | 'issues' | 'keys' | null>(null);
+  const [hasSetInitialExpansion, setHasSetInitialExpansion] = useState(false);
   
   // Data hooks
   const { notifications = [], isLoading: notificationsLoading, markAsRead, markAllAsRead, clearNotification, clearAllNotifications, refetch: refetchNotifications } = useNotifications(user?.id);
@@ -150,6 +151,24 @@ export default function UserDashboard() {
   const inProgressIssues = userIssues.filter(i => i.status === 'in_progress').length;
   const keysHeld = keyAssignments.length;
 
+  // Smart initial expansion - prioritize ready-for-pickup, then open issues, then supplies
+  useEffect(() => {
+    if (!hasSetInitialExpansion && !supplyLoading && !issuesLoading && !keyLoading) {
+      if (readyForPickup > 0) {
+        setExpandedSection('supplies');
+      } else if (openIssues > 0) {
+        setExpandedSection('issues');
+      } else if (activeSupplyRequests > 0) {
+        setExpandedSection('supplies');
+      } else if (keysHeld > 0 || pendingKeyRequests > 0) {
+        setExpandedSection('keys');
+      } else {
+        setExpandedSection('supplies'); // Default fallback
+      }
+      setHasSetInitialExpansion(true);
+    }
+  }, [hasSetInitialExpansion, supplyLoading, issuesLoading, keyLoading, readyForPickup, openIssues, activeSupplyRequests, keysHeld, pendingKeyRequests]);
+
   const toggleSection = (section: 'supplies' | 'issues' | 'keys') => {
     setExpandedSection(expandedSection === section ? null : section);
   };
@@ -224,7 +243,7 @@ export default function UserDashboard() {
           {/* Supply Requests Section */}
           <Card className={expandedSection === 'supplies' ? 'ring-2 ring-primary/20' : ''}>
             <CardHeader 
-              className="cursor-pointer py-3"
+              className="cursor-pointer py-3 min-h-[52px] touch-manipulation"
               onClick={() => toggleSection('supplies')}
             >
               <CardTitle className="flex items-center justify-between text-base">
@@ -235,11 +254,13 @@ export default function UserDashboard() {
                     <Badge variant="secondary">{activeSupplyRequests} active</Badge>
                   )}
                 </div>
-                {expandedSection === 'supplies' ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
+                <div className="p-1.5 -mr-1.5 rounded-md hover:bg-accent/50">
+                  {expandedSection === 'supplies' ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
             {expandedSection === 'supplies' && (
@@ -255,7 +276,7 @@ export default function UserDashboard() {
           {/* Issues Section */}
           <Card className={expandedSection === 'issues' ? 'ring-2 ring-primary/20' : ''}>
             <CardHeader 
-              className="cursor-pointer py-3"
+              className="cursor-pointer py-3 min-h-[52px] touch-manipulation"
               onClick={() => toggleSection('issues')}
             >
               <CardTitle className="flex items-center justify-between text-base">
@@ -266,11 +287,13 @@ export default function UserDashboard() {
                     <Badge variant="destructive">{openIssues} open</Badge>
                   )}
                 </div>
-                {expandedSection === 'issues' ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
+                <div className="p-1.5 -mr-1.5 rounded-md hover:bg-accent/50">
+                  {expandedSection === 'issues' ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
             {expandedSection === 'issues' && (
@@ -341,7 +364,7 @@ export default function UserDashboard() {
           {/* Keys Section */}
           <Card className={expandedSection === 'keys' ? 'ring-2 ring-primary/20' : ''}>
             <CardHeader 
-              className="cursor-pointer py-3"
+              className="cursor-pointer py-3 min-h-[52px] touch-manipulation"
               onClick={() => toggleSection('keys')}
             >
               <CardTitle className="flex items-center justify-between text-base">
@@ -352,11 +375,13 @@ export default function UserDashboard() {
                     <Badge variant="secondary">{keysHeld} held</Badge>
                   )}
                 </div>
-                {expandedSection === 'keys' ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
+                <div className="p-1.5 -mr-1.5 rounded-md hover:bg-accent/50">
+                  {expandedSection === 'keys' ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
             {expandedSection === 'keys' && (
