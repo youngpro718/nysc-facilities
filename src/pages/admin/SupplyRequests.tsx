@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { FulfillmentWorkflow } from "@/components/supply/FulfillmentWorkflow";
 import { useToast } from "@/hooks/use-toast";
 import { getSupplyRequests, updateSupplyRequestStatus, updateSupplyRequestItems } from "@/lib/supabase";
+import { normalizeSupabaseError } from "@/lib/supabaseErrors";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 interface SupplyRequestWithUser {
@@ -135,18 +136,44 @@ export default function AdminSupplyRequests() {
           break;
       }
 
-      await updateSupplyRequestStatus(selectedRequest.id, newStatus);
+      // If approving, only persist quantity changes (default = requested)
+      if (actionType === 'approve' && (selectedRequest.supply_request_items || []).length > 0) {
+        const itemUpdates = (selectedRequest.supply_request_items || [])
+          .map((item) => ({
+            id: item.id,
+            quantity_approved: itemQuantities[item.id]?.approved ?? item.quantity_requested,
+            notes: item.notes ?? null,
+          }))
+          .filter((u) => {
+            const original = (selectedRequest.supply_request_items || []).find((i) => i.id === u.id);
+            if (!original) return true;
+            return (u.quantity_approved ?? original.quantity_requested) !== original.quantity_requested;
+          });
 
-      // If approving, update item quantities
-      if (actionType === 'approve' && Object.keys(itemQuantities).length > 0) {
-        const itemUpdates = (selectedRequest.supply_request_items || []).map(item => ({
-          item_id: item.item_id,
-          quantity_approved: itemQuantities[item.id]?.approved ?? item.quantity_requested,
-          notes: item.notes,
-        }));
-
-        await updateSupplyRequestItems(selectedRequest.id, itemUpdates);
+        if (itemUpdates.length > 0) {
+          await updateSupplyRequestItems(selectedRequest.id, itemUpdates);
+        }
       }
+
+      // Persist request status + related admin fields
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('Authentication required');
+
+      const statusUpdates: Record<string, any> = {};
+      if (actionType === 'approve') {
+        statusUpdates.approved_by = user.id;
+        statusUpdates.approved_at = new Date().toISOString();
+        statusUpdates.approval_notes = notes.trim() || null;
+        statusUpdates.rejection_reason = null;
+      }
+      if (actionType === 'reject') {
+        statusUpdates.rejection_reason = notes.trim();
+        statusUpdates.approval_notes = null;
+        statusUpdates.approved_by = null;
+        statusUpdates.approved_at = null;
+      }
+
+      await updateSupplyRequestStatus(selectedRequest.id, newStatus, statusUpdates);
 
       toast({
         title: "Success",
@@ -160,11 +187,13 @@ export default function AdminSupplyRequests() {
       setItemQuantities({});
 
     } catch (error) {
+      const normalized = normalizeSupabaseError(error);
       toast({
-        title: "Error",
-        description: `Failed to update request status`,
-        variant: "destructive",
+        title: normalized.isPermission ? 'Not allowed' : 'Error',
+        description: normalized.userMessage,
+        variant: 'destructive',
       });
+      console.error('Failed to update supply request:', normalized.message);
     }
   };
 
