@@ -143,9 +143,8 @@ const Layout = () => {
                     className="focus:outline-none p-1 rounded-full hover:bg-muted/50 transition-colors"
                     title="Profile"
                     onClick={() => {
-                      // OPTIMIZATION: Allow navigation even while loading, use best guess
-                      const goAdmin = userRole === 'admin' || isAdmin;
-                      navigate(goAdmin ? '/admin-profile' : '/profile');
+                      // Navigate to profile page for all users
+                      navigate('/profile');
                     }}
                   >
                     <UserAvatar

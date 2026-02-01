@@ -56,9 +56,9 @@ export function ModuleProtectedRoute({ children, moduleKey, moduleName }: Module
                 Go Back
               </Button>
               <Button asChild>
-                <NavLink to="/admin-profile">
+                <NavLink to="/admin">
                   <Settings className="h-4 w-4 mr-2" />
-                  Admin Settings
+                  Admin Center
                 </NavLink>
               </Button>
             </div>
