@@ -42,7 +42,7 @@ export function AlertsBar() {
       const { count: pendingSuppliesCount } = await supabase
         .from('supply_requests')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['approved', 'in_progress']);
+        .in('status', ['submitted', 'approved', 'received', 'picking']);
 
       return {
         lowStock: lowStockCount || 0,
