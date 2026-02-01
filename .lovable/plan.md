@@ -1,177 +1,178 @@
 
-# Issue Management Audit & Admin Quick Report Plan
 
-## Part 1: Database Cleanup
+# Simplified User Issue Reporting Flow
 
-### Current Test Issues Found
-I found 12+ test issues in the database. Here's what they look like:
+## Current State Analysis
 
-| Title | Description | Status | Created |
-|-------|-------------|--------|---------|
-| PLUMBING_NEEDS Issue | bathroom | open | Oct 30, 2025 |
-| Lighting Issue - ballast_issue | LED bulb | open | Aug 31, 2025 |
-| CLEANING_REQUEST Issue - Deep Clean | (empty) | open | Aug 19, 2025 |
-| ACCESS_REQUEST Issue - Key Issues | (empty) | open | Aug 17, 2025 |
-| ELECTRICAL_NEEDS Issue - Lighting | bulb replacement | open | Aug 17, 2025 |
-| ...and 7 more similar test entries |
+### What Exists Now (4-Step Flow)
+The current `ReportIssueWizard.tsx` has 4 mandatory steps:
 
-To clean these up, you have two options:
-1. **I can provide a SQL query** to delete all test issues in one go
-2. **Delete them manually** through the Operations page (one by one)
+| Step | Fields | Taps Required |
+|------|--------|---------------|
+| 1. Type | Select from 7 categories | 2 taps (select + next) |
+| 2. Location | Select room (or use assigned) | 2 taps (select + next) |
+| 3. Contact | Name*, Phone, Department + toggle | 2+ taps (verify/edit + next) |
+| 4. Details | Problem Type dropdown, Description*, Emergency toggle, Photos | 3+ taps (fill + submit) |
+
+**Total: 8-10+ taps minimum**
+
+### Problems Identified
+1. **Step 3 (Contact) is redundant** - data already auto-populated from profile via `useAuth()`
+2. **7 categories cause decision fatigue** - too many similar options
+3. **Problem Type dropdown adds friction** - secondary categorization after already selecting type
+4. **Emergency toggle rarely used** - clutters the interface
+5. **Photo upload shown to regular users** - you mentioned they don't need it
 
 ---
 
-## Part 2: Admin Quick Issue Report
+## Proposed 2-Step Flow
 
-### Current Problem
-As a facility coordinator, you currently have to:
-1. Navigate to Operations → Report Issue
-2. Fill out: Title, Description, Space Type, Room (dropdown of ALL rooms), Issue Type, Severity
-3. No recent rooms, no photo upload, no quick actions
+### Step 1: Room + Issue Type (Combined)
+One screen with:
+- **Your assigned room(s)** at top (one-tap selection)
+- **"Report for different room" toggle** (expands room picker if needed)
+- **5 issue categories** as large tap targets
 
-**That's 6+ taps/clicks minimum**, and no photos.
+### Step 2: Description + Submit
+One screen with:
+- **Description textarea** with voice dictation (already exists)
+- **Submit button**
+- No photos, no emergency toggle, no problem type sub-categories
 
-### Proposed Solution: Admin Quick Report
+**Total: 3-4 taps** (room + type + description + submit)
 
-A streamlined reporting flow designed for facility coordinators who need to report issues on the go:
+---
+
+## Implementation Details
+
+### Step 1: Combined Location + Type
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ Quick Report                                       [×] Close│
-├─────────────────────────────────────────────────────────────┤
+┌──────────────────────────────────────────────────────────────┐
+│  What's the issue?                                           │
+├──────────────────────────────────────────────────────────────┤
 │                                                              │
-│  RECENT ROOMS                                                │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐        │
-│  │ 1609     │ │ 1616     │ │ Lobby    │ │ 1109A    │        │
-│  │ Jury Rm  │ │ Courtroom│ │ Main     │ │ Office   │        │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘        │
+│  YOUR ROOM                                                   │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  [✓] Courtroom 1616 • Floor 16                        │  │
+│  └────────────────────────────────────────────────────────┘  │
 │                                                              │
-│  Or search: [🔍 Type room number...           ]              │
+│  [ ] Report for a different room                             │
 │                                                              │
-├─────────────────────────────────────────────────────────────┤
-│  ISSUE TYPE (tap to select)                                  │
+├──────────────────────────────────────────────────────────────┤
 │                                                              │
-│  ⚡ Electrical    🔧 Maintenance    ❄️ HVAC                   │
-│  🚿 Plumbing      🧹 Cleaning       ⚠️ Safety                 │
+│  ISSUE TYPE                                                  │
 │                                                              │
-├─────────────────────────────────────────────────────────────┤
-│  📷 Add Photos (tap or drag)                                 │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │              [Camera icon]                               ││
-│  │         Tap to take photo or upload                      ││
-│  └─────────────────────────────────────────────────────────┘│
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │     ⚡      │  │     🔧      │  │     ❄️      │          │
+│  │ Electrical  │  │  Plumbing   │  │   Climate   │          │
+│  └─────────────┘  └─────────────┘  └─────────────┘          │
 │                                                              │
-├─────────────────────────────────────────────────────────────┤
-│  DESCRIPTION (optional)                                      │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │ Quick notes about the issue...                          ││
-│  └─────────────────────────────────────────────────────────┘│
+│  ┌─────────────┐  ┌─────────────┐                            │
+│  │     🧹      │  │     💬      │                            │
+│  │  Cleaning   │  │   Other     │                            │
+│  └─────────────┘  └─────────────┘                            │
 │                                                              │
-│                           [Submit Report]                    │
-└─────────────────────────────────────────────────────────────┘
+│                                          [Next →]            │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### The 4-5 Tap Flow
-
-1. **Tap** recent room OR search and tap room result
-2. **Tap** issue type (Electrical, HVAC, etc.)
-3. **Tap** camera button (optional - take photo)
-4. **Tap** Submit
-
-That's 3-4 taps minimum (5 if adding a photo).
-
----
-
-## Technical Implementation
-
-### New Component: `AdminQuickReportDialog.tsx`
-
-A new dialog component with:
-
-| Feature | Implementation |
-|---------|----------------|
-| **Recent Rooms** | Track last 8 rooms used in localStorage, show as quick-select chips |
-| **Room Search** | Autocomplete searching all rooms (room_number, name) |
-| **Quick Issue Types** | 6 large tap targets with icons (same as user flow) |
-| **Photo Upload** | Reuse existing `IssuePhotoForm` component |
-| **Description** | Single textarea, optional |
-| **Auto-fill** | building_id, floor_id auto-filled from room selection |
-
-### Files to Create/Modify
-
-1. **Create**: `src/components/issues/admin/AdminQuickReportDialog.tsx`
-   - New streamlined dialog for admins
-   - Recent rooms from localStorage
-   - Room search with autocomplete
-   - Quick issue type selector
-   - Photo upload
-   - Description field
-
-2. **Create**: `src/hooks/useRecentRooms.ts`
-   - Track last 8 rooms reported for in localStorage
-   - `addRecentRoom(roomId, roomName, roomNumber)` 
-   - `getRecentRooms()` returns last 8
-
-3. **Modify**: `src/pages/Operations.tsx`
-   - Replace "Report Issue" button to open new `AdminQuickReportDialog`
-
-4. **Modify**: `src/pages/AdminDashboard.tsx` (optional)
-   - Add floating action button for quick reporting
-
-### Room Search Component
+### Step 2: Description + Submit
 
 ```text
-Search behavior:
-- Type "16" → Shows: 1609, 1616, 1617, etc.
-- Type "jury" → Shows: Jury Room 1, Jury Room 2
-- Type "court" → Shows: All courtrooms
-- Tap result → Auto-selects room + fills building/floor
+┌──────────────────────────────────────────────────────────────┐
+│  ← Back        Describe the issue                            │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  📍 Courtroom 1616 • ⚡ Electrical                           │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┬───┐  │
+│  │                                                    │ 🎤│  │
+│  │  What's the problem? Tap the mic to dictate...    │   │  │
+│  │                                                    │   │  │
+│  │                                                    │   │  │
+│  └────────────────────────────────────────────────────┴───┘  │
+│                                                              │
+│                                                              │
+│                        [Submit Report]                       │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### Photo Upload
+---
 
-Reuse the existing photo upload infrastructure:
-- Same `issue-photos` storage bucket (already exists and is public)
-- Same upload logic from `ReportIssueWizard`
-- Support camera access on mobile
+## Category Simplification
+
+### Before (7 categories)
+- ACCESS_REQUEST
+- BUILDING_SYSTEMS  
+- CLEANING_REQUEST
+- CLIMATE_CONTROL
+- ELECTRICAL_NEEDS
+- GENERAL_REQUESTS
+- PLUMBING_NEEDS
+
+### After (5 categories)
+| New Category | Maps To | Description |
+|--------------|---------|-------------|
+| **Electrical** | ELECTRICAL_NEEDS | Lights, outlets, power |
+| **Plumbing** | PLUMBING_NEEDS | Leaks, clogs, water |
+| **Climate** | CLIMATE_CONTROL | Temperature, AC, heat |
+| **Cleaning** | CLEANING_REQUEST | Spills, trash, cleaning |
+| **Other** | GENERAL_REQUESTS | Everything else (access, safety, etc.) |
+
+We keep the backend types unchanged - just consolidate the user-facing options.
 
 ---
 
-## User Permissions
+## What Gets Removed for Regular Users
 
-| User Type | Can Use Admin Quick Report? |
-|-----------|------------------------------|
-| Regular User | No - uses existing wizard with assigned rooms |
-| Court Aide | No - uses existing wizard |
-| Facility Coordinator | Yes - can report for any room |
-| Administrator | Yes - can report for any room |
-
-The quick report will check `isAdmin` or `role === 'facilities_manager'` before showing.
-
----
-
-## What Regular Users Keep
-
-Their existing flow remains unchanged:
-- Dashboard → Quick Report widget → Their assigned rooms only
-- 4-step wizard with contact info pre-filled
-- They report for their room(s), no need to search
+| Feature | Kept? | Reason |
+|---------|-------|--------|
+| Problem Type dropdown | No | Redundant sub-categorization |
+| Contact step | No | Auto-populated from profile |
+| Emergency toggle | No | Rarely used, can be added by admin |
+| Photo upload | No | Per your feedback - not needed |
+| 7 categories | No | Simplified to 5 |
 
 ---
 
-## Summary
+## Files to Modify
 
-### For You (Admin/Facility Coordinator)
-- New "Quick Report" button in Operations
-- Recent rooms shown first (no scrolling through dropdowns)
-- Room search by number or name
-- Photo upload built in
-- **3-5 taps to report an issue**
+### 1. Create: `src/components/issues/wizard/SimpleReportWizard.tsx`
+New simplified 2-step wizard for regular users:
+- Step 1: Room selection + 5 issue type buttons
+- Step 2: Description with voice dictation + submit
+- Reuses existing hooks and mutations
 
-### For Regular Users
-- Same flow as before
-- Report for their assigned room(s)
-- No photo requirement (you mentioned this isn't necessary for them)
+### 2. Create: `src/components/issues/wizard/constants/simpleCategories.ts`  
+Simplified 5-category mapping for regular users
 
-### Database Cleanup
-I'll provide a SQL query or handle deletion through the app once you confirm you want the test data removed.
+### 3. Modify: `src/components/issues/IssueDialog.tsx`
+Conditional logic to show:
+- `SimpleReportWizard` for regular users (court clerks, aides)
+- `ReportIssueWizard` for users without assigned rooms (fallback)
+
+### 4. Keep Unchanged: `src/components/issues/wizard/ReportIssueWizard.tsx`
+Preserved as fallback for edge cases
+
+---
+
+## User Experience Comparison
+
+| Metric | Current | Proposed |
+|--------|---------|----------|
+| Steps | 4 | 2 |
+| Minimum taps | 8-10 | 3-4 |
+| Categories to choose from | 7 | 5 |
+| Form fields to fill | 5+ | 1 (description) |
+| Time to submit | ~45 seconds | ~15 seconds |
+
+---
+
+## Technical Notes
+
+- **Voice dictation preserved**: The existing `DescriptionField` component with speech recognition is reused
+- **Contact info auto-captured**: The `created_by` field links to the user's profile - no need to collect name/phone
+- **Assigned rooms**: Uses existing `assignedRooms` prop from `UserAssignment[]`
+- **Database compatibility**: Still creates issues with the same schema, just fewer fields filled
+
