@@ -76,10 +76,10 @@ export function AdminQuickReportDialog({ open, onOpenChange }: AdminQuickReportD
 
   // Fetch all rooms for search
   const { data: allRooms = [], isLoading: roomsLoading } = useQuery({
-    queryKey: ['admin-quick-report-rooms'],
+    queryKey: ['admin-quick-report-unified-spaces'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('rooms')
+        .from('unified_spaces')
         .select(`
           id,
           room_number,
@@ -94,6 +94,7 @@ export function AdminQuickReportDialog({ open, onOpenChange }: AdminQuickReportD
             )
           )
         `)
+        .eq('space_type', 'room')
         .order('room_number');
       if (error) throw error;
       return (data as unknown as RoomSearchResult[]) || [];
