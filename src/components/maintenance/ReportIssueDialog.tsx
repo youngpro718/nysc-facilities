@@ -73,11 +73,12 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
   const spaceType = form.watch("space_type");
 
   const { data: rooms } = useQuery<RoomOption[]>({
-    queryKey: ["rooms-for-issues"],
+    queryKey: ["unified-spaces-rooms-for-issues"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("rooms")
+        .from("unified_spaces")
         .select("id, name, room_number, floor_id, floors(building_id)")
+        .eq("space_type", "room")
         .order("room_number");
       if (error) throw error;
       return (data as unknown as RoomOption[]) || [];
