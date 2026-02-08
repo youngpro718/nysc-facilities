@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Link2Off, CircleDashed } from "lucide-react";
+import { Search, Link2Off, CircleDashed } from "lucide-react";
 import { LockboxSlot, getRoomLinkStatus } from "../types/LockboxTypes";
 import { LockboxSlotCard } from "./LockboxSlotCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LockboxSearchProps {
   slots: LockboxSlot[];
@@ -77,53 +76,35 @@ export function LockboxSearch({ slots, onSlotClick, lockboxName }: LockboxSearch
         </Toggle>
 
         {unlinkedCount > 0 && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  pressed={roomFilter === 'unlinked'}
-                  onPressedChange={() => setRoomFilter(roomFilter === 'unlinked' ? 'all' : 'unlinked')}
-                  size="sm"
-                  variant="outline"
-                  className="data-[state=on]:bg-yellow-500 data-[state=on]:text-white"
-                >
-                  <Link2Off className="h-3.5 w-3.5 mr-1" />
-                  Unlinked
-                  <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                    {unlinkedCount}
-                  </Badge>
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Slots with room number but not linked to database room</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Toggle
+            pressed={roomFilter === 'unlinked'}
+            onPressedChange={() => setRoomFilter(roomFilter === 'unlinked' ? 'all' : 'unlinked')}
+            size="sm"
+            variant="outline"
+            className="data-[state=on]:bg-yellow-500 data-[state=on]:text-white touch-manipulation"
+          >
+            <Link2Off className="h-3.5 w-3.5 mr-1" />
+            Unlinked
+            <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+              {unlinkedCount}
+            </Badge>
+          </Toggle>
         )}
 
         {noRoomCount > 0 && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  pressed={roomFilter === 'no_room'}
-                  onPressedChange={() => setRoomFilter(roomFilter === 'no_room' ? 'all' : 'no_room')}
-                  size="sm"
-                  variant="outline"
-                  className="data-[state=on]:bg-muted-foreground data-[state=on]:text-white"
-                >
-                  <CircleDashed className="h-3.5 w-3.5 mr-1" />
-                  No Room
-                  <Badge variant="secondary" className="ml-1.5 h-5 px-1.5">
-                    {noRoomCount}
-                  </Badge>
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Slots with no room assigned</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Toggle
+            pressed={roomFilter === 'no_room'}
+            onPressedChange={() => setRoomFilter(roomFilter === 'no_room' ? 'all' : 'no_room')}
+            size="sm"
+            variant="outline"
+            className="data-[state=on]:bg-muted-foreground data-[state=on]:text-white touch-manipulation"
+          >
+            <CircleDashed className="h-3.5 w-3.5 mr-1" />
+            No Room
+            <Badge variant="secondary" className="ml-1.5 h-5 px-1.5">
+              {noRoomCount}
+            </Badge>
+          </Toggle>
         )}
       </div>
 

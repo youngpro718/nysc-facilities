@@ -1,7 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { LockboxSlot, getRoomLinkStatus } from "../types/LockboxTypes";
 import { Key, AlertTriangle, CheckCircle, Archive, Link2, Link2Off, CircleDashed } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LockboxSlotCardProps {
   slot: LockboxSlot;
@@ -14,15 +13,15 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'in_box':
-        return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle className="w-3 h-3 mr-1" /> In Box</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-600 text-xs"><CheckCircle className="w-3 h-3 mr-1" /> In Box</Badge>;
       case 'checked_out':
-        return <Badge variant="destructive" className="bg-orange-500 hover:bg-orange-600"><Key className="w-3 h-3 mr-1" /> Checked Out</Badge>;
+        return <Badge variant="destructive" className="bg-orange-500 hover:bg-orange-600 text-xs"><Key className="w-3 h-3 mr-1" /> Out</Badge>;
       case 'missing':
-        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" /> Missing</Badge>;
+        return <Badge variant="destructive" className="text-xs"><AlertTriangle className="w-3 h-3 mr-1" /> Missing</Badge>;
       case 'retired':
-        return <Badge variant="secondary"><Archive className="w-3 h-3 mr-1" /> Retired</Badge>;
+        return <Badge variant="secondary" className="text-xs"><Archive className="w-3 h-3 mr-1" /> Retired</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="text-xs">{status}</Badge>;
     }
   };
 
@@ -32,68 +31,43 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
     switch (roomLinkStatus) {
       case 'linked':
         return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 dark:text-green-500">
-                  <Link2 className="w-3.5 h-3.5" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Linked to room in database</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+            <Link2 className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline text-xs">Linked</span>
+          </span>
         );
       case 'unlinked':
         return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 dark:text-yellow-500">
-                  <Link2Off className="w-3.5 h-3.5" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Room not linked - click to fix</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+            <Link2Off className="w-3.5 h-3.5 shrink-0" />
+            <span className="text-xs">Unlinked</span>
+          </span>
         );
       case 'no_room':
         return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <CircleDashed className="w-3.5 h-3.5" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>No room assigned</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <CircleDashed className="w-3.5 h-3.5 shrink-0" />
+          </span>
         );
     }
   };
 
   return (
     <div 
-      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+      className="flex items-center justify-between p-3 sm:p-4 border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors active:scale-[0.99] touch-manipulation"
       onClick={() => onClick(slot)}
     >
-      <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-10 h-10 bg-muted rounded-full font-bold text-lg">
+      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+        <div className="flex items-center justify-center w-10 h-10 sm:w-10 sm:h-10 bg-muted rounded-full font-bold text-base sm:text-lg shrink-0">
           {slot.slot_number}
         </div>
-        <div>
-          <h4 className="font-bold text-base">{slot.label}</h4>
-          <div className="text-sm text-muted-foreground flex items-center gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-sm sm:text-base truncate">{slot.label}</h4>
+          <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {(slot.room_number || slot.room_id) && (
               <>
                 {getRoomLinkIndicator()}
-                <span>Room: {slot.room_number || 'Linked'}</span>
+                <span className="truncate">Room {slot.room_number || 'Linked'}</span>
               </>
             )}
             {!slot.room_number && !slot.room_id && (
@@ -101,13 +75,13 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
             )}
             {slot.quantity && slot.quantity > 1 && (
               <span className="text-primary font-semibold">
-                × {slot.quantity} keys
+                ×{slot.quantity}
               </span>
             )}
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center shrink-0 ml-2">
         {getStatusBadge(slot.status)}
       </div>
     </div>

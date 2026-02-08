@@ -37,7 +37,7 @@ export function InlineItemRow({
   return (
     <div
       className={cn(
-        "rounded-lg border transition-all overflow-hidden",
+        "rounded-xl border transition-all overflow-hidden",
         "flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-3",
         inCart 
           ? "bg-primary/5 border-primary/20" 
@@ -46,27 +46,57 @@ export function InlineItemRow({
         compact && "p-2"
       )}
     >
-      {/* Mobile Row 1: Item Name + Warning Icon */}
-      <div className="flex items-center gap-2 sm:flex-1 sm:min-w-0">
-        <span className={cn(
-          "font-medium truncate flex-1",
-          compact ? "text-sm" : "text-sm sm:text-base"
-        )}>
-          {item.name}
-        </span>
-        {item.requires_justification && (
-          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 sm:hidden" />
+      {/* Mobile: Row 1 — Name + Star (top-right) */}
+      <div className="flex items-start gap-2 sm:flex-1 sm:min-w-0 sm:items-center">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className={cn(
+              "font-medium truncate",
+              compact ? "text-sm" : "text-[15px] sm:text-base"
+            )}>
+              {item.name}
+            </span>
+            {item.requires_justification && (
+              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+            )}
+          </div>
+          {/* Mobile: metadata under name */}
+          <div className="flex items-center gap-2 mt-0.5 sm:hidden">
+            {item.sku && (
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {item.sku}
+              </span>
+            )}
+            <span className="text-[11px] text-muted-foreground">
+              {item.quantity ?? 0} {item.unit || 'units'} in stock
+            </span>
+          </div>
+        </div>
+
+        {/* Mobile: Star button — always visible top-right */}
+        {onToggleFavorite && (
+          <button
+            className="shrink-0 p-2 -m-1 rounded-full active:scale-90 transition-transform touch-manipulation sm:hidden"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite();
+            }}
+          >
+            <Star
+              className={cn(
+                "h-5 w-5",
+                isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"
+              )}
+            />
+          </button>
         )}
-        
+
         {/* Desktop: Show all metadata inline */}
         <div className="hidden sm:flex items-center gap-2">
           {item.sku && (
             <Badge variant="outline" className="font-mono text-xs shrink-0">
               {item.sku}
             </Badge>
-          )}
-          {item.requires_justification && (
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
           )}
         </div>
       </div>
@@ -90,46 +120,14 @@ export function InlineItemRow({
         </div>
       )}
 
-      {/* Mobile Row 2: SKU + Stock + Favorite Star */}
-      <div className="flex items-center justify-between sm:hidden">
-        <div className="flex items-center gap-2 min-w-0">
-          {item.sku && (
-            <Badge variant="outline" className="font-mono text-xs shrink-0">
-              {item.sku}
-            </Badge>
-          )}
-          <span className="text-xs text-muted-foreground shrink-0">
-            Stock: {item.quantity ?? 0}
-          </span>
-        </div>
-        {onToggleFavorite && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 h-10 w-10 touch-manipulation"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFavorite();
-            }}
-          >
-            <Star
-              className={cn(
-                "h-5 w-5",
-                isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
-              )}
-            />
-          </Button>
-        )}
-      </div>
-
-      {/* Mobile Row 3: Quantity Controls (centered, full width) */}
-      <div className="flex justify-center pt-1 sm:hidden">
+      {/* Mobile: Row 2 — Quantity controls (full width) */}
+      <div className="sm:hidden">
         {inCart ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between bg-muted/50 rounded-lg px-2 py-1">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-12 w-12 rounded-full touch-manipulation"
+              className="h-11 w-11 rounded-full touch-manipulation active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onDecrement();
@@ -137,13 +135,13 @@ export function InlineItemRow({
             >
               <Minus className="h-5 w-5" />
             </Button>
-            <span className="w-12 text-center font-bold text-xl">
+            <span className="font-bold text-lg tabular-nums">
               {cartQuantity}
             </span>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-12 w-12 rounded-full touch-manipulation"
+              className="h-11 w-11 rounded-full touch-manipulation active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onIncrement();
@@ -155,13 +153,13 @@ export function InlineItemRow({
         ) : (
           <Button
             variant="secondary"
-            className="h-12 px-8 touch-manipulation"
+            className="w-full h-11 touch-manipulation active:scale-[0.98] transition-transform text-sm font-medium"
             onClick={(e) => {
               e.stopPropagation();
               onAdd();
             }}
           >
-            <Plus className="h-5 w-5 mr-2" />
+            <Plus className="h-4 w-4 mr-1.5" />
             Add to Cart
           </Button>
         )}

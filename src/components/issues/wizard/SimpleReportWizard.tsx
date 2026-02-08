@@ -11,11 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Loader2, MapPin, Mic, MicOff, Check, AlertCircle, Building2, Star, Settings } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Mic, MicOff, Check, AlertCircle, Building2, Star, Settings, Camera, X, ImagePlus } from "lucide-react";
 import { Link } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { SIMPLE_CATEGORIES, SimpleCategory, getBackendIssueType } from "./constants/simpleCategories";
+import { usePhotoUpload } from "../hooks/usePhotoUpload";
 
 // Flexible room assignment type that works with both UserAssignment and DetailedRoomAssignment
 interface RoomAssignment {
@@ -50,10 +51,12 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
   
   // Voice dictation state
   const [isRecording, setIsRecording] = useState(false);
-  const [recognition, setRecognition] = useState<Record<string, unknown> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [recognition, setRecognition] = useState<any>(null);
   
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
 
   const hasAssignedRooms = assignedRooms && assignedRooms.length > 0;
 
@@ -97,7 +100,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
           floor_id: selectedRoom?.floor_id || null,
           room_id: selectedRoomId || null,
           location_description: continueWithoutRoom ? locationDescription.trim() : null,
-          photos: [],
+          photos: selectedPhotos,
           seen: false,
           created_by: user.id,
           reported_by: user.id,
@@ -113,7 +116,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
     },
     onError: (error: unknown) => {
       logger.error('Error creating issue:', error);
-      toast.error(error.message || "Failed to report issue");
+      toast.error((error as Error).message || "Failed to report issue");
     }
   });
 
@@ -127,7 +130,9 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      const newRecognition = new ((window as Record<string, unknown>)).webkitSpeechRecognition();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const SpeechRecognition = (window as any).webkitSpeechRecognition;
+      const newRecognition = new SpeechRecognition();
       newRecognition.continuous = true;
       newRecognition.interimResults = true;
       newRecognition.lang = 'en-US';
@@ -137,7 +142,8 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
         toast.success("Listening...");
       };
 
-      newRecognition.onresult = (event: Record<string, unknown>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      newRecognition.onresult = (event: any) => {
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
@@ -433,7 +439,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What's the problem? Tap the mic to dictate..."
-                className="min-h-[150px] pr-12"
+                className="min-h-[120px] pr-12"
               />
               <Button
                 type="button"
@@ -452,6 +458,69 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
             <p className="text-xs text-muted-foreground">
               Tip: Tap the microphone to dictate instead of typing
             </p>
+          </div>
+
+          {/* Photo Upload */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Camera className="h-4 w-4" />
+              Add Photos <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
+
+            {/* Photo previews */}
+            {selectedPhotos.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {selectedPhotos.map((photo, index) => (
+                  <div key={index} className="relative group rounded-lg overflow-hidden">
+                    <img
+                      src={photo}
+                      alt={`Photo ${index + 1}`}
+                      className="w-full h-20 object-cover"
+                    />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 p-1 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity touch-manipulation"
+                      onClick={() => setSelectedPhotos(selectedPhotos.filter((_, i) => i !== index))}
+                    >
+                      <X className="h-3.5 w-3.5 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload button */}
+            <label className="cursor-pointer">
+              <div className={cn(
+                "flex items-center justify-center gap-2 w-full py-3 px-4",
+                "border-2 border-dashed rounded-xl",
+                "text-sm text-muted-foreground",
+                "hover:border-primary/50 hover:bg-primary/5 transition-colors",
+                "touch-manipulation active:scale-[0.98]",
+                uploading && "opacity-50 pointer-events-none"
+              )}>
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus className="h-5 w-5" />
+                    <span>{selectedPhotos.length > 0 ? 'Add more photos' : 'Take or choose a photo'}</span>
+                  </>
+                )}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                onChange={handlePhotoUpload}
+                disabled={uploading}
+                className="hidden"
+              />
+            </label>
           </div>
 
           {/* Submit */}

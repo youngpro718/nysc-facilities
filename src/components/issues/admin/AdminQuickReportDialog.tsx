@@ -154,6 +154,7 @@ export function AdminQuickReportDialog({ open, onOpenChange }: AdminQuickReportD
         room_id: selectedRoom.id,
         floor_id: selectedRoom.floorId,
         building_id: selectedRoom.buildingId,
+        photos: selectedPhotos,
       });
 
       if (error) throw error;
