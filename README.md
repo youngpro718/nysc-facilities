@@ -65,8 +65,12 @@ Required environment variables:
 
 ## Documentation
 
-See the `docs/` folder for detailed documentation:
-- Architecture diagrams
-- Security guidelines
-- Testing guides
-- Production deployment checklist
+See the `docs/` folder:
+- **[USER_GUIDE.md](docs/USER_GUIDE.md)** — Complete feature guide with how-tos, FYIs, and tips
+- **[QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** — Routes, roles, DB tables at a glance
+- **[ARCHITECTURE_DIAGRAM.md](docs/ARCHITECTURE_DIAGRAM.md)** — System architecture
+- **[ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md)** — Environment configuration
+- **[RBAC_STRATEGY.md](docs/RBAC_STRATEGY.md)** — Role-based access control
+- **[SECURITY_CHECKLIST.md](docs/SECURITY_CHECKLIST.md)** — Security guidelines
+- **[TESTING_GUIDE.md](docs/TESTING_GUIDE.md)** — Testing approach
+- **[PRODUCTION_READY_CHECKLIST.md](docs/PRODUCTION_READY_CHECKLIST.md)** — Deployment checklist

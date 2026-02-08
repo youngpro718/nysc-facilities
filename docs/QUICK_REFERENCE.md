@@ -1,10 +1,11 @@
-# 🚀 NYSC Facilities Hub - Quick Reference Guide
+# NYSC Facilities Hub — Quick Reference
 
-## 📍 Application URLs
+> For the full user guide, see [USER_GUIDE.md](./USER_GUIDE.md)
+
+## Application URLs
 
 ### Development
 - **Local:** http://localhost:8080
-- **Network:** http://192.168.1.183:8080
 
 ### Production
 - **Live Site:** https://nysc-facilities.windsurf.build
@@ -12,381 +13,159 @@
 
 ---
 
-## 🗺️ Page Navigation Map
+## Page Navigation Map
 
 ### Admin Routes (Require Admin Role)
 ```
 / ........................... Admin Dashboard (Main hub)
-/spaces ..................... Spaces Management (Rooms, floors, buildings)
-/operations ................. Operations Hub (Issues, maintenance, supplies)
-/occupants .................. Personnel Management (Staff, assignments)
+/spaces ..................... Spaces Management (Buildings, floors, rooms)
+/operations ................. Operations Center (Issues, maintenance, supplies)
+/access-assignments ......... Access & Assignments (Personnel, rooms, keys)
 /court-operations ........... Court Operations (Terms, assignments, shutdowns)
+/court-live ................. Live Court Grid
 /keys ....................... Keys Management (Inventory, requests, orders)
 /inventory .................. Inventory Management (Stock, categories, analytics)
-/lighting ................... Lighting Management (Fixtures, zones)
-/admin-profile .............. Admin Settings (Users, roles, modules)
+/lighting ................... Lighting Management (Dashboard + Floor View)
+/admin ...................... Admin Center (Users, roles, approvals)
 /system-settings ............ System Configuration
 /access-management .......... User Access Control
+/notifications .............. Notifications
+/admin/key-requests ......... Key Request Admin
+/admin/supply-requests ...... Supply Request Admin
+/admin/routing-rules ........ Form Routing Rules
+/admin/form-templates ....... Form Templates Admin
 ```
 
-### User Routes (Regular Users)
+### Role-Specific Dashboards
+```
+/cmc-dashboard .............. CMC Dashboard (Court Management Coordinator)
+/court-aide-dashboard ....... Supply Staff Dashboard (Court Aide)
+/purchasing-dashboard ....... Purchasing Dashboard
+```
+
+### User Routes (All Authenticated Users)
 ```
 /dashboard .................. User Dashboard (Personal overview)
-/my-requests ................ My Requests (Keys, supplies)
-/my-issues .................. My Issues (Reported problems)
-/profile .................... User Profile Settings
-/supply-room ................ Supply Room (Permission-based)
+/my-activity ................ My Activity (Requests, issues, supply orders)
+/request/supplies ........... Supply Request Form
+/request/help ............... Help Request
+/profile .................... Profile & Settings
+/term-sheet ................. Criminal Term Sheet
 ```
 
-### Public Routes
+### Staff Routes (Court Aide / Supply)
 ```
-/login ...................... Authentication
+/tasks ...................... Task Management
+/supply-room ................ Supply Room (Fulfillment)
+/inventory .................. Inventory Management
+```
+
+### Public Routes (No Login Required)
+```
 /public-forms ............... Public Form Directory
 /forms/key-request .......... Key Request Form
-/request/supplies ........... Supply Request Form (streamlined)
+/request/supplies ........... Supply Request Form
 /forms/maintenance-request .. Maintenance Request Form
 /forms/issue-report ......... Issue Report Form
 ```
 
----
-
-## 🔑 Key Features by Module
-
-### 📦 Spaces Management
-- **Create/Edit Rooms** - Comprehensive room management
-- **Floor Plans** - 2D and 3D visualization
-- **Building Hierarchy** - Buildings → Floors → Rooms
-- **Room Assignments** - Occupant tracking
-- **Capacity Management** - Space utilization
-
-**Quick Actions:**
-- Create Room: Click "+" button in Spaces page
-- Edit Room: Click room card → Edit button
-- View Floor Plan: Click "Floor Plan" tab
-- Filter by Building: Use building dropdown
-
-### ⚠️ Operations Hub
-- **Issues Tracking** - Facility problems
-- **Maintenance Scheduling** - Planned maintenance
-- **Supply Requests** - Request oversight
-- **Analytics** - Operational metrics
-- **Building Filters** - Location-based views
-
-**Quick Actions:**
-- Report Issue: Click "Report Issue" button
-- Update Status: Click issue card → Status dropdown
-- View Analytics: Click "Analytics" tab
-- Filter by Building: Toggle building buttons
-
-### ⚖️ Court Operations
-- **Courtroom Status** - 32 courtrooms tracked
-- **Term Assignments** - Judge/staff assignments
-- **Room Shutdowns** - Maintenance tracking
-- **Personnel Selection** - Dropdown-based assignment
-- **Temporary Locations** - Relocation management
-
-**Quick Actions:**
-- Upload Term: Click "Upload Term" button
-- Assign Personnel: Go to Assignments tab → Select from dropdowns
-- Track Shutdowns: Click "Room Shutdowns" tab
-- Set Temp Location: Click courtroom → "Set Temporary Location"
-
-### 👥 Occupants Management
-- **Personnel Directory** - 95+ court personnel
-- **Room Assignments** - Assignment tracking
-- **Key Assignments** - Key distribution
-- **Search & Filter** - Find personnel quickly
-- **Export/Import** - Bulk operations
-
-**Quick Actions:**
-- Add Occupant: Click "Add Occupant" button
-- Assign Room: Click occupant → "Assign Room"
-- Assign Key: Click occupant → "Assign Key"
-- Export CSV: Click "Export" button
-
-### 🔑 Keys Management
-- **Key Inventory** - 8 keys tracked
-- **Key Requests** - 6 active requests
-- **Key Orders** - 5 orders in system
-- **Assignments** - 11 active assignments
-- **Audit Logs** - 27 log entries
-
-**Quick Actions:**
-- Create Key: Click "Create Key" button
-- Process Request: Go to Requests tab → Approve/Reject
-- Order Keys: Click "Create Order" button
-- View History: Click "History" tab
-
-### 📦 Inventory Management
-- **Stock Tracking** - Real-time inventory
-- **Low Stock Alerts** - Automatic warnings
-- **Categories** - Organized inventory
-- **Reorder Recommendations** - Smart suggestions
-- **Analytics** - Usage trends
-
-**Quick Actions:**
-- Add Item: Click "Add Item" button
-- Update Stock: Click item → Edit quantity
-- View Low Stock: Check "Low Stock Alerts" panel
-- Export Data: Click "Export CSV" button
-
-### 🏪 Supply Room
-- **Request Fulfillment** - Process requests
-- **Status Tracking** - Request lifecycle
-- **Inventory Integration** - Stock checking
-- **Analytics** - Usage patterns
-- **Cost Tracking** - Budget monitoring
-
-**Quick Actions:**
-- Claim Request: Click "Claim" button
-- Update Status: Select status → Add notes
-- Check Inventory: View stock levels
-- View Analytics: Click "Analytics" tab
+### Legacy Redirects
+```
+/occupants → /access-assignments
+/admin-profile → /admin
+/issues → /operations?tab=issues
+/maintenance → /operations?tab=maintenance
+/supplies → /tasks
+/supply-requests → /my-activity
+/settings → /profile?tab=settings
+/my-requests → (still works, legacy)
+/my-issues → (still works, legacy)
+```
 
 ---
 
-## 🗄️ Database Quick Reference
+## Key Features by Module
+
+| Module | Key Features |
+|--------|-------------|
+| **Spaces** | Buildings → Floors → Rooms, 2D/3D floor plans, room assignments |
+| **Operations** | Issues tracking, maintenance scheduling, supply request oversight |
+| **Access & Assignments** | Personnel directory, room assignments, key assignments, CSV export |
+| **Court Operations** | Daily sessions, term sheet board, judge management, staff absences, live grid |
+| **Keys** | Inventory, requests, orders, assignments, audit logs |
+| **Inventory** | Stock tracking, low stock alerts, categories, reorder recommendations |
+| **Lighting** | Dashboard + Floor View, tap-to-toggle fixtures, add sections, walkthrough mode |
+| **Supply Room** | Request fulfillment, status tracking, inventory integration |
+| **Tasks** | Task assignment, claiming, status updates |
+
+---
+
+## Roles & Permissions
+
+| Role | Dashboard | Access |
+|------|-----------|--------|
+| **Admin** | `/` | All modules, user management, system settings |
+| **CMC** | `/cmc-dashboard` | Court operations, term management, personnel |
+| **Court Aide** | `/court-aide-dashboard` | Tasks, supply room, inventory |
+| **User** | `/dashboard` | Submit requests, report issues, view activity |
+| **Public** | — | Public forms only (no login) |
+
+---
+
+## Database Quick Reference
 
 ### Core Tables
 ```
-buildings ................... 2 buildings
-  └── floors ................ 15 floors
-      └── rooms ............. 94 rooms
-          └── issues ........ 2 active issues
-
-profiles .................... Registered users
-personnel_profiles .......... 150+ court personnel
-occupants ................... Unified personnel view
-
-keys ........................ 8 keys
-key_assignments ............. 11 active
-key_requests ................ 6 requests
-key_orders .................. 5 orders
-
-inventory_items ............. Stock tracking
-supply_requests ............. Request management
-supply_request_items ........ Request details
-
-court_rooms ................. 32 courtrooms
-court_assignments ........... Term assignments
-court_terms ................. Term management
-room_shutdowns .............. Shutdown tracking
+buildings → floors → rooms/hallways → lighting_fixtures
+profiles, personnel_profiles
+keys, key_assignments, key_requests, key_orders
+inventory_items, supply_requests, supply_request_items
+court_rooms, court_assignments, court_terms, room_shutdowns
+issues, staff_tasks
 ```
 
-### Important Views
+### Key Views
 ```
-unified_spaces .............. Combined spatial data
-key_inventory_view .......... Aggregated key data
-personnel_profiles_view ..... Court personnel
-unified_personnel_view ...... All personnel
-spaces_dashboard_mv ......... Analytics (materialized)
-```
-
-### Key RPC Functions
-```
-get_dashboard_stats() ....... Admin dashboard data
-get_building_hierarchy() .... Spatial structure
-create_key_order() .......... Key ordering
-process_key_order_receipt() . Key receiving
-get_facility_analytics() .... Analytics data
+unified_spaces, key_inventory_view, personnel_profiles_view
+unified_personnel_view, spaces_dashboard_mv
 ```
 
 ---
 
-## 🔐 User Roles & Permissions
+## Development
 
-### Administrator
-- ✅ Full access to all modules
-- ✅ User management
-- ✅ System settings
-- ✅ Security controls
-- ✅ Analytics access
-
-### Manager
-- ✅ Most modules accessible
-- ✅ Limited user management
-- ✅ Reporting capabilities
-- ❌ System settings
-- ❌ Security controls
-
-### Staff
-- ✅ Basic operations
-- ✅ Issue reporting
-- ✅ Request submission
-- ❌ User management
-- ❌ System settings
-
-### Supply Room Staff
-- ✅ Supply room access
-- ✅ Inventory management
-- ✅ Request fulfillment
-- ❌ Other admin features
-- ❌ Court operations
-
-### Guest
-- ✅ View-only access
-- ✅ Public forms
-- ❌ Data modification
-- ❌ Admin features
-- ❌ Sensitive data
-
----
-
-## 🛠️ Common Development Tasks
-
-### Start Development Server
 ```bash
-cd /Users/jackduhatelier/Downloads/nysc-facilities-main
-npm run dev
-# Opens at http://localhost:8080
+npm install          # Install dependencies
+npm run dev          # Start dev server (http://localhost:8080)
+npm run build        # Production build → dist/
+npm run typecheck    # TypeScript check
+npm run lint         # ESLint
+npm test             # Run tests
 ```
 
-### Type Check
-```bash
-npm run typecheck
-# Should show: Exit code: 0 (no errors)
-```
-
-### Build for Production
-```bash
-npm run build
-# Output: dist/ directory
-```
-
-### Deploy to Netlify
-```bash
-# Automatic deployment on git push to main
-# Or manual: netlify deploy --prod
-```
+Deploy: automatic on `git push origin main` (Netlify)
 
 ---
 
-## 🐛 Common Issues & Solutions
+## Documentation
 
-### Issue: Edit Room Dialog Not Populating
-**Solution:** Field mapping normalization needed
-**File:** `/src/components/spaces/dialogs/EditSpaceDialog.tsx`
-**Status:** Known issue, fix in progress
-
-### Issue: Court Personnel Dropdowns Empty
-**Solution:** Check personnel_profiles table has data
-**Verify:** Should have 150+ records
-**Status:** ✅ Fixed - Now using correct table
-
-### Issue: Import CSV Not Working
-**Solution:** Feature not yet implemented
-**Status:** Planned enhancement
-
-### Issue: Filters Reset on Building Change
-**Solution:** Persist filters in URL params
-**Status:** Low priority enhancement
-
-### Issue: CORS Error on Different Port
-**Solution:** Ensure dev server runs on port 8080
-**Command:** Check vite.config.ts server.port setting
-
----
-
-## 📊 Performance Metrics
-
-### Current Performance
-- **TypeScript Compilation:** < 5 seconds
-- **Dev Server Start:** ~1.5 seconds
-- **Page Load (First):** ~2 seconds
-- **Page Load (Cached):** < 500ms
-- **Query Response:** < 200ms (avg)
-
-### Optimization Opportunities
-- Bundle size: ~6MB (can be reduced)
-- Code splitting: Partial implementation
-- Image optimization: Recommended
-- Lazy loading: Implemented for major routes
-
----
-
-## 🔍 Debugging Tips
-
-### React Query DevTools
-```typescript
-// Already integrated - check browser console
-// Shows all queries, mutations, cache state
-```
-
-### Supabase Logs
-```
-// Check Supabase dashboard for:
-- Database logs
-- Auth logs
-- API logs
-- Real-time logs
-```
-
-### Console Debugging
-```typescript
-// Common debug patterns in codebase:
-console.log('Data loaded:', data);
-console.error('Error:', error);
-console.warn('Warning:', warning);
-```
-
-### Network Debugging
-```
-// Browser DevTools → Network tab
-- Check API calls to Supabase
-- Verify authentication headers
-- Monitor real-time subscriptions
-```
-
----
-
-## 📞 Support & Resources
-
-### Documentation
-- **This Guide:** `/docs/BROWNFIELD_ANALYSIS.md`
-- **Quick Reference:** `/docs/QUICK_REFERENCE.md`
-- **README:** `/README.md`
+- **[USER_GUIDE.md](./USER_GUIDE.md)** — Complete feature guide with how-tos and FYIs
+- **[ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md)** — Environment configuration
+- **[ARCHITECTURE_DIAGRAM.md](./ARCHITECTURE_DIAGRAM.md)** — System architecture
+- **[RBAC_STRATEGY.md](./RBAC_STRATEGY.md)** — Role-based access control details
+- **[SECURITY_CHECKLIST.md](./SECURITY_CHECKLIST.md)** — Security guidelines
+- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** — Testing approach
+- **[PRODUCTION_READY_CHECKLIST.md](./PRODUCTION_READY_CHECKLIST.md)** — Deployment checklist
 
 ### External Resources
-- **React Query:** https://tanstack.com/query/latest
-- **Supabase:** https://supabase.com/docs
-- **Shadcn/ui:** https://ui.shadcn.com
-- **Tailwind CSS:** https://tailwindcss.com/docs
+- [Supabase Docs](https://supabase.com/docs)
+- [TanStack Query](https://tanstack.com/query/latest)
+- [shadcn/ui](https://ui.shadcn.com)
+- [Tailwind CSS](https://tailwindcss.com/docs)
 
 ### Repository
 - **GitHub:** https://github.com/youngpro718/nysc-facilities.git
-- **Branch:** main
-- **Issues:** Track via GitHub Issues
 
 ---
 
-## ✅ Quick Checklist for New Developers
-
-### Setup (First Time)
-- [ ] Clone repository
-- [ ] Run `npm install`
-- [ ] Configure `.env` file (copy from `.env.local.example`)
-- [ ] Run `npm run dev`
-- [ ] Verify app loads at http://localhost:8080
-- [ ] Check TypeScript: `npm run typecheck`
-
-### Daily Development
-- [ ] Pull latest changes: `git pull origin main`
-- [ ] Start dev server: `npm run dev`
-- [ ] Check for TypeScript errors
-- [ ] Test changes in browser
-- [ ] Commit with descriptive messages
-- [ ] Push to GitHub
-
-### Before Deployment
-- [ ] Run type check: `npm run typecheck`
-- [ ] Test all modified features
-- [ ] Check console for errors
-- [ ] Verify mobile responsiveness
-- [ ] Update documentation if needed
-- [ ] Create pull request
-
----
-
-**Last Updated:** October 25, 2025  
-**Maintained By:** Development Team  
-**Version:** 1.0.0
+**Last Updated:** February 2026
