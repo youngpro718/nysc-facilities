@@ -22,11 +22,11 @@ export const IssueBadges = ({
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
       case 'high':
-        return 'bg-red-500/20 text-red-600 ring-1 ring-red-500/30';
+        return 'bg-red-500/20 text-red-600 dark:text-red-400 ring-1 ring-red-500/30';
       case 'medium':
-        return 'bg-yellow-500/20 text-yellow-600 ring-1 ring-yellow-500/30';
+        return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 ring-1 ring-yellow-500/30';
       case 'low':
-        return 'bg-green-500/20 text-green-600 ring-1 ring-green-500/30';
+        return 'bg-green-500/20 text-green-600 dark:text-green-400 ring-1 ring-green-500/30';
       default:
         return 'bg-gray-500/20 text-gray-600 ring-1 ring-gray-500/30';
     }
@@ -46,7 +46,7 @@ export const IssueBadges = ({
       {isOverdue && (
         <Badge 
           variant="destructive" 
-          className="animate-in fade-in-50 bg-red-500/20 text-red-600 ring-1 ring-red-500/30"
+          className="animate-in fade-in-50 bg-red-500/20 text-red-600 dark:text-red-400 ring-1 ring-red-500/30"
         >
           Overdue
         </Badge>
@@ -55,8 +55,8 @@ export const IssueBadges = ({
       {!seen && (
         <Badge 
           variant="secondary" 
-          className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors animate-in fade-in-50
-            bg-blue-500/20 text-blue-600 ring-1 ring-blue-500/30" 
+          className="cursor-pointer hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900 transition-colors animate-in fade-in-50
+            bg-blue-500/20 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30" 
           onClick={onMarkAsSeen}
         >
           <Eye className="h-3 w-3 mr-1" />

@@ -45,27 +45,27 @@ export function MobileRequestCard({
     const configs = {
       pending: { 
         icon: Clock, 
-        color: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20", 
+        color: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20", 
         label: "Pending Review"
       },
       approved: { 
         icon: CheckCircle, 
-        color: "bg-green-500/10 text-green-700 border-green-500/20", 
+        color: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20", 
         label: "Approved"
       },
       rejected: { 
         icon: XCircle, 
-        color: "bg-red-500/10 text-red-700 border-red-500/20", 
+        color: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20", 
         label: "Rejected"
       },
       completed: { 
         icon: CheckCircle, 
-        color: "bg-blue-500/10 text-blue-700 border-blue-500/20", 
+        color: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20", 
         label: "Completed"
       },
       in_progress: { 
         icon: Clock, 
-        color: "bg-purple-500/10 text-purple-700 border-purple-500/20", 
+        color: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20", 
         label: "In Progress"
       }
     };
@@ -197,36 +197,36 @@ export function MobileRequestCard({
 
         {/* Status-specific information */}
         {request.status === 'rejected' && (
-          <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+          <div className="p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
             <div className="flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-red-600" />
-              <p className="text-sm font-medium text-red-700">Request Rejected</p>
+              <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+              <p className="text-sm font-medium text-red-700 dark:text-red-400">Request Rejected</p>
             </div>
             {request.notes && (
-              <p className="text-xs text-red-600 mt-1">{request.notes}</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1">{request.notes}</p>
             )}
           </div>
         )}
 
         {request.status === 'approved' && (
-          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+          <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <p className="text-sm font-medium text-green-700">Request Approved</p>
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <p className="text-sm font-medium text-green-700 dark:text-green-400">Request Approved</p>
             </div>
-            <p className="text-xs text-green-600 mt-1">
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
               Your key access has been approved. Please contact the front desk to collect your key.
             </p>
           </div>
         )}
 
         {request.status === 'pending' && (
-          <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-yellow-600" />
-              <p className="text-sm font-medium text-yellow-700">Awaiting Review</p>
+              <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Awaiting Review</p>
             </div>
-            <p className="text-xs text-yellow-600 mt-1">
+            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
               Your request is being reviewed. You'll be notified when there's an update.
             </p>
           </div>

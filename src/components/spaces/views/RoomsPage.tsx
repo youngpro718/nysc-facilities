@@ -4,8 +4,19 @@ import { logger } from '@/lib/logger';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Building } from "lucide-react";
+import { AlertCircle, Search as SearchIcon } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { FilterBar } from "../rooms/components/FilterBar";
 import { MobileFilterBar } from "../rooms/components/MobileFilterBar";
 import { RoomsContent } from "../rooms/components/RoomsContent";
@@ -45,6 +56,7 @@ const RoomsPage = () => {
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedRoomForPanel, setSelectedRoomForPanel] = useState<Room | null>(null);
+  const [deleteRoomId, setDeleteRoomId] = useState<string | null>(null);
   
   // Read room ID from URL query parameter
   const urlRoomId = searchParams.get('room');
@@ -77,7 +89,7 @@ const RoomsPage = () => {
     
     // If URL has a room ID, try to select it
     if (urlRoomId) {
-      const roomFromUrl = list.find((r: Record<string, unknown>) => r.id === urlRoomId);
+      const roomFromUrl = list.find((r) => r.id === urlRoomId);
       if (roomFromUrl && roomFromUrl.id !== selectedRoomForPanel?.id) {
         setSelectedRoomForPanel(roomFromUrl as Room);
         return;
@@ -85,7 +97,7 @@ const RoomsPage = () => {
     }
     
     // If current selection exists and is still present in the list, keep it
-    if (selectedRoomForPanel && list.some((r: Record<string, unknown>) => r.id === selectedRoomForPanel.id)) {
+    if (selectedRoomForPanel && list.some((r) => r.id === selectedRoomForPanel.id)) {
       return;
     }
     // Otherwise, pick the first available room or clear selection for empty state
@@ -99,7 +111,7 @@ const RoomsPage = () => {
   // Single source of truth for the panel room
   const panelRoom = useMemo(() => {
     const list = filteredAndSortedRooms ?? [];
-    if (selectedRoomForPanel && list.some((r: Record<string, unknown>) => r.id === selectedRoomForPanel.id)) {
+    if (selectedRoomForPanel && list.some((r) => r.id === selectedRoomForPanel.id)) {
       return selectedRoomForPanel as Room;
     }
     return (list[0] as Room) ?? null;
@@ -142,7 +154,7 @@ const RoomsPage = () => {
   };
 
   const handleRoomSelect = (room: Room) => {
-    logger.debug('Room selected for panel:', room.name, room.id);
+    logger.debug('Room selected for panel:', { name: room.name, id: room.id });
     setSelectedRoomForPanel(room);
     // Update URL with selected room ID (preserve other params)
     const newParams = new URLSearchParams(searchParams);
@@ -199,6 +211,7 @@ const RoomsPage = () => {
                 rooms={filteredAndSortedRooms}
                 selectedRoomId={selectedRoomForPanel?.id}
                 onSelect={handleRoomSelect}
+                isLoading={isLoading}
               />
             </div>
           </ResizablePanel>
@@ -208,20 +221,21 @@ const RoomsPage = () => {
               { panelRoom ? (
                 <RoomCard
                   room={panelRoom}
-                  onDelete={(id) => {
-                    if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-                      deleteRoomMutation.mutate(id);
-                    }
-                  }}
+                  onDelete={(id) => setDeleteRoomId(id)}
                   variant="panel"
                 />
               ) : (
                 <div className="text-center text-muted-foreground">
                   <div className="mb-4">
-                    <Building className="h-12 w-12 mx-auto opacity-50" />
+                    <SearchIcon className="h-12 w-12 mx-auto opacity-40" />
                   </div>
                   <h3 className="text-lg font-medium mb-2">No rooms found</h3>
-                  <p>Adjust your search or filters to see rooms</p>
+                  <p className="text-sm mb-4">Adjust your search or filters to see rooms</p>
+                  {searchQuery && (
+                    <Button variant="outline" size="sm" onClick={() => setSearchQuery('')}>
+                      Clear search
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -233,11 +247,7 @@ const RoomsPage = () => {
           rooms={rooms || []}
           filteredRooms={filteredAndSortedRooms}
           view="grid"
-          onDelete={(id) => {
-            if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-              deleteRoomMutation.mutate(id);
-            }
-          }}
+          onDelete={(id) => setDeleteRoomId(id)}
           searchQuery={searchQuery}
           onRoomClick={handleRoomClick}
         />
@@ -257,6 +267,32 @@ const RoomsPage = () => {
       
       {/* Mobile Inventory Dialog */}
       <MobileInventoryDialog />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteRoomId} onOpenChange={(open) => !open && setDeleteRoomId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Room</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this room? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteRoomId) {
+                  deleteRoomMutation.mutate(deleteRoomId);
+                  setDeleteRoomId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -61,7 +61,7 @@ export function ViewControls({
 
   return (
     <TooltipProvider>
-      <div className="flex items-center space-x-1 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg p-1 shadow-sm">
+      <div className="flex items-center space-x-1 bg-white/80 dark:bg-slate-900/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg p-1 shadow-sm">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

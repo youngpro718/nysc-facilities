@@ -72,14 +72,18 @@ export function SupplyFulfillmentPanel() {
       if (error) throw error;
       
       // Transform the data to match our interface (profiles comes as array from supabase)
-      return (data || []).map((item: Record<string, unknown>) => ({
-        ...item,
-        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
-        supply_request_items: item.supply_request_items?.map((sri: Record<string, unknown>) => ({
-          ...sri,
-          inventory_items: Array.isArray(sri.inventory_items) ? sri.inventory_items[0] : sri.inventory_items,
-        })) || [],
-      })) as SupplyRequest[];
+      return (data || []).map((item) => {
+        const profiles = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
+        const supply_request_items = Array.isArray(item.supply_request_items)
+          ? item.supply_request_items.map((sri) => {
+              const inventory_items = Array.isArray((sri as Record<string, unknown>).inventory_items)
+                ? ((sri as Record<string, unknown>).inventory_items as unknown[])[0]
+                : (sri as Record<string, unknown>).inventory_items;
+              return { ...sri, inventory_items } as SupplyRequest['supply_request_items'][number];
+            })
+          : [];
+        return { ...item, profiles, supply_request_items } as SupplyRequest;
+      });
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
@@ -102,7 +106,7 @@ export function SupplyFulfillmentPanel() {
       toast.success('Request marked as ready for pickup');
       queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast.error('Failed to update request', { description: error.message });
     },
   });
@@ -124,12 +128,14 @@ export function SupplyFulfillmentPanel() {
       toast.success('Started fulfilling request');
       queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast.error('Failed to update request', { description: error.message });
     },
   });
 
-  const toFulfill = requests?.filter(r => ['submitted', 'received', 'picking'].includes(r.status)) || [];
+  // Group by status pipeline
+  const newOrders = requests?.filter(r => ['submitted', 'received'].includes(r.status)) || [];
+  const inProgress = requests?.filter(r => r.status === 'picking') || [];
   const readyForPickup = requests?.filter(r => r.status === 'ready') || [];
 
   const getPriorityColor = (priority: string) => {
@@ -142,18 +148,136 @@ export function SupplyFulfillmentPanel() {
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'submitted': return <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">New Order</Badge>;
+      case 'received': return <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">Received</Badge>;
+      case 'picking': return <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30">Picking</Badge>;
+      case 'ready': return <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30">Ready</Badge>;
+      default: return <Badge variant="outline" className="text-xs">{status}</Badge>;
+    }
+  };
+
+  const renderRequest = (request: SupplyRequest) => {
+    const isNew = ['submitted', 'received'].includes(request.status);
+    const isPicking = request.status === 'picking';
+    const isReady = request.status === 'ready';
+
+    return (
+      <div
+        key={request.id}
+        className={`border rounded-lg p-3 transition-colors ${
+          isReady
+            ? 'bg-green-500/5 border-green-500/20'
+            : isPicking
+            ? 'bg-blue-500/5 border-blue-500/20'
+            : 'bg-card border-border hover:bg-accent/50'
+        }`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            {/* Requester + Status + Priority */}
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="font-medium text-sm truncate">
+                {request.profiles?.first_name} {request.profiles?.last_name}
+              </span>
+              {getStatusBadge(request.status)}
+              <Badge className={`text-xs ${getPriorityColor(request.priority)}`}>
+                {request.priority}
+              </Badge>
+            </div>
+
+            {/* Items list */}
+            <div className="text-sm mb-1.5">
+              {request.supply_request_items.map((item, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-foreground">
+                  <Package className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <span>{item.quantity_requested}x {item.inventory_items?.name || 'Unknown item'}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Notes */}
+            {request.notes && (
+              <p className="text-xs text-muted-foreground italic mb-1.5">
+                "{request.notes}"
+              </p>
+            )}
+
+            {/* Time */}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {format(new Date(request.created_at), 'MMM d, h:mm a')}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-1 shrink-0">
+            {isNew && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => startFulfillment.mutate(request.id)}
+                disabled={startFulfillment.isPending}
+              >
+                {startFulfillment.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Package className="h-4 w-4 mr-1" />
+                    Start
+                  </>
+                )}
+              </Button>
+            )}
+            {isPicking && (
+              <Button
+                size="sm"
+                onClick={() => markReady.mutate(request.id)}
+                disabled={markReady.isPending}
+              >
+                {markReady.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Mark Ready
+                  </>
+                )}
+              </Button>
+            )}
+            {isReady && (
+              <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-500/30 whitespace-nowrap">
+                Awaiting pickup
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-primary" />
-            Supply Fulfillment
+            Supply Orders
           </CardTitle>
           {!isLoading && requests && requests.length > 0 && (
-            <Badge variant="secondary">
-              {requests.length} pending
-            </Badge>
+            <div className="flex gap-1.5">
+              {newOrders.length > 0 && (
+                <Badge className="bg-amber-500 text-white text-xs">{newOrders.length} new</Badge>
+              )}
+              {inProgress.length > 0 && (
+                <Badge className="bg-blue-500 text-white text-xs">{inProgress.length} picking</Badge>
+              )}
+              {readyForPickup.length > 0 && (
+                <Badge className="bg-green-500 text-white text-xs">{readyForPickup.length} ready</Badge>
+              )}
+            </div>
           )}
         </div>
       </CardHeader>
@@ -168,116 +292,45 @@ export function SupplyFulfillmentPanel() {
               <div className="text-center py-8 text-muted-foreground">
                 <PackageCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
                 <p className="font-medium">All caught up!</p>
-                <p className="text-sm">No supply requests to fulfill</p>
+                <p className="text-sm">No pending supply orders</p>
               </div>
             ) : (
               <>
-                {/* To Fulfill Section */}
-                {toFulfill.length > 0 && (
+                {/* New Orders */}
+                {newOrders.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" />
-                      To Prepare ({toFulfill.length})
+                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-amber-500" />
+                      New Orders ({newOrders.length})
                     </h4>
                     <div className="space-y-2">
-                      {toFulfill.map((request) => (
-                        <div 
-                          key={request.id}
-                          className="border rounded-lg p-3 bg-card hover:bg-accent/50 transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                                <span className="font-medium text-sm truncate">
-                                  {request.profiles?.first_name} {request.profiles?.last_name}
-                                </span>
-                                <Badge className={`text-xs ${getPriorityColor(request.priority)}`}>
-                                  {request.priority}
-                                </Badge>
-                              </div>
-                              <div className="text-xs text-muted-foreground mb-2">
-                                {request.supply_request_items.map((item, i) => (
-                                  <span key={i}>
-                                    {item.quantity_requested}x {item.inventory_items?.name || 'Unknown item'}
-                                    {i < request.supply_request_items.length - 1 ? ', ' : ''}
-                                  </span>
-                                ))}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {format(new Date(request.created_at), 'MMM d, h:mm a')}
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              {(request.status === 'submitted' || request.status === 'received') && (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => startFulfillment.mutate(request.id)}
-                                  disabled={startFulfillment.isPending}
-                                >
-                                  {startFulfillment.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : 'Start'}
-                                </Button>
-                              )}
-                              {request.status === 'picking' && (
-                                <Button 
-                                  size="sm"
-                                  onClick={() => markReady.mutate(request.id)}
-                                  disabled={markReady.isPending}
-                                >
-                                  {markReady.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="h-4 w-4 mr-1" />
-                                      Ready
-                                    </>
-                                  )}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                      {newOrders.map(renderRequest)}
                     </div>
                   </div>
                 )}
 
-                {/* Ready for Pickup Section */}
+                {/* In Progress */}
+                {inProgress.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <Package className="h-4 w-4 text-blue-500" />
+                      Being Prepared ({inProgress.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {inProgress.map(renderRequest)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Ready for Pickup */}
                 {readyForPickup.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
                       <PackageCheck className="h-4 w-4 text-green-500" />
                       Ready for Pickup ({readyForPickup.length})
                     </h4>
                     <div className="space-y-2">
-                      {readyForPickup.map((request) => (
-                        <div 
-                          key={request.id}
-                          className="border rounded-lg p-3 bg-green-500/5 border-green-500/20"
-                        >
-                          <div className="flex items-center gap-2">
-                            <User className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="font-medium text-sm">
-                              {request.profiles?.first_name} {request.profiles?.last_name}
-                            </span>
-                            <Badge variant="outline" className="text-green-600 border-green-500/30">
-                              Awaiting pickup
-                            </Badge>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {request.supply_request_items.map((item, i) => (
-                              <span key={i}>
-                                {item.quantity_requested}x {item.inventory_items?.name || 'Unknown'}
-                                {i < request.supply_request_items.length - 1 ? ', ' : ''}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+                      {readyForPickup.map(renderRequest)}
                     </div>
                   </div>
                 )}

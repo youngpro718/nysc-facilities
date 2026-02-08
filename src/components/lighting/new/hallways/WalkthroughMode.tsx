@@ -171,7 +171,7 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
               <Button
                 size="lg"
                 variant="outline"
-                className="h-24 flex flex-col gap-2 bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+                className="h-24 flex flex-col gap-2 bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
                 onClick={() => handleStatusUpdate('functional')}
                 disabled={updateStatusMutation.isPending}
               >
@@ -182,7 +182,7 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
               <Button
                 size="lg"
                 variant="outline"
-                className="h-24 flex flex-col gap-2 bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
+                className="h-24 flex flex-col gap-2 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
                 onClick={() => handleStatusUpdate('non_functional')}
                 disabled={updateStatusMutation.isPending}
               >
@@ -193,7 +193,7 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
               <Button
                 size="lg"
                 variant="outline"
-                className="h-24 flex flex-col gap-2 bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-700"
+                className="h-24 flex flex-col gap-2 bg-yellow-50 dark:bg-yellow-950/30 hover:bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400"
                 onClick={() => handleStatusUpdate('maintenance_needed', true)}
                 disabled={updateStatusMutation.isPending}
               >
@@ -204,7 +204,7 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
               <Button
                 size="lg"
                 variant="outline"
-                className="h-24 flex flex-col gap-2 bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
+                className="h-24 flex flex-col gap-2 bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800 text-orange-700"
                 onClick={() => handleStatusUpdate('maintenance_needed')}
                 disabled={updateStatusMutation.isPending}
               >
@@ -248,19 +248,19 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
           <CardContent className="p-4">
             <div className="flex items-center justify-around text-sm">
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {Object.values(updates).filter(u => u.status === 'functional').length}
                 </div>
                 <div className="text-muted-foreground">Functional</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {Object.values(updates).filter(u => u.status === 'non_functional').length}
                 </div>
                 <div className="text-muted-foreground">Out</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                   {Object.values(updates).filter(u => u.ballast_issue).length}
                 </div>
                 <div className="text-muted-foreground">Ballast</div>

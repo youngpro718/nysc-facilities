@@ -24,7 +24,7 @@ import {
   Image,
   ArrowUpCircle,
   Loader2,
-  X,
+  X
 } from "lucide-react";
 
 interface UserIssueDetailDialogProps {
@@ -68,21 +68,21 @@ export function UserIssueDetailDialog({
     const configs: Record<string, { icon: typeof AlertCircle; color: string; label: string; bgColor: string }> = {
       open: {
         icon: AlertCircle,
-        color: "text-red-600",
+        color: "text-red-600 dark:text-red-400",
         label: "Open",
-        bgColor: "bg-red-50 border-red-200",
+        bgColor: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800",
       },
       in_progress: {
         icon: Settings,
-        color: "text-blue-600",
+        color: "text-blue-600 dark:text-blue-400",
         label: "In Progress",
-        bgColor: "bg-blue-50 border-blue-200",
+        bgColor: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800",
       },
       resolved: {
         icon: CheckCircle,
-        color: "text-green-600",
+        color: "text-green-600 dark:text-green-400",
         label: "Resolved",
-        bgColor: "bg-green-50 border-green-200",
+        bgColor: "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800",
       },
       closed: {
         icon: CheckCircle,
@@ -271,9 +271,9 @@ export function UserIssueDetailDialog({
                 </div>
 
                 {issue.resolution_notes && (
-                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm font-medium text-green-700 mb-1">Resolution Notes</p>
-                    <p className="text-sm text-green-600">{issue.resolution_notes}</p>
+                  <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400 mb-1">Resolution Notes</p>
+                    <p className="text-sm text-green-600 dark:text-green-400">{issue.resolution_notes}</p>
                   </div>
                 )}
               </TabsContent>

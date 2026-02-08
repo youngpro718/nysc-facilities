@@ -208,21 +208,21 @@ export function ReportsView() {
 
   const getPriorityColor = (priority: string) => {
     switch(priority) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'critical': return 'bg-red-100 dark:bg-red-900/30 text-red-800';
+      case 'high': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800';
+      case 'medium': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800';
+      case 'low': return 'bg-green-100 dark:bg-green-900/30 text-green-800';
+      default: return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'open': return 'bg-blue-100 text-blue-800';
-      case 'in_progress': return 'bg-purple-100 text-purple-800';
-      case 'resolved': return 'bg-green-100 text-green-800';
-      case 'deferred': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'open': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800';
+      case 'in_progress': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800';
+      case 'resolved': return 'bg-green-100 dark:bg-green-900/30 text-green-800';
+      case 'deferred': return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800';
+      default: return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800';
     }
   };
 
@@ -298,7 +298,7 @@ export function ReportsView() {
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-red-600">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                       {issuesData?.criticalIssues || 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Critical Issues</div>
@@ -312,7 +312,7 @@ export function ReportsView() {
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-orange-600">
+                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                       {issuesData?.overdueIssues?.length || 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Overdue (&gt;7 days)</div>

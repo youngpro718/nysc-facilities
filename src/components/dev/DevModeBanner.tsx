@@ -28,7 +28,7 @@ export function DevModeBanner({ realRole, previewRole }: DevModeBannerProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-500/20"
+          className="h-7 text-xs text-amber-700 dark:text-amber-400 hover:text-amber-900 hover:bg-amber-500/20"
           onClick={clearPreviewRole}
         >
           <X className="h-3 w-3 mr-1" />

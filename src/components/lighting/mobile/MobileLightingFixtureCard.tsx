@@ -40,11 +40,11 @@ export function MobileLightingFixtureCard({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'functional':
-        return 'bg-green-500/10 text-green-700 border-green-500/20';
+        return 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20';
       case 'maintenance_needed':
-        return 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20';
+        return 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20';
       case 'non_functional':
-        return 'bg-red-500/10 text-red-700 border-red-500/20';
+        return 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20';
       default:
         return 'bg-gray-500/10 text-gray-700 border-gray-500/20';
     }
@@ -117,13 +117,13 @@ export function MobileLightingFixtureCard({
           {/* Fixture details */}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-yellow-600" />
+              <Zap className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
               <span className="text-muted-foreground">
                 {fixture.bulb_count}x {fixture.technology || 'Bulb'}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-600" />
+              <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <span className="text-muted-foreground">
                 Next: {fixture.next_maintenance_date ? new Date(fixture.next_maintenance_date).toLocaleDateString() : "Not scheduled"}
               </span>
@@ -133,13 +133,13 @@ export function MobileLightingFixtureCard({
           {/* Additional info */}
           <div className="grid grid-cols-2 gap-3 text-xs">
              <div className="flex items-center gap-1">
-                <Zap className="h-3 w-3 text-yellow-600" />
+                <Zap className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
                 <span className="text-muted-foreground">{fixture.position}</span>
              </div>
             {fixture.status !== 'functional' && (
               <div className="flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3 text-red-600" />
-                <span className="text-red-600">Issues Detected</span>
+                <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" />
+                <span className="text-red-600 dark:text-red-400">Issues Detected</span>
               </div>
             )}
           </div>

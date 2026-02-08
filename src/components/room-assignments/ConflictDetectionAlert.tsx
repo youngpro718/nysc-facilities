@@ -32,7 +32,7 @@ export function ConflictDetectionAlert({ conflicts }: ConflictDetectionAlertProp
   const getSeverityColor = (severity: AssignmentConflict['severity']) => {
     return severity === 'error' 
       ? 'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive'
-      : 'border-yellow-500/50 text-yellow-600 dark:border-yellow-500 [&>svg]:text-yellow-600';
+      : 'border-yellow-500/50 text-yellow-600 dark:text-yellow-400 dark:border-yellow-500 [&>svg]:text-yellow-600 dark:text-yellow-400';
   };
 
   return (

@@ -3,13 +3,14 @@ import { logger } from '@/lib/logger';
 import { useNavigate, useLocation } from "react-router-dom";
 import { LogOut, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NavigationTab } from "../types";
+import { NavigationTab, Tab } from "../types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import { useSupplyPendingCounts } from "@/hooks/useSupplyPendingCounts";
 import { useStaffTasksPendingCounts } from "@/hooks/useStaffTasksPendingCounts";
 import { Badge } from "@/components/ui/badge";
+import { getNavigationPath } from "../utils/navigationPaths";
 
 interface DesktopNavigationImprovedProps {
   navigation: NavigationTab[];
@@ -35,8 +36,8 @@ export const DesktopNavigationImproved = ({
     try {
       if (!isAdmin) return 0;
       const uid = user?.id;
-      return (adminNotifications || []).filter((n: Record<string, unknown>) => {
-        const readers: string[] = Array.isArray(n.read_by) ? n.read_by : [];
+      return (adminNotifications || []).filter((n) => {
+        const readers: string[] = Array.isArray((n as { read_by?: string[] }).read_by) ? (n as { read_by?: string[] }).read_by! : [];
         return !uid || !readers.includes(uid);
       }).length;
     } catch {
@@ -92,7 +93,7 @@ export const DesktopNavigationImproved = ({
             );
           }
 
-          const navItem = item as { title: string; icon: unknown };
+          const navItem = item as Tab;
           const Icon = navItem.icon;
           const path = getNavigationPath(navItem.title, isAdmin);
           const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
@@ -167,32 +168,3 @@ export const DesktopNavigationImproved = ({
   );
 };
 
-// Helper function to get navigation path
-function getNavigationPath(title: string, isAdmin?: boolean): string {
-  const pathMap: Record<string, string> = {
-    'Dashboard': isAdmin ? '/' : '/dashboard',
-    'New Request': '/request',
-    'Spaces': '/spaces',
-    'Operations': '/operations',
-    'Issues': '/operations',
-    'Access & Assignments': '/access-assignments',
-    'Occupants': '/occupants',
-    'Inventory': '/inventory',
-    'Tasks': '/tasks',
-    'Supplies': '/tasks',
-    'Supply Requests': isAdmin ? '/admin/supply-requests' : '/supply-requests',
-    'Supply Room': '/supply-room',
-    'Keys': '/keys',
-    'Lighting': '/lighting',
-    'Maintenance': '/maintenance',
-    'Court Operations': '/court-operations',
-    'My Requests': '/my-requests',
-    'My Issues': '/my-issues',
-    'My Activity': '/my-activity',
-    'Admin Center': '/admin',
-    'Admin Profile': '/admin', // Legacy fallback
-    'Profile': '/profile',
-    'System Settings': '/system-settings',
-  };
-  return pathMap[title] || '/';
-}

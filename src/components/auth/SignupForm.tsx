@@ -354,7 +354,7 @@ export const SignupForm = ({
       <div className="space-y-4">
         <Button
           type="submit"
-          className="w-full bg-white text-courthouse hover:bg-white/90 transition-colors"
+          className="w-full bg-white text-courthouse hover:bg-white/90 dark:bg-slate-900/90 transition-colors"
           disabled={loading}
         >
           {loading ? (

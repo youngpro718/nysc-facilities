@@ -147,7 +147,7 @@ export default function PublicFormSubmission() {
               </ol>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
               <p className="text-sm text-blue-900 dark:text-blue-100">
                 <strong>Need help?</strong> Contact us at {facilityEmail} or call (555) 123-4567
               </p>

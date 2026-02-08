@@ -162,7 +162,7 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
           
           <Button 
             variant="outline" 
-            className="w-full sm:w-auto border-red-200 text-red-600 hover:bg-red-50"
+            className="w-full sm:w-auto border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30"
             onClick={() => handleAction('missing')}
             disabled={isLoading}
           >

@@ -94,7 +94,7 @@ export function InventoryManagementTab() {
     if (status === 'out') {
       return <Badge variant="destructive">Out of Stock</Badge>;
     } else if (status === 'low') {
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Low Stock</Badge>;
+      return <Badge variant="secondary" className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800">Low Stock</Badge>;
     }
     return <Badge variant="outline">In Stock</Badge>;
   };
@@ -119,10 +119,10 @@ export function InventoryManagementTab() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
-            <TrendingDown className="h-4 w-4 text-yellow-600" />
+            <TrendingDown className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{lowStockItems}</div>
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{lowStockItems}</div>
             <p className="text-xs text-muted-foreground">
               Need reordering
             </p>
@@ -132,10 +132,10 @@ export function InventoryManagementTab() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{outOfStockItems}</div>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{outOfStockItems}</div>
             <p className="text-xs text-muted-foreground">
               Urgent reorder
             </p>
@@ -262,15 +262,15 @@ export function InventoryManagementTab() {
 
       {/* Low Stock Alert */}
       {lowStockItems > 0 && filterView === 'all' && (
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/30">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
               <div className="flex-1">
                 <p className="font-medium text-yellow-900">
                   {lowStockItems} item{lowStockItems !== 1 ? 's' : ''} running low on stock
                 </p>
-                <p className="text-sm text-yellow-700 mt-1">
+                <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
                   Consider reordering these items soon to avoid stockouts.
                 </p>
               </div>
@@ -289,15 +289,15 @@ export function InventoryManagementTab() {
 
       {/* Out of Stock Alert */}
       {outOfStockItems > 0 && filterView === 'all' && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
               <div className="flex-1">
                 <p className="font-medium text-red-900">
                   {outOfStockItems} item{outOfStockItems !== 1 ? 's' : ''} out of stock
                 </p>
-                <p className="text-sm text-red-700 mt-1">
+                <p className="text-sm text-red-700 dark:text-red-400 mt-1">
                   These items need immediate reordering.
                 </p>
               </div>

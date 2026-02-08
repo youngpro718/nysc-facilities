@@ -93,10 +93,10 @@ export const MaintenanceCalendar = () => {
               <div
                 key={day.toISOString()}
                 className={`min-h-[100px] p-2 border rounded-lg ${
-                  isToday ? "bg-blue-50 border-blue-300" : "bg-background"
+                  isToday ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300" : "bg-background"
                 } ${!isSameMonth(day, today) ? "opacity-50" : ""}`}
               >
-                <div className={`text-sm font-medium mb-1 ${isToday ? "text-blue-600" : ""}`}>
+                <div className={`text-sm font-medium mb-1 ${isToday ? "text-blue-600 dark:text-blue-400" : ""}`}>
                   {format(day, "d")}
                 </div>
                 <div className="space-y-1">

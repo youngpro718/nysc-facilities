@@ -25,7 +25,7 @@ export function KeyDetails({ assignment }: KeyDetailsProps) {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Badge variant="outline" className="text-yellow-600 border-yellow-600 flex items-center gap-1">
+              <Badge variant="outline" className="text-yellow-600 dark:text-yellow-400 border-yellow-600 flex items-center gap-1">
                 <Info className="h-3 w-3" />
                 Spare
               </Badge>

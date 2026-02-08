@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { User, Save, X } from "lucide-react";
+import { User, Save, X, Loader2 } from "lucide-react";
 
 interface ProfileEditModalProps {
   open: boolean;
@@ -142,7 +142,7 @@ export function ProfileEditModal({ open, onOpenChange, profile, onProfileUpdate 
               className="flex-1"
             >
               {saving ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}

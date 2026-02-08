@@ -6,19 +6,21 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { 
   Home, 
   Map, 
-  Activity, 
   LayoutPanelLeft,
   Maximize2,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import RoomsPage from './views/RoomsPage';
-// Removed Infrastructure views (HallwaysList, DoorsList)
 import { ModernFloorPlanView } from './floorplan/ModernFloorPlanView';
-// Removed Access Control view (RoomAccessManager)
+import { useRoomsQuery } from './hooks/queries/useRoomsQuery';
 
 const SpacesTabs = () => {
   const [activeView, setActiveView] = useState("rooms");
   const [floorPlanExpanded, setFloorPlanExpanded] = useState(false);
+  const { data: rooms } = useRoomsQuery({});
+  const totalRooms = rooms?.length ?? 0;
+  const activeRooms = rooms?.filter(r => r.status === 'active').length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -69,8 +71,12 @@ const SpacesTabs = () => {
           </div>
 
           <div className="hidden sm:flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">94 Total</Badge>
-            <Badge variant="secondary" className="text-xs">87 Active</Badge>
+            {totalRooms > 0 && (
+              <>
+                <Badge variant="outline" className="text-xs">{totalRooms} Total</Badge>
+                <Badge variant="secondary" className="text-xs">{activeRooms} Active</Badge>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -78,28 +84,8 @@ const SpacesTabs = () => {
       {/* Main Content Area */}
       <div className="min-w-0">
         {activeView === 'rooms' && (
-          <div className="space-y-4">
-            {/* Header - Not in a card for less boxed-in feel */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold flex items-center gap-3">
-                  <Home className="h-6 w-6" />
-                  Room Management
-                  <Badge variant="secondary" className="text-xs">
-                    <Activity className="h-3 w-3 mr-1" />
-                    Primary
-                  </Badge>
-                </h2>
-                <p className="text-muted-foreground mt-1">
-                  Browse, search, and manage all rooms with enhanced visual interface
-                </p>
-              </div>
-            </div>
-            
-            {/* Room content - Direct integration without card wrapper */}
-            <div className="min-h-[500px]">
-              <RoomsPage />
-            </div>
+          <div className="min-h-[500px]">
+            <RoomsPage />
           </div>
         )}
 
@@ -149,7 +135,7 @@ const SpacesTabs = () => {
                 <Suspense fallback={
                   <div className="h-full flex items-center justify-center">
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       Loading floor plan...
                     </div>
                   </div>

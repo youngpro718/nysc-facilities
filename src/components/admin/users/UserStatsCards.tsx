@@ -36,7 +36,7 @@ export function UserStatsCards({
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <Shield className="h-5 w-5 text-blue-600" />
+            <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             <span className="text-2xl font-bold">{totalUsers}</span>
           </div>
           <p className="text-sm font-medium">All Users</p>
@@ -50,7 +50,7 @@ export function UserStatsCards({
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <Clock className="h-5 w-5 text-yellow-600" />
+            <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
             <span className="text-2xl font-bold">{pendingCount}</span>
           </div>
           <p className="text-sm font-medium">Pending</p>
@@ -63,7 +63,7 @@ export function UserStatsCards({
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
+            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
             <span className="text-2xl font-bold">{verifiedCount}</span>
           </div>
           <p className="text-sm font-medium">Verified</p>
@@ -76,7 +76,7 @@ export function UserStatsCards({
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <Ban className="h-5 w-5 text-red-600" />
+            <Ban className="h-5 w-5 text-red-600 dark:text-red-400" />
             <span className="text-2xl font-bold">{suspendedCount}</span>
           </div>
           <p className="text-sm font-medium">Suspended</p>
@@ -89,7 +89,7 @@ export function UserStatsCards({
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <Shield className="h-5 w-5 text-purple-600" />
+            <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             <span className="text-2xl font-bold">{adminCount}</span>
           </div>
           <p className="text-sm font-medium">Admins</p>

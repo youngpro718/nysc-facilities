@@ -57,9 +57,9 @@ export function RoomDetailView({ room, fixtures }: RoomDetailViewProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'functional': return 'bg-green-50 text-green-700 border-green-200';
-      case 'non_functional': return 'bg-red-50 text-red-700 border-red-200';
-      case 'maintenance_needed': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'functional': return 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800';
+      case 'non_functional': return 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800';
+      case 'maintenance_needed': return 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
       default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
@@ -97,9 +97,9 @@ export function RoomDetailView({ room, fixtures }: RoomDetailViewProps) {
                 <span className="text-2xl font-bold">{room.total_fixtures}</span>
               </div>
               <div className={`text-sm font-semibold ${
-                healthPercent >= 90 ? 'text-green-600' :
-                healthPercent >= 70 ? 'text-yellow-600' :
-                'text-red-600'
+                healthPercent >= 90 ? 'text-green-600 dark:text-green-400' :
+                healthPercent >= 70 ? 'text-yellow-600 dark:text-yellow-400' :
+                'text-red-600 dark:text-red-400'
               }`}>
                 {healthPercent}% Functional
               </div>
@@ -108,16 +108,16 @@ export function RoomDetailView({ room, fixtures }: RoomDetailViewProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{room.functional_count}</div>
+            <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{room.functional_count}</div>
               <div className="text-sm text-muted-foreground">Functional</div>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">{room.non_functional_count}</div>
+            <div className="text-center p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{room.non_functional_count}</div>
               <div className="text-sm text-muted-foreground">Out</div>
             </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">{room.maintenance_count}</div>
+            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{room.maintenance_count}</div>
               <div className="text-sm text-muted-foreground">Maintenance</div>
             </div>
           </div>
@@ -168,7 +168,7 @@ export function RoomDetailView({ room, fixtures }: RoomDetailViewProps) {
                       disabled={updateStatusMutation.isPending}
                       title="Mark as Functional"
                     >
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                     </Button>
 
                     <Button
@@ -183,7 +183,7 @@ export function RoomDetailView({ room, fixtures }: RoomDetailViewProps) {
                       disabled={updateStatusMutation.isPending}
                       title="Mark as Out"
                     >
-                      <XCircle className="h-4 w-4 text-red-600" />
+                      <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                     </Button>
 
                     <Button
@@ -198,7 +198,7 @@ export function RoomDetailView({ room, fixtures }: RoomDetailViewProps) {
                       disabled={updateStatusMutation.isPending}
                       title="Mark as Ballast Issue"
                     >
-                      <Zap className="h-4 w-4 text-yellow-600" />
+                      <Zap className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                     </Button>
 
                     <Button
@@ -213,7 +213,7 @@ export function RoomDetailView({ room, fixtures }: RoomDetailViewProps) {
                       disabled={updateStatusMutation.isPending}
                       title="Mark as Needs Maintenance"
                     >
-                      <AlertTriangle className="h-4 w-4 text-orange-600" />
+                      <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                     </Button>
                   </div>
                 </div>

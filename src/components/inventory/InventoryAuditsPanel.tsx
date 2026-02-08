@@ -234,13 +234,13 @@ export function InventoryAuditsPanel() {
   const getTransactionBadge = (type: string) => {
     switch (type) {
       case 'addition':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Addition</Badge>;
+        return <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-800">Addition</Badge>;
       case 'removal':
-        return <Badge variant="default" className="bg-red-100 text-red-800">Removal</Badge>;
+        return <Badge variant="default" className="bg-red-100 dark:bg-red-900/30 text-red-800">Removal</Badge>;
       case 'adjustment':
-        return <Badge variant="default" className="bg-orange-100 text-orange-800">Adjustment</Badge>;
+        return <Badge variant="default" className="bg-orange-100 dark:bg-orange-900/30 text-orange-800">Adjustment</Badge>;
       case 'audit':
-        return <Badge variant="default" className="bg-blue-100 text-blue-800">Audit</Badge>;
+        return <Badge variant="default" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800">Audit</Badge>;
       default:
         return <Badge variant="outline">{type}</Badge>;
     }
@@ -314,7 +314,7 @@ export function InventoryAuditsPanel() {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{auditSummary.additions}</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{auditSummary.additions}</div>
             <p className="text-xs text-muted-foreground">
               Stock increases
             </p>
@@ -327,7 +327,7 @@ export function InventoryAuditsPanel() {
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{auditSummary.removals}</div>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{auditSummary.removals}</div>
             <p className="text-xs text-muted-foreground">
               Stock decreases
             </p>
@@ -340,7 +340,7 @@ export function InventoryAuditsPanel() {
             <AlertTriangle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${auditSummary.total_value_change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-2xl font-bold ${auditSummary.total_value_change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
               {auditSummary.total_value_change >= 0 ? '+' : ''}{auditSummary.total_value_change}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -451,9 +451,9 @@ export function InventoryAuditsPanel() {
                       {transaction.previous_quantity} → {transaction.new_quantity}
                     </div>
                     <div className={`text-xs ${
-                      transaction.transaction_type === 'addition' ? 'text-green-600' :
-                      transaction.transaction_type === 'removal' ? 'text-red-600' :
-                      'text-orange-600'
+                      transaction.transaction_type === 'addition' ? 'text-green-600 dark:text-green-400' :
+                      transaction.transaction_type === 'removal' ? 'text-red-600 dark:text-red-400' :
+                      'text-orange-600 dark:text-orange-400'
                     }`}>
                       {transaction.transaction_type === 'addition' ? '+' : 
                        transaction.transaction_type === 'removal' ? '-' : '±'}

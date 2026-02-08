@@ -7,6 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Camera } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
@@ -59,6 +69,7 @@ export const InventoryItemsPanel = () => {
   const [sortKey, setSortKey] = useState<"name" | "quantity" | "updated_at">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [exporting, setExporting] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState<{ id: string; name: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -193,10 +204,8 @@ export const InventoryItemsPanel = () => {
     setPhotoDialogOpen(true);
   };
 
-  const handleDelete = async (item: InventoryItem) => {
-    if (confirm(`Are you sure you want to delete "${item.name}"?`)) {
-      deleteItemMutation.mutate(item.id);
-    }
+  const handleDelete = (item: InventoryItem) => {
+    setDeleteItemId({ id: item.id, name: item.name });
   };
 
   const handleExportCsv = async () => {
@@ -241,7 +250,7 @@ export const InventoryItemsPanel = () => {
       const toCsv = (arr: Record<string, unknown>[]) => {
         if (arr.length === 0) return "";
         const headers = Object.keys(arr[0]);
-        const esc = (v: Record<string, unknown>) => {
+        const esc = (v: unknown) => {
           const s = String(v ?? "");
           const needsQuote = /[",\n]/.test(s);
           const escaped = s.replace(/"/g, '""');
@@ -368,7 +377,7 @@ export const InventoryItemsPanel = () => {
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Sort</label>
             <div className="flex gap-2">
-              <Select value={sortKey} onValueChange={(v) => setSortKey(v as unknown)}>
+              <Select value={sortKey} onValueChange={(v) => setSortKey(v as typeof sortKey)}>
                 <SelectTrigger className="h-9 flex-1 bg-background z-50">
                   <SelectValue />
                 </SelectTrigger>
@@ -378,7 +387,7 @@ export const InventoryItemsPanel = () => {
                   <SelectItem value="updated_at">Updated</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={sortDir} onValueChange={(v) => setSortDir(v as unknown)}>
+              <Select value={sortDir} onValueChange={(v) => setSortDir(v as typeof sortDir)}>
                 <SelectTrigger className="h-9 w-20 bg-background z-50">
                   <SelectValue />
                 </SelectTrigger>
@@ -547,7 +556,7 @@ export const InventoryItemsPanel = () => {
       {/* Error State */}
       {isError && (
         <div className="mt-4 rounded border border-destructive/30 bg-destructive/10 text-destructive p-3 text-sm">
-          Failed to load items: {String((error as Record<string, unknown>)?.message || error)}
+          Failed to load items: {String((error as Error)?.message || error)}
         </div>
       )}
 
@@ -566,6 +575,32 @@ export const InventoryItemsPanel = () => {
         onOpenChange={setCreateDialogOpen}
       />
       
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteItemId} onOpenChange={(open) => !open && setDeleteItemId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteItemId?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteItemId) {
+                  deleteItemMutation.mutate(deleteItemId.id);
+                  setDeleteItemId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {selectedItem && (
         <>
           <EditItemDialog

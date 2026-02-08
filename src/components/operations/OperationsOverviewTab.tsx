@@ -63,7 +63,7 @@ export function OperationsOverviewTab({
             <Button 
               onClick={onCreateIssue} 
               variant="outline" 
-              className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-red-50 hover:border-red-200 transition-colors group"
+              className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800 transition-colors group"
             >
               <AlertTriangle className="h-8 w-8 text-red-500 group-hover:scale-110 transition-transform" />
               <div className="text-center">
@@ -74,7 +74,7 @@ export function OperationsOverviewTab({
             <Button 
               onClick={onScheduleMaintenance} 
               variant="outline" 
-              className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-blue-50 hover:border-blue-200 transition-colors group"
+              className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 dark:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-800 dark:border-blue-800 transition-colors group"
             >
               <Calendar className="h-8 w-8 text-blue-500 group-hover:scale-110 transition-transform" />
               <div className="text-center">
@@ -102,7 +102,7 @@ export function OperationsOverviewTab({
                   </div>
                   Critical Issues
                   {enhancedMetrics.criticalCount > 0 && (
-                    <Badge variant="destructive" className="ml-2 animate-pulse">
+                    <Badge variant="destructive" className="ml-2">
                       {enhancedMetrics.criticalCount}
                     </Badge>
                   )}
@@ -113,7 +113,7 @@ export function OperationsOverviewTab({
                 variant="outline" 
                 size="sm" 
                 onClick={() => onTabChange('issues')}
-                className="hover:bg-red-50 hover:border-red-200"
+                className="hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800"
               >
                 View All Issues
               </Button>
@@ -166,21 +166,21 @@ export function OperationsOverviewTab({
               <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 rounded-lg border border-orange-200 dark:border-orange-800">
                 <div>
                   <p className="font-semibold text-orange-900 dark:text-orange-100">In Progress</p>
-                  <p className="text-3xl font-bold text-orange-600">{enhancedMetrics.maintenanceInProgress}</p>
+                  <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.maintenanceInProgress}</p>
                 </div>
                 <Clock className="h-10 w-10 text-orange-500" />
               </div>
               <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div>
                   <p className="font-semibold text-blue-900 dark:text-blue-100">Scheduled</p>
-                  <p className="text-3xl font-bold text-blue-600">{enhancedMetrics.maintenanceScheduled}</p>
+                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.maintenanceScheduled}</p>
                 </div>
                 <Calendar className="h-10 w-10 text-blue-500" />
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="w-full hover:bg-orange-50 hover:border-orange-200 transition-colors"
+                className="w-full hover:bg-orange-50 dark:hover:bg-orange-950/30 dark:bg-orange-950/30 hover:border-orange-200 dark:hover:border-orange-800 dark:border-orange-800 transition-colors"
                 onClick={() => onTabChange('maintenance')}
               >
                 View All Maintenance

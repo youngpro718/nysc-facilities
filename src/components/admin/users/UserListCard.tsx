@@ -74,7 +74,7 @@ export function UserListCard({
   const isVerified = user.verification_status === 'verified' && user.is_approved && !user.is_suspended;
 
   return (
-    <Card className={`p-4 transition-all ${isUpdating ? 'ring-2 ring-primary animate-pulse' : ''}`}>
+    <Card className={`p-4 transition-all ${isUpdating ? 'ring-2 ring-primary' : ''}`}>
       <div className="flex items-start gap-4">
         <Avatar className="h-12 w-12">
           <AvatarFallback className="bg-primary/10 text-primary font-semibold">
@@ -116,7 +116,7 @@ export function UserListCard({
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => onReject(user.id)}
-                      className="text-red-600"
+                      className="text-red-600 dark:text-red-400"
                     >
                       <UserX className="h-4 w-4 mr-2" />
                       Reject User

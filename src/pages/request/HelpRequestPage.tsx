@@ -274,7 +274,7 @@ export default function HelpRequestPage() {
     <div className="container max-w-2xl mx-auto px-4 py-12">
       <div className="text-center space-y-4">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10">
-          <CheckCircle className="h-8 w-8 text-green-600" />
+          <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
         </div>
         <h1 className="text-2xl font-bold">Request Submitted!</h1>
         

@@ -198,7 +198,7 @@ export function MaintenanceStats() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col items-center">
-              <div className="text-lg font-semibold text-red-600">High Priority</div>
+              <div className="text-lg font-semibold text-red-600 dark:text-red-400">High Priority</div>
               <div className="text-3xl font-bold">{efficiencyData?.completionRateByPriority.high}%</div>
               <div className="w-full h-2 bg-gray-200 rounded-full mt-2">
                 <div 
@@ -220,7 +220,7 @@ export function MaintenanceStats() {
             </div>
             
             <div className="flex flex-col items-center">
-              <div className="text-lg font-semibold text-blue-600">Low Priority</div>
+              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">Low Priority</div>
               <div className="text-3xl font-bold">{efficiencyData?.completionRateByPriority.low}%</div>
               <div className="w-full h-2 bg-gray-200 rounded-full mt-2">
                 <div 

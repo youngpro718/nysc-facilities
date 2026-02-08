@@ -51,10 +51,10 @@ export const LightingTemplateManager: React.FC<LightingTemplateManagerProps> = (
 
   const getTemplateTypeColor = (type: string) => {
     switch (type) {
-      case 'main_hallway': return 'bg-blue-100 text-blue-800';
-      case 'elevator_bank': return 'bg-green-100 text-green-800';
-      case 'special_floor': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'main_hallway': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800';
+      case 'elevator_bank': return 'bg-green-100 dark:bg-green-900/30 text-green-800';
+      case 'special_floor': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800';
+      default: return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800';
     }
   };
 
@@ -156,8 +156,8 @@ export const LightingTemplateManager: React.FC<LightingTemplateManagerProps> = (
                             </div>
                           )}
                           
-                          <div className="bg-blue-50 p-3 rounded">
-                            <p className="text-sm text-blue-700">
+                          <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded">
+                            <p className="text-sm text-blue-700 dark:text-blue-400">
                               This will create {template.fixture_count} fixtures with {template.bulbs_per_fixture} bulbs each 
                               for Floor {floorNumber}.
                             </p>

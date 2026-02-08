@@ -208,7 +208,7 @@ export default function MFASetup() {
                   </Button>
                 )}
                 {isPrivileged && (
-                  <p className="text-xs text-center text-amber-600 font-medium">
+                  <p className="text-xs text-center text-amber-600 dark:text-amber-400 font-medium">
                     MFA is required for your role and cannot be skipped.
                   </p>
                 )}
@@ -222,7 +222,7 @@ export default function MFASetup() {
               <div className="space-y-4">
                 {/* QR Code */}
                 {qrCode && (
-                  <div className="flex justify-center p-4 bg-white rounded-lg">
+                  <div className="flex justify-center p-4 bg-white dark:bg-slate-900 rounded-lg">
                     <img src={qrCode} alt="MFA QR Code" className="w-48 h-48" />
                   </div>
                 )}
@@ -282,8 +282,8 @@ export default function MFASetup() {
           {step === 'verify' && (
             <>
               <div className="text-center space-y-4">
-                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="h-8 w-8 text-green-600" />
+                <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
                 </div>
                 <p className="text-muted-foreground">
                   Your account is now protected with two-factor authentication. You'll be redirected to the dashboard shortly.

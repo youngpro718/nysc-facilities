@@ -39,7 +39,7 @@ export interface FinishEntry {
 
 const finishTypeConfig: Record<FinishType, { icon: React.ElementType; label: string; color: string }> = {
   painting: { icon: Paintbrush, label: "Painting", color: "text-amber-500" },
-  carpeting: { icon: SquareStack, label: "Carpeting", color: "text-orange-600" },
+  carpeting: { icon: SquareStack, label: "Carpeting", color: "text-orange-600 dark:text-orange-400" },
   blinds: { icon: Blinds, label: "Blinds", color: "text-blue-500" },
   furniture: { icon: Armchair, label: "Furniture", color: "text-purple-500" },
   other: { icon: Package, label: "Other", color: "text-muted-foreground" },

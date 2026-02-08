@@ -348,7 +348,7 @@ export default function MyRequests() {
                           );
                         })()}
                         {normalizeOrderStatus(relatedOrder.status) === 'ready_for_pickup' && (
-                          <p className="text-sm text-green-600 mt-2 font-medium">
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
                             🎉 Your key is ready for pickup at the facilities office!
                           </p>
                         )}

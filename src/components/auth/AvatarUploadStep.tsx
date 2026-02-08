@@ -52,7 +52,7 @@ export function AvatarUploadStep({
       <div className="text-center space-y-4">
         <Avatar className="w-24 h-24 mx-auto ring-2 ring-slate-200">
           <AvatarImage src={previewUrl || undefined} />
-          <AvatarFallback className="text-xl font-semibold bg-slate-100 text-slate-700">
+          <AvatarFallback className="text-xl font-semibold bg-slate-100 dark:bg-slate-800/30 text-slate-700">
             {firstName && lastName ? getInitials() : <Camera className="w-8 h-8" />}
           </AvatarFallback>
         </Avatar>

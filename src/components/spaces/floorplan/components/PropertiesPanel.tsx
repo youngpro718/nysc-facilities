@@ -56,19 +56,19 @@ export function PropertiesPanel({
     switch (type) {
       case 'room':
         return (
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
             Room
           </Badge>
         );
       case 'hallway':
         return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
             Hallway
           </Badge>
         );
       case 'door':
         return (
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:text-amber-400 border-amber-200">
             Door
           </Badge>
         );
@@ -103,11 +103,11 @@ export function PropertiesPanel({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>;
+        return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">Active</Badge>;
       case 'inactive':
         return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>;
       case 'under_maintenance':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Under Maintenance</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">Under Maintenance</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -156,7 +156,7 @@ export function PropertiesPanel({
             variant="ghost" 
             size="sm" 
             onClick={() => setLocalValues({})}
-            className="h-8 w-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="h-8 w-8 rounded-full hover:bg-slate-100 dark:bg-slate-800/30 dark:hover:bg-slate-800"
           >
             <X className="h-4 w-4" />
           </Button>

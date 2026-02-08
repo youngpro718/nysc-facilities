@@ -73,7 +73,7 @@ export default function PendingApproval() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+          <div className="mx-auto w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-4">
             <Clock className="h-8 w-8 text-amber-600" />
           </div>
           <CardTitle className="text-2xl">Account Pending Approval</CardTitle>

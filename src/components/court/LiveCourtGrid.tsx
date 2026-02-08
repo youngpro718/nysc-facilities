@@ -299,7 +299,7 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
         <div className="flex flex-col gap-0.5">
           <div className="font-medium">{room.room_number}</div>
           {room.assigned_part && (
-            <div className="text-xs font-medium text-blue-600">Part {room.assigned_part}</div>
+            <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Part {room.assigned_part}</div>
           )}
           {room.courtroom_number && (
             <div className="text-xs text-muted-foreground">Court {room.courtroom_number}</div>
@@ -313,7 +313,7 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
             {room.assigned_judge ? (
               <>
                 <span className="text-sm font-medium">{room.assigned_judge}</span>
-                <span className={`text-xs ${judgePresent ? 'text-emerald-600 font-medium' : 'text-muted-foreground'}`}>
+                <span className={`text-xs ${judgePresent ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-muted-foreground'}`}>
                   {judgePresent ? '✓ Present' : 'Not marked present'}
                 </span>
               </>
@@ -354,7 +354,7 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
                       }}
                       className="h-3 w-3"
                     />
-                    <span className={isPresent ? 'text-emerald-600 font-medium' : 'text-muted-foreground'}>
+                    <span className={isPresent ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-muted-foreground'}>
                       {clerk}
                     </span>
                   </label>

@@ -107,12 +107,12 @@ export const ROOM_STATUS_LABELS: Record<RoomStatus, string> = {
 };
 
 export const ROOM_STATUS_COLORS: Record<RoomStatus, string> = {
-  [RoomStatus.AVAILABLE]: 'bg-green-100 text-green-800',
-  [RoomStatus.OCCUPIED]: 'bg-blue-100 text-blue-800',
-  [RoomStatus.MAINTENANCE]: 'bg-yellow-100 text-yellow-800',
-  [RoomStatus.RESERVED]: 'bg-purple-100 text-purple-800',
-  [RoomStatus.CLOSED]: 'bg-red-100 text-red-800',
-  [RoomStatus.UNDER_CONSTRUCTION]: 'bg-orange-100 text-orange-800',
+  [RoomStatus.AVAILABLE]: 'bg-green-100 dark:bg-green-900/30 text-green-800',
+  [RoomStatus.OCCUPIED]: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800',
+  [RoomStatus.MAINTENANCE]: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800',
+  [RoomStatus.RESERVED]: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800',
+  [RoomStatus.CLOSED]: 'bg-red-100 dark:bg-red-900/30 text-red-800',
+  [RoomStatus.UNDER_CONSTRUCTION]: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800',
 };
 
 export const ROOM_TYPE_LABELS: Record<RoomType, string> = {
@@ -164,7 +164,7 @@ export function isRoomInMaintenance(room: Room): boolean {
  * Get room status badge classes
  */
 export function getRoomStatusBadgeClass(status: RoomStatus): string {
-  return ROOM_STATUS_COLORS[status] || 'bg-gray-100 text-gray-800';
+  return ROOM_STATUS_COLORS[status] || 'bg-gray-100 dark:bg-gray-800/30 text-gray-800';
 }
 
 /**

@@ -56,23 +56,23 @@ interface SupplyRequestWithUser {
 }
 
 const statusConfig = {
-  submitted: { icon: Clock, color: "text-blue-600 bg-blue-50", label: "Submitted" },
-  pending_approval: { icon: AlertTriangle, color: "text-orange-600 bg-orange-50", label: "Pending Approval" },
-  approved: { icon: CheckCircle, color: "text-green-600 bg-green-50", label: "Approved" },
-  rejected: { icon: XCircle, color: "text-red-600 bg-red-50", label: "Rejected" },
-  received: { icon: Package, color: "text-blue-600 bg-blue-50", label: "Received" },
-  processing: { icon: Clock, color: "text-yellow-600 bg-yellow-50", label: "Processing" },
-  ready: { icon: CheckCircle, color: "text-green-600 bg-green-50", label: "Ready for Pickup" },
-  delivered: { icon: CheckCircle, color: "text-purple-600 bg-purple-50", label: "Delivered" },
+  submitted: { icon: Clock, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30", label: "Submitted" },
+  pending_approval: { icon: AlertTriangle, color: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30", label: "Pending Approval" },
+  approved: { icon: CheckCircle, color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30", label: "Approved" },
+  rejected: { icon: XCircle, color: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30", label: "Rejected" },
+  received: { icon: Package, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30", label: "Received" },
+  processing: { icon: Clock, color: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30", label: "Processing" },
+  ready: { icon: CheckCircle, color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30", label: "Ready for Pickup" },
+  delivered: { icon: CheckCircle, color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30", label: "Delivered" },
   completed: { icon: CheckCircle, color: "text-gray-600 bg-gray-50", label: "Completed" },
   cancelled: { icon: XCircle, color: "text-gray-600 bg-gray-50", label: "Cancelled" },
 };
 
 const priorityConfig = {
-  low: { color: "text-green-600 bg-green-50", label: "Low" },
-  medium: { color: "text-yellow-600 bg-yellow-50", label: "Medium" },
-  high: { color: "text-orange-600 bg-orange-50", label: "High" },
-  urgent: { color: "text-red-600 bg-red-50", label: "Urgent" },
+  low: { color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30", label: "Low" },
+  medium: { color: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30", label: "Medium" },
+  high: { color: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30", label: "High" },
+  urgent: { color: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30", label: "Urgent" },
 };
 
 export default function AdminSupplyRequests() {
@@ -261,12 +261,12 @@ export default function AdminSupplyRequests() {
                           <div className="text-sm text-muted-foreground">
                             Requested: {item.quantity_requested} {item.inventory_items.unit || 'units'}
                             {item.quantity_approved !== undefined && item.quantity_approved !== null && (
-                              <span className="ml-2 text-green-600">
+                              <span className="ml-2 text-green-600 dark:text-green-400">
                                 | Approved: {item.quantity_approved}
                               </span>
                             )}
                             {item.quantity_fulfilled !== undefined && item.quantity_fulfilled !== null && (
-                              <span className="ml-2 text-blue-600">
+                              <span className="ml-2 text-blue-600 dark:text-blue-400">
                                 | Fulfilled: {item.quantity_fulfilled}
                               </span>
                             )}
@@ -302,13 +302,13 @@ export default function AdminSupplyRequests() {
                       {request.approval_notes && (
                         <div>
                           <p className="font-medium text-sm text-muted-foreground mb-1">Approval Notes</p>
-                          <p className="text-sm bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-100 p-2 rounded">{request.approval_notes}</p>
+                          <p className="text-sm bg-green-50 dark:bg-green-950/30 dark:bg-green-900/30 text-green-900 dark:text-green-100 p-2 rounded">{request.approval_notes}</p>
                         </div>
                       )}
                       {request.fulfillment_notes && (
                         <div>
                           <p className="font-medium text-sm text-muted-foreground mb-1">Fulfillment Notes</p>
-                          <p className="text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 rounded">{request.fulfillment_notes}</p>
+                          <p className="text-sm bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 rounded">{request.fulfillment_notes}</p>
                         </div>
                       )}
                     </div>

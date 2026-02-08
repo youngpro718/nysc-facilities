@@ -33,7 +33,7 @@ export function IssueAnalyticsPanel({
 
           {/* Resolution Rate */}
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {resolutionRate}%
             </div>
             <div className="text-sm text-muted-foreground">Resolution Rate</div>
@@ -49,7 +49,7 @@ export function IssueAnalyticsPanel({
 
           {/* Rooms Affected */}
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {stats.roomsWithIssues}
             </div>
             <div className="text-sm text-muted-foreground">Rooms Affected</div>
@@ -76,7 +76,7 @@ export function IssueAnalyticsPanel({
               
               <div className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-3">
-                  <Badge className="min-w-fit px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200">In Progress</Badge>
+                  <Badge className="min-w-fit px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 border-blue-200 dark:border-blue-800 hover:bg-blue-200">In Progress</Badge>
                   <span className="text-sm font-medium">{stats.in_progress} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">
@@ -86,7 +86,7 @@ export function IssueAnalyticsPanel({
               
               <div className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-3">
-                  <Badge className="min-w-fit px-2 py-1 text-xs font-medium bg-green-100 text-green-800 border-green-200 hover:bg-green-200">Resolved</Badge>
+                  <Badge className="min-w-fit px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 border-green-200 dark:border-green-800 hover:bg-green-200">Resolved</Badge>
                   <span className="text-sm font-medium">{stats.resolved} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">
@@ -115,7 +115,7 @@ export function IssueAnalyticsPanel({
               
               <div className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-3">
-                  <Badge className="min-w-fit px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200">Medium</Badge>
+                  <Badge className="min-w-fit px-2 py-1 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 border-yellow-200 dark:border-yellow-800 hover:bg-yellow-200">Medium</Badge>
                   <span className="text-sm font-medium">{stats.medium} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">

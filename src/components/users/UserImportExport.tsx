@@ -408,7 +408,7 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
               <Card>
                 <CardContent className="pt-6 space-y-3">
                   {importResults.successful > 0 && (
-                    <div className="flex items-center gap-2 text-green-600">
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                       <CheckCircle2 className="h-4 w-4" />
                       {importResults.successful} users imported successfully
                     </div>

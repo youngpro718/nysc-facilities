@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { TypeFilters } from "./filters/TypeFilters";
 import { LightingFilters } from "./filters/LightingFilters";
-import { IssueFilters as IssueFiltersType, ViewMode } from "./types/FilterTypes";
+import { IssueFilters as IssueFiltersType } from "./types/FilterTypes";
 import { useState, useCallback } from "react";
 import { QuickFilters } from "./filters/QuickFilters";
 
@@ -11,7 +11,7 @@ interface IssueFiltersProps {
   onFilterChange: (filters: Partial<IssueFiltersType>) => void;
   onSearchChange: (query: string) => void;
   searchQuery: string;
-  viewMode: ViewMode;
+  viewMode?: string;
 }
 
 export const IssueFilters = ({ 
@@ -64,14 +64,4 @@ export const IssueFilters = ({
       />
     </div>
   );
-};
-
-const isValidType = (type: string): type is IssueFiltersType['type'] => {
-  return type === 'all_types' || [
-    'ACCESS_REQUEST', 'BUILDING_SYSTEMS', 'CEILING', 'CLEANING_REQUEST',
-    'CLIMATE_CONTROL', 'DOOR', 'ELECTRICAL_NEEDS', 'EMERGENCY',
-    'EXTERIOR_FACADE', 'FLAGPOLE_FLAG', 'FLOORING', 'GENERAL_REQUESTS',
-    'LEAK', 'LIGHTING', 'LOCK', 'PLUMBING_NEEDS', 'RESTROOM_REPAIR',
-    'SIGNAGE', 'WINDOW'
-  ].includes(type);
 };

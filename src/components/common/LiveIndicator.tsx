@@ -41,7 +41,7 @@ export function LiveIndicator({
           <div className="h-2 w-2 rounded-full bg-green-500" />
           <div className="absolute inset-0 h-2 w-2 rounded-full bg-green-500 animate-ping opacity-75" />
         </div>
-        <span className="font-medium text-green-600">LIVE</span>
+        <span className="font-medium text-green-600 dark:text-green-400">LIVE</span>
       </div>
 
       {/* Separator */}

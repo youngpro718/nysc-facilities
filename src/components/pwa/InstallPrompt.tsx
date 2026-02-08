@@ -96,14 +96,14 @@ export function InstallPrompt() {
       <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50 animate-in slide-in-from-bottom-5">
         <button
           onClick={handleDismiss}
-          className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 dark:bg-gray-800/30 dark:hover:bg-gray-700 transition-colors"
           aria-label="Dismiss"
         >
           <X className="h-4 w-4" />
         </button>
         
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+          <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/30 dark:bg-blue-900 rounded-lg flex items-center justify-center">
             <Download className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           
@@ -135,14 +135,14 @@ export function InstallPrompt() {
       <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50 animate-in slide-in-from-bottom-5">
         <button
           onClick={handleDismiss}
-          className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 dark:bg-gray-800/30 dark:hover:bg-gray-700 transition-colors"
           aria-label="Dismiss"
         >
           <X className="h-4 w-4" />
         </button>
         
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+          <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/30 dark:bg-blue-900 rounded-lg flex items-center justify-center">
             <Apple className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           

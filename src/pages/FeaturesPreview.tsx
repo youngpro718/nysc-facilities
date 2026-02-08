@@ -168,8 +168,8 @@ export default function FeaturesPreview() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${
-                        feature.status === 'available' ? 'bg-green-100 text-green-600' :
-                        feature.status === 'preview' ? 'bg-blue-100 text-blue-600' :
+                        feature.status === 'available' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                        feature.status === 'preview' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
                         'bg-muted text-muted-foreground'
                       }`}>
                         <IconComponent className="w-5 h-5" />
@@ -200,12 +200,12 @@ export default function FeaturesPreview() {
                   </CardDescription>
                   
                   {feature.status === 'available' && (
-                    <div className="mt-3 text-xs text-green-600 font-medium">
+                    <div className="mt-3 text-xs text-green-600 dark:text-green-400 font-medium">
                       ✓ Available now - Click to access
                     </div>
                   )}
                   {feature.status === 'preview' && (
-                    <div className="mt-3 text-xs text-blue-600 font-medium">
+                    <div className="mt-3 text-xs text-blue-600 dark:text-blue-400 font-medium">
                       👁 Preview available - Limited functionality
                     </div>
                   )}

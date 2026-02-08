@@ -62,10 +62,10 @@ export function LockboxSelector({
             <span className="text-sm font-medium">{selectedLockbox.location_description || 'No location specified'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+            <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
               {selectedLockbox.available_slots} Available
             </Badge>
-            <Badge variant="outline" className="bg-orange-500/10 text-orange-700 border-orange-500/20">
+            <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20">
               {selectedLockbox.checked_out_slots} Out
             </Badge>
           </div>

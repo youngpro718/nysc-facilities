@@ -426,7 +426,7 @@ export function EnhancedInventoryImportExport({
                   </div>
                 )}
 
-                <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
                   <h4 className="font-medium text-sm mb-2">Flexible Field Mapping</h4>
                   <p className="text-xs text-muted-foreground mb-2">
                     The import supports various column names. For example:
@@ -455,7 +455,7 @@ export function EnhancedInventoryImportExport({
               <Card>
                 <CardContent className="pt-6 space-y-3">
                   {importResults.successful > 0 && (
-                    <div className="flex items-center gap-2 text-green-600">
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                       <CheckCircle2 className="h-4 w-4" />
                       {importResults.successful} items imported successfully
                     </div>

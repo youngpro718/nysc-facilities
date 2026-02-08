@@ -110,9 +110,9 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
     <div className="space-y-6">
       {/* Completion Summary */}
       {completedActions.length > 0 && (
-        <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+        <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 dark:border-green-800 dark:bg-green-950">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
+            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400 dark:text-green-300">
               <Key className="h-5 w-5" />
               Departure Actions Completed
             </CardTitle>
@@ -130,12 +130,12 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
                   </span>
                 </div>
               ))}
-              <div className="mt-3 p-2 bg-green-100 dark:bg-green-900 rounded">
+              <div className="mt-3 p-2 bg-green-100 dark:bg-green-900/30 dark:bg-green-900 rounded">
                 <p className="text-sm text-green-800 dark:text-green-200 font-medium">
                   ✓ Total: {completedActions.length} key{completedActions.length !== 1 ? 's' : ''} successfully returned
                 </p>
                 {accessSummary.room_assignments.length > 0 && (
-                  <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                  <p className="text-xs text-green-700 dark:text-green-400 dark:text-green-300 mt-1">
                     Note: Room assignments require manual administrative removal
                   </p>
                 )}

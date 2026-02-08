@@ -228,7 +228,7 @@ export default function AdvancedAnalyticsDashboard({
                   {summary.maintenance_summary.maintenance_status.replace('_', ' ')}
                 </Badge>
                 {summary.maintenance_summary.critical_count > 0 && (
-                  <span className="text-xs text-red-600">
+                  <span className="text-xs text-red-600 dark:text-red-400">
                     {summary.maintenance_summary.critical_count} critical
                   </span>
                 )}
@@ -257,7 +257,7 @@ export default function AdvancedAnalyticsDashboard({
                 }>
                   {summary.energy_summary.efficiency_status.replace('_', ' ')}
                 </Badge>
-                <span className="text-xs text-green-600">
+                <span className="text-xs text-green-600 dark:text-green-400">
                   ${isNaN(summary.energy_summary.potential_savings) ? '0' : summary.energy_summary.potential_savings.toLocaleString()} savings
                 </span>
               </div>
@@ -409,7 +409,7 @@ export default function AdvancedAnalyticsDashboard({
                           {item.space_type} • Score: {item.maintenance_score}
                         </div>
                         {item.predicted_issues.length > 0 && (
-                          <div className="text-xs text-orange-600">
+                          <div className="text-xs text-orange-600 dark:text-orange-400">
                             {item.predicted_issues[0]}
                           </div>
                         )}
@@ -458,10 +458,10 @@ export default function AdvancedAnalyticsDashboard({
                         </Badge>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-blue-600">
+                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
                           Recommended: {rec.recommended_usage}
                         </p>
-                        <p className="text-sm text-green-600">
+                        <p className="text-sm text-green-600 dark:text-green-400">
                           {rec.potential_benefit}
                         </p>
                       </div>

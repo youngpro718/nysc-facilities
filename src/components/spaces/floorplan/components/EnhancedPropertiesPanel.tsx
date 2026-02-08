@@ -35,7 +35,7 @@ export function EnhancedPropertiesPanel({
     <Card className="h-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
         <div className="border-b border-slate-200 dark:border-slate-700 px-4 pt-4">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-700">
+          <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-800/30 dark:bg-slate-700">
             <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs">
               <Users className="h-3.5 w-3.5" />
               Overview
@@ -78,7 +78,7 @@ export function EnhancedPropertiesPanel({
                         <li key={idx} className="flex items-center justify-between">
                           <div>
                             {o.occupant?.first_name} {o.occupant?.last_name}
-                            {o.is_primary ? <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Primary</span> : null}
+                            {o.is_primary ? <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">Primary</span> : null}
                           </div>
                           <div className="text-xs text-muted-foreground">{o.assignment_type?.replace(/_/g, ' ')}</div>
                         </li>
@@ -122,7 +122,7 @@ export function EnhancedPropertiesPanel({
               />
             ) : (
               <div className="h-full flex flex-col items-center justify-center p-6 text-center">
-                <div className="p-4 bg-slate-100 dark:bg-slate-700 rounded-full mb-4">
+                <div className="p-4 bg-slate-100 dark:bg-slate-800/30 dark:bg-slate-700 rounded-full mb-4">
                   <Settings className="h-8 w-8 text-slate-400" />
                 </div>
                 <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
@@ -150,7 +150,7 @@ export function EnhancedPropertiesPanel({
                 {/* Floor Information */}
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-                    <Info className="h-5 w-5 text-blue-600" />
+                    <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     Floor Information
                   </h3>
                   <div className="space-y-3">

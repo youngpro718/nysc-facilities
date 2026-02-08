@@ -7,7 +7,6 @@ import {
   Lightbulb, 
   AlertTriangle, 
   Users, 
-  Building,
   Trash2,
   Pencil,
   ChevronRight,
@@ -245,7 +244,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
                   
                   {/* Lighting Issue Flag */}
                   {hasLightingIssue && !hasIssues && (
-                    <div className="flex items-center gap-1 text-xs text-yellow-600">
+                    <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
                       <Lightbulb className="h-3.5 w-3.5" />
                       <span>{lightingPercentage}%</span>
                     </div>

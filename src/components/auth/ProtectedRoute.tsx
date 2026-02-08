@@ -55,8 +55,8 @@ export function ProtectedRoute({
   // Don't render admin routes for non-admin users, unless they're in allowed departments or have required room assignment
   if (requireAdmin && !isAdmin) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vestigial props, not used in current routes
-    const p = profile as Record<string, unknown>;
-    const userDepartment = p?.department || p?.department_id;
+    const p = profile as unknown as Record<string, unknown>;
+    const userDepartment = (p?.department || p?.department_id) as string | undefined;
     const hasDepartmentAccess = allowDepartments.length > 0 && userDepartment && allowDepartments.includes(userDepartment);
     const hasRoomAccess = requireRoomAssignment && Array.isArray(p?.roomAssignments) &&
       p.roomAssignments.some((a: { room_number?: string }) => a.room_number === requireRoomAssignment);

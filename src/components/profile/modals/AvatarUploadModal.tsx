@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, Upload, X, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface AvatarUploadModalProps {
@@ -161,7 +161,7 @@ export function AvatarUploadModal({ open, onOpenChange, currentAvatarUrl, onAvat
                   className="flex-1"
                 >
                   {uploading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
                     <Upload className="h-4 w-4 mr-2" />
                   )}

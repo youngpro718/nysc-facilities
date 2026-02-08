@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, TrendingDown, Folder, Activity, AlertTriangle } from "lucide-react";
+import { Package, TrendingDown, Folder, Activity, AlertTriangle, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -35,8 +35,6 @@ type LowStockItem = {
 
 export const InventoryOverviewPanel = () => {
   const [range, setRange] = useState<"7d" | "30d" | "90d" | "ytd">("30d");
-  const [typeFilter, setTypeFilter] = useState<"all" | "add" | "remove" | "adjustment">("all");
-
 
   const startDate = useMemo(() => {
     const now = new Date();
@@ -56,13 +54,12 @@ export const InventoryOverviewPanel = () => {
   const {
     data: stats
   } = useQuery({
-    queryKey: ["inventory-stats", startDate.toISOString(), typeFilter],
+    queryKey: ["inventory-stats", startDate.toISOString()],
     queryFn: async () => {
       const txCountQuery = supabase
         .from("inventory_item_transactions")
         .select("*", { count: "exact" })
         .gte("created_at", startDate.toISOString());
-      if (typeFilter !== "all") txCountQuery.eq("transaction_type", typeFilter);
 
       const [itemsResult, categoriesResult, transactionsResult] = await Promise.all([
         supabase.from("inventory_items").select("id", { count: "exact" }),
@@ -99,109 +96,107 @@ export const InventoryOverviewPanel = () => {
     retry: 2
   });
 
-  const { data: analytics } = useQuery({
-    queryKey: [
-      "inventory-analytics",
-      startDate.toISOString(),
-      typeFilter,
-    ],
+  // Most Used Items — items with the most "remove" transactions in the period
+  const { data: mostUsedItems } = useQuery({
+    queryKey: ["inventory-most-used", startDate.toISOString()],
     queryFn: async () => {
-      // Fetch transactions in range (optionally filtered by type)
-      let txQuery = supabase
+      const { data: txs, error } = await supabase
         .from("inventory_item_transactions")
-        .select("id,item_id,transaction_type,quantity,created_at")
+        .select("item_id,quantity")
+        .eq("transaction_type", "remove")
         .gte("created_at", startDate.toISOString());
-      if (typeFilter !== "all") txQuery = txQuery.eq("transaction_type", typeFilter);
-      const { data: txs, error: txError } = await txQuery;
-      if (txError) throw txError;
+      if (error) throw error;
 
-      const byDay: Record<string, { adds: number; removes: number; adjustments: number; net: number }> = {};
-      let adds = 0, removes = 0, adjustments = 0;
-      const removedByItem = new Map<string, number>();
-
+      // Aggregate quantity removed per item
+      const byItem = new Map<string, number>();
       for (const t of txs || []) {
-        const day = format(new Date(t.created_at as string), "yyyy-MM-dd");
-        if (!byDay[day]) byDay[day] = { adds: 0, removes: 0, adjustments: 0, net: 0 };
-        if (t.transaction_type === "add") {
-          byDay[day].adds += t.quantity || 0;
-          adds += t.quantity || 0;
-          byDay[day].net += t.quantity || 0;
-        } else if (t.transaction_type === "remove") {
-          byDay[day].removes += t.quantity || 0;
-          removes += t.quantity || 0;
-          byDay[day].net -= t.quantity || 0;
-          if (t.item_id) {
-            removedByItem.set(t.item_id, (removedByItem.get(t.item_id) || 0) + (t.quantity || 0));
-          }
-        } else if (t.transaction_type === "adjustment") {
-          adjustments += t.quantity || 0;
-          byDay[day].adjustments += t.quantity || 0;
+        if (t.item_id) {
+          byItem.set(t.item_id, (byItem.get(t.item_id) || 0) + (t.quantity || 0));
         }
       }
 
-      const netFlow = adds - removes;
+      const topIds = Array.from(byItem.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
 
-      // Fetch item names and categories for removed items
-      const itemIds = Array.from(removedByItem.keys());
-      let itemsById = new Map<string, { name: string; category_id: string | null }>();
-      if (itemIds.length > 0) {
-        const { data: itemsData } = await supabase
-          .from("inventory_items")
-          .select("id,name,category_id")
-          .in("id", itemIds);
-        for (const it of itemsData || []) {
-          itemsById.set(it.id, { name: it.name, category_id: it.category_id });
+      if (topIds.length === 0) return [];
+
+      // Fetch item names
+      const { data: items } = await supabase
+        .from("inventory_items")
+        .select("id,name")
+        .in("id", topIds.map(([id]) => id));
+      const namesById = new Map((items || []).map(i => [i.id, i.name]));
+
+      return topIds.map(([id, qty]) => ({
+        id,
+        name: namesById.get(id) || "Unknown Item",
+        total_used: qty,
+      }));
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+
+  // Usage by Room — which rooms/offices consume the most inventory
+  const { data: usageByRoom } = useQuery({
+    queryKey: ["inventory-usage-by-room", startDate.toISOString()],
+    queryFn: async () => {
+      const { data: txs, error } = await supabase
+        .from("inventory_item_transactions")
+        .select("item_id,quantity")
+        .eq("transaction_type", "remove")
+        .gte("created_at", startDate.toISOString());
+      if (error) throw error;
+
+      // Aggregate quantity removed per item
+      const byItem = new Map<string, number>();
+      for (const t of txs || []) {
+        if (t.item_id) {
+          byItem.set(t.item_id, (byItem.get(t.item_id) || 0) + (t.quantity || 0));
         }
       }
 
-      // Build top items removed
-      const topItemsRemoved = Array.from(removedByItem.entries())
-        .map(([item_id, qty]) => ({
-          item_id,
-          name: itemsById.get(item_id)?.name || "Unknown Item",
-          quantity: qty,
-        }))
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5);
+      if (byItem.size === 0) return [];
 
-      // Build top categories removed
-      const categoryTotals = new Map<string | null, number>();
-      for (const [item_id, qty] of removedByItem.entries()) {
-        const catId = itemsById.get(item_id)?.category_id ?? null;
-        categoryTotals.set(catId, (categoryTotals.get(catId) || 0) + qty);
+      // Fetch items with their storage room
+      const { data: items } = await supabase
+        .from("inventory_items")
+        .select("id,storage_room_id")
+        .in("id", Array.from(byItem.keys()));
+
+      // Aggregate by room
+      const byRoom = new Map<string, number>();
+      for (const item of items || []) {
+        if (item.storage_room_id) {
+          const qty = byItem.get(item.id) || 0;
+          byRoom.set(item.storage_room_id, (byRoom.get(item.storage_room_id) || 0) + qty);
+        }
       }
-      const catIds = Array.from(new Set(Array.from(categoryTotals.keys()).filter((id): id is string => !!id)));
-      const categoriesById = new Map<string, string>();
-      if (catIds.length > 0) {
-        const { data: catsData } = await supabase
-          .from("inventory_categories")
-          .select("id,name")
-          .in("id", catIds);
-        for (const c of catsData || []) categoriesById.set(c.id, c.name);
-      }
-      const topCategoriesRemoved = Array.from(categoryTotals.entries())
-        // Exclude items without a category to avoid showing fallback labels
-        .filter(([category_id]) => !!category_id)
-        .map(([category_id, qty]) => ({
-          category_id,
-          name: categoriesById.get(category_id as string) || "Unknown Category",
-          quantity: qty,
-        }))
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5);
 
-      const trend = Object.entries(byDay)
-        .map(([date, v]) => ({ date, ...v }))
-        .sort((a, b) => (a.date < b.date ? 1 : -1))
-        .slice(0, 7);
+      const topRooms = Array.from(byRoom.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
 
-      return {
-        netFlow,
-        totals: { adds, removes, adjustments },
-        trend,
-        topItemsRemoved,
-        topCategoriesRemoved,
-      } as const;
+      if (topRooms.length === 0) return [];
+
+      // Fetch room names
+      const { data: rooms } = await supabase
+        .from("rooms")
+        .select("id,name,room_number")
+        .in("id", topRooms.map(([id]) => id));
+      const roomsById = new Map((rooms || []).map(r => [r.id, r]));
+
+      return topRooms.map(([id, qty]) => {
+        const room = roomsById.get(id);
+        return {
+          id,
+          name: room ? `${room.name}${room.room_number ? ` (${room.room_number})` : ""}` : "Unknown Room",
+          total_used: qty,
+        };
+      });
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
@@ -211,23 +206,21 @@ export const InventoryOverviewPanel = () => {
   const {
     data: recentTransactions
   } = useQuery({
-    queryKey: ["recent-transactions", startDate.toISOString(), typeFilter],
+    queryKey: ["recent-transactions", startDate.toISOString()],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("inventory_item_transactions")
-        .select(
-          `
+        .select(`
           id,
           transaction_type,
           quantity,
           created_at,
           performed_by,
           item_id
-        `
-        )
-        .gte("created_at", startDate.toISOString());
-      if (typeFilter !== "all") query = query.eq("transaction_type", typeFilter);
-      const { data, error } = await query.order("created_at", { ascending: false }).limit(5);
+        `)
+        .gte("created_at", startDate.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(5);
       if (error) {
         logger.error('Error fetching transactions:', error);
         return [];
@@ -294,24 +287,24 @@ export const InventoryOverviewPanel = () => {
       );
 
       // Enrich with category names
-      const categoryIds = Array.from(new Set(filteredItems.map((i: Record<string, unknown>) => i.category_id).filter(Boolean)));
+      const categoryIds = Array.from(new Set(filteredItems.map((i) => i.category_id).filter(Boolean))) as string[];
       const categoriesById = new Map<string, string>();
       if (categoryIds.length > 0) {
         const { data: cats } = await supabase
           .from("inventory_categories")
           .select("id,name")
-          .in("id", categoryIds as string[]);
-        for (const c of (cats || []) as unknown[]) categoriesById.set(c.id, c.name);
+          .in("id", categoryIds);
+        for (const c of cats || []) categoriesById.set(c.id, c.name);
       }
 
       const limited = filteredItems.slice(0, 5); // Limit to 5 items
-      return limited.map((item: Record<string, unknown>) => ({
+      return limited.map((item) => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity,
         minimum_quantity: item.minimum_quantity,
         // Only include a category name if we have one; otherwise leave undefined/null
-        category_name: categoriesById.get(item.category_id) ?? null
+        category_name: item.category_id ? categoriesById.get(item.category_id) ?? null : null
       })) as LowStockItem[];
     },
     staleTime: 2 * 60 * 1000,
@@ -336,45 +329,30 @@ export const InventoryOverviewPanel = () => {
   const getTransactionColor = (type: string) => {
     switch (type) {
       case "add":
-        return "text-green-600";
+        return "text-green-600 dark:text-green-400";
       case "remove":
-        return "text-red-600";
+        return "text-red-600 dark:text-red-400";
       case "adjustment":
-        return "text-blue-600";
+        return "text-blue-600 dark:text-blue-400";
       default:
         return "text-gray-600";
     }
   };
   return <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-[180px]">
-            <Select value={range} onValueChange={(v) => setRange(v as unknown)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Time Range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7d">Last 7 days</SelectItem>
-                <SelectItem value="30d">Last 30 days</SelectItem>
-                <SelectItem value="90d">Last 90 days</SelectItem>
-                <SelectItem value="ytd">Year to date</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-[220px]">
-            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as unknown)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Transaction Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="add">Adds</SelectItem>
-                <SelectItem value="remove">Removes</SelectItem>
-                <SelectItem value="adjustment">Adjustments</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Time Range Filter */}
+      <div className="flex items-center gap-3">
+        <div className="w-[180px]">
+          <Select value={range} onValueChange={(v) => setRange(v as typeof range)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Time Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="ytd">Year to date</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -425,75 +403,28 @@ export const InventoryOverviewPanel = () => {
         </Card>
       </div>
 
-      {/* Analytics: Trends and Top Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Trends */}
+      {/* Usage Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Most Used Items */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Trends (range)
+              <Package className="h-5 w-5" />
+              Most Used Items
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!analytics ? (
-              <p className="text-muted-foreground text-center py-4">Loading...</p>
+            {!mostUsedItems || mostUsedItems.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">No usage data yet</p>
             ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Adds</span>
-                  <span className="font-medium">{analytics.totals.adds || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Removes</span>
-                  <span className="font-medium">{analytics.totals.removes || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Adjustments</span>
-                  <span className="font-medium">{analytics.totals.adjustments || 0}</span>
-                </div>
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-sm">Net Flow</span>
-                  <span className={`font-semibold ${((analytics.netFlow || 0) >= 0) ? "text-green-600" : "text-red-600"}`}>
-                    {(analytics.netFlow || 0) >= 0 ? "+" : ""}{analytics.netFlow || 0}
-                  </span>
-                </div>
-                <div className="pt-2">
-                  <p className="text-xs text-muted-foreground mb-1">Recent days</p>
-                  <div className="space-y-1">
-                    {analytics.trend.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">No activity</p>
-                    ) : (
-                      analytics.trend.map((d) => (
-                        <div key={d.date} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{d.date}</span>
-                          <span className="font-medium">
-                            {d.net >= 0 ? "+" : ""}{d.net} (A {d.adds} | R {d.removes} | Adj {d.adjustments})
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Top Items Removed */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Items Removed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!analytics || analytics.topItemsRemoved.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No data</p>
-            ) : (
-              <div className="space-y-2">
-                {analytics.topItemsRemoved.map((it) => (
-                  <div key={it.item_id} className="flex items-center justify-between">
-                    <span className="text-sm text-foreground">{it.name}</span>
-                    <Badge variant="outline">{it.quantity}</Badge>
+              <div className="space-y-3">
+                {mostUsedItems.map((item, i) => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-muted-foreground w-5">{i + 1}.</span>
+                      <span className="text-sm font-medium">{item.name}</span>
+                    </div>
+                    <Badge variant="secondary">{item.total_used} used</Badge>
                   </div>
                 ))}
               </div>
@@ -501,20 +432,26 @@ export const InventoryOverviewPanel = () => {
           </CardContent>
         </Card>
 
-        {/* Top Categories Removed */}
+        {/* Usage by Room */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Categories Removed</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Usage by Room
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {!analytics || analytics.topCategoriesRemoved.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No data</p>
+            {!usageByRoom || usageByRoom.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">No usage data yet</p>
             ) : (
-              <div className="space-y-2">
-                {analytics.topCategoriesRemoved.map((c) => (
-                  <div key={c.category_id ?? "uncategorized"} className="flex items-center justify-between">
-                    <span className="text-sm text-foreground">{c.name}</span>
-                    <Badge variant="outline">{c.quantity}</Badge>
+              <div className="space-y-3">
+                {usageByRoom.map((room, i) => (
+                  <div key={room.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-muted-foreground w-5">{i + 1}.</span>
+                      <span className="text-sm font-medium">{room.name}</span>
+                    </div>
+                    <Badge variant="secondary">{room.total_used} items</Badge>
                   </div>
                 ))}
               </div>

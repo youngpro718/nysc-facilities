@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
+import { StaffActivityPanel } from "@/components/tasks/StaffActivityPanel";
 
 
 export default function Tasks() {
@@ -363,7 +364,7 @@ export default function Tasks() {
       ) : (
         // Default tabs for managers/admins
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="pending" className="gap-2">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">Pending</span>
@@ -381,6 +382,10 @@ export default function Tasks() {
                   {activeTasks.length}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="staff" className="gap-2">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Staff Activity</span>
             </TabsTrigger>
             <TabsTrigger value="completed" className="gap-2">
               <CheckCircle2 className="h-4 w-4" />
@@ -424,6 +429,10 @@ export default function Tasks() {
                 {renderTaskList(activeTasks, "No active tasks")}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="staff" className="mt-6">
+            <StaffActivityPanel />
           </TabsContent>
 
           <TabsContent value="completed" className="mt-6">

@@ -103,11 +103,11 @@ export function StorageFields({ form }: StorageFieldsProps) {
         {isStorage && (
           <>
             {form.getValues("originalRoomType") && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
                   <strong>Original Room Type:</strong> {form.getValues("originalRoomType")?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                   <br />
-                  <span className="text-blue-600">This room is temporarily being used as storage.</span>
+                  <span className="text-blue-600 dark:text-blue-400">This room is temporarily being used as storage.</span>
                 </p>
               </div>
             )}

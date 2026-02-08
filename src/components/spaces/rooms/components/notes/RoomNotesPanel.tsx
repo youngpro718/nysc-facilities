@@ -31,16 +31,16 @@ export function RoomNotesPanel({ roomId, compact = false }: RoomNotesPanelProps)
 
   const getSeverityColor = (severity: NoteSeverity | null) => {
     switch (severity) {
-      case 'high': return 'border-l-red-500 bg-red-50 dark:bg-red-950/20';
+      case 'high': return 'border-l-red-500 bg-red-50 dark:bg-red-950/30 dark:bg-red-950/20';
       case 'medium': return 'border-l-amber-500 bg-amber-50 dark:bg-amber-950/20';
-      default: return 'border-l-blue-500 bg-blue-50 dark:bg-blue-950/20';
+      default: return 'border-l-blue-500 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950/20';
     }
   };
 
   const getSeverityBadge = (severity: NoteSeverity | null) => {
     switch (severity) {
       case 'high': return <Badge variant="destructive" className="text-[10px] px-1 py-0">High</Badge>;
-      case 'medium': return <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-amber-100 text-amber-800">Medium</Badge>;
+      case 'medium': return <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-amber-100 dark:bg-amber-900/30 text-amber-800">Medium</Badge>;
       default: return <Badge variant="outline" className="text-[10px] px-1 py-0">Low</Badge>;
     }
   };
@@ -187,7 +187,7 @@ export function RoomNotesPanel({ roomId, compact = false }: RoomNotesPanelProps)
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 text-[10px] px-2 text-green-600 hover:text-green-700"
+                    className="h-6 text-[10px] px-2 text-green-600 dark:text-green-400 hover:text-green-700 dark:text-green-400"
                     onClick={() => handleResolve(note)}
                     disabled={updateNote.isPending}
                   >

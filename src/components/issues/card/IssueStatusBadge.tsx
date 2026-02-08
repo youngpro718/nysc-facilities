@@ -12,17 +12,17 @@ export const getStatusStyle = (status: string): StatusStyle => {
     case 'open':
       return {
         icon: <AlertCircle className="h-5 w-5 text-yellow-500" />,
-        badge: 'border-yellow-500 text-yellow-700 bg-yellow-50'
+        badge: 'border-yellow-500 text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30'
       };
     case 'in_progress':
       return {
         icon: <Clock className="h-5 w-5 text-blue-500" />,
-        badge: 'border-blue-500 text-blue-700 bg-blue-50'
+        badge: 'border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30'
       };
     case 'resolved':
       return {
         icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-        badge: 'border-green-500 text-green-700 bg-green-50'
+        badge: 'border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30'
       };
     default:
       return {

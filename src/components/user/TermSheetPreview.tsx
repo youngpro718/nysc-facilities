@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react';
+import { Loader2 } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -156,7 +157,7 @@ export function TermSheetPreview({
       <CardContent className="pt-0">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : filteredAssignments.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground text-sm">

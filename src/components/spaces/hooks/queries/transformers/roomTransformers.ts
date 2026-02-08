@@ -41,7 +41,7 @@ export const transformRoomData = (
         id: issue.id,
         title: issue.title,
         status: issue.status,
-        type: issue.type,
+        type: issue.issue_type,
         priority: issue.priority,
         created_at: issue.created_at
       })),

@@ -279,7 +279,7 @@ function FloorPlanCanvasInner({
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Topology tools bar - Desktop only */}
       {!isMobile && (
-        <div className="absolute top-2 left-2 z-10 bg-white/90 dark:bg-slate-800/90 rounded-md px-2 py-1.5 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="absolute top-2 left-2 z-10 bg-white/90 dark:bg-slate-900/90 dark:bg-slate-800/90 rounded-md px-2 py-1.5 border border-slate-200 dark:border-slate-700 shadow-sm">
           <div className="flex flex-col gap-1.5">
             {/* Main toolbar row */}
             <div className="flex items-center gap-1.5 flex-wrap">

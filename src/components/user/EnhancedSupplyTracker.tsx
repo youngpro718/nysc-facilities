@@ -83,10 +83,10 @@ interface EnhancedSupplyTrackerProps {
 }
 
 const SUPPLY_STAGES = [
-  { key: 'submitted', label: 'Submitted', icon: ClipboardCheck, color: 'text-yellow-600' },
-  { key: 'received', label: 'Received', icon: Clock, color: 'text-blue-600' },
-  { key: 'picking', label: 'Picking Items', icon: Box, color: 'text-purple-600' },
-  { key: 'ready', label: 'Ready for Pickup', icon: Package, color: 'text-green-600' },
+  { key: 'submitted', label: 'Submitted', icon: ClipboardCheck, color: 'text-yellow-600 dark:text-yellow-400' },
+  { key: 'received', label: 'Received', icon: Clock, color: 'text-blue-600 dark:text-blue-400' },
+  { key: 'picking', label: 'Picking Items', icon: Box, color: 'text-purple-600 dark:text-purple-400' },
+  { key: 'ready', label: 'Ready for Pickup', icon: Package, color: 'text-green-600 dark:text-green-400' },
   { key: 'completed', label: 'Completed', icon: CheckCircle, color: 'text-emerald-600' },
 ];
 

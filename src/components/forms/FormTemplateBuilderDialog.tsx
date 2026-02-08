@@ -218,7 +218,7 @@ export function FormTemplateBuilderDialog({
                       size="icon"
                       onClick={() => deleteSection(section.id)}
                     >
-                      <Trash2 className="h-4 w-4 text-red-600" />
+                      <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                     </Button>
                   </div>
                 </Card>
@@ -301,7 +301,7 @@ export function FormTemplateBuilderDialog({
                               size="icon"
                               onClick={() => deleteField(field.id)}
                             >
-                              <Trash2 className="h-4 w-4 text-red-600" />
+                              <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                             </Button>
                           </div>
                         </div>

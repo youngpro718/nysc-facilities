@@ -43,9 +43,9 @@ export default function Users() {
 
   const getVerificationStatusColor = (status: string) => {
     switch (status) {
-      case 'verified': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-yellow-100 text-yellow-800';
+      case 'verified': return 'bg-green-100 dark:bg-green-900/30 text-green-800';
+      case 'rejected': return 'bg-red-100 dark:bg-red-900/30 text-red-800';
+      default: return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800';
     }
   };
 

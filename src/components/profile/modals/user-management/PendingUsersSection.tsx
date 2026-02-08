@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserCheck, UserX, Mail, Clock, AlertCircle, ShieldCheck } from "lucide-react";
+import { UserCheck, UserX, Mail, Clock, AlertCircle, ShieldCheck, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
@@ -51,7 +51,7 @@ export function PendingUsersSection({
   if (loading) {
     return (
       <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -87,7 +87,7 @@ export function PendingUsersSection({
                 <div className="space-y-1">
                   <CardTitle className="text-lg flex items-center gap-2">
                     {user.first_name} {user.last_name}
-                    <Badge variant="outline" className="text-yellow-700 border-yellow-500">
+                    <Badge variant="outline" className="text-yellow-700 dark:text-yellow-400 border-yellow-500">
                       <Clock className="h-3 w-3 mr-1" />
                       Pending
                     </Badge>
@@ -118,7 +118,7 @@ export function PendingUsersSection({
                     size="sm"
                     variant="outline"
                     onClick={() => onReject(user.id)}
-                    className="border-red-300 text-red-600 hover:bg-red-50"
+                    className="border-red-300 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30"
                   >
                     <UserX className="h-4 w-4 mr-2" />
                     Reject

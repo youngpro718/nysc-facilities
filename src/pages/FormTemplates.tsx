@@ -280,7 +280,7 @@ export default function FormTemplates() {
                         </Button>
                       </div>
                       
-                      <div className="bg-green-50 dark:bg-green-950 p-2 rounded text-xs text-green-700 dark:text-green-300 text-center">
+                      <div className="bg-green-50 dark:bg-green-950/30 dark:bg-green-950 p-2 rounded text-xs text-green-700 dark:text-green-400 dark:text-green-300 text-center">
                         ✨ Online form submits instantly - no email needed!
                       </div>
                     </>
@@ -346,7 +346,7 @@ export default function FormTemplates() {
           <CardTitle>How Forms Work</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
             <h4 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">Forms are an alternative way to submit requests</h4>
             <p className="text-sm text-blue-800 dark:text-blue-200">
               All form submissions are logged and tracked in the app system, just like direct app submissions. 
@@ -374,7 +374,7 @@ export default function FormTemplates() {
               <li><strong>Submit:</strong> Click submit - your request is instantly logged in the system</li>
               <li><strong>Track:</strong> You'll receive email updates as your request is processed</li>
             </ol>
-            <div className="mt-2 p-2 bg-green-50 dark:bg-green-950 rounded text-xs text-green-700 dark:text-green-300">
+            <div className="mt-2 p-2 bg-green-50 dark:bg-green-950/30 dark:bg-green-950 rounded text-xs text-green-700 dark:text-green-400 dark:text-green-300">
               ✨ <strong>Benefits:</strong> No downloads, no email attachments, instant submission, mobile-friendly!
             </div>
           </div>

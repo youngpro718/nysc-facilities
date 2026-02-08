@@ -55,7 +55,7 @@ export function EnhancedAccessDenied({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
             {title}
           </CardTitle>
         </CardHeader>

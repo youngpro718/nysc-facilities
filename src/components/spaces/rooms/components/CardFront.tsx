@@ -2,7 +2,7 @@
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag, AlertTriangle, Phone, Building, Pencil, Layers } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users, Lightbulb, ShoppingBag, AlertTriangle, Building, Pencil, Layers } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { RoomLightingManager } from "./lighting/RoomLightingManager";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
@@ -188,7 +188,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
               </div>
               <div className="text-xl font-bold">{room.current_occupants.length}</div>
               <div className="text-xs text-muted-foreground truncate mt-1">
-                {room.current_occupants[0]?.first_name} {room.current_occupants[0]?.last_name}
+                {(room.current_occupants[0] as Record<string, string>)?.first_name} {(room.current_occupants[0] as Record<string, string>)?.last_name}
                 {room.current_occupants.length > 1 && ` +${room.current_occupants.length - 1}`}
               </div>
             </div>

@@ -169,19 +169,19 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
               <SelectContent>
                 <SelectItem value="add">
                   <div className="flex items-center gap-2">
-                    <Plus className="h-4 w-4 text-green-600" />
+                    <Plus className="h-4 w-4 text-green-600 dark:text-green-400" />
                     Add Stock
                   </div>
                 </SelectItem>
                 <SelectItem value="remove">
                   <div className="flex items-center gap-2">
-                    <Minus className="h-4 w-4 text-red-600" />
+                    <Minus className="h-4 w-4 text-red-600 dark:text-red-400" />
                     Remove Stock
                   </div>
                 </SelectItem>
                 <SelectItem value="adjustment">
                   <div className="flex items-center gap-2">
-                    <RotateCw className="h-4 w-4 text-blue-600" />
+                    <RotateCw className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     Set Exact Amount
                   </div>
                 </SelectItem>

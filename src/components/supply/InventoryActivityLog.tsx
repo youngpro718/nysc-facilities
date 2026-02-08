@@ -77,9 +77,9 @@ export function InventoryActivityLog({ itemId, limit = 50 }: InventoryActivityLo
 
   const getTransactionIcon = (type: string) => {
     if (type === 'add' || type === 'restock' || type === 'adjustment_increase') {
-      return <TrendingUp className="h-4 w-4 text-green-600" />;
+      return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />;
     }
-    return <TrendingDown className="h-4 w-4 text-red-600" />;
+    return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />;
   };
 
   const getTransactionBadge = (type: string) => {
@@ -102,7 +102,7 @@ export function InventoryActivityLog({ itemId, limit = 50 }: InventoryActivityLo
     
     return (
       <div className="text-right">
-        <div className={`text-lg font-semibold ${isIncrease ? 'text-green-600' : 'text-red-600'}`}>
+        <div className={`text-lg font-semibold ${isIncrease ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
           {isIncrease ? '+' : ''}{change} {transaction.inventory_items?.unit || 'units'}
         </div>
         <div className="text-xs text-muted-foreground">

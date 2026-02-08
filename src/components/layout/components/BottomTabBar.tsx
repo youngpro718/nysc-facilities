@@ -1,12 +1,13 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { NavigationTab } from "../types";
+import { NavigationTab, Tab } from "../types";
 import { useAuth } from "@/hooks/useAuth";
 import { MoreHorizontal } from "lucide-react";
 import { useSupplyPendingCounts } from "@/hooks/useSupplyPendingCounts";
 import { useStaffTasksPendingCounts } from "@/hooks/useStaffTasksPendingCounts";
 import { Badge } from "@/components/ui/badge";
+import { getNavigationPath } from "../utils/navigationPaths";
 
 interface BottomTabBarProps {
   navigation: NavigationTab[];
@@ -20,7 +21,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
   const { data: supplyCounts } = useSupplyPendingCounts();
   const { data: staffTaskCounts } = useStaffTasksPendingCounts();
 
-  const items = navigation.filter((i) => ((i as Record<string, unknown>)).title) as Array<{ title: string; icon: unknown }>;
+  const items = navigation.filter((i): i is Tab => 'title' in i);
   const primary = items.slice(0, 4);
   const hasMore = items.length > 4;
 
@@ -132,31 +133,3 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
   );
 };
 
-function getNavigationPath(title: string, isAdmin?: boolean): string {
-  const pathMap: Record<string, string> = {
-    Dashboard: isAdmin ? "/" : "/dashboard",
-    "New Request": "/request",
-    Spaces: "/spaces",
-    Operations: "/operations",
-    Issues: "/operations?tab=issues",
-    "Access & Assignments": "/access-assignments",
-    Occupants: "/occupants",
-    Inventory: "/inventory",
-    "Supply Requests": "/admin/supply-requests",
-    "Supply Room": "/supply-room",
-    "Supplies": "/tasks",
-    "Tasks": "/tasks",
-    Keys: "/keys",
-    Lighting: "/lighting",
-    Maintenance: "/operations?tab=maintenance",
-    "Court Operations": "/court-operations",
-    "My Activity": "/my-activity",
-    "My Requests": "/my-activity?tab=keys",
-    "My Issues": "/my-activity?tab=issues",
-    "Admin Center": "/admin",
-    "Admin Profile": "/admin", // Legacy fallback
-    Profile: "/profile",
-    "System Settings": "/system-settings",
-  };
-  return pathMap[title] || "/";
-}

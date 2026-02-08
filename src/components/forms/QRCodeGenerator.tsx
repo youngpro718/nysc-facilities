@@ -101,7 +101,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
             <div className="bg-white p-12 text-black">
               <div className="text-center space-y-8">
                 <div>
-                  <h1 className="text-5xl font-bold text-blue-600 mb-4">NYSC Facilities</h1>
+                  <h1 className="text-5xl font-bold text-blue-600 dark:text-blue-400 mb-4">NYSC Facilities</h1>
                   <h2 className="text-3xl font-semibold mb-2">Request Forms</h2>
                   <p className="text-xl text-gray-600">No Account Needed</p>
                 </div>
@@ -119,7 +119,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
 
                 <div className="space-y-4">
                   <p className="text-2xl font-semibold">Scan with your phone camera</p>
-                  <div className="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
+                  <div className="bg-blue-50 dark:bg-blue-950/30 p-6 rounded-lg border-2 border-blue-200 dark:border-blue-800">
                     <p className="text-lg mb-4 font-semibold">Available Forms:</p>
                     <ul className="text-left space-y-2 text-base max-w-2xl mx-auto">
                       <li>• Key & Elevator Pass Requests</li>
@@ -132,7 +132,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
 
                 <div className="border-t-2 border-gray-300 pt-6 space-y-2">
                   <p className="text-lg font-semibold">Or visit:</p>
-                  <p className="text-xl font-mono text-blue-600">{publicFormsUrl}</p>
+                  <p className="text-xl font-mono text-blue-600 dark:text-blue-400">{publicFormsUrl}</p>
                   <p className="text-base text-gray-600 mt-4">Email: {facilityEmail} | Phone: (555) 123-4567</p>
                 </div>
               </div>
@@ -145,7 +145,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
               <div className="bg-white p-8 text-black border-2 border-dashed border-gray-300 rounded-lg">
                 <div className="text-center space-y-6 scale-50 origin-top">
                   <div>
-                    <h1 className="text-5xl font-bold text-blue-600 mb-4">NYSC Facilities</h1>
+                    <h1 className="text-5xl font-bold text-blue-600 dark:text-blue-400 mb-4">NYSC Facilities</h1>
                     <h2 className="text-3xl font-semibold mb-2">Request Forms</h2>
                     <p className="text-xl text-gray-600">No Account Needed</p>
                   </div>
@@ -163,7 +163,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
 
                   <div className="space-y-4">
                     <p className="text-2xl font-semibold">Scan with your phone camera</p>
-                    <div className="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-6 rounded-lg border-2 border-blue-200 dark:border-blue-800">
                       <p className="text-lg mb-4 font-semibold">Available Forms:</p>
                       <ul className="text-left space-y-2 text-base max-w-2xl mx-auto">
                         <li>• Key & Elevator Pass Requests</li>
@@ -176,7 +176,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
 
                   <div className="border-t-2 border-gray-300 pt-6 space-y-2">
                     <p className="text-lg font-semibold">Or visit:</p>
-                    <p className="text-xl font-mono text-blue-600">{publicFormsUrl}</p>
+                    <p className="text-xl font-mono text-blue-600 dark:text-blue-400">{publicFormsUrl}</p>
                     <p className="text-base text-gray-600 mt-4">Email: {facilityEmail} | Phone: (555) 123-4567</p>
                   </div>
                 </div>

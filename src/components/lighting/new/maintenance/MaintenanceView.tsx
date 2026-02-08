@@ -144,7 +144,7 @@ export function MaintenanceView() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{maintenanceStats?.overdueCount || 0}</div>
-            <p className="text-xs text-red-600 mt-1">Requires immediate attention</p>
+            <p className="text-xs text-red-600 dark:text-red-400 mt-1">Requires immediate attention</p>
           </CardContent>
         </Card>
 
@@ -157,7 +157,7 @@ export function MaintenanceView() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{maintenanceStats?.scheduledCount || 0}</div>
-            <p className="text-xs text-blue-600 mt-1">Upcoming maintenance tasks</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Upcoming maintenance tasks</p>
           </CardContent>
         </Card>
 
@@ -170,7 +170,7 @@ export function MaintenanceView() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{maintenanceStats?.completedThisMonth || 0}</div>
-            <p className="text-xs text-green-600 mt-1">Avg resolution: {maintenanceStats?.averageResolutionDays} days</p>
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1">Avg resolution: {maintenanceStats?.averageResolutionDays} days</p>
           </CardContent>
         </Card>
 
@@ -320,7 +320,7 @@ export function MaintenanceView() {
                         )}
                       </div>
                       {task.notes && (
-                        <p className="text-xs text-green-600 mt-1">{task.notes}</p>
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">{task.notes}</p>
                       )}
                     </div>
                     <Button variant="outline" size="sm">View Details</Button>

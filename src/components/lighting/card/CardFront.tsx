@@ -211,7 +211,7 @@ export function CardFront({
       case 'emergency':
         return <Badge variant="destructive" className="text-xs">Emergency</Badge>;
       case 'motion_sensor':
-        return <Badge variant="outline" className="text-xs bg-blue-50 text-blue-800">Motion Sensor</Badge>;
+        return <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-800">Motion Sensor</Badge>;
       default:
         return <Badge variant="outline" className="text-xs">Standard</Badge>;
     }
@@ -467,7 +467,7 @@ export function CardFront({
         <div className="mt-auto pt-2">
           {showDeleteConfirm ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-red-600">Confirm?</span>
+              <span className="text-xs text-red-600 dark:text-red-400">Confirm?</span>
               <Button variant="destructive" size="sm" onClick={onDelete}>Yes</Button>
               <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>No</Button>
             </div>

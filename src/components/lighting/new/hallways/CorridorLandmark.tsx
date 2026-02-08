@@ -32,7 +32,7 @@ export function CorridorLandmark({ landmark, onClick }: CorridorLandmarkProps) {
       case 'transit_door':
         return <DoorClosed className="h-4 w-4 text-amber-600" />;
       case 'private_hallway':
-        return <GitFork className="h-4 w-4 text-purple-600" />;
+        return <GitFork className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
       case 'fire_exit':
         return <LogOut className="h-4 w-4 text-red-500" />;
       default:

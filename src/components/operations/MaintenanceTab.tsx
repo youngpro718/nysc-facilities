@@ -63,34 +63,34 @@ export function MaintenanceTab({
 
       {/* Maintenance Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950 dark:border-orange-800">
+        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 dark:bg-orange-950 dark:border-orange-800">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-orange-800 dark:text-orange-200">In Progress</p>
-                <p className="text-2xl font-bold text-orange-600">{enhancedMetrics.maintenanceInProgress}</p>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.maintenanceInProgress}</p>
               </div>
               <Clock className="h-8 w-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950 dark:border-blue-800">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Scheduled</p>
-                <p className="text-2xl font-bold text-blue-600">{enhancedMetrics.maintenanceScheduled}</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.maintenanceScheduled}</p>
               </div>
               <Calendar className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+        <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 dark:bg-green-950 dark:border-green-800">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-800 dark:text-green-200">Completed</p>
-                <p className="text-2xl font-bold text-green-600">{completedCount}</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{completedCount}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>

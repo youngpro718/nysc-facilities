@@ -103,10 +103,10 @@ export function AnalyticsDashboard({ objects, selectedFloorName }: AnalyticsDash
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 border-green-200';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'inactive': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'active': return 'bg-green-100 dark:bg-green-900/30 text-green-800 border-green-200 dark:border-green-800';
+      case 'maintenance': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 border-yellow-200 dark:border-yellow-800';
+      case 'inactive': return 'bg-red-100 dark:bg-red-900/30 text-red-800 border-red-200 dark:border-red-800';
+      default: return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800 border-gray-200';
     }
   };
 
@@ -131,14 +131,14 @@ export function AnalyticsDashboard({ objects, selectedFloorName }: AnalyticsDash
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-blue-600" />
+            <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             Floor Analytics
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {selectedFloorName || 'Current Floor'} • Real-time insights
           </p>
         </div>
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+        <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
           Live Data
         </Badge>
       </div>
@@ -261,7 +261,7 @@ export function AnalyticsDashboard({ objects, selectedFloorName }: AnalyticsDash
           <h4 className="font-medium text-slate-900 dark:text-slate-100">Insights</h4>
         </div>
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-900/20 rounded-lg">
             <span className="text-sm text-slate-700 dark:text-slate-300">
               Spaces with lighting data
             </span>
@@ -270,7 +270,7 @@ export function AnalyticsDashboard({ objects, selectedFloorName }: AnalyticsDash
             </Badge>
           </div>
           
-          <div className="flex items-center justify-between p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+          <div className="flex items-center justify-between p-2 bg-yellow-50 dark:bg-yellow-950/30 dark:bg-yellow-900/20 rounded-lg">
             <span className="text-sm text-slate-700 dark:text-slate-300">
               Spaces requiring attention
             </span>
@@ -279,7 +279,7 @@ export function AnalyticsDashboard({ objects, selectedFloorName }: AnalyticsDash
             </Badge>
           </div>
           
-          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/30 dark:bg-green-900/20 rounded-lg">
             <span className="text-sm text-slate-700 dark:text-slate-300">
               Average space size
             </span>

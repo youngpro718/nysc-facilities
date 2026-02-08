@@ -101,7 +101,7 @@ export function HallwayWalkthroughTab() {
                             {issueCount} issue{issueCount !== 1 ? 's' : ''}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 border-green-200">
+                          <Badge variant="outline" className="gap-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
                             <CheckCircle className="h-3 w-3" />
                             All OK
                           </Badge>
@@ -110,9 +110,9 @@ export function HallwayWalkthroughTab() {
                         <div className="flex items-center gap-2">
                           <div className="text-sm text-muted-foreground">Health:</div>
                           <div className={`text-sm font-semibold ${
-                            healthPercent >= 90 ? 'text-green-600' :
-                            healthPercent >= 70 ? 'text-yellow-600' :
-                            'text-red-600'
+                            healthPercent >= 90 ? 'text-green-600 dark:text-green-400' :
+                            healthPercent >= 70 ? 'text-yellow-600 dark:text-yellow-400' :
+                            'text-red-600 dark:text-red-400'
                           }`}>
                             {healthPercent}%
                           </div>

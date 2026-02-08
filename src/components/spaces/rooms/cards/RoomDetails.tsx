@@ -25,12 +25,12 @@ export function RoomDetails({ room }: RoomDetailsProps) {
             {roomTypeName}
           </Badge>
           
-          <Badge variant="outline" className={room.status === 'active' ? 'bg-green-500/20 text-green-700' : 'bg-yellow-500/20 text-yellow-700'}>
+          <Badge variant="outline" className={room.status === 'active' ? 'bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'}>
             {room.status === 'active' ? 'Active' : room.status === 'inactive' ? 'Inactive' : 'Under Maintenance'}
           </Badge>
           
           {room.is_storage && (
-            <Badge variant="outline" className="bg-blue-500/20 text-blue-700">
+            <Badge variant="outline" className="bg-blue-500/20 text-blue-700 dark:text-blue-400">
               Storage
             </Badge>
           )}

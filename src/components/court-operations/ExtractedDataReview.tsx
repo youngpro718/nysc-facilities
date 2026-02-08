@@ -142,7 +142,7 @@ export function ExtractedDataReview({
           <DialogDescription>
             Review and edit the extracted session data before adding to the system.
             {lowConfidenceCount > 0 && (
-              <span className="text-amber-600 font-medium">
+              <span className="text-amber-600 dark:text-amber-400 font-medium">
                 {' '}{lowConfidenceCount} {lowConfidenceCount === 1 ? 'session has' : 'sessions have'} low confidence - please review carefully.
               </span>
             )}

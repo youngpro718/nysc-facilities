@@ -55,7 +55,7 @@ export function KeyAssignmentSummary({ assignment }: KeyAssignmentSummaryProps) 
             <Badge variant="secondary" className="text-xs">Passkey</Badge>
           )}
           {assignment.is_spare && (
-            <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
+            <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700 dark:text-yellow-400">
               Spare Key
             </Badge>
           )}
@@ -91,7 +91,7 @@ export function KeyAssignmentSummary({ assignment }: KeyAssignmentSummaryProps) 
 
         {/* Spare Key Reason */}
         {assignment.is_spare && assignment.spare_key_reason && (
-          <div className="text-xs text-muted-foreground bg-yellow-50 p-2 rounded border-l-2 border-yellow-200">
+          <div className="text-xs text-muted-foreground bg-yellow-50 dark:bg-yellow-950/30 p-2 rounded border-l-2 border-yellow-200 dark:border-yellow-800">
             <strong>Reason for spare key:</strong> {assignment.spare_key_reason}
           </div>
         )}

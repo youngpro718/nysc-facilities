@@ -89,7 +89,7 @@ export function LockboxSearch({ slots, onSlotClick, lockboxName }: LockboxSearch
                 >
                   <Link2Off className="h-3.5 w-3.5 mr-1" />
                   Unlinked
-                  <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                  <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                     {unlinkedCount}
                   </Badge>
                 </Toggle>

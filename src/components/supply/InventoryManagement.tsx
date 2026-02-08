@@ -276,20 +276,20 @@ export function InventoryManagement() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stockAlerts.length}</div>
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stockAlerts.length}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
+            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {stockAlerts.filter(a => a.alertType === 'out').length}
             </div>
           </CardContent>
@@ -533,7 +533,7 @@ export function InventoryManagement() {
                         <div className="text-sm text-muted-foreground">Monthly usage</div>
                       </div>
                       <div className={`flex items-center ${
-                        trend.trend === 'up' ? 'text-red-600' : 'text-green-600'
+                        trend.trend === 'up' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                       }`}>
                         {trend.trend === 'up' ? (
                           <TrendingUp className="h-4 w-4 mr-1" />

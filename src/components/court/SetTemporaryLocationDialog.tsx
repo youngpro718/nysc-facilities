@@ -155,7 +155,7 @@ export const SetTemporaryLocationDialog = ({
               {courtroomInfo.rooms?.name || courtroomInfo.room_number}
             </div>
             {courtroomInfo.maintenance_status !== "operational" && (
-              <div className="text-sm text-orange-600 mt-1">
+              <div className="text-sm text-orange-600 dark:text-orange-400 mt-1">
                 Currently under maintenance
               </div>
             )}

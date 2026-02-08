@@ -142,7 +142,7 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
                 size="sm"
                 onClick={clearPhotos}
                 disabled={isClearing}
-                className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20"
+                className="text-red-500 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/20"
               >
                 <Trash2 className="h-4 w-4 mr-1" />
                 {isClearing ? 'Clearing...' : 'Clear All'}

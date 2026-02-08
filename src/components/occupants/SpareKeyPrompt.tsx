@@ -44,7 +44,7 @@ export function SpareKeyPrompt({
           <AlertDialogDescription>
             This occupant already has this key assigned. You can assign it as a spare key.
             {currentSpareCount > 0 && (
-              <p className="mt-2 text-yellow-600 dark:text-yellow-500">
+              <p className="mt-2 text-yellow-600 dark:text-yellow-400 dark:text-yellow-500">
                 Current spare keys: {currentSpareCount}/2
               </p>
             )}

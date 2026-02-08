@@ -66,7 +66,7 @@ export const BuildingCard = ({
                     src={mostRecentIssue?.photos?.[0] || buildingImage}
                     alt={mostRecentIssue ? `Active issue in ${building.name}` : building.name}
                     className={`absolute inset-0 h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${
-                      mostRecentIssue ? 'animate-pulse' : ''
+                      mostRecentIssue ? 'ring-2 ring-red-500/40' : ''
                     }`}
                   />
                 </div>
@@ -74,7 +74,7 @@ export const BuildingCard = ({
                   <>
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Badge variant="destructive" className="text-sm animate-pulse">
+                      <Badge variant="destructive" className="text-sm ring-1 ring-destructive">
                         View Active Issue
                       </Badge>
                     </div>
@@ -82,7 +82,7 @@ export const BuildingCard = ({
                       <img
                         src={buildingImage}
                         alt="Default building view"
-                        className="h-12 w-12 rounded-md object-cover border-2 border-white"
+                        className="h-12 w-12 rounded-md object-cover border-2 border-white dark:border-slate-700"
                       />
                     </div>
                   </>
@@ -91,7 +91,7 @@ export const BuildingCard = ({
                   <div className="absolute right-2 top-2">
                     <Badge 
                       variant="destructive" 
-                      className="animate-pulse text-xs cursor-pointer hover:scale-105 transition-transform"
+                      className="text-xs cursor-pointer hover:scale-105 transition-transform"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (building?.id) {

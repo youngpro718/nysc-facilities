@@ -62,13 +62,13 @@ export default function FormTemplatesAdmin() {
 
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
-      key_request: 'bg-blue-100 text-blue-800',
-      supply_request: 'bg-green-100 text-green-800',
-      maintenance_request: 'bg-orange-100 text-orange-800',
-      issue_report: 'bg-red-100 text-red-800',
-      custom: 'bg-purple-100 text-purple-800',
+      key_request: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800',
+      supply_request: 'bg-green-100 dark:bg-green-900/30 text-green-800',
+      maintenance_request: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800',
+      issue_report: 'bg-red-100 dark:bg-red-900/30 text-red-800',
+      custom: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800',
     };
-    return colors[type] || 'bg-gray-100 text-gray-800';
+    return colors[type] || 'bg-gray-100 dark:bg-gray-800/30 text-gray-800';
   };
 
   const getTypeName = (type: string) => {
@@ -128,7 +128,7 @@ export default function FormTemplatesAdmin() {
             <CardTitle className="text-sm font-medium">Active</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {templates?.filter((t) => t.is_active).length || 0}
             </div>
           </CardContent>
@@ -148,7 +148,7 @@ export default function FormTemplatesAdmin() {
             <CardTitle className="text-sm font-medium">Custom Forms</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
               {templates?.filter((t) => t.template_type === 'custom').length || 0}
             </div>
           </CardContent>
@@ -174,7 +174,7 @@ export default function FormTemplatesAdmin() {
                   title={template.is_active ? 'Deactivate' : 'Activate'}
                 >
                   {template.is_active ? (
-                    <Power className="h-4 w-4 text-green-600" />
+                    <Power className="h-4 w-4 text-green-600 dark:text-green-400" />
                   ) : (
                     <PowerOff className="h-4 w-4 text-gray-400" />
                   )}
@@ -232,7 +232,7 @@ export default function FormTemplatesAdmin() {
                   size="sm"
                   onClick={() => handleDelete(template.id)}
                 >
-                  <Trash2 className="h-3 w-3 text-red-600" />
+                  <Trash2 className="h-3 w-3 text-red-600 dark:text-red-400" />
                 </Button>
               </div>
 

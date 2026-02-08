@@ -61,7 +61,7 @@ export function MaintenanceView() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-amber-50 border-amber-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-amber-700 flex items-center text-sm font-medium">
+            <CardTitle className="text-amber-700 dark:text-amber-400 flex items-center text-sm font-medium">
               <AlertTriangle className="h-4 w-4 mr-2" />
               Overdue Maintenance
             </CardTitle>
@@ -70,37 +70,37 @@ export function MaintenanceView() {
             <div className="text-2xl font-bold text-amber-700">
               {loadingStats ? '...' : maintenanceStats?.overdueCount}
             </div>
-            <p className="text-xs text-amber-600 mt-1">Requires immediate attention</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Requires immediate attention</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-blue-700 flex items-center text-sm font-medium">
+            <CardTitle className="text-blue-700 dark:text-blue-400 flex items-center text-sm font-medium">
               <Clock className="h-4 w-4 mr-2" />
               Scheduled
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700">
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
               {loadingStats ? '...' : maintenanceStats?.scheduledCount}
             </div>
-            <p className="text-xs text-blue-600 mt-1">Upcoming maintenance tasks</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Upcoming maintenance tasks</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-green-700 flex items-center text-sm font-medium">
+            <CardTitle className="text-green-700 dark:text-green-400 flex items-center text-sm font-medium">
               <CheckCircle2 className="h-4 w-4 mr-2" />
               Completed This Month
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-700">
+            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
               {loadingStats ? '...' : maintenanceStats?.completedThisMonth}
             </div>
-            <p className="text-xs text-green-600 mt-1">Avg resolution: {maintenanceStats?.averageResolutionDays} days</p>
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1">Avg resolution: {maintenanceStats?.averageResolutionDays} days</p>
           </CardContent>
         </Card>
       </div>

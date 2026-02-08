@@ -132,7 +132,7 @@ export function FormTemplatePreviewDialog({
                         {field.type !== 'checkbox' && (
                           <Label htmlFor={field.id}>
                             {field.label}
-                            {field.required && <span className="text-red-600 ml-1">*</span>}
+                            {field.required && <span className="text-red-600 dark:text-red-400 ml-1">*</span>}
                           </Label>
                         )}
                         {renderField(field)}

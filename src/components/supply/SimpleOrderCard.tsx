@@ -63,7 +63,7 @@ export function SimpleOrderCard({
   // Status badge
   const getStatusBadge = () => {
     if (needsApproval && !isCompleted) {
-      return <Badge variant="outline" className="border-orange-500 text-orange-600 bg-orange-50"><AlertTriangle className="h-3 w-3 mr-1" />Needs Approval</Badge>;
+      return <Badge variant="outline" className="border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30"><AlertTriangle className="h-3 w-3 mr-1" />Needs Approval</Badge>;
     }
     if (isCompleted) {
       return <Badge className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
@@ -75,16 +75,16 @@ export function SimpleOrderCard({
       return <Badge variant="secondary"><Package className="h-3 w-3 mr-1" />Ready for Pickup</Badge>;
     }
     if (order.status === 'picking') {
-      return <Badge variant="outline" className="border-blue-500 text-blue-600">Picking</Badge>;
+      return <Badge variant="outline" className="border-blue-500 text-blue-600 dark:text-blue-400">Picking</Badge>;
     }
     if (order.status === 'received') {
-      return <Badge variant="outline" className="border-purple-500 text-purple-600">Received</Badge>;
+      return <Badge variant="outline" className="border-purple-500 text-purple-600 dark:text-purple-400">Received</Badge>;
     }
     if (order.status === 'submitted') {
       return <Badge variant="outline" className="border-blue-400 text-blue-500">New</Badge>;
     }
     if (isPartialFulfillment) {
-      return <Badge variant="outline" className="border-yellow-500 text-yellow-600">Partial</Badge>;
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-600 dark:text-yellow-400">Partial</Badge>;
     }
     return null;
   };
@@ -151,7 +151,7 @@ export function SimpleOrderCard({
                   <span className={isUnfulfilled ? 'line-through text-muted-foreground' : ''}>
                     {item.inventory_items?.name || 'Unknown Item'}
                     {isPartial ? (
-                      <span className="text-yellow-600 ml-1">
+                      <span className="text-yellow-600 dark:text-yellow-400 ml-1">
                         ({fulfilled}/{requested})
                       </span>
                     ) : (

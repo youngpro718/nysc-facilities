@@ -208,7 +208,7 @@ export function SearchPanel({
                   className={cn(
                     'p-3 rounded-md cursor-pointer transition-colors',
                     idx === activeIndex
-                      ? 'bg-slate-100 dark:bg-slate-700'
+                      ? 'bg-slate-100 dark:bg-slate-800/30 dark:bg-slate-700'
                       : 'hover:bg-slate-50 dark:hover:bg-slate-700'
                   )}
                 >

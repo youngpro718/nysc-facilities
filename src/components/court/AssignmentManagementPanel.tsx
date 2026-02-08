@@ -90,7 +90,7 @@ export const AssignmentManagementPanel = () => {
 
   if (error) {
     return (
-      <div className="p-4 text-sm text-red-600">Error loading assignment stats: {(error as Error).message}</div>
+      <div className="p-4 text-sm text-red-600 dark:text-red-400">Error loading assignment stats: {(error as Error).message}</div>
     );
   }
 
@@ -150,10 +150,10 @@ export const AssignmentManagementPanel = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Occupied</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
+            <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{assignmentStats?.assignedRooms || 0}</div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{assignmentStats?.assignedRooms || 0}</div>
             <p className="text-xs text-muted-foreground">Currently in use</p>
           </CardContent>
         </Card>
@@ -161,10 +161,10 @@ export const AssignmentManagementPanel = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Available</CardTitle>
-            <Calendar className="h-4 w-4 text-green-600" />
+            <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{assignmentStats?.availableRooms || 0}</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{assignmentStats?.availableRooms || 0}</div>
             <p className="text-xs text-muted-foreground">Ready for assignment</p>
           </CardContent>
         </Card>
@@ -174,10 +174,10 @@ export const AssignmentManagementPanel = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Temporarily Relocated</CardTitle>
-            <MapPin className="h-4 w-4 text-blue-600" />
+            <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{assignmentStats?.temporarilyRelocated || 0}</div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{assignmentStats?.temporarilyRelocated || 0}</div>
             <p className="text-xs text-muted-foreground">Operating from alternate location</p>
           </CardContent>
         </Card>
@@ -185,10 +185,10 @@ export const AssignmentManagementPanel = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Shutdown</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{assignmentStats?.shutdownRooms || 0}</div>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{assignmentStats?.shutdownRooms || 0}</div>
             <p className="text-xs text-muted-foreground">Temporarily closed</p>
           </CardContent>
         </Card>
@@ -199,7 +199,7 @@ export const AssignmentManagementPanel = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
               {impactSummary?.totalAffectedRooms || 0}
             </div>
             <p className="text-xs text-muted-foreground">

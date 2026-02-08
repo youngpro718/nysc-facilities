@@ -194,7 +194,7 @@ export function InventoryTable({
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-red-600"
+                        className="text-red-600 dark:text-red-400"
                         onClick={() => handleDelete(item.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />

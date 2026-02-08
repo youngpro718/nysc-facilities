@@ -142,7 +142,7 @@ export const AdminKeyOrdersSection = () => {
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</div>
           </CardContent>
         </Card>
 
@@ -152,7 +152,7 @@ export const AdminKeyOrdersSection = () => {
             <Truck className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.inProgress}</div>
           </CardContent>
         </Card>
 
@@ -162,7 +162,7 @@ export const AdminKeyOrdersSection = () => {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.ready}</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.ready}</div>
           </CardContent>
         </Card>
 

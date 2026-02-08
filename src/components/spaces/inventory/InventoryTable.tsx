@@ -67,7 +67,7 @@ export function InventoryTable({
             return (
               <TableRow key={item.id} className={cn(
                 "hover:bg-muted/50",
-                showWarning && "bg-yellow-50/50"
+                showWarning && "bg-yellow-50/50 dark:bg-yellow-950/20"
               )}>
                 <TableCell>
                   <div className="flex items-center gap-2">

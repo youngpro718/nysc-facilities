@@ -374,7 +374,7 @@ const SortableRow = ({
       ref={setNodeRef}
       style={style}
       title={tooltipText || undefined}
-      className={`border-b hover:bg-muted/50 ${urgentIssues ? 'bg-red-50 border-red-200' : ''} ${glowClass} ${rowAnimationClass} ${isRecentlyAffected ? 'ring-2 ring-amber-400 animate-pulse' : ''}`}
+      className={`border-b hover:bg-muted/50 ${urgentIssues ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800' : ''} ${glowClass} ${rowAnimationClass} ${isRecentlyAffected ? 'ring-2 ring-amber-400' : ''}`}
     >
       <td className="p-2">
         <div className="flex items-center gap-2">

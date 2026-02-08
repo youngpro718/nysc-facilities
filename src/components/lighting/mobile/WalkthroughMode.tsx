@@ -271,7 +271,7 @@ export function WalkthroughMode({ fixtures, onExit, onFixtureUpdate }: Walkthrou
                                     </Button>
                                     <Button 
                                         variant="outline" 
-                                        className="h-14 flex flex-col gap-1 border-orange-500/20 hover:bg-orange-500/10 hover:text-orange-600"
+                                        className="h-14 flex flex-col gap-1 border-orange-500/20 hover:bg-orange-500/10 hover:text-orange-600 dark:text-orange-400"
                                         onClick={() => handleFixtureAction(fixture, 'ballast')}
                                         disabled={isProcessing}
                                     >

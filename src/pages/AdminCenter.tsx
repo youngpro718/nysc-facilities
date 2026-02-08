@@ -330,7 +330,7 @@ export default function AdminCenter() {
 
       {/* Pending Users Alert */}
       {pendingUsers.length > 0 && (
-        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+        <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
           <Clock className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800 dark:text-amber-200">
             <span className="font-medium">{pendingUsers.length} user{pendingUsers.length > 1 ? 's' : ''}</span> awaiting approval
@@ -414,7 +414,7 @@ export default function AdminCenter() {
                       <span className="font-medium">{getUserDisplayName(user)}</span>
                       {isCurrentUser && <Badge variant="outline" className="text-xs">You</Badge>}
                       {isPending && (
-                        <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-200">
+                        <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200">
                           <Clock className="h-3 w-3 mr-1" />Pending
                         </Badge>
                       )}

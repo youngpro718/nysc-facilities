@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -128,7 +129,7 @@ export function AvatarPromptModal({ open, onOpenChange, onComplete }: AvatarProm
                   className="w-full"
                 >
                   {uploading || isCompleting ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
                     <Upload className="h-4 w-4 mr-2" />
                   )}

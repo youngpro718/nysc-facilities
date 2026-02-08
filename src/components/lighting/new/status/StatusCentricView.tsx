@@ -56,19 +56,19 @@ export function StatusCentricView() {
     functional: {
       label: 'Functional',
       icon: CheckCircle,
-      color: 'bg-green-100 text-green-800',
+      color: 'bg-green-100 dark:bg-green-900/30 text-green-800',
       count: fixturesByStatus.functional.length,
     },
     non_functional: {
       label: 'Non-Functional',
       icon: AlertTriangle,
-      color: 'bg-red-100 text-red-800',
+      color: 'bg-red-100 dark:bg-red-900/30 text-red-800',
       count: fixturesByStatus.non_functional.length,
     },
     maintenance_needed: {
       label: 'Maintenance Needed',
       icon: Clock,
-      color: 'bg-yellow-100 text-yellow-800',
+      color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800',
       count:
         fixturesByStatus.maintenance_needed.length +
         fixturesByStatus.pending_maintenance.length,
@@ -76,7 +76,7 @@ export function StatusCentricView() {
     scheduled_replacement: {
       label: 'Scheduled Replacement',
       icon: Settings,
-      color: 'bg-blue-100 text-blue-800',
+      color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800',
       count: fixturesByStatus.scheduled_replacement.length,
     },
   } as const;
@@ -213,12 +213,12 @@ export function StatusCentricView() {
                 <span>Last: {fixture.last_maintenance_date}</span>
               )}
               {fixture.reported_out_date && (
-                <span className="text-red-600">
+                <span className="text-red-600 dark:text-red-400">
                   Out since {new Date(fixture.reported_out_date).toLocaleDateString()}
                 </span>
               )}
               {fixture.next_maintenance_date && (
-                <span className="text-blue-600">
+                <span className="text-blue-600 dark:text-blue-400">
                   Next: {new Date(fixture.next_maintenance_date).toLocaleDateString()}
                 </span>
               )}

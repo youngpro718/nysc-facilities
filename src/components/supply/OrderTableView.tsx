@@ -42,7 +42,7 @@ export function OrderTableView({
     const needsApproval = order.status === 'pending_approval';
 
     if (needsApproval && !isCompleted) {
-      return <Badge variant="outline" className="border-orange-500 text-orange-600 bg-orange-50">Needs Approval</Badge>;
+      return <Badge variant="outline" className="border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30">Needs Approval</Badge>;
     }
     if (isCompleted) {
       return <Badge className="bg-green-600">Completed</Badge>;
@@ -54,10 +54,10 @@ export function OrderTableView({
       return <Badge variant="secondary">Ready</Badge>;
     }
     if (order.status === 'picking') {
-      return <Badge variant="outline" className="border-blue-500 text-blue-600">Picking</Badge>;
+      return <Badge variant="outline" className="border-blue-500 text-blue-600 dark:text-blue-400">Picking</Badge>;
     }
     if (order.status === 'received') {
-      return <Badge variant="outline" className="border-purple-500 text-purple-600">Received</Badge>;
+      return <Badge variant="outline" className="border-purple-500 text-purple-600 dark:text-purple-400">Received</Badge>;
     }
     if (order.status === 'submitted') {
       return <Badge variant="outline" className="border-blue-400 text-blue-500">New</Badge>;

@@ -48,17 +48,17 @@ export function MobileIssueCard({
     const configs = {
       open: { 
         icon: AlertCircle, 
-        color: "bg-red-500/10 text-red-700 border-red-500/20", 
+        color: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20", 
         label: "Open"
       },
       in_progress: { 
         icon: Settings, 
-        color: "bg-blue-500/10 text-blue-700 border-blue-500/20", 
+        color: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20", 
         label: "In Progress"
       },
       resolved: { 
         icon: CheckCircle, 
-        color: "bg-green-500/10 text-green-700 border-green-500/20", 
+        color: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20", 
         label: "Resolved"
       },
       closed: { 
@@ -73,9 +73,9 @@ export function MobileIssueCard({
   const getPriorityConfig = (priority: string) => {
     const configs = {
       low: { label: "Low Priority", variant: "outline" as const, color: "text-gray-600" },
-      medium: { label: "Medium Priority", variant: "secondary" as const, color: "text-orange-600" },
-      high: { label: "High Priority", variant: "destructive" as const, color: "text-red-600" },
-      urgent: { label: "Urgent", variant: "destructive" as const, color: "text-red-700" }
+      medium: { label: "Medium Priority", variant: "secondary" as const, color: "text-orange-600 dark:text-orange-400" },
+      high: { label: "High Priority", variant: "destructive" as const, color: "text-red-600 dark:text-red-400" },
+      urgent: { label: "Urgent", variant: "destructive" as const, color: "text-red-700 dark:text-red-400" }
     };
     return configs[priority as keyof typeof configs] || configs.medium;
   };
@@ -222,48 +222,48 @@ export function MobileIssueCard({
 
         {/* Status-specific information */}
         {issue.status === 'resolved' && (
-          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+          <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <p className="text-sm font-medium text-green-700">Issue Resolved</p>
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <p className="text-sm font-medium text-green-700 dark:text-green-400">Issue Resolved</p>
             </div>
-            <p className="text-xs text-green-600 mt-1">
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
               This issue has been marked as resolved. If the problem persists, you can follow up.
             </p>
           </div>
         )}
 
         {issue.status === 'in_progress' && (
-          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
             <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-blue-600" />
-              <p className="text-sm font-medium text-blue-700">Work in Progress</p>
+              <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Work in Progress</p>
             </div>
-            <p className="text-xs text-blue-600 mt-1">
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
               Our team is actively working on resolving this issue.
             </p>
           </div>
         )}
 
         {issue.status === 'open' && issue.priority === 'urgent' && (
-          <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+          <div className="p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <p className="text-sm font-medium text-red-700">Urgent Priority</p>
+              <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+              <p className="text-sm font-medium text-red-700 dark:text-red-400">Urgent Priority</p>
             </div>
-            <p className="text-xs text-red-600 mt-1">
+            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
               This issue is marked as urgent and will be prioritized for immediate attention.
             </p>
           </div>
         )}
 
         {issue.status === 'open' && (
-          <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-yellow-600" />
-              <p className="text-sm font-medium text-yellow-700">Awaiting Assignment</p>
+              <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Awaiting Assignment</p>
             </div>
-            <p className="text-xs text-yellow-600 mt-1">
+            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
               Your issue has been received and is waiting to be assigned to a team member.
             </p>
           </div>

@@ -117,7 +117,7 @@ export function OperationsStatsCards({ metrics, isLoading }: OperationsStatsCard
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Maintenance Queue</p>
+                <p className="text-sm font-medium text-orange-700 dark:text-orange-400 dark:text-orange-300">Maintenance Queue</p>
                 <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{metrics.totalMaintenanceItems}</p>
                 <p className="text-xs text-orange-600 dark:text-orange-400">
                   {metrics.maintenanceScheduled} scheduled • {metrics.maintenanceInProgress} active
@@ -132,7 +132,7 @@ export function OperationsStatsCards({ metrics, isLoading }: OperationsStatsCard
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-700 dark:text-green-300">System Performance</p>
+                <p className="text-sm font-medium text-green-700 dark:text-green-400 dark:text-green-300">System Performance</p>
                 <p className="text-2xl font-bold text-green-900 dark:text-green-100">98%</p>
                 <p className="text-xs text-green-600 dark:text-green-400">
                   Operational efficiency • All systems nominal

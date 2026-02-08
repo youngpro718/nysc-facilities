@@ -30,41 +30,41 @@ interface KeyOrderCardProps {
 const statusConfig = {
   pending_fulfillment: { 
     label: "Pending Fulfillment", 
-    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    color: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 border-yellow-200 dark:border-yellow-800",
     icon: Clock 
   },
   in_progress: { 
     label: "In Progress", 
-    color: "bg-blue-100 text-blue-800 border-blue-200",
+    color: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 border-blue-200 dark:border-blue-800",
     icon: Package 
   },
   received: {
     label: "Received",
-    color: "bg-purple-100 text-purple-800 border-purple-200",
+    color: "bg-purple-100 dark:bg-purple-900/30 text-purple-800 border-purple-200 dark:border-purple-800",
     icon: Package
   },
   ready_for_pickup: { 
     label: "Ready for Pickup", 
-    color: "bg-green-100 text-green-800 border-green-200",
+    color: "bg-green-100 dark:bg-green-900/30 text-green-800 border-green-200 dark:border-green-800",
     icon: CheckCircle 
   },
   completed: { 
     label: "Completed", 
-    color: "bg-gray-100 text-gray-800 border-gray-200",
+    color: "bg-gray-100 dark:bg-gray-800/30 text-gray-800 border-gray-200",
     icon: CheckCircle 
   },
   cancelled: { 
     label: "Cancelled", 
-    color: "bg-red-100 text-red-800 border-red-200",
+    color: "bg-red-100 dark:bg-red-900/30 text-red-800 border-red-200 dark:border-red-800",
     icon: AlertTriangle 
   },
 };
 
 const priorityConfig = {
-  low: { label: "Low", color: "bg-gray-100 text-gray-800" },
-  medium: { label: "Medium", color: "bg-blue-100 text-blue-800" },
-  high: { label: "High", color: "bg-orange-100 text-orange-800" },
-  urgent: { label: "Urgent", color: "bg-red-100 text-red-800" },
+  low: { label: "Low", color: "bg-gray-100 dark:bg-gray-800/30 text-gray-800" },
+  medium: { label: "Medium", color: "bg-blue-100 dark:bg-blue-900/30 text-blue-800" },
+  high: { label: "High", color: "bg-orange-100 dark:bg-orange-900/30 text-orange-800" },
+  urgent: { label: "Urgent", color: "bg-red-100 dark:bg-red-900/30 text-red-800" },
 };
 
 const getNextStatus = (currentStatus: string): string | null => {

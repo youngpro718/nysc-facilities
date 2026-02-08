@@ -3,8 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, Shield, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera } from "lucide-react";
-import { useRoomAccess } from "@/hooks/useRoomAccess";
+import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog } from "@/components/ui/dialog";
 import { RoomInventory } from "../../RoomInventory";
@@ -24,8 +23,7 @@ interface CardBackProps {
 
 export function CardBack({ room, onFlip }: CardBackProps) {
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'access' | 'lighting' | 'notes' | 'history'>('info');
-  const { data: roomAccess, isLoading: isAccessLoading } = useRoomAccess(room.id);
+  const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'lighting' | 'notes' | 'history'>('info');
   const { data: lightingWithTickets = [] } = useLightingWithTickets(room.id);
   
   // Courtroom photos
@@ -34,6 +32,10 @@ export function CardBack({ room, onFlip }: CardBackProps) {
   const hasPhotos = courtroomPhotos && (courtroomPhotos.judge_view || courtroomPhotos.audience_view);
   const navigate = useNavigate();
   const { getIssuesForRoom } = useCourtIssuesIntegration();
+  const unresolvedIssues = getIssuesForRoom(room.id);
+  const highPriorityIssues = unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase()));
+  const mediumPriorityIssues = unresolvedIssues.filter(i => (i.priority || "").toLowerCase() === "medium");
+  const lowPriorityIssues = unresolvedIssues.filter(i => !["urgent", "high", "critical", "medium"].includes((i.priority || "").toLowerCase()));
 
   const totalLights = useMemo(() => room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0, [room]);
   const functionalLights = useMemo(() => room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0, [room]);
@@ -69,13 +71,18 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           Info
         </button>
         <button
-          onClick={() => setActiveTab('access')}
+          onClick={() => setActiveTab('issues')}
           className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
-            activeTab === 'access' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            activeTab === 'issues' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          <Shield className="h-3.5 w-3.5 inline mr-1" />
-          Access
+          <AlertTriangle className="h-3.5 w-3.5 inline mr-1" />
+          Issues
+          {unresolvedIssues.length > 0 && (
+            <span className="ml-1 inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+              {unresolvedIssues.length}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab('lighting')}
@@ -346,198 +353,253 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           </div>
         )}
 
-        {/* Access Tab */}
-        {activeTab === 'access' && (
+        {/* Issues Tab */}
+        {activeTab === 'issues' && (
           <div className="space-y-4">
-            {/* Empty State */}
-            {(!roomAccess || (roomAccess.key_holders.length === 0 && roomAccess.access_doors.length === 0 && (!room.current_occupants || room.current_occupants.length === 0))) && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No access information available</p>
+            {unresolvedIssues.length === 0 ? (
+              <div className="text-center py-8">
+                <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500/60" />
+                <p className="text-sm font-medium text-green-700 dark:text-green-400 mb-1">No open issues</p>
+                <p className="text-xs text-muted-foreground mb-3">This room has no unresolved issues</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/operations?tab=issues&create=true&room_id=${room.id}&title=Issue%20in%20${encodeURIComponent(room.name)}`);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  Report Issue
+                </Button>
               </div>
-            )}
+            ) : (
+              <>
+                {/* Priority Summary */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className={`text-center p-2.5 rounded-lg border ${
+                    highPriorityIssues.length > 0
+                      ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'
+                      : 'bg-muted/30 border-border'
+                  }`}>
+                    <div className={`text-xl font-bold ${highPriorityIssues.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
+                      {highPriorityIssues.length}
+                    </div>
+                    <div className="text-xs text-muted-foreground">High</div>
+                  </div>
+                  <div className={`text-center p-2.5 rounded-lg border ${
+                    mediumPriorityIssues.length > 0
+                      ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
+                      : 'bg-muted/30 border-border'
+                  }`}>
+                    <div className={`text-xl font-bold ${mediumPriorityIssues.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                      {mediumPriorityIssues.length}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Medium</div>
+                  </div>
+                  <div className={`text-center p-2.5 rounded-lg border ${
+                    lowPriorityIssues.length > 0
+                      ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+                      : 'bg-muted/30 border-border'
+                  }`}>
+                    <div className={`text-xl font-bold ${lowPriorityIssues.length > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`}>
+                      {lowPriorityIssues.length}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Low</div>
+                  </div>
+                </div>
 
-            {/* People with Access - Combined occupants and key holders */}
-            {roomAccess && (roomAccess.key_holders.length > 0 || (room.current_occupants && room.current_occupants.length > 0)) && (
-              <div className="bg-muted/50 p-3 rounded-lg">
-                <div className="text-sm font-medium mb-3 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                    People with Access
-                  </span>
-                  <Badge variant="secondary" className="text-xs">
-                    {(room.current_occupants?.length || 0) + roomAccess.key_holders.length} total
-                  </Badge>
-                </div>
+                {/* Issue List */}
                 <div className="space-y-2">
-                  {/* Occupants first */}
-                  {room.current_occupants?.map((occupant, index) => (
-                    <div
-                      key={`occupant-${index}`}
-                      className="flex items-center justify-between p-2 bg-background/50 rounded-md"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-xs font-medium text-primary">
-                            {occupant.first_name?.[0]}{occupant.last_name?.[0]}
-                          </span>
-                        </div>
-                        <span className="text-sm font-medium">{occupant.first_name} {occupant.last_name}</span>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {occupant.is_primary ? 'Primary Occupant' : 'Occupant'}
-                      </Badge>
-                    </div>
-                  ))}
-                  
-                  {/* Key holders */}
-                  {roomAccess.key_holders.map((holder, index) => (
-                    <div
-                      key={`keyholder-${index}`}
-                      className="flex items-center justify-between p-2 bg-background/50 rounded-md"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-xs font-medium text-primary">
-                            {holder.first_name?.[0]}{holder.last_name?.[0]}
-                          </span>
-                        </div>
-                        <span className="text-sm font-medium">{holder.first_name} {holder.last_name}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {holder.is_passkey && (
-                          <Badge variant="outline" className="text-xs px-1 py-0">
-                            <Shield className="h-2.5 w-2.5 mr-1" />
-                            Master
+                  {unresolvedIssues.map((issue) => {
+                    const priorityColor = ["urgent", "high", "critical"].includes((issue.priority || "").toLowerCase())
+                      ? 'border-l-red-500'
+                      : (issue.priority || "").toLowerCase() === "medium"
+                        ? 'border-l-amber-500'
+                        : 'border-l-blue-500';
+                    return (
+                      <div
+                        key={issue.id}
+                        className={`bg-card border border-border border-l-[3px] ${priorityColor} p-3 rounded-md cursor-pointer hover:bg-muted/50 transition-colors`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/operations?tab=issues&issue=${issue.id}`);
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <span className="text-sm font-medium leading-tight line-clamp-2">{issue.title}</span>
+                          <Badge
+                            variant={issue.status === 'open' ? 'destructive' : 'secondary'}
+                            className="text-xs shrink-0 capitalize"
+                          >
+                            {(issue.status || 'open').replace(/_/g, ' ')}
                           </Badge>
-                        )}
-                        <Badge variant="secondary" className="text-xs">
-                          Key: {holder.key_name}
-                        </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {(issue.priority || 'low').replace(/_/g, ' ')}
+                          </Badge>
+                          {issue.created_at && (
+                            <span>{Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))}d ago</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              </div>
-            )}
-            
-            {/* Access Doors */}
-            {roomAccess && roomAccess.access_doors.length > 0 && (
-              <div className="bg-muted/50 p-2 rounded-md">
-                <p className="text-xs font-medium mb-2">Access Points</p>
-                <div className="space-y-1">
-                  {roomAccess.access_doors.map((door, index) => (
-                    <div key={index} className="flex items-center justify-between text-xs">
-                      <span>{door.name}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {door.keys_count} key{door.keys_count !== 1 ? 's' : ''}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Access Conflicts */}
-            {roomAccess && roomAccess.access_conflicts && roomAccess.access_conflicts.length > 0 && (
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-2 rounded-md">
-                <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">Access Alerts</p>
-                {roomAccess.access_conflicts.map((conflict, index) => (
-                  <p key={index} className="text-xs text-amber-600 dark:text-amber-500">
-                    {conflict.description}
-                  </p>
-                ))}
-              </div>
+
+                {/* Report New Issue */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/operations?tab=issues&create=true&room_id=${room.id}&title=Issue%20in%20${encodeURIComponent(room.name)}`);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  Report New Issue
+                </Button>
+              </>
             )}
           </div>
         )}
 
         {/* Lighting Tab */}
-        {activeTab === 'lighting' && totalLights > 0 && (
+        {activeTab === 'lighting' && (
           <div className="space-y-4">
-            <div className="bg-muted/30 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
+            {/* Empty state when no fixtures */}
+            {totalLights === 0 ? (
+              <div className="text-center py-8">
+                <Lightbulb className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                <p className="text-sm font-medium text-muted-foreground mb-1">No fixtures configured</p>
+                <p className="text-xs text-muted-foreground/70 mb-3">Add lighting fixtures to track their status</p>
                 <RoomLightingManager
                   room={room}
                   trigger={
-                    <LightingStatusWheel
-                      functional={functionalLights}
-                      total={totalLights}
-                      size={48}
-                      title={`${functionalLights}/${totalLights} lights functional - Click to manage`}
-                      onClick={() => {}}
-                    />
+                    <Button variant="outline" size="sm">
+                      <Plus className="h-3.5 w-3.5 mr-1.5" />
+                      Configure Lighting
+                    </Button>
                   }
                 />
-                <div className="text-right">
-                  <div className="text-lg font-bold text-foreground">
-                    {Math.round((functionalLights / totalLights) * 100)}%
-                  </div>
-                  <div className="text-xs text-muted-foreground">Functional</div>
-                </div>
               </div>
-              <div className="w-full bg-muted h-2 rounded-full">
-                <div 
-                  className="h-2 rounded-full bg-primary transition-all duration-300" 
-                  style={{ width: `${(functionalLights / totalLights) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Warning for fixtures without tickets */}
-            {fixturesWithoutTickets.length > 0 && (
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-2 rounded-md">
-                <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  <span className="font-medium">{fixturesWithoutTickets.length} fixture(s) have no ticket submitted</span>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              {nonFunctionalFixtures.map((fixture) => (
-                <div
-                  key={fixture.id}
-                  className="text-xs bg-card border border-border p-3 rounded-md"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={fixture.status === 'flickering' ? 'secondary' : 'destructive'} className="text-[10px]">
-                        {fixture.status}
-                      </Badge>
-                      <span className="font-medium">{fixture.position || fixture.name}</span>
-                    </div>
-                    {fixture.outage_duration_days && fixture.outage_duration_days > 0 && (
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <AlertTriangle className="h-3 w-3" />
-                        Out {fixture.outage_duration_days}d
+            ) : (
+              <>
+                {/* Summary Header */}
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <RoomLightingManager
+                      room={room}
+                      trigger={
+                        <LightingStatusWheel
+                          functional={functionalLights}
+                          total={totalLights}
+                          size={48}
+                          title={`${functionalLights}/${totalLights} lights functional - Click to manage`}
+                          onClick={() => {}}
+                        />
+                      }
+                    />
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-foreground">
+                        {functionalLights}/{totalLights}
                       </div>
-                    )}
-                  </div>
-                  {/* Ticket Status */}
-                  {fixture.ticket ? (
-                    <div className="flex items-center gap-2 p-2 bg-muted/50 rounded text-[10px]">
-                      <Ticket className="h-3 w-3 text-primary" />
-                      <span className="font-medium">Ticket: {fixture.ticket.status}</span>
-                      <span className="text-muted-foreground">• Submitted {fixture.ticket.days_since_submitted}d ago</span>
+                      <div className="text-xs text-muted-foreground">Functional</div>
                     </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-7 text-[10px] text-amber-600 border-amber-300"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/operations?tab=issues&create=true&room_id=${room.id}&title=Lighting%20Issue%20-%20${encodeURIComponent(fixture.name)}`);
-                      }}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Create Ticket
-                    </Button>
-                  )}
+                  </div>
+                  {(() => {
+                    const pct = Math.round((functionalLights / totalLights) * 100);
+                    const barColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+                    return (
+                      <div className="w-full bg-muted h-2 rounded-full">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-300 ${barColor}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
-              ))}
-            </div>
+
+                {/* Warning for fixtures without tickets */}
+                {fixturesWithoutTickets.length > 0 && (
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 p-2.5 rounded-md">
+                    <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span className="font-medium">{fixturesWithoutTickets.length} fixture(s) need a ticket</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* All Clear state */}
+                {nonFunctionalFixtures.length === 0 && (
+                  <div className="text-center py-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <CheckCircle className="h-6 w-6 mx-auto mb-1.5 text-green-500" />
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400">All lights functional</p>
+                    <p className="text-xs text-green-600/70 dark:text-green-500/70 mt-0.5">{totalLights} fixture{totalLights !== 1 ? 's' : ''} operating normally</p>
+                  </div>
+                )}
+
+                {/* Non-functional fixture list */}
+                {nonFunctionalFixtures.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {nonFunctionalFixtures.length} fixture{nonFunctionalFixtures.length !== 1 ? 's' : ''} need attention
+                    </p>
+                    {nonFunctionalFixtures.map((fixture) => (
+                      <div
+                        key={fixture.id}
+                        className="bg-card border border-border p-3 rounded-md"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={fixture.status === 'flickering' ? 'secondary' : 'destructive'} className="text-xs capitalize">
+                              {fixture.status.replace(/_/g, ' ')}
+                            </Badge>
+                            <span className="text-sm font-medium">{fixture.position || fixture.name}</span>
+                          </div>
+                          {fixture.outage_duration_days != null && fixture.outage_duration_days > 0 && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <AlertTriangle className="h-3 w-3" />
+                              {fixture.outage_duration_days}d
+                            </div>
+                          )}
+                        </div>
+                        {fixture.ballast_issue && (
+                          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 mb-2">
+                            <Zap className="h-3 w-3" />
+                            <span>Ballast issue — requires electrician</span>
+                          </div>
+                        )}
+                        {/* Ticket Status */}
+                        {fixture.ticket ? (
+                          <div className="flex items-center gap-2 p-2 bg-muted/50 rounded text-xs">
+                            <Ticket className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <span className="font-medium capitalize">{fixture.ticket.status}</span>
+                            <span className="text-muted-foreground">• {fixture.ticket.days_since_submitted}d ago</span>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full h-8 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/operations?tab=issues&create=true&room_id=${room.id}&title=Lighting%20Issue%20-%20${encodeURIComponent(fixture.name)}`);
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Create Ticket
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 

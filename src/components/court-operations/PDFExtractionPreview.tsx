@@ -121,15 +121,15 @@ export function PDFExtractionPreview({
             </div>
             <div>
               <div className="text-muted-foreground">High Confidence</div>
-              <div className="text-2xl font-bold text-green-600">{highConfidence.length}</div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{highConfidence.length}</div>
             </div>
             <div>
               <div className="text-muted-foreground">Needs Review</div>
-              <div className="text-2xl font-bold text-yellow-600">{lowConfidence.length}</div>
+              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{lowConfidence.length}</div>
             </div>
             <div>
               <div className="text-muted-foreground">Not Mapped</div>
-              <div className="text-2xl font-bold text-red-600">{unmapped.length}</div>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{unmapped.length}</div>
             </div>
           </div>
 
@@ -243,7 +243,7 @@ export function PDFExtractionPreview({
                   {/* Room Mapping */}
                   {!isMapped && availableRooms.length > 0 && (
                     <div>
-                      <Label className="text-xs text-red-600">
+                      <Label className="text-xs text-red-600 dark:text-red-400">
                         Select Courtroom Manually
                       </Label>
                       <Select

@@ -37,13 +37,13 @@ export function SupplyOrderReceipt({
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'urgent':
-        return 'text-red-600';
+        return 'text-red-600 dark:text-red-400';
       case 'high':
-        return 'text-orange-600';
+        return 'text-orange-600 dark:text-orange-400';
       case 'medium':
-        return 'text-yellow-600';
+        return 'text-yellow-600 dark:text-yellow-400';
       default:
-        return 'text-green-600';
+        return 'text-green-600 dark:text-green-400';
     }
   };
 

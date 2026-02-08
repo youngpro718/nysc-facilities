@@ -99,19 +99,19 @@ export const InventoryTransactionsPanel = () => {
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case "add": return <Plus className="h-4 w-4 text-green-600" />;
-      case "remove": return <Minus className="h-4 w-4 text-red-600" />;
-      case "adjustment": return <RotateCw className="h-4 w-4 text-blue-600" />;
+      case "add": return <Plus className="h-4 w-4 text-green-600 dark:text-green-400" />;
+      case "remove": return <Minus className="h-4 w-4 text-red-600 dark:text-red-400" />;
+      case "adjustment": return <RotateCw className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
       default: return <History className="h-4 w-4 text-gray-600" />;
     }
   };
 
   const getTransactionColor = (type: string) => {
     switch (type) {
-      case "add": return "bg-green-100 text-green-800";
-      case "remove": return "bg-red-100 text-red-800";
-      case "adjustment": return "bg-blue-100 text-blue-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "add": return "bg-green-100 dark:bg-green-900/30 text-green-800";
+      case "remove": return "bg-red-100 dark:bg-red-900/30 text-red-800";
+      case "adjustment": return "bg-blue-100 dark:bg-blue-900/30 text-blue-800";
+      default: return "bg-gray-100 dark:bg-gray-800/30 text-gray-800";
     }
   };
 
@@ -244,19 +244,19 @@ export const InventoryTransactionsPanel = () => {
           <CardContent>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {transactions.filter(t => t.transaction_type === "add").length}
                 </p>
                 <p className="text-sm text-muted-foreground">Stock Added</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {transactions.filter(t => t.transaction_type === "remove").length}
                 </p>
                 <p className="text-sm text-muted-foreground">Stock Removed</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {transactions.filter(t => t.transaction_type === "adjustment").length}
                 </p>
                 <p className="text-sm text-muted-foreground">Adjustments</p>

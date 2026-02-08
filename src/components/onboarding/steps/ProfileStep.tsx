@@ -182,7 +182,7 @@ export function ProfileStep() {
           <AlertDescription>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                 <p className="text-sm font-medium">
                   Detected Role: <span className="text-primary">{detectedRole}</span>
                 </p>

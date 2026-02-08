@@ -135,7 +135,7 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
     // Fetch issues
     supabase
       .from('issues')
-      .select('id, title, status, type, priority, created_at, room_id')
+      .select('id, title, status, issue_type, priority, created_at, room_id')
       .in('room_id', roomIds),
 
     // Fetch room history

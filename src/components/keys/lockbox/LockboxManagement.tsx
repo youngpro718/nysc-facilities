@@ -118,10 +118,10 @@ export function LockboxManagement() {
                 <Badge variant="outline" className="bg-background">
                   {lockbox.total_slots} Total
                 </Badge>
-                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+                <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
                   {lockbox.available_slots} Available
                 </Badge>
-                <Badge variant="outline" className="bg-orange-500/10 text-orange-700 border-orange-500/20">
+                <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20">
                   {lockbox.checked_out_slots} Out
                 </Badge>
               </div>

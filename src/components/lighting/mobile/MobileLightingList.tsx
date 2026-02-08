@@ -334,10 +334,10 @@ export function MobileLightingList({
                 <p className="text-sm font-medium text-muted-foreground">Status</p>
                 <Badge className={`mt-1 ${
                   selectedFixture.status === 'functional' 
-                    ? 'bg-green-500/10 text-green-700' 
+                    ? 'bg-green-500/10 text-green-700 dark:text-green-400' 
                     : selectedFixture.status === 'maintenance_needed'
-                    ? 'bg-yellow-500/10 text-yellow-700'
-                    : 'bg-red-500/10 text-red-700'
+                    ? 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400'
+                    : 'bg-red-500/10 text-red-700 dark:text-red-400'
                 }`}>
                   {selectedFixture.status}
                 </Badge>
@@ -364,14 +364,14 @@ export function MobileLightingList({
             </div>
 
             {selectedFixture.status !== 'functional' && (
-              <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+              <div className="p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
                 <div className="flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-red-600" />
-                  <p className="text-sm font-medium text-red-700">
+                  <Lightbulb className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <p className="text-sm font-medium text-red-700 dark:text-red-400">
                     Issues Detected
                   </p>
                 </div>
-                <p className="text-xs text-red-600 mt-1">
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                   {selectedFixture.requires_electrician ? 'Electrician required' : 'Bulb replacement needed'}
                 </p>
               </div>

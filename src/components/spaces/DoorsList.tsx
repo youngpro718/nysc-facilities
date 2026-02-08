@@ -118,21 +118,21 @@ const DoorsList = () => {
         </div>
         
         {door.is_transition_door && (
-          <Badge variant="outline" className="bg-blue-50">
+          <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/30">
             Transition Door
           </Badge>
         )}
 
         {(door.has_closing_issue || door.has_handle_issue) && (
           <div className="space-y-1">
-            <p className="text-sm font-medium text-yellow-700">Issues:</p>
+            <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Issues:</p>
             {door.has_closing_issue && (
-              <Badge variant="outline" className="bg-yellow-50">
+              <Badge variant="outline" className="bg-yellow-50 dark:bg-yellow-950/30">
                 Closing Issue
               </Badge>
             )}
             {door.has_handle_issue && (
-              <Badge variant="outline" className="bg-yellow-50">
+              <Badge variant="outline" className="bg-yellow-50 dark:bg-yellow-950/30">
                 Handle Issue
               </Badge>
             )}

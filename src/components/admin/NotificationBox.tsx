@@ -167,22 +167,22 @@ export const NotificationBox = () => {
   const getNotificationColor = (type: string, urgency: string) => {
     const u = (urgency || '').toLowerCase();
     if (['high', 'urgent', 'critical'].includes(u)) {
-      return 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
+      return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 dark:bg-red-900/20 dark:text-red-400';
     }
     
     switch (type) {
       case 'new_key_request':
       case 'new_key_order':
-        return 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 dark:bg-blue-900/20 dark:text-blue-400';
       case 'new_supply_request':
-        return 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 dark:bg-green-900/20 dark:text-green-400';
       case 'new_issue':
       case 'issue_status_change':
-        return 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 dark:bg-red-900/20 dark:text-red-400';
       case 'court_assignment_change':
-        return 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400';
+        return 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 dark:bg-purple-900/20 dark:text-purple-400';
       default:
-        return 'bg-gray-100 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400';
+        return 'bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 

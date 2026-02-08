@@ -96,7 +96,7 @@ export const EnhancedHallwayLightingPage: React.FC = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Building className="h-8 w-8 text-blue-600" />
+              <Building className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               <div>
                 <h3 className="font-semibold">Main Hallways</h3>
                 <p className="text-sm text-gray-600">15 fixtures × 2 bulbs each</p>
@@ -108,7 +108,7 @@ export const EnhancedHallwayLightingPage: React.FC = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Settings className="h-8 w-8 text-green-600" />
+              <Settings className="h-8 w-8 text-green-600 dark:text-green-400" />
               <div>
                 <h3 className="font-semibold">Elevator Banks</h3>
                 <p className="text-sm text-gray-600">3 fixtures × 2 bulbs each</p>
@@ -120,7 +120,7 @@ export const EnhancedHallwayLightingPage: React.FC = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Route className="h-8 w-8 text-purple-600" />
+              <Route className="h-8 w-8 text-purple-600 dark:text-purple-400" />
               <div>
                 <h3 className="font-semibold">Directional Sections</h3>
                 <p className="text-sm text-gray-600">North, Center, South areas</p>
@@ -182,9 +182,9 @@ export const EnhancedHallwayLightingPage: React.FC = () => {
           </div>
 
           {selectedFloorData && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <Building className="h-5 w-5 text-blue-600" />
+                <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 <span className="font-medium">{selectedFloorData.name}</span>
               </div>
               <div className="text-sm text-gray-600 space-y-1">

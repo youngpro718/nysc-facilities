@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Loader2 } from "lucide-react";
 import { logger } from '@/lib/logger';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -289,7 +290,7 @@ export function ModernFloorPlanView() {
     return (
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-lg font-medium text-slate-600 dark:text-slate-300">Loading floor plans...</p>
         </div>
       </div>
@@ -309,7 +310,7 @@ export function ModernFloorPlanView() {
               currentFloor={currentFloor}
             />
             
-            <div className="flex items-center space-x-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg p-1 shadow-sm">
+            <div className="flex items-center space-x-2 bg-white/80 dark:bg-slate-900/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg p-1 shadow-sm">
               <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as '2d' | '3d')}>
                 <TabsList className="h-8 bg-transparent">
                   <TabsTrigger value="2d" className="text-xs px-3 py-1">2D</TabsTrigger>
@@ -441,7 +442,7 @@ export function ModernFloorPlanView() {
 
           {/* Floating Info Card */}
           {currentFloor && (
-            <div className="absolute top-6 left-6 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl p-4 shadow-lg border border-white/20 dark:border-slate-700/50">
+            <div className="absolute top-6 left-6 bg-white/95 dark:bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl p-4 shadow-lg border border-white/20 dark:border-slate-700/50">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                 <div>

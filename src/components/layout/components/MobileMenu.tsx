@@ -3,9 +3,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { NavigationTab } from "../types";
+import { NavigationTab, Tab } from "../types";
 import { MobileNavigationGrid } from "./MobileNavigationGrid";
 import { useAuth } from "@/hooks/useAuth";
+import { getNavigationPath, getNavigationDescription } from "../utils/navigationPaths";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -28,7 +29,7 @@ export const MobileMenu = ({
     .filter(item => item.type !== "separator")
     .map((item, index) => {
       // Type assertion since we know these are not separators
-      const navItem = item as { title: string; icon: unknown };
+      const navItem = item as Tab;
       return {
         title: navItem.title,
         icon: navItem.icon,
@@ -73,66 +74,3 @@ export const MobileMenu = ({
   );
 };
 
-// Helper functions to map navigation items to paths and descriptions
-function getNavigationPath(title: string, isAdmin?: boolean): string {
-  const pathMap: Record<string, string> = {
-    'Dashboard': isAdmin ? '/' : '/dashboard',
-    'New Request': '/request',
-    'Spaces': '/spaces',
-    'Operations': '/operations',
-    'Issues': '/issues',
-    'Access & Assignments': '/access-assignments',
-    'Occupants': '/occupants',
-    'Inventory': '/inventory',
-    'Tasks': '/tasks',
-    'Supplies': '/tasks',
-    'Supply Requests': isAdmin ? '/admin/supply-requests' : '/supply-requests',
-    'Supply Room': '/supply-room',
-    'Keys': '/keys',
-    'Lighting': '/lighting',
-    'Maintenance': '/maintenance',
-    'Court Operations': '/court-operations',
-    'My Requests': '/my-requests',
-    'My Issues': '/my-issues',
-    'My Activity': '/my-activity',
-    'Admin Center': '/admin',
-    'Admin Profile': '/admin', // Legacy fallback
-    'Profile': '/profile',
-    'System Settings': '/system-settings',
-  };
-  const path = pathMap[title];
-  if (!path) {
-    logger.warn('MobileMenu: Unmapped navigation title', title);
-    return '/';
-  }
-  return path;
-}
-
-function getNavigationDescription(title: string): string {
-  const descriptionMap: Record<string, string> = {
-    'Dashboard': 'Overview & stats',
-    'New Request': 'Supplies, help, issues, keys',
-    'Spaces': 'Manage buildings',
-    'Operations': 'Issues, Maintenance, Supplies',
-    'Issues': 'Track problems',
-    'Access & Assignments': 'Access levels & assignments',
-    'Occupants': 'Manage people',
-    'Inventory': 'Stock & assets',
-    'Tasks': 'Staff task management',
-    'Supplies': 'Staff task management',
-    'Supply Requests': 'Request and track supplies',
-    'Supply Room': 'Supply room management',
-    'Keys': 'Key management',
-    'Lighting': 'Control lights',
-    'Maintenance': 'Schedule & track maintenance',
-    'Court Operations': 'Manage court schedules',
-    'My Requests': 'View your submitted requests',
-    'My Issues': 'Track your reported issues',
-    'My Activity': 'Track all your requests',
-    'Admin Center': 'Team & user management',
-    'Admin Profile': 'Team & user management',
-    'Profile': 'Your account',
-    'System Settings': 'System configuration',
-  };
-  return descriptionMap[title] || '';
-}

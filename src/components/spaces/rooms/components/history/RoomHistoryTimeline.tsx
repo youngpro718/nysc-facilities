@@ -54,31 +54,38 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
         if (error) throw error;
         
         const events: HistoryEvent[] = (roomIssues || []).map((issue: Record<string, unknown>) => {
-          const resolutionSpeed = issue.status === 'resolved' || issue.status === 'closed'
-            ? getResolutionSpeed(issue.created_at, issue.updated_at)
+          const id = String(issue.id || '');
+          const createdAt = String(issue.created_at || new Date().toISOString());
+          const updatedAt = String(issue.updated_at || createdAt);
+          const status = String(issue.status || 'open');
+          const title = String(issue.title || 'Issue');
+          const description = String(issue.description || 'No description available');
+          const priority = String(issue.priority || 'medium');
+          const resolutionSpeed = (status === 'resolved' || status === 'closed')
+            ? getResolutionSpeed(createdAt, updatedAt)
             : 'ongoing';
             
           return {
-            id: issue.id,
-            date: issue.created_at || new Date().toISOString(),
-            type: (issue.status === 'resolved' || issue.status === 'closed') ? 'issue_resolved' : 'issue_created',
-            title: issue.title || 'Issue',
-            description: issue.description || 'No description available',
-            severity: (issue.priority || 'medium') as 'low' | 'medium' | 'high' | 'critical',
+            id,
+            date: createdAt,
+            type: (status === 'resolved' || status === 'closed') ? 'issue_resolved' as const : 'issue_created' as const,
+            title,
+            description,
+            severity: priority as 'low' | 'medium' | 'high' | 'critical',
             resolutionSpeed,
             category: getCategoryFromIssue(issue),
-            status: issue.status
+            status
           };
         });
 
         if (room.previous_functions && Array.isArray(room.previous_functions)) {
-          room.previous_functions.forEach((func: Record<string, unknown>) => {
+          room.previous_functions.forEach((func: Record<string, unknown>, idx: number) => {
             events.push({
-              id: `func-${func.date}`,
-              date: func.date || room.function_change_date || new Date().toISOString(),
+              id: `func-${idx}-${String(func.date || 'unknown')}`,
+              date: String(func.date || room.function_change_date || new Date().toISOString()),
               type: 'quick_fix',
               title: 'Room Function Changed',
-              description: `Room repurposed from ${func.type?.replace(/_/g, ' ')} - ${func.reason || 'No reason provided'}`,
+              description: `Room repurposed from ${String(func.type || '').replace(/_/g, ' ')} - ${String(func.reason || 'No reason provided')}`,
               severity: 'low',
               resolutionSpeed: func.temporary ? 'ongoing' : 'quick',
               category: 'other',
@@ -109,8 +116,8 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
   };
 
   const getCategoryFromIssue = (issue: Record<string, unknown>): 'lighting' | 'maintenance' | 'safety' | 'access' | 'other' => {
-    const title = (issue.title || '').toLowerCase();
-    const description = (issue.description || '').toLowerCase();
+    const title = String(issue.title || '').toLowerCase();
+    const description = String(issue.description || '').toLowerCase();
     
     if (title.includes('light') || description.includes('light') || title.includes('bulb')) return 'lighting';
     if (title.includes('door') || description.includes('access') || title.includes('key')) return 'access';
@@ -167,13 +174,13 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
   const getResolutionBadge = (speed?: string) => {
     switch (speed) {
       case 'quick':
-        return <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-1 py-0">Quick Fix</Badge>;
+        return <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-xs px-1 py-0">Quick Fix</Badge>;
       case 'normal':
-        return <Badge variant="secondary" className="text-[10px] px-1 py-0">Resolved</Badge>;
+        return <Badge variant="secondary" className="text-xs px-1 py-0">Resolved</Badge>;
       case 'slow':
-        return <Badge variant="outline" className="text-[10px] px-1 py-0 border-yellow-500 text-yellow-600">Slow Resolution</Badge>;
+        return <Badge variant="outline" className="text-xs px-1 py-0 border-yellow-500 text-yellow-600 dark:text-yellow-400">Slow Resolution</Badge>;
       case 'ongoing':
-        return <Badge variant="destructive" className="text-[10px] px-1 py-0">Ongoing</Badge>;
+        return <Badge variant="destructive" className="text-xs px-1 py-0">Ongoing</Badge>;
       default:
         return null;
     }
@@ -197,11 +204,11 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return 'border-l-red-500 bg-red-50 dark:bg-red-950/20';
+        return 'border-l-red-500 bg-red-50 dark:bg-red-950/30 dark:bg-red-950/20';
       case 'high':
-        return 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20';
+        return 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/30 dark:bg-orange-950/20';
       case 'medium':
-        return 'border-l-blue-500 bg-blue-50 dark:bg-blue-950/20';
+        return 'border-l-blue-500 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950/20';
       default:
         return 'border-l-gray-300 bg-gray-50 dark:bg-gray-900/20';
     }
@@ -266,7 +273,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
           </div>
           <div className="flex flex-wrap gap-1 mt-1.5">
             {categoryStats.chronicCategories.map((cat) => (
-              <Badge key={cat} variant="outline" className="text-[10px] capitalize border-amber-400 text-amber-700 dark:text-amber-400">
+              <Badge key={cat} variant="outline" className="text-xs capitalize border-amber-400 text-amber-700 dark:text-amber-400">
                 {cat}: {categoryStats.stats[cat as keyof typeof categoryStats.stats]} this year
               </Badge>
             ))}
@@ -277,16 +284,16 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
       {/* Summary insights */}
       <div className="grid grid-cols-3 gap-2">
         <div className="text-center p-2 bg-muted/30 rounded-md border">
-          <div className="text-sm font-bold text-green-600">{quickFixes}</div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Quick Fixes</div>
+          <div className="text-sm font-bold text-green-600 dark:text-green-400">{quickFixes}</div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Quick Fixes</div>
         </div>
         <div className="text-center p-2 bg-muted/30 rounded-md border">
-          <div className="text-sm font-bold text-orange-600">{ongoingIssues}</div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Ongoing</div>
+          <div className="text-sm font-bold text-orange-600 dark:text-orange-400">{ongoingIssues}</div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Ongoing</div>
         </div>
         <div className="text-center p-2 bg-muted/30 rounded-md border">
-          <div className="text-sm font-bold text-blue-600">{recentIssues}</div>
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">This Month</div>
+          <div className="text-sm font-bold text-blue-600 dark:text-blue-400">{recentIssues}</div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">This Month</div>
         </div>
       </div>
 
@@ -295,7 +302,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
         {Object.entries(categoryStats.stats)
           .filter(([_, count]) => count > 0)
           .map(([cat, count]) => (
-            <Badge key={cat} variant="secondary" className="text-[10px] capitalize gap-1">
+            <Badge key={cat} variant="secondary" className="text-xs capitalize gap-1">
               {getCategoryIcon(cat)}
               {cat}: {count}
             </Badge>
@@ -333,7 +340,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
                     <p className="text-xs text-muted-foreground line-clamp-2 mb-1.5">
                       {event.description}
                     </p>
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       {format(new Date(event.date), 'MMM d, yyyy')}
                       <span className="text-muted-foreground/60">

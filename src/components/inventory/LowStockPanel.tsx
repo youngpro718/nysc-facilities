@@ -184,7 +184,7 @@ export const LowStockPanel = () => {
         label: "Low Stock",
         // Amber scheme with good contrast
         badgeVariant: undefined,
-        badgeClass: "bg-amber-100 text-amber-900 dark:bg-amber-200/20 dark:text-amber-300",
+        badgeClass: "bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:bg-amber-200/20 dark:text-amber-300",
       } as const;
     }
     return {
@@ -207,16 +207,16 @@ export const LowStockPanel = () => {
 
   const getCategoryColor = (color: string) => {
     const colorMap: Record<string, string> = {
-      red: "bg-red-100 text-red-800",
-      blue: "bg-blue-100 text-blue-800",
-      green: "bg-green-100 text-green-800",
-      orange: "bg-orange-100 text-orange-800",
-      purple: "bg-purple-100 text-purple-800",
-      yellow: "bg-yellow-100 text-yellow-800",
+      red: "bg-red-100 dark:bg-red-900/30 text-red-800",
+      blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-800",
+      green: "bg-green-100 dark:bg-green-900/30 text-green-800",
+      orange: "bg-orange-100 dark:bg-orange-900/30 text-orange-800",
+      purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-800",
+      yellow: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800",
       pink: "bg-pink-100 text-pink-800",
-      gray: "bg-gray-100 text-gray-800",
+      gray: "bg-gray-100 dark:bg-gray-800/30 text-gray-800",
     };
-    return colorMap[color] || "bg-gray-100 text-gray-800";
+    return colorMap[color] || "bg-gray-100 dark:bg-gray-800/30 text-gray-800";
   };
 
   if (isLoading) {

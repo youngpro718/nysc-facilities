@@ -83,7 +83,7 @@ export function InlineItemRow({
             </Badge>
           )}
           {item.requires_justification && (
-            <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
+            <Badge variant="outline" className="text-xs text-amber-600 dark:text-amber-400 border-amber-500/30">
               Requires approval
             </Badge>
           )}

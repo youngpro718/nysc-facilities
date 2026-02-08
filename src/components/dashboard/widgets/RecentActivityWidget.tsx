@@ -36,10 +36,10 @@ interface RecentActivityWidgetProps {
 }
 
 const typeConfig = {
-  supply_request: { icon: Package, color: 'text-green-600', label: 'Supply' },
-  key_request: { icon: Key, color: 'text-blue-600', label: 'Key' },
-  issue: { icon: AlertTriangle, color: 'text-orange-600', label: 'Issue' },
-  notification: { icon: Activity, color: 'text-purple-600', label: 'Update' },
+  supply_request: { icon: Package, color: 'text-green-600 dark:text-green-400', label: 'Supply' },
+  key_request: { icon: Key, color: 'text-blue-600 dark:text-blue-400', label: 'Key' },
+  issue: { icon: AlertTriangle, color: 'text-orange-600 dark:text-orange-400', label: 'Issue' },
+  notification: { icon: Activity, color: 'text-purple-600 dark:text-purple-400', label: 'Update' },
 };
 
 const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', icon: unknown }> = {

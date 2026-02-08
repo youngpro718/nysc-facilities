@@ -52,7 +52,15 @@ export function useLightingWithTickets(roomId: string | null) {
         .map(f => f.issue_id)
         .filter((id): id is string => id !== null);
 
-      let issuesMap: Record<string, unknown> = {};
+      interface IssueRecord {
+        id: string;
+        title: string;
+        status: string;
+        priority: string;
+        created_at: string;
+      }
+
+      let issuesMap: Record<string, IssueRecord> = {};
       if (issueIds.length > 0) {
         const { data: issues } = await supabase
           .from('issues')
@@ -60,9 +68,9 @@ export function useLightingWithTickets(roomId: string | null) {
           .in('id', issueIds);
 
         issuesMap = (issues || []).reduce((acc, issue) => {
-          acc[issue.id] = issue;
+          acc[issue.id] = issue as IssueRecord;
           return acc;
-        }, {} as Record<string, unknown>);
+        }, {} as Record<string, IssueRecord>);
       }
 
       // Transform data
@@ -71,8 +79,8 @@ export function useLightingWithTickets(roomId: string | null) {
           ? Math.floor((Date.now() - new Date(fixture.reported_out_date).getTime()) / (1000 * 60 * 60 * 24))
           : null;
 
-        const issue = fixture.issue_id ? issuesMap[fixture.issue_id] : null;
-        const ticketDays = issue?.created_at
+        const issue = fixture.issue_id ? issuesMap[fixture.issue_id] ?? null : null;
+        const ticketDays = issue
           ? Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60 * 24))
           : null;
 

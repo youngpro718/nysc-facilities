@@ -85,8 +85,8 @@ export default function VerifyEmail() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
             <CardTitle className="text-2xl">Email Verified!</CardTitle>
             <CardDescription>Redirecting you to the app...</CardDescription>

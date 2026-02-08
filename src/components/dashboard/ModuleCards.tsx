@@ -41,17 +41,17 @@ const ModuleCard = ({ title, icon, count, status, description, route, color = "p
   const getColorClasses = (color: string) => {
     switch (color) {
       case 'red':
-        return 'border-red-200 hover:border-red-300 bg-red-50';
+        return 'border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700 bg-red-50 dark:bg-red-950/30';
       case 'yellow':
-        return 'border-yellow-200 hover:border-yellow-300 bg-yellow-50';
+        return 'border-yellow-200 dark:border-yellow-800 hover:border-yellow-300 dark:hover:border-yellow-700 bg-yellow-50 dark:bg-yellow-950/30';
       case 'green':
-        return 'border-green-200 hover:border-green-300 bg-green-50';
+        return 'border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700 bg-green-50 dark:bg-green-950/30';
       case 'blue':
-        return 'border-blue-200 hover:border-blue-300 bg-blue-50';
+        return 'border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 bg-blue-50 dark:bg-blue-950/30';
       case 'purple':
-        return 'border-purple-200 hover:border-purple-300 bg-purple-50';
+        return 'border-purple-200 dark:border-purple-800 hover:border-purple-300 dark:hover:border-purple-700 bg-purple-50 dark:bg-purple-950/30';
       case 'orange':
-        return 'border-orange-200 hover:border-orange-300 bg-orange-50';
+        return 'border-orange-200 dark:border-orange-800 hover:border-orange-300 dark:hover:border-orange-700 bg-orange-50 dark:bg-orange-950/30';
       default:
         return 'border-gray-200 hover:border-gray-300';
     }

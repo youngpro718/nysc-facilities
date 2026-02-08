@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Loader2 } from "lucide-react";
 import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -306,7 +307,7 @@ export function EnhancedUserSettings() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading settings...</p>
         </div>
       </div>
@@ -338,7 +339,7 @@ export function EnhancedUserSettings() {
           >
             {isSaving ? (
               <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Saving...
               </div>
             ) : (

@@ -36,7 +36,7 @@ export function CardFront({ issue, onMarkAsSeen, actions }: CardFrontProps) {
             <IssueStatusBadge status={issue.status} />
             {issue.seen === false && (
               <span 
-                className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 cursor-pointer"
+                className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-950/30 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-400 cursor-pointer"
                 onClick={handleNewBadgeClick}
               >
                 New

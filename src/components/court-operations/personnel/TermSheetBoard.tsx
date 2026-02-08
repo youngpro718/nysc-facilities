@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Loader2 } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -146,7 +147,7 @@ export const TermSheetBoard: React.FC = () => {
     return (
       <div className="bg-neutral-900 text-neutral-100 min-h-screen p-3">
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </div>
     );

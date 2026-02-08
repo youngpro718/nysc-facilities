@@ -363,7 +363,7 @@ export function UploadDailyReportDialog({
           {extractionStatus === 'success' && (
             <Alert className="border-green-500">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              <AlertDescription className="text-green-700">
+              <AlertDescription className="text-green-700 dark:text-green-400">
                 Data extracted successfully! Review the data in the next step.
               </AlertDescription>
             </Alert>

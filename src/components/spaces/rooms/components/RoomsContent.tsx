@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React from 'react';
+import { Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Room } from "../types/RoomTypes";
 import { RoomCard } from "../RoomCard";
@@ -27,18 +28,6 @@ export function RoomsContent({
 }: RoomsContentProps) {
   const isMobile = useIsMobile();
 
-  // Calculate room type counts for the filtered rooms
-  const roomTypeCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    
-    filteredRooms.forEach(room => {
-      const type = room.room_type;
-      counts[type] = (counts[type] || 0) + 1;
-    });
-    
-    return counts;
-  }, [filteredRooms]);
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -61,10 +50,14 @@ export function RoomsContent({
 
   if (filteredRooms.length === 0) {
     return (
-      <div className="text-center py-10 text-muted-foreground">
-        {searchQuery ? 
-          `No rooms found for "${searchQuery}"` : 
-          'No rooms found matching your criteria'}
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <Search className="h-10 w-10 text-muted-foreground/50 mb-3" />
+        <p className="text-base font-medium text-muted-foreground">
+          {searchQuery ? `No rooms found for "${searchQuery}"` : 'No rooms found'}
+        </p>
+        <p className="text-sm text-muted-foreground/70 mt-1">
+          {searchQuery ? 'Try adjusting your search or filters' : 'No rooms match your current filters'}
+        </p>
       </div>
     );
   }

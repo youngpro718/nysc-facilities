@@ -27,7 +27,7 @@ export function AdminToggle({ isAdmin, userId, status, onToggleAdmin }: AdminTog
           size="sm"
           variant="outline"
           onClick={() => onToggleAdmin(userId, false)}
-          className="border-red-300 text-red-600 hover:bg-red-50 text-xs"
+          className="border-red-300 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 text-xs"
         >
           <ArrowDown className="h-3 w-3 mr-1" />
           Remove Admin
@@ -37,7 +37,7 @@ export function AdminToggle({ isAdmin, userId, status, onToggleAdmin }: AdminTog
           size="sm"
           variant="outline"
           onClick={() => onToggleAdmin(userId, true)}
-          className="border-blue-300 text-blue-600 hover:bg-blue-50 text-xs"
+          className="border-blue-300 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 dark:bg-blue-950/30 text-xs"
         >
           <ArrowUp className="h-3 w-3 mr-1" />
           Make Admin

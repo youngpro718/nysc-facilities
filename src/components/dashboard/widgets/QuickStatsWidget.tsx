@@ -23,11 +23,11 @@ interface QuickStatsWidgetProps {
 }
 
 const colorClasses = {
-  blue: 'text-blue-600',
-  green: 'text-green-600',
-  orange: 'text-orange-600',
-  red: 'text-red-600',
-  purple: 'text-purple-600',
+  blue: 'text-blue-600 dark:text-blue-400',
+  green: 'text-green-600 dark:text-green-400',
+  orange: 'text-orange-600 dark:text-orange-400',
+  red: 'text-red-600 dark:text-red-400',
+  purple: 'text-purple-600 dark:text-purple-400',
   gray: 'text-gray-600',
 };
 

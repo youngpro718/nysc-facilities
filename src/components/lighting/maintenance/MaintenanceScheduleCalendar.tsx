@@ -99,10 +99,10 @@ export function MaintenanceScheduleCalendar() {
     
     const events = maintenanceEvents.get(dayString);
     if (events?.hasHighPriority) {
-      return "bg-red-100 text-red-800";
+      return "bg-red-100 dark:bg-red-900/30 text-red-800";
     }
     
-    return events?.count > 2 ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800";
+    return events?.count > 2 ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800" : "bg-blue-100 dark:bg-blue-900/30 text-blue-800";
   };
   
   return (

@@ -37,24 +37,24 @@ export const HallwayLightingDashboard: React.FC<HallwayLightingDashboardProps> =
 }) => {
   const getSectionBadgeColor = (section: string) => {
     switch (section) {
-      case 'main': return 'bg-blue-100 text-blue-800';
+      case 'main': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800';
       case 'north_east':
-      case 'north_west': return 'bg-green-100 text-green-800';
+      case 'north_west': return 'bg-green-100 dark:bg-green-900/30 text-green-800';
       case 'center_east':
-      case 'center_west': return 'bg-yellow-100 text-yellow-800';
+      case 'center_west': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800';
       case 'south_east':
-      case 'south_west': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'south_west': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800';
+      default: return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800';
     }
   };
 
   const getHealthStatus = (functional: number, total: number) => {
     if (total === 0) return { status: 'unknown', color: 'text-gray-500' };
     const percentage = (functional / total) * 100;
-    if (percentage >= 95) return { status: 'excellent', color: 'text-green-600' };
-    if (percentage >= 80) return { status: 'good', color: 'text-blue-600' };
-    if (percentage >= 60) return { status: 'fair', color: 'text-yellow-600' };
-    return { status: 'poor', color: 'text-red-600' };
+    if (percentage >= 95) return { status: 'excellent', color: 'text-green-600 dark:text-green-400' };
+    if (percentage >= 80) return { status: 'good', color: 'text-blue-600 dark:text-blue-400' };
+    if (percentage >= 60) return { status: 'fair', color: 'text-yellow-600 dark:text-yellow-400' };
+    return { status: 'poor', color: 'text-red-600 dark:text-red-400' };
   };
 
   const overallStats = stats.reduce(
@@ -97,7 +97,7 @@ export const HallwayLightingDashboard: React.FC<HallwayLightingDashboardProps> =
               <div className="text-sm text-gray-600">Total Bulbs</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">
+              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {overallStats.maintenance_needed}
               </div>
               <div className="text-sm text-gray-600">Need Maintenance</div>
@@ -153,7 +153,7 @@ export const HallwayLightingDashboard: React.FC<HallwayLightingDashboardProps> =
                   </div>
                   
                   {hallway.maintenance_needed > 0 && (
-                    <div className="mt-3 flex items-center gap-2 text-yellow-600">
+                    <div className="mt-3 flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
                       <AlertTriangle className="h-4 w-4" />
                       <span className="text-sm">
                         {hallway.maintenance_needed} fixtures need maintenance
@@ -184,7 +184,7 @@ export const HallwayLightingDashboard: React.FC<HallwayLightingDashboardProps> =
 
       {/* Special Configurations for 13th and 16th Floors */}
       {(floorNumber === 13 || floorNumber === 16) && (
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-amber-800">
               <TrendingUp className="h-5 w-5" />

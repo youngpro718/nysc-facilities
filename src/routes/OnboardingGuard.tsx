@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { Loader2 } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { getMyProfile } from '@/services/profile';
@@ -206,7 +207,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Verifying access...</p>
         </div>
       </div>

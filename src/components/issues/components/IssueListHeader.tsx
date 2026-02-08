@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { IssueFilters } from "../IssueFilters";
-import { IssueFiltersType, ViewMode } from "../types/FilterTypes";
+import { IssueFiltersType } from "../types/FilterTypes";
 
 interface IssueListHeaderProps {
   viewMode: 'cards' | 'table';

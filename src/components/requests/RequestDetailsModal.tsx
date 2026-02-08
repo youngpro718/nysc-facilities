@@ -244,7 +244,7 @@ export function RequestDetailsModal({ request, order, open, onClose, onCancel }:
                   />
                   
                   {normalizedOrderStatus === 'ready_for_pickup' && (
-                    <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                    <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3 rounded-lg">
                       <p className="text-sm text-green-800 font-medium">
                         🎉 Your key is ready for pickup at the facilities office!
                       </p>

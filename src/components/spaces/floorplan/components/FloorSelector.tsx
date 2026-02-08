@@ -101,15 +101,15 @@ export function FloorSelector({
   return (
     <div className="flex items-center gap-3">
       {/* Current Floor Display */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl shadow-sm border border-blue-200 dark:border-blue-700/50">
-        <div className="p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg">
+      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800 dark:border-blue-700/50">
+        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 dark:bg-blue-800/50 rounded-lg">
           <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
         </div>
         <div className="min-w-0">
           <div className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate">
             {currentFloor?.buildings.name || 'Building Name'}
           </div>
-          <div className="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1">
+          <div className="text-xs text-blue-700 dark:text-blue-400 dark:text-blue-300 flex items-center gap-1">
             <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
             {currentFloor?.name || 'Select Floor'}
           </div>
@@ -129,7 +129,7 @@ export function FloorSelector({
             <SelectItem 
               key={floor.id} 
               value={floor.id}
-              className="rounded-lg mx-1 my-0.5 focus:bg-blue-50 dark:focus:bg-blue-900/20"
+              className="rounded-lg mx-1 my-0.5 focus:bg-blue-50 dark:bg-blue-950/30 dark:focus:bg-blue-900/20"
             >
               <div className="flex items-center gap-3 py-1">
                 <div className="w-2 h-2 bg-slate-400 rounded-full"></div>

@@ -190,13 +190,13 @@ export function InventoryAdjustmentDialog({
               <SelectContent>
                 <SelectItem value="add">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
+                    <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
                     <span>Add Stock</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="remove">
                   <div className="flex items-center gap-2">
-                    <TrendingDown className="h-4 w-4 text-red-600" />
+                    <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
                     <span>Remove Stock</span>
                   </div>
                 </SelectItem>
@@ -220,11 +220,11 @@ export function InventoryAdjustmentDialog({
 
           {/* Preview */}
           {quantity && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm font-medium text-blue-900">
                 New Stock Level:
               </p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {item.quantity} → {previewQuantity} {item.unit}
               </p>
             </div>

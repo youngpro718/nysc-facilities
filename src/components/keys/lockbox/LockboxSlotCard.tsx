@@ -35,7 +35,7 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 text-green-600 dark:text-green-500">
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 dark:text-green-500">
                   <Link2 className="w-3.5 h-3.5" />
                 </div>
               </TooltipTrigger>
@@ -50,7 +50,7 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-500">
+                <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 dark:text-yellow-500">
                   <Link2Off className="w-3.5 h-3.5" />
                 </div>
               </TooltipTrigger>

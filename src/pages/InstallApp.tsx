@@ -118,7 +118,7 @@ export default function InstallApp() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center space-y-4">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm">
               <QRCodeSVG
                 id="qr-code"
                 value={appUrl}

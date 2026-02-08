@@ -237,8 +237,8 @@ export function ThreeDViewer({
         <Card className="p-8">
           <div className="text-center space-y-4">
             <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto" />
-              <Building2Icon className="h-8 w-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-blue-600" />
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 dark:border-blue-800 border-t-blue-600 mx-auto" />
+              <Building2Icon className="h-8 w-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Loading 3D View</h3>
@@ -259,12 +259,12 @@ export function ThreeDViewer({
     return (
       <Card className="w-full h-full flex items-center justify-center bg-gray-50">
         <div className="text-center p-6 max-w-md">
-          <div className="rounded-full bg-red-100 p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
-            <InfoIcon className="h-6 w-6 text-red-600" />
+          <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+            <InfoIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
           </div>
-          <p className="text-red-600 font-medium mb-2">Error rendering 3D view</p>
+          <p className="text-red-600 dark:text-red-400 font-medium mb-2">Error rendering 3D view</p>
           <p className="text-gray-500 mb-4">Try refreshing the page or check your browser compatibility</p>
-          <p className="text-xs text-gray-400 bg-gray-100 p-2 rounded overflow-x-auto">
+          <p className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-800/30 p-2 rounded overflow-x-auto">
             {viewerError.message}
           </p>
           <Button 
@@ -312,7 +312,7 @@ export function ThreeDViewer({
       <div className="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none z-20">
         {/* Left Controls */}
         <div className="flex flex-col gap-2">
-          <Card className="p-2 pointer-events-auto bg-white/95 backdrop-blur-sm shadow-lg">
+          <Card className="p-2 pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-lg">
             <div className="flex gap-1">
               <TooltipProvider>
                 <Tooltip>
@@ -391,7 +391,7 @@ export function ThreeDViewer({
           </Card>
 
           {/* Camera Controls */}
-          <Card className="p-2 pointer-events-auto bg-white/95 backdrop-blur-sm shadow-lg">
+          <Card className="p-2 pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-lg">
             <div className="flex gap-1">
               <TooltipProvider>
                 <Tooltip>
@@ -498,7 +498,7 @@ export function ThreeDViewer({
         
         {/* Right Controls */}
         <div className="flex flex-col gap-2">
-          <Card className="p-2 pointer-events-auto bg-white/95 backdrop-blur-sm shadow-lg">
+          <Card className="p-2 pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-lg">
             <Button 
               variant="outline" 
               size="sm" 
@@ -512,7 +512,7 @@ export function ThreeDViewer({
 
           {/* Statistics Panel */}
           {showStats && (
-            <Card className="p-3 pointer-events-auto bg-white/95 backdrop-blur-sm shadow-lg">
+            <Card className="p-3 pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-lg">
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold text-gray-700">Floor Statistics</h4>
                 <div className="space-y-1">
@@ -554,7 +554,7 @@ export function ThreeDViewer({
       {/* Bottom Controls Bar */}
       <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end pointer-events-none z-20">
         {/* View Mode Selector */}
-        <Card className="p-2 pointer-events-auto bg-white/95 backdrop-blur-sm shadow-lg">
+        <Card className="p-2 pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-lg">
           <div className="flex gap-1">
             <TooltipProvider>
               <Tooltip>
@@ -631,9 +631,9 @@ export function ThreeDViewer({
         </Card>
 
         {/* Lighting Intensity Control */}
-        <Card className="p-3 pointer-events-auto bg-white/95 backdrop-blur-sm shadow-lg">
+        <Card className="p-3 pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-lg">
           <div className="flex items-center gap-3">
-            <SunIcon className="h-4 w-4 text-yellow-600" />
+            <SunIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             <Slider 
               value={[lightIntensity]} 
               onValueChange={(value) => setLightIntensity(value[0])}
@@ -652,12 +652,12 @@ export function ThreeDViewer({
       {/* Selected Object Info Panel */}
       {selectedObjectData && (
         <div className="absolute top-24 left-4 pointer-events-none z-20">
-          <Card className="p-4 pointer-events-auto bg-white/95 backdrop-blur-sm shadow-xl max-w-sm animate-in slide-in-from-left">
+          <Card className="p-4 pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-xl max-w-sm animate-in slide-in-from-left">
             <div className="space-y-3">
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <MousePointerClickIcon className="h-4 w-4 text-blue-600" />
+                    <MousePointerClickIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     {selectedObjectData.label || selectedObjectData.properties?.room_number || 'Selected Object'}
                   </h3>
                   <Badge variant="outline" className="mt-1 text-xs">

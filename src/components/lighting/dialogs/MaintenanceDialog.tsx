@@ -101,7 +101,7 @@ export function MaintenanceDialog({ fixture, onComplete }: MaintenanceDialogProp
       status={fixture.status}
       contextInfo={contextInfo}
       trigger={
-        <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+        <Button variant="outline" size="sm" className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30 dark:bg-blue-950/30">
           <Wrench className="h-4 w-4 mr-2" />
           Record Maintenance
         </Button>

@@ -63,21 +63,21 @@ export const MaintenanceIssuesList = () => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "urgent":
-      case "critical": return "bg-red-100 text-red-800";
-      case "high": return "bg-orange-100 text-orange-800";
-      case "medium": return "bg-yellow-100 text-yellow-800";
-      case "low": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "critical": return "bg-red-100 dark:bg-red-900/30 text-red-800";
+      case "high": return "bg-orange-100 dark:bg-orange-900/30 text-orange-800";
+      case "medium": return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800";
+      case "low": return "bg-green-100 dark:bg-green-900/30 text-green-800";
+      default: return "bg-gray-100 dark:bg-gray-800/30 text-gray-800";
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "reported": return "bg-red-100 text-red-800";
-      case "in_progress": return "bg-yellow-100 text-yellow-800";
-      case "scheduled": return "bg-blue-100 text-blue-800";
-      case "resolved": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "reported": return "bg-red-100 dark:bg-red-900/30 text-red-800";
+      case "in_progress": return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800";
+      case "scheduled": return "bg-blue-100 dark:bg-blue-900/30 text-blue-800";
+      case "resolved": return "bg-green-100 dark:bg-green-900/30 text-green-800";
+      default: return "bg-gray-100 dark:bg-gray-800/30 text-gray-800";
     }
   };
 
@@ -331,14 +331,14 @@ export const MaintenanceIssuesList = () => {
                 </div>
 
                 {issue.notes && issue.notes.startsWith('Temporary fix:') && (
-                  <div className="bg-yellow-50 p-3 rounded-lg">
+                  <div className="bg-yellow-50 dark:bg-yellow-950/30 p-3 rounded-lg">
                     <div className="flex items-center gap-2 text-yellow-800 font-medium">
                       <CheckCircle className="h-4 w-4" />
                       Temporary Fix Applied
                     </div>
-                    <p className="text-sm mt-1 text-yellow-700">{issue.notes.replace('Temporary fix: ', '')}</p>
+                    <p className="text-sm mt-1 text-yellow-700 dark:text-yellow-400">{issue.notes.replace('Temporary fix: ', '')}</p>
                     {issue.updated_at && (
-                      <p className="text-xs text-yellow-600 mt-1">
+                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
                         Applied on {format(new Date(issue.updated_at), "MMM dd, yyyy")}
                       </p>
                     )}

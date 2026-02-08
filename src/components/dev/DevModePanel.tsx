@@ -163,7 +163,7 @@ export function DevModePanel({ realRole }: DevModePanelProps) {
           {isPreviewActive && (
             <>
               <span className="text-muted-foreground">→</span>
-              <Badge className="text-xs py-0 bg-amber-500/20 text-amber-700 border-amber-500/30">
+              <Badge className="text-xs py-0 bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30">
                 {getRoleLabel(previewRole)}
               </Badge>
             </>

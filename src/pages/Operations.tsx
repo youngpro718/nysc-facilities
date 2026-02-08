@@ -19,7 +19,6 @@ import {
   TrendingUp,
   Activity,
   Users,
-  BarChart3,
   RefreshCw,
   Zap,
   Boxes
@@ -27,12 +26,10 @@ import {
 
 // Import existing components
 import { EnhancedIssuesList } from "@/components/admin-issues/EnhancedIssuesList";
-import { IssueAnalyticsPanel } from "@/components/admin-issues/IssueAnalyticsPanel";
 import { IssueGroupingControls } from "@/components/admin-issues/IssueGroupingControls";
 import { MaintenanceScheduleList } from "@/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@/components/maintenance/MaintenanceIssuesList";
 import { MaintenanceCalendar } from "@/components/maintenance/MaintenanceCalendar";
-import AdvancedAnalyticsDashboard from "@/components/analytics/AdvancedAnalyticsDashboard";
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/types/issues";
 
 
@@ -167,7 +164,7 @@ export default function Operations() {
 
   // React to `tab` query param changes
   useEffect(() => {
-    if (tabParam && ['overview','issues','maintenance','analytics'].includes(tabParam)) {
+    if (tabParam && ['overview','issues','maintenance'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -433,7 +430,7 @@ export default function Operations() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Maintenance Queue</p>
+                  <p className="text-sm font-medium text-orange-700 dark:text-orange-400 dark:text-orange-300">Maintenance Queue</p>
                   <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{enhancedMetrics.totalMaintenanceItems}</p>
                   <p className="text-xs text-orange-600 dark:text-orange-400">
                     {enhancedMetrics.maintenanceScheduled} scheduled • {enhancedMetrics.maintenanceInProgress} active
@@ -448,7 +445,7 @@ export default function Operations() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-700 dark:text-green-300">System Performance</p>
+                  <p className="text-sm font-medium text-green-700 dark:text-green-400 dark:text-green-300">System Performance</p>
                   <p className="text-2xl font-bold text-green-900 dark:text-green-100">98%</p>
                   <p className="text-xs text-green-600 dark:text-green-400">
                     Operational efficiency • All systems nominal
@@ -476,10 +473,6 @@ export default function Operations() {
             <Wrench className="h-4 w-4" />
             Maintenance
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -499,7 +492,7 @@ export default function Operations() {
                 <Button 
                   onClick={() => setShowCreateIssue(true)} 
                   variant="outline" 
-                  className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-red-50 hover:border-red-200 transition-colors group"
+                  className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800 transition-colors group"
                 >
                   <AlertTriangle className="h-8 w-8 text-red-500 group-hover:scale-110 transition-transform" />
                   <div className="text-center">
@@ -510,7 +503,7 @@ export default function Operations() {
                 <Button 
                   onClick={() => setShowScheduleMaintenance(true)} 
                   variant="outline" 
-                  className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-blue-50 hover:border-blue-200 transition-colors group"
+                  className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 dark:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-800 dark:border-blue-800 transition-colors group"
                 >
                   <Calendar className="h-8 w-8 text-blue-500 group-hover:scale-110 transition-transform" />
                   <div className="text-center">
@@ -539,7 +532,7 @@ export default function Operations() {
                       </div>
                       Critical Issues
                       {enhancedMetrics.criticalCount > 0 && (
-                        <Badge variant="destructive" className="ml-2 animate-pulse">
+                        <Badge variant="destructive" className="ml-2">
                           {enhancedMetrics.criticalCount}
                         </Badge>
                       )}
@@ -550,7 +543,7 @@ export default function Operations() {
                     variant="outline" 
                     size="sm" 
                     onClick={() => handleTabChange('issues')}
-                    className="hover:bg-red-50 hover:border-red-200"
+                    className="hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800"
                   >
                     View All Issues
                   </Button>
@@ -604,21 +597,21 @@ export default function Operations() {
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 rounded-lg border border-orange-200 dark:border-orange-800">
                     <div>
                       <p className="font-semibold text-orange-900 dark:text-orange-100">In Progress</p>
-                      <p className="text-3xl font-bold text-orange-600">{enhancedMetrics.maintenanceInProgress}</p>
+                      <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.maintenanceInProgress}</p>
                     </div>
                     <Clock className="h-10 w-10 text-orange-500" />
                   </div>
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div>
                       <p className="font-semibold text-blue-900 dark:text-blue-100">Scheduled</p>
-                      <p className="text-3xl font-bold text-blue-600">{enhancedMetrics.maintenanceScheduled}</p>
+                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.maintenanceScheduled}</p>
                     </div>
                     <Calendar className="h-10 w-10 text-blue-500" />
                   </div>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="w-full hover:bg-orange-50 hover:border-orange-200 transition-colors"
+                    className="w-full hover:bg-orange-50 dark:hover:bg-orange-950/30 dark:bg-orange-950/30 hover:border-orange-200 dark:hover:border-orange-800 dark:border-orange-800 transition-colors"
                     onClick={() => handleTabChange('maintenance')}
                   >
                     View All Maintenance
@@ -657,45 +650,45 @@ export default function Operations() {
 
           {/* Quick Stats for Issues */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800">
+            <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 dark:bg-red-950 dark:border-red-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-red-800 dark:text-red-200">Critical Issues</p>
-                    <p className="text-2xl font-bold text-red-600">{enhancedMetrics.criticalCount}</p>
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{enhancedMetrics.criticalCount}</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-red-500" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950 dark:border-orange-800">
+            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 dark:bg-orange-950 dark:border-orange-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-orange-800 dark:text-orange-200">In Progress</p>
-                    <p className="text-2xl font-bold text-orange-600">{enhancedMetrics.inProgress}</p>
+                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.inProgress}</p>
                   </div>
                   <Clock className="h-8 w-8 text-orange-500" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950 dark:border-blue-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Active Issues</p>
-                    <p className="text-2xl font-bold text-blue-600">{enhancedMetrics.activeIssues}</p>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.activeIssues}</p>
                   </div>
                   <AlertCircle className="h-8 w-8 text-blue-500" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+            <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 dark:bg-green-950 dark:border-green-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-green-800 dark:text-green-200">Resolved Today</p>
-                    <p className="text-2xl font-bold text-green-600">{enhancedMetrics.resolvedToday}</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{enhancedMetrics.resolvedToday}</p>
                   </div>
                   <CheckCircle className="h-8 w-8 text-green-500" />
                 </div>
@@ -787,34 +780,34 @@ export default function Operations() {
 
           {/* Maintenance Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950 dark:border-orange-800">
+            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 dark:bg-orange-950 dark:border-orange-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-orange-800 dark:text-orange-200">In Progress</p>
-                    <p className="text-2xl font-bold text-orange-600">{enhancedMetrics.maintenanceInProgress}</p>
+                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.maintenanceInProgress}</p>
                   </div>
                   <Clock className="h-8 w-8 text-orange-500" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950 dark:border-blue-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Scheduled</p>
-                    <p className="text-2xl font-bold text-blue-600">{enhancedMetrics.maintenanceScheduled}</p>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.maintenanceScheduled}</p>
                   </div>
                   <Calendar className="h-8 w-8 text-blue-500" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+            <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 dark:bg-green-950 dark:border-green-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-green-800 dark:text-green-200">Completed</p>
-                    <p className="text-2xl font-bold text-green-600">{maintenanceData?.filter(item => item.status === 'resolved').length || 0}</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{maintenanceData?.filter(item => item.status === 'resolved').length || 0}</p>
                   </div>
                   <CheckCircle className="h-8 w-8 text-green-500" />
                 </div>
@@ -866,22 +859,6 @@ export default function Operations() {
           </div>
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Advanced Analytics Dashboard
-              </CardTitle>
-              <CardDescription>
-                Comprehensive facility analytics with AI-powered insights and predictive maintenance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AdvancedAnalyticsDashboard />
-            </CardContent>
-          </Card>
-        </TabsContent>
 
       </Tabs>
 

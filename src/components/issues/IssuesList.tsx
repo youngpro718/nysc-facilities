@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useDialogManager } from "@/hooks/useDialogManager";
 import { IssueFiltersType } from "./types/FilterTypes";
-import { IssueStats } from "./components/IssueStats";
 import { IssueDialogManager } from "./components/IssueDialogManager";
 import { IssueTabs } from "./tabs/IssueTabs";
 
@@ -31,8 +30,6 @@ export const IssuesList = () => {
 
   return (
     <>
-      <IssueStats />
-      
       <IssueTabs
         activeTab={activeTab}
         onTabChange={handleTabChange}

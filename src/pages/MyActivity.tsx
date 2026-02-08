@@ -24,7 +24,8 @@ import {
   Loader2,
   FileText,
   Wrench,
-  ClipboardList
+  ClipboardList,
+  type LucideIcon
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,7 +47,7 @@ import { SimpleReportWizard } from "@/components/issues/wizard/SimpleReportWizar
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 // Status configurations
-const supplyStatusConfig: Record<string, { icon: unknown; label: string; color: string }> = {
+const supplyStatusConfig: Record<string, { icon: LucideIcon; label: string; color: string }> = {
   submitted: { icon: Clock, label: "Submitted", color: "bg-blue-500" },
   pending: { icon: Clock, label: "Pending", color: "bg-yellow-500" },
   approved: { icon: CheckCircle, label: "Approved", color: "bg-green-500" },
@@ -57,14 +58,14 @@ const supplyStatusConfig: Record<string, { icon: unknown; label: string; color: 
   cancelled: { icon: XCircle, label: "Cancelled", color: "bg-gray-500" },
 };
 
-const keyStatusConfig: Record<string, { icon: unknown; label: string; color: string }> = {
+const keyStatusConfig: Record<string, { icon: LucideIcon; label: string; color: string }> = {
   pending: { icon: Clock, label: "Pending Review", color: "bg-yellow-500" },
   approved: { icon: CheckCircle, label: "Approved", color: "bg-green-500" },
   rejected: { icon: XCircle, label: "Rejected", color: "bg-red-500" },
   fulfilled: { icon: Key, label: "Fulfilled", color: "bg-blue-500" },
 };
 
-const issueStatusConfig: Record<string, { icon: unknown; label: string; color: string }> = {
+const issueStatusConfig: Record<string, { icon: LucideIcon; label: string; color: string }> = {
   open: { icon: AlertTriangle, label: "Open", color: "bg-red-500" },
   in_progress: { icon: Wrench, label: "In Progress", color: "bg-yellow-500" },
   resolved: { icon: CheckCircle, label: "Resolved", color: "bg-green-500" },
@@ -153,7 +154,7 @@ export default function MyActivity() {
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <Package className="h-5 w-5 text-green-600" />
+              <Package className="h-5 w-5 text-green-600 dark:text-green-400" />
               <Badge variant={activeSupplyCount > 0 ? "default" : "secondary"}>
                 {activeSupplyCount}
               </Badge>
@@ -168,7 +169,7 @@ export default function MyActivity() {
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <Key className="h-5 w-5 text-blue-600" />
+              <Key className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               <Badge variant={activeKeyCount > 0 ? "default" : "secondary"}>
                 {activeKeyCount}
               </Badge>
@@ -183,7 +184,7 @@ export default function MyActivity() {
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
+              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               <Badge variant={activeIssueCount > 0 ? "destructive" : "secondary"}>
                 {activeIssueCount}
               </Badge>
@@ -198,7 +199,7 @@ export default function MyActivity() {
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <ClipboardList className="h-5 w-5 text-purple-600" />
+              <ClipboardList className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               <Badge variant={activeTaskCount > 0 ? "default" : "secondary"}>
                 {activeTaskCount}
               </Badge>
@@ -257,8 +258,8 @@ export default function MyActivity() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {supplyRequests.map((request: Record<string, unknown>) => {
-                const status = supplyStatusConfig[request.status] || supplyStatusConfig.pending;
+              {supplyRequests.map((request) => {
+                const status = supplyStatusConfig[String(request.status)] || supplyStatusConfig.pending;
                 const StatusIcon = status.icon;
                 return (
                   <Card key={request.id} className="hover:shadow-md transition-shadow">
@@ -323,8 +324,8 @@ export default function MyActivity() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {keyRequests.map((request: Record<string, unknown>) => {
-                const status = keyStatusConfig[request.status] || keyStatusConfig.pending;
+              {keyRequests.map((request) => {
+                const status = keyStatusConfig[String(request.status)] || keyStatusConfig.pending;
                 const StatusIcon = status.icon;
                 return (
                   <Card key={request.id} className="hover:shadow-md transition-shadow">
@@ -333,8 +334,9 @@ export default function MyActivity() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-medium">
-                              {request.request_type === 'new_key' ? 'New Key' : 
+                              {request.request_type === 'new' ? 'New Key' : 
                                request.request_type === 'replacement' ? 'Replacement Key' : 
+                               request.request_type === 'spare' ? 'Spare Key' :
                                'Key Request'}
                             </h3>
                             <Badge variant="outline" className="text-xs">
@@ -343,7 +345,7 @@ export default function MyActivity() {
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground line-clamp-1">
-                            {request.justification || 'No description'}
+                            {request.reason || 'No description'}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
                             {request.created_at && format(new Date(request.created_at), 'MMM d, yyyy')}
@@ -393,8 +395,8 @@ export default function MyActivity() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {issues.map((issue: Record<string, unknown>) => {
-                const status = issueStatusConfig[issue.status] || issueStatusConfig.open;
+              {issues.map((issue) => {
+                const status = issueStatusConfig[String(issue.status)] || issueStatusConfig.open;
                 const StatusIcon = status.icon;
                 return (
                   <Card key={issue.id} className="hover:shadow-md transition-shadow">

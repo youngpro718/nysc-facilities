@@ -188,7 +188,7 @@ export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRo
                     <CommandItem
                       value={matchingRoom.id}
                       onSelect={() => handleSelect(matchingRoom)}
-                      className="bg-yellow-50 dark:bg-yellow-950/20"
+                      className="bg-yellow-50 dark:bg-yellow-950/30 dark:bg-yellow-950/20"
                     >
                       <Check className={cn("mr-2 h-4 w-4", value === matchingRoom.id ? "opacity-100" : "opacity-0")} />
                       <div className="flex flex-col flex-1 min-w-0">
@@ -255,7 +255,7 @@ export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRo
 
       {/* Warning for unlinked room number */}
       {hasUnlinkedRoomNumber && !matchingRoom && (
-        <div className="flex items-start gap-2 text-xs text-yellow-600 dark:text-yellow-500">
+        <div className="flex items-start gap-2 text-xs text-yellow-600 dark:text-yellow-400 dark:text-yellow-500">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>
             Room "{roomNumber}" is not linked to any room in the database. 
