@@ -9,15 +9,16 @@ export function useVerificationMutations(
   const handleVerification = async (
     userId: string,
     approved: boolean,
-    selectedDepartment: string | null
+    selectedDepartment: string | null,
+    selectedRole?: string
   ) => {
     try {
       if (approved) {
-        // Note: The database function expects p_role, not p_department_id
-        // For now, using 'standard' as default role
+        // Use admin-selected role, or fall back to 'standard'
+        const role = selectedRole || 'standard';
         const { error } = await supabase.rpc('approve_user_verification', {
           p_user_id: userId,
-          p_role: 'standard',
+          p_role: role,
           p_admin_notes: null
         });
 
@@ -43,7 +44,7 @@ export function useVerificationMutations(
     }
   };
 
-  const handleBulkVerification = async (selectedUsers: SelectedUser[], approve: boolean, selectedDepartment: string | null) => {
+  const handleBulkVerification = async (selectedUsers: SelectedUser[], approve: boolean, selectedDepartment: string | null, selectedRole?: string) => {
     if (approve && !selectedDepartment) {
       toast.error('Please select a department before approving users');
       return;
@@ -51,7 +52,7 @@ export function useVerificationMutations(
 
     try {
       for (const user of selectedUsers) {
-        await handleVerification(user.userId, approve, selectedDepartment);
+        await handleVerification(user.userId, approve, selectedDepartment, selectedRole);
       }
       
       const action = approve ? 'approved' : 'rejected and removed';
