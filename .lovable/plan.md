@@ -1,138 +1,79 @@
 
-# Fix Foreign Key Constraint Violations for Issue Creation
 
-## Problem Summary
+# Audit: Signup, Onboarding, and Admin Verification Flow
 
-When creating issues, users encounter:
-> `insert or update on table "issues" violates foreign key constraint "issues_room_id_fkey"`
+## Issues Found
 
-This happens because:
-1. The `issues.room_id` column references `unified_spaces.id` (not `rooms.id`)
-2. **19 rooms** exist in the `rooms` table but are missing from `unified_spaces`
-3. Several components query the `rooms` table directly and use those IDs when creating issues
+### 1. CRITICAL BUG: `requested_role` not passed to Supabase auth metadata
 
-### Current State
+The signup forms (`SimpleSignupForm.tsx` and `SignupForm.tsx`) pass `requested_role` in `userData`, but `useSecureAuth.ts` maps it to `requested_access_level` (a legacy field name) and **never maps `requested_role`** into the sanitized metadata sent to Supabase.
 
-| Table | Count |
-|-------|-------|
-| `rooms` | 113 |
-| `unified_spaces` (rooms) | 94 |
-| **Missing** | **19** |
+- `SimpleSignupForm.tsx` line 67: `requested_role: formData.requestedRole`
+- `SignupForm.tsx` line 91: `requested_role: requestedRole`
+- `useSecureAuth.ts` line 169: Only maps `requested_access_level: userData.requested_access_level` (which is undefined since forms send `requested_role`)
 
----
+**Result**: The DB trigger `handle_new_user` reads `NEW.raw_user_meta_data->>'requested_role'` but it's never set, so it always defaults to `'standard'` regardless of what the user picks.
 
-## Solution: Two-Part Fix
+**Fix**: In `useSecureAuth.ts`, add `requested_role: userData.requested_role` to the sanitized metadata object.
 
-### Part 1: Sync Missing Rooms to `unified_spaces`
+### 2. Verification request record never created during signup
 
-Insert the 19 missing rooms into `unified_spaces` so all existing room IDs are valid foreign key references.
+The `handle_new_user` DB trigger creates the profile and a default `user_roles` entry, but it **does not** insert a row into `verification_requests`. The `AdminCenter` page fetches pending users from `profiles` (checking `verification_status = 'pending'`), which works. However, the `VerificationSection` and `UserManagementTab` components query `verification_requests` for pending items -- so they may show nothing if no verification_request row exists.
 
-**SQL Migration:**
+The `AdminCenter.tsx` approach (querying `profiles` directly for `verification_status`) is the correct one since it doesn't depend on `verification_requests`. The `UserManagementTab.tsx` queries `verification_requests` separately -- this is redundant but functional because it's used alongside a full profiles query.
+
+**Recommendation**: Add `INSERT INTO verification_requests` in the `handle_new_user` trigger to ensure consistent data across all admin views.
+
+### 3. `reject_user_verification` does NOT delete the user
+
+The `reject_user_verification` function only updates `verification_requests.status` to `'rejected'` but does NOT update `profiles.verification_status` or `profiles.is_approved`. This means rejected users remain in the system as "pending" in the profiles table.
+
+**Fix**: Add profile status update to the reject function:
 ```sql
-INSERT INTO unified_spaces (id, name, space_type, floor_id, room_number, room_type, status)
-SELECT 
-  r.id,
-  COALESCE(r.name, r.room_number, 'Room'),
-  'room',
-  r.floor_id,
-  r.room_number,
-  r.room_type,
-  'active'::status_enum
-FROM rooms r
-WHERE r.id NOT IN (SELECT id FROM unified_spaces WHERE id IS NOT NULL);
+UPDATE public.profiles
+SET verification_status = 'rejected',
+    is_approved = false,
+    updated_at = NOW()
+WHERE id = p_user_id;
 ```
 
-### Part 2: Add Trigger for Future Sync
+### 4. Stats card references stale role name
 
-Create a trigger so new rooms are automatically added to `unified_spaces`:
+In `UserManagementTab.tsx` line 615, the stats card filters by `role === "supply_room_staff"` which is a legacy role not in the current 4-role system. This counter will always show 0.
 
-```sql
-CREATE OR REPLACE FUNCTION sync_room_to_unified_spaces()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO unified_spaces (id, name, space_type, floor_id, room_number, room_type, status)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.name, NEW.room_number, 'Room'),
-    'room',
-    NEW.floor_id,
-    NEW.room_number,
-    NEW.room_type,
-    'active'
-  )
-  ON CONFLICT (id) DO UPDATE SET
-    name = EXCLUDED.name,
-    room_number = EXCLUDED.room_number,
-    floor_id = EXCLUDED.floor_id,
-    room_type = EXCLUDED.room_type;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+**Fix**: Replace with `role === "court_aide"` to match the current role hierarchy.
 
-CREATE TRIGGER rooms_sync_to_unified
-  AFTER INSERT OR UPDATE ON rooms
-  FOR EACH ROW
-  EXECUTE FUNCTION sync_room_to_unified_spaces();
-```
+### 5. Admin approval defaults to 'standard' in VerificationSection
 
-### Part 3: Update Components (Optional but Recommended)
+In `useVerificationMutations.ts` line 20, when approving a user, the role is hardcoded to `'standard'` rather than letting the admin choose or using the user's `requested_role`.
 
-While syncing fixes the immediate issue, it's cleaner to query `unified_spaces` directly in these components:
-
-| Component | Current Query | Change |
-|-----------|---------------|--------|
-| `ReportIssueDialog.tsx` | Queries `rooms` table | Query `unified_spaces` with `space_type = 'room'` |
-| `AdminQuickReportDialog.tsx` | Queries `rooms` table | Query `unified_spaces` with `space_type = 'room'` |
-| `SimpleReportWizard.tsx` | Uses room_id from assignments | No change needed (assignments already use valid IDs) |
-| `QuickIssueDialog.tsx` | Receives roomId as prop | Ensure caller passes `unified_spaces.id` |
+**Fix**: Pass the user's requested role or admin-selected role through the approval flow.
 
 ---
 
 ## Implementation Plan
 
-### Step 1: Database Migration
-- Run SQL to insert 19 missing rooms into `unified_spaces`
-- Create trigger for automatic future sync
+### Step 1: Fix `requested_role` metadata propagation (useSecureAuth.ts)
+Add `requested_role: userData.requested_role` to the sanitized user data object passed to `supabase.auth.signUp()`.
 
-### Step 2: Update `ReportIssueDialog.tsx`
-Change the room query from:
-```typescript
-supabase.from("rooms").select(...)
-```
-To:
-```typescript
-supabase.from("unified_spaces")
-  .select("id, name, room_number, floor_id, floors(building_id)")
-  .eq('space_type', 'room')
-  .order("room_number");
-```
+### Step 2: Database migration -- Fix `reject_user_verification` and `handle_new_user`
+- Update `reject_user_verification` to also set `profiles.verification_status = 'rejected'`
+- Update `handle_new_user` to insert a `verification_requests` row so all admin views show pending users consistently
 
-### Step 3: Update `AdminQuickReportDialog.tsx`
-Same change - query `unified_spaces` instead of `rooms`.
+### Step 3: Fix stale role reference (UserManagementTab.tsx)
+Change `"supply_room_staff"` to `"court_aide"` in the stats card.
 
-### Step 4: Verify Occupant Assignment Sources
-The `SimpleReportWizard` receives room assignments from:
-- `useOccupantAssignments` hook
-- `useUserRoomAssignments` hook
-
-These query `occupant_room_assignments.room_id` which references `rooms.id`. After syncing, these IDs will exist in `unified_spaces` and work correctly.
+### Step 4: Fix hardcoded 'standard' role in VerificationSection approval
+Update `useVerificationMutations.ts` to accept and pass the actual role instead of hardcoding `'standard'`.
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| *Database migration* | Insert 19 missing rooms + create sync trigger |
-| `src/components/maintenance/ReportIssueDialog.tsx` | Query `unified_spaces` instead of `rooms` |
-| `src/components/issues/admin/AdminQuickReportDialog.tsx` | Query `unified_spaces` instead of `rooms` |
+| File | Change |
+|------|--------|
+| `src/hooks/security/useSecureAuth.ts` | Add `requested_role` to sanitized metadata |
+| `src/components/admin/UserManagementTab.tsx` | Fix stats card stale role reference |
+| `src/components/profile/sections/verification/hooks/useVerificationMutations.ts` | Remove hardcoded 'standard' role |
+| *Database migration* | Fix `reject_user_verification` to update profiles; fix `handle_new_user` to create verification_request |
 
----
-
-## Expected Outcome
-
-After implementation:
-- All 113 rooms will exist in `unified_spaces`
-- Issue creation will succeed for any room
-- New rooms automatically sync to `unified_spaces`
-- Components use consistent data source
