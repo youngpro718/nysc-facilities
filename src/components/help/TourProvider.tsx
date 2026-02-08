@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import Joyride, { CallBackProps, STATUS, ACTIONS, EVENTS, Step } from 'react-joyride';
+import Joyride, { CallBackProps, STATUS, ACTIONS, Step } from 'react-joyride';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getTourForRoute } from './tours/tourSteps';
 
@@ -80,46 +80,55 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [run, setRun] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
-  const [stepIndex, setStepIndex] = useState(0);
+  // Use a key to force Joyride to remount and reset when starting a new tour
+  const [tourKey, setTourKey] = useState(0);
 
   const tourInfo = getTourForRoute(location.pathname);
 
   const startTour = useCallback(() => {
     const info = getTourForRoute(location.pathname);
     if (info) {
-      setSteps(info.steps);
-      setStepIndex(0);
-      setRun(true);
+      // Filter steps to only include those whose targets exist in the DOM
+      // (except 'body' which is always valid)
+      const availableSteps = info.steps.filter((step) => {
+        if (step.target === 'body') return true;
+        return document.querySelector(step.target as string) !== null;
+      });
+      if (availableSteps.length === 0) return;
+      setRun(false);
+      setSteps(availableSteps);
+      setTourKey((k) => k + 1);
+      // Small delay to let Joyride unmount/remount with new steps
+      setTimeout(() => setRun(true), 50);
     }
   }, [location.pathname]);
 
   const startTourForRoute = useCallback((path: string) => {
-    // Navigate to the page first, then start the tour after a short delay
     navigate(path);
     setTimeout(() => {
       const info = getTourForRoute(path);
       if (info) {
-        setSteps(info.steps);
-        setStepIndex(0);
-        setRun(true);
+        const availableSteps = info.steps.filter((step) => {
+          if (step.target === 'body') return true;
+          return document.querySelector(step.target as string) !== null;
+        });
+        if (availableSteps.length === 0) return;
+        setRun(false);
+        setSteps(availableSteps);
+        setTourKey((k) => k + 1);
+        setTimeout(() => setRun(true), 50);
       }
-    }, 500);
+    }, 600);
   }, [navigate]);
 
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
-    const { status, action, index, type } = data;
+    const { status, action } = data;
 
-    // Handle step navigation
-    if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
-      setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1));
-    }
-
-    // Handle tour completion or skip
+    // Tour finished or skipped
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setRun(false);
-      setStepIndex(0);
 
-      // Mark tour as completed in localStorage
+      // Mark tour as completed
       const completedTours = JSON.parse(localStorage.getItem('completedTours') || '[]');
       if (!completedTours.includes(location.pathname)) {
         completedTours.push(location.pathname);
@@ -127,10 +136,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Handle close button
+    // User clicked the X close button
     if (action === ACTIONS.CLOSE) {
       setRun(false);
-      setStepIndex(0);
     }
   }, [location.pathname]);
 
@@ -146,14 +154,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
       <Joyride
+        key={tourKey}
         steps={steps}
-        stepIndex={stepIndex}
         run={run}
         continuous
         showSkipButton
         showProgress
         scrollToFirstStep
         disableOverlayClose
+        disableScrolling={false}
         callback={handleJoyrideCallback}
         styles={TOUR_STYLES}
         locale={{
