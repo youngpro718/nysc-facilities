@@ -90,14 +90,14 @@ export function StaffAbsenceManager() {
     return endDate >= new Date();
   }) || [];
 
-  const getStaffName = (staff: Record<string, unknown>) => {
+  const getStaffName = (staff: { display_name: string; role?: string } | undefined | null) => {
     if (!staff) return "Unknown";
     return staff.display_name || "Unknown";
   };
 
   const getReasonBadge = (reason: string | null) => {
     if (!reason) return <Badge variant="secondary">N/A</Badge>;
-    const variants: Record<string, unknown> = {
+    const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
       sick: "destructive",
       emergency: "destructive",
       vacation: "default",
@@ -111,7 +111,7 @@ export function StaffAbsenceManager() {
   return (
     <div className="space-y-4">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -164,18 +164,20 @@ export function StaffAbsenceManager() {
 
       {/* Tabs for List and Calendar Views */}
       <Tabs defaultValue="list" className="w-full">
-        <div className="flex items-center justify-between mb-4">
-          <TabsList>
-            <TabsTrigger value="list" className="flex items-center gap-2">
-              <List className="h-4 w-4" />
-              List View
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <TabsList className="touch-manipulation">
+            <TabsTrigger value="list" className="flex items-center gap-1.5 text-xs sm:text-sm">
+              <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">List View</span>
+              <span className="sm:hidden">List</span>
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Calendar View
+            <TabsTrigger value="calendar" className="flex items-center gap-1.5 text-xs sm:text-sm">
+              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Calendar View</span>
+              <span className="sm:hidden">Calendar</span>
             </TabsTrigger>
           </TabsList>
-          <Button onClick={() => setShowAddDialog(true)}>
+          <Button onClick={() => setShowAddDialog(true)} size="sm" className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Record Absence
           </Button>
@@ -211,7 +213,7 @@ export function StaffAbsenceManager() {
                     return (
                       <TableRow key={absence.id} className={!isActive ? "opacity-50" : ""}>
                         <TableCell className="font-medium">
-                          {getStaffName(absence.staff)}
+                          {getStaffName(absence.staff as { display_name: string; role?: string } | undefined)}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">{absence.staff?.role || "N/A"}</Badge>
@@ -230,7 +232,7 @@ export function StaffAbsenceManager() {
                             <div className="flex items-center gap-2">
                               <UserCheck className="h-4 w-4 text-green-500" />
                               <span className="text-sm">
-                                {getStaffName(absence.covering_staff)}
+                                {getStaffName(absence.covering_staff as { display_name: string } | undefined)}
                               </span>
                             </div>
                           ) : (
@@ -292,8 +294,18 @@ export function StaffAbsenceManager() {
   );
 }
 
+interface StaffOption {
+  id: string;
+  display_name: string;
+  role: string;
+}
+
 // Add Absence Dialog Component
-function AddAbsenceDialog({ open, onOpenChange, availableStaff }: Record<string, unknown>) {
+function AddAbsenceDialog({ open, onOpenChange, availableStaff }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  availableStaff: StaffOption[];
+}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -338,7 +350,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: Record<string,
         affected_room_id: "",
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Failed to record absence",
@@ -363,7 +375,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: Record<string,
             <Select
               value={formData.staff_id}
               onValueChange={(value) => {
-                const staff = availableStaff.find((s: Record<string, unknown>) => s.id === value);
+                const staff = availableStaff.find((s) => s.id === value);
                 setFormData({ ...formData, staff_id: value, role: staff?.role || "" });
               }}
             >
@@ -371,7 +383,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: Record<string,
                 <SelectValue placeholder="Select staff member" />
               </SelectTrigger>
               <SelectContent>
-                {availableStaff.map((staff: Record<string, unknown>) => (
+                {availableStaff.map((staff) => (
                   <SelectItem key={staff.id} value={staff.id}>
                     {staff.display_name} ({staff.role})
                   </SelectItem>
@@ -456,7 +468,12 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: Record<string,
 }
 
 // Assign Coverage Dialog Component
-function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: Record<string, unknown>) {
+function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  absence: StaffAbsence | null;
+  availableStaff: StaffOption[];
+}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -467,7 +484,7 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: R
       if (!absence || !coveringStaffId) return;
 
       const { error } = await supabase.rpc("assign_absence_coverage", {
-        p_absence_id: absence.id,
+        p_absence_id: absence!.id,
         p_covering_staff_id: coveringStaffId,
         p_actor_id: user?.id,
       });
@@ -483,7 +500,7 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: R
       onOpenChange(false);
       setCoveringStaffId("");
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Failed to assign coverage",
@@ -500,7 +517,7 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: R
         <DialogHeader>
           <DialogTitle>Assign Coverage</DialogTitle>
           <DialogDescription>
-            Assign a staff member to cover for {absence.staff?.display_name || "Unknown"}
+            Assign a staff member to cover for {(absence?.staff as { display_name: string } | undefined)?.display_name || "Unknown"}
           </DialogDescription>
         </DialogHeader>
 
@@ -508,12 +525,12 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: R
           <div className="p-3 bg-muted rounded-lg text-sm">
             <div className="font-medium mb-1">Absence Details</div>
             <div className="text-muted-foreground">
-              <div>Reason: {absence.absence_reason || absence.kind}</div>
+              <div>Reason: {absence?.absence_reason || absence?.kind}</div>
               <div>
-                Dates: {format(new Date(absence.starts_on), "MMM dd")} -{" "}
-                {format(new Date(absence.ends_on), "MMM dd, yyyy")}
+                Dates: {format(new Date(absence!.starts_on), "MMM dd")} -{" "}
+                {format(new Date(absence!.ends_on), "MMM dd, yyyy")}
               </div>
-              {absence.notes && <div className="mt-1">Notes: {absence.notes}</div>}
+              {absence?.notes && <div className="mt-1">Notes: {absence.notes}</div>}
             </div>
           </div>
 
@@ -525,8 +542,8 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: R
               </SelectTrigger>
               <SelectContent>
                 {availableStaff
-                  .filter((s: Record<string, unknown>) => s.id !== absence.staff_id)
-                  .map((staff: Record<string, unknown>) => (
+                  .filter((s) => s.id !== absence?.staff_id)
+                  .map((staff) => (
                     <SelectItem key={staff.id} value={staff.id}>
                       {staff.display_name} ({staff.role})
                     </SelectItem>

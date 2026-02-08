@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { IssueComments } from "./card/IssueComments";
 import { format, formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 import {
   AlertCircle,
   CheckCircle,
@@ -24,7 +26,9 @@ import {
   Image,
   ArrowUpCircle,
   Loader2,
-  X
+  Ticket,
+  CheckCheck,
+  ExternalLink,
 } from "lucide-react";
 
 interface UserIssueDetailDialogProps {
@@ -43,6 +47,36 @@ export function UserIssueDetailDialog({
   onEscalate,
 }: UserIssueDetailDialogProps) {
   const [activeTab, setActiveTab] = useState("details");
+  const [isConfirming, setIsConfirming] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleConfirmResolved = async () => {
+    if (!issueId) return;
+    setIsConfirming(true);
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({
+          confirmed_resolved_by_user: true,
+          confirmed_resolved_at: new Date().toISOString(),
+          status: 'resolved',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', issueId);
+
+      if (error) throw error;
+
+      toast.success("Thank you! Issue marked as resolved.");
+      queryClient.invalidateQueries({ queryKey: ['userIssues'] });
+      queryClient.invalidateQueries({ queryKey: ['user-issue-detail', issueId] });
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+    } catch (error) {
+      logger.error('Error confirming resolution:', error);
+      toast.error("Failed to confirm resolution");
+    } finally {
+      setIsConfirming(false);
+    }
+  };
 
   const { data: issue, isLoading } = useQuery({
     queryKey: ["user-issue-detail", issueId],
@@ -270,6 +304,51 @@ export function UserIssueDetailDialog({
                   )}
                 </div>
 
+                {/* External Ticket Info */}
+                {issue.external_ticket_number && (
+                  <Card className="border-primary/20 bg-primary/5">
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Ticket className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">Work Order Submitted</span>
+                      </div>
+                      <div className="flex items-center gap-2 pl-6">
+                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="font-mono text-sm font-semibold">{issue.external_ticket_number}</span>
+                        {issue.external_system && (
+                          <Badge variant="outline" className="text-[10px]">{issue.external_system}</Badge>
+                        )}
+                      </div>
+                      <div className="pl-6">
+                        {issue.external_ticket_status === 'entered' && (
+                          <p className="text-xs text-muted-foreground">This issue has been entered into the work order system. Waiting for work to begin.</p>
+                        )}
+                        {issue.external_ticket_status === 'in_progress' && (
+                          <p className="text-xs text-blue-600 dark:text-blue-400">Work has started on this issue.</p>
+                        )}
+                        {issue.external_ticket_status === 'completed' && (
+                          <p className="text-xs text-green-600 dark:text-green-400">The work order has been completed. If you can confirm the fix, please use the button below.</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* User Confirmed Resolution */}
+                {issue.confirmed_resolved_by_user && (
+                  <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                    <CheckCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <p className="text-sm text-green-700 dark:text-green-400 font-medium">
+                      You confirmed this issue is resolved
+                      {issue.confirmed_resolved_at && (
+                        <span className="font-normal text-xs block text-green-600 dark:text-green-400">
+                          {formatDistanceToNow(new Date(issue.confirmed_resolved_at), { addSuffix: true })}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+
                 {issue.resolution_notes && (
                   <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
                     <p className="text-sm font-medium text-green-700 dark:text-green-400 mb-1">Resolution Notes</p>
@@ -304,7 +383,23 @@ export function UserIssueDetailDialog({
             </Tabs>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-2 pt-4 border-t">
+            <div className="flex flex-wrap justify-end gap-2 pt-4 border-t">
+              {/* Confirm Complete - user can confirm the issue is fixed */}
+              {["in_progress", "resolved"].includes(issue.status) && !issue.confirmed_resolved_by_user && (
+                <Button
+                  variant="default"
+                  onClick={handleConfirmResolved}
+                  disabled={isConfirming}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isConfirming ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCheck className="h-4 w-4 mr-2" />
+                  )}
+                  Confirm Complete
+                </Button>
+              )}
               {issue.status === "resolved" && onFollowUp && (
                 <Button variant="outline" onClick={() => onFollowUp(issue.id)}>
                   <MessageSquare className="h-4 w-4 mr-2" />

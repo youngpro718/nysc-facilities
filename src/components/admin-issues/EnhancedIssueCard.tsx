@@ -126,6 +126,14 @@ export function EnhancedIssueCard({ issue, isSelected, onSelect, onUpdate }: Enh
                 <span>{issue.photos.length}</span>
               </div>
             )}
+
+            {(issue as unknown as Record<string, unknown>).external_ticket_number && (
+              <div className="flex items-center gap-1 text-primary">
+                <span className="font-mono text-[10px] font-medium">
+                  #{String((issue as unknown as Record<string, unknown>).external_ticket_number)}
+                </span>
+              </div>
+            )}
           </div>
           
           {/* Monitor Button */}

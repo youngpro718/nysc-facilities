@@ -1,65 +1,37 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
 import { 
   LayoutDashboard, 
   Lightbulb, 
-  MapPin, 
-  AlertCircle,
-  BarChart3,
-  DoorOpen
+  Building2
 } from "lucide-react";
 import { useLightingTabs } from "./hooks/useLightingTabs";
 import { OverviewView } from "./overview/OverviewView";
-import { LocationCentricView } from "./location/LocationCentricView";
-import { StatusCentricView } from "./status/StatusCentricView";
-import { ReportsView } from "./reports/ReportsView";
 import { CreateLightingDialog } from "../CreateLightingDialog";
-import { HallwayWalkthroughTab } from "./hallways/HallwayWalkthroughTab";
-import { RoomMonitoringTab } from "./rooms/RoomMonitoringTab";
+import { FloorLightingView } from "./floors/FloorLightingView";
+import type { LightingTab } from "./types";
 
 export function LightingPageLayout() {
   const { state, setActiveTab } = useLightingTabs();
 
   const tabConfig = [
     {
-      id: 'overview',
+      id: 'overview' as LightingTab,
       label: 'Dashboard',
       icon: LayoutDashboard,
       component: OverviewView,
-      description: 'Overview stats, health metrics, and priority alerts'
+      description: 'Stats, health metrics, and fixture issues at a glance'
     },
     {
-      id: 'hallways',
-      label: 'Hallways',
-      icon: MapPin,
-      component: HallwayWalkthroughTab,
-      description: 'Hallway-focused walkthrough mode for quick inspections'
+      id: 'floors' as LightingTab,
+      label: 'Floor View',
+      icon: Building2,
+      component: FloorLightingView,
+      description: 'Visual floor-by-floor lighting — tap any light to update'
     },
-    {
-      id: 'rooms',
-      label: 'Rooms',
-      icon: DoorOpen,
-      component: RoomMonitoringTab,
-      description: 'Monitor lighting fixtures room by room'
-    },
-    {
-      id: 'status',
-      label: 'Issues',
-      icon: AlertCircle,
-      component: StatusCentricView,
-      description: 'All fixtures organized by status and issues'
-    },
-    {
-      id: 'reports',
-      label: 'Reports',
-      icon: BarChart3,
-      component: ReportsView,
-      description: 'Multi-dimensional reporting and analytics'
-    }
   ];
 
-  const activeTabConfig = tabConfig.find(tab => tab.id === state.activeTab);
+  const activeTabConfig = tabConfig.find(tab => tab.id === state.activeTab) || tabConfig[0];
 
   return (
     <div className="space-y-6">
@@ -71,7 +43,7 @@ export function LightingPageLayout() {
             Lighting Management
           </h1>
           <p className="text-muted-foreground">
-            {activeTabConfig?.description || 'Comprehensive lighting facilities management'}
+            {activeTabConfig.description}
           </p>
         </div>
         
@@ -83,9 +55,9 @@ export function LightingPageLayout() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <Tabs value={state.activeTab} onValueChange={(value: unknown) => setActiveTab(value)}>
-        <TabsList className="grid w-full grid-cols-5">
+      {/* Navigation Tabs — just 2 */}
+      <Tabs value={state.activeTab} onValueChange={(value: string) => setActiveTab(value as LightingTab)}>
+        <TabsList className="w-auto">
           {tabConfig.map((tab) => (
             <TabsTrigger 
               key={tab.id} 
@@ -93,7 +65,7 @@ export function LightingPageLayout() {
               className="flex items-center gap-2"
             >
               <tab.icon className="h-4 w-4" />
-              <span className="hidden sm:inline">{tab.label}</span>
+              {tab.label}
             </TabsTrigger>
           ))}
         </TabsList>

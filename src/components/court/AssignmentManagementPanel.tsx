@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { EnhancedCourtAssignmentTable } from "./EnhancedCourtAssignmentTable";
 import { TermSheetBoard } from "@/components/court-operations/personnel/TermSheetBoard";
+import { AddJudgeDialog } from "./JudgeStatusManager";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
+import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
-import { RefreshCw, AlertTriangle, Users, Calendar, MapPin, Edit3, Eye } from "lucide-react";
+import { RefreshCw, AlertTriangle, Users, Calendar, MapPin, Edit3, Eye, UserPlus, Gavel, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const AssignmentManagementPanel = () => {
   const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
+  const [addJudgeOpen, setAddJudgeOpen] = useState(false);
   const { getCourtImpactSummary, getRecentlyAffectedRooms } = useCourtIssuesIntegration();
+  const { personnel } = useCourtPersonnel();
   const impactSummary = getCourtImpactSummary();
   const recentlyAffectedRooms = getRecentlyAffectedRooms();
 
@@ -97,10 +101,10 @@ export const AssignmentManagementPanel = () => {
   return (
     <div className="space-y-6">
       {/* Header with View Mode Toggle */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Full Assignments</h2>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-lg sm:text-2xl font-bold">Assignments</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {viewMode === 'edit' 
               ? 'Manage court assignments with real-time presence tracking' 
               : 'View-only term sheet for reference and export'}
@@ -108,20 +112,22 @@ export const AssignmentManagementPanel = () => {
         </div>
         <div className="flex items-center gap-2">
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'edit' | 'view')}>
-            <TabsList>
-              <TabsTrigger value="edit" className="flex items-center gap-2">
-                <Edit3 className="h-4 w-4" />
-                Edit Mode
+            <TabsList className="touch-manipulation">
+              <TabsTrigger value="edit" className="flex items-center gap-1.5 text-xs sm:text-sm">
+                <Edit3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Edit Mode</span>
+                <span className="sm:hidden">Edit</span>
               </TabsTrigger>
-              <TabsTrigger value="view" className="flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                Term Sheet
+              <TabsTrigger value="view" className="flex items-center gap-1.5 text-xs sm:text-sm">
+                <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Term Sheet</span>
+                <span className="sm:hidden">View</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+          <Button variant="outline" size="sm" onClick={() => setAddJudgeOpen(true)}>
+            <UserPlus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Judge</span>
           </Button>
         </div>
       </div>
@@ -135,7 +141,29 @@ export const AssignmentManagementPanel = () => {
         // Edit Mode Content
         <>
       {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Judges</CardTitle>
+            <Gavel className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{personnel.judges.length}</div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {personnel.jhoJudges.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                  {personnel.jhoJudges.length} JHO
+                </Badge>
+              )}
+              {personnel.departedJudges.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  {personnel.departedJudges.length} departed
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Courtrooms</CardTitle>
@@ -225,6 +253,8 @@ export const AssignmentManagementPanel = () => {
       </Card>
 
 
+
+      <AddJudgeDialog open={addJudgeOpen} onOpenChange={setAddJudgeOpen} />
 
       {/* Instructions */}
       <Card>

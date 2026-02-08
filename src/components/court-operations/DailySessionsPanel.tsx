@@ -83,7 +83,7 @@ export function DailySessionsPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
             {/* Date Picker */}
             <div className="space-y-2">
               <Label>Date</Label>
@@ -150,47 +150,52 @@ export function DailySessionsPanel() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
             <Button
               size="sm"
               variant="default"
+              className="text-xs sm:text-sm"
               onClick={() => setShowUploadDialog(true)}
             >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Report
+              <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+              Upload
             </Button>
             <Button
               size="sm"
               variant="outline"
+              className="text-xs sm:text-sm"
               onClick={() => setShowCreateDialog(true)}
             >
-              <CalendarCheck className="h-4 w-4 mr-2" />
+              <CalendarCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Add Session
             </Button>
             <Button
               variant="outline"
               size="sm"
+              className="text-xs sm:text-sm"
               onClick={handleCopyYesterday}
               disabled={copyYesterday.isPending}
             >
-              <Copy className="h-4 w-4 mr-2" />
+              <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Copy Yesterday
             </Button>
             <Button
               variant="outline"
               size="sm"
+              className="text-xs sm:text-sm"
               onClick={() => setShowCoveragePanel(!showCoveragePanel)}
             >
-              <Users className="h-4 w-4 mr-2" />
-              {showCoveragePanel ? 'Hide' : 'Show'} Coverage
+              <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+              Coverage
             </Button>
             <Button
               variant="outline"
               size="sm"
+              className="text-xs sm:text-sm col-span-2 sm:col-span-1"
               onClick={() => setShowReportDialog(true)}
               disabled={!sessions || sessions.length === 0}
             >
-              <FileText className="h-4 w-4 mr-2" />
+              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Generate Report
             </Button>
           </div>

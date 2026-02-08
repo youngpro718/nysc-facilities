@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, ZoomIn, ZoomOut, Download, FileSpreadsheet, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCourtPersonnel } from '@/hooks/useCourtPersonnel';
+import { JudgeStatusBadge } from '@/components/court/JudgeStatusManager';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +29,7 @@ interface TermAssignment {
 export const TermSheetBoard: React.FC = () => {
   const [isDense, setIsDense] = useState(false);
   const { toast } = useToast();
+  const { personnel } = useCourtPersonnel();
 
   // Export to CSV/Excel
   const exportToCSV = () => {
@@ -107,36 +110,55 @@ export const TermSheetBoard: React.FC = () => {
         roomMap.set(room.room_id, room);
       });
 
+      interface AssignmentRow {
+        room_id: string;
+        part: string | null;
+        justice: string | null;
+        tel: string | null;
+        fax: string | null;
+        sergeant: string | null;
+        clerks: string[] | null;
+        calendar_day: string | null;
+        sort_order: number | null;
+      }
+
+      interface RoomRow {
+        room_id: string;
+        room_number: string;
+        courtroom_number: string | null;
+        is_active: boolean;
+      }
+
       // Map assignments to include room data, maintaining sort_order
-      const combined = (assignmentsData || [])
-        .map((assignment: Record<string, unknown>) => {
-          const room = roomMap.get(assignment.room_id);
+      const combined = ((assignmentsData || []) as AssignmentRow[])
+        .map((assignment) => {
+          const room = roomMap.get(assignment.room_id) as RoomRow | undefined;
           if (!room) return null;
           
           return {
             room_number: room.room_number || room.courtroom_number || '—',
-            part: assignment?.part || '—',
-            justice: assignment?.justice || '—',
-            tel: assignment?.tel || '—',
-            fax: assignment?.fax || '—',
-            sergeant: assignment?.sergeant || '—',
-            clerks: assignment?.clerks || ['—'],
-            calendar_day: assignment?.calendar_day || '—',
+            part: assignment.part || '—',
+            justice: assignment.justice || '—',
+            tel: assignment.tel || '—',
+            fax: assignment.fax || '—',
+            sergeant: assignment.sergeant || '—',
+            clerks: assignment.clerks || ['—'],
+            calendar_day: assignment.calendar_day || '—',
             is_active: room.is_active,
             sort_order: assignment.sort_order
           };
         })
-        .filter((row: Record<string, unknown>) => row !== null && row.is_active); // Only show active rooms with assignments
+        .filter((row): row is NonNullable<typeof row> => row !== null && row.is_active);
 
-      return combined.map((row: Record<string, unknown>): TermAssignment => ({
+      return combined.map((row): TermAssignment => ({
         part: row.part,
         justice: row.justice,
         room: row.room_number,
         fax: row.fax,
         tel: row.tel,
         sergeant: row.sergeant,
-        clerks: Array.isArray(row.clerks) ? row.clerks : [row.clerks || '—'],
-        building: undefined // Building info not in current schema
+        clerks: Array.isArray(row.clerks) ? row.clerks : [String(row.clerks || '—')],
+        building: undefined
       }));
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -251,7 +273,13 @@ export const TermSheetBoard: React.FC = () => {
                         {assignment.part}
                       </td>
                       <td className="px-3 py-2 text-neutral-200 border-r border-neutral-800/50">
-                        {assignment.justice}
+                        <span className="inline-flex items-center gap-1.5">
+                          {assignment.justice}
+                          {(() => {
+                            const judge = personnel.judges.find(j => j.name === assignment.justice);
+                            return judge?.judgeStatus ? <JudgeStatusBadge status={judge.judgeStatus} /> : null;
+                          })()}
+                        </span>
                       </td>
                       <td className="px-3 py-2 text-neutral-300 border-r border-neutral-800/50 text-center whitespace-nowrap">
                         {assignment.room}

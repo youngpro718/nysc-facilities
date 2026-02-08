@@ -11,6 +11,7 @@ import { logger } from '@/lib/logger';
 import { batchMapPartsToCourtrooms } from '@/services/court/courtroomMappingService';
 import { PDFExtractionPreview, type ExtractedPart } from './PDFExtractionPreview';
 import { validateBatch, getValidationSummary } from '@/services/court/sessionValidation';
+import { parseDailyReportPDF } from '@/services/court/dailyReportParser';
 
 interface UploadDailyReportDialogProps {
   open: boolean;
@@ -67,55 +68,36 @@ export function UploadDailyReportDialog({
     setExtractionStatus('uploading');
 
     try {
-      // Step 1: Upload file to Supabase storage
+      // Step 1: Parse PDF client-side (no server needed)
+      setExtractionStatus('extracting');
+      toast.info('Analyzing document...');
+
+      const parseResult = await parseDailyReportPDF(file);
+
+      if (!parseResult.success || !parseResult.extracted_data) {
+        throw new Error(parseResult.error || 'Failed to process the document. Please check the file format and try again.');
+      }
+
+      logger.debug('✅ Extraction successful:', parseResult);
+
+      // Step 2: Upload file to Supabase storage for archival
+      setExtractionStatus('uploading');
       const fileName = `court-reports/${user.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('term-pdfs')
         .upload(fileName, file);
 
       if (uploadError) {
-        throw new Error(`Upload failed: ${uploadError.message}`);
+        // Non-critical — extraction already succeeded, just log the upload failure
+        logger.warn('File archival upload failed (non-critical):', uploadError.message);
       }
-
-      logger.debug('📄 File uploaded:', fileName);
-
-      // Step 2: Extract data using AI
-      setExtractionStatus('extracting');
-      toast.info('Analyzing document with AI...');
-
-      const { data: parseResult, error: parseError } = await supabase.functions.invoke('parse-pdf', {
-        body: { filePath: fileName }
-      });
-
-      if (parseError) {
-        // Sanitize error message to prevent information disclosure
-        logger.error('[Admin Only] Parse error details:', parseError);
-        throw new Error('Document extraction failed. Please ensure the file is a valid PDF and try again.');
-      }
-
-      if (!parseResult?.success) {
-        const error = parseResult?.error || '';
-        
-        // Log detailed error for admins only
-        logger.error('[Admin Only] Parse result error:', error);
-        
-        // Check if it's a configuration error and provide helpful message
-        if (error.includes('not configured') || error.includes('LOVABLE_API_KEY') || error.includes('API key')) {
-          throw new Error('AI extraction service is not configured. Please contact your administrator.');
-        }
-        
-        // Return generic error to user, don't expose internal details
-        throw new Error('Failed to process the document. Please check the file format and try again.');
-      }
-
-      logger.debug('✅ Extraction successful:', parseResult);
 
       // Step 3: Map parts to courtrooms
       setExtractionStatus('enriching');
       toast.info('Mapping parts to courtrooms...');
 
       const extractedData = parseResult.extracted_data;
-      const entries = extractedData?.entries || [];
+      const entries = extractedData.entries || [];
 
       if (entries.length === 0) {
         throw new Error('No sessions could be extracted from the document.');
@@ -138,17 +120,17 @@ export function UploadDailyReportDialog({
         .eq('is_active', true);
 
       const filteredRooms = (rooms || [])
-        .filter((r: Record<string, unknown>) => r.rooms?.floors?.buildings?.address?.includes(`${buildingCode} Centre`))
-        .map((r: Record<string, unknown>) => ({
-          id: r.id,
-          room_number: r.room_number,
-          name: r.rooms?.name || r.courtroom_number || r.room_number,
+        .filter((r: any) => r.rooms?.floors?.buildings?.address?.includes(`${buildingCode} Centre`))
+        .map((r: any) => ({
+          id: r.id as string,
+          room_number: r.room_number as string,
+          name: (r.rooms?.name || r.courtroom_number || r.room_number) as string,
         }));
 
       setAvailableRooms(filteredRooms);
 
       // Batch map all parts to courtrooms
-      const partsToMap = entries.map((e: Record<string, unknown>) => ({
+      const partsToMap = entries.map((e) => ({
         part_number: e.part,
         building_code: buildingCode,
       }));
@@ -157,19 +139,14 @@ export function UploadDailyReportDialog({
       logger.debug(`📍 Mapped ${mappings.size} of ${entries.length} parts`);
 
       // Transform to ExtractedPart format with mapping info
-      const transformedParts: ExtractedPart[] = entries.map((entry: Record<string, unknown>) => {
+      const transformedParts: ExtractedPart[] = entries.map((entry) => {
         const mapping = mappings.get(entry.part);
         
         return {
-          part: entry.part,
-          judge: entry.judge || '',
-          calendar_day: entry.calendar_day || '',
-          out_dates: entry.out_dates || [],
+          ...entry,
           room_number: mapping?.room_number || '',
-          cases: entry.cases || [],
-          confidence: entry.confidence || 0.75,
           courtroom_id: mapping?.courtroom_id,
-          mapping_status: mapping ? 'found' : 'not_found',
+          mapping_status: (mapping ? 'found' : 'not_found') as 'found' | 'not_found',
           mapping_message: mapping
             ? `Mapped to ${mapping.room_name} (${mapping.room_number})`
             : `Part "${entry.part}" not found in database. Please select manually.`,
@@ -282,7 +259,7 @@ export function UploadDailyReportDialog({
         <DialogHeader>
           <DialogTitle>Upload Daily Report</DialogTitle>
           <DialogDescription>
-            Upload a PDF of the daily court report to automatically extract session data using AI.
+            Upload a PDF of the daily court report to automatically extract session data.
           </DialogDescription>
         </DialogHeader>
 
@@ -346,7 +323,7 @@ export function UploadDailyReportDialog({
             <Alert>
               <Loader2 className="h-4 w-4 animate-spin" />
               <AlertDescription>
-                Extracting data using AI... This may take a moment.
+                Extracting data from PDF... This may take a moment.
               </AlertDescription>
             </Alert>
           )}
@@ -383,7 +360,7 @@ export function UploadDailyReportDialog({
             <p className="text-sm font-medium mb-2">How it works:</p>
             <ol className="text-xs space-y-1 list-decimal list-inside text-muted-foreground">
               <li>Upload your daily report (PDF)</li>
-              <li>AI extracts parts, judges, cases, and defendants automatically</li>
+              <li>Parts, judges, cases, and defendants are extracted automatically</li>
               <li>Review and edit extracted data as needed</li>
               <li>Approve to add sessions to the system</li>
             </ol>

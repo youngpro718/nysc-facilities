@@ -1,4 +1,4 @@
-export type LightingTab = 'overview' | 'fixtures' | 'rooms' | 'maintenance' | 'reports';
+export type LightingTab = 'overview' | 'fixtures' | 'rooms' | 'maintenance' | 'reports' | 'hallways' | 'status' | 'floors';
 
 export interface LightingPageState {
   activeTab: LightingTab;

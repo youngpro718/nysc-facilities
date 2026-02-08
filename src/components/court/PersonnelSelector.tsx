@@ -148,9 +148,15 @@ export const PersonnelSelector = ({
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-muted-foreground" />
             <span>{selectedPerson.name}</span>
-            <Badge variant="outline" className="text-xs">
-              {selectedPerson.role}
-            </Badge>
+            {selectedPerson.judgeStatus === 'jho' ? (
+              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                JHO
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-xs">
+                {selectedPerson.role}
+              </Badge>
+            )}
           </div>
         );
       }
@@ -221,10 +227,17 @@ export const PersonnelSelector = ({
                   <div className="flex items-center space-x-3 flex-1">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1">
-                      <div className="font-medium">{person.name}</div>
+                      <div className="font-medium flex items-center gap-1.5">
+                        {person.name}
+                        {person.judgeStatus === 'jho' && (
+                          <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                            JHO
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-sm text-muted-foreground flex items-center gap-2">
                         <Badge variant="outline" className="text-xs">
-                          {person.role}
+                          {person.judgeStatus === 'jho' ? 'Judicial Hearing Officer' : person.role}
                         </Badge>
                         {person.phone && (
                           <span className="flex items-center gap-1">

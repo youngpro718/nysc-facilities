@@ -16,6 +16,7 @@ import { useRealtime } from "@/hooks/useRealtime";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { PersonnelSelector } from "./PersonnelSelector";
+import { JudgeStatusDropdown, JudgeStatusBadge } from "./JudgeStatusManager";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -406,12 +407,18 @@ const SortableRow = ({
         {renderEditableCell("part", row.part || "")}
       </td>
       <td className="p-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 group">
           {row.justice && (
-            <span className={`inline-block h-2 w-2 rounded-full ${row.judge_present ? 'bg-emerald-500' : 'bg-gray-400'}`} 
+            <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${row.judge_present ? 'bg-emerald-500' : 'bg-gray-400'}`} 
                   title={row.judge_present ? 'Present' : 'Status unknown'} />
           )}
           {renderEditableCell("justice", row.justice || "")}
+          {row.justice && (
+            <>
+              <JudgeStatusBadge status={personnel.judges.find(j => j.name === row.justice)?.judgeStatus || 'active'} />
+              <JudgeStatusDropdown judgeName={row.justice} compact />
+            </>
+          )}
         </div>
       </td>
       <td className="p-2">

@@ -121,11 +121,11 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold">Today's Status</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-lg sm:text-2xl font-bold">Today's Status</h2>
+        <p className="text-xs sm:text-sm text-muted-foreground">
           {format(new Date(), 'EEEE, MMMM d, yyyy')}
         </p>
       </div>
@@ -142,7 +142,7 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
       )}
 
       {/* Quick Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Sessions Today */}
         <Card>
           <CardHeader className="pb-3">
@@ -152,11 +152,11 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{sessionsCount}</div>
+            <div className="text-2xl sm:text-3xl font-bold">{sessionsCount}</div>
             <Button 
               variant="link" 
               className="p-0 h-auto text-xs mt-1"
-              onClick={() => handleNavigate('daily-sessions')}
+              onClick={() => handleNavigate('sessions')}
             >
               View all sessions <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
@@ -172,7 +172,7 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{judgesOut + clerksOut}</div>
+            <div className="text-2xl sm:text-3xl font-bold">{judgesOut + clerksOut}</div>
             <div className="text-xs text-muted-foreground mt-1">
               {judgesOut} judges • {clerksOut} clerks
             </div>
@@ -184,7 +184,7 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
             <Button 
               variant="link" 
               className="p-0 h-auto text-xs mt-1"
-              onClick={() => handleNavigate('management')}
+              onClick={() => handleNavigate('staff')}
             >
               Manage absences <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
@@ -200,7 +200,7 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{activeShutdowns}</div>
+            <div className="text-2xl sm:text-3xl font-bold">{activeShutdowns}</div>
             <div className="text-xs text-muted-foreground mt-1">
               Rooms unavailable
             </div>
@@ -227,7 +227,7 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="text-2xl sm:text-3xl font-bold">
               {conflicts?.conflicts.length || 0}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -236,7 +236,7 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
             <Button 
               variant="link" 
               className="p-0 h-auto text-xs mt-1"
-              onClick={() => handleNavigate('management')}
+              onClick={() => handleNavigate('staff')}
             >
               View details <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
@@ -262,11 +262,12 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
               <Alert>
                 <Users className="h-4 w-4" />
                 <AlertTitle>Coverage Assignments</AlertTitle>
-                <AlertDescription className="flex items-center justify-between">
+                <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <span>{needsCoverage} staff absences need coverage assigned</span>
                   <Button 
                     size="sm" 
-                    onClick={() => handleNavigate('management')}
+                    className="w-full sm:w-auto"
+                    onClick={() => handleNavigate('staff')}
                   >
                     Assign Coverage
                   </Button>
@@ -279,10 +280,11 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
               <Alert>
                 <Wrench className="h-4 w-4" />
                 <AlertTitle>Room Unavailable</AlertTitle>
-                <AlertDescription className="flex items-center justify-between">
+                <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <span>{activeShutdowns} {activeShutdowns === 1 ? 'room is' : 'rooms are'} shut down or in maintenance</span>
                   <Button 
                     size="sm" 
+                    className="w-full sm:w-auto"
                     onClick={() => handleNavigate('assignments')}
                   >
                     View Rooms
@@ -296,12 +298,13 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Scheduling Conflicts</AlertTitle>
-                <AlertDescription className="flex items-center justify-between">
+                <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <span>{conflicts.conflicts.length} conflicts detected in assignments</span>
                   <Button 
                     size="sm" 
                     variant="destructive"
-                    onClick={() => handleNavigate('management')}
+                    className="w-full sm:w-auto"
+                    onClick={() => handleNavigate('staff')}
                   >
                     Resolve
                   </Button>
@@ -334,11 +337,11 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
           <CardDescription>Common tasks for today</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Button 
               variant="outline" 
               className="justify-start"
-              onClick={() => handleNavigate('daily-sessions')}
+              onClick={() => handleNavigate('sessions')}
             >
               <Calendar className="h-4 w-4 mr-2" />
               View Today's Sessions
@@ -354,7 +357,7 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
             <Button 
               variant="outline" 
               className="justify-start"
-              onClick={() => handleNavigate('management')}
+              onClick={() => handleNavigate('staff')}
             >
               <UserX className="h-4 w-4 mr-2" />
               Record Absence
