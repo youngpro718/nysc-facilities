@@ -610,9 +610,9 @@ export function UserManagementTab() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription className="text-xs">Supply Staff</CardDescription>
+              <CardDescription className="text-xs">Court Aides</CardDescription>
               <CardTitle className="text-2xl">
-                {users?.filter(u => u.role === "supply_room_staff").length || 0}
+                {users?.filter(u => u.role === "court_aide").length || 0}
               </CardTitle>
             </CardHeader>
           </Card>

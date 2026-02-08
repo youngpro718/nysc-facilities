@@ -165,8 +165,8 @@ export function useSecureAuth() {
         court_position: userData.court_position ? await sanitizeInput(userData.court_position) : undefined,
         room_number: userData.room_number ? await sanitizeInput(userData.room_number) : undefined,
         emergency_contact: userData.emergency_contact,
-        // capture requested role in auth metadata so it can be propagated to profile
-        requested_access_level: userData.requested_access_level
+        // capture requested role in auth metadata so it can be propagated to profile/verification
+        requested_role: userData.requested_role
       };
 
       // Set redirect URL for email verification
