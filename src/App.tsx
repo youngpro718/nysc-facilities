@@ -69,6 +69,7 @@ import RequestHub from "@/pages/RequestHub";
 import HelpRequestPage from "@/pages/request/HelpRequestPage";
 import SupplyOrderPage from "@/pages/request/SupplyOrderPage";
 import { DevModePanel } from "@/components/dev/DevModePanel";
+import { HelpCenter } from "@/components/help/HelpCenter";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import type { UserRole } from "@/config/roles";
 
@@ -340,6 +341,12 @@ function AppContent() {
         <Route path="term-sheet" element={
           <ProtectedRoute>
             <TermSheet />
+          </ProtectedRoute>
+        } />
+        {/* Help Center */}
+        <Route path="help" element={
+          <ProtectedRoute>
+            <HelpCenter />
           </ProtectedRoute>
         } />
 

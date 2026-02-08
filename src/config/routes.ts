@@ -191,6 +191,14 @@ export const routes: Record<string, RouteConfig> = {
     parent: '/',
   },
   
+  // Help
+  '/help': {
+    path: '/help',
+    title: 'Help Center',
+    breadcrumbLabel: 'Help',
+    icon: FileText,
+  },
+  
   // Public pages
   '/term-sheet': {
     path: '/term-sheet',

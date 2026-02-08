@@ -264,7 +264,7 @@ export function FloorLightingView() {
     <>
     <div className="space-y-4">
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground px-1">
+      <div className="flex items-center gap-4 text-xs text-muted-foreground px-1" data-tour="lighting-legend">
         <span className="font-medium">Tap to cycle:</span>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-green-500" />
@@ -281,6 +281,7 @@ export function FloorLightingView() {
       </div>
 
       {/* Floor Accordion */}
+      <div data-tour="lighting-floor-accordion">
       {floors.map((floor) => {
         const isExpanded = effectiveExpanded === floor.floorId;
         const totalFixtures = floor.hallways.reduce((sum, h) => sum + h.fixtures.length, 0);
@@ -353,6 +354,7 @@ export function FloorLightingView() {
                           variant="ghost"
                           size="sm"
                           className="text-xs gap-1 h-7"
+                          data-tour="lighting-walkthrough"
                           onClick={() => setWalkthroughHallway(hallway.id)}
                         >
                           Walkthrough
@@ -361,7 +363,7 @@ export function FloorLightingView() {
                       </div>
 
                       {/* Fixture Grid — the visual dots */}
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2" data-tour="lighting-fixture-grid">
                         {hallway.fixtures.map((fixture) => {
                           const colorClass = STATUS_COLORS[fixture.status] || STATUS_COLORS.functional;
                           const label = fixture.sequence_number
@@ -416,6 +418,7 @@ export function FloorLightingView() {
                 <Button
                   variant="outline"
                   size="sm"
+                  data-tour="lighting-add-section"
                   className="w-full gap-2 border-dashed"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -430,6 +433,7 @@ export function FloorLightingView() {
           </Card>
         );
       })}
+      </div>
     </div>
 
     {/* Add Section Dialog */}

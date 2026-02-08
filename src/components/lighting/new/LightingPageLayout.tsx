@@ -56,7 +56,7 @@ export function LightingPageLayout() {
       </div>
 
       {/* Navigation Tabs — just 2 */}
-      <Tabs value={state.activeTab} onValueChange={(value: string) => setActiveTab(value as LightingTab)}>
+      <Tabs value={state.activeTab} onValueChange={(value: string) => setActiveTab(value as LightingTab)} data-tour="lighting-tabs">
         <TabsList className="w-auto">
           {tabConfig.map((tab) => (
             <TabsTrigger 

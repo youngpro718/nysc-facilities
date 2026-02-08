@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { DevModeBanner } from "@/components/dev/DevModeBanner";
+import { TourProvider } from "@/components/help/TourProvider";
+import { HelpButton } from "@/components/help/HelpButton";
 import type { UserRole } from "@/config/roles";
 
 const Layout = () => {
@@ -88,6 +90,7 @@ const Layout = () => {
   const isPreviewActive = isAdmin && previewRole && previewRole !== 'admin';
 
   return (
+    <TourProvider>
     <div className="min-h-screen bg-background">
       {/* Dev Mode Preview Banner */}
       {!isLoginPage && isAuthenticated && isPreviewActive && (
@@ -121,11 +124,13 @@ const Layout = () => {
               <div className="flex items-center gap-2 sm:gap-4">
                 {/* Admin Notifications */}
                 {isAdmin && (
-                  <NotificationBox />
+                  <div data-tour="notification-box">
+                    <NotificationBox />
+                  </div>
                 )}
                 
                 {/* Theme Toggle - Hidden on mobile for space */}
-                <div className="hidden sm:block">
+                <div className="hidden sm:block" data-tour="theme-toggle">
                   <ThemeToggle />
                 </div>
 
@@ -142,6 +147,7 @@ const Layout = () => {
                   <button
                     className="focus:outline-none p-1 rounded-full hover:bg-muted/50 transition-colors"
                     title="Profile"
+                    data-tour="user-avatar"
                     onClick={() => {
                       // Navigate to profile page for all users
                       navigate('/profile');
@@ -186,7 +192,7 @@ const Layout = () => {
                 </div>
 
                 {/* Desktop Navigation */}
-                <div className="hidden md:flex items-center gap-4">
+                <div className="hidden md:flex items-center gap-4" data-tour="nav-bar">
                   {navReady ? (
                     <DesktopNavigationImproved
                       navigation={navigation}
@@ -237,7 +243,10 @@ const Layout = () => {
       
       {/* Floating Action Button for quick actions */}
       {isAuthenticated && !isLoginPage && <FloatingActionButton />}
+      {/* Help Button */}
+      {isAuthenticated && !isLoginPage && <HelpButton />}
     </div>
+    </TourProvider>
   );
 };
 
