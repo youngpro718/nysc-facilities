@@ -1,4 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,53 +58,55 @@ export const LowStockPanel = () => {
 
       if (error) throw error;
       // Base mapping
-      const base = (data || []).map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity || 0,
-        unit: item.unit || '',
-        location_details: item.location_details || '',
-        preferred_vendor: item.preferred_vendor || '',
+      type InventoryRow = Record<string, unknown>;
+      const base = (data || []).map((item: InventoryRow) => ({
+        id: item.id as string,
+        name: item.name as string,
+        quantity: item.quantity as number,
+        minimum_quantity: (item.minimum_quantity as number) || 0,
+        unit: (item.unit as string) || '',
+        location_details: (item.location_details as string) || '',
+        preferred_vendor: (item.preferred_vendor as string) || '',
         category_name: "Uncategorized",
         category_color: "#6b7280", // default gray-500
         room_name: "",
         room_number: "",
-        storage_room_id: item.storage_room_id,
+        storage_room_id: item.storage_room_id as string,
       }));
 
       // Optional enrichment: categories and rooms
       try {
-        const categoryIds = Array.from(new Set((data || []).map((i: any) => i.category_id).filter(Boolean)));
-        const roomIds = Array.from(new Set((data || []).map((i: any) => i.storage_room_id).filter(Boolean)));
+        const categoryIds = Array.from(new Set((data || []).map((i: InventoryRow) => i.category_id as string).filter(Boolean)));
+        const roomIds = Array.from(new Set((data || []).map((i: InventoryRow) => i.storage_room_id as string).filter(Boolean)));
 
         const [catsRes, roomsRes] = await Promise.all([
           categoryIds.length
             ? supabase.from('inventory_categories').select('id, name, color').in('id', categoryIds)
-            : Promise.resolve({ data: [], error: null } as any),
+            : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
           roomIds.length
             ? supabase.from('rooms').select('id, name, room_number').in('id', roomIds)
-            : Promise.resolve({ data: [], error: null } as any),
+            : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
         ]);
 
-        const catsById = new Map(((catsRes.data as any[]) || []).map((c: any) => [c.id, c]));
-        const roomsById = new Map(((roomsRes.data as any[]) || []).map((r: any) => [r.id, r]));
+        type LookupRow = Record<string, unknown>;
+        const catsById = new Map(((catsRes.data as LookupRow[]) || []).map((c) => [c.id as string, c]));
+        const roomsById = new Map(((roomsRes.data as LookupRow[]) || []).map((r) => [r.id as string, r]));
 
-        const enriched = base.map((it: any) => {
-          const cat = catsById.get((data as any[]).find(d => d.id === it.id)?.category_id);
+        const enriched = base.map((it) => {
+          const cat = catsById.get((data as InventoryRow[]).find(d => d.id === it.id)?.category_id as string);
           const room = roomsById.get(it.storage_room_id);
           return {
             ...it,
-            category_name: cat?.name ?? it.category_name,
-            category_color: cat?.color ?? it.category_color,
-            room_name: room?.name ?? it.room_name,
-            room_number: room?.room_number ?? it.room_number,
+            category_name: (cat?.name as string) ?? it.category_name,
+            category_color: (cat?.color as string) ?? it.category_color,
+            room_name: (room?.name as string) ?? it.room_name,
+            room_number: (room?.room_number as string) ?? it.room_number,
           } as LowStockItem;
         });
 
         return enriched.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
       } catch (e) {
-        if (import.meta.env.DEV) console.warn('[LowStockPanel] enrichment failed, using base data:', e);
+        if (import.meta.env.DEV) logger.warn('[LowStockPanel] enrichment failed, using base data:', e);
         return base.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
       }
     },
@@ -118,46 +122,48 @@ export const LowStockPanel = () => {
         .order("name");
 
       if (error) throw error;
-      const base = (data || []).map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity || 0,
-        unit: item.unit || '',
-        location_details: item.location_details || '',
-        preferred_vendor: item.preferred_vendor || '',
+      type OosRow = Record<string, unknown>;
+      const base = (data || []).map((item: OosRow) => ({
+        id: item.id as string,
+        name: item.name as string,
+        quantity: item.quantity as number,
+        minimum_quantity: (item.minimum_quantity as number) || 0,
+        unit: (item.unit as string) || '',
+        location_details: (item.location_details as string) || '',
+        preferred_vendor: (item.preferred_vendor as string) || '',
         category_name: "Uncategorized",
         category_color: "#6b7280",
         room_name: "",
         room_number: "",
-        storage_room_id: item.storage_room_id,
+        storage_room_id: item.storage_room_id as string,
       }));
       try {
-        const categoryIds = Array.from(new Set((data || []).map((i: any) => i.category_id).filter(Boolean)));
-        const roomIds = Array.from(new Set((data || []).map((i: any) => i.storage_room_id).filter(Boolean)));
+        const categoryIds = Array.from(new Set((data || []).map((i: OosRow) => i.category_id as string).filter(Boolean)));
+        const roomIds = Array.from(new Set((data || []).map((i: OosRow) => i.storage_room_id as string).filter(Boolean)));
         const [catsRes, roomsRes] = await Promise.all([
           categoryIds.length
             ? supabase.from('inventory_categories').select('id, name, color').in('id', categoryIds)
-            : Promise.resolve({ data: [], error: null } as any),
+            : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
           roomIds.length
             ? supabase.from('rooms').select('id, name, room_number').in('id', roomIds)
-            : Promise.resolve({ data: [], error: null } as any),
+            : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
         ]);
-        const catsById = new Map(((catsRes.data as any[]) || []).map((c: any) => [c.id, c]));
-        const roomsById = new Map(((roomsRes.data as any[]) || []).map((r: any) => [r.id, r]));
-        return base.map((it: any) => {
-          const cat = catsById.get((data as any[]).find(d => d.id === it.id)?.category_id);
+        type LookupRow2 = Record<string, unknown>;
+        const catsById = new Map(((catsRes.data as LookupRow2[]) || []).map((c) => [c.id as string, c]));
+        const roomsById = new Map(((roomsRes.data as LookupRow2[]) || []).map((r) => [r.id as string, r]));
+        return base.map((it) => {
+          const cat = catsById.get((data as OosRow[]).find(d => d.id === it.id)?.category_id as string);
           const room = roomsById.get(it.storage_room_id);
           return {
             ...it,
-            category_name: cat?.name ?? it.category_name,
-            category_color: cat?.color ?? it.category_color,
-            room_name: room?.name ?? it.room_name,
-            room_number: room?.room_number ?? it.room_number,
+            category_name: (cat?.name as string) ?? it.category_name,
+            category_color: (cat?.color as string) ?? it.category_color,
+            room_name: (room?.name as string) ?? it.room_name,
+            room_number: (room?.room_number as string) ?? it.room_number,
           } as LowStockItem;
         });
       } catch (e) {
-        if (import.meta.env.DEV) console.warn('[LowStockPanel] enrichment (OOS) failed, using base data:', e);
+        if (import.meta.env.DEV) logger.warn('[LowStockPanel] enrichment (OOS) failed, using base data:', e);
         return base;
       }
     },
@@ -323,7 +329,7 @@ export const LowStockPanel = () => {
 
       {(lowErr || outErr) && (
         <div className="mb-4 rounded border border-destructive/30 bg-destructive/10 text-destructive p-3 text-sm">
-          Failed to load some stock data: {String((lowError as any)?.message || lowError || (outError as any)?.message || outError)}
+          Failed to load some stock data: {lowError ? getErrorMessage(lowError) : outError ? getErrorMessage(outError) : 'Unknown error'}
         </div>
       )}
 

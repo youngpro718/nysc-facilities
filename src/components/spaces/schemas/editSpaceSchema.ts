@@ -16,10 +16,10 @@ const sizeSchema = z.object({
 export const editSpaceSchema = z.preprocess(
   (data) => ({
     ...(data as object),
-    position: (data as any)?.position || { x: 0, y: 0 },
-    size: (data as any)?.size || { width: 150, height: 100 },
-    rotation: (data as any)?.rotation || 0,
-    connections: (data as any)?.connections || []
+    position: (data as Record<string, unknown>)?.position || { x: 0, y: 0 },
+    size: (data as Record<string, unknown>)?.size || { width: 150, height: 100 },
+    rotation: (data as Record<string, unknown>)?.rotation || 0,
+    connections: (data as Record<string, unknown>)?.connections || []
   }),
   createSpaceSchema.and(
     z.object({

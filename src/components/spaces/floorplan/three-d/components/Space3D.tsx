@@ -8,7 +8,7 @@ interface Space3DProps {
   size: { width: number; height: number };
   rotation?: number;
   label?: string;
-  properties?: any;
+  properties?: Record<string, unknown>;
   isSelected?: boolean;
   showLabels?: boolean;
   onClick?: (id: string) => void;
@@ -107,7 +107,7 @@ export function Space3D({
     }
   }, [isSelected, hovered, material]);
 
-  const handleClick = (e: any) => {
+  const handleClick = (e: Record<string, unknown>) => {
     e.stopPropagation();
     
     // Handle connection mode
@@ -119,7 +119,7 @@ export function Space3D({
     onClick?.(id);
   };
 
-  const handleDoubleClick = (e: any) => {
+  const handleDoubleClick = (e: Record<string, unknown>) => {
     e.stopPropagation();
     if (onStartConnection) {
       onStartConnection(id);

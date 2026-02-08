@@ -9,7 +9,7 @@
  */
 
 export function mapPartToRoom(partNumber: string, buildingCode: '100' | '111'): string {
-  console.warn('⚠️ Using legacy static part mapping. Consider migrating to courtroomMappingService.ts for database-driven mapping.');
+  logger.warn('⚠️ Using legacy static part mapping. Consider migrating to courtroomMappingService.ts for database-driven mapping.');
   
   // For building 111, we have some known part-to-room mappings
   if (buildingCode === '111') {

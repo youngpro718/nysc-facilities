@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Loader2, Building2, DoorClosed, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import { UserAssignment } from "@/types/dashboard";
 
 // Custom Dropdown Component
@@ -26,7 +27,7 @@ function CustomDropdown({
   disabled?: boolean;
   loading?: boolean;
   options: Array<{ id: string; name: string; display?: string }>;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<unknown>;
   className?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -96,7 +97,7 @@ function CustomDropdown({
 }
 
 interface EnhancedLocationStepProps {
-  form: any;
+  form: unknown;
   assignedRooms?: UserAssignment[];
 }
 
@@ -109,15 +110,15 @@ export function EnhancedLocationStep({ form, assignedRooms }: EnhancedLocationSt
   const { data: buildings = [], isLoading: isLoadingBuildings } = useQuery({
     queryKey: ['buildings'],
     queryFn: async () => {
-      console.log('Fetching buildings...');
+      logger.debug('Fetching buildings...');
       const { data, error } = await supabase
         .from('buildings')
         .select('*')
         .eq('status', 'active')
         .order('name');
       
-      console.log('Buildings data:', data);
-      console.log('Buildings error:', error);
+      logger.debug('Buildings data:', data);
+      logger.debug('Buildings error:', error);
       
       if (error) throw error;
       return data || [];
@@ -128,7 +129,7 @@ export function EnhancedLocationStep({ form, assignedRooms }: EnhancedLocationSt
     queryKey: ['floors', buildingId],
     queryFn: async () => {
       if (!buildingId) return [];
-      console.log('Fetching floors for building:', buildingId);
+      logger.debug('Fetching floors for building:', buildingId);
       
       const { data, error } = await supabase
         .from('floors')
@@ -137,8 +138,8 @@ export function EnhancedLocationStep({ form, assignedRooms }: EnhancedLocationSt
         .eq('status', 'active')
         .order('floor_number');
       
-      console.log('Floors data:', data);
-      console.log('Floors error:', error);
+      logger.debug('Floors data:', data);
+      logger.error('Floors error:', error);
       
       if (error) throw error;
       return data || [];
@@ -150,7 +151,7 @@ export function EnhancedLocationStep({ form, assignedRooms }: EnhancedLocationSt
     queryKey: ['rooms', floorId],
     queryFn: async () => {
       if (!floorId) return [];
-      console.log('Fetching rooms for floor:', floorId);
+      logger.debug('Fetching rooms for floor:', floorId);
       
       const { data, error } = await supabase
         .from('rooms')
@@ -159,8 +160,8 @@ export function EnhancedLocationStep({ form, assignedRooms }: EnhancedLocationSt
         .eq('status', 'active')
         .order('room_number');
       
-      console.log('Rooms data:', data);
-      console.log('Rooms error:', error);
+      logger.debug('Rooms data:', data);
+      logger.debug('Rooms error:', error);
       
       if (error) throw error;
       return data || [];

@@ -24,7 +24,7 @@ interface OrderSummaryFooterProps {
   totalItems: number;
   onRemove: (itemId: string) => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
-  onSubmit: (options?: any) => Promise<any>;
+  onSubmit: (options?: Record<string, unknown>) => Promise<unknown>;
   onClear: () => void;
   isSubmitting: boolean;
   hasRestrictedItems?: boolean;
@@ -65,7 +65,7 @@ export function OrderSummaryFooter({
     }
     
     // Fallback to profile metadata
-    const meta = profile?.metadata as Record<string, any> | undefined;
+    const meta = profile?.metadata as Record<string, unknown> | undefined;
     const roomFromProfile = meta?.room_number || meta?.office || '';
     if (roomFromProfile) {
       setDeliveryLocation(roomFromProfile);
@@ -87,7 +87,7 @@ export function OrderSummaryFooter({
         justification: 'Standard supply request',
       });
       // Reset form
-      const meta = profile?.metadata as Record<string, any> | undefined;
+      const meta = profile?.metadata as Record<string, unknown> | undefined;
       const roomFromProfile = meta?.room_number || meta?.office || '';
       setDeliveryLocation(roomFromProfile);
       setPriority('medium');

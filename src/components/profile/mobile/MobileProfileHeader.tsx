@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,7 @@ export function MobileProfileHeader() {
         });
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      logger.error('Error loading profile:', error);
       toast({
         title: "Error loading profile",
         description: "Failed to load profile information",

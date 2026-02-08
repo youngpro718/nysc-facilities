@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -23,7 +24,7 @@ export const useRequestActions = () => {
       toast.success('Request cancelled successfully');
     },
     onError: (error) => {
-      console.error('Error cancelling request:', error);
+      logger.error('Error cancelling request:', error);
       toast.error('Failed to cancel request');
     },
   });
@@ -31,7 +32,7 @@ export const useRequestActions = () => {
   const resubmitRequest = useMutation({
     mutationFn: async ({ originalRequestId, newData }: { 
       originalRequestId: string; 
-      newData: any; 
+      newData: unknown; 
     }) => {
       // First, get the original request data
       const { data: originalRequest, error: fetchError } = await supabase
@@ -63,7 +64,7 @@ export const useRequestActions = () => {
       toast.success('Request resubmitted successfully');
     },
     onError: (error) => {
-      console.error('Error resubmitting request:', error);
+      logger.error('Error resubmitting request:', error);
       toast.error('Failed to resubmit request');
     },
   });

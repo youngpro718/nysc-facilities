@@ -49,16 +49,16 @@ export const AssignmentManagementPanel = () => {
       let relocatedCount = 0;
       // track inactive rooms only for flow control; not surfaced in metrics
 
-      const assignedRoomIds = new Set((assignments || []).map((a: any) => a.room_id).filter(Boolean));
+      const assignedRoomIds = new Set((assignments || []).map((a: Record<string, unknown>) => a.room_id).filter(Boolean));
 
       courtrooms?.forEach(room => {
         const roomShutdown = shutdownMap.get(room.id);
         // Check if room has a part assigned using room_id key
         const hasAssignment = assignedRoomIds.has(room.room_id);
 
-        if (roomShutdown && ((roomShutdown as any).status === "in_progress" || (roomShutdown as any).status === "scheduled")) {
+        if (roomShutdown && (((roomShutdown as Record<string, unknown>)).status === "in_progress" || ((roomShutdown as Record<string, unknown>)).status === "scheduled")) {
           shutdownCount++;
-          if ((roomShutdown as any).temporary_location) {
+          if (((roomShutdown as Record<string, unknown>)).temporary_location) {
             relocatedCount++;
           }
         } else if (!room.is_active) {

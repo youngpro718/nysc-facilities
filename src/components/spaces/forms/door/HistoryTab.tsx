@@ -19,7 +19,7 @@ export function HistoryTab({ form }: HistoryTabProps) {
       </div>
 
       <div className="space-y-4">
-        {form.watch("statusHistory")?.map((entry: any, index: number) => (
+        {form.watch("statusHistory")?.map((entry: Record<string, unknown>, index: number) => (
           <div key={index} className="flex items-center gap-2">
             <Badge 
               variant={

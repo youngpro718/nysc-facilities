@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { UseFormReturn } from "react-hook-form";
 import { CreateSpaceFormData } from "../../../schemas/createSpaceSchema";
+import { logger } from "@/lib/logger";
 
 interface BuildingSelectorProps {
   form: UseFormReturn<CreateSpaceFormData>;
@@ -15,7 +16,7 @@ export function BuildingSelector({ form, onBuildingChange }: BuildingSelectorPro
   const { data: buildings, isLoading } = useQuery({
     queryKey: ["buildings"],
     queryFn: async () => {
-      console.log("Fetching buildings...");
+      logger.debug("Fetching buildings...");
       const { data, error } = await supabase
         .from("buildings")
         .select("id, name, address, status")
@@ -23,10 +24,10 @@ export function BuildingSelector({ form, onBuildingChange }: BuildingSelectorPro
         .order('name');
       
       if (error) {
-        console.error("Error fetching buildings:", error);
+        logger.error("Error fetching buildings:", error);
         throw error;
       }
-      console.log("Fetched buildings:", data);
+      logger.debug("Fetched buildings:", data);
       return data;
     }
   });

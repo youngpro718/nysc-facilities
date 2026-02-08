@@ -12,7 +12,7 @@ export interface LightingTemplate {
     naming_pattern?: string;
     floor?: number;
     location?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   created_at: string;
   updated_at: string;
@@ -26,7 +26,7 @@ export interface FloorLightingMetadata {
   special_config_details: {
     north_fixture_count?: number;
     special_zones?: string[];
-    [key: string]: any;
+    [key: string]: unknown;
   };
   created_at: string;
   updated_at: string;
@@ -39,7 +39,7 @@ export interface HallwayConnection {
   connection_point: {
     position: string;
     access_type: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   created_at: string;
   updated_at: string;

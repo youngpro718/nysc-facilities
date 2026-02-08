@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { logger } from "@/utils/logger";
+import { logger } from "@/lib/logger";
 
 /**
  * Service for handling Supabase storage operations
@@ -18,7 +18,7 @@ export const storageService = {
     file: File,
     options: {
       path?: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       entityId?: string; // Entity ID (like room ID) for structured storage
     } = {}
   ): Promise<string | null> {
@@ -37,14 +37,14 @@ export const storageService = {
       // If bucket doesn't exist, try to create it
       if (!bucketExists) {
         try {
-          logger.log(`Attempting to create bucket: ${bucketName}`);
+          logger.debug(`Attempting to create bucket: ${bucketName}`);
           const { error } = await supabase.storage.createBucket(bucketName, {
             public: true,  // Make it public to allow direct access to files
             fileSizeLimit: 10485760, // 10MB
           });
           
           if (!error) {
-            logger.log(`Successfully created bucket: ${bucketName}`);
+            logger.debug(`Successfully created bucket: ${bucketName}`);
             bucketExists = true;
           } else {
             logger.error(`Failed to create bucket ${bucketName}:`, error);
@@ -75,7 +75,7 @@ export const storageService = {
         }
       }
       
-      logger.log(`Uploading file to ${bucketName} at path: ${filePath}`);
+      logger.debug(`Uploading file to ${bucketName} at path: ${filePath}`);
       
       // Upload the file
       const { data, error: uploadError } = await supabase.storage
@@ -235,7 +235,7 @@ export const storageService = {
    */
   async checkBucketExists(bucketName: string): Promise<boolean> {
     try {
-      logger.log(`Checking if bucket ${bucketName} exists...`);
+      logger.debug(`Checking if bucket ${bucketName} exists...`);
       
       // Use listBuckets instead of getBucket to avoid permission issues
       const { data: buckets, error } = await supabase.storage.listBuckets();
@@ -247,7 +247,7 @@ export const storageService = {
       
       // Check if the bucket exists in the list
       const bucketExists = buckets?.some(bucket => bucket.name === bucketName) || false;
-      logger.log(`Bucket '${bucketName}' exists: ${bucketExists}`);
+      logger.debug(`Bucket '${bucketName}' exists: ${bucketExists}`);
       return bucketExists;
     } catch (error) {
       logger.error(`Exception checking if bucket ${bucketName} exists:`, error);
@@ -264,7 +264,7 @@ export const storageService = {
       // Check authentication first
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        logger.log('Skipping bucket verification: User not authenticated');
+        logger.debug('Skipping bucket verification: User not authenticated');
         return;
       }
       
@@ -272,7 +272,7 @@ export const storageService = {
         const exists = await this.checkBucketExists(bucketName);
         
         if (exists) {
-          logger.log(`Verified bucket exists: ${bucketName}`);
+          logger.debug(`Verified bucket exists: ${bucketName}`);
         } else {
           logger.warn(`Storage bucket not found: ${bucketName}`);
           // We don't try to create it as it should be created via SQL

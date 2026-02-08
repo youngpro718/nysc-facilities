@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 interface RoomNumberOptions {
   floorId: string;
@@ -25,7 +26,7 @@ export async function generateSmartRoomNumber({
       .not('room_number', 'is', null);
 
     if (error) {
-      console.error('Error fetching existing rooms:', error);
+      logger.error('Error fetching existing rooms:', error);
       return generateFallbackRoomNumber(floorNumber);
     }
 
@@ -71,7 +72,7 @@ export async function generateSmartRoomNumber({
     return generateFallbackRoomNumber(floorNumber);
 
   } catch (error) {
-    console.error('Error generating room number:', error);
+    logger.error('Error generating room number:', error);
     return generateFallbackRoomNumber(floorNumber);
   }
 }

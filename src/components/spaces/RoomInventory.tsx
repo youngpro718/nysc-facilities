@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { useInventory } from "./inventory/hooks/useInventory";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -66,7 +67,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
       setIsEditDialogOpen(false);
       setSelectedItem(null);
     } catch (error) {
-      console.error('Error editing item:', error);
+      logger.error('Error editing item:', error);
       toast({
         title: "Error",
         description: "Failed to update item. Please try again.",
@@ -75,7 +76,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     }
   };
 
-  const handleImportSuccess = async (importedItems: any[]) => {
+  const handleImportSuccess = async (importedItems: unknown[]) => {
     try {
       await addBulkItems(importedItems);
       toast({

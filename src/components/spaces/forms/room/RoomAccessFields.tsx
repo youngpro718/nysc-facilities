@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { logger } from '@/lib/logger';
 import { UseFormReturn, useFieldArray } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +54,7 @@ export default function RoomAccessFields({ form }: RoomAccessFieldsProps) {
         .order("name");
 
       if (error) {
-        console.error("Error fetching keys:", error);
+        logger.error("Error fetching keys:", error);
         return [];
       }
 
@@ -67,7 +68,7 @@ export default function RoomAccessFields({ form }: RoomAccessFieldsProps) {
     const selectedKeyData = keys.find(k => k.id === selectedKey);
     
     const newAccess: RoomAccessData = {
-      accessType: selectedAccessType as any,
+      accessType: selectedAccessType as unknown,
       keyId: selectedKey || undefined,
       keyName: selectedKeyData?.name || undefined,
       description: description || undefined,

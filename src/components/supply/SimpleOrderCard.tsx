@@ -7,7 +7,7 @@ import { Package, User, MapPin, Clock, AlertTriangle, Truck, CheckCircle } from 
 import { formatDistanceToNow } from 'date-fns';
 
 interface SimpleOrderCardProps {
-  order: any;
+  order: Record<string, unknown>;
   onFulfill: () => void;
   onConfirmPickup?: () => void;
   showDeliveryConfirm?: boolean;
@@ -139,7 +139,7 @@ export function SimpleOrderCard({
         <div className="border-t pt-3">
           <p className="text-sm font-semibold mb-2">Items Requested ({itemCount}):</p>
           <div className="space-y-1.5">
-            {order.supply_request_items?.slice(0, 3).map((item: any) => {
+            {order.supply_request_items?.slice(0, 3).map((item: Record<string, unknown>) => {
               const fulfilled = item.quantity_fulfilled || 0;
               const requested = item.quantity_requested;
               const isPartial = fulfilled > 0 && fulfilled < requested;

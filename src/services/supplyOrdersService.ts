@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import { InventoryItemWithFlag, requiresApprovalForItems } from '@/constants/supplyOrders';
 
 export interface SubmitOrderItem {
@@ -32,7 +33,7 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     .in('id', itemIds);
   if (invErr) throw new Error(`Failed to fetch inventory: ${invErr.message}`);
 
-  const liteItems: InventoryItemWithFlag[] = (inv || []).map((i: any) => ({
+  const liteItems: InventoryItemWithFlag[] = (inv || []).map((i: Record<string, unknown>) => ({
     id: i.id,
     name: i.name,
     categoryName: i.inventory_categories?.name ?? null,
@@ -42,7 +43,7 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
   const approvalRequired = requiresApprovalForItems(liteItems);
 
   // Compose insert payload - CRITICAL: include requester_id for RLS
-  const insertData: any = {
+  const insertData: Record<string, unknown> = {
     requester_id: session.user.id, // Required by RLS policy
     title: payload.title,
     description: payload.description || '',
@@ -81,7 +82,7 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     .from('supply_request_items')
     .insert(itemsRows);
   if (itemErr) {
-    console.error('Failed to insert request items:', itemErr);
+    logger.error('Failed to insert request items:', itemErr);
     // Don't throw - the main request was created
   }
 
@@ -97,7 +98,7 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
         changed_at: new Date().toISOString(),
       });
   } catch (histErr) {
-    console.warn('Failed to record status history:', histErr);
+    logger.warn('Failed to record status history:', histErr);
     // Non-critical - don't fail the order
   }
 

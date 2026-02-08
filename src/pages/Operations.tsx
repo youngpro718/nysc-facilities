@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { logger } from '@/lib/logger';
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -267,7 +268,7 @@ export default function Operations() {
       ]);
       toast.success('Operations data refreshed successfully');
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      logger.error('Error refreshing data:', error);
       toast.error('Failed to refresh some data');
     } finally {
       setIsRefreshing(false);

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { UserCheck, UserX, Mail, Clock, AlertCircle, ShieldCheck, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export interface User {
   id: string;
@@ -17,7 +18,7 @@ export interface User {
   department: string;
   title: string;
   is_admin?: boolean;
-  metadata?: any;
+  metadata?: unknown;
   access_level?: 'none' | 'read' | 'write' | 'admin';
   is_suspended?: boolean;
   suspension_reason?: string;
@@ -40,7 +41,7 @@ export function PendingUsersSection({
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   const handleQuickApprove = async (userId: string, userName: string) => {
-    console.log('[PendingUsersSection] Quick approving user:', { userId, userName });
+    logger.debug('[PendingUsersSection] Quick approving user:', { userId, userName });
     
     setProcessingIds(prev => new Set(prev).add(userId));
     
@@ -49,7 +50,7 @@ export function PendingUsersSection({
         .rpc('admin_verify_and_approve', { target_user_id: userId });
 
       if (error) {
-        console.error('[PendingUsersSection] RPC error:', error);
+        logger.error('[PendingUsersSection] RPC error:', error);
         throw error;
       }
 
@@ -57,13 +58,13 @@ export function PendingUsersSection({
         throw new Error(data?.message || 'Failed to approve user');
       }
 
-      console.log('[PendingUsersSection] Successfully approved user:', data);
+      logger.debug('[PendingUsersSection] Successfully approved user:', data);
       toast.success(`${userName} has been verified and approved successfully`);
       
       // Trigger parent component refresh
       onVerify(userId);
     } catch (error) {
-      console.error('[PendingUsersSection] Error approving user:', error);
+      logger.error('[PendingUsersSection] Error approving user:', error);
       toast.error('Failed to verify and approve user');
     } finally {
       setProcessingIds(prev => {
@@ -177,7 +178,7 @@ export function PendingUsersSection({
                   <span className="font-medium">Requested Access:</span>
                   <span className="ml-2 text-slate-800">
                     {(() => {
-                      const raw = (user as any)?.metadata?.requested_access_level as string | undefined;
+                      const raw = ((user as Record<string, unknown>))?.metadata?.requested_access_level as string | undefined;
                       if (!raw) return 'Not specified';
                       return (raw === 'administrative' || raw === 'admin') ? 'Administrative' : 'Standard';
                     })()}

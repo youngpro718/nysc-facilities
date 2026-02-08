@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,7 +128,7 @@ export const InventoryItemsPanel = () => {
       const normalized = (data || []) as InventoryItem[];
 
       // Debug: log count and returned items length to spot RLS or filter issues
-      console.debug('[InventoryItemsPanel] fetched', { totalCount: count, page, pageSize, itemsLength: normalized.length, searchQuery });
+      logger.debug('[InventoryItemsPanel] fetched', { totalCount: count, page, pageSize, itemsLength: normalized.length, searchQuery });
       return { items: normalized, total: count ?? 0 };
     },
     refetchOnWindowFocus: false,
@@ -222,7 +223,7 @@ export const InventoryItemsPanel = () => {
       if (error) throw error;
       const rows = (data as InventoryItem[] | null) ?? [];
 
-      const csvRows: Record<string, any>[] = rows.map((it) => {
+      const csvRows: Record<string, unknown>[] = rows.map((it) => {
         const cat = categoriesById.get(it.category_id);
         const room = roomsById.get(it.storage_room_id);
         return {
@@ -237,10 +238,10 @@ export const InventoryItemsPanel = () => {
         };
       });
 
-      const toCsv = (arr: Record<string, any>[]) => {
+      const toCsv = (arr: Record<string, unknown>[]) => {
         if (arr.length === 0) return "";
         const headers = Object.keys(arr[0]);
-        const esc = (v: any) => {
+        const esc = (v: Record<string, unknown>) => {
           const s = String(v ?? "");
           const needsQuote = /[",\n]/.test(s);
           const escaped = s.replace(/"/g, '""');
@@ -260,7 +261,7 @@ export const InventoryItemsPanel = () => {
       URL.revokeObjectURL(url);
 
       toast({ title: "Export complete", description: `Exported ${rows.length} items.` });
-    } catch (e: any) {
+    } catch (e) {
       toast({ variant: "destructive", title: "Export failed", description: e?.message ?? String(e) });
     } finally {
       setExporting(false);
@@ -367,7 +368,7 @@ export const InventoryItemsPanel = () => {
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Sort</label>
             <div className="flex gap-2">
-              <Select value={sortKey} onValueChange={(v) => setSortKey(v as any)}>
+              <Select value={sortKey} onValueChange={(v) => setSortKey(v as unknown)}>
                 <SelectTrigger className="h-9 flex-1 bg-background z-50">
                   <SelectValue />
                 </SelectTrigger>
@@ -377,7 +378,7 @@ export const InventoryItemsPanel = () => {
                   <SelectItem value="updated_at">Updated</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={sortDir} onValueChange={(v) => setSortDir(v as any)}>
+              <Select value={sortDir} onValueChange={(v) => setSortDir(v as unknown)}>
                 <SelectTrigger className="h-9 w-20 bg-background z-50">
                   <SelectValue />
                 </SelectTrigger>
@@ -546,7 +547,7 @@ export const InventoryItemsPanel = () => {
       {/* Error State */}
       {isError && (
         <div className="mt-4 rounded border border-destructive/30 bg-destructive/10 text-destructive p-3 text-sm">
-          Failed to load items: {String((error as any)?.message || error)}
+          Failed to load items: {String((error as Record<string, unknown>)?.message || error)}
         </div>
       )}
 

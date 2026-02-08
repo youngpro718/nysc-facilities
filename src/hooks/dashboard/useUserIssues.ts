@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -62,7 +63,7 @@ export function useUserIssues(userId: string | undefined) {
         if (error) throw new IssueError(`Failed to fetch user issues: ${error.message}`);
         if (!data) throw new IssueError('No issues data returned');
         
-        return (data as any)?.map((issue: any) => ({
+        return (data as Record<string, unknown>)?.map((issue: Record<string, unknown>) => ({
           ...issue,
           buildings: issue.buildings?.[0] || { name: 'Unknown Building' },
           floors: issue.floors?.[0] || { name: 'Unknown Floor' },
@@ -70,7 +71,7 @@ export function useUserIssues(userId: string | undefined) {
           created_at: new Date(issue.created_at).toISOString(),
         })) || [];
       } catch (error) {
-        console.error('Error fetching user issues:', error);
+        logger.error('Error fetching user issues:', error);
         throw error;
       }
     },
@@ -94,7 +95,7 @@ export function useUserIssues(userId: string | undefined) {
         )
       );
     } catch (error) {
-      console.error('Error marking issue as seen:', error);
+      logger.error('Error marking issue as seen:', error);
     }
   }, [queryClient, userId]);
 

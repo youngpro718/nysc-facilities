@@ -62,7 +62,7 @@ export function AuditTrail({
   };
 
   const getActionBadge = (action: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, unknown> = {
       INSERT: 'default',
       UPDATE: 'secondary',
       DELETE: 'destructive',

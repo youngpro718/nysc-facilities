@@ -33,7 +33,7 @@ export class PositionUtils {
   isPositionFree(
     position: Position, 
     size: Size, 
-    existingObjects: any[], 
+    existingObjects: unknown[], 
     excludeId?: string
   ): boolean {
     const margin = 10; // Minimum spacing between objects
@@ -60,7 +60,7 @@ export class PositionUtils {
    * Find optimal position for new object
    */
   findOptimalPosition(
-    existingObjects: any[], 
+    existingObjects: unknown[], 
     objectSize: Size,
     preferredPosition?: Position
   ): Position {
@@ -116,7 +116,7 @@ export class PositionUtils {
   /**
    * Auto-arrange objects to prevent overlaps
    */
-  autoArrangeObjects(objects: any[]): any[] {
+  autoArrangeObjects(objects: unknown[]): unknown[] {
     const arranged = [...objects];
     const positionUtils = new PositionUtils(this.gridSize);
     

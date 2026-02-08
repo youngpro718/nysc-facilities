@@ -216,7 +216,7 @@ export function RoomDetailPanel({ roomId, onEdit, onDelete }: RoomDetailPanelPro
                         Recent Issues
                       </h4>
                       <div className="space-y-2">
-                        {roomData.issues.slice(0, 3).map((issue: any) => (
+                        {roomData.issues.slice(0, 3).map((issue: Record<string, unknown>) => (
                           <div key={issue.id} className="p-3 bg-muted/50 rounded-lg">
                             <div className="font-medium text-sm">{issue.title}</div>
                             <div className="text-xs text-muted-foreground">
@@ -236,7 +236,7 @@ export function RoomDetailPanel({ roomId, onEdit, onDelete }: RoomDetailPanelPro
                         Current Occupants
                       </h4>
                       <div className="space-y-2">
-                        {roomData.current_occupants.slice(0, 3).map((occupant: any, index: number) => (
+                        {roomData.current_occupants.slice(0, 3).map((occupant: Record<string, unknown>, index: number) => (
                           <div key={occupant.id || index} className="p-3 bg-muted/50 rounded-lg">
                             <div className="font-medium text-sm">{occupant.personnel_name || 'Unknown'}</div>
                             <div className="text-xs text-muted-foreground">

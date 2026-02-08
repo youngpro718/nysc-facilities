@@ -4,6 +4,7 @@ import { Clock, CheckCircle, XCircle, Key, User, Calendar, Phone } from "lucide-
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,7 +103,7 @@ export default function AdminKeyRequests() {
     if (!selectedRequest || !actionType) return;
 
     try {
-      const updates: any = {
+      const updates: Record<string, unknown> = {
         status: actionType === 'approve' ? 'approved' : 'rejected',
         admin_notes: adminNotes.trim() || null,
         updated_at: new Date().toISOString(),
@@ -117,8 +118,8 @@ export default function AdminKeyRequests() {
 
       // Always create user notification and send email if opted in
       try {
-        console.log('Starting notification process for user:', selectedRequest.user_id);
-        console.log('Request data:', selectedRequest);
+        logger.debug('Starting notification process for user:', selectedRequest.user_id);
+        logger.debug('Request data:', selectedRequest);
         
         const functionResponse = await supabase.functions.invoke('send-key-request-notification', {
           body: {
@@ -135,16 +136,16 @@ export default function AdminKeyRequests() {
           }
         });
         
-        console.log('Function response:', functionResponse);
+        logger.debug('Function response:', functionResponse);
         
         if (functionResponse.error) {
-          console.error('Edge function error:', functionResponse.error);
+          logger.error('Edge function error:', functionResponse.error);
           throw new Error('Edge function failed');
         }
         
-        console.log('Notification sent successfully via edge function');
+        logger.debug('Notification sent successfully via edge function');
       } catch (notificationError) {
-        console.error('Edge function failed, creating notification directly:', notificationError);
+        logger.error('Edge function failed, creating notification directly:', notificationError);
         
         // Fallback: Create notification directly in database
         try {
@@ -180,12 +181,12 @@ export default function AdminKeyRequests() {
             });
 
           if (directNotificationError) {
-            console.error('Failed to create direct notification:', directNotificationError);
+            logger.error('Failed to create direct notification:', directNotificationError);
           } else {
-            console.log('Direct notification created successfully');
+            logger.debug('Direct notification created successfully');
           }
         } catch (directError) {
-          console.error('Direct notification creation also failed:', directError);
+          logger.error('Direct notification creation also failed:', directError);
         }
       }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { useSearchParams } from 'react-router-dom';
 
 interface SpaceContext {
@@ -46,7 +47,7 @@ export function useSpaceContext(): SpaceContext {
         setContext(parsed);
       }
     } catch (error) {
-      console.error('Error reading space context from storage:', error);
+      logger.error('Error reading space context from storage:', error);
     }
   }, [searchParams]);
 
@@ -60,6 +61,6 @@ export function saveSpaceContext(context: SpaceContext) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(context));
   } catch (error) {
-    console.error('Error saving space context:', error);
+    logger.error('Error saving space context:', error);
   }
 }

@@ -25,7 +25,7 @@ const HallwaysList = () => {
   const filteredAndSortedHallways = useMemo(() => {
     if (!hallways) return [];
     const filtered = filterSpaces(hallways, searchQuery, statusFilter);
-    return sortSpaces(filtered, sortBy as any);
+    return sortSpaces(filtered, sortBy as unknown);
   }, [hallways, searchQuery, sortBy, statusFilter]);
 
   const getAccessibilityColor = (accessibility?: string) => {
@@ -46,7 +46,7 @@ const HallwaysList = () => {
     }
   };
 
-  const renderGridContent = (hallway: any) => (
+  const renderGridContent = (hallway: Record<string, unknown>) => (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">Type: {hallway.type}</p>
       <div className="flex gap-2 items-center">
@@ -91,7 +91,7 @@ const HallwaysList = () => {
     </div>
   );
 
-  const renderListRow = (hallway: any) => [
+  const renderListRow = (hallway: Record<string, unknown>) => [
     <TableCell key="name">{hallway.name}</TableCell>,
     <TableCell key="type">{hallway.type}</TableCell>,
     <TableCell key="building">{hallway.floors?.buildings?.name}</TableCell>,

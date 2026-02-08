@@ -2,12 +2,13 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export interface UploadOptions {
   entityId: string;
   bucketName: string;
   category?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export function usePhotoUpload() {
@@ -31,13 +32,13 @@ export function usePhotoUpload() {
       const { data, error } = await supabase.storage.getBucket(bucketName);
       
       if (error) {
-        console.error(`Error checking bucket existence: ${error.message}`, error);
+        logger.error(`Error checking bucket existence: ${error.message}`, error);
         return false;
       }
       
       return !!data;
     } catch (error) {
-      console.error(`Exception checking if bucket ${bucketName} exists:`, error);
+      logger.error(`Exception checking if bucket ${bucketName} exists:`, error);
       return false;
     }
   };
@@ -73,7 +74,7 @@ export function usePhotoUpload() {
       const category = options.category || 'default';
       const filePath = `${options.entityId}/${category}/${fileName}`;
       
-      console.log(`Uploading file to ${options.bucketName} at path: ${filePath}`);
+      logger.debug(`Uploading file to ${options.bucketName} at path: ${filePath}`);
       
       // Upload the file
       const { data, error: uploadError } = await supabase.storage
@@ -85,7 +86,7 @@ export function usePhotoUpload() {
         });
         
       if (uploadError) {
-        console.error(`Error uploading file to ${options.bucketName}:`, uploadError);
+        logger.error(`Error uploading file to ${options.bucketName}:`, uploadError);
         throw uploadError;
       }
       
@@ -97,7 +98,7 @@ export function usePhotoUpload() {
       return publicUrl;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Upload error:`, error);
+      logger.error(`Upload error:`, error);
       setError(errorMessage);
       toast.error(`Failed to upload file: ${errorMessage}`);
       return null;
@@ -115,26 +116,26 @@ export function usePhotoUpload() {
       // Extract filename from URL
       const pathMatch = url.match(/\/storage\/v1\/object\/public\/([\w-]+)\/(.*)/);
       if (!pathMatch || pathMatch.length < 3) {
-        console.error('Could not extract file path from URL:', url);
+        logger.error('Could not extract file path from URL:', url);
         return false;
       }
       
       const filePath = pathMatch[2];
-      console.log('Removing file from storage:', filePath);
+      logger.debug('Removing file from storage:', filePath);
       
       const { error } = await supabase.storage
         .from(bucketName)
         .remove([filePath]);
       
       if (error) {
-        console.error(`Error removing file:`, error);
+        logger.error(`Error removing file:`, error);
         toast.error(`Error removing file: ${error.message}`);
         return false;
       }
       
       return true;
     } catch (error) {
-      console.error('File removal error:', error);
+      logger.error('File removal error:', error);
       toast.error(`Failed to remove file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
@@ -217,7 +218,7 @@ export function usePhotoUpload() {
       const category = options.category || 'default';
       const filePath = `${options.entityId}/${category}/${fileName}`;
       
-      console.log(`Uploading file to ${options.bucketName} at path: ${filePath}`);
+      logger.debug(`Uploading file to ${options.bucketName} at path: ${filePath}`);
       
       // Simulate progress updates since Supabase doesn't provide native progress
       const progressInterval = setInterval(() => {
@@ -242,7 +243,7 @@ export function usePhotoUpload() {
       onProgress?.(100);
         
       if (uploadError) {
-        console.error(`Error uploading file to ${options.bucketName}:`, uploadError);
+        logger.error(`Error uploading file to ${options.bucketName}:`, uploadError);
         throw uploadError;
       }
       
@@ -254,7 +255,7 @@ export function usePhotoUpload() {
       return publicUrl;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Upload error:`, error);
+      logger.error(`Upload error:`, error);
       setError(errorMessage);
       toast.error(`Failed to upload file: ${errorMessage}`);
       return null;

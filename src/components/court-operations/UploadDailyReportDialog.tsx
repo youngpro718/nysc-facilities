@@ -7,6 +7,7 @@ import { Upload, FileText, Loader2, CheckCircle, AlertTriangle } from 'lucide-re
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 import { batchMapPartsToCourtrooms } from '@/services/court/courtroomMappingService';
 import { PDFExtractionPreview, type ExtractedPart } from './PDFExtractionPreview';
 import { validateBatch, getValidationSummary } from '@/services/court/sessionValidation';
@@ -14,7 +15,7 @@ import { validateBatch, getValidationSummary } from '@/services/court/sessionVal
 interface UploadDailyReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDataExtracted?: (data: any[]) => void;
+  onDataExtracted?: (data: unknown[]) => void;
   buildingCode?: '100' | '111';
 }
 
@@ -76,7 +77,7 @@ export function UploadDailyReportDialog({
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
-      console.log('📄 File uploaded:', fileName);
+      logger.debug('📄 File uploaded:', fileName);
 
       // Step 2: Extract data using AI
       setExtractionStatus('extracting');
@@ -88,7 +89,7 @@ export function UploadDailyReportDialog({
 
       if (parseError) {
         // Sanitize error message to prevent information disclosure
-        console.error('[Admin Only] Parse error details:', parseError);
+        logger.error('[Admin Only] Parse error details:', parseError);
         throw new Error('Document extraction failed. Please ensure the file is a valid PDF and try again.');
       }
 
@@ -96,7 +97,7 @@ export function UploadDailyReportDialog({
         const error = parseResult?.error || '';
         
         // Log detailed error for admins only
-        console.error('[Admin Only] Parse result error:', error);
+        logger.error('[Admin Only] Parse result error:', error);
         
         // Check if it's a configuration error and provide helpful message
         if (error.includes('not configured') || error.includes('LOVABLE_API_KEY') || error.includes('API key')) {
@@ -107,7 +108,7 @@ export function UploadDailyReportDialog({
         throw new Error('Failed to process the document. Please check the file format and try again.');
       }
 
-      console.log('✅ Extraction successful:', parseResult);
+      logger.debug('✅ Extraction successful:', parseResult);
 
       // Step 3: Map parts to courtrooms
       setExtractionStatus('enriching');
@@ -137,8 +138,8 @@ export function UploadDailyReportDialog({
         .eq('is_active', true);
 
       const filteredRooms = (rooms || [])
-        .filter((r: any) => r.rooms?.floors?.buildings?.address?.includes(`${buildingCode} Centre`))
-        .map((r: any) => ({
+        .filter((r: Record<string, unknown>) => r.rooms?.floors?.buildings?.address?.includes(`${buildingCode} Centre`))
+        .map((r: Record<string, unknown>) => ({
           id: r.id,
           room_number: r.room_number,
           name: r.rooms?.name || r.courtroom_number || r.room_number,
@@ -147,16 +148,16 @@ export function UploadDailyReportDialog({
       setAvailableRooms(filteredRooms);
 
       // Batch map all parts to courtrooms
-      const partsToMap = entries.map((e: any) => ({
+      const partsToMap = entries.map((e: Record<string, unknown>) => ({
         part_number: e.part,
         building_code: buildingCode,
       }));
 
       const mappings = await batchMapPartsToCourtrooms(partsToMap);
-      console.log(`📍 Mapped ${mappings.size} of ${entries.length} parts`);
+      logger.debug(`📍 Mapped ${mappings.size} of ${entries.length} parts`);
 
       // Transform to ExtractedPart format with mapping info
-      const transformedParts: ExtractedPart[] = entries.map((entry: any) => {
+      const transformedParts: ExtractedPart[] = entries.map((entry: Record<string, unknown>) => {
         const mapping = mappings.get(entry.part);
         
         return {
@@ -176,7 +177,7 @@ export function UploadDailyReportDialog({
         };
       });
 
-      console.log(`✅ Prepared ${transformedParts.length} parts for preview`);
+      logger.debug(`✅ Prepared ${transformedParts.length} parts for preview`);
 
       // Validate all parts
       const validationResults = validateBatch(transformedParts, buildingCode);
@@ -191,7 +192,7 @@ export function UploadDailyReportDialog({
       toast.success(`Ready to preview ${transformedParts.length} extracted parts`);
 
     } catch (error) {
-      console.error('Extraction error:', error);
+      logger.error('Extraction error:', error);
       setExtractionStatus('error');
       const errorMsg = error instanceof Error ? error.message : 'Failed to extract data from document';
       setErrorMessage(errorMsg);
@@ -210,7 +211,7 @@ export function UploadDailyReportDialog({
   };
 
   const handleAcceptParts = async (selectedParts: ExtractedPart[]) => {
-    console.log(`📥 Importing ${selectedParts.length} selected parts...`);
+    logger.debug(`📥 Importing ${selectedParts.length} selected parts...`);
     
     // Transform to session format for onDataExtracted callback
     const sessions = selectedParts.map(part => ({

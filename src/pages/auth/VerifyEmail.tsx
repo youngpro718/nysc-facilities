@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +36,7 @@ export default function VerifyEmail() {
           title: 'Email Verified',
           description: 'Your email has been verified successfully.',
         });
-        setTimeout(() => navigate('/', { replace: true }), 1500);
+        setTimeout(() => navigate('/dashboard', { replace: true }), 1500);
       }
     } catch (error) {
       logger.error('[VerifyEmail] Check failed:', error);
@@ -67,11 +68,11 @@ export default function VerifyEmail() {
         title: 'Email Sent',
         description: 'Verification email has been resent. Please check your inbox.',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[VerifyEmail] Resend failed:', error);
       toast({
         title: 'Failed to Resend',
-        description: error.message || 'Could not resend verification email.',
+        description: getErrorMessage(error) || 'Could not resend verification email.',
         variant: 'destructive',
       });
     } finally {

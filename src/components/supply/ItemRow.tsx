@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Minus, Plus } from 'lucide-react';
 
 interface ItemRowProps {
-  item: any;
+  item: Record<string, unknown>;
   cartQuantity: number;
   isSelected: boolean;
   onSelect: () => void;

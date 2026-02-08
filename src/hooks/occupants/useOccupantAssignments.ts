@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 export interface DetailedRoomAssignment {
   id: string;
@@ -83,8 +84,8 @@ const KEY_ASSIGNMENT_SELECT = `
 /**
  * Format raw room assignments into detailed format
  */
-function formatRoomAssignments(rawAssignments: any[]): DetailedRoomAssignment[] {
-  return (rawAssignments || []).map((assignment: any) => ({
+function formatRoomAssignments(rawAssignments: unknown[]): DetailedRoomAssignment[] {
+  return (rawAssignments || []).map((assignment: Record<string, unknown>) => ({
     id: assignment.id,
     room_id: assignment.room_id,
     room_name: assignment.rooms?.name || 'Unknown Room',
@@ -107,8 +108,8 @@ function formatRoomAssignments(rawAssignments: any[]): DetailedRoomAssignment[] 
 /**
  * Format raw key assignments into detailed format
  */
-function formatKeyAssignments(rawAssignments: any[]): DetailedKeyAssignment[] {
-  return (rawAssignments || []).map((assignment: any) => ({
+function formatKeyAssignments(rawAssignments: unknown[]): DetailedKeyAssignment[] {
+  return (rawAssignments || []).map((assignment: Record<string, unknown>) => ({
     id: assignment.id,
     key_id: assignment.key_id,
     key_name: assignment.keys?.name || 'Unknown Key',
@@ -152,7 +153,7 @@ function buildResult(
  * 2. If not found, get user's email from profiles and match by email
  */
 async function resolveOccupantId(authUserId: string): Promise<string | null> {
-  console.log('[useOccupantAssignments] Legacy fallback: Resolving occupant for authUserId:', authUserId);
+  logger.debug('[useOccupantAssignments] Legacy fallback: Resolving occupant for authUserId:', authUserId);
   
   // First try: direct ID match
   const { data: directMatch, error: directError } = await supabase
@@ -162,11 +163,11 @@ async function resolveOccupantId(authUserId: string): Promise<string | null> {
     .maybeSingle();
 
   if (directError) {
-    console.log('[useOccupantAssignments] Direct match query error:', directError);
+    logger.debug('[useOccupantAssignments] Direct match query error:', directError);
   }
 
   if (directMatch?.id) {
-    console.log('[useOccupantAssignments] Found occupant by direct ID match:', directMatch.id);
+    logger.debug('[useOccupantAssignments] Found occupant by direct ID match:', directMatch.id);
     return directMatch.id;
   }
 
@@ -178,11 +179,11 @@ async function resolveOccupantId(authUserId: string): Promise<string | null> {
     .maybeSingle();
 
   if (profileError) {
-    console.log('[useOccupantAssignments] Profile query error:', profileError);
+    logger.debug('[useOccupantAssignments] Profile query error:', profileError);
   }
 
   if (!profile?.email) {
-    console.log('[useOccupantAssignments] No email found in profiles for user:', authUserId);
+    logger.debug('[useOccupantAssignments] No email found in profiles for user:', authUserId);
     return null;
   }
 
@@ -195,11 +196,11 @@ async function resolveOccupantId(authUserId: string): Promise<string | null> {
     .maybeSingle();
 
   if (emailError) {
-    console.log('[useOccupantAssignments] Email match query error:', emailError);
+    logger.debug('[useOccupantAssignments] Email match query error:', emailError);
   }
 
   if (emailMatch?.id) {
-    console.log('[useOccupantAssignments] Found occupant by email match:', emailMatch.id);
+    logger.debug('[useOccupantAssignments] Found occupant by email match:', emailMatch.id);
     return emailMatch.id;
   }
 
@@ -212,7 +213,7 @@ export const useOccupantAssignments = (authUserId: string) => {
     queryFn: async () => {
       if (!authUserId) throw new Error('No user ID provided');
 
-      console.log('[useOccupantAssignments] Fetching assignments for user:', authUserId);
+      logger.debug('[useOccupantAssignments] Fetching assignments for user:', authUserId);
 
       // STRATEGY:
       // 1) Try direct match against all supported identity columns using the auth user id.
@@ -237,16 +238,16 @@ export const useOccupantAssignments = (authUserId: string) => {
       ]);
 
       if (directRoomResult.error) {
-        console.error('[useOccupantAssignments] Error fetching direct room assignments:', directRoomResult.error);
+        logger.error('[useOccupantAssignments] Error fetching direct room assignments:', directRoomResult.error);
       }
       if (directKeyResult.error) {
-        console.error('[useOccupantAssignments] Error fetching direct key assignments:', directKeyResult.error);
+        logger.error('[useOccupantAssignments] Error fetching direct key assignments:', directKeyResult.error);
       }
 
       const directRoomAssignments = directRoomResult.data || [];
       const directKeyAssignments = directKeyResult.data || [];
 
-      console.log('[useOccupantAssignments] Direct identity results:', {
+      logger.debug('[useOccupantAssignments] Direct identity results:', {
         rooms: directRoomAssignments.length,
         keys: directKeyAssignments.length
       });
@@ -259,12 +260,12 @@ export const useOccupantAssignments = (authUserId: string) => {
       }
 
       // 2. Fallback: Legacy occupant_id lookup for backward compatibility (when occupant_id != auth user id)
-      console.log('[useOccupantAssignments] No direct identity assignments, trying legacy occupant lookup...');
+      logger.debug('[useOccupantAssignments] No direct identity assignments, trying legacy occupant lookup...');
       
       const occupantId = await resolveOccupantId(authUserId);
 
       if (!occupantId) {
-        console.log('[useOccupantAssignments] No occupant found, returning empty assignments');
+        logger.debug('[useOccupantAssignments] No occupant found, returning empty assignments');
         return {
           roomAssignments: [],
           keyAssignments: [],
@@ -287,15 +288,15 @@ export const useOccupantAssignments = (authUserId: string) => {
       ]);
 
       if (legacyRoomResult.error) {
-        console.error('[useOccupantAssignments] Error fetching legacy room assignments:', legacyRoomResult.error);
+        logger.error('[useOccupantAssignments] Error fetching legacy room assignments:', legacyRoomResult.error);
         throw legacyRoomResult.error;
       }
       if (legacyKeyResult.error) {
-        console.error('[useOccupantAssignments] Error fetching legacy key assignments:', legacyKeyResult.error);
+        logger.error('[useOccupantAssignments] Error fetching legacy key assignments:', legacyKeyResult.error);
         throw legacyKeyResult.error;
       }
 
-      console.log('[useOccupantAssignments] Legacy results:', {
+      logger.debug('[useOccupantAssignments] Legacy results:', {
         rooms: legacyRoomResult.data?.length || 0,
         keys: legacyKeyResult.data?.length || 0
       });

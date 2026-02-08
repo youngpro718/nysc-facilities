@@ -17,8 +17,8 @@ export interface FloorPlanObjectData {
   label?: string;
   type: string;
   size: Size;
-  style: Record<string, any>;
-  properties: Record<string, any>;
+  style: Record<string, unknown>;
+  properties: Record<string, unknown>;
   position?: Position;
   rotation?: number;
 }
@@ -38,7 +38,7 @@ export interface FloorPlanEdge {
   target: string;
   data?: {
     type: string;
-    style?: Record<string, any>;
+    style?: Record<string, unknown>;
   };
 }
 
@@ -49,7 +49,7 @@ export interface FloorPlanLayerDB {
   name: string;
   order_index: number;
   visible: boolean;
-  data: any;
+  data: unknown;
   created_at: string;
   updated_at: string;
 }
@@ -61,7 +61,7 @@ export interface FloorPlanLayer {
   name: string;
   order_index: number;
   visible: boolean;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 // Raw object structure from API - made all properties optional except id
@@ -77,9 +77,9 @@ export interface RawFloorPlanObject {
   position?: Position | string | any; // Allow any for parsing flexibility
   size?: Size | string | any; // Allow any for parsing flexibility
   rotation?: number; 
-  properties?: Record<string, any> | null;
+  properties?: Record<string, unknown> | null;
   parent_room_id?: string | null;
-  hallway_properties?: any[];
+  hallway_properties?: unknown[];
 }
 
 // 3D visualization specific types
@@ -90,7 +90,7 @@ export interface Object3D {
   size: Size;
   rotation?: number;
   color?: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
 }
 
 export interface Connection3D {

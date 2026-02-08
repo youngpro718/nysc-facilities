@@ -47,11 +47,11 @@ export const MaintenanceIssuesList = () => {
         .order("created_at", { ascending: false });
 
       if (statusFilter !== "all") {
-        const validStatus = statusFilter as any;
+        const validStatus = statusFilter as unknown;
         query = query.eq("status", validStatus);
       }
       if (severityFilter !== "all") {
-        query = query.eq("priority", severityFilter as any);
+        query = query.eq("priority", severityFilter as unknown);
       }
 
       const { data, error } = await query;
@@ -315,16 +315,16 @@ export const MaintenanceIssuesList = () => {
                     <strong>Issue Type:</strong> <span className="capitalize">{issue.issue_type}</span>
                   </div>
                   <div className="flex items-center gap-3 text-muted-foreground">
-                    {(issue as any).photos && (issue as any).photos.length > 0 && (
+                    {((issue as Record<string, unknown>)).photos && ((issue as Record<string, unknown>)).photos.length > 0 && (
                       <div className="flex items-center gap-1">
                         <Camera className="h-4 w-4" />
-                        <span className="text-xs">{(issue as any).photos.length}</span>
+                        <span className="text-xs">{((issue as Record<string, unknown>)).photos.length}</span>
                       </div>
                     )}
-                    {(issue as any).attachments && (issue as any).attachments.length > 0 && (
+                    {((issue as Record<string, unknown>)).attachments && ((issue as Record<string, unknown>)).attachments.length > 0 && (
                       <div className="flex items-center gap-1">
                         <FileText className="h-4 w-4" />
-                        <span className="text-xs">{(issue as any).attachments.length}</span>
+                        <span className="text-xs">{((issue as Record<string, unknown>)).attachments.length}</span>
                       </div>
                     )}
                   </div>

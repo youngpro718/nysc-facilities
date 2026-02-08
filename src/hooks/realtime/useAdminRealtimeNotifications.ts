@@ -3,10 +3,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface AdminRealtimeNotificationHook {
   isConnected: boolean;
-  lastNotification: any;
+  lastNotification: unknown;
 }
 
 /**
@@ -17,13 +18,13 @@ interface AdminRealtimeNotificationHook {
 export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook => {
   const { user, isAdmin } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
-  const [lastNotification, setLastNotification] = useState<any>(null);
+  const [lastNotification, setLastNotification] = useState<Record<string, unknown> | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!user?.id || !isAdmin) return;
 
-    console.log('[AdminRealtime] Setting up consolidated admin notifications for:', user.id);
+    logger.debug('[AdminRealtime] Setting up consolidated admin notifications for:', user.id);
 
     // Single multiplexed channel for all admin updates
     const channel = supabase
@@ -37,7 +38,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           table: 'admin_notifications',
         },
         (payload) => {
-          console.log('[AdminRealtime] New admin notification:', payload);
+          logger.debug('[AdminRealtime] New admin notification:', payload);
           const notification = payload.new;
           setLastNotification(notification);
           queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
@@ -79,7 +80,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'key_requests' },
         (payload) => {
-          console.log('[AdminRealtime] New key request:', payload);
+          logger.debug('[AdminRealtime] New key request:', payload);
           const request = payload.new;
           toast.info('🔑 New Key Request', {
             description: `Request for ${request.request_type} key submitted`,
@@ -93,7 +94,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'key_requests' },
         (payload) => {
-          console.log('[AdminRealtime] Key request updated:', payload);
+          logger.debug('[AdminRealtime] Key request updated:', payload);
           queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
@@ -102,7 +103,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'supply_requests' },
         (payload) => {
-          console.log('[AdminRealtime] New supply request:', payload);
+          logger.debug('[AdminRealtime] New supply request:', payload);
           const request = payload.new;
           const isUrgent = request.priority === 'high';
 
@@ -127,7 +128,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'issues' },
         (payload) => {
-          console.log('[AdminRealtime] New issue:', payload);
+          logger.debug('[AdminRealtime] New issue:', payload);
           const issue = payload.new;
           const isCritical = issue.priority === 'high';
 
@@ -153,7 +154,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'issues' },
         (payload) => {
-          console.log('[AdminRealtime] Issue updated:', payload);
+          logger.debug('[AdminRealtime] Issue updated:', payload);
           const issue = payload.new;
 
           if (issue.status === 'resolved') {
@@ -173,7 +174,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'key_orders' },
         (payload) => {
-          console.log('[AdminRealtime] New key order:', payload);
+          logger.debug('[AdminRealtime] New key order:', payload);
           const order = payload.new;
           toast.info('🛒 New Key Order', {
             description: `Order #${order.id} created`,
@@ -187,7 +188,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'key_orders' },
         (payload) => {
-          console.log('[AdminRealtime] Key order updated:', payload);
+          logger.debug('[AdminRealtime] Key order updated:', payload);
           queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
@@ -196,7 +197,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'profiles' },
         (payload) => {
-          console.log('[AdminRealtime] New profile:', payload);
+          logger.debug('[AdminRealtime] New profile:', payload);
           toast.info('🆕 New User Registration', {
             description: 'A new user has registered and requires approval',
             duration: 8000,
@@ -209,22 +210,22 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles' },
         (payload) => {
-          console.log('[AdminRealtime] Profile updated:', payload);
+          logger.debug('[AdminRealtime] Profile updated:', payload);
           queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       .subscribe((status) => {
-        console.log('[AdminRealtime] Channel status:', status);
+        logger.debug('[AdminRealtime] Channel status:', status);
         setIsConnected(status === 'SUBSCRIBED');
 
         // Only log errors for actual failures, not cleanup-related closures
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error('[AdminRealtime] Connection failed:', status);
+          logger.error('[AdminRealtime] Connection failed:', status);
         }
       });
 
     return () => {
-      console.log('[AdminRealtime] Cleaning up');
+      logger.debug('[AdminRealtime] Cleaning up');
       supabase.removeChannel(channel);
     };
   }, [user?.id, isAdmin, queryClient]);

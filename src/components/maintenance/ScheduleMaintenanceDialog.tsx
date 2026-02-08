@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -97,7 +98,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
       onOpenChange(false);
     },
     onError: (error) => {
-      console.error('Error scheduling maintenance:', error);
+      logger.error('Error scheduling maintenance:', error);
       toast({
         title: "Error",
         description: "Failed to schedule maintenance. Please try again.",

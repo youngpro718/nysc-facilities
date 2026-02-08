@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -52,13 +53,13 @@ export function useEnabledModules() {
       let systemDefaults: Partial<EnabledModules> = {};
       try {
         const { data: sysMods } = await supabase
-          .from('system_modules' as any)
+          .from('system_modules' as unknown)
           .select('id, enabled');
         if (sysMods && Array.isArray(sysMods)) {
-          sysMods.forEach((m: any) => {
+          sysMods.forEach((m: Record<string, unknown>) => {
             const key = m.id as keyof EnabledModules;
             if (key in DEFAULT_MODULES && typeof m.enabled === 'boolean') {
-              systemDefaults[key] = m.enabled as any;
+              systemDefaults[key] = m.enabled as unknown;
             }
           });
         }
@@ -76,7 +77,7 @@ export function useEnabledModules() {
         .single();
 
       if (error) {
-        console.error('Error fetching enabled modules:', error);
+        logger.error('Error fetching enabled modules:', error);
         return;
       }
 
@@ -97,14 +98,14 @@ export function useEnabledModules() {
       }
       
       // Auto-enable supply_requests and inventory for Supply Department users
-      if ((profile as any)?.departments?.name === 'Supply Department') {
+      if (((profile as Record<string, unknown>))?.departments?.name === 'Supply Department') {
         finalModules.supply_requests = true;
         finalModules.inventory = true;
       }
       
       setEnabledModules(finalModules);
     } catch (error) {
-      console.error('Error in fetchEnabledModules:', error);
+      logger.error('Error in fetchEnabledModules:', error);
     } finally {
       setLoading(false);
     }
@@ -142,7 +143,7 @@ export function useEnabledModules() {
         description: "Module preferences updated successfully",
       });
     } catch (error) {
-      console.error('Error updating modules:', error);
+      logger.error('Error updating modules:', error);
       toast({
         title: "Error",
         description: "Failed to update module preferences",
@@ -156,13 +157,13 @@ export function useEnabledModules() {
     let systemDefaults: Partial<EnabledModules> = {};
     try {
       const { data: sysMods } = await supabase
-        .from('system_modules' as any)
+        .from('system_modules' as unknown)
         .select('id, enabled');
       if (sysMods && Array.isArray(sysMods)) {
-        sysMods.forEach((m: any) => {
+        sysMods.forEach((m: Record<string, unknown>) => {
           const key = m.id as keyof EnabledModules;
           if (key in DEFAULT_MODULES && typeof m.enabled === 'boolean') {
-            systemDefaults[key] = m.enabled as any;
+            systemDefaults[key] = m.enabled as unknown;
           }
         });
       }

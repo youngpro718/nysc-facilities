@@ -1,5 +1,7 @@
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useKeyAssignments } from "../hooks/useKeyAssignments";
@@ -62,9 +64,9 @@ export function KeyAssignmentSection() {
 
       toast.success(`Key returned successfully by ${getOccupantFullName(assignments?.find(a => a.id === assignmentId)?.occupant)}`);
       refetch();
-    } catch (error: any) {
-      console.error("Error returning key:", error);
-      toast.error(error.message || "Failed to return key");
+    } catch (error) {
+      logger.error("Error returning key:", error);
+      toast.error(getErrorMessage(error) || "Failed to return key");
     } finally {
       setIsProcessing(false);
     }
@@ -96,7 +98,7 @@ export function KeyAssignmentSection() {
             const csv = [
               headers.join(","),
               ...rows.map(r => headers.map(h => {
-                const val = String((r as any)[h] ?? "");
+                const val = String(((r as Record<string, unknown>))[h] ?? "");
                 const escaped = val.replace(/"/g, '""');
                 return `"${escaped}"`;
               }).join(","))

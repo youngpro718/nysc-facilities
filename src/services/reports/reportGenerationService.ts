@@ -5,6 +5,7 @@
  */
 
 import { AdvancedAnalyticsService } from '@/services/analytics/advancedAnalyticsService';
+import { logger } from '@/lib/logger';
 import { OptimizedSpacesService } from '@/services/optimized/spacesService';
 import { fetchLightingFixtures } from '@/lib/supabase';
 import type { LightingFixture, LightStatus } from '@/types/lighting';
@@ -25,8 +26,8 @@ export interface ReportSection {
   id: string;
   title: string;
   type: 'summary' | 'table' | 'chart' | 'recommendations' | 'analytics';
-  data?: any;
-  config?: any;
+  data?: unknown;
+  config?: unknown;
 }
 
 export interface GeneratedReport {
@@ -36,7 +37,7 @@ export interface GeneratedReport {
   format: string;
   size_bytes: number;
   download_url?: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface LightingAuditorReportOptions {
@@ -119,7 +120,7 @@ export class ReportGenerationService {
 
       return generatedReport;
     } catch (error) {
-      console.error('Error generating facility report:', error);
+      logger.error('Error generating facility report:', error);
       throw error;
     }
   }
@@ -150,11 +151,11 @@ export class ReportGenerationService {
 
     if (options.buildingId) {
       // building_id may be undefined in some fetch paths; also attempt building_name match if provided id is actually a name
-      fixtures = fixtures.filter(f => (f as any).building_id === options.buildingId || f.building_name === options.buildingId);
+      fixtures = fixtures.filter(f => ((f as Record<string, unknown>)).building_id === options.buildingId || f.building_name === options.buildingId);
     }
 
     if (options.floorId) {
-      fixtures = fixtures.filter(f => (f as any).floor_id === options.floorId || f.floor_name === options.floorId);
+      fixtures = fixtures.filter(f => ((f as Record<string, unknown>)).floor_id === options.floorId || f.floor_name === options.floorId);
     }
 
     // 3) Prepare dataset
@@ -180,7 +181,7 @@ export class ReportGenerationService {
       f.space_type ?? '',
       f.space_name ?? '',
       f.room_number ?? '',
-      (f as any).zone_name ?? '',
+      ((f as Record<string, unknown>)).zone_name ?? '',
       f.building_name ?? '',
       f.floor_name ?? '',
       f.reported_out_date ?? '',
@@ -350,7 +351,7 @@ export class ReportGenerationService {
         data: csvContent,
       };
     } catch (error) {
-      console.error('Error exporting dashboard CSV:', error);
+      logger.error('Error exporting dashboard CSV:', error);
       throw error;
     }
   }
@@ -358,7 +359,7 @@ export class ReportGenerationService {
   /**
    * Generate key insights from facility data
    */
-  private static generateKeyInsights(facilityReport: any): string[] {
+  private static generateKeyInsights(facilityReport: Record<string, unknown>): string[] {
     const insights: string[] = [];
 
     // Utilization insights
@@ -381,7 +382,7 @@ export class ReportGenerationService {
     // Energy insights
     const energyData = facilityReport.energy_efficiency;
     if (energyData && energyData.length > 0) {
-      const totalSavings = energyData.reduce((sum: number, e: any) => sum + e.potential_savings, 0);
+      const totalSavings = energyData.reduce((sum: number, e: Record<string, unknown>) => sum + e.potential_savings, 0);
       if (totalSavings > 1000) {
         insights.push(`Potential energy savings of $${totalSavings.toLocaleString()} identified`);
       }
@@ -395,7 +396,7 @@ export class ReportGenerationService {
    */
   private static async buildReportSections(
     sectionConfigs: ReportSection[],
-    data: any
+    data: unknown
   ): Promise<ReportSection[]> {
     const sections: ReportSection[] = [];
 
@@ -413,26 +414,26 @@ export class ReportGenerationService {
   /**
    * Get data for a specific report section
    */
-  private static async getSectionData(section: ReportSection, allData: any): Promise<any> {
+  private static async getSectionData(section: ReportSection, allData: Record<string, unknown>): Promise<unknown> {
     switch (section.id) {
       case 'maintenance-summary':
         return {
           total_spaces: allData.dashboardData.length,
-          critical_maintenance: allData.facilityReport.maintenance_analytics.filter((m: any) => m.maintenance_score < 50).length,
-          average_score: allData.facilityReport.maintenance_analytics.reduce((sum: number, m: any) => sum + m.maintenance_score, 0) / allData.facilityReport.maintenance_analytics.length,
+          critical_maintenance: allData.facilityReport.maintenance_analytics.filter((m: Record<string, unknown>) => m.maintenance_score < 50).length,
+          average_score: allData.facilityReport.maintenance_analytics.reduce((sum: number, m: Record<string, unknown>) => sum + m.maintenance_score, 0) / allData.facilityReport.maintenance_analytics.length,
         };
 
       case 'priority-list':
         return allData.facilityReport.maintenance_analytics
-          .filter((m: any) => m.maintenance_score < 70)
-          .sort((a: any, b: any) => a.maintenance_score - b.maintenance_score)
+          .filter((m: Record<string, unknown>) => m.maintenance_score < 70)
+          .sort((a: Record<string, unknown>, b: Record<string, unknown>) => a.maintenance_score - b.maintenance_score)
           .slice(0, 20);
 
       case 'energy-summary':
         return {
           total_buildings: allData.facilityReport.energy_efficiency.length,
-          average_efficiency: allData.facilityReport.energy_efficiency.reduce((sum: number, e: any) => sum + e.efficiency_score, 0) / allData.facilityReport.energy_efficiency.length,
-          total_potential_savings: allData.facilityReport.energy_efficiency.reduce((sum: number, e: any) => sum + e.potential_savings, 0),
+          average_efficiency: allData.facilityReport.energy_efficiency.reduce((sum: number, e: Record<string, unknown>) => sum + e.efficiency_score, 0) / allData.facilityReport.energy_efficiency.length,
+          total_potential_savings: allData.facilityReport.energy_efficiency.reduce((sum: number, e: Record<string, unknown>) => sum + e.potential_savings, 0),
         };
 
       case 'utilization-summary':
@@ -453,7 +454,7 @@ export class ReportGenerationService {
   /**
    * Generate PDF report (simplified - would use a PDF library in production)
    */
-  private static async generatePDFReport(reportData: any): Promise<GeneratedReport> {
+  private static async generatePDFReport(reportData: Record<string, unknown>): Promise<GeneratedReport> {
     // In a real implementation, you would use libraries like:
     // - jsPDF
     // - Puppeteer
@@ -475,7 +476,7 @@ export class ReportGenerationService {
   /**
    * Generate CSV report
    */
-  private static async generateCSVReport(reportData: any): Promise<GeneratedReport> {
+  private static async generateCSVReport(reportData: Record<string, unknown>): Promise<GeneratedReport> {
     const csvData = this.convertToCSV(reportData);
     
     return {
@@ -491,7 +492,7 @@ export class ReportGenerationService {
   /**
    * Generate JSON report
    */
-  private static generateJSONReport(reportData: any): GeneratedReport {
+  private static generateJSONReport(reportData: Record<string, unknown>): GeneratedReport {
     const jsonData = JSON.stringify(reportData, null, 2);
     
     return {
@@ -507,7 +508,7 @@ export class ReportGenerationService {
   /**
    * Generate PDF content (simplified HTML representation)
    */
-  private static generatePDFContent(reportData: any): string {
+  private static generatePDFContent(reportData: Record<string, unknown>): string {
     return `
 <!DOCTYPE html>
 <html>
@@ -549,7 +550,7 @@ export class ReportGenerationService {
         ).join('')}
     </div>
 
-    ${reportData.sections.map((section: any) => `
+    ${reportData.sections.map((section: Record<string, unknown>) => `
         <div class="section">
             <h2>${section.title}</h2>
             ${this.renderSectionContent(section)}
@@ -603,7 +604,7 @@ export class ReportGenerationService {
   /**
    * Render section content for PDF
    */
-  private static renderSectionContent(section: any): string {
+  private static renderSectionContent(section: Record<string, unknown>): string {
     if (!section.data) return '<p>No data available for this section.</p>';
 
     switch (section.type) {
@@ -616,7 +617,7 @@ export class ReportGenerationService {
                     <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
                 </thead>
                 <tbody>
-                    ${section.data.map((row: any) => 
+                    ${section.data.map((row: Record<string, unknown>) => 
                       `<tr>${headers.map(h => `<td>${row[h] || ''}</td>`).join('')}</tr>`
                     ).join('')}
                 </tbody>
@@ -642,7 +643,7 @@ export class ReportGenerationService {
   /**
    * Convert report data to CSV format
    */
-  private static convertToCSV(reportData: any): string {
+  private static convertToCSV(reportData: Record<string, unknown>): string {
     const rows: string[] = [];
     
     // Add metadata
@@ -659,12 +660,12 @@ export class ReportGenerationService {
     rows.push('');
 
     // Add sections
-    reportData.sections.forEach((section: any) => {
+    reportData.sections.forEach((section: Record<string, unknown>) => {
       rows.push(section.title);
       if (Array.isArray(section.data)) {
         const headers = Object.keys(section.data[0] || {});
         rows.push(headers.join(','));
-        section.data.forEach((row: any) => {
+        section.data.forEach((row: Record<string, unknown>) => {
           rows.push(headers.map(h => `"${row[h] || ''}"`).join(','));
         });
       }
@@ -691,11 +692,11 @@ export class ReportGenerationService {
       
       const scheduleId = `schedule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      console.log(`Scheduled report "${config.title}" for ${config.schedule} delivery to:`, config.recipients);
+      logger.debug(`Scheduled report "${config.title}" for ${config.schedule} delivery to:`, config.recipients);
       
       return { success: true, scheduleId };
     } catch (error) {
-      console.error('Error scheduling report:', error);
+      logger.error('Error scheduling report:', error);
       return { success: false };
     }
   }

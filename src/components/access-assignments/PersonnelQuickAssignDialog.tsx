@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -102,9 +104,9 @@ export function PersonnelQuickAssignDialog({
       toast.success('Room assignment removed');
       refetchAssignments();
       queryClient.invalidateQueries({ queryKey: ['personnel-access'] });
-    } catch (error: any) {
-      console.error('Error removing assignment:', error);
-      toast.error(error.message || 'Failed to remove assignment');
+    } catch (error) {
+      logger.error('Error removing assignment:', error);
+      toast.error(getErrorMessage(error) || 'Failed to remove assignment');
     } finally {
       setIsRemoving(null);
     }
@@ -131,8 +133,8 @@ export function PersonnelQuickAssignDialog({
       
       toast.success('Primary room updated');
       refetchAssignments();
-    } catch (error: any) {
-      console.error('Error setting primary:', error);
+    } catch (error) {
+      logger.error('Error setting primary:', error);
       toast.error('Failed to update primary room');
     }
   };
@@ -178,7 +180,7 @@ export function PersonnelQuickAssignDialog({
             ) : assignments?.roomDetails && assignments.roomDetails.length > 0 ? (
               <ScrollArea className="max-h-[200px]">
                 <div className="space-y-2">
-                  {assignments.roomDetails.map((assignment: any) => {
+                  {assignments.roomDetails.map((assignment: Record<string, unknown>) => {
                     const room = assignment.rooms;
                     if (!room) return null;
                     

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -12,8 +14,8 @@ import { CourtReportPreview } from '@/components/court-reports/CourtReportPrevie
 
 export default function FormIntake() {
   const [uploading, setUploading] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
-  const [selectedCourtReport, setSelectedCourtReport] = useState<any>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<Record<string, unknown> | null>(null);
+  const [selectedCourtReport, setSelectedCourtReport] = useState<Record<string, unknown> | null>(null);
   const queryClient = useQueryClient();
 
   const { data: submissions, isLoading } = useQuery({
@@ -90,7 +92,7 @@ export default function FormIntake() {
       let initialFormType = 'unknown';
 
       if (!extractionError && extractionResult?.success) {
-        console.log('AI extraction successful:', extractionResult.extracted_data);
+        logger.debug('AI extraction successful:', extractionResult.extracted_data);
         extractedData = {
           ...extractedData,
           ...extractionResult.extracted_data,
@@ -101,7 +103,7 @@ export default function FormIntake() {
           initialFormType = extractionResult.extracted_data.form_type;
         }
       } else {
-        console.warn('AI extraction failed, will require manual entry:', extractionError);
+        logger.warn('AI extraction failed, will require manual entry:', extractionError);
       }
 
       // Create submission record with extracted data
@@ -131,9 +133,9 @@ export default function FormIntake() {
 
       // Refresh the list
       queryClient.invalidateQueries({ queryKey: ['form-submissions'] });
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast.error(error.message || 'Failed to upload form');
+    } catch (error) {
+      logger.error('Upload error:', error);
+      toast.error(getErrorMessage(error) || 'Failed to upload form');
     } finally {
       setUploading(false);
     }
@@ -161,7 +163,7 @@ export default function FormIntake() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, unknown> = {
       processed: 'default',
       completed: 'default',
       failed: 'destructive',

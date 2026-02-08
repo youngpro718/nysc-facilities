@@ -54,7 +54,7 @@ export function TodaySchedule() {
         .not('status', 'in', '("completed","cancelled","rejected")');
 
       if (!tasksError && tasks) {
-        tasks.forEach((task: any) => {
+        tasks.forEach((task: Record<string, unknown>) => {
           items.push({
             id: task.id,
             type: 'task',
@@ -78,7 +78,7 @@ export function TodaySchedule() {
         .neq('status', 'completed');
 
       if (!maintError && maintenance) {
-        maintenance.forEach((maint: any) => {
+        maintenance.forEach((maint: Record<string, unknown>) => {
           items.push({
             id: maint.id,
             type: 'maintenance',

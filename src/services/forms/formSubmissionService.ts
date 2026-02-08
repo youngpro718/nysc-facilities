@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import { submitKeyRequest } from '@/services/keyRequestService';
 import type {
   FormSubmissionResult,
@@ -56,7 +57,7 @@ export async function createKeyRequestFromForm(
 
     return { success: true };
   } catch (error) {
-    console.error('Error creating key request from form:', error);
+    logger.error('Error creating key request from form:', error);
     return { success: false, error: error.message };
   }
 }
@@ -89,7 +90,7 @@ export async function createSupplyRequestFromForm(
 
     // Create supply request items
     if (formData.items && formData.items.length > 0) {
-      const items = formData.items.map((item: any) => ({
+      const items = formData.items.map((item: Record<string, unknown>) => ({
         request_id: request.id,
         item_name: item.item_name,
         quantity_requested: item.quantity,
@@ -118,7 +119,7 @@ export async function createSupplyRequestFromForm(
 
     return { success: true, requestId: request.id };
   } catch (error) {
-    console.error('Error creating supply request from form:', error);
+    logger.error('Error creating supply request from form:', error);
     return { success: false, error: error.message };
   }
 }
@@ -174,7 +175,7 @@ export async function createMaintenanceRequestFromForm(
 
     return { success: true, requestId: request.id };
   } catch (error) {
-    console.error('Error creating maintenance request from form:', error);
+    logger.error('Error creating maintenance request from form:', error);
     return { success: false, error: error.message };
   }
 }
@@ -218,7 +219,7 @@ export async function createIssueFromForm(
 
     return { success: true, requestId: issue.id };
   } catch (error) {
-    console.error('Error creating issue from form:', error);
+    logger.error('Error creating issue from form:', error);
     return { success: false, error: error.message };
   }
 }

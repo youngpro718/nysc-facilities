@@ -54,7 +54,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
       
       try {
         // Don't check if we're already on an auth/onboarding page
-        const publicPaths = ['/auth/', '/onboarding/', '/login', '/public-forms', '/forms/'];
+        const publicPaths = ['/auth/', '/onboarding/', '/login', '/public-forms', '/forms/', '/verification-pending', '/features-preview'];
         if (publicPaths.some(path => location.pathname.startsWith(path))) {
           if (mounted) setChecking(false);
           isCheckingRef.current = false;
@@ -81,7 +81,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
         }
 
         // 3) Check profile completeness and approval status
-        let profile: any = null;
+        let profile: Record<string, unknown> = null;
         try {
           profile = await withTimeout(getMyProfile(), 10000, 'loading profile');
         } catch (profileError) {
@@ -151,7 +151,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
 
             const hasVerifiedTotp =
               Array.isArray(factorData?.totp) &&
-              factorData.totp.some((f: any) => f.status === 'verified');
+              factorData.totp.some((f: Record<string, unknown>) => f.status === 'verified');
 
             if (!hasVerifiedTotp) {
               logger.debug('[OnboardingGuard] MFA required but not enabled, redirecting to MFA setup');

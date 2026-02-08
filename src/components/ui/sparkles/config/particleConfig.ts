@@ -38,7 +38,7 @@ export const createParticleConfig = ({
         enable: false,
         mode: "repulse",
       },
-      resize: true as any,
+      resize: true as unknown,
     },
     modes: {
       push: {

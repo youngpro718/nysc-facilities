@@ -121,7 +121,7 @@ export const useRoomAccess = (roomId?: string) => {
       // Filter key assignments that are relevant to this room
       const relevantKeyAssignments = (keyAssignments || []).filter(assignment => {
         const key = keysResult.data?.find(k => k.id === assignment.key_id);
-        const locationData = key?.location_data as any;
+        const locationData = key?.location_data as Record<string, unknown>;
         
         // Only include keys that specifically grant access to this room
         const floor = Array.isArray(room.floors) ? room.floors[0] : room.floors;

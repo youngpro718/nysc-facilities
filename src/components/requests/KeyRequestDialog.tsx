@@ -6,6 +6,8 @@
  */
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,10 +105,10 @@ export function KeyRequestDialog({ open, onOpenChange, onSuccess }: KeyRequestDi
       
       onSuccess?.();
       onOpenChange(false);
-    } catch (error: any) {
-      console.error("Error submitting key request:", error);
+    } catch (error) {
+      logger.error("Error submitting key request:", error);
       toast.error("Failed to submit request", {
-        description: error.message || "Please try again later.",
+        description: getErrorMessage(error) || "Please try again later.",
       });
     } finally {
       setIsSubmitting(false);

@@ -92,7 +92,7 @@ export default function MyRequests() {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showMobileForm, setShowMobileForm] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedRequest, setSelectedRequest] = useState<Record<string, unknown> | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -134,7 +134,7 @@ export default function MyRequests() {
     statusFilter === "all" || request.status === statusFilter
   );
 
-  const handleSubmitRequest = async (data: any) => {
+  const handleSubmitRequest = async (data: Record<string, unknown>) => {
     setShowRequestForm(false);
     setShowMobileForm(false);
     try {
@@ -163,7 +163,7 @@ export default function MyRequests() {
     setSelectedRequest(null);
   };
 
-  const handleViewDetails = (request: any) => {
+  const handleViewDetails = (request: Record<string, unknown>) => {
     setSelectedRequest(request);
   };
 

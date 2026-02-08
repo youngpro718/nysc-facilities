@@ -60,7 +60,7 @@ export function useRoomFilters({
         } else {
           // For other room types, match exact room_type values
           matchesRoomType = room.room_type === roomTypeFilter || 
-            roomTypeToString(room.room_type as any) === roomTypeFilter;
+            roomTypeToString(room.room_type as unknown) === roomTypeFilter;
         }
       }
 

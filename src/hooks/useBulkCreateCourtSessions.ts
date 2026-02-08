@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -138,7 +139,7 @@ export function useBulkCreateCourtSessions() {
       }
     },
     onError: (error) => {
-      console.error('Error creating sessions:', error);
+      logger.error('Error creating sessions:', error);
       toast.error('Failed to create sessions', {
         description: error instanceof Error ? error.message : 'Unknown error',
       });

@@ -17,7 +17,7 @@ interface Space {
 }
 
 interface HallwayConnectionFormProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<Record<string, unknown>>;
   availableSpaces: Space[];
   isDisabled?: boolean;
 }

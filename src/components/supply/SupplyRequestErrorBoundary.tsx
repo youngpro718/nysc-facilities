@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
@@ -26,7 +27,7 @@ export class SupplyRequestErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('SupplyRequestErrorBoundary: Error caught:', error, errorInfo);
+    logger.error('SupplyRequestErrorBoundary: Error caught:', error, errorInfo);
     this.props.onError?.(error, errorInfo);
   }
 

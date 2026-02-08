@@ -52,7 +52,7 @@ export function useLightingWithTickets(roomId: string | null) {
         .map(f => f.issue_id)
         .filter((id): id is string => id !== null);
 
-      let issuesMap: Record<string, any> = {};
+      let issuesMap: Record<string, unknown> = {};
       if (issueIds.length > 0) {
         const { data: issues } = await supabase
           .from('issues')
@@ -62,7 +62,7 @@ export function useLightingWithTickets(roomId: string | null) {
         issuesMap = (issues || []).reduce((acc, issue) => {
           acc[issue.id] = issue;
           return acc;
-        }, {} as Record<string, any>);
+        }, {} as Record<string, unknown>);
       }
 
       // Transform data

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -60,7 +61,7 @@ export function SessionsTable({
       setEditingId(null);
       setEditData({});
     } catch (error) {
-      console.error('Error saving session:', error);
+      logger.error('Error saving session:', error);
     }
   };
 

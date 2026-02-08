@@ -2,6 +2,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { logger } from "@/lib/logger";
 import { getRoleBasedNavigation, getNavigationRoutes } from "./config/navigation";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { MobileMenu } from "./components/MobileMenu";
@@ -16,7 +17,6 @@ import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { Button } from "@/components/ui/button";
 import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
-import { logger } from "@/lib/logger";
 import { DevModeBanner } from "@/components/dev/DevModeBanner";
 import type { UserRole } from "@/config/roles";
 
@@ -45,7 +45,7 @@ const Layout = () => {
   useEffect(() => {
     if (!navReady && isAuthenticated && !isLoginPage) {
       const timer = setTimeout(() => {
-        console.warn('[Layout] Navigation stuck loading for 5s, showing refresh button');
+        logger.warn('[Layout] Navigation stuck loading for 5s, showing refresh button');
         setShowRefreshButton(true);
       }, 5000);
       
@@ -172,7 +172,7 @@ const Layout = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        console.log('[Layout] Manual refresh triggered');
+                        logger.debug('[Layout] Manual refresh triggered');
                         refetch();
                         setShowRefreshButton(false);
                       }}
@@ -197,7 +197,7 @@ const Layout = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        console.log('[Layout] Manual refresh triggered');
+                        logger.debug('[Layout] Manual refresh triggered');
                         refetch();
                         setShowRefreshButton(false);
                       }}

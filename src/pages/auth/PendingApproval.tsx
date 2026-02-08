@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,7 @@ export default function PendingApproval() {
         navigate('/auth/account-rejected', { replace: true });
       }
     } catch (error) {
-      console.error('Error checking approval status:', error);
+      logger.error('Error checking approval status:', error);
     } finally {
       setChecking(false);
     }
@@ -46,12 +47,22 @@ export default function PendingApproval() {
 
   // Check status on mount and periodically
   useEffect(() => {
-    checkApprovalStatus();
+    let mounted = true;
+
+    const check = async () => {
+      if (!mounted) return;
+      await checkApprovalStatus();
+    };
+
+    check();
     
     // Check every 30 seconds
-    const interval = setInterval(checkApprovalStatus, 30000);
-    return () => clearInterval(interval);
-  }, [user?.id]);
+    const interval = setInterval(check, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSignOut = async () => {
     await signOut();
@@ -89,11 +100,11 @@ export default function PendingApproval() {
             <div className="text-sm text-muted-foreground space-y-1">
               <p><strong>Name:</strong> {profile?.first_name} {profile?.last_name}</p>
               <p><strong>Email:</strong> {user?.email}</p>
-              {(profile as any)?.department && (
-                <p><strong>Department:</strong> {(profile as any).department}</p>
+              {((profile as Record<string, unknown>))?.department && (
+                <p><strong>Department:</strong> {((profile as Record<string, unknown>)).department}</p>
               )}
-              {(profile as any)?.title && (
-                <p><strong>Title:</strong> {(profile as any).title}</p>
+              {((profile as Record<string, unknown>))?.title && (
+                <p><strong>Title:</strong> {((profile as Record<string, unknown>)).title}</p>
               )}
             </div>
           </div>

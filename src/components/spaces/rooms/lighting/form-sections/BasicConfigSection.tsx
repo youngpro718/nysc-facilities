@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 interface BasicConfigSectionProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<Record<string, unknown>>;
 }
 
 export function BasicConfigSection({ form }: BasicConfigSectionProps) {

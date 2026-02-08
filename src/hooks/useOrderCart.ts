@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { useQueryClient } from '@tanstack/react-query';
 import { submitSupplyOrder } from '@/services/supplyOrdersService';
 import { useToast } from '@/hooks/use-toast';
@@ -118,7 +119,7 @@ export function useOrderCart() {
             receiptData,
           });
         } catch (receiptError) {
-          console.error('Failed to generate receipt:', receiptError);
+          logger.error('Failed to generate receipt:', receiptError);
           // Don't fail the order if receipt generation fails
         }
       }
@@ -133,7 +134,7 @@ export function useOrderCart() {
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
       clearCart();
       return result;
-    } catch (error: any) {
+    } catch (error) {
       const message = error?.message || 'Failed to submit order';
       toast({
         title: 'Submission Failed',

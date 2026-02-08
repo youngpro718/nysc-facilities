@@ -21,7 +21,7 @@ export function MyRoomCard({ userId }: MyRoomCardProps) {
   }
   
   // rooms comes from the Supabase join - it could be an object or array
-  const roomsData = primaryAssignment.rooms as any;
+  const roomsData = primaryAssignment.rooms as Record<string, unknown>;
   const room = Array.isArray(roomsData) ? roomsData[0] : roomsData;
   
   if (!room) {

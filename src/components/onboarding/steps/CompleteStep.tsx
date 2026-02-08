@@ -5,7 +5,7 @@ const quickActions = [
   {
     title: "Report an Issue",
     description: "Something broken? Report it to get help quickly",
-    action: "/issues/new",
+    action: "/request/help",
     icon: "🔧"
   },
   {
@@ -15,10 +15,10 @@ const quickActions = [
     icon: "📊"
   },
   {
-    title: "Browse Spaces",
-    description: "Explore building layouts and room information",
-    action: "/spaces",
-    icon: "🏢"
+    title: "Request Supplies",
+    description: "Order supplies or materials you need",
+    action: "/request/supplies",
+    icon: "📦"
   },
   {
     title: "Update Profile",

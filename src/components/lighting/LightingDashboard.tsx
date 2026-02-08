@@ -54,7 +54,7 @@ export const LightingDashboard = () => {
 
       if (error) throw error;
 
-      const fixturesByType = (fixtures || []).reduce((acc: Record<string, any[]>, fixture) => {
+      const fixturesByType = (fixtures || []).reduce((acc: Record<string, unknown[]>, fixture) => {
         if (!acc[fixture.type]) acc[fixture.type] = [];
         acc[fixture.type].push(fixture);
         return acc;

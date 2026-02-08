@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +43,7 @@ export default function SessionsPanel() {
         }]);
       }
     } catch (error) {
-      console.error('Failed to load sessions:', error);
+      logger.error('Failed to load sessions:', error);
       toast.error('Failed to load session information');
     } finally {
       setLoading(false);
@@ -55,7 +56,7 @@ export default function SessionsPanel() {
       toast.success('All other sessions have been signed out');
       await loadSessions();
     } catch (error) {
-      console.error('Failed to sign out other sessions:', error);
+      logger.error('Failed to sign out other sessions:', error);
       toast.error('Failed to sign out other sessions');
     }
   };

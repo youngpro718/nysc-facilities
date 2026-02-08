@@ -30,7 +30,7 @@ import {
 interface EditSpaceDialogProps {
   id: string;
   type: "room" | "hallway";
-  initialData?: any;
+  initialData?: Record<string, unknown>;
   open?: boolean;
   setOpen?: (open: boolean) => void;
   variant?: "button" | "custom";

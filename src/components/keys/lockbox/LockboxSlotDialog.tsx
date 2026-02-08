@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,9 +71,9 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
       onOpenChange(false);
       setPersonName("");
       setNote("");
-    } catch (error: any) {
-      console.error('Error updating key status:', error);
-      toast.error(error.message || "Failed to update status");
+    } catch (error) {
+      logger.error('Error updating key status:', error);
+      toast.error(getErrorMessage(error) || "Failed to update status");
     } finally {
       setIsLoading(false);
     }

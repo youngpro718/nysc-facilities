@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { logger } from '@/lib/logger';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, CheckCircle, AlertCircle, Settings, History, Lightbulb, ChevronDown, ChevronUp, ExternalLink, Filter, Shield, TrendingUp } from "lucide-react";
@@ -52,7 +53,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
 
         if (error) throw error;
         
-        const events: HistoryEvent[] = (roomIssues || []).map((issue: any) => {
+        const events: HistoryEvent[] = (roomIssues || []).map((issue: Record<string, unknown>) => {
           const resolutionSpeed = issue.status === 'resolved' || issue.status === 'closed'
             ? getResolutionSpeed(issue.created_at, issue.updated_at)
             : 'ongoing';
@@ -71,7 +72,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
         });
 
         if (room.previous_functions && Array.isArray(room.previous_functions)) {
-          room.previous_functions.forEach((func: any) => {
+          room.previous_functions.forEach((func: Record<string, unknown>) => {
             events.push({
               id: `func-${func.date}`,
               date: func.date || room.function_change_date || new Date().toISOString(),
@@ -88,7 +89,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
 
         setRealEvents(events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       } catch (error) {
-        console.error('Error fetching room history:', error);
+        logger.error('Error fetching room history:', error);
       } finally {
         setIsLoading(false);
       }
@@ -107,7 +108,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
     return 'slow';
   };
 
-  const getCategoryFromIssue = (issue: any): 'lighting' | 'maintenance' | 'safety' | 'access' | 'other' => {
+  const getCategoryFromIssue = (issue: Record<string, unknown>): 'lighting' | 'maintenance' | 'safety' | 'access' | 'other' => {
     const title = (issue.title || '').toLowerCase();
     const description = (issue.description || '').toLowerCase();
     

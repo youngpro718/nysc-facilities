@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import type { PersonSourceType } from "./useRoomAssignment";
 
@@ -56,12 +57,12 @@ export function useOccupantAssignments(
       ]);
 
       if (roomAssignments.error) {
-        console.error("Error fetching room assignments:", roomAssignments.error);
+        logger.error("Error fetching room assignments:", roomAssignments.error);
         throw roomAssignments.error;
       }
 
       if (keyAssignments.error) {
-        console.error("Error fetching key assignments:", keyAssignments.error);
+        logger.error("Error fetching key assignments:", keyAssignments.error);
         throw keyAssignments.error;
       }
 

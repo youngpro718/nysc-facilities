@@ -82,7 +82,7 @@ export function PDFExtractionPreview({
     );
   };
 
-  const handleEditPart = (index: number, field: string, value: any) => {
+  const handleEditPart = (index: number, field: string, value: unknown) => {
     const newParts = [...editedParts];
     newParts[index] = { ...newParts[index], [field]: value };
     setEditedParts(newParts);

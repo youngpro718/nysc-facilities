@@ -31,7 +31,7 @@ export function useLightingHallways() {
 
       // Get fixture counts for each hallway
       const hallwaysWithStats = await Promise.all(
-        (data || []).map(async (hallway: any) => {
+        (data || []).map(async (hallway: Record<string, unknown>) => {
           const { data: fixtures, error: fixturesError } = await supabase
             .from('lighting_fixtures')
             .select('status')

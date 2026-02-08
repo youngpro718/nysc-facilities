@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { TypeFilters } from "./filters/TypeFilters";
 import { LightingFilters } from "./filters/LightingFilters";
 import { IssueFilters as IssueFiltersType, ViewMode } from "./types/FilterTypes";
@@ -22,19 +23,19 @@ export const IssueFilters = ({
   const [showLightingFilters, setShowLightingFilters] = useState(false);
 
   const handleTypeChange = useCallback((type: string) => {
-    console.log("Type filter changed to:", type);
+    logger.debug("Type filter changed to:", type);
     setShowLightingFilters(type === 'LIGHTING');
     onFilterChange({ type: type as IssueFiltersType['type'] });
   }, [onFilterChange]);
 
   const handleFilterChange = useCallback((newFilters: Partial<IssueFiltersType>) => {
-    console.log("Updating filters with:", newFilters);
+    logger.debug("Updating filters with:", newFilters);
     onFilterChange(newFilters);
   }, [onFilterChange]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    console.log("Search query changed to:", value);
+    logger.debug("Search query changed to:", value);
     onSearchChange(value);
   }, [onSearchChange]);
 

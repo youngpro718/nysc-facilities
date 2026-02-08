@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -263,8 +264,8 @@ export const CourtAssignmentTable = () => {
       if (assignmentsError) throw assignmentsError;
 
       // Join the data manually
-      const result = courtRooms.map((room: any) => {
-        const assignment = assignments?.find((a: any) => a.room_id === room.room_id);
+      const result = courtRooms.map((room: Record<string, unknown>) => {
+        const assignment = assignments?.find((a: Record<string, unknown>) => a.room_id === room.room_id);
         
         return {
           room_id: room.room_id,
@@ -348,7 +349,7 @@ export const CourtAssignmentTable = () => {
       
       if (existingAssignment?.assignment_id) {
         // Update existing assignment
-        const updateData: any = { [field]: field === 'clerks' ? value.split(',').map(c => c.trim()) : value };
+        const updateData: Record<string, unknown> = { [field]: field === 'clerks' ? value.split(',').map(c => c.trim()) : value };
         const { error } = await supabase
           .from("court_assignments")
           .update(updateData)
@@ -356,7 +357,7 @@ export const CourtAssignmentTable = () => {
         if (error) throw error;
       } else {
         // Create new assignment
-        const insertData: any = {
+        const insertData: Record<string, unknown> = {
           room_id: roomId,
           room_number: existingAssignment?.room_number || "",
           [field]: field === 'clerks' ? value.split(',').map(c => c.trim()) : value,
@@ -458,7 +459,7 @@ export const CourtAssignmentTable = () => {
       setEditingCell(null);
       setEditingValue("");
     } catch (error) {
-      console.error('Error saving assignment:', error);
+      logger.error('Error saving assignment:', error);
       // Keep editing state on error so user can retry
     }
   };

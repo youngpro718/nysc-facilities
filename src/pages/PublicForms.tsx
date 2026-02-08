@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { FileText, Download, ClipboardList, Wrench, AlertCircle, Eye, Mail, Upload } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,7 @@ export default function PublicForms() {
         description: 'Fill it out and submit via email or upload.',
       });
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error('Failed to generate PDF', {
         description: 'Please try again or contact support.',
       });
@@ -113,7 +114,7 @@ export default function PublicForms() {
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         variant="outline"
-                        onClick={() => handlePreview(template.id as any)}
+                        onClick={() => handlePreview((template.id as unknown))}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Preview

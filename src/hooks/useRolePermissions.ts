@@ -28,7 +28,7 @@ export interface RolePermissions {
 
 export function useRolePermissions() {
   const [userRole, setUserRole] = useState<CourtRole | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [permissions, setPermissions] = useState<RolePermissions>({
     spaces: null,
     issues: null,
@@ -247,7 +247,7 @@ export function useRolePermissions() {
       };
       
       // Check if user is in Supply Department for permission enhancement
-      const isSupplyDepartmentUser = (profileData as any)?.departments?.name === 'Supply Department';
+      const isSupplyDepartmentUser = (profileData as Record<string, unknown>)?.departments?.name === 'Supply Department';
       
       // Enhance permissions for Supply Department users
       if (isSupplyDepartmentUser) {

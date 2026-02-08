@@ -2,12 +2,12 @@
 import { Room, RoomType, StorageType, CourtroomPhotos } from "../../../rooms/types/RoomTypes";
 
 export const transformRoomData = (
-  roomsData: any[],
-  fixturesByRoomId: Record<string, any>,
-  issuesByRoomId: Record<string, any[]>,
-  historyByRoomId: Record<string, any[]>,
-  occupantsByRoomId: Record<string, any[]>,
-  connectionsByRoomId: Record<string, any[]>
+  roomsData: unknown[],
+  fixturesByRoomId: Record<string, unknown>,
+  issuesByRoomId: Record<string, unknown[]>,
+  historyByRoomId: Record<string, unknown[]>,
+  occupantsByRoomId: Record<string, unknown[]>,
+  connectionsByRoomId: Record<string, unknown[]>
 ): Room[] => {
   return roomsData.map(room => {
     // Handle courtroom photos - normalize to consistent format

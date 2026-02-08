@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { logger } from '@/lib/logger';
 
 export interface DashboardWidget {
   id: string;
@@ -205,12 +206,12 @@ export function DashboardCustomizationProvider({ children }: { children: React.R
         try {
           const parsed = JSON.parse(saved);
           // Ensure all layouts have widgets array
-          return parsed.map((layout: any) => ({
+          return parsed.map((layout: Record<string, unknown>) => ({
             ...layout,
             widgets: Array.isArray(layout.widgets) ? layout.widgets : []
           }));
         } catch (e) {
-          console.warn('Failed to parse saved layouts, clearing localStorage and using defaults:', e);
+          logger.warn('Failed to parse saved layouts, clearing localStorage and using defaults:', e);
           localStorage.removeItem("dashboard-layouts");
           localStorage.removeItem("active-dashboard-layout");
           return defaultLayouts;

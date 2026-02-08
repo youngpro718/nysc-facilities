@@ -15,14 +15,14 @@ import {
 } from "@/components/ui/tooltip";
 
 interface BuildingCardProps {
-  building: any;
+  building: Record<string, unknown>;
   buildingImage: string;
   floorCount: number;
   roomCount: number;
   workingFixtures: number;
   totalFixtures: number;
-  buildingIssues: any[];
-  buildingActivities: any[];
+  buildingIssues: unknown[];
+  buildingActivities: unknown[];
   onMarkAsSeen: (issueId: string) => void;
 }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,7 +81,7 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
       setCustomMessage('');
       onClose();
     } catch (error) {
-      console.error('Error composing email:', error);
+      logger.error('Error composing email:', error);
       toast.error('Failed to compose email');
     } finally {
       setSending(false);

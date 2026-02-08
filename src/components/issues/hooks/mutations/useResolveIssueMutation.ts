@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { ResolutionType } from "../../types/IssueTypes";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 interface ResolveIssueData {
   id: string;
@@ -16,7 +17,7 @@ export const useResolveIssueMutation = () => {
   return useMutation({
     mutationFn: async ({ id, resolution_type, resolution_notes }: ResolveIssueData) => {
       try {
-        console.log("Starting issue resolution for ID:", id);
+        logger.debug("Starting issue resolution for ID:", id);
         const { error } = await supabase
           .from("issues")
           .update({
@@ -29,19 +30,19 @@ export const useResolveIssueMutation = () => {
           .eq("id", id);
 
         if (error) {
-          console.error("Supabase update error:", error);
+          logger.error("Supabase update error:", error);
           throw error;
         }
         
-        console.log("Issue resolved successfully");
+        logger.debug("Issue resolved successfully");
         return { id, success: true };
       } catch (error) {
-        console.error("Supabase error:", error);
+        logger.error("Supabase error:", error);
         throw error;
       }
     },
     onSuccess: (data) => {
-      console.log("Resolution mutation succeeded:", data);
+      logger.debug("Resolution mutation succeeded:", data);
       
       // Instead of using setTimeout, invalidate the queries immediately
       // but do it in a controlled way to prevent UI freezes
@@ -53,7 +54,7 @@ export const useResolveIssueMutation = () => {
       toast.success("Issue resolved successfully");
     },
     onError: (error) => {
-      console.error("Mutation error:", error);
+      logger.error("Mutation error:", error);
       toast.error("Failed to resolve issue. Please try again.");
     }
   });

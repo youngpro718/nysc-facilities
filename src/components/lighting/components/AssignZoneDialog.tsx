@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -52,9 +54,9 @@ export function AssignZoneDialog({ selectedFixtures, onComplete }: AssignZoneDia
       toast.success("Fixtures assigned to zone successfully");
       onComplete();
       setOpen(false);
-    } catch (error: any) {
-      console.error('Error assigning fixtures to zone:', error);
-      toast.error(error.message || "Failed to assign fixtures to zone");
+    } catch (error) {
+      logger.error('Error assigning fixtures to zone:', error);
+      toast.error(getErrorMessage(error) || "Failed to assign fixtures to zone");
     }
   };
 

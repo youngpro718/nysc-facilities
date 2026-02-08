@@ -1,5 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { UserDataError } from "./types/errors";
 import type { UserProfile } from "@/types/dashboard";
@@ -15,7 +16,7 @@ export const useUserData = () => {
         if (!user) throw new UserDataError('No authenticated user found');
         return user;
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        logger.error('Error fetching user data:', error);
         throw new UserDataError(error instanceof Error ? error.message : 'Failed to fetch user data');
       }
     },
@@ -39,7 +40,7 @@ export const useUserData = () => {
         if (!data) throw new UserDataError('Profile not found');
         return data;
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        logger.error('Error fetching user profile:', error);
         throw new UserDataError(error instanceof Error ? error.message : 'Failed to fetch user profile');
       }
     },

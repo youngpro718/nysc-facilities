@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Optimized Spaces Service
  * Leverages Phase 2 database optimizations (unified_spaces, materialized views, stored procedures)
@@ -6,6 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import type { Database } from '@/integrations/supabase/types';
 
 // Type definitions for optimized queries
@@ -64,7 +64,7 @@ export interface SpaceDetails {
   storage_type?: string;
   phone_number?: string;
   current_function?: string;
-  courtroom_photos?: any;
+  courtroom_photos?: unknown;
   floor_id: string;
   floor_name: string;
   floor_number: number;
@@ -95,7 +95,7 @@ export class OptimizedSpacesService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      logger.error('Error fetching dashboard data:', error);
       throw error;
     }
   }
@@ -111,7 +111,7 @@ export class OptimizedSpacesService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching building hierarchy:', error);
+      logger.error('Error fetching building hierarchy:', error);
       throw error;
     }
   }
@@ -137,7 +137,7 @@ export class OptimizedSpacesService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error searching spaces:', error);
+      logger.error('Error searching spaces:', error);
       throw error;
     }
   }
@@ -155,7 +155,7 @@ export class OptimizedSpacesService {
       if (error) throw error;
       return data && data.length > 0 ? data[0] : null;
     } catch (error) {
-      console.error('Error fetching space details:', error);
+      logger.error('Error fetching space details:', error);
       // Fallback to unified_spaces query
       try {
         const { data, error: fallbackError } = await supabase
@@ -171,7 +171,7 @@ export class OptimizedSpacesService {
         if (fallbackError) throw fallbackError;
         return data;
       } catch (fallbackError) {
-        console.error('Fallback query also failed:', fallbackError);
+        logger.error('Fallback query also failed:', fallbackError);
         return null;
       }
     }
@@ -218,7 +218,7 @@ export class OptimizedSpacesService {
       
       return rooms;
     } catch (error) {
-      console.error('Error fetching rooms:', error);
+      logger.error('Error fetching rooms:', error);
       throw error;
     }
   }
@@ -239,7 +239,7 @@ export class OptimizedSpacesService {
         if (error) throw error;
       }
     } catch (error) {
-      console.error('Error refreshing cache:', error);
+      logger.error('Error refreshing cache:', error);
       throw error;
     }
   }

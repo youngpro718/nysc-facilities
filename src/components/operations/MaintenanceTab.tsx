@@ -17,7 +17,7 @@ import { MaintenanceIssuesList } from "@/components/maintenance/MaintenanceIssue
 import { MaintenanceCalendar } from "@/components/maintenance/MaintenanceCalendar";
 
 interface MaintenanceTabProps {
-  maintenanceData: any[];
+  maintenanceData: unknown[];
   enhancedMetrics: {
     maintenanceInProgress: number;
     maintenanceScheduled: number;

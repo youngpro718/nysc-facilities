@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +31,7 @@ import { toast } from 'sonner';
 
 export function ImprovedSupplyStaffDashboard() {
   const queryClient = useQueryClient();
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Record<string, unknown> | null>(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('new');
@@ -46,7 +47,7 @@ export function ImprovedSupplyStaffDashboard() {
       queryClient.invalidateQueries({ queryKey: ['supply-orders'] });
       queryClient.invalidateQueries({ queryKey: ['completed-orders'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error('Failed to confirm pickup', { description: error.message });
     },
   });
@@ -88,7 +89,7 @@ export function ImprovedSupplyStaffDashboard() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching orders:', error);
+        logger.error('Error fetching orders:', error);
         throw error;
       }
 

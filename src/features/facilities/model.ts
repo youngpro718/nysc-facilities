@@ -52,9 +52,9 @@ export interface Room {
   building?: Building;
   floor?: Floor;
   occupants?: Occupant[];
-  current_occupants?: any[]; // Current room occupants
-  issues?: any[]; // Related issues
-  room_history?: any[]; // Room history records
+  current_occupants?: unknown[]; // Current room occupants
+  issues?: unknown[]; // Related issues
+  room_history?: unknown[]; // Room history records
   notes?: string; // Room notes
 }
 

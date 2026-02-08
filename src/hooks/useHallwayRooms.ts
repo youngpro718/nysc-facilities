@@ -54,7 +54,7 @@ export function useHallwayRooms(hallwayId: string | null) {
 
       // Fetch fixture counts for each room
       const roomsWithCounts = await Promise.all(
-        (data || []).map(async (hallwayRoom: any) => {
+        (data || []).map(async (hallwayRoom: Record<string, unknown>) => {
           const { data: fixtures } = await supabase
             .from('lighting_fixtures')
             .select('status')
@@ -108,7 +108,7 @@ export function useAddHallwayRoom() {
       queryClient.invalidateQueries({ queryKey: ['hallway-rooms', variables.hallway_id] });
       toast.success('Room added to hallway');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.message || 'Failed to add room');
     },
   });
@@ -131,7 +131,7 @@ export function useRemoveHallwayRoom() {
       queryClient.invalidateQueries({ queryKey: ['hallway-rooms', hallwayId] });
       toast.success('Room removed from hallway');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.message || 'Failed to remove room');
     },
   });

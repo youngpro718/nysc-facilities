@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import {
   Settings,
   LayoutDashboard,
@@ -178,9 +179,9 @@ export const userNavigationItems: NavigationItem[] = [
 ];
 
 // Create filtered navigation based on role permissions
-export function getRoleBasedNavigation(permissions: RolePermissions, userRole: CourtRole, profile?: any): NavigationTab[] {
-  console.log('Navigation - userRole:', userRole, 'profile department:', profile?.departments?.name || profile?.department);
-  console.log('Navigation - profile title:', profile?.title);
+export function getRoleBasedNavigation(permissions: RolePermissions, userRole: CourtRole, profile?: Record<string, unknown>): NavigationTab[] {
+  logger.debug(`Navigation - userRole: ${userRole}, profile department: ${profile?.departments?.name || profile?.department}`);
+  logger.debug('Navigation - profile title:', profile?.title);
   
   // Admin navigation
   if (userRole === 'admin') {
@@ -253,9 +254,9 @@ export const userNavigation: NavigationTab[] = [
 ];
 
 // Helper function to get navigation routes based on role permissions
-export const getNavigationRoutes = (permissions: RolePermissions, userRole: CourtRole, profile?: any): string[] => {
-  console.log('Routes - userRole:', userRole, 'profile department:', profile?.departments?.name || profile?.department);
-  console.log('Routes - profile title:', profile?.title);
+export const getNavigationRoutes = (permissions: RolePermissions, userRole: CourtRole, profile?: Record<string, unknown>): string[] => {
+  logger.debug(`Routes - userRole: ${userRole}, profile department: ${profile?.departments?.name || profile?.department}`);
+  logger.debug('Routes - profile title:', profile?.title);
   
   // Admin routes
   if (userRole === 'admin') {

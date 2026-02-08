@@ -108,7 +108,7 @@ export interface Activity {
   created_at: string;
   metadata?: {
     building_id: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

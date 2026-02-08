@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,7 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface EnhancedInventoryImportExportProps {
   inventoryData: InventoryItem[];
-  onImportSuccess?: (importedItems: any[]) => void;
+  onImportSuccess?: (importedItems: unknown[]) => void;
 }
 
 export function EnhancedInventoryImportExport({ 
@@ -86,7 +87,7 @@ export function EnhancedInventoryImportExport({
         const fetchedCategories = await fetchAllCategories();
         setCategories(fetchedCategories);
       } catch (error) {
-        console.error('Error loading categories:', error);
+        logger.error('Error loading categories:', error);
         toast({
           title: "Warning",
           description: "Could not load categories for validation. Import will still work but categories won't be mapped.",
@@ -113,7 +114,7 @@ export function EnhancedInventoryImportExport({
       .map(([field]) => field);
 
     const exportData = inventoryData.map(item => {
-      const row: any = {};
+      const row: Record<string, unknown> = {};
       selectedFields.forEach(field => {
         switch (field) {
           case 'category':
@@ -221,7 +222,7 @@ export function EnhancedInventoryImportExport({
       let failed = 0;
       const errors: string[] = [];
       const categoryIssues: string[] = [];
-      const importedItems: any[] = [];
+      const importedItems: unknown[] = [];
 
       // Process invalid items first (add to errors)
       invalidItems.forEach(item => {
@@ -282,7 +283,7 @@ export function EnhancedInventoryImportExport({
       }
 
     } catch (error) {
-      console.error('Import error:', error);
+      logger.error('Import error:', error);
       toast({
         title: "Import failed",
         description: error instanceof Error ? error.message : "Failed to import inventory data.",

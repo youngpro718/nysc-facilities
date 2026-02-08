@@ -24,7 +24,7 @@ export interface LightingFixture {
 export interface IssueHistory {
   id: string;
   action_type: string;
-  action_details: Record<string, any>;
+  action_details: Record<string, unknown>;
   performed_by: string;
   performed_at: string;
   previous_status?: IssueStatus;
@@ -81,7 +81,7 @@ export interface Issue {
   lighting_details?: {
     fixture_status?: string;
     detected_issues?: string[];
-    maintenance_history?: any[];
+    maintenance_history?: unknown[];
   };
 }
 

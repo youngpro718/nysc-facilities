@@ -30,7 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface MobileRequestFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Record<string, unknown>) => void;
   type: 'key_request' | 'issue_report';
 }
 

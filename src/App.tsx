@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { logger } from '@/lib/logger';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -380,14 +381,14 @@ function DevModeWrapper() {
 
 function App() {
   return (
-    <ErrorBoundary onError={(error) => console.error('App: Global error caught:', error)}>
+    <ErrorBoundary onError={(error) => logger.error('App: Global error caught:', error)}>
       <QueryClientProvider client={queryClient}>
         <RealtimeProvider>
           <ThemeProvider>
             <EnhancedThemeProvider>
               <SimpleDashboardProvider>
                 <BrowserRouter>
-                  <AuthErrorBoundary onError={(error) => console.error('App: Auth error caught:', error)}>
+                  <AuthErrorBoundary onError={(error) => logger.error('App: Auth error caught:', error)}>
                     <AuthProvider>
                       <NotificationsWrapper>
                         <AppContent />

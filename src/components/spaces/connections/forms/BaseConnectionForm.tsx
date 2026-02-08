@@ -9,7 +9,7 @@ export interface BaseFormFieldProps {
   placeholder: string;
   options: { value: string; label: string }[];
   disabled?: boolean;
-  form: any;
+  form: unknown;
 }
 
 export const BaseFormField = ({ label, name, placeholder, options, disabled, form }: BaseFormFieldProps) => (

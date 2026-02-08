@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -117,7 +118,7 @@ export function QuickSpaceTemplates({
   preselectedFloor 
 }: QuickSpaceTemplatesProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<SpaceTemplate | null>(null);
-  const [smartDefaults, setSmartDefaults] = useState<any>(null);
+  const [smartDefaults, setSmartDefaults] = useState<Record<string, unknown> | null>(null);
   const [isLoadingDefaults, setIsLoadingDefaults] = useState(false);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
   const [showQuickEdit, setShowQuickEdit] = useState(false);
@@ -126,7 +127,7 @@ export function QuickSpaceTemplates({
 
   const createSpaceMutation = useMutation({
     mutationFn: createSpace,
-    onSuccess: (data: any) => {
+    onSuccess: (data: Record<string, unknown>) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['floor-spaces'] });
       
@@ -163,7 +164,7 @@ export function QuickSpaceTemplates({
       
       setSmartDefaults(defaults);
     } catch (error) {
-      console.error('Error generating smart defaults:', error);
+      logger.error('Error generating smart defaults:', error);
       toast.error('Failed to generate defaults');
       setSelectedTemplate(null);
     } finally {
@@ -187,7 +188,7 @@ export function QuickSpaceTemplates({
       currentFunction: selectedTemplate.name.toLowerCase(),
       description: selectedTemplate.description,
       isStorage: selectedTemplate.roomType === RoomTypeEnum.UTILITY_ROOM || selectedTemplate.roomType === RoomTypeEnum.FILING_ROOM,
-      storageType: (selectedTemplate.roomType === RoomTypeEnum.UTILITY_ROOM || selectedTemplate.roomType === RoomTypeEnum.FILING_ROOM) ? 'general' as any : null,
+      storageType: (selectedTemplate.roomType === RoomTypeEnum.UTILITY_ROOM || selectedTemplate.roomType === RoomTypeEnum.FILING_ROOM) ? 'general' as unknown : null,
       storageCapacity: (selectedTemplate.roomType === RoomTypeEnum.UTILITY_ROOM || selectedTemplate.roomType === RoomTypeEnum.FILING_ROOM) ? 100 : null,
       storageNotes: '',
       parentRoomId: null,

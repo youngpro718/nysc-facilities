@@ -107,9 +107,9 @@ export interface Space {
   status: 'active' | 'inactive' | 'under_maintenance';
   created_at: string;
   updated_at: string;
-  properties?: Record<string, any>;
-  position?: Record<string, any>;
-  size?: Record<string, any>;
+  properties?: Record<string, unknown>;
+  position?: Record<string, unknown>;
+  size?: Record<string, unknown>;
   rotation?: number;
   subtype?: string;
 }

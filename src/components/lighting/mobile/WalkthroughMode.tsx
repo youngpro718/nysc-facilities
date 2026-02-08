@@ -1,5 +1,6 @@
 
 import { useState, useMemo } from "react";
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -102,7 +103,7 @@ export function WalkthroughMode({ fixtures, onExit, onFixtureUpdate }: Walkthrou
       }
       onFixtureUpdate();
     } catch (e) {
-      console.error(e);
+      logger.error('Failed to update fixture:', e);
       toast.error("Failed to update fixture");
     } finally {
       setProcessingId(null);

@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 /**
  * Delete a supply request and all related data (admin only)
@@ -18,7 +19,7 @@ export async function deleteSupplyRequest(requestId: string): Promise<void> {
     .eq('request_id', requestId);
 
   if (historyError) {
-    console.error('Failed to delete status history:', historyError);
+    logger.error('Failed to delete status history:', historyError);
     // Continue anyway - main delete might still work
   }
 
@@ -29,7 +30,7 @@ export async function deleteSupplyRequest(requestId: string): Promise<void> {
     .eq('request_id', requestId);
 
   if (itemsError) {
-    console.error('Failed to delete request items:', itemsError);
+    logger.error('Failed to delete request items:', itemsError);
     throw new Error(`Failed to delete request items: ${itemsError.message}`);
   }
 
@@ -56,7 +57,7 @@ export async function deleteMultipleSupplyRequests(requestIds: string[]): Promis
       await deleteSupplyRequest(id);
       success++;
     } catch (error) {
-      console.error(`Failed to delete request ${id}:`, error);
+      logger.error(`Failed to delete request ${id}:`, error);
       failed++;
     }
   }

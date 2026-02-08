@@ -1,9 +1,10 @@
 
 import { ReactNode } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
-import { isAdminRole } from '@/utils/roleBasedRouting';
+import { isAdminRole, getDashboardForRole } from '@/utils/roleBasedRouting';
+import { logger } from '@/lib/logger';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -34,50 +35,36 @@ export function ProtectedRoute({
     );
   }
 
-  // Don't render anything if not authenticated - auth provider handles redirects
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto p-6">
-        <DashboardSkeleton />
-      </div>
-    );
+    return <Navigate to="/login" replace />;
   }
 
-  // Admins and facilities managers bypass verification checks
+  // Admins bypass verification checks
   if (isAdminRole(profile?.role)) {
-    console.log('[ProtectedRoute] Admin-level user detected, granting access', { role: profile?.role });
+    logger.debug('[ProtectedRoute] Admin user, granting access');
     return <>{children}</>;
   }
 
-  // Don't render if verification is required but user is pending
+  // Redirect pending users to approval page
   if (requireVerified && profile?.verification_status === 'pending') {
-    console.log('[ProtectedRoute] Blocking route - verification required:', {
-      verification_status: profile?.verification_status,
-      is_approved: profile?.is_approved,
-      access_level: profile?.access_level,
-      requireVerified
-    });
-    return (
-      <div className="container mx-auto p-6">
-        <DashboardSkeleton />
-      </div>
-    );
+    logger.debug('[ProtectedRoute] User pending verification, redirecting');
+    return <Navigate to="/auth/pending-approval" replace />;
   }
 
   // Don't render admin routes for non-admin users, unless they're in allowed departments or have required room assignment
   if (requireAdmin && !isAdmin) {
-    const userDepartment = (profile as any)?.department;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vestigial props, not used in current routes
+    const p = profile as Record<string, unknown>;
+    const userDepartment = p?.department || p?.department_id;
     const hasDepartmentAccess = allowDepartments.length > 0 && userDepartment && allowDepartments.includes(userDepartment);
-    const hasRoomAccess = requireRoomAssignment && (profile as any)?.roomAssignments?.some((assignment: any) => 
-      assignment.room_number === requireRoomAssignment
-    );
+    const hasRoomAccess = requireRoomAssignment && Array.isArray(p?.roomAssignments) &&
+      p.roomAssignments.some((a: { room_number?: string }) => a.room_number === requireRoomAssignment);
     
     if (!hasDepartmentAccess && !hasRoomAccess) {
-      return (
-        <div className="container mx-auto p-6">
-          <DashboardSkeleton />
-        </div>
-      );
+      // Redirect non-admin users to their role-appropriate dashboard
+      const fallback = getDashboardForRole(profile?.role);
+      return <Navigate to={fallback} replace />;
     }
   }
 

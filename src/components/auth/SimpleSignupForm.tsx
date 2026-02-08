@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,8 +89,8 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
         onSuccess?.();
       }
       
-    } catch (error: any) {
-      console.error('Signup error:', error);
+    } catch (error) {
+      logger.error('Signup error:', error);
       
       // Reset states on error so user can try again
       setIsSubmitted(false);
@@ -96,16 +98,16 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
       
       let errorMessage = "Failed to create account. Please try again.";
       
-      if (error.message?.includes('duplicate key') || error.message?.includes('unique_user_role')) {
+      if (getErrorMessage(error)?.includes('duplicate key') || getErrorMessage(error)?.includes('unique_user_role')) {
         errorMessage = "Account processing issue detected. Please try again or contact support if this persists.";
-      } else if (error.message?.includes("User already registered")) {
+      } else if (getErrorMessage(error)?.includes("User already registered")) {
         errorMessage = "An account with this email already exists. Please try signing in instead.";
-      } else if (error.message?.includes("Invalid email")) {
+      } else if (getErrorMessage(error)?.includes("Invalid email")) {
         errorMessage = "Please enter a valid email address.";
-      } else if (error.message?.includes("Password")) {
+      } else if (getErrorMessage(error)?.includes("Password")) {
         errorMessage = "Password must be at least 6 characters long.";
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (getErrorMessage(error)) {
+        errorMessage = getErrorMessage(error);
       }
       
       toast.error(errorMessage);

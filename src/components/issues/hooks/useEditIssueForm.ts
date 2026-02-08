@@ -1,5 +1,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { logger } from '@/lib/logger';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Issue } from "../types/IssueTypes";
@@ -46,7 +47,7 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
     try {
       return format(parseISO(dateString), "yyyy-MM-dd'T'HH:mm");
     } catch (error) {
-      console.error('Date parsing error:', error);
+      logger.error('Date parsing error:', error);
       return '';
     }
   };
@@ -86,7 +87,7 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
         try {
           formattedDueDate = new Date(values.due_date).toISOString();
         } catch (error) {
-          console.error('Date formatting error:', error);
+          logger.error('Date formatting error:', error);
           throw new Error('Invalid date format');
         }
       }
@@ -111,7 +112,7 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
       onClose();
     },
     onError: (error) => {
-      console.error('Update error:', error);
+      logger.error('Update error:', error);
       toast.error("Failed to update issue");
     },
   });

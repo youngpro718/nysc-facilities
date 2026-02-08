@@ -1,5 +1,6 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { logger } from '@/lib/logger';
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Loader2 } from "lucide-react";
@@ -14,7 +15,7 @@ interface DescriptionFieldProps {
 
 export function DescriptionField({ form }: DescriptionFieldProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [recognition, setRecognition] = useState<any>(null);
+  const [recognition, setRecognition] = useState<Record<string, unknown> | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
 
   const initializeSpeechRecognition = useCallback(() => {
@@ -23,7 +24,7 @@ export function DescriptionField({ form }: DescriptionFieldProps) {
       return null;
     }
 
-    const recognition = new (window as any).webkitSpeechRecognition();
+    const recognition = new ((window as Record<string, unknown>)).webkitSpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
@@ -34,7 +35,7 @@ export function DescriptionField({ form }: DescriptionFieldProps) {
       toast.success("Started recording");
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: Record<string, unknown>) => {
       let finalTranscript = '';
       let interimTranscript = '';
 
@@ -53,8 +54,8 @@ export function DescriptionField({ form }: DescriptionFieldProps) {
       }
     };
 
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error', event.error);
+    recognition.onerror = (event: Record<string, unknown>) => {
+      logger.error('Speech recognition error', event.error);
       setIsRecording(false);
       setIsInitializing(false);
       if (event.error === 'not-allowed') {
@@ -99,7 +100,7 @@ export function DescriptionField({ form }: DescriptionFieldProps) {
         newRecognition.start();
       }
     } catch (error) {
-      console.error('Microphone access error:', error);
+      logger.error('Microphone access error:', error);
       toast.error("Could not access microphone");
       setIsInitializing(false);
     }

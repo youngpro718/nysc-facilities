@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -95,7 +96,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
         status: "open",
         room_id: data.room_id || null,
         building_id: data.building_id || null,
-      } as any);
+      } as unknown);
 
       if (error) throw error;
 
@@ -120,7 +121,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       form.reset();
       onOpenChange(false);
     } catch (error) {
-      console.error("Error reporting issue:", error);
+      logger.error("Error reporting issue:", error);
       toast.error("Failed to report issue", { description: "Please try again." });
     }
   };

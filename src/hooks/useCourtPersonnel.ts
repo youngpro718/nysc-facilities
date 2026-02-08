@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 
 export interface PersonnelOption {
@@ -47,11 +48,11 @@ export const useCourtPersonnel = () => {
           .rpc('list_personnel_profiles_minimal');
         if (personnelError) throw personnelError;
 
-        const rows = (personnelData as any[]) || [];
+        const rows = (personnelData as unknown[]) || [];
         // Prefer active, but include nulls to avoid dropping everything if the column isn't populated
-        const filteredRows = rows.filter((r: any) => r.is_active === true || r.is_active === null || typeof r.is_active === 'undefined');
+        const filteredRows = rows.filter((r: Record<string, unknown>) => r.is_active === true || r.is_active === null || typeof r.is_active === 'undefined');
 
-        allPersonnel = filteredRows.map((person: any) => ({
+        allPersonnel = filteredRows.map((person: Record<string, unknown>) => ({
           id: person.id,
           name: person.display_name || person.full_name || '',
           role: person.title || person.primary_role || 'Staff',
@@ -65,7 +66,7 @@ export const useCourtPersonnel = () => {
       } catch (e) {
         // Swallow and try fallbacks below
         // eslint-disable-next-line no-console
-        console.warn('[useCourtPersonnel] personnel_profiles query failed, will try fallbacks', e);
+        logger.warn('[useCourtPersonnel] personnel_profiles query failed, will try fallbacks', e);
       }
 
       // Fallback: personnel_profiles_view (legacy)
@@ -75,7 +76,7 @@ export const useCourtPersonnel = () => {
             .from('personnel_profiles_view')
             .select(`id, display_name, full_name, primary_role, title, department`);
           if (legacyError) throw legacyError;
-          const rows = (legacyData as any[]) || [];
+          const rows = (legacyData as unknown[]) || [];
           allPersonnel = rows.map((r) => ({
             id: r.id,
             name: r.display_name || r.full_name || '',
@@ -85,7 +86,7 @@ export const useCourtPersonnel = () => {
         } catch (e) {
           // Final fallback will leave empty arrays
           // eslint-disable-next-line no-console
-          console.warn('[useCourtPersonnel] personnel_profiles_view fallback failed', e);
+          logger.warn('[useCourtPersonnel] personnel_profiles_view fallback failed', e);
         }
       }
 

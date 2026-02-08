@@ -53,7 +53,7 @@ interface NewThreeDSceneProps {
   // Legacy props (ignored in blueprint mode)
   enableShadows?: boolean;
   backgroundColor?: number;
-  commandToken?: any;
+  commandToken?: unknown;
   moveEnabled?: boolean;
 }
 

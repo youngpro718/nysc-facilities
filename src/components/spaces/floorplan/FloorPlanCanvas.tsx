@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { logger } from '@/lib/logger';
 import { 
   useNodesState, 
   useEdgesState, 
@@ -28,8 +29,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface FloorPlanCanvasProps {
   floorId: string | null;
   zoom?: number;
-  onObjectSelect?: (object: any | null) => void;
-  previewData?: any;
+  onObjectSelect?: (object: unknown | null) => void;
+  previewData?: Record<string, unknown>;
 }
 
 const nodeTypes = {
@@ -58,7 +59,7 @@ function FloorPlanCanvasInner({
   const [attachSide, setAttachSide] = useState<'north'|'south'|'east'|'west'>('north');
   const [offsetPercent, setOffsetPercent] = useState<number>(50);
 
-  const initializeNodes = useCallback((objects: any[]) => {
+  const initializeNodes = useCallback((objects: unknown[]) => {
     if (!objects?.length) return [];
 
     const reactFlowNodes = objects.map((obj) => {
@@ -71,7 +72,7 @@ function FloorPlanCanvasInner({
         obj.position : null;
 
       if (!position) {
-        console.warn(`Invalid or missing position for node ${obj.id}:`, obj.position);
+        logger.warn(`Invalid or missing position for node ${obj.id}:`, obj.position);
       }
 
       const size = obj.data?.size && 
@@ -233,7 +234,7 @@ function FloorPlanCanvasInner({
             .update({ position: newTopLeft, rotation: newRotation })
             .eq('id', node.id);
           if (error) {
-            console.error('Failed to update room position', error);
+            logger.error('Failed to update room position', error);
             toast.error('Failed to attach room');
             return;
           }
@@ -315,7 +316,7 @@ function FloorPlanCanvasInner({
                 accessibility: 'fully_accessible',
                 type: 'public_main',
                 section: 'connector'
-              } as any;
+              } as unknown;
               const north = {
                 name: 'North Hallway',
                 floor_id: floorId,
@@ -328,7 +329,7 @@ function FloorPlanCanvasInner({
                 accessibility: 'fully_accessible',
                 type: 'public_main',
                 section: 'connector'
-              } as any;
+              } as unknown;
               const south = {
                 name: 'South Hallway',
                 floor_id: floorId,
@@ -341,7 +342,7 @@ function FloorPlanCanvasInner({
                 accessibility: 'fully_accessible',
                 type: 'public_main',
                 section: 'connector'
-              } as any;
+              } as unknown;
               const { error: e1 } = await supabase.from('hallways').insert(central);
               if (e1) throw e1;
               const { error: e2 } = await supabase.from('hallways').insert(north);
@@ -350,7 +351,7 @@ function FloorPlanCanvasInner({
               if (e3) throw e3;
               toast.success('Created central + north + south hallways');
             } catch (e:any) {
-              console.error('Failed to create default hallways', e);
+              logger.error('Failed to create default hallways', e);
               toast.error(`Failed: ${e?.message || 'Unknown error'}`);
             }
           }}

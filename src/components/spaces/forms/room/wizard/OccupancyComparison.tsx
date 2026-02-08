@@ -112,7 +112,7 @@ export function OccupancyComparison({ roomId }: OccupancyComparisonProps) {
               </p>
             ) : (
               <div className="space-y-2">
-                {current.map((assignment: any) => (
+                {current.map((assignment: Record<string, unknown>) => (
                   <div
                     key={assignment.id}
                     className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
@@ -158,7 +158,7 @@ export function OccupancyComparison({ roomId }: OccupancyComparisonProps) {
               </p>
             ) : (
               <div className="space-y-2">
-                {previous.slice(0, 3).map((assignment: any) => (
+                {previous.slice(0, 3).map((assignment: Record<string, unknown>) => (
                   <div
                     key={assignment.id}
                     className="flex items-center gap-2 p-2 rounded-lg bg-muted/30"

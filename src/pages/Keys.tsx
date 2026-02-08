@@ -1,5 +1,6 @@
 
 import { KeyInventorySection } from "@/components/keys/sections/KeyInventorySection";
+import { logger } from '@/lib/logger';
 import { KeyAssignmentSection } from "@/components/keys/sections/KeyAssignmentSection";
 import { KeyHistorySection } from "@/components/keys/sections/KeyHistorySection";
 import { KeyOrderSection } from "@/components/keys/sections/KeyOrderSection";
@@ -24,7 +25,7 @@ export default function Keys() {
         .select("*");
 
       if (keysError) {
-        console.error("Error fetching key statistics:", keysError);
+        logger.error("Error fetching key statistics:", keysError);
         throw keysError;
       }
       

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { logger } from '@/lib/logger';
 
 export interface RoomData {
   id: string;
@@ -127,7 +128,7 @@ export class Scene3DManager {
       this.selectedRoomId = roomId;
       this.updateRoomMaterials();
     } catch (error) {
-      console.error('Scene3DManager: Error setting room selection:', error);
+      logger.error('Scene3DManager: Error setting room selection:', error);
     }
   }
 
@@ -137,7 +138,7 @@ export class Scene3DManager {
       this.hoveredRoomId = roomId;
       this.updateRoomMaterials();
     } catch (error) {
-      console.error('Scene3DManager: Error setting room hover:', error);
+      logger.error('Scene3DManager: Error setting room hover:', error);
     }
   }
 
@@ -160,7 +161,7 @@ export class Scene3DManager {
         });
       });
     } catch (error) {
-      console.error('Scene3DManager: Error updating room materials:', error);
+      logger.error('Scene3DManager: Error updating room materials:', error);
     }
   }
 
@@ -253,14 +254,14 @@ export class Scene3DManager {
       this.camera.updateProjectionMatrix();
 
     } catch (error) {
-      console.error('Scene3DManager: Error setting up scene:', error);
+      logger.error('Scene3DManager: Error setting up scene:', error);
       throw new Error('Failed to initialize 3D scene');
     }
   }
 
   public mount(container: HTMLElement): void {
     if (this.isInitialized) {
-      console.warn('Scene3DManager: Already initialized, skipping mount');
+      logger.warn('Scene3DManager: Already initialized, skipping mount');
       return;
     }
 
@@ -339,10 +340,10 @@ export class Scene3DManager {
       this.startRenderLoop();
 
       this.isInitialized = true;
-      console.log('Scene3DManager: Successfully mounted');
+      logger.debug('Scene3DManager: Successfully mounted');
 
     } catch (error) {
-      console.error('Scene3DManager: Error mounting:', error);
+      logger.error('Scene3DManager: Error mounting:', error);
       throw new Error('Failed to mount 3D scene');
     }
   }
@@ -418,16 +419,16 @@ export class Scene3DManager {
       // Dispose of renderer and WebGL context
       try {
         // Force context loss to free GPU resources and avoid context-type conflicts
-        (this.renderer as any)?.forceContextLoss?.();
+        (this.renderer as Record<string, unknown>)?.forceContextLoss?.();
       } catch {}
       this.renderer?.dispose?.();
       
       this.isInitialized = false;
 
-      console.log('Scene3DManager: Successfully unmounted with proper cleanup');
+      logger.debug('Scene3DManager: Successfully unmounted with proper cleanup');
 
     } catch (error) {
-      console.error('Scene3DManager: Error unmounting:', error);
+      logger.error('Scene3DManager: Error unmounting:', error);
     }
   }
 
@@ -443,7 +444,7 @@ export class Scene3DManager {
       this.renderer?.setSize(width, height);
 
     } catch (error) {
-      console.error('Scene3DManager: Error handling resize:', error);
+      logger.error('Scene3DManager: Error handling resize:', error);
     }
   };
   private startRenderLoop(): void {
@@ -454,7 +455,7 @@ export class Scene3DManager {
         try {
           const cameraPos = this.camera.position.clone();
           this.scene.traverse((obj) => {
-            if ((obj as any).userData?.type === 'label' && obj instanceof THREE.Sprite) {
+            if (((obj as Record<string, unknown>)).userData?.type === 'label' && obj instanceof THREE.Sprite) {
               const sprite = obj as THREE.Sprite;
               const worldPos = new THREE.Vector3();
               sprite.getWorldPosition(worldPos);
@@ -471,7 +472,7 @@ export class Scene3DManager {
         this.renderer?.render(this.scene, this.camera);
         this.animationId = requestAnimationFrame(render);
       } catch (error) {
-        console.error('Scene3DManager: Error in render loop:', error);
+        logger.error('Scene3DManager: Error in render loop:', error);
         // Stop the render loop on error to prevent infinite error spam
         if (this.animationId) {
           cancelAnimationFrame(this.animationId);
@@ -665,10 +666,10 @@ export class Scene3DManager {
         }
       });
 
-      console.log(`Scene3DManager: Updated ${validRooms.length} rooms`);
+      logger.debug(`Scene3DManager: Updated ${validRooms.length} rooms`);
 
     } catch (error) {
-      console.error('Scene3DManager: Error updating rooms:', error);
+      logger.error('Scene3DManager: Error updating rooms:', error);
     }
   }
 
@@ -689,10 +690,10 @@ export class Scene3DManager {
         }
       });
 
-      console.log(`Scene3DManager: Updated ${validConnections.length} connections`);
+      logger.debug(`Scene3DManager: Updated ${validConnections.length} connections`);
 
     } catch (error) {
-      console.error('Scene3DManager: Error updating connections:', error);
+      logger.error('Scene3DManager: Error updating connections:', error);
     }
   }
 
@@ -730,7 +731,7 @@ export class Scene3DManager {
       }
 
     } catch (error) {
-      console.error(`Scene3DManager: Error creating room mesh for ${room.id}:`, error);
+      logger.error(`Scene3DManager: Error creating room mesh for ${room.id}:`, error);
       return null;
     }
   }
@@ -1025,7 +1026,7 @@ export class Scene3DManager {
       
       group.add(sprite);
     } catch (error) {
-      console.error('Error creating room label:', error);
+      logger.error('Error creating room label:', error);
     }
   }
 
@@ -1076,7 +1077,7 @@ export class Scene3DManager {
       return group;
 
     } catch (error) {
-      console.error(`Scene3DManager: Error creating connection mesh for ${connection.id}:`, error);
+      logger.error(`Scene3DManager: Error creating connection mesh for ${connection.id}:`, error);
       return null;
     }
   }
@@ -1132,9 +1133,9 @@ export class Scene3DManager {
       this.connectionMaterial.dispose();
       // Dispose of renderer if present
       this.renderer?.dispose?.();
-      console.log('Scene3DManager: Disposed successfully');
+      logger.debug('Scene3DManager: Disposed successfully');
     } catch (error) {
-      console.error('Scene3DManager: Error disposing:', error);
+      logger.error('Scene3DManager: Error disposing:', error);
     }
   }
 }

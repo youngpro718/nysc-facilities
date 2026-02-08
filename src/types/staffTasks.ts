@@ -62,8 +62,8 @@ export interface StaffTaskHistory {
   action: string;
   performed_by: string | null;
   notes: string | null;
-  old_values: Record<string, any> | null;
-  new_values: Record<string, any> | null;
+  old_values: Record<string, unknown> | null;
+  new_values: Record<string, unknown> | null;
   created_at: string;
   performer?: { full_name: string } | null;
 }

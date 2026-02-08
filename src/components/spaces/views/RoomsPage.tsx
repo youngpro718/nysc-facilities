@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useMemo } from "react";
+import { logger } from '@/lib/logger';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -76,7 +77,7 @@ const RoomsPage = () => {
     
     // If URL has a room ID, try to select it
     if (urlRoomId) {
-      const roomFromUrl = list.find((r: any) => r.id === urlRoomId);
+      const roomFromUrl = list.find((r: Record<string, unknown>) => r.id === urlRoomId);
       if (roomFromUrl && roomFromUrl.id !== selectedRoomForPanel?.id) {
         setSelectedRoomForPanel(roomFromUrl as Room);
         return;
@@ -84,7 +85,7 @@ const RoomsPage = () => {
     }
     
     // If current selection exists and is still present in the list, keep it
-    if (selectedRoomForPanel && list.some((r: any) => r.id === selectedRoomForPanel.id)) {
+    if (selectedRoomForPanel && list.some((r: Record<string, unknown>) => r.id === selectedRoomForPanel.id)) {
       return;
     }
     // Otherwise, pick the first available room or clear selection for empty state
@@ -98,7 +99,7 @@ const RoomsPage = () => {
   // Single source of truth for the panel room
   const panelRoom = useMemo(() => {
     const list = filteredAndSortedRooms ?? [];
-    if (selectedRoomForPanel && list.some((r: any) => r.id === selectedRoomForPanel.id)) {
+    if (selectedRoomForPanel && list.some((r: Record<string, unknown>) => r.id === selectedRoomForPanel.id)) {
       return selectedRoomForPanel as Room;
     }
     return (list[0] as Room) ?? null;
@@ -119,7 +120,7 @@ const RoomsPage = () => {
         description: error.message || "Failed to delete room. Please try again.",
         variant: "destructive",
       });
-      console.error('Error deleting room:', error);
+      logger.error('Error deleting room:', error);
     },
   });
 
@@ -141,7 +142,7 @@ const RoomsPage = () => {
   };
 
   const handleRoomSelect = (room: Room) => {
-    console.log('Room selected for panel:', room.name, room.id);
+    logger.debug('Room selected for panel:', room.name, room.id);
     setSelectedRoomForPanel(room);
     // Update URL with selected room ID (preserve other params)
     const newParams = new URLSearchParams(searchParams);

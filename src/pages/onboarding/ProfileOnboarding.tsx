@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errorUtils";
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -91,9 +92,9 @@ export default function ProfileOnboarding() {
 
       // Redirect to dashboard
       navigate('/', { replace: true });
-    } catch (err: any) {
+    } catch (err) {
       logger.error('[ProfileOnboarding] Update failed:', err);
-      setError(err.message || 'Failed to update profile');
+      setError(getErrorMessage(err) || 'Failed to update profile');
       toast({
         title: 'Update Failed',
         description: 'Could not update your profile. Please try again.',

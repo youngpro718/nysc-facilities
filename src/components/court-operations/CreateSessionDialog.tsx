@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -42,7 +43,7 @@ export function CreateSessionDialog({
   const [customStatus, setCustomStatus] = useState('');
   const [statusDetail, setStatusDetail] = useState('');
   const [notes, setNotes] = useState('');
-  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<Record<string, unknown> | null>(null);
   const [roomSearch, setRoomSearch] = useState('');
   const [statusSearch, setStatusSearch] = useState('');
   const [showCustomStatus, setShowCustomStatus] = useState(false);
@@ -142,7 +143,7 @@ export function CreateSessionDialog({
       });
       
       // Sort all groups by room number
-      const sortByRoomNumber = (a: any, b: any) => {
+      const sortByRoomNumber = (a: Record<string, unknown>, b: Record<string, unknown>) => {
         const numA = parseInt(a.room_number);
         const numB = parseInt(b.room_number);
         if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
@@ -242,7 +243,7 @@ export function CreateSessionDialog({
         const endDate = format(new Date(absence.ends_on), 'MM/dd');
         setStatusDetail(`OUT ${startDate}-${endDate}`);
         
-        console.log('✅ Auto-populated absence for', selectedAssignment.justice, ':', `OUT ${startDate}-${endDate}`);
+        logger.debug('✅ Auto-populated absence for', selectedAssignment.justice, ':', `OUT ${startDate}-${endDate}`);
       }
     }
   }, [selectedAssignment, absentStaffMap]);
@@ -355,7 +356,7 @@ export function CreateSessionDialog({
         onOpenChange(false);
       }
     } catch (error) {
-      console.error('Session creation error:', error);
+      logger.error('Session creation error:', error);
       // Error toast is already handled in the mutation's onError
     }
   };

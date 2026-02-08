@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { logger } from '@/lib/logger';
 import { FileSpreadsheet, Import } from "lucide-react";
 import { InventoryItem } from "./types";
 import { exportToExcel, parseExcelFile } from "./excelUtils";
@@ -43,7 +44,7 @@ export function InventoryImportExport({ inventoryData }: InventoryImportExportPr
         description: "Failed to import inventory data.",
         variant: "destructive",
       });
-      console.error('Import error:', error);
+      logger.error('Import error:', error);
     }
   };
 

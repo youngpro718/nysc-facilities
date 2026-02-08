@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,10 +114,10 @@ export default function IssueReportFormPage() {
       toast.success('Issue report submitted successfully!', {
         description: 'Your report will be reviewed by the facilities team.',
       });
-    } catch (error: any) {
-      console.error('Error submitting issue report:', error);
+    } catch (error) {
+      logger.error('Error submitting issue report:', error);
       toast.error('Failed to submit report', {
-        description: error.message || 'Please try again later.',
+        description: getErrorMessage(error) || 'Please try again later.',
       });
     } finally {
       setIsSubmitting(false);

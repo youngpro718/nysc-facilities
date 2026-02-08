@@ -1,5 +1,6 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { NavigationTab } from "../types";
@@ -27,7 +28,7 @@ export const MobileMenu = ({
     .filter(item => item.type !== "separator")
     .map((item, index) => {
       // Type assertion since we know these are not separators
-      const navItem = item as { title: string; icon: any };
+      const navItem = item as { title: string; icon: unknown };
       return {
         title: navItem.title,
         icon: navItem.icon,
@@ -101,7 +102,7 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
   };
   const path = pathMap[title];
   if (!path) {
-    console.warn('MobileMenu: Unmapped navigation title', title);
+    logger.warn('MobileMenu: Unmapped navigation title', title);
     return '/';
   }
   return path;

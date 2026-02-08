@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import {
   Form,
   FormControl,
@@ -82,7 +83,7 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
     
     try {
       setIsSubmitting(true);
-      console.log("Submitting resolution form:", { issueId, ...data });
+      logger.debug("Submitting resolution form:", { issueId, ...data });
       
       await resolveMutation.mutateAsync({
         id: issueId,
@@ -99,11 +100,11 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
       // Call success callback after a short delay
       // to ensure state updates complete first
       if (onSuccess) {
-        console.log("Calling onSuccess callback");
+        logger.debug("Calling onSuccess callback");
         onSuccess();
       }
     } catch (error) {
-      console.error("Resolution submission error:", error);
+      logger.error("Resolution submission error:", error);
       toast.error("Failed to resolve issue");
       // Reset submission state on error
       setIsSubmitting(false);

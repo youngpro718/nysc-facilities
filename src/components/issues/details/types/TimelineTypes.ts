@@ -7,6 +7,6 @@ export interface TimelineEvent {
   performed_at: string;
   previous_status?: string;
   new_status?: string;
-  action_details?: Record<string, any>;
+  action_details?: Record<string, unknown>;
   notes?: string;
 }

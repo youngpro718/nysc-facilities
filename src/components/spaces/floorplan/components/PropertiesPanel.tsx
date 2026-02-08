@@ -10,9 +10,9 @@ import { Separator } from '@/components/ui/separator';
 import { RoomType } from '@/components/spaces/rooms/types/RoomTypes';
 
 interface PropertiesPanelProps {
-  selectedObject: any;
+  selectedObject: Record<string, unknown>;
   onUpdate: () => void;
-  onPreviewChange?: (values: any) => void;
+  onPreviewChange?: (values: Record<string, unknown>) => void;
 }
 
 export function PropertiesPanel({ 
@@ -20,7 +20,7 @@ export function PropertiesPanel({
   onUpdate,
   onPreviewChange
 }: PropertiesPanelProps) {
-  const [localValues, setLocalValues] = useState<any>({});
+  const [localValues, setLocalValues] = useState<Record<string, unknown>>({});
   
   // Reset local values when selected object changes
   useEffect(() => {

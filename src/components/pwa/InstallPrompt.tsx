@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { X, Download, Apple } from 'lucide-react';
 import { isIOS, isStandalone } from '@/utils/registerServiceWorker';
@@ -63,9 +64,9 @@ export function InstallPrompt() {
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
+      logger.debug('User accepted the install prompt');
     } else {
-      console.log('User dismissed the install prompt');
+      logger.debug('User dismissed the install prompt');
     }
 
     // Clear the deferredPrompt

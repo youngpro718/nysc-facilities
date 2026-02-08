@@ -51,11 +51,14 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
 ] as const;
 
 // Signup role options (for the signup form)
-export const SIGNUP_ROLE_OPTIONS = SYSTEM_ROLES.map(r => ({
-  value: r.value,
-  label: r.label,
-  description: r.description,
-}));
+// Excludes admin — admin role can only be assigned by existing administrators
+export const SIGNUP_ROLE_OPTIONS = SYSTEM_ROLES
+  .filter(r => r.value !== 'admin')
+  .map(r => ({
+    value: r.value,
+    label: r.label,
+    description: r.description,
+  }));
 
 // Helper functions
 export function getRoleLabel(roleValue: UserRole | string | null | undefined): string {

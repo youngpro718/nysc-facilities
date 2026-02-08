@@ -68,9 +68,9 @@ export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRo
         room_number: room.room_number,
         name: room.name,
         floor: room.floor ? {
-          name: (room.floor as any).name,
-          building: (room.floor as any).building ? {
-            name: (room.floor as any).building.name
+          name: ((room.floor as Record<string, unknown>)).name,
+          building: ((room.floor as Record<string, unknown>)).building ? {
+            name: ((room.floor as Record<string, unknown>)).building.name
           } : undefined
         } : undefined
       })) as Room[];

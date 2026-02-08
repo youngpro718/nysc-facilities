@@ -82,7 +82,7 @@ export const MaintenanceScheduleList = () => {
   };
 
   const updateStatus = async (id: string, newStatus: string) => {
-    const updates: any = { status: newStatus };
+    const updates: Record<string, unknown> = { status: newStatus };
     
     if (newStatus === "in_progress" && !schedules?.find(s => s.id === id)?.scheduled_start_date) {
       updates.actual_start_date = new Date().toISOString();

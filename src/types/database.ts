@@ -31,14 +31,14 @@ export interface Profile {
   access_level: 'none' | 'read' | 'write' | 'admin' | null;
   verification_status: 'pending' | 'approved' | 'rejected' | null;
   is_approved: boolean;
-  feature_flags: Record<string, any> | null;
+  feature_flags: Record<string, unknown> | null;
   interface_preferences: {
     theme: string;
     notifications: boolean;
   } | null;
-  system_preferences: Record<string, any> | null;
-  security_settings: Record<string, any> | null;
-  accessibility_preferences: Record<string, any> | null;
+  system_preferences: Record<string, unknown> | null;
+  security_settings: Record<string, unknown> | null;
+  accessibility_preferences: Record<string, unknown> | null;
   first_name: string | null;
   last_name: string | null;
   bio: string | null;

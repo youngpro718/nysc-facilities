@@ -17,8 +17,8 @@ interface SearchPanelProps {
   onSearchQueryChange?: (q: string) => void;
   filterType?: 'all' | 'room' | 'hallway' | 'door';
   onFilterTypeChange?: (t: 'all' | 'room' | 'hallway' | 'door') => void;
-  objects?: any[];
-  onObjectSelect?: (obj: any) => void;
+  objects?: unknown[];
+  onObjectSelect?: (obj: Record<string, unknown>) => void;
 }
 
 // Strong types for search results
@@ -31,7 +31,7 @@ export interface SearchResult {
 }
 
 // Helper: validate result shape
-const isValidResult = (r: any): r is SearchResult => {
+const isValidResult = (r: Record<string, unknown>): r is SearchResult => {
   return (
     r && typeof r === 'object' && typeof r.id === 'string' && typeof r.type === 'string'
   );
@@ -106,7 +106,7 @@ export function SearchPanel({
     if (!Array.isArray(objects)) return [];
     const q = (query || '').toLowerCase().trim();
     return objects
-      .filter((obj: any) => {
+      .filter((obj: Record<string, unknown>) => {
         if (!obj) return false;
         if (filterType !== 'all' && obj?.type !== filterType) return false;
         if (!q) return true;
@@ -114,7 +114,7 @@ export function SearchPanel({
         const desc = String(obj?.data?.properties?.description || '').toLowerCase();
         return name.includes(q) || desc.includes(q);
       })
-      .map((obj: any) => ({
+      .map((obj: Record<string, unknown>) => ({
         id: String(obj.id),
         type: String(obj.type || 'room'),
         name: String(obj?.data?.properties?.label || obj?.data?.name || obj?.name || obj.id),
@@ -132,7 +132,7 @@ export function SearchPanel({
     if (onSelect) {
       onSelect(result);
     } else if (onObjectSelect && Array.isArray(objects)) {
-      const match = objects.find((o: any) => String(o?.id) === result.id);
+      const match = objects.find((o: Record<string, unknown>) => String(o?.id) === result.id);
       if (match) onObjectSelect(match);
     }
     onClose();

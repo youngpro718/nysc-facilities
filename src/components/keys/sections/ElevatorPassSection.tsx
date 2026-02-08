@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -96,7 +97,7 @@ export function ElevatorPassSection() {
   const { data: officeAllocations } = useQuery({
     queryKey: ["office-card-allocations", officeName, elevatorCardKey?.id],
     queryFn: async () => {
-      if (!elevatorCardKey?.id) return [] as any[];
+      if (!elevatorCardKey?.id) return [] as unknown[];
       const { data, error } = await supabase
         .from("office_elevator_card_allocations")
         .select("allocated_at, quantity_delta, notes")
@@ -142,7 +143,7 @@ export function ElevatorPassSection() {
       toast.success("Elevator pass returned successfully");
     },
     onError: (error) => {
-      console.error("Error returning elevator pass:", error);
+      logger.error("Error returning elevator pass:", error);
       toast.error("Failed to return elevator pass");
     },
   });
@@ -165,7 +166,7 @@ export function ElevatorPassSection() {
       setSelectedAssignments([]);
     },
     onError: (error) => {
-      console.error("Error bulk returning elevator passes:", error);
+      logger.error("Error bulk returning elevator passes:", error);
       toast.error("Failed to return elevator passes");
     },
   });
@@ -283,7 +284,7 @@ export function ElevatorPassSection() {
                 ...rows.map(r =>
                   headers
                     .map(h => {
-                      const val = String((r as any)[h] ?? "");
+                      const val = String(((r as Record<string, unknown>))[h] ?? "");
                       const escaped = val.replace(/\"/g, '""');
                       return `"${escaped}"`;
                     })
@@ -594,7 +595,7 @@ export function ElevatorPassSection() {
       <EditElevatorPassDialog
         open={editOpen}
         onOpenChange={setEditOpen}
-        assignment={editingAssignment as any}
+        assignment={editingAssignment as unknown}
         onUpdated={() => {
           queryClient.invalidateQueries({ queryKey: ["elevator-pass-assignments"] });
           setEditOpen(false);

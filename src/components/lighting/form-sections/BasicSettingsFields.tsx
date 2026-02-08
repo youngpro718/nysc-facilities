@@ -1,5 +1,6 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { logger } from '@/lib/logger';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
@@ -46,7 +47,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
       if (roomsResult.error) throw roomsResult.error;
       if (hallwaysResult.error) throw hallwaysResult.error;
       
-      const rooms = (roomsResult.data || []).map((room: any) => ({
+      const rooms = (roomsResult.data || []).map((room: Record<string, unknown>) => ({
         id: room.id,
         name: room.name,
         room_number: room.room_number,
@@ -56,7 +57,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
         building: room.floors?.buildings
       }));
       
-      const hallways = (hallwaysResult.data || []).map((hallway: any) => ({
+      const hallways = (hallwaysResult.data || []).map((hallway: Record<string, unknown>) => ({
         id: hallway.id,
         name: hallway.name,
         room_number: null,
@@ -92,12 +93,12 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
             });
           
           if (error) {
-            console.warn('Could not get sequence, using fallback:', error);
+            logger.warn('Could not get sequence, using fallback:', error);
           } else {
             sequence = typeof sequenceData === 'number' ? sequenceData : 1;
           }
         } catch (error) {
-          console.warn('Error getting sequence, using fallback:', error);
+          logger.warn('Error getting sequence, using fallback:', error);
         }
         
         const name = generateFixtureName(
@@ -162,7 +163,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {spaces?.filter(space => space.type === spaceType).map((space: any) => (
+                {spaces?.filter(space => space.type === spaceType).map((space: Record<string, unknown>) => (
                   <SelectItem key={space.id} value={space.id}>
                     <div className="flex flex-col">
                       <span>

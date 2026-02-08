@@ -6,7 +6,7 @@ import { LightingFixtureFormData } from "../schemas/lightingSchema";
 
 interface ZoneFieldProps {
   form: UseFormReturn<LightingFixtureFormData>;
-  zones?: any[];
+  zones?: unknown[];
 }
 
 export function ZoneField({ form, zones }: ZoneFieldProps) {

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { AlertCircle, CheckCircle, Clock, Wrench } from "lucide-react";
@@ -23,7 +24,7 @@ export function LightingIssuesCard() {
           .eq('issue_type', 'lighting');
         
         if (error) {
-          console.error('Error fetching lighting issues:', error);
+          logger.error('Error fetching lighting issues:', error);
           return {
             openCount: 0,
             resolvedCount: 0,
@@ -52,7 +53,7 @@ export function LightingIssuesCard() {
           totalCount: openCount + resolvedCount + inProgressCount
         };
       } catch (error) {
-        console.error('Error in lighting issues stats query:', error);
+        logger.error('Error in lighting issues stats query:', error);
         return {
           openCount: 0,
           resolvedCount: 0,

@@ -14,7 +14,7 @@ export interface User {
   department: string;
   title: string;
   is_admin?: boolean;
-  metadata?: any;
+  metadata?: unknown;
   access_level?: 'none' | 'read' | 'write' | 'admin';
   is_suspended?: boolean;
   suspension_reason?: string;

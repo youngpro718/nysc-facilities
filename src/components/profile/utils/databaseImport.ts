@@ -13,7 +13,7 @@ export async function importDatabase(file: File, exportableTables: readonly Expo
     
     // Verify the sheet name is a valid table name
     if (exportableTables.includes(sheetName as ExportableTable)) {
-      const jsonData: any[] = [];
+      const jsonData: unknown[] = [];
       const headers: string[] = [];
       
       worksheet.eachRow((row, rowNumber) => {
@@ -24,7 +24,7 @@ export async function importDatabase(file: File, exportableTables: readonly Expo
           });
         } else {
           // Data rows
-          const rowData: any = {};
+          const rowData: Record<string, unknown> = {};
           row.eachCell((cell, colNumber) => {
             const header = headers[colNumber - 1];
             if (header) {

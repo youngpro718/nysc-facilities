@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -85,8 +86,8 @@ export function CreateLightingZoneDialog({ onZoneCreated }: { onZoneCreated: () 
       onZoneCreated();
       setOpen(false);
       form.reset();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create lighting zone");
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Failed to create lighting zone");
     }
   };
 
@@ -156,7 +157,7 @@ export function CreateLightingZoneDialog({ onZoneCreated }: { onZoneCreated: () 
                     <SelectContent>
                       {floors?.map((floor) => (
                         <SelectItem key={floor.id} value={floor.id}>
-                          {(floor.buildings as any)?.name || floor.name}
+                          {(floor.buildings as Record<string, unknown>)?.name || floor.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

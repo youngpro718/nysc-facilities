@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,9 +79,9 @@ export function LockboxManagement() {
       queryClient.invalidateQueries({ queryKey: ["lockboxes"] });
       setDeleteDialogOpen(false);
       setLockboxToDelete(null);
-    } catch (error: any) {
-      console.error('Error deleting lockbox:', error);
-      toast.error(error.message || "Failed to delete lockbox");
+    } catch (error) {
+      logger.error('Error deleting lockbox:', error);
+      toast.error(getErrorMessage(error) || "Failed to delete lockbox");
     } finally {
       setIsDeleting(false);
     }

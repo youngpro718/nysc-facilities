@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useCourtOperationsRealtime, useCourtPresence, useRoomStatus, useCourtRooms, useStaffOutToday } from "@/hooks/useCourtOperationsRealtime";
 import { useAuth } from "@/hooks/useAuth";
+import { logger } from "@/lib/logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +34,7 @@ export function LiveCourtGrid() {
   const filteredRooms = useMemo(() => {
     if (!rooms || !Array.isArray(rooms)) return [];
     const term = search.trim().toLowerCase();
-    return rooms.filter((r: any) => {
+    return rooms.filter((r: Record<string, unknown>) => {
       const match = !term || (r.room_number?.toLowerCase().includes(term) || r.courtroom_number?.toLowerCase().includes(term));
       return match;
     });
@@ -85,7 +86,7 @@ export function LiveCourtGrid() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRooms.map((room: any) => (
+              {filteredRooms.map((room: Record<string, unknown>) => (
                 <LiveRow 
                   key={room.id} 
                   room={room} 
@@ -161,7 +162,7 @@ function RecordAbsenceDialog({ open, onOpenChange, judgeName, roomNumber, actorI
       onOpenChange(false);
       setNotes("");
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "Failed to record absence",
@@ -246,7 +247,7 @@ function RecordAbsenceDialog({ open, onOpenChange, judgeName, roomNumber, actorI
 }
 
 function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMarkClerkPresence }: {
-  room: any;
+  room: Record<string, unknown>;
   actorId: string;
   onMoveJudge: (fromRoomId: string | null, toRoomId: string, judgeName: string, actorId: string, isCovering?: boolean) => Promise<void>;
   onMarkAbsent: (roomId: string, role: "judge" | "clerk", actorId: string) => Promise<void>;
@@ -268,15 +269,15 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
 
   const handleMarkPresent = async () => {
     setPending(true);
-    console.log('Marking present:', { court_room_id: room.id, room_id: room.room_id, judge: room.assigned_judge, actorId });
+    logger.debug('Marking present:', { court_room_id: room.id, room_id: room.room_id, judge: room.assigned_judge, actorId });
     try {
       await onMarkPresent(room.id, 'judge', actorId); // Use room.id (court_rooms.id) not room.room_id
       toast({
         title: "Judge marked present",
         description: `${room.assigned_judge || 'Judge'} marked present in room ${room.room_number}`,
       });
-    } catch (error: any) {
-      console.error('Mark present error:', error);
+    } catch (error) {
+      logger.error('Mark present error:', error);
       toast({
         title: "Failed to mark judge present",
         description: error?.message || String(error) || "An error occurred",
@@ -346,8 +347,8 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
                             title: isPresent ? "Clerk checked out" : "Clerk checked in", 
                             description: `${clerk} - Room ${room.room_number}` 
                           });
-                        } catch (error: any) {
-                          console.error('Clerk presence error:', error);
+                        } catch (error) {
+                          logger.error('Clerk presence error:', error);
                           toast({ title: "Error", description: error?.message || "Failed to update clerk presence", variant: "destructive" });
                         }
                       }}
@@ -432,7 +433,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
 
   const handleMoveJudge = async () => {
     setSaving(true);
-    console.log('🔄 Move/Swap Judge clicked:', { 
+    logger.debug('🔄 Move/Swap Judge clicked:', { 
       currentRoomId, 
       toRoom, 
       judgeName, 
@@ -449,7 +450,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
       
       if (isSwap) {
         // Use swap_courtrooms RPC function
-        console.log('🔀 Calling swap_courtrooms with:', {
+        logger.debug('🔀 Calling swap_courtrooms with:', {
           room_a: currentRoomId,
           room_b: toRoom,
           actor: actorId
@@ -475,7 +476,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
         });
       } else {
         // Use existing move_judge function
-        console.log('➡️ Calling onMoveJudge with:', {
+        logger.debug('➡️ Calling onMoveJudge with:', {
           from: currentRoomId,
           to: toRoom,
           judge: judgeName,
@@ -492,14 +493,14 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
         });
       }
       
-      console.log('✅ Operation successful!');
+      logger.debug('✅ Operation successful!');
       
       onOpenChange(false);
       setJudgeName("");
       setToRoom("");
       setIsSwap(false);
-    } catch (error: any) {
-      console.error('❌ Move/Swap error:', error);
+    } catch (error) {
+      logger.error('❌ Move/Swap error:', error);
       toast({
         title: "Failed to " + (isSwap ? "swap courtrooms" : "move judge"),
         description: error?.message || String(error) || "An error occurred",
@@ -533,7 +534,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
               </SelectTrigger>
               <SelectContent>
                 {(rooms || [])
-                  .filter((r: any) => {
+                  .filter((r: Record<string, unknown>) => {
                     if (r.room_id === currentRoomId) return false; // Exclude current room
                     if (!r.is_active) return false; // Only active rooms
                     
@@ -546,7 +547,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
                       return true;
                     }
                   })
-                  .map((r: any) => {
+                  .map((r: Record<string, unknown>) => {
                     const hasJudge = r.assigned_judge && r.assigned_judge.trim();
                     const label = hasJudge 
                       ? `${r.room_number} · ${r.assigned_judge} (Part ${r.assigned_part || '?'})`

@@ -1,5 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { IssueError } from "./types/errors";
 import type { UserIssue } from "@/types/dashboard";
@@ -18,7 +19,7 @@ export const useAdminIssues = () => {
         if (!data) throw new IssueError('No issues data returned');
         return data;
       } catch (error) {
-        console.error('Error fetching all issues:', error);
+        logger.error('Error fetching all issues:', error);
         throw new IssueError(error instanceof Error ? error.message : 'Failed to fetch all issues');
       }
     },

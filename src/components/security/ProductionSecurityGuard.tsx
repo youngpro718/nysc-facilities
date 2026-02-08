@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -22,12 +23,12 @@ export function ProductionSecurityGuard() {
     try {
       const { data, error } = await supabase.rpc('check_production_security');
       if (error) {
-        console.error('Security check failed:', error);
+        logger.error('Security check failed:', error);
         return;
       }
       setSecurityStatus(data as unknown as SecurityCheck);
     } catch (error) {
-      console.error('Security check error:', error);
+      logger.error('Security check error:', error);
     } finally {
       setIsLoading(false);
     }

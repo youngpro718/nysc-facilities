@@ -4,6 +4,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { logger } from '@/lib/logger';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -179,7 +180,7 @@ export function AdminQuickReportDialog({ open, onOpenChange }: AdminQuickReportD
         description: `${title}`,
       });
     } catch (error) {
-      console.error('Error submitting issue:', error);
+      logger.error('Error submitting issue:', error);
       toast.error('Failed to report issue');
     } finally {
       setIsSubmitting(false);

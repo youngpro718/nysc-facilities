@@ -63,12 +63,12 @@ export function CardFront({
     queryFn: async () => fetchSiblingFixturesForFixture(fixture.id)
   });
 
-  const openIssue = (fixtureIssues || []).find((i: any) => i.status !== "resolved" && (i.issue_id || i.id));
+  const openIssue = (fixtureIssues || []).find((i: Record<string, unknown>) => i.status !== "resolved" && (i.issue_id || i.id));
 
   // Helper to find the latest resolved issue
   const latestResolvedIssue = (fixtureIssues || [])
-    .filter((i: any) => i.status === 'resolved' && i.resolved_at)
-    .sort((a: any, b: any) => new Date(b.resolved_at).getTime() - new Date(a.resolved_at).getTime())[0];
+    .filter((i: Record<string, unknown>) => i.status === 'resolved' && i.resolved_at)
+    .sort((a: Record<string, unknown>, b: Record<string, unknown>) => new Date(b.resolved_at).getTime() - new Date(a.resolved_at).getTime())[0];
 
   // Format compact duration like 2d 3h or 5h 12m
   const formatDuration = (startISO: string, endISO?: string) => {
@@ -363,7 +363,7 @@ export function CardFront({
               const fallbackFx = selectedFixtureId ? roomFixtures.find(rf => rf.id === selectedFixtureId) : fixture;
               const override = localStatuses[baseId];
               const statusNow = override?.status ?? fallbackFx?.status;
-              const reqElecNow = override?.requires_electrician ?? (fallbackFx as any)?.requires_electrician;
+              const reqElecNow = override?.requires_electrician ?? (fallbackFx as Record<string, unknown>)?.requires_electrician;
               if (statusNow !== 'non_functional') return null;
               return (
                 <div className={`px-3 py-2 rounded-md text-sm font-medium shadow-sm ${reqElecNow ? 'bg-destructive text-destructive-foreground' : 'bg-amber-500/90 text-black'}`}>
@@ -497,7 +497,7 @@ export function CardFront({
                   )}
                   {openIssue ? (
                     <DropdownMenuItem onClick={() => {
-                      const issueId = (openIssue as any).issue_id ?? (openIssue as any).id;
+                      const issueId = (openIssue as Record<string, unknown>).issue_id ?? (openIssue as Record<string, unknown>).id;
                       navigate(`/operations?tab=issues&issue_id=${issueId}`);
                     }}>
                       Issues

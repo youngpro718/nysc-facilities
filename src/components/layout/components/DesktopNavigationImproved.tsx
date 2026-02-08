@@ -1,4 +1,5 @@
 import React from "react";
+import { logger } from '@/lib/logger';
 import { useNavigate, useLocation } from "react-router-dom";
 import { LogOut, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ export const DesktopNavigationImproved = ({
     try {
       if (!isAdmin) return 0;
       const uid = user?.id;
-      return (adminNotifications || []).filter((n: any) => {
+      return (adminNotifications || []).filter((n: Record<string, unknown>) => {
         const readers: string[] = Array.isArray(n.read_by) ? n.read_by : [];
         return !uid || !readers.includes(uid);
       }).length;
@@ -49,7 +50,7 @@ export const DesktopNavigationImproved = ({
     if (path) {
       navigate(path);
     } else {
-      console.warn("DesktopNavigationImproved: Unmapped navigation title", title);
+      logger.warn("DesktopNavigationImproved: Unmapped navigation title", title);
     }
   };
 
@@ -91,7 +92,7 @@ export const DesktopNavigationImproved = ({
             );
           }
 
-          const navItem = item as { title: string; icon: any };
+          const navItem = item as { title: string; icon: unknown };
           const Icon = navItem.icon;
           const path = getNavigationPath(navItem.title, isAdmin);
           const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);

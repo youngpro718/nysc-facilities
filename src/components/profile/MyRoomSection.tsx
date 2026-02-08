@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,8 +42,8 @@ export function MyRoomSection() {
       setHasRequestedRoom(true);
       queryClient.invalidateQueries({ queryKey: ['staff_tasks'] });
     },
-    onError: (error: any) => {
-      console.error('Error requesting room:', error);
+    onError: (error: unknown) => {
+      logger.error('Error requesting room:', error);
       toast.error(error.message || 'Failed to submit request');
     }
   });
@@ -64,7 +65,7 @@ export function MyRoomSection() {
           </div>
         ) : hasRooms ? (
           <div className="space-y-2">
-            {assignments.roomDetails.map((assignment: any) => {
+            {assignments.roomDetails.map((assignment: Record<string, unknown>) => {
               const room = assignment.rooms;
               if (!room) return null;
               

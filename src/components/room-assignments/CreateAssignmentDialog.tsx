@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -87,7 +88,7 @@ export function CreateAssignmentDialog({
           });
         }
       } catch (error) {
-        console.error('Error checking primary office conflicts:', error);
+        logger.error('Error checking primary office conflicts:', error);
       }
     }
 
@@ -109,7 +110,7 @@ export function CreateAssignmentDialog({
           });
         }
       } catch (error) {
-        console.error('Error checking room capacity:', error);
+        logger.error('Error checking room capacity:', error);
       }
     }
 
@@ -181,7 +182,7 @@ export function CreateAssignmentDialog({
     setIsCreating(true);
     try {
       // Build the insert object with the correct ID column
-      const insertData: Record<string, any> = {
+      const insertData: Record<string, unknown> = {
         room_id: selectedRoom,
         assignment_type: assignmentType,
         is_primary: isPrimary,
@@ -217,7 +218,7 @@ export function CreateAssignmentDialog({
       setExpirationDate(undefined);
       setConflicts([]);
     } catch (error) {
-      console.error("Error creating assignment:", error);
+      logger.error("Error creating assignment:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to create assignment";
       toast.error(errorMessage);
     } finally {
@@ -267,7 +268,7 @@ export function CreateAssignmentDialog({
                 {rooms?.map((room) => (
                   <SelectItem key={room.id} value={room.id}>
                     {room.room_number} - {room.name} 
-                    ({(room as any)?.floors?.buildings?.name} - {(room as any)?.floors?.name})
+                    ({(room as Record<string, unknown>)?.floors?.buildings?.name} - {(room as Record<string, unknown>)?.floors?.name})
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -1,5 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 
 export function useRoomOccupants(roomId?: string) {
@@ -29,7 +30,7 @@ export function useRoomOccupants(roomId?: string) {
         .eq('room_id', roomId);
 
       if (error) {
-        console.error('Error fetching room occupants:', error);
+        logger.error('Error fetching room occupants:', error);
         throw error;
       }
 
@@ -39,13 +40,13 @@ export function useRoomOccupants(roomId?: string) {
         isPrimary: assignment.is_primary,
         schedule: assignment.schedule,
         occupant: assignment.occupants ? {
-          id: (assignment.occupants as any)?.id,
-          firstName: (assignment.occupants as any)?.first_name,
-          lastName: (assignment.occupants as any)?.last_name,
-          title: (assignment.occupants as any)?.title,
-          email: (assignment.occupants as any)?.email,
-          phone: (assignment.occupants as any)?.phone,
-          status: (assignment.occupants as any)?.status
+          id: (assignment.occupants as Record<string, unknown>)?.id,
+          firstName: (assignment.occupants as Record<string, unknown>)?.first_name,
+          lastName: (assignment.occupants as Record<string, unknown>)?.last_name,
+          title: (assignment.occupants as Record<string, unknown>)?.title,
+          email: (assignment.occupants as Record<string, unknown>)?.email,
+          phone: (assignment.occupants as Record<string, unknown>)?.phone,
+          status: (assignment.occupants as Record<string, unknown>)?.status
         } : null
       })).filter(assignment => assignment.occupant !== null) || [];
     },

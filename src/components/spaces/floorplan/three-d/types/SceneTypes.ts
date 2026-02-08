@@ -19,7 +19,7 @@ export interface SpaceData {
   name: string;
   type: ObjectKind;
   status?: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
 }
 
 export interface FloorPlanObject {
@@ -30,7 +30,7 @@ export interface FloorPlanObject {
   rotation?: number;
   data: SpaceData;
   label?: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
 }
 
 export interface Connection {
@@ -41,7 +41,7 @@ export interface Connection {
   data?: {
     type?: string;
     direction?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   is_emergency_exit?: boolean;
 }

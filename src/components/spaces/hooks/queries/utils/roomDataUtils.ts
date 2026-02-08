@@ -1,5 +1,5 @@
 
-export const createOccupantsLookup = (occupantsData: any[] = []): Record<string, any[]> => {
+export const createOccupantsLookup = (occupantsData: unknown[] = []): Record<string, unknown[]> => {
   if (!Array.isArray(occupantsData)) return {};
   
   return occupantsData.reduce((acc, assignment) => {
@@ -17,7 +17,7 @@ export const createOccupantsLookup = (occupantsData: any[] = []): Record<string,
   }, {});
 };
 
-export const createIssuesLookup = (issuesData: any[] = []): Record<string, any[]> => {
+export const createIssuesLookup = (issuesData: unknown[] = []): Record<string, unknown[]> => {
   if (!Array.isArray(issuesData)) return {};
 
   return issuesData.reduce((acc, issue) => {
@@ -29,7 +29,7 @@ export const createIssuesLookup = (issuesData: any[] = []): Record<string, any[]
   }, {});
 };
 
-export const createHistoryLookup = (historyData: any[] = []): Record<string, any[]> => {
+export const createHistoryLookup = (historyData: unknown[] = []): Record<string, unknown[]> => {
   if (!Array.isArray(historyData)) return {};
 
   return historyData.reduce((acc, history) => {
@@ -41,7 +41,7 @@ export const createHistoryLookup = (historyData: any[] = []): Record<string, any
   }, {});
 };
 
-export const createFixturesLookup = (fixturesData: any[] = []): Record<string, any> => {
+export const createFixturesLookup = (fixturesData: unknown[] = []): Record<string, unknown> => {
   if (!Array.isArray(fixturesData)) return {};
 
   return fixturesData.reduce((acc, fixture) => {
@@ -52,7 +52,7 @@ export const createFixturesLookup = (fixturesData: any[] = []): Record<string, a
   }, {});
 };
 
-export const createConnectionsLookup = (connectionsData: any[] = []): Record<string, any[]> => {
+export const createConnectionsLookup = (connectionsData: unknown[] = []): Record<string, unknown[]> => {
   if (!Array.isArray(connectionsData)) return {};
 
   return connectionsData.reduce((acc, connection) => {

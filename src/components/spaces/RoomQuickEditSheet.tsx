@@ -26,7 +26,7 @@ export function RoomQuickEditSheet({ open, onClose, roomId, roomType, defaultSec
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
-    mutationFn: async (updates: any) => {
+    mutationFn: async (updates: Record<string, unknown>) => {
       const { error } = await supabase
         .from('rooms')
         .update(updates)
@@ -57,7 +57,7 @@ export function RoomQuickEditSheet({ open, onClose, roomId, roomType, defaultSec
   };
 
   const handleSave = () => {
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     if (description) updates.description = description;
     if (phoneNumber) updates.phone_number = phoneNumber;
     if (storageNotes) updates.storage_notes = storageNotes;

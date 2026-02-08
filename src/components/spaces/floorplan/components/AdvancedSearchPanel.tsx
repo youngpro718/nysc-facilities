@@ -116,7 +116,7 @@ export function AdvancedSearchPanel({
     });
   }, [objects, filters]);
 
-  const handleFilterChange = (key: keyof SearchFilters, value: any) => {
+  const handleFilterChange = (key: keyof SearchFilters, value: unknown) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 

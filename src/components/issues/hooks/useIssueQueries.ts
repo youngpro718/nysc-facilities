@@ -4,6 +4,7 @@ import { useIssueMutations } from "./mutations/useIssueMutations";
 import { IssueFiltersType } from "../types/FilterTypes";
 import { Issue } from "../types/IssueTypes";
 import { useMemo } from "react";
+import { logger } from "@/lib/logger";
 
 interface UseIssueQueriesProps {
   filters: IssueFiltersType;
@@ -24,11 +25,11 @@ export const useIssueQueries = ({ filters, searchQuery }: UseIssueQueriesProps) 
 
   // Only log in development environment and when values actually change
   if (process.env.NODE_ENV === 'development') {
-    console.log("useIssueQueries - Raw filters:", JSON.stringify(filters, null, 2));
-    console.log("useIssueQueries - Adjusted filters:", JSON.stringify(adjustedFilters, null, 2));
-    console.log("useIssueQueries - Raw queryResponse:", JSON.stringify(queryResponse, null, 2));
-    console.log("useIssueQueries - Error:", error);
-    console.log("useIssueQueries - isLoading:", isLoading);
+    logger.debug("useIssueQueries - Raw filters:", JSON.stringify(filters, null, 2));
+    logger.debug("useIssueQueries - Adjusted filters:", JSON.stringify(adjustedFilters, null, 2));
+    logger.debug("useIssueQueries - Raw queryResponse:", JSON.stringify(queryResponse, null, 2));
+    logger.debug("useIssueQueries - Error:", error);
+    logger.debug("useIssueQueries - isLoading:", isLoading);
   }
 
   const issues = queryResponse?.data || [];

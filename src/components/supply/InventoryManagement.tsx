@@ -1,5 +1,5 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -145,7 +145,7 @@ export function InventoryManagement() {
       setUsageTrends(trends);
       
     } catch (error) {
-      console.error('Error fetching inventory:', error);
+      logger.error('Error fetching inventory:', error);
       toast({
         title: "Error",
         description: "Failed to load inventory data",
@@ -224,7 +224,7 @@ export function InventoryManagement() {
       setStockAlerts(alerts);
 
     } catch (error) {
-      console.error('Error updating stock:', error);
+      logger.error('Error updating stock:', error);
       toast({
         title: "Error",
         description: "Failed to update stock",

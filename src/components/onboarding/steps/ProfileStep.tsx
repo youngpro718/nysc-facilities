@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -52,7 +53,7 @@ export function ProfileStep() {
     }
   }, [profileData.title]);
 
-  // Auto-save profile data
+  // Auto-save profile data (department, title, phone only — roles are assigned by admin)
   useEffect(() => {
     const saveProfile = async () => {
       if (!profile?.id || isSaving) return;
@@ -62,8 +63,7 @@ export function ProfileStep() {
 
       setIsSaving(true);
       try {
-        const updates: any = {
-          id: profile.id,
+        const updates: Record<string, string> = {
           updated_at: new Date().toISOString()
         };
 
@@ -77,31 +77,10 @@ export function ProfileStep() {
           .eq('id', profile.id);
 
         if (error) throw error;
+        // NOTE: Roles are assigned by admin approval only — not by title during onboarding
 
-        // If title is provided, automatically assign role
-        if (profileData.title) {
-          const assignedRole = getRoleFromTitle(profileData.title);
-          
-          // Update user_roles table
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .upsert({
-              user_id: profile.id,
-              role: assignedRole,
-              updated_at: new Date().toISOString()
-            }, {
-              onConflict: 'user_id'
-            });
-
-          if (roleError) {
-            console.error('Error updating role:', roleError);
-          } else {
-            console.log(`[Onboarding] Assigned role "${assignedRole}" based on title "${profileData.title}"`);
-          }
-        }
-
-      } catch (error: any) {
-        console.error('Error saving profile:', error);
+      } catch (error) {
+        logger.error('Error saving profile:', error);
         toast.error('Failed to save profile information');
       } finally {
         setIsSaving(false);

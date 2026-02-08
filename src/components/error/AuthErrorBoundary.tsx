@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from '@/lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -74,11 +75,11 @@ export function AuthErrorBoundary({ children, onError }: AuthErrorBoundaryProps)
                        errorMessage.includes('unauthorized');
     
     if (isAuthError) {
-      console.error('AuthErrorBoundary: Authentication error caught:', error);
+      logger.error('AuthErrorBoundary: Authentication error caught:', error);
       onError?.(error);
     } else {
       // For non-auth errors, just log and re-throw to let other error boundaries handle them
-      console.error('AuthErrorBoundary: Non-auth error, re-throwing:', error);
+      logger.error('AuthErrorBoundary: Non-auth error, re-throwing:', error);
       
       // If error is not a proper Error object, create a proper one
       if (!(error instanceof Error)) {

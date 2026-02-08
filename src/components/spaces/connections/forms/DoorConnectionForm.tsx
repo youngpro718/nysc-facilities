@@ -26,7 +26,7 @@ interface Space {
 }
 
 interface DoorConnectionFormProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<Record<string, unknown>>;
   availableSpaces: Space[];
   isDisabled?: boolean;
 }

@@ -71,7 +71,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
   const actionsOpacity = useTransform(x, [-actionWidth, -40, 0], [1, 0.5, 0]);
   const actionsScale = useTransform(x, [-actionWidth, -20, 0], [1, 0.8, 0.6]);
   
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
     const threshold = actionWidth / 2;
     if (info.offset.x < -threshold) {
       setIsSwipedOpen(true);

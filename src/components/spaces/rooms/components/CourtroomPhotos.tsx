@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
 import {
   Dialog,
   DialogContent,
@@ -13,12 +14,15 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from "sonner";
 import { courtroomPhotoService } from '@/services/courtroom-photos';
+import { useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 
 interface CourtroomPhotosProps {
   room: Room;
 }
 
 export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [activeView, setActiveView] = useState<'judge' | 'audience'>('judge');
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
@@ -84,7 +88,7 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
     setIsClearing(true);
     
     try {
-      console.log('Clearing courtroom photos for room:', room.id);
+      logger.debug('Clearing courtroom photos for room:', room.id);
       
       const result = await courtroomPhotoService.clearPhotos(room.id);
       
@@ -92,7 +96,7 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
         throw new Error(result.message || 'Failed to clear photos');
       }
       
-      console.log('Clear photos result:', result);
+      logger.debug('Clear photos result:', result);
       
       if (result.errors?.length > 0) {
         toast.warning(`Photos cleared with ${result.errors.length} errors. Some files may need manual cleanup.`);
@@ -101,13 +105,11 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
       }
       
       setOpen(false);
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-    } catch (error: any) {
-      console.error('Failed to clear photos:', error);
-      toast.error(`Failed to clear photos: ${error.message || 'Unknown error'}`);
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['spaces'] });
+    } catch (error) {
+      logger.error('Failed to clear photos:', error);
+      toast.error(`Failed to clear photos: ${getErrorMessage(error) || 'Unknown error'}`);
     } finally {
       setIsClearing(false);
     }

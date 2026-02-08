@@ -1,6 +1,7 @@
 // src/services/profile.ts
 // Profile management service with role-based access control
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 // Export the new role management functions
 export { 
@@ -51,10 +52,12 @@ export interface Profile {
   is_approved?: boolean;
   verification_status?: string;
   access_level?: string;
-  enabled_modules?: any;
-  user_settings?: any;
+  enabled_modules?: unknown;
+  user_settings?: unknown;
   is_suspended?: boolean;
   onboarding_completed?: boolean;
+  onboarding_skipped?: boolean;
+  onboarding_completed_at?: string;
 }
 
 /**
@@ -184,7 +187,7 @@ export async function isCoordinator(): Promise<boolean> {
     if (error) throw error;
     return data === true;
   } catch (error) {
-    console.error('Error checking coordinator status:', error);
+    logger.error('Error checking coordinator status:', error);
     return false;
   }
 }
@@ -197,7 +200,7 @@ export async function isCoordinator(): Promise<boolean> {
  * @throws Error if not authorized
  */
 export async function getProfilesByRole(role: Role): Promise<Profile[]> {
-  console.warn('getProfilesByRole is deprecated. Use getUsersByRole instead.');
+  logger.warn('getProfilesByRole is deprecated. Use getUsersByRole instead.');
   const { data, error } = await supabase
     .from('user_roles')
     .select('user_id')
@@ -237,14 +240,15 @@ export async function getProfilesByBuilding(building: string): Promise<Profile[]
 
 /**
  * Get profiles that need onboarding
- * @returns Array of profiles where onboarded is false
+ * @returns Array of profiles where onboarding is not completed
  * @throws Error if not authorized
  */
 export async function getProfilesNeedingOnboarding(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('onboarded', false)
+    .eq('onboarding_completed', false)
+    .eq('verification_status', 'verified')
     .order('created_at', { ascending: true });
   
   if (error) throw error;
@@ -281,11 +285,11 @@ export async function setMfaEnforcement(userId: string, enforced: boolean): Prom
  * @throws Error if not authorized or update fails
  */
 export async function assignRole(userId: string, role: Role): Promise<Profile> {
-  console.warn('assignRole is deprecated. Use updateUserRole from roleManagement.ts instead.');
+  logger.warn('assignRole is deprecated. Use updateUserRole from roleManagement.ts instead.');
   
   // Import dynamically to avoid circular dependency
   const { updateUserRole } = await import('./profile/roleManagement');
-  await updateUserRole(userId, role as any);
+  await updateUserRole(userId, role as unknown);
   
   return getProfileById(userId);
 }

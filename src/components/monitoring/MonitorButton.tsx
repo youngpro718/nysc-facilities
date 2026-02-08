@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useMonitoring } from "@/hooks/useMonitoring";
@@ -9,7 +10,7 @@ interface MonitorButtonProps {
   itemId: string;
   itemName: string;
   itemDescription?: string;
-  criteria?: Record<string, any>;
+  criteria?: Record<string, unknown>;
   size?: "sm" | "default" | "lg";
   variant?: "default" | "outline" | "ghost";
 }
@@ -40,7 +41,7 @@ export const MonitorButton = ({
       const monitored = await checkIsMonitored(itemType, itemId);
       setIsMonitored(monitored);
     } catch (error) {
-      console.warn("Error checking monitoring status:", error);
+      logger.warn("Error checking monitoring status:", error);
       setIsMonitored(false);
     } finally {
       setIsChecking(false);

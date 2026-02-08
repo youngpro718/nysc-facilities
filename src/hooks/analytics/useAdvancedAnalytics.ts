@@ -5,6 +5,7 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { useCallback, useMemo } from 'react';
 import {
   AdvancedAnalyticsService,
@@ -20,7 +21,7 @@ import {
 export const ANALYTICS_QUERY_KEYS = {
   analytics: {
     all: ['advanced-analytics'] as const,
-    utilization: (dateRange: any, buildingId?: string) => 
+    utilization: (dateRange: unknown, buildingId?: string) => 
       ['advanced-analytics', 'utilization', dateRange, buildingId] as const,
     occupancyTrends: (period: string) => 
       ['advanced-analytics', 'occupancy-trends', period] as const,
@@ -237,7 +238,7 @@ export function useAnalyticsCacheManager() {
       
       return { success: true };
     } catch (error) {
-      console.error('Error refreshing analytics cache:', error);
+      logger.error('Error refreshing analytics cache:', error);
       return { success: false, error };
     }
   }, [queryClient]);
@@ -254,12 +255,12 @@ export function useAnalyticsCacheManager() {
       }[type];
 
       if (queryKey) {
-        await queryClient.invalidateQueries({ queryKey: queryKey as any });
+        await queryClient.invalidateQueries({ queryKey: queryKey as unknown });
       }
       
       return { success: true };
     } catch (error) {
-      console.error(`Error refreshing ${type} analytics:`, error);
+      logger.error(`Error refreshing ${type} analytics:`, error);
       return { success: false, error };
     }
   }, [queryClient]);

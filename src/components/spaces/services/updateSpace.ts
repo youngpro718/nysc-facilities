@@ -1,6 +1,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { StatusEnum } from "../rooms/types/roomEnums";
+import { logger } from "@/lib/logger";
 
 interface UpdateSpaceData {
   type?: "room" | "hallway" | "door";
@@ -26,11 +27,11 @@ interface UpdateSpaceData {
 }
 
 export const updateSpace = async (id: string, updates: Partial<UpdateSpaceData>) => {
-  console.log("=== updateSpace called ===");
-  console.log("Updates received:", updates);
-  console.log("Parent room ID in updates:", updates.parent_room_id);
+  logger.debug("=== updateSpace called ===");
+  logger.debug("Updates received:", updates);
+  logger.debug("Parent room ID in updates:", updates.parent_room_id);
   
-  const roomUpdates: any = {
+  const roomUpdates: Record<string, unknown> = {
     name: updates.name,
     status: updates.status,
     description: updates.description,
@@ -41,7 +42,7 @@ export const updateSpace = async (id: string, updates: Partial<UpdateSpaceData>)
   if ('room_type' in updates) roomUpdates.room_type = updates.room_type;
   if ('floorId' in updates) roomUpdates.floor_id = updates.floorId;
   // Also support snake_case floor_id if provided by upstream mapping
-  if ('floor_id' in (updates as any)) roomUpdates.floor_id = (updates as any).floor_id;
+  if ('floor_id' in (updates as Record<string, unknown>)) roomUpdates.floor_id = ((updates as Record<string, unknown>)).floor_id;
   if ('phone_number' in updates) roomUpdates.phone_number = updates.phone_number;
   if ('is_storage' in updates) roomUpdates.is_storage = updates.is_storage;
   // Enforce: storage rooms cannot have a current_function
@@ -55,8 +56,8 @@ export const updateSpace = async (id: string, updates: Partial<UpdateSpaceData>)
   if ('parent_room_id' in updates) roomUpdates.parent_room_id = updates.parent_room_id;
   if ('courtroom_photos' in updates) roomUpdates.courtroom_photos = updates.courtroom_photos;
 
-  console.log("Final roomUpdates before database:", roomUpdates);
-  console.log("Parent room ID being sent to DB:", roomUpdates.parent_room_id);
+  logger.debug("Final roomUpdates before database:", roomUpdates);
+  logger.debug("Parent room ID being sent to DB:", roomUpdates.parent_room_id);
 
   // Remove undefined values
   Object.keys(roomUpdates).forEach(key => {
@@ -72,7 +73,7 @@ export const updateSpace = async (id: string, updates: Partial<UpdateSpaceData>)
     .select();
 
   if (error) {
-    console.error('Error updating space:', error);
+    logger.error('Error updating space:', error);
     throw error;
   }
 

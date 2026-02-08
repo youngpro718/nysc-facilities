@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { logger } from '@/lib/logger';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +16,7 @@ interface UseRealtimeOptions {
 export function useRealtime({ table, queryKeys = [], showToasts = false }: UseRealtimeOptions) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<unknown>(null);
 
   useEffect(() => {
     // Create channel for real-time updates
@@ -29,7 +30,7 @@ export function useRealtime({ table, queryKeys = [], showToasts = false }: UseRe
           table: table,
         },
         (payload) => {
-          console.log(`Real-time update for ${table}:`, payload);
+          logger.debug(`Real-time update for ${table}:`, payload);
           
           // Invalidate using centralized map first
           invalidateForTable(queryClient, table);

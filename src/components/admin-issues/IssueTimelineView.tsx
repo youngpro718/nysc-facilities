@@ -68,7 +68,7 @@ export function IssueTimelineView({ issues, onIssueUpdate }: IssueTimelineViewPr
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant={getPriorityColor(issue.priority) as any} className="text-xs">
+                          <Badge variant={getPriorityColor(issue.priority) as unknown} className="text-xs">
                             {issue.priority.toUpperCase()}
                           </Badge>
                           <Badge variant="outline" className="text-xs">

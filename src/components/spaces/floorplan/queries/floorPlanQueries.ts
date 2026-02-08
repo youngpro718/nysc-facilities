@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { logger } from '@/lib/logger';
 
 export async function fetchFloorPlanLayers(floorId: string) {
   const { data, error } = await supabase
@@ -12,7 +13,7 @@ export async function fetchFloorPlanLayers(floorId: string) {
 }
 
 export async function fetchFloorPlanObjects(floorId: string) {
-  console.log("Fetching floor plan objects for floor:", floorId);
+  logger.debug("Fetching floor plan objects for floor:", floorId);
   
   // Fetch rooms
   const { data: rooms, error: roomsError } = await supabase

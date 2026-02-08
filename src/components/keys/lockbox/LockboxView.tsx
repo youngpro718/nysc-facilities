@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { LockboxSlot, LockboxWithSlotCount } from "../types/LockboxTypes";
@@ -74,8 +75,8 @@ export function LockboxView() {
 
       if (error) throw error;
       setSlots(data as LockboxSlot[]);
-    } catch (error: any) {
-      console.error('Error fetching lockbox slots:', error);
+    } catch (error) {
+      logger.error('Error fetching lockbox slots:', error);
       toast.error("Failed to load lockbox data");
     } finally {
       setIsLoading(false);

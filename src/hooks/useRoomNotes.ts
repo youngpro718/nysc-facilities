@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { RoomNote, CreateRoomNoteInput, UpdateRoomNoteInput } from '@/types/roomNotes';
 import { useToast } from '@/hooks/use-toast';
@@ -67,7 +68,7 @@ export function useCreateRoomNote() {
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Failed to add note.', variant: 'destructive' });
-      console.error('Error creating room note:', error);
+      logger.error('Error creating room note:', error);
     },
   });
 }
@@ -78,7 +79,7 @@ export function useUpdateRoomNote() {
 
   return useMutation({
     mutationFn: async ({ id, roomId, updates }: { id: string; roomId: string; updates: UpdateRoomNoteInput }) => {
-      const updateData: any = { ...updates };
+      const updateData: Record<string, unknown> = { ...updates };
       if (updates.is_resolved) {
         updateData.resolved_at = new Date().toISOString();
       }
@@ -100,7 +101,7 @@ export function useUpdateRoomNote() {
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Failed to update note.', variant: 'destructive' });
-      console.error('Error updating room note:', error);
+      logger.error('Error updating room note:', error);
     },
   });
 }
@@ -126,7 +127,7 @@ export function useDeleteRoomNote() {
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Failed to delete note.', variant: 'destructive' });
-      console.error('Error deleting room note:', error);
+      logger.error('Error deleting room note:', error);
     },
   });
 }

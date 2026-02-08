@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 
 interface RateLimitStatus {
@@ -30,9 +32,9 @@ export function useRateLimitManager() {
       if (error) throw error;
       
       return data;
-    } catch (error: any) {
-      console.error('Rate limit reset error:', error);
-      setError(error.message || 'Failed to reset rate limit');
+    } catch (error) {
+      logger.error('Rate limit reset error:', error);
+      setError(getErrorMessage(error) || 'Failed to reset rate limit');
       return false;
     } finally {
       setIsLoading(false);
@@ -55,9 +57,9 @@ export function useRateLimitManager() {
       if (error) throw error;
       
       return data || [];
-    } catch (error: any) {
-      console.error('Rate limit status error:', error);
-      setError(error.message || 'Failed to get rate limit status');
+    } catch (error) {
+      logger.error('Rate limit status error:', error);
+      setError(getErrorMessage(error) || 'Failed to get rate limit status');
       return [];
     } finally {
       setIsLoading(false);

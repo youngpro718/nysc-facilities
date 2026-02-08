@@ -7,6 +7,7 @@ import { useDialogManager } from '@/hooks/useDialogManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Maximize, RefreshCw, Layers, Box } from 'lucide-react';
 import { SimpleFloorSelector } from './components/SimpleFloorSelector';
@@ -45,7 +46,7 @@ export function FloorPlanView() {
           setSelectedFloor(data[0].id);
         }
       } catch (error) {
-        console.error('Error fetching floors:', error);
+        logger.error('Error fetching floors:', error);
         toast.error('Failed to load floors');
       } finally {
         setIsLoading(false);
@@ -56,8 +57,8 @@ export function FloorPlanView() {
   }, [selectedFloor]);
 
   // Handle object selection
-  const handleObjectSelect = useCallback((object: any) => {
-    console.log('Selected object:', object);
+  const handleObjectSelect = useCallback((object: Record<string, unknown>) => {
+    logger.debug('Selected object:', object);
     // On mobile, don't show any dialog - just log for now
     if (isMobile) {
       // TODO: Implement alternative mobile interaction (e.g., toast, highlight, etc.)
@@ -75,8 +76,8 @@ export function FloorPlanView() {
   }, [selectedFloor]);
 
   // Handle property updates during edit
-  const handlePropertyUpdate = useCallback((updates: any) => {
-    console.log('Property updates:', updates);
+  const handlePropertyUpdate = useCallback((updates: Record<string, unknown>) => {
+    logger.debug('Property updates:', updates);
     
     // Transform form values to proper object structure
     const position = {
@@ -92,7 +93,7 @@ export function FloorPlanView() {
     const rotation = parseFloat(updates.rotation);
     
     // Build properties object based on object type
-    let properties: Record<string, any> = {};
+    let properties: Record<string, unknown> = {};
     
     if (selectedObject?.type === 'room') {
       properties = {

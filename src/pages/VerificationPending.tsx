@@ -1,5 +1,7 @@
 
 import { useEffect, useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +41,7 @@ export default function VerificationPending() {
         toast.info("Your account is still pending verification");
       }
     } catch (error) {
-      console.error("Error checking status:", error);
+      logger.error("Error checking status:", error);
       toast.error("Failed to check verification status");
     }
   };
@@ -66,9 +68,9 @@ export default function VerificationPending() {
       toast.success('Verification email sent!', {
         description: `Check your inbox at ${userEmail}`
       });
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Failed to resend email', {
-        description: error.message || 'Please try again later.'
+        description: getErrorMessage(error) || 'Please try again later.'
       });
     } finally {
       setIsResending(false);

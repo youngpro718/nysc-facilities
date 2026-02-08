@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errorUtils";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,14 +32,14 @@ export default function AllocateElevatorCardsToOfficeDialog({ open, onOpenChange
   const { data: cardKey, isLoading: loadingKey } = useQuery({
     queryKey: ["elevator-card-key"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabase as Record<string, unknown>)
         .from("keys")
         .select("id, name, available_quantity")
         .eq("is_elevator_card", true)
         .limit(1)
         .single();
       if (error) throw error;
-      return (data as any);
+      return (data as unknown);
     },
     enabled: open,
   });
@@ -48,14 +49,14 @@ export default function AllocateElevatorCardsToOfficeDialog({ open, onOpenChange
     queryKey: ["office-card-holdings", officeName, cardKey?.id],
     queryFn: async () => {
       if (!cardKey?.id) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabase as Record<string, unknown>)
         .from("v_office_elevator_card_holdings")
         .select("key_id, office_name, quantity_held")
         .eq("office_name", officeName)
         .eq("key_id", cardKey.id)
         .maybeSingle();
       if (error) throw error;
-      return (data as any);
+      return (data as unknown);
     },
     enabled: open && !!cardKey?.id,
   });
@@ -67,7 +68,7 @@ export default function AllocateElevatorCardsToOfficeDialog({ open, onOpenChange
     }
   }, [open]);
 
-  const currentHeld = (holdings as any)?.quantity_held ?? 0;
+  const currentHeld = (holdings as Record<string, unknown>)?.quantity_held ?? 0;
 
   async function onAllocate() {
     if (!cardKey?.id) return;
@@ -83,7 +84,7 @@ export default function AllocateElevatorCardsToOfficeDialog({ open, onOpenChange
     setSubmitting(true);
     try {
       // Narrow-cast supabase to any to avoid TS RPC typing issues
-      const { error } = await (supabase as any).rpc("fn_allocate_elevator_cards_to_office", {
+      const { error } = await (supabase as Record<string, unknown>).rpc("fn_allocate_elevator_cards_to_office", {
         p_key_id: cardKey.id,
         p_quantity: quantity,
         p_office_name: officeName,
@@ -97,8 +98,8 @@ export default function AllocateElevatorCardsToOfficeDialog({ open, onOpenChange
         refetchHoldings(),
       ]);
       onOpenChange(false);
-    } catch (e: any) {
-      toast.error(e.message || "Failed to allocate cards");
+    } catch (e) {
+      toast.error(getErrorMessage(e) || "Failed to allocate cards");
     } finally {
       setSubmitting(false);
     }

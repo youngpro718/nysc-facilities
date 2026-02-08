@@ -2,11 +2,11 @@
 // All other files should import from '@/lib/supabase'
 
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
-// Lovable projects should not rely on VITE_* env vars; use the project ref directly.
-// (Anon key is safe to ship client-side.)
-const SUPABASE_URL = 'https://fmymhtuiqzhupjyopfvi.supabase.co';
-const SUPABASE_ANON_KEY =
+// Prefer environment variables; fall back to project defaults for local dev.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://fmymhtuiqzhupjyopfvi.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -25,7 +25,7 @@ export const supabaseWithRetry = {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await queryFn();
-      } catch (error: any) {
+      } catch (error) {
         lastError = error;
         if (error?.message?.includes('Failed to fetch') || 
             error?.message?.includes('ERR_CONNECTION_CLOSED') ||
@@ -117,7 +117,7 @@ export const getSupplyRequests = async (userId?: string) => {
 export const updateSupplyRequestStatus = async (
   id: string,
   status: string,
-  updates: Record<string, any> = {}
+  updates: Record<string, unknown> = {}
 ) => {
   const { error } = await supabase
     .from('supply_requests')
@@ -188,14 +188,9 @@ export const getInventoryItems = async () => {
   return data;
 };
 
-// Auth service functions
+// Auth service functions — only methods used by useAuth.tsx
+// For signIn/signUp, use services/auth.ts or hooks/security/useSecureAuth.ts
 export const authService = {
-  signIn: async (email: string, password: string) => {
-    return supabase.auth.signInWithPassword({ email, password });
-  },
-  signUp: async (email: string, password: string) => {
-    return supabase.auth.signUp({ email, password });
-  },
   signOut: async () => {
     return supabase.auth.signOut();
   },
@@ -204,25 +199,9 @@ export const authService = {
     if (error) throw error;
     return session;
   },
-  signInWithEmail: async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
-  },
-  signUpWithEmail: async (email: string, password: string, userData: any) => {
-    const { data, error } = await supabase.auth.signUp({ 
-      email, 
-      password,
-      options: {
-        data: userData
-      }
-    });
-    if (error) throw error;
-    return data;
-  },
   fetchUserProfile: async (userId: string) => {
     const startTime = Date.now();
-    console.log('[authService.fetchUserProfile] Starting parallel fetch for user:', userId);
+    logger.debug('[authService.fetchUserProfile] Starting parallel fetch for user:', userId);
     
     // OPTIMIZATION: Fetch user roles and profile in parallel instead of sequentially
     const [rolesResult, profileResult] = await Promise.all([
@@ -242,11 +221,11 @@ export const authService = {
     ]);
 
     if (rolesResult.error) {
-      console.error('[authService.fetchUserProfile] Error fetching user roles:', rolesResult.error);
+      logger.error('[authService.fetchUserProfile] Error fetching user roles:', rolesResult.error);
     }
 
     if (profileResult.error) {
-      console.error('[authService.fetchUserProfile] Error fetching profile:', profileResult.error);
+      logger.error('[authService.fetchUserProfile] Error fetching profile:', profileResult.error);
     }
 
     const role = rolesResult.data?.role || 'standard';
@@ -254,7 +233,7 @@ export const authService = {
     const profile = profileResult.data ? { ...profileResult.data, role } : null;
 
     const elapsed = Date.now() - startTime;
-    console.log(`[authService.fetchUserProfile] Completed in ${elapsed}ms - role: ${role}, isAdmin: ${isAdmin}, profile: ${!!profile}`);
+    logger.debug(`[authService.fetchUserProfile] Completed in ${elapsed}ms - role: ${role}, isAdmin: ${isAdmin}, profile: ${!!profile}`);
 
     return { isAdmin, profile };
   },
@@ -273,10 +252,10 @@ export const authService = {
         });
       
       if (error) {
-        console.error('[authService.updateSessionTracking] Error:', error);
+        logger.error('[authService.updateSessionTracking] Error:', error);
       }
     } catch (error) {
-      console.error('[authService.updateSessionTracking] Exception:', error);
+      logger.error('[authService.updateSessionTracking] Exception:', error);
     }
   },
   deleteUserSession: async (userId: string) => {
@@ -286,7 +265,7 @@ export const authService = {
       .eq('user_id', userId);
     
     if (error) {
-      console.error('Error deleting user session:', error);
+      logger.error('[authService.deleteUserSession] Error:', error);
     }
   }
 };
@@ -452,7 +431,7 @@ export const fetchLightingFixtures = async () => {
 
     return enriched;
   } catch (e) {
-    console.warn('Lighting fixtures enrichment failed:', e);
+    logger.warn('Lighting fixtures enrichment failed:', e);
   }
 
   return fixtures;

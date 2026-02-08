@@ -352,7 +352,7 @@ export function LandmarkSetupDialog({ hallwayId, hallwayName }: LandmarkSetupDia
                     <SelectContent>
                       {availableRooms
                         .filter(room => !hallwayRooms.find(hr => hr.room_id === room.id))
-                        .map((room: any) => (
+                        .map((room: Record<string, unknown>) => (
                           <SelectItem key={room.id} value={room.id}>
                             {room.room_number} - {room.name}
                           </SelectItem>

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 
 interface SupplyPendingCounts {
@@ -23,7 +24,7 @@ export function useSupplyPendingCounts() {
         .not('status', 'in', '(approved,rejected,completed,cancelled)');
 
       if (approvalsError) {
-        console.error('Error fetching pending approvals count:', approvalsError);
+        logger.error('Error fetching pending approvals count:', approvalsError);
       }
 
       // Count orders pending fulfillment (submitted, approved, received, picking)
@@ -33,7 +34,7 @@ export function useSupplyPendingCounts() {
         .in('status', ['submitted', 'approved', 'received', 'picking']);
 
       if (ordersError) {
-        console.error('Error fetching pending orders count:', ordersError);
+        logger.error('Error fetching pending orders count:', ordersError);
       }
 
       // Count orders ready for pickup
@@ -43,7 +44,7 @@ export function useSupplyPendingCounts() {
         .eq('status', 'ready');
 
       if (readyError) {
-        console.error('Error fetching ready count:', readyError);
+        logger.error('Error fetching ready count:', readyError);
       }
 
       return {

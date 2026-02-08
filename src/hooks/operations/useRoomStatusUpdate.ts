@@ -46,7 +46,7 @@ export function useRoomStatusUpdate() {
       const previousRoom = queryClient.getQueryData(['facility-details', roomId]);
 
       // Optimistically update
-      queryClient.setQueryData(['facility-details', roomId], (old: any) => {
+      queryClient.setQueryData(['facility-details', roomId], (old: Record<string, unknown>) => {
         if (!old) return old;
         return {
           ...old,

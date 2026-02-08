@@ -28,7 +28,7 @@ export function FormTemplatePreviewDialog({
 }: FormTemplatePreviewDialogProps) {
   if (!template) return null;
 
-  const renderField = (field: any) => {
+  const renderField = (field: Record<string, unknown>) => {
     const baseProps = {
       id: field.id,
       placeholder: field.placeholder || field.label,

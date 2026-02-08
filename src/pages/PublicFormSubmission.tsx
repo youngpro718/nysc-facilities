@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, CheckCircle, ArrowLeft, Mail, Phone, User } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,10 +105,10 @@ export default function PublicFormSubmission() {
       });
 
       // TODO: Send confirmation email to contactInfo.email
-    } catch (error: any) {
-      console.error('Upload error:', error);
+    } catch (error) {
+      logger.error('Upload error:', error);
       toast.error('Failed to submit form', {
-        description: error.message || `Please try again or email the form to ${facilityEmail}`,
+        description: getErrorMessage(error) || `Please try again or email the form to ${facilityEmail}`,
       });
     } finally {
       setUploading(false);

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateForTable } from '@/hooks/cache/invalidationMap';
@@ -11,19 +12,19 @@ const TABLES = [
 
 type TableName = (typeof TABLES)[number];
 
-function subscribeTables(channel: any, tables: readonly TableName[], onEvent: (table: TableName, payload: any) => void) {
+function subscribeTables(channel: unknown, tables: readonly TableName[], onEvent: (table: TableName, payload: Record<string, unknown>) => void) {
   tables.forEach((table) => {
     channel.on(
       'postgres_changes',
       { event: '*', schema: 'public', table },
-      (payload: any) => onEvent(table, payload)
+      (payload: Record<string, unknown>) => onEvent(table, payload)
     );
   });
 }
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<unknown>(null);
   const retriesRef = useRef(0);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
         const channel = supabase.channel('global_changes');
         subscribeTables(channel, TABLES, (table, payload) => {
-          console.log(`[Realtime] ${table} ->`, payload.eventType);
+          logger.debug(`[Realtime] ${table} ->`, payload.eventType);
           invalidateForTable(queryClient, table);
         });
 

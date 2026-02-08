@@ -1,4 +1,6 @@
+import { getErrorMessage } from "@/lib/errorUtils";
 import { useEffect, useMemo, useState } from "react";
+import { logger } from '@/lib/logger';
 import { Dialog } from "@/components/ui/dialog";
 import { ModalFrame } from "@/components/common/ModalFrame";
 import { Button } from "@/components/ui/button";
@@ -55,11 +57,11 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
         .eq("is_elevator_card", true)
         .order("name");
       if (error) {
-        console.error(error);
+        logger.error('Failed to load elevator card pool:', error);
         toast.error("Failed to load elevator card pool");
         return;
       }
-      const list = (data || []) as any as PassOption[];
+      const list = (data || []) as unknown as PassOption[];
       setPassOptions(list);
       if (!list.length) {
         toast.error("No elevator card pool is configured. Please add an elevator card in Keys.");
@@ -82,10 +84,10 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
         .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
         .limit(10);
       if (error) {
-        console.error(error);
+        logger.error('Error searching occupants:', error);
         return;
       }
-      setOccupantOptions((data || []) as any);
+      setOccupantOptions((data || []) as unknown[]);
     };
     const t = setTimeout(run, 200);
     return () => clearTimeout(t);
@@ -123,7 +125,7 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
       const { data: userData } = await supabase.auth.getUser();
       const issuedBy = userData?.user?.email || "admin";
       // Narrow-cast supabase to any to bypass missing RPC typings
-      const { error } = await (supabase as any).rpc("fn_issue_elevator_pass", {
+      const { error } = await (supabase as Record<string, unknown>).rpc("fn_issue_elevator_pass", {
         p_key_id: passId,
         p_recipient_type: recipientType,
         p_occupant_id: recipientType === "occupant" ? occupantId : null,
@@ -134,7 +136,7 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
         p_notes: notes ? `${notes} (issued_by: ${issuedBy})` : `(issued_by: ${issuedBy})`,
       });
       if (error) {
-        console.error("RPC error details:", error);
+        logger.error("RPC error details:", error);
         toast.error(`Failed to issue pass: ${error.message || 'Unknown error'}`);
         return;
       }
@@ -151,9 +153,9 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
       setExpectedReturnAt("");
       setReason("");
       setNotes("");
-    } catch (e: any) {
-      console.error("Unexpected error:", e);
-      toast.error(`Failed to issue pass: ${e.message || 'Unexpected error'}`);
+    } catch (e) {
+      logger.error("Unexpected error:", e);
+      toast.error(`Failed to issue pass: ${getErrorMessage(e) || 'Unexpected error'}`);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { logger } from '@/lib/logger';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -120,7 +121,7 @@ export function ModernFloorPlanView() {
       if (saved.filterType) setFilterType(saved.filterType);
       if (typeof saved.showProperties === 'boolean') setShowProperties(saved.showProperties);
       if (saved.selectedFloor) setSelectedFloor(saved.selectedFloor);
-      if (typeof (saved as any).showConnectionsPref === 'boolean') setShowConnectionsPref((saved as any).showConnectionsPref);
+      if (typeof ((saved as Record<string, unknown>)).showConnectionsPref === 'boolean') setShowConnectionsPref(((saved as Record<string, unknown>)).showConnectionsPref);
       if (typeof saved.labelScale === 'number') setLabelScale(saved.labelScale);
       if (typeof saved.moveEnabled === 'boolean') setMoveEnabled(saved.moveEnabled);
     } catch {}
@@ -159,7 +160,7 @@ export function ModernFloorPlanView() {
 
         if (error) {
           // Only show sign-in message if RLS/auth blocks the request
-          const status = (error as any)?.code || (error as any)?.status || (error as any)?.message;
+          const status = (error as Record<string, unknown>)?.code || (error as Record<string, unknown>)?.status || (error as Record<string, unknown>)?.message;
           if (String(status).includes('401') || String(status).includes('403')) {
             toast.message('Sign in required', {
               description: 'Please sign in to load floors and floorplans.',
@@ -171,18 +172,18 @@ export function ModernFloorPlanView() {
         }
         
         setFloors(
-          (data || []).map((f: any) => ({
+          (data || []).map((f: Record<string, unknown>) => ({
             ...f,
             buildings: Array.isArray(f.buildings) ? f.buildings[0] : f.buildings
           }))
         );
         if (data && data.length > 0) {
           // If a saved floor exists and is still valid, keep it; otherwise default to first
-          const exists = selectedFloor && data.some((f: any) => f.id === selectedFloor);
+          const exists = selectedFloor && data.some((f: Record<string, unknown>) => f.id === selectedFloor);
           setSelectedFloor(exists ? selectedFloor : data[0].id);
         }
       } catch (error) {
-        console.error('Error fetching floors:', error);
+        logger.error('Error fetching floors:', error);
         toast.error('Failed to load floors');
       } finally {
         setIsLoading(false);
@@ -216,15 +217,15 @@ export function ModernFloorPlanView() {
   const handlePropertyUpdate = useCallback((updates: FloorPlanObjectProperties) => {
     if (!selectedObject) return;
 
-    const posXParsed = parseFloat(String((updates as any).positionX ?? ''));
-    const posYParsed = parseFloat(String((updates as any).positionY ?? ''));
+    const posXParsed = parseFloat(String(((updates as Record<string, unknown>)).positionX ?? ''));
+    const posYParsed = parseFloat(String(((updates as Record<string, unknown>)).positionY ?? ''));
     const position = {
       x: Number.isFinite(posXParsed) ? posXParsed : selectedObject.position.x,
       y: Number.isFinite(posYParsed) ? posYParsed : selectedObject.position.y,
     };
 
-    const widthParsed = parseFloat(String((updates as any).width ?? ''));
-    const heightParsed = parseFloat(String((updates as any).height ?? ''));
+    const widthParsed = parseFloat(String(((updates as Record<string, unknown>)).width ?? ''));
+    const heightParsed = parseFloat(String(((updates as Record<string, unknown>)).height ?? ''));
     const size = {
       width: Number.isFinite(widthParsed) ? widthParsed : selectedObject.data.size.width,
       height: Number.isFinite(heightParsed) ? heightParsed : selectedObject.data.size.height,
@@ -269,7 +270,7 @@ export function ModernFloorPlanView() {
   // Filter objects based on search and type
   const filteredObjects = useMemo(() => {
     const q = (searchQuery || '').toLowerCase().trim();
-    return (sceneObjects as any[]).filter((obj: any) => {
+    return (sceneObjects as unknown[]).filter((obj: Record<string, unknown>) => {
       if (!obj) return false;
       if (filterType !== 'all' && obj.type !== filterType) return false;
       if (!q) return true;
@@ -423,8 +424,8 @@ export function ModernFloorPlanView() {
                 key={`3d-${refreshKey}`}
                 floorId={selectedFloor}
                 onObjectSelect={(objectId) => {
-                  const match = (sceneObjects as any[]).find((o: any) => o.id === objectId);
-                  if (match) handleObjectSelect(match as any);
+                  const match = (sceneObjects as unknown[]).find((o: Record<string, unknown>) => o.id === objectId);
+                  if (match) handleObjectSelect(match as Record<string, unknown>);
                 }}
                 selectedObjectId={selectedObject?.id}
                 previewData={previewData}
@@ -484,7 +485,7 @@ export function ModernFloorPlanView() {
         filterType={filterType}
         onFilterTypeChange={setFilterType}
         objects={filteredObjects}
-        onObjectSelect={(obj: any) => handleObjectSelect(obj as FloorPlanObject)}
+        onObjectSelect={(obj: Record<string, unknown>) => handleObjectSelect(obj as FloorPlanObject)}
       />
 
       {/* Advanced Search Panel */}
@@ -492,7 +493,7 @@ export function ModernFloorPlanView() {
         isOpen={isAdvancedSearchOpen}
         onClose={() => setIsAdvancedSearchOpen(false)}
         objects={filteredObjects}
-        onObjectSelect={(obj: any) => handleObjectSelect(obj as FloorPlanObject)}
+        onObjectSelect={(obj: Record<string, unknown>) => handleObjectSelect(obj as FloorPlanObject)}
         onHighlightObjects={setHighlightedObjects}
       />
 

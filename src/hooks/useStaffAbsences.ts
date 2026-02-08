@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 
@@ -40,12 +41,12 @@ export function useStaffAbsencesForDate(date: Date) {
         .gte('ends_on', dateStr);
 
       if (error) {
-        console.error('Error fetching staff absences:', error);
+        logger.error('Error fetching staff absences:', error);
         throw error;
       }
 
       // Map to a cleaner format
-      const absences: StaffAbsence[] = (data || []).map((absence: any) => ({
+      const absences: StaffAbsence[] = (data || []).map((absence: Record<string, unknown>) => ({
         id: absence.id,
         staff_id: absence.staff_id,
         staff_name: absence.staff?.display_name || 'Unknown',

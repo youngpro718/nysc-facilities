@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { IssueStatus } from "../../types/IssueTypes";
 import { toast } from "sonner";
@@ -35,7 +36,7 @@ export const useBulkUpdateIssueMutation = () => {
     },
     onError: (error) => {
       toast.error("Failed to update issues");
-      console.error("Error updating issues:", error);
+      logger.error("Error updating issues:", error);
     }
   });
 };

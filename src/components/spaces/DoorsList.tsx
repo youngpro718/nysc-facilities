@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { SpaceListFilters } from "./SpaceListFilters";
@@ -71,7 +72,7 @@ const DoorsList = () => {
   );
 
   const sortedDoors = useMemo(() => 
-    sortSpaces(filteredDoors, sortBy as any),
+    sortSpaces(filteredDoors, sortBy as unknown),
     [filteredDoors, sortBy]
   );
 
@@ -96,7 +97,7 @@ const DoorsList = () => {
         description: "Failed to delete door. Please try again.",
         variant: "destructive",
       });
-      console.error('Error deleting door:', error);
+      logger.error('Error deleting door:', error);
     },
   });
 

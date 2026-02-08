@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 interface Category {
   id: string;
@@ -19,29 +20,29 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
   const { data: categories, isLoading, error } = useQuery({
     queryKey: ['inventory-categories'],
     queryFn: async () => {
-      console.log('Fetching categories...');
+      logger.debug('Fetching categories...');
       const { data, error } = await supabase
         .from('inventory_categories')
         .select('id, name, color, icon')
         .order('name');
       
       if (error) {
-        console.error('Error fetching categories:', error);
+        logger.error('Error fetching categories:', error);
         throw error;
       }
       
-      console.log('Retrieved categories:', data);
+      logger.debug('Retrieved categories:', data);
       return (data || []) as Category[];
     },
   });
 
   // Debug logging
-  console.log('Current categories state:', categories);
-  console.log('Loading state:', isLoading);
-  console.log('Error state:', error);
+  logger.debug('Current categories state:', categories);
+  logger.debug('Loading state:', isLoading);
+  logger.debug('Error state:', error);
 
   if (error) {
-    console.error('Error in CategorySelector:', error);
+    logger.error('Error in CategorySelector:', error);
     return (
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger>

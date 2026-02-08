@@ -3,8 +3,8 @@ export interface HallwayConnection {
   id: string;
   position: string;
   connection_type: string;
-  door_details?: Record<string, any>;
-  access_requirements?: Record<string, any>;
+  door_details?: Record<string, unknown>;
+  access_requirements?: Record<string, unknown>;
   is_emergency_exit?: boolean;
   to_space?: {
     name: string;
@@ -51,11 +51,11 @@ export interface Hallway {
   main_hallway_id?: string;
   created_at: string;
   updated_at: string;
-  maintenance_history?: any[];
+  maintenance_history?: unknown[];
   next_maintenance_date?: string;
   last_maintenance_date?: string;
   maintenance_priority?: string;
-  inspection_history?: any[];
+  inspection_history?: unknown[];
   next_inspection_date?: string;
   maintenance_notes?: string;
   inspected_by?: string;

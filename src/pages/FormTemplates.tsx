@@ -1,4 +1,5 @@
 import { FileText, Download, ClipboardList, Wrench, AlertCircle, Eye, Mail, QrCode, Send, Plus } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -123,7 +124,7 @@ export default function FormTemplates() {
         description: 'Fill it out and submit via email or Form Intake.',
       });
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error('Failed to generate PDF', {
         description: 'Please try again or contact support.',
       });
@@ -264,7 +265,7 @@ export default function FormTemplates() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handlePreview(template.id as any)}
+                          onClick={() => handlePreview((template.id as unknown))}
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           Preview
@@ -289,7 +290,7 @@ export default function FormTemplates() {
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => handlePreview(template.id as any)}
+                        onClick={() => handlePreview((template.id as unknown))}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Preview Form

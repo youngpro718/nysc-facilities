@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -95,7 +96,7 @@ export function AvatarUploadModal({ open, onOpenChange, currentAvatarUrl, onAvat
       onOpenChange(false);
       setPreviewUrl(null);
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      logger.error('Error uploading avatar:', error);
       toast({
         title: "Upload Failed",
         description: "Failed to upload avatar. Please try again.",

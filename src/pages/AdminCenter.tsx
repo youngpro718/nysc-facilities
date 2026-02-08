@@ -1,4 +1,6 @@
-import { ChevronLeft, Users, AlertCircle, Search, RefreshCw, MoreVertical, Mail, UserX, UserCheck, Clock, Unlock, CheckCircle, Ban } from 'lucide-react';
+import { ChevronLeft, Users, AlertCircle, Search, RefreshCw, MoreVertical, Mail, UserX, UserCheck, Clock, Unlock, CheckCircle, Ban, Trash2 } from 'lucide-react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRateLimitManager } from "@/hooks/security/useRateLimitManager";
@@ -99,7 +102,7 @@ export default function AdminCenter() {
 
       setUsers(usersWithRoles);
     } catch (error) {
-      console.error('Error loading users:', error);
+      logger.error('Error loading users:', error);
       toast.error('Failed to load users');
     } finally {
       setLoading(false);
@@ -138,7 +141,7 @@ export default function AdminCenter() {
       });
       await loadUsers(true);
     } catch (error) {
-      console.error('Error approving user:', error);
+      logger.error('Error approving user:', error);
       toast.error(`❌ Failed to approve ${userName}`, { id: 'approve-user' });
     } finally {
       setUpdatingUserId(null);
@@ -165,8 +168,31 @@ export default function AdminCenter() {
       toast.success(`${userName} has been rejected`, { id: 'reject-user' });
       await loadUsers(true);
     } catch (error) {
-      console.error('Error rejecting user:', error);
+      logger.error('Error rejecting user:', error);
       toast.error(`❌ Failed to reject ${userName}`, { id: 'reject-user' });
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    const userName = user?.first_name && user?.last_name 
+      ? `${user.first_name} ${user.last_name}` 
+      : user?.email || 'User';
+    
+    setUpdatingUserId(userId);
+    toast.loading(`Deleting ${userName}...`, { id: 'delete-user' });
+    
+    try {
+      const { error } = await supabase.rpc('admin_delete_user', { p_user_id: userId });
+      if (error) throw error;
+      
+      toast.success(`${userName} has been deleted`, { id: 'delete-user' });
+      await loadUsers(true);
+    } catch (error) {
+      logger.error('Error deleting user:', error);
+      toast.error(`Failed to delete ${userName}: ${getErrorMessage(error)}`, { id: 'delete-user' });
     } finally {
       setUpdatingUserId(null);
     }
@@ -183,9 +209,9 @@ export default function AdminCenter() {
       } else {
         toast.error('Failed to unlock account', { id: 'unlock-account' });
       }
-    } catch (error: any) {
-      console.error('Error unlocking account:', error);
-      toast.error(`❌ Failed to unlock account: ${error.message}`, { id: 'unlock-account' });
+    } catch (error) {
+      logger.error('Error unlocking account:', error);
+      toast.error(`❌ Failed to unlock account: ${getErrorMessage(error)}`, { id: 'unlock-account' });
     }
   };
 
@@ -213,8 +239,8 @@ export default function AdminCenter() {
       
       toast.success(`✅ ${userName} is now a ${roleLabel}!`, { id: 'change-role' });
       await loadUsers(true);
-    } catch (error: any) {
-      console.error('Error changing role:', error);
+    } catch (error) {
+      logger.error('Error changing role:', error);
       toast.error(`❌ Failed to change role: ${error?.message || 'Unknown error'}`, { id: 'change-role' });
     } finally {
       setUpdatingUserId(null);
@@ -458,6 +484,21 @@ export default function AdminCenter() {
                             <UserX className="h-4 w-4 mr-1" />
                             Reject
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+                              if (window.confirm(`Permanently delete ${userName}? This cannot be undone.`)) {
+                                handleDeleteUser(user.id);
+                              }
+                            }}
+                            disabled={isUpdating}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -520,6 +561,23 @@ export default function AdminCenter() {
                           <Mail className="h-4 w-4 mr-2" />
                           Copy Email
                         </DropdownMenuItem>
+                        {!isCurrentUser && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => {
+                                const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+                                if (window.confirm(`Are you sure you want to permanently delete ${userName}? This cannot be undone.`)) {
+                                  handleDeleteUser(user.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete User
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}

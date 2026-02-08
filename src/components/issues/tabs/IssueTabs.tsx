@@ -12,7 +12,7 @@ interface IssueTabsProps {
   setFilters: (filters: IssueFiltersType) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  openDialog: (type: 'issueDetails' | 'resolution', data?: any) => void;
+  openDialog: (type: 'issueDetails' | 'resolution', data?: unknown) => void;
 }
 
 export const IssueTabs = ({

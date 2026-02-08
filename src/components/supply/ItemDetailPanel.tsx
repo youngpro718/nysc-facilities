@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 
 interface ItemDetailPanelProps {
-  item: any;
+  item: Record<string, unknown>;
   cartQuantity: number;
   isFavorite: boolean;
   onToggleFavorite: () => void;

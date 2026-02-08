@@ -58,7 +58,7 @@ export function useFavoriteItems() {
         description: 'Item has been added to your favorites',
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to add favorite',
@@ -87,7 +87,7 @@ export function useFavoriteItems() {
         description: 'Item has been removed from your favorites',
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to remove favorite',

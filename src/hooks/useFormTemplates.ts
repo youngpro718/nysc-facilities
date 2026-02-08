@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { FormTemplate, CreateFormTemplateInput, UpdateFormTemplateInput } from '@/types/formTemplate';
 import { toast } from 'sonner';
@@ -68,7 +69,7 @@ export function useCreateFormTemplate() {
       toast.success('Form template created successfully');
     },
     onError: (error: Error) => {
-      console.error('Error creating form template:', error);
+      logger.error('Error creating form template:', error);
       toast.error('Failed to create form template');
     },
   });
@@ -97,7 +98,7 @@ export function useUpdateFormTemplate() {
       toast.success('Form template updated successfully');
     },
     onError: (error: Error) => {
-      console.error('Error updating form template:', error);
+      logger.error('Error updating form template:', error);
       toast.error('Failed to update form template');
     },
   });
@@ -120,7 +121,7 @@ export function useDeleteFormTemplate() {
       toast.success('Form template deleted successfully');
     },
     onError: (error: Error) => {
-      console.error('Error deleting form template:', error);
+      logger.error('Error deleting form template:', error);
       toast.error('Failed to delete form template');
     },
   });
@@ -147,7 +148,7 @@ export function useToggleTemplateActive() {
       toast.success(`Template ${data.is_active ? 'activated' : 'deactivated'}`);
     },
     onError: (error: Error) => {
-      console.error('Error toggling template active status:', error);
+      logger.error('Error toggling template active status:', error);
       toast.error('Failed to update template status');
     },
   });

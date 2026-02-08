@@ -18,7 +18,7 @@ export const facilitiesKeys = {
   all: ['facilities'] as const,
   rooms: () => [...facilitiesKeys.all, 'rooms'] as const,
   room: (id: string) => [...facilitiesKeys.rooms(), id] as const,
-  roomsFiltered: (filters: any) => [...facilitiesKeys.rooms(), { filters }] as const,
+  roomsFiltered: (filters: Record<string, unknown>) => [...facilitiesKeys.rooms(), { filters }] as const,
   buildings: () => [...facilitiesKeys.all, 'buildings'] as const,
   floors: (buildingId?: string) => [...facilitiesKeys.all, 'floors', buildingId] as const,
 };
@@ -34,7 +34,7 @@ export const facilitiesKeys = {
  * const { data: rooms, isLoading, error } = useRooms({ status: 'available' });
  * ```
  */
-export function useRooms(filters?: any) {
+export function useRooms(filters?: Record<string, unknown>) {
   return useQuery({
     queryKey: filters ? facilitiesKeys.roomsFiltered(filters) : facilitiesKeys.rooms(),
     queryFn: () => facilitiesService.getRooms(filters),
@@ -118,19 +118,19 @@ export function useRoomMutations() {
   const queryClient = useQueryClient();
 
   const createRoom = useMutation({
-    mutationFn: (roomData: any) => facilitiesService.createRoom(roomData),
+    mutationFn: (roomData: Record<string, unknown>) => facilitiesService.createRoom(roomData),
     onSuccess: () => {
       // Invalidate and refetch rooms list
       queryClient.invalidateQueries({ queryKey: facilitiesKeys.rooms() });
       toast.success('Room created successfully');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(`Failed to create room: ${error.message}`);
     },
   });
 
   const updateRoom = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: Record<string, unknown> }) =>
       facilitiesService.updateRoom(id, updates),
     onMutate: async ({ id, updates }) => {
       // Cancel outgoing refetches
@@ -140,14 +140,14 @@ export function useRoomMutations() {
       const previousRoom = queryClient.getQueryData(facilitiesKeys.room(id));
 
       // Optimistically update
-      queryClient.setQueryData(facilitiesKeys.room(id), (old: any) => ({
+      queryClient.setQueryData(facilitiesKeys.room(id), (old: Record<string, unknown>) => ({
         ...old,
         ...updates,
       }));
 
       return { previousRoom };
     },
-    onError: (error: any, { id }, context) => {
+    onError: ( error: unknown, { id }, context) => {
       // Rollback on error
       if (context?.previousRoom) {
         queryClient.setQueryData(facilitiesKeys.room(id), context.previousRoom);
@@ -170,7 +170,7 @@ export function useRoomMutations() {
       queryClient.invalidateQueries({ queryKey: facilitiesKeys.rooms() });
       toast.success('Room deleted successfully');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(`Failed to delete room: ${error.message}`);
     },
   });

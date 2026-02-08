@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from '@/lib/logger';
 import { ImprovedSupplyStaffDashboard } from '@/components/supply/ImprovedSupplyStaffDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
@@ -16,16 +17,16 @@ export default function SupplyRoom() {
   const canManageInventory = hasPermission('inventory', 'admin') || hasPermission('inventory', 'write');
   
   // Also allow access for users assigned to Supply Department
-  const isSupplyDepartmentUser = (profile as any)?.department === 'Supply Department';
+  const isSupplyDepartmentUser = ((profile as Record<string, unknown>))?.department === 'Supply Department';
   
   // Debug logging
-  console.log('SupplyRoom Debug:', {
+  logger.debug('SupplyRoom Debug:', {
     isLoading,
     permissionsLoading,
     canManageSupplyRequests,
     canManageInventory,
     isSupplyDepartmentUser,
-    department: (profile as any)?.department,
+    department: ((profile as Record<string, unknown>))?.department,
     profile
   });
 
@@ -58,7 +59,7 @@ export default function SupplyRoom() {
         currentPermissions={{
           'Supply Requests': canManageSupplyRequests ? 'admin' : null,
           'Inventory': canManageInventory ? 'admin' : null,
-          'Department': (profile as any)?.department || 'Not assigned',
+          'Department': ((profile as Record<string, unknown>))?.department || 'Not assigned',
         }}
         contactEmail="support@nysc.gov"
         showRequestAccess={true}

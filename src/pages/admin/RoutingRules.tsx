@@ -15,7 +15,7 @@ interface RoutingRule {
   form_type: string | null;
   priority: number;
   is_active: boolean;
-  conditions: any;
+  conditions: unknown;
   assign_to_user_id: string | null;
   assign_to_role: string | null;
   auto_approve: boolean;

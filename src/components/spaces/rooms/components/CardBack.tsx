@@ -171,7 +171,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             )}
 
             {/* Courtroom Layout/Setup Details */}
-            {isCourtroom && (room as any).court_room?.layout_details && (
+            {isCourtroom && ((room as Record<string, unknown>)).court_room?.layout_details && (
               <div className="space-y-3">
                 <h4 className="text-sm font-medium flex items-center gap-1">
                   <Building className="h-3.5 w-3.5 text-muted-foreground" />
@@ -179,38 +179,38 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   {/* Defense Table */}
-                  {(room as any).court_room.layout_details.defense_table && (
+                  {((room as Record<string, unknown>)).court_room.layout_details.defense_table && (
                     <div className="bg-muted/50 p-3 rounded-lg">
                       <p className="text-xs font-medium text-muted-foreground mb-1">Defense Table</p>
                       <div className="text-sm space-y-0.5">
-                        {(room as any).court_room.layout_details.defense_table.length_in && 
-                         (room as any).court_room.layout_details.defense_table.depth_in && (
-                          <p>{(room as any).court_room.layout_details.defense_table.length_in}" × {(room as any).court_room.layout_details.defense_table.depth_in}"</p>
+                        {((room as Record<string, unknown>)).court_room.layout_details.defense_table.length_in && 
+                         ((room as Record<string, unknown>)).court_room.layout_details.defense_table.depth_in && (
+                          <p>{((room as Record<string, unknown>)).court_room.layout_details.defense_table.length_in}" × {((room as Record<string, unknown>)).court_room.layout_details.defense_table.depth_in}"</p>
                         )}
-                        {(room as any).court_room.layout_details.defense_table.seats && (
-                          <p className="text-muted-foreground">{(room as any).court_room.layout_details.defense_table.seats} seats</p>
+                        {((room as Record<string, unknown>)).court_room.layout_details.defense_table.seats && (
+                          <p className="text-muted-foreground">{((room as Record<string, unknown>)).court_room.layout_details.defense_table.seats} seats</p>
                         )}
                       </div>
                     </div>
                   )}
                   {/* Prosecution Table */}
-                  {(room as any).court_room.layout_details.prosecution_table && (
+                  {((room as Record<string, unknown>)).court_room.layout_details.prosecution_table && (
                     <div className="bg-muted/50 p-3 rounded-lg">
                       <p className="text-xs font-medium text-muted-foreground mb-1">Prosecution Table</p>
                       <div className="text-sm space-y-0.5">
-                        {(room as any).court_room.layout_details.prosecution_table.length_in && 
-                         (room as any).court_room.layout_details.prosecution_table.depth_in && (
-                          <p>{(room as any).court_room.layout_details.prosecution_table.length_in}" × {(room as any).court_room.layout_details.prosecution_table.depth_in}"</p>
+                        {((room as Record<string, unknown>)).court_room.layout_details.prosecution_table.length_in && 
+                         ((room as Record<string, unknown>)).court_room.layout_details.prosecution_table.depth_in && (
+                          <p>{((room as Record<string, unknown>)).court_room.layout_details.prosecution_table.length_in}" × {((room as Record<string, unknown>)).court_room.layout_details.prosecution_table.depth_in}"</p>
                         )}
-                        {(room as any).court_room.layout_details.prosecution_table.seats && (
-                          <p className="text-muted-foreground">{(room as any).court_room.layout_details.prosecution_table.seats} seats</p>
+                        {((room as Record<string, unknown>)).court_room.layout_details.prosecution_table.seats && (
+                          <p className="text-muted-foreground">{((room as Record<string, unknown>)).court_room.layout_details.prosecution_table.seats} seats</p>
                         )}
                       </div>
                     </div>
                   )}
                 </div>
-                {(room as any).court_room.layout_details.notes && (
-                  <p className="text-xs text-muted-foreground">{(room as any).court_room.layout_details.notes}</p>
+                {((room as Record<string, unknown>)).court_room.layout_details.notes && (
+                  <p className="text-xs text-muted-foreground">{((room as Record<string, unknown>)).court_room.layout_details.notes}</p>
                 )}
               </div>
             )}

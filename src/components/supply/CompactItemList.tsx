@@ -2,14 +2,14 @@ import { ItemRow } from './ItemRow';
 import { Loader2 } from 'lucide-react';
 
 interface CompactItemListProps {
-  items: any[];
-  cartItems: any[];
+  items: unknown[];
+  cartItems: unknown[];
   selectedItemId: string | null;
   isLoading: boolean;
   onSelectItem: (itemId: string) => void;
-  onAddItem: (item: any) => void;
-  onIncrement: (item: any) => void;
-  onDecrement: (item: any) => void;
+  onAddItem: (item: Record<string, unknown>) => void;
+  onIncrement: (item: Record<string, unknown>) => void;
+  onDecrement: (item: Record<string, unknown>) => void;
 }
 
 export function CompactItemList({

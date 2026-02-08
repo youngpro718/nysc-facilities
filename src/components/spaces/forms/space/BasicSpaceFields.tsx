@@ -1,6 +1,7 @@
 
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { logger } from "@/lib/logger";
 import { Input } from "@/components/ui/input";
 import { SpaceTypeSelector } from "./selectors/SpaceTypeSelector";
 import { BuildingSelector } from "./selectors/BuildingSelector";
@@ -15,9 +16,9 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
   // Get selected building ID
   const selectedBuildingId = form.watch('buildingId');
   
-  console.log('=== BasicSpaceFields rendered ===');
-  console.log('Selected building ID:', selectedBuildingId);
-  console.log('Current form values in BasicSpaceFields:', {
+  logger.debug('=== BasicSpaceFields rendered ===');
+  logger.debug('Selected building ID:', selectedBuildingId);
+  logger.debug('Current form values in BasicSpaceFields:', {
     name: form.watch('name'),
     buildingId: form.watch('buildingId'),
     floorId: form.watch('floorId'),
@@ -26,7 +27,7 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
 
   // Reset floor when building changes
   const handleBuildingChange = (buildingId: string) => {
-    console.log('Building changed to:', buildingId);
+    logger.debug('Building changed to:', buildingId);
     form.setValue('buildingId', buildingId);
     form.setValue('floorId', ''); // Reset floor selection when building changes
   };

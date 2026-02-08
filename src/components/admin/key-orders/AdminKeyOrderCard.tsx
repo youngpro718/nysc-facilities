@@ -88,7 +88,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
   const priorityInfo = priorityConfig[order.priority as keyof typeof priorityConfig] || priorityConfig.medium;
   const StatusIcon = statusInfo.icon;
   
-  const profile = (order as any)?.key_requests?.profiles;
+  const profile = ((order as Record<string, unknown>))?.key_requests?.profiles;
   const userName = (profile?.first_name || '') || (profile?.last_name || '')
     ? `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim()
     : profile?.email || 'Unknown User';
@@ -100,7 +100,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
     .join('')
     .toUpperCase() || 'U';
 
-  const orderedDateStr = (order as any).ordered_at || (order as any).created_at;
+  const orderedDateStr = ((order as Record<string, unknown>)).ordered_at || ((order as Record<string, unknown>)).created_at;
 
   const nextStatus = getNextStatus(order.status);
   const canReceive = order.status === 'pending_fulfillment' || order.status === 'in_progress';

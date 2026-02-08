@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Room } from "../../rooms/types/RoomTypes";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 import { fetchRoomsData, fetchRelatedRoomData } from "./api/roomQueries";
 import { transformRoomData } from "./transformers/roomTransformers";
 import { 
@@ -23,12 +24,12 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
   return useQuery({
     queryKey: ['rooms', buildingId, floorId], // Include filters in query key
     queryFn: async () => {
-      console.log("Fetching rooms data with filters:", { buildingId, floorId });
+      logger.debug("Fetching rooms data with filters:", { buildingId, floorId });
       
       const { data: roomsData, error: roomsError } = await fetchRoomsData(buildingId, floorId);
 
       if (roomsError) {
-        console.error('Error fetching rooms:', roomsError);
+        logger.error('Error fetching rooms:', roomsError);
         toast({
           title: "Error",
           description: "Failed to fetch rooms. Please try again.",
@@ -49,7 +50,7 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
       ] = await fetchRelatedRoomData(roomsData.map(room => room.id));
 
       if (occupantsError || issuesError || historyError || fixturesError || connectionsError) {
-        console.error('Error fetching related data:', { 
+        logger.error('Error fetching related data:', { 
           occupantsError, 
           issuesError, 
           historyError, 
@@ -59,7 +60,7 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
         // Continue with partial data but log the errors
       }
 
-      console.log("Connections data:", connectionsData);
+      logger.debug("Connections data:", connectionsData);
 
       // Create lookup maps for the related data
       const occupantsByRoomId = createOccupantsLookup(occupantsData || []);
@@ -78,7 +79,7 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
         connectionsByRoomId
       );
 
-      console.log("Transformed room data:", transformedRooms);
+      logger.debug("Transformed room data:", transformedRooms);
       return transformedRooms;
     },
     staleTime: 1000 * 60 * 5, // Cache data for 5 minutes

@@ -52,7 +52,7 @@ export function SupplyRequestActions({ requestId, requestTitle, onDeleted }: Sup
       setDeleteDialogOpen(false);
       onDeleted?.();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         title: 'Delete Failed',
         description: error.message || 'Could not delete the request',

@@ -4,12 +4,12 @@ import { Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface FavoritesTabProps {
-  cartItems: any[];
+  cartItems: unknown[];
   selectedItemId: string | null;
   onSelectItem: (itemId: string) => void;
-  onAddItem: (item: any) => void;
-  onIncrement: (item: any) => void;
-  onDecrement: (item: any) => void;
+  onAddItem: (item: Record<string, unknown>) => void;
+  onIncrement: (item: Record<string, unknown>) => void;
+  onDecrement: (item: Record<string, unknown>) => void;
 }
 
 export function FavoritesTab({

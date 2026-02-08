@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -34,8 +35,8 @@ export const usePhotoUpload = () => {
 
       setSelectedPhotos([...selectedPhotos, ...uploadedPhotos]);
       toast.success("Photos uploaded successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to upload photos");
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Failed to upload photos");
     } finally {
       setUploading(false);
     }

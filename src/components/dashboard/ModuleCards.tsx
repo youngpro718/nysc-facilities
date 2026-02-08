@@ -1,5 +1,5 @@
-// @ts-nocheck
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -168,7 +168,7 @@ export const LightingDashboardCard = () => {
           critical: nonFunctional
         };
       } catch (error) {
-        console.error('Error fetching lighting stats:', error);
+        logger.error('Error fetching lighting stats:', error);
         return { total: 0, functional: 0, issues: 0, critical: 0 };
       }
     },
@@ -282,9 +282,9 @@ export const MaintenanceDashboardCard = () => {
     }
   });
 
-  const scheduled = maintenance?.filter(m => (m as any).status === 'pending')?.length || 0;
-  const inProgress = maintenance?.filter(m => (m as any).status === 'in_progress')?.length || 0;
-  const urgent = maintenance?.filter(m => (m as any).priority === 'high')?.length || 0;
+  const scheduled = maintenance?.filter(m => (m as Record<string, unknown>).status === 'pending')?.length || 0;
+  const inProgress = maintenance?.filter(m => (m as Record<string, unknown>).status === 'in_progress')?.length || 0;
+  const urgent = maintenance?.filter(m => (m as Record<string, unknown>).priority === 'high')?.length || 0;
 
   return (
     <ModuleCard

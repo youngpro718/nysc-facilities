@@ -1,7 +1,7 @@
 import type { ReceiptData } from '@/types/receipt';
 
 export function createReceiptData(
-  request: any,
+  request: Record<string, unknown>,
   receiptType: 'confirmation' | 'pickup' | 'final',
   receiptNumber: string
 ): ReceiptData {
@@ -9,7 +9,7 @@ export function createReceiptData(
     ? `${request.profiles.first_name || ''} ${request.profiles.last_name || ''}`.trim() || 'Unknown'
     : 'Unknown';
 
-  const items = (request.supply_request_items || []).map((item: any) => ({
+  const items = (request.supply_request_items || []).map((item: Record<string, unknown>) => ({
     name: item.inventory_items?.name || 'Unknown Item',
     quantityRequested: item.quantity_requested || 0,
     quantityApproved: item.quantity_approved,

@@ -16,7 +16,7 @@ interface IssueListContentProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   activeTab: 'active' | 'historical';
-  openDialog: (type: 'issueDetails' | 'resolution', data?: any) => void;
+  openDialog: (type: 'issueDetails' | 'resolution', data?: unknown) => void;
 }
 
 export const IssueListContent = ({

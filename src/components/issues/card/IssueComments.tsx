@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -75,7 +76,7 @@ export const IssueComments = ({ issueId, compact = false }: IssueCommentsProps) 
     },
     onError: (error) => {
       toast.error("Failed to add comment");
-      console.error("Error adding comment:", error);
+      logger.error("Error adding comment:", error);
     }
   });
 

@@ -9,11 +9,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface FloorPlanFlowProps {
   nodes: Node[];
   edges: Edge[];
-  onNodesChange: any;
-  onEdgesChange: any;
-  onConnect: any;
-  onNodeClick: any;
-  nodeTypes: any;
+  onNodesChange: unknown;
+  onEdgesChange: unknown;
+  onConnect: unknown;
+  onNodeClick: unknown;
+  nodeTypes: unknown;
   zoom?: number;
 }
 

@@ -32,7 +32,7 @@ declare global {
       fontSize?: number;
       cornerStyle?: "rect" | "circle";
       evented?: boolean;
-      data?: any;
+      data?: unknown;
     }
 
     // Object properties including inherited ones

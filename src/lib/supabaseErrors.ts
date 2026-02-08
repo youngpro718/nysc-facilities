@@ -8,7 +8,7 @@ export type NormalizedSupabaseError = {
 // Normalize Supabase and PostgREST-style errors into a consistent shape
 export function normalizeSupabaseError(err: unknown): NormalizedSupabaseError {
   // Supabase can throw strings, Error objects, or PostgREST error payloads
-  const anyErr = err as any;
+  const anyErr = err as Record<string, unknown>;
   const rawMessage: string = anyErr?.message || anyErr?.error_description || anyErr?.error || String(err);
   const code: string | undefined = anyErr?.code || anyErr?.status || anyErr?.hint || undefined;
 

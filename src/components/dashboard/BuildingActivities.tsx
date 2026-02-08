@@ -2,7 +2,7 @@ import { History } from "lucide-react";
 import { format } from "date-fns";
 
 interface BuildingActivitiesProps {
-  activities: any[];
+  activities: unknown[];
 }
 
 export const BuildingActivities = ({ activities }: BuildingActivitiesProps) => {

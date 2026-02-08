@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { Package, Plus, Filter, RefreshCw, AlertCircle, WifiOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupplyRequests } from "@/hooks/useSupplyRequests";
@@ -31,7 +32,7 @@ export default function MySupplyRequests() {
       toast.success("Refreshed successfully");
     } catch (err) {
       toast.error("Failed to refresh. Please try again.");
-      console.error("Refresh error:", err);
+      logger.error("Refresh error:", err);
     }
   };
 
@@ -40,7 +41,7 @@ export default function MySupplyRequests() {
     try {
       await refetch();
     } catch (err) {
-      console.error("Retry error:", err);
+      logger.error("Retry error:", err);
     }
   };
 

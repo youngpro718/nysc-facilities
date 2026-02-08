@@ -46,7 +46,7 @@ import { SimpleReportWizard } from "@/components/issues/wizard/SimpleReportWizar
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 // Status configurations
-const supplyStatusConfig: Record<string, { icon: any; label: string; color: string }> = {
+const supplyStatusConfig: Record<string, { icon: unknown; label: string; color: string }> = {
   submitted: { icon: Clock, label: "Submitted", color: "bg-blue-500" },
   pending: { icon: Clock, label: "Pending", color: "bg-yellow-500" },
   approved: { icon: CheckCircle, label: "Approved", color: "bg-green-500" },
@@ -57,14 +57,14 @@ const supplyStatusConfig: Record<string, { icon: any; label: string; color: stri
   cancelled: { icon: XCircle, label: "Cancelled", color: "bg-gray-500" },
 };
 
-const keyStatusConfig: Record<string, { icon: any; label: string; color: string }> = {
+const keyStatusConfig: Record<string, { icon: unknown; label: string; color: string }> = {
   pending: { icon: Clock, label: "Pending Review", color: "bg-yellow-500" },
   approved: { icon: CheckCircle, label: "Approved", color: "bg-green-500" },
   rejected: { icon: XCircle, label: "Rejected", color: "bg-red-500" },
   fulfilled: { icon: Key, label: "Fulfilled", color: "bg-blue-500" },
 };
 
-const issueStatusConfig: Record<string, { icon: any; label: string; color: string }> = {
+const issueStatusConfig: Record<string, { icon: unknown; label: string; color: string }> = {
   open: { icon: AlertTriangle, label: "Open", color: "bg-red-500" },
   in_progress: { icon: Wrench, label: "In Progress", color: "bg-yellow-500" },
   resolved: { icon: CheckCircle, label: "Resolved", color: "bg-green-500" },
@@ -257,7 +257,7 @@ export default function MyActivity() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {supplyRequests.map((request: any) => {
+              {supplyRequests.map((request: Record<string, unknown>) => {
                 const status = supplyStatusConfig[request.status] || supplyStatusConfig.pending;
                 const StatusIcon = status.icon;
                 return (
@@ -323,7 +323,7 @@ export default function MyActivity() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {keyRequests.map((request: any) => {
+              {keyRequests.map((request: Record<string, unknown>) => {
                 const status = keyStatusConfig[request.status] || keyStatusConfig.pending;
                 const StatusIcon = status.icon;
                 return (
@@ -393,7 +393,7 @@ export default function MyActivity() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {issues.map((issue: any) => {
+              {issues.map((issue: Record<string, unknown>) => {
                 const status = issueStatusConfig[issue.status] || issueStatusConfig.open;
                 const StatusIcon = status.icon;
                 return (

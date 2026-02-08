@@ -35,7 +35,7 @@ export function SpaceCard<T extends { id: string; name: string; status: string; 
 
   // Auto-detect lighting metrics from common shapes if not provided via props
   const detectedFunctional = ((): number | undefined => {
-    const anyItem: any = item as any;
+    const anyItem: Record<string, unknown> = item as Record<string, unknown>;
     return (
       anyItem?.functional_lights ??
       anyItem?.lights?.functional ??
@@ -44,7 +44,7 @@ export function SpaceCard<T extends { id: string; name: string; status: string; 
     );
   })();
   const detectedTotal = ((): number | undefined => {
-    const anyItem: any = item as any;
+    const anyItem: Record<string, unknown> = item as Record<string, unknown>;
     return (
       anyItem?.total_lights ??
       anyItem?.lights?.total ??
@@ -61,7 +61,7 @@ export function SpaceCard<T extends { id: string; name: string; status: string; 
   // Fallback: if no explicit lighting, try deriving from fixture_count and open_issue_count
   const derivedLighting = React.useMemo(() => {
     if (effectiveLighting) return effectiveLighting;
-    const anyItem: any = item as any;
+    const anyItem: Record<string, unknown> = item as Record<string, unknown>;
     const total = anyItem?.fixture_count;
     const openIssues = anyItem?.open_issue_count;
     if (typeof total === 'number' && total > 0) {

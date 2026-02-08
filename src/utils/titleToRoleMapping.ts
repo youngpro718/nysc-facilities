@@ -7,6 +7,7 @@
 
 import { CourtRole } from "@/hooks/useRolePermissions";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 export interface TitleRoleMapping {
   keywords: string[];
@@ -134,7 +135,7 @@ async function fetchTitleRules(): Promise<Array<{ title: string; role: CourtRole
       .select("title, role");
 
     if (error) {
-      console.warn("[Title Mapping] Could not fetch rules from database:", error);
+      logger.warn("[Title Mapping] Could not fetch rules from database:", error);
       return [];
     }
 
@@ -142,7 +143,7 @@ async function fetchTitleRules(): Promise<Array<{ title: string; role: CourtRole
     lastFetch = now;
     return titleRulesCache;
   } catch (err) {
-    console.warn("[Title Mapping] Error fetching title rules:", err);
+    logger.warn("[Title Mapping] Error fetching title rules:", err);
     return [];
   }
 }
@@ -166,7 +167,7 @@ export async function getRoleFromTitleAsync(title: string | null | undefined): P
   // Check for exact match (case-insensitive)
   for (const rule of rules) {
     if (rule.title.toLowerCase() === normalizedTitle) {
-      console.log(`[Title Mapping] Matched "${title}" to role "${rule.role}"`);
+      logger.debug(`[Title Mapping] Matched "${title}" to role "${rule.role}"`);
       return rule.role;
     }
   }
@@ -175,14 +176,14 @@ export async function getRoleFromTitleAsync(title: string | null | undefined): P
   for (const mapping of TITLE_ROLE_MAPPINGS) {
     for (const keyword of mapping.keywords) {
       if (normalizedTitle.includes(keyword.toLowerCase())) {
-        console.log(`[Title Mapping] Matched "${title}" to role "${mapping.role}" via keyword "${keyword}"`);
+        logger.debug(`[Title Mapping] Matched "${title}" to role "${mapping.role}" via keyword "${keyword}"`);
         return mapping.role;
       }
     }
   }
 
   // Default to standard if no match found
-  console.log(`[Title Mapping] No match found for "${title}", defaulting to "standard"`);
+  logger.debug(`[Title Mapping] No match found for "${title}", defaulting to "standard"`);
   return "standard";
 }
 
@@ -210,14 +211,14 @@ export function getRoleFromTitle(title: string | null | undefined): CourtRole {
   for (const mapping of TITLE_ROLE_MAPPINGS) {
     for (const keyword of mapping.keywords) {
       if (normalizedTitle.includes(keyword.toLowerCase())) {
-        console.log(`[Title Mapping] Matched "${title}" to role "${mapping.role}" via keyword "${keyword}"`);
+        logger.debug(`[Title Mapping] Matched "${title}" to role "${mapping.role}" via keyword "${keyword}"`);
         return mapping.role;
       }
     }
   }
 
   // Default to standard if no match found
-  console.log(`[Title Mapping] No match found for "${title}", defaulting to "standard"`);
+  logger.debug(`[Title Mapping] No match found for "${title}", defaulting to "standard"`);
   return "standard";
 }
 

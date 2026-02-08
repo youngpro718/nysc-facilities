@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 export interface CourtroomMapping {
   part_number: string;
@@ -18,7 +19,7 @@ export async function mapPartToCourtroom(
   partNumber: string,
   buildingCode: '100' | '111'
 ): Promise<CourtroomMapping | null> {
-  console.log(`🔍 Mapping part "${partNumber}" to courtroom in building ${buildingCode}`);
+  logger.debug(`🔍 Mapping part "${partNumber}" to courtroom in building ${buildingCode}`);
 
   // Clean and normalize part number
   const cleanPart = normalizePartNumber(partNumber);
@@ -45,17 +46,17 @@ export async function mapPartToCourtroom(
     `);
 
   if (error) {
-    console.error('Error querying courtrooms:', error);
+    logger.error('Error querying courtrooms:', error);
     return null;
   }
 
   if (!courtRooms || courtRooms.length === 0) {
-    console.log('No courtrooms found in database');
+    logger.debug('No courtrooms found in database');
     return null;
   }
 
   // Filter by building
-  const buildingFiltered = courtRooms.filter((cr: any) => {
+  const buildingFiltered = courtRooms.filter((cr: Record<string, unknown>) => {
     const address = cr.rooms?.floors?.buildings?.address || '';
     return address.includes(`${buildingCode} Centre`);
   });
@@ -68,13 +69,13 @@ export async function mapPartToCourtroom(
   ];
 
   if (matches.length === 0) {
-    console.log(`❌ No courtroom found for part ${partNumber}`);
+    logger.debug(`❌ No courtroom found for part ${partNumber}`);
     return null;
   }
 
   // Return best match
   const bestMatch = matches.sort((a, b) => b.confidence - a.confidence)[0];
-  console.log(`✅ Mapped part ${partNumber} to room ${bestMatch.room_number} (confidence: ${bestMatch.confidence})`);
+  logger.debug(`✅ Mapped part ${partNumber} to room ${bestMatch.room_number} (confidence: ${bestMatch.confidence})`);
   
   return bestMatch;
 }
@@ -94,7 +95,7 @@ function normalizePartNumber(partNumber: string): string {
 /**
  * Find exact matches (highest confidence)
  */
-function findExactMatches(cleanPart: string, courtRooms: any[]): CourtroomMapping[] {
+function findExactMatches(cleanPart: string, courtRooms: unknown[]): CourtroomMapping[] {
   const matches: CourtroomMapping[] = [];
 
   for (const cr of courtRooms) {
@@ -119,7 +120,7 @@ function findExactMatches(cleanPart: string, courtRooms: any[]): CourtroomMappin
 /**
  * Find partial matches (medium confidence)
  */
-function findPartialMatches(cleanPart: string, courtRooms: any[]): CourtroomMapping[] {
+function findPartialMatches(cleanPart: string, courtRooms: unknown[]): CourtroomMapping[] {
   const matches: CourtroomMapping[] = [];
 
   // Extract numeric part if exists
@@ -144,7 +145,7 @@ function findPartialMatches(cleanPart: string, courtRooms: any[]): CourtroomMapp
 /**
  * Find special format matches (TAP A, PT 75, RTA-73)
  */
-function findSpecialFormatMatches(originalPart: string, courtRooms: any[]): CourtroomMapping[] {
+function findSpecialFormatMatches(originalPart: string, courtRooms: unknown[]): CourtroomMapping[] {
   const matches: CourtroomMapping[] = [];
   const upperPart = originalPart.toUpperCase();
 
@@ -192,7 +193,7 @@ function findSpecialFormatMatches(originalPart: string, courtRooms: any[]): Cour
 /**
  * Create mapping object from court room data
  */
-function createMapping(cr: any, confidence: number): CourtroomMapping {
+function createMapping(cr: Record<string, unknown>, confidence: number): CourtroomMapping {
   const building = cr.rooms?.floors?.buildings;
   const buildingCode = building?.address?.includes('111') ? '111' : '100';
   
@@ -216,7 +217,7 @@ export async function batchMapPartsToCourtrooms(
 ): Promise<Map<string, CourtroomMapping>> {
   const mappings = new Map<string, CourtroomMapping>();
   
-  console.log(`🔄 Batch mapping ${parts.length} parts...`);
+  logger.debug(`🔄 Batch mapping ${parts.length} parts...`);
   
   // Process all parts in parallel
   const results = await Promise.all(
@@ -230,7 +231,7 @@ export async function batchMapPartsToCourtrooms(
     }
   });
   
-  console.log(`✅ Mapped ${mappings.size} of ${parts.length} parts`);
+  logger.debug(`✅ Mapped ${mappings.size} of ${parts.length} parts`);
   
   return mappings;
 }

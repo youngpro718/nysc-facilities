@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Loader2, QrCode, Smartphone } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { logger } from "@/lib/logger";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,7 +27,7 @@ const LoginPage = () => {
 
   // Show loading while auth state is being determined
   if (isLoading) {
-    console.log('[LoginPage] isLoading = true, showing spinner');
+    logger.debug('[LoginPage] isLoading = true, showing spinner');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -36,7 +37,7 @@ const LoginPage = () => {
 
   // Don't render login form if already authenticated - let AuthProvider handle redirect
   if (isAuthenticated) {
-    console.log('[LoginPage] isAuthenticated = true, showing spinner');
+    logger.debug('[LoginPage] isAuthenticated = true, showing spinner');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -44,7 +45,7 @@ const LoginPage = () => {
     );
   }
 
-  console.log('[LoginPage] Rendering login form');
+  logger.debug('[LoginPage] Rendering login form');
 
 
 

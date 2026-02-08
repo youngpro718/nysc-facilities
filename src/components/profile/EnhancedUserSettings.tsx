@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -204,10 +205,10 @@ export function EnhancedUserSettings() {
       }
 
       if (data) {
-        setSettings({ ...defaultSettings, ...(data as any).user_settings });
+        setSettings({ ...defaultSettings, ...((data as Record<string, unknown>)).user_settings });
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
+      logger.error('Error loading settings:', error);
       toast({
         title: "Error",
         description: "Failed to load settings",
@@ -247,7 +248,7 @@ export function EnhancedUserSettings() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          user_settings: minimalSettings as any,
+          user_settings: minimalSettings as unknown,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -260,7 +261,7 @@ export function EnhancedUserSettings() {
         description: "Settings saved successfully",
       });
     } catch (error) {
-      console.error('Error saving settings:', error);
+      logger.error('Error saving settings:', error);
       toast({
         title: "Error",
         description: "Failed to save settings",
@@ -440,7 +441,7 @@ export function EnhancedUserSettings() {
                   <Label>Notification Frequency</Label>
                   <Select
                     value={settings.notification_frequency}
-                    onValueChange={(value: any) => updateSetting('notification_frequency', value)}
+                    onValueChange={(value: unknown) => updateSetting('notification_frequency', value)}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue />
@@ -487,7 +488,7 @@ export function EnhancedUserSettings() {
                   <Label>Theme</Label>
                   <Select
                     value={settings.theme}
-                    onValueChange={(value: any) => updateSetting('theme', value)}
+                    onValueChange={(value: unknown) => updateSetting('theme', value)}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue />
@@ -519,7 +520,7 @@ export function EnhancedUserSettings() {
                   <Label>Font Size</Label>
                   <Select
                     value={settings.font_size}
-                    onValueChange={(value: any) => updateSetting('font_size', value)}
+                    onValueChange={(value: unknown) => updateSetting('font_size', value)}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue />
@@ -540,7 +541,7 @@ export function EnhancedUserSettings() {
                   <Label>Language</Label>
                   <Select
                     value={settings.language}
-                    onValueChange={(value: any) => updateSetting('language', value)}
+                    onValueChange={(value: unknown) => updateSetting('language', value)}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue />
@@ -557,7 +558,7 @@ export function EnhancedUserSettings() {
                   <Label>Date Format</Label>
                   <Select
                     value={settings.date_format}
-                    onValueChange={(value: any) => updateSetting('date_format', value)}
+                    onValueChange={(value: unknown) => updateSetting('date_format', value)}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue />
@@ -574,7 +575,7 @@ export function EnhancedUserSettings() {
                   <Label>Time Format</Label>
                   <Select
                     value={settings.time_format}
-                    onValueChange={(value: any) => updateSetting('time_format', value)}
+                    onValueChange={(value: unknown) => updateSetting('time_format', value)}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue />
@@ -623,7 +624,7 @@ export function EnhancedUserSettings() {
                       onValueChange={(value) => {
                         const n = Number(value);
                         if (Number.isFinite(n) && !Number.isNaN(n)) {
-                          updateSetting('session_timeout', n as any);
+                          updateSetting('session_timeout', n as unknown);
                         } else {
                           // Gracefully handle invalid input (shouldn't occur with Select)
                           // Optionally notify the user

@@ -1,5 +1,6 @@
 
 import { supabase } from "@/lib/supabase";
+import { logger } from '@/lib/logger';
 import { toast } from "sonner";
 import { Department, SelectedUser } from "../types/verificationTypes";
 
@@ -73,7 +74,7 @@ export function useVerificationMutation(
       
       refetchUsers();
     } catch (error) {
-      console.error('Error handling verification:', error);
+      logger.error('Error handling verification:', error);
       toast.error('Failed to process verification request');
       throw error;
     }
@@ -106,7 +107,7 @@ export function useVerificationMutation(
 
       refetchUsers();
     } catch (error) {
-      console.error('Error in bulk verification:', error);
+      logger.error('Error in bulk verification:', error);
       toast.error('Failed to process verification requests');
     }
   };

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +20,7 @@ import {
 } from '@/services/forms/formSubmissionService';
 
 interface QuickProcessDialogProps {
-  submission: any;
+  submission: Record<string, unknown>;
   open: boolean;
   onClose: () => void;
 }
@@ -142,9 +144,9 @@ export function QuickProcessDialog({ submission, open, onClose }: QuickProcessDi
       } else {
         throw new Error(result.error || 'Failed to create request');
       }
-    } catch (error: any) {
-      console.error('Processing error:', error);
-      toast.error(error.message || 'Failed to process form');
+    } catch (error) {
+      logger.error('Processing error:', error);
+      toast.error(getErrorMessage(error) || 'Failed to process form');
     } finally {
       setSubmitting(false);
     }

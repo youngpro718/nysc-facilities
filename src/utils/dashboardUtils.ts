@@ -62,7 +62,7 @@ export const calculateRoomLightingStatus = (room: Room): RoomLightingStatus => {
   };
 };
 
-export const calculateBuildingStats = (building: any): BuildingStats => {
+export const calculateBuildingStats = (building: Record<string, unknown>): BuildingStats => {
   // Add defensive checks
   if (!building) {
     return {

@@ -69,12 +69,12 @@ export function TermSheetPreview({
       if (roomsError) throw roomsError;
 
       const roomMap = new Map();
-      (roomsData || []).forEach((room: any) => {
+      (roomsData || []).forEach((room: Record<string, unknown>) => {
         roomMap.set(room.room_id, room);
       });
 
       const combined = (assignmentsData || [])
-        .map((assignment: any) => {
+        .map((assignment: Record<string, unknown>) => {
           const room = roomMap.get(assignment.room_id);
           if (!room) return null;
           
@@ -87,9 +87,9 @@ export function TermSheetPreview({
             is_active: room.is_active,
           };
         })
-        .filter((row: any) => row !== null && row.is_active);
+        .filter((row: Record<string, unknown>) => row !== null && row.is_active);
 
-      return combined.map((row: any): TermAssignment => ({
+      return combined.map((row: Record<string, unknown>): TermAssignment => ({
         part: row.part,
         justice: row.justice,
         room: row.room_number,

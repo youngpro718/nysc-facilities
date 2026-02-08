@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,7 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
     timestamp: string;
   }>>([]);
 
-  console.log('OccupantDepartureView - Access Summary:', accessSummary);
+  logger.debug('OccupantDepartureView - Access Summary:', accessSummary);
 
   const handleKeySelection = (keyAssignmentId: string, checked: boolean) => {
     if (checked) {
@@ -65,7 +66,7 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
       toast.success(`Successfully returned ${selectedKeys.length} keys`);
       onComplete?.();
     } catch (error) {
-      console.error("Error returning keys:", error);
+      logger.error("Error returning keys:", error);
       toast.error("Failed to return some keys");
     } finally {
       setReturningKeys(false);

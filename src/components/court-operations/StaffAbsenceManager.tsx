@@ -90,14 +90,14 @@ export function StaffAbsenceManager() {
     return endDate >= new Date();
   }) || [];
 
-  const getStaffName = (staff: any) => {
+  const getStaffName = (staff: Record<string, unknown>) => {
     if (!staff) return "Unknown";
     return staff.display_name || "Unknown";
   };
 
   const getReasonBadge = (reason: string | null) => {
     if (!reason) return <Badge variant="secondary">N/A</Badge>;
-    const variants: Record<string, any> = {
+    const variants: Record<string, unknown> = {
       sick: "destructive",
       emergency: "destructive",
       vacation: "default",
@@ -293,7 +293,7 @@ export function StaffAbsenceManager() {
 }
 
 // Add Absence Dialog Component
-function AddAbsenceDialog({ open, onOpenChange, availableStaff }: any) {
+function AddAbsenceDialog({ open, onOpenChange, availableStaff }: Record<string, unknown>) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -338,7 +338,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: any) {
         affected_room_id: "",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "Failed to record absence",
@@ -363,7 +363,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: any) {
             <Select
               value={formData.staff_id}
               onValueChange={(value) => {
-                const staff = availableStaff.find((s: any) => s.id === value);
+                const staff = availableStaff.find((s: Record<string, unknown>) => s.id === value);
                 setFormData({ ...formData, staff_id: value, role: staff?.role || "" });
               }}
             >
@@ -371,7 +371,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: any) {
                 <SelectValue placeholder="Select staff member" />
               </SelectTrigger>
               <SelectContent>
-                {availableStaff.map((staff: any) => (
+                {availableStaff.map((staff: Record<string, unknown>) => (
                   <SelectItem key={staff.id} value={staff.id}>
                     {staff.display_name} ({staff.role})
                   </SelectItem>
@@ -456,7 +456,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: any) {
 }
 
 // Assign Coverage Dialog Component
-function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: any) {
+function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: Record<string, unknown>) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -483,7 +483,7 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: a
       onOpenChange(false);
       setCoveringStaffId("");
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "Failed to assign coverage",
@@ -525,8 +525,8 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: a
               </SelectTrigger>
               <SelectContent>
                 {availableStaff
-                  .filter((s: any) => s.id !== absence.staff_id)
-                  .map((staff: any) => (
+                  .filter((s: Record<string, unknown>) => s.id !== absence.staff_id)
+                  .map((staff: Record<string, unknown>) => (
                     <SelectItem key={staff.id} value={staff.id}>
                       {staff.display_name} ({staff.role})
                     </SelectItem>

@@ -8,7 +8,7 @@ import ExcelJS from 'exceljs';
 /**
  * Sanitize string values to prevent Excel formula injection
  */
-export const sanitizeForExcel = (value: any): any => {
+export const sanitizeForExcel = (value: unknown): unknown => {
   if (typeof value === 'string') {
     // Prevent formula injection by prefixing dangerous characters
     if (value.startsWith('=') || value.startsWith('+') || value.startsWith('-') || value.startsWith('@')) {
@@ -25,7 +25,7 @@ export const sanitizeForExcel = (value: any): any => {
  * @param sheetName Name of the worksheet
  */
 export const exportToExcel = async (
-  data: any[],
+  data: unknown[],
   filename: string,
   sheetName: string = 'Sheet1'
 ): Promise<void> => {
@@ -90,7 +90,7 @@ export const exportToExcel = async (
  * @param filename Name of the file (without extension)
  */
 export const exportMultipleSheets = async (
-  sheets: Array<{ name: string; data: any[] }>,
+  sheets: Array<{ name: string; data: unknown[] }>,
   filename: string
 ): Promise<void> => {
   const workbook = new ExcelJS.Workbook();
@@ -151,7 +151,7 @@ export const exportMultipleSheets = async (
  * @param file Excel file to parse
  * @returns Promise with array of objects
  */
-export const parseExcelFile = async (file: File): Promise<any[]> => {
+export const parseExcelFile = async (file: File): Promise<unknown[]> => {
   const workbook = new ExcelJS.Workbook();
   const arrayBuffer = await file.arrayBuffer();
   await workbook.xlsx.load(arrayBuffer);
@@ -161,7 +161,7 @@ export const parseExcelFile = async (file: File): Promise<any[]> => {
     throw new Error('No worksheet found in file');
   }
 
-  const data: any[] = [];
+  const data: unknown[] = [];
   const headers: string[] = [];
 
   worksheet.eachRow((row, rowNumber) => {
@@ -172,7 +172,7 @@ export const parseExcelFile = async (file: File): Promise<any[]> => {
       });
     } else {
       // Data rows
-      const rowData: any = {};
+      const rowData: Record<string, unknown> = {};
       row.eachCell((cell, colNumber) => {
         const header = headers[colNumber - 1];
         if (header) {

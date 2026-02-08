@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +41,7 @@ interface FulfillmentItem {
 }
 
 interface PartialFulfillmentDialogProps {
-  order: any;
+  order: Record<string, unknown>;
   onClose: () => void;
 }
 
@@ -48,7 +50,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
   const { profile } = useAuth();
   
   const [items, setItems] = useState<FulfillmentItem[]>(
-    order.supply_request_items?.map((item: any) => ({
+    order.supply_request_items?.map((item: Record<string, unknown>) => ({
       id: item.id,
       item_id: item.item_id,
       quantity_requested: item.quantity_requested,
@@ -157,11 +159,11 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
 
       onClose();
-    } catch (error: any) {
-      console.error('Error fulfilling order:', error);
+    } catch (error) {
+      logger.error('Error fulfilling order:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to fulfill order',
+        description: getErrorMessage(error) || 'Failed to fulfill order',
         variant: 'destructive',
       });
     } finally {

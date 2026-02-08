@@ -41,7 +41,7 @@ export function KeyHistorySection() {
   const occupantIds = useMemo(() => {
     const set = new Set<string>();
     (history || []).forEach((log) => {
-      const occId = (log as any)?.changes?.occupant_id as string | undefined;
+      const occId = (log as Record<string, unknown>)?.changes?.occupant_id as string | undefined;
       if (occId) set.add(occId);
     });
     return Array.from(set);
@@ -57,7 +57,7 @@ export function KeyHistorySection() {
         .in("id", occupantIds);
       if (error) throw error;
       const map: Record<string, string> = {};
-      (data || []).forEach((o: any) => {
+      (data || []).forEach((o: Record<string, unknown>) => {
         map[o.id] = `${o.first_name ?? ""} ${o.last_name ?? ""}`.trim();
       });
       return map;
@@ -75,7 +75,7 @@ export function KeyHistorySection() {
     return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
-  const prettyValue = (key: string, value: any) => {
+  const prettyValue = (key: string, value: unknown) => {
     if (key === "occupant_id") {
       const name = occupantsMap?.[value as string];
       return name ? `${name}` : String(value);

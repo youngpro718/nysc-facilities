@@ -1,5 +1,7 @@
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyData, KeyFilterOptions, SortOption } from "../types/KeyTypes";
@@ -42,13 +44,13 @@ export function KeyInventorySection() {
         const { data: keysData, error: keysError } = await keysQuery;
 
         if (keysError) {
-          console.error("Error fetching keys:", keysError);
+          logger.error("Error fetching keys:", keysError);
           throw keysError;
         }
 
         return keysData as KeyData[];
-      } catch (error: any) {
-        console.error("Error in query:", error);
+      } catch (error) {
+        logger.error("Error in query:", error);
         toast.error("Failed to fetch keys inventory");
         return [];
       }
@@ -66,19 +68,19 @@ export function KeyInventorySection() {
       });
 
       if (error) {
-        if (error.message.includes('active assignments')) {
+        if (getErrorMessage(error).includes('active assignments')) {
           toast.error("Cannot delete key with active assignments");
         } else {
-          toast.error("Error deleting key: " + error.message);
+          toast.error("Error deleting key: " + getErrorMessage(error));
         }
         return;
       }
 
       toast.success("Key deleted successfully");
       refetch();
-    } catch (error: any) {
-      console.error("Error deleting key:", error);
-      toast.error("Error deleting key: " + (error.message || "Unknown error"));
+    } catch (error) {
+      logger.error("Error deleting key:", error);
+      toast.error("Error deleting key: " + (getErrorMessage(error) || "Unknown error"));
     } finally {
       setKeyToDelete(null);
     }
@@ -96,7 +98,7 @@ export function KeyInventorySection() {
         .eq('id', keyId);
 
       if (error) {
-        toast.error("Error updating captain's office status: " + error.message);
+        toast.error("Error updating captain's office status: " + getErrorMessage(error));
         return;
       }
 
@@ -105,8 +107,8 @@ export function KeyInventorySection() {
         "Key removed from Captain's Office"
       );
       refetch();
-    } catch (error: any) {
-      console.error("Error updating captain's office status:", error);
+    } catch (error) {
+      logger.error("Error updating captain's office status:", error);
       toast.error("Error updating captain's office status");
     }
   };
@@ -126,15 +128,15 @@ export function KeyInventorySection() {
             available_quantity: k.available_quantity,
             is_passkey: k.is_passkey ? "yes" : "no",
             key_scope: k.key_scope || "",
-            active_assignments: (k as any).active_assignments ?? "",
-            returned_assignments: (k as any).returned_assignments ?? "",
-            lost_count: (k as any).lost_count ?? "",
+            active_assignments: ((k as Record<string, unknown>)).active_assignments ?? "",
+            returned_assignments: ((k as Record<string, unknown>)).returned_assignments ?? "",
+            lost_count: ((k as Record<string, unknown>)).lost_count ?? "",
           }));
           const headers = Object.keys(rows[0] || { id: "", name: "", type: "", status: "", total_quantity: "", available_quantity: "", is_passkey: "", key_scope: "", active_assignments: "", returned_assignments: "", lost_count: "" });
           const csv = [
             headers.join(','),
             ...rows.map(r => headers.map(h => {
-              const val = String((r as any)[h] ?? "");
+              const val = String(((r as Record<string, unknown>))[h] ?? "");
               const escaped = val.replace(/"/g, '""');
               return `"${escaped}"`;
             }).join(','))

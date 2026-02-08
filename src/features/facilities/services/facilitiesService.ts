@@ -10,6 +10,7 @@
  */
 
 import { db, handleSupabaseError, validateData } from '@/services/core/supabaseClient';
+import { logger } from '@/lib/logger';
 import type { Room, Building, Floor, RoomFilters } from '../model';
 import {
   validateRooms,
@@ -69,14 +70,14 @@ export const facilitiesService = {
       if (error) handleSupabaseError(error, 'Failed to fetch rooms');
       
       // Transform to add building at top level for convenience
-      const rooms = (data || []).map((room: any) => ({
+      const rooms = (data || []).map((room: Record<string, unknown>) => ({
         ...room,
         building: room.floor?.building || null,
       }));
       
       return rooms;
     } catch (error) {
-      console.error('[facilitiesService.getRooms]:', error);
+      logger.error('[facilitiesService.getRooms]:', error);
       throw error;
     }
   },
@@ -113,7 +114,7 @@ export const facilitiesService = {
       
       return validateData(room, 'Room not found');
     } catch (error) {
-      console.error('[facilitiesService.getRoomById]:', error);
+      logger.error('[facilitiesService.getRoomById]:', error);
       throw error;
     }
   },
@@ -133,7 +134,7 @@ export const facilitiesService = {
       if (error) handleSupabaseError(error, 'Failed to fetch buildings');
       return data || [];
     } catch (error) {
-      console.error('[facilitiesService.getBuildings]:', error);
+      logger.error('[facilitiesService.getBuildings]:', error);
       throw error;
     }
   },
@@ -159,7 +160,7 @@ export const facilitiesService = {
       if (error) handleSupabaseError(error, 'Failed to fetch floors');
       return data || [];
     } catch (error) {
-      console.error('[facilitiesService.getFloors]:', error);
+      logger.error('[facilitiesService.getFloors]:', error);
       throw error;
     }
   },
@@ -180,7 +181,7 @@ export const facilitiesService = {
       if (error) handleSupabaseError(error, 'Failed to create room');
       return validateData(data, 'Failed to create room');
     } catch (error) {
-      console.error('[facilitiesService.createRoom]:', error);
+      logger.error('[facilitiesService.createRoom]:', error);
       throw error;
     }
   },
@@ -203,7 +204,7 @@ export const facilitiesService = {
       if (error) handleSupabaseError(error, 'Failed to update room');
       return validateData(data, 'Failed to update room');
     } catch (error) {
-      console.error('[facilitiesService.updateRoom]:', error);
+      logger.error('[facilitiesService.updateRoom]:', error);
       throw error;
     }
   },
@@ -222,7 +223,7 @@ export const facilitiesService = {
 
       if (error) handleSupabaseError(error, 'Failed to delete room');
     } catch (error) {
-      console.error('[facilitiesService.deleteRoom]:', error);
+      logger.error('[facilitiesService.deleteRoom]:', error);
       throw error;
     }
   },

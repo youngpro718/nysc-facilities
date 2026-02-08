@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 import { 
   LayoutDashboard, 
   Lightbulb, 
@@ -76,14 +77,14 @@ export function LightingPageLayout() {
         
         <div className="flex items-center gap-3">
           <CreateLightingDialog 
-            onFixtureCreated={() => console.log('Fixture created')}
-            onZoneCreated={() => console.log('Zone created')}
+            onFixtureCreated={() => logger.debug('Fixture created')}
+            onZoneCreated={() => logger.debug('Zone created')}
           />
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <Tabs value={state.activeTab} onValueChange={(value: any) => setActiveTab(value)}>
+      <Tabs value={state.activeTab} onValueChange={(value: unknown) => setActiveTab(value)}>
         <TabsList className="grid w-full grid-cols-5">
           {tabConfig.map((tab) => (
             <TabsTrigger 

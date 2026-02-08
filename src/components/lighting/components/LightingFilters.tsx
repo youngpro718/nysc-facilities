@@ -19,7 +19,7 @@ interface LightingFiltersProps {
     zone_id: string;
     technology: string | null;
   };
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: Record<string, unknown>) => void;
   zoneOptions: ZoneOption[];
 }
 

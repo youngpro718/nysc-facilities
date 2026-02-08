@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -40,7 +41,7 @@ export function GenerateReportDialog({ open, onOpenChange, reportOptions }: Gene
       toast.success('Report downloaded successfully');
       onOpenChange(false);
     } catch (error) {
-      console.error('Error generating report:', error);
+      logger.error('Error generating report:', error);
       toast.error('Failed to generate report');
     } finally {
       setIsGenerating(false);
@@ -64,7 +65,7 @@ export function GenerateReportDialog({ open, onOpenChange, reportOptions }: Gene
       
       toast.success('Report opened in new tab');
     } catch (error) {
-      console.error('Error previewing report:', error);
+      logger.error('Error previewing report:', error);
       toast.error('Failed to preview report');
     } finally {
       setIsGenerating(false);

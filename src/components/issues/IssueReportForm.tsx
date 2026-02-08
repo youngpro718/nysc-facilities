@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,15 +48,15 @@ export const IssueReportForm: React.FC<IssueReportFormProps> = ({ open, onClose,
         status: 'open',
       };
 
-      const { error } = await supabase.from('issues').insert([payload as any]);
+      const { error } = await supabase.from('issues').insert([payload as Record<string, unknown>]);
       if (error) throw error;
 
       toast.success("Issue reported successfully");
       form.reset();
-      onSubmit?.(values as any);
+      onSubmit?.(values as unknown);
       onClose();
-    } catch (err: any) {
-      console.error('IssueReportForm submit error:', err);
+    } catch (err) {
+      logger.error('IssueReportForm submit error:', err);
       toast.error(err?.message || 'Failed to submit issue');
     } finally {
       setIsSubmitting(false);

@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 
 interface RoomFormContentProps extends RoomFormProps {
@@ -38,17 +39,17 @@ export function RoomFormContent({
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("=== FORM SUBMIT HANDLER CALLED ===");
-    console.log("Form submit event triggered!");
+    logger.debug("=== FORM SUBMIT HANDLER CALLED ===");
+    logger.debug("Form submit event triggered!");
     
     try {
       // Pre-validation cleanup to ensure proper values for validation
       const formValues = form.getValues();
-      console.log("Current form values before cleanup:", formValues);
+      logger.debug("Current form values before cleanup:", formValues);
       
       // Critical: Ensure ID is present
       if (!formValues.id && roomId) {
-        console.log("Setting missing ID from roomId prop:", roomId);
+        logger.debug("Setting missing ID from roomId prop:", roomId);
         form.setValue("id", roomId, { shouldValidate: false });
       }
       
@@ -67,21 +68,21 @@ export function RoomFormContent({
       const validConnections = connections.filter(conn => conn.toSpaceId && conn.connectionType);
       
       if (connections.length !== validConnections.length) {
-        console.error("Invalid connections found:", connections);
+        logger.error("Invalid connections found:", connections);
         toast.error("Some connections are invalid. Please check all connections have a space and type selected.");
         return;
       }
       
       // Get updated form values after cleanup
       const cleanedFormValues = form.getValues();
-      console.log("Form values after cleanup:", cleanedFormValues);
-      console.log("Form ID after cleanup:", cleanedFormValues.id);
+      logger.debug("Form values after cleanup:", cleanedFormValues);
+      logger.debug("Form ID after cleanup:", cleanedFormValues.id);
       
       // Trigger validation
       const isValid = await form.trigger();
       if (!isValid) {
         const errors = form.formState.errors;
-        console.error("Form validation errors:", errors);
+        logger.error("Form validation errors:", errors);
         
         // Show specific error messages
         const errorMessages = Object.entries(errors)
@@ -93,10 +94,10 @@ export function RoomFormContent({
         return;
       }
       
-      console.log("Form validation passed, calling onSubmit");
+      logger.debug("Form validation passed, calling onSubmit");
       await form.handleSubmit(onSubmit)(e);
     } catch (error) {
-      console.error("Form submission error:", error);
+      logger.error("Form submission error:", error);
       if (error instanceof Error) {
         toast.error(`Form submission failed: ${error.message}`);
       } else {

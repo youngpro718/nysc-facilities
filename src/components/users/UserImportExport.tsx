@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,7 +22,7 @@ import { supabase } from "@/lib/supabase";
 import { exportToExcel, sanitizeForExcel, parseExcelFile } from "@/utils/excelExport";
 
 interface UserImportExportProps {
-  users?: any[];
+  users?: unknown[];
   onImportSuccess?: () => void;
 }
 
@@ -65,8 +66,8 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
     room_assignments: true
   });
 
-  const exportToExcelLocal = async (data: any[], filename: string) => {
-    const sanitized = data.map((row: any) =>
+  const exportToExcelLocal = async (data: unknown[], filename: string) => {
+    const sanitized = data.map((row: Record<string, unknown>) =>
       Object.fromEntries(
         Object.entries(row).map(([k, v]) => [k, sanitizeForExcel(v)])
       )
@@ -89,7 +90,7 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
       .map(([field]) => field);
 
     const exportData = users.map(user => {
-      const row: any = {};
+      const row: Record<string, unknown> = {};
       selectedFields.forEach(field => {
         switch (field) {
           case 'created_at':
@@ -244,7 +245,7 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
                 });
 
               if (assignmentError) {
-                console.warn(`Room assignment failed for ${row.email}:`, assignmentError);
+                logger.warn(`Room assignment failed for ${row.email}:`, assignmentError);
               }
             }
           }
@@ -276,7 +277,7 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
       }
 
     } catch (error) {
-      console.error('Import error:', error);
+      logger.error('Import error:', error);
       toast({
         title: "Import failed",
         description: error instanceof Error ? error.message : "Failed to import user data.",

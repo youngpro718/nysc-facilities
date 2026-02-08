@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { Check, Clock, AlertTriangle, MessageCircle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -49,7 +50,7 @@ export function QuickUpdateActions({ issue, onUpdate }: QuickUpdateActionsProps)
       setComment("");
       onUpdate();
     } catch (error) {
-      console.error('Error updating issue:', error);
+      logger.error('Error updating issue:', error);
       toast({
         title: "Error",
         description: "Failed to update issue",
@@ -80,7 +81,7 @@ export function QuickUpdateActions({ issue, onUpdate }: QuickUpdateActionsProps)
       
       onUpdate();
     } catch (error) {
-      console.error('Error updating priority:', error);
+      logger.error('Error updating priority:', error);
       toast({
         title: "Error",
         description: "Failed to update priority",

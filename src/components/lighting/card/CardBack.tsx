@@ -22,7 +22,7 @@ export function CardBack({ fixture, onFlip }: CardBackProps) {
     return Object.values(fixture.electrical_issues).some(value => value === true);
   };
   
-  const formatMaintenanceHistory = (history: any[] | null | undefined) => {
+  const formatMaintenanceHistory = (history: unknown[] | null | undefined) => {
     if (!history || history.length === 0) return [];
     return history.slice(0, 3).map((item) => ({
       date: item.date ? formatDate(item.date) : "Unknown date",

@@ -5,6 +5,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { useCallback, useState } from 'react';
 import {
   ReportGenerationService,
@@ -53,7 +54,7 @@ export function useGenerateReport() {
       }
     },
     onError: (error) => {
-      console.error('Error generating report:', error);
+      logger.error('Error generating report:', error);
       setIsGenerating(false);
       setProgress(0);
     },
@@ -144,7 +145,7 @@ export function useExportDashboardCSV() {
 
   const downloadCSV = useCallback((report: GeneratedReport) => {
     if (report.format !== 'csv' || !report.data) {
-      console.error('Invalid CSV report data');
+      logger.error('Invalid CSV report data');
       return;
     }
 
@@ -200,7 +201,7 @@ export function useScheduleReport() {
 export function useReportDownload() {
   const downloadReport = useCallback((report: GeneratedReport) => {
     if (!report.data) {
-      console.error('No report data available for download');
+      logger.error('No report data available for download');
       return;
     }
 
@@ -221,7 +222,7 @@ export function useReportDownload() {
         fileExtension = 'json';
         break;
       default:
-        console.error(`Unsupported report format: ${report.format}`);
+        logger.error(`Unsupported report format: ${report.format}`);
         return;
     }
 
@@ -247,7 +248,7 @@ export function useReportDownload() {
       }
     } else if (report.format === 'pdf') {
       // For PDF, would typically use a PDF viewer
-      console.log('PDF preview would open here');
+      logger.debug('PDF preview would open here');
     }
   }, []);
 
@@ -323,7 +324,7 @@ export function useReportingDashboard() {
         downloadCSV(report);
       }
     } catch (error) {
-      console.error('Error exporting CSV:', error);
+      logger.error('Error exporting CSV:', error);
     }
   }, [exportCSVAsync, downloadCSV]);
 

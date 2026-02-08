@@ -83,7 +83,7 @@ export const InventoryTransactionsPanel = () => {
 
       return data?.map(t => ({
         id: t.id,
-        item_name: (t.inventory_items as any)?.name || "Unknown Item",
+        item_name: (t.inventory_items as Record<string, unknown>)?.name || "Unknown Item",
         transaction_type: t.transaction_type,
         quantity: t.quantity,
         previous_quantity: t.previous_quantity,

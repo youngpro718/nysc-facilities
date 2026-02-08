@@ -20,7 +20,7 @@ import {
 } from '@/types/staffTasks';
 import type { StaffTask } from '@/types/staffTasks';
 
-const statusIcons: Record<string, any> = {
+const statusIcons: Record<string, unknown> = {
   pending_approval: Clock,
   approved: CheckCircle,
   claimed: Loader2,

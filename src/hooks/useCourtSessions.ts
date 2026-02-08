@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { 
   CourtSession, 
@@ -99,7 +100,7 @@ export function useCreateCourtSession() {
       toast.success('Session created successfully');
     },
     onError: (error: Error) => {
-      console.error('Error creating session:', error);
+      logger.error('Error creating session:', error);
       toast.error('Failed to create session');
     },
   });
@@ -114,7 +115,7 @@ export function useUpdateCourtSession() {
       const { id, ...updates } = input;
 
       // Remove court_rooms from updates to avoid schema cache issues
-      const { court_rooms, ...cleanUpdates } = updates as any;
+      const { court_rooms, ...cleanUpdates } = updates as Record<string, unknown>;
 
       const { data, error } = await supabase
         .from('court_sessions')
@@ -150,7 +151,7 @@ export function useUpdateCourtSession() {
       toast.success('Session updated successfully');
     },
     onError: (error: Error) => {
-      console.error('Error updating session:', error);
+      logger.error('Error updating session:', error);
       toast.error('Failed to update session');
     },
   });
@@ -173,7 +174,7 @@ export function useDeleteCourtSession() {
       toast.success('Session deleted successfully');
     },
     onError: (error: Error) => {
-      console.error('Error deleting session:', error);
+      logger.error('Error deleting session:', error);
       toast.error('Failed to delete session');
     },
   });
@@ -240,7 +241,7 @@ export function useCopyYesterdaySessions() {
       toast.success(`${count} sessions copied successfully`);
     },
     onError: (error: Error) => {
-      console.error('Error copying sessions:', error);
+      logger.error('Error copying sessions:', error);
       toast.error(error.message || 'Failed to copy sessions');
     },
   });

@@ -24,7 +24,7 @@ export interface BackupVersion {
   tables: ExportableTable[];
   created_at: string;
   status: string;
-  metadata: any;
+  metadata: unknown;
   compressed: boolean;
   encrypted: boolean;
   compression_ratio: number | null;
@@ -39,7 +39,7 @@ export interface BackupRestoration {
   status: 'in_progress' | 'completed' | 'failed';
   error_message: string | null;
   restored_tables: string[];
-  metadata: any;
+  metadata: unknown;
 }
 
 export async function createBackupVersion(backup: Pick<BackupVersion, 'name' | 'tables' | 'size_bytes' | 'description'>) {

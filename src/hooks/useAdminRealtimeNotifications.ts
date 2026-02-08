@@ -3,22 +3,23 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface AdminRealtimeNotificationHook {
   isConnected: boolean;
-  lastNotification: any;
+  lastNotification: unknown;
 }
 
 export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook => {
   const { user, isAdmin } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
-  const [lastNotification, setLastNotification] = useState<any>(null);
+  const [lastNotification, setLastNotification] = useState<Record<string, unknown> | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!user?.id || !isAdmin) return;
 
-    console.log('Setting up admin realtime notifications for user:', user.id);
+    logger.debug('[AdminRealtime] Setting up notifications for user:', user.id);
 
     // Track created channels to safely clean them up
     const channels: ReturnType<typeof supabase.channel>[] = [];
@@ -31,7 +32,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         const doSub = () => {
           attempt += 1;
           channel.subscribe((status) => {
-            console.log(`${name} channel status:`, status);
+            logger.debug(`${name} channel status:`, status);
             if (status === 'SUBSCRIBED') {
               setIsConnected(true);
               resolve();
@@ -40,10 +41,10 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
               if (attempt < max) {
                 const backoff = 1000 * attempt; // 1s, 2s, 3s
-                console.log(`${name} channel failed, retrying in ${backoff}ms (attempt ${attempt}/${max})`);
+                logger.debug(`${name} channel failed, retrying in ${backoff}ms (attempt ${attempt}/${max})`);
                 setTimeout(doSub, backoff);
               } else {
-                console.error(`${name} channel failed after ${max} attempts`);
+                logger.error(`${name} channel failed after ${max} attempts`);
                 setIsConnected(false);
                 reject(new Error(`Failed to connect ${name} channel after ${max} attempts`));
               }
@@ -65,7 +66,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           table: 'admin_notifications'
         },
         (payload) => {
-          console.log('New admin notification received:', payload);
+          logger.debug('[AdminRealtime] New admin notification:', payload);
           const notification = payload.new;
           
           setLastNotification(notification);
@@ -79,7 +80,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               label: 'View',
               onClick: () => {
                 // Navigate based on notification type
-                const actionUrl = (notification as any)?.metadata?.action_url as string | undefined;
+                const actionUrl = (notification as Record<string, unknown>)?.metadata?.action_url as string | undefined;
                 if (actionUrl) {
                   window.location.href = actionUrl;
                 } else switch (notification.notification_type) {
@@ -180,7 +181,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           table: 'key_requests'
         },
         (payload) => {
-          console.log('New key request for admin:', payload);
+          logger.debug('[AdminRealtime] New key request:', payload);
           const request = payload.new;
           
           toast.info('🔑 New Key Request', {
@@ -203,8 +204,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           table: 'key_requests'
         },
         (payload) => {
-          console.log('Key request updated for admin:', payload);
-          const req = payload.new as any;
+          logger.debug('[AdminRealtime] Key request updated:', payload);
+          const req = payload.new as Record<string, unknown>;
           const status = (req?.status || '').toString();
 
           let message = '';
@@ -251,7 +252,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           table: 'supply_requests'
         },
         (payload) => {
-          console.log('New supply request for admin:', payload);
+          logger.debug('[AdminRealtime] New supply request:', payload);
           const request = payload.new;
           
           const isUrgent = request.priority === 'high';
@@ -293,8 +294,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           table: 'issues'
         },
         (payload) => {
-          console.log('New issue for admin:', payload);
-          const issue = payload.new as any;
+          logger.debug('[AdminRealtime] New issue:', payload);
+          const issue = payload.new as Record<string, unknown>;
           const priority = (issue?.priority || '').toLowerCase();
           const isCritical = ['high'].includes(priority);
           
@@ -335,8 +336,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           table: 'issues'
         },
         (payload) => {
-          console.log('Issue updated for admin:', payload);
-          const issue = payload.new as any;
+          logger.debug('[AdminRealtime] Issue updated:', payload);
+          const issue = payload.new as Record<string, unknown>;
           if (issue?.status === 'resolved') {
             toast.success('✅ Issue Resolved', {
               description: `"${issue.title}" has been resolved.`,
@@ -364,7 +365,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           table: 'issues'
         },
         (payload) => {
-          console.log('Issue deleted for admin:', payload);
+          logger.debug('[AdminRealtime] Issue deleted:', payload);
           queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
           queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
           queryClient.invalidateQueries({ queryKey: ['issues'] });
@@ -384,8 +385,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'key_orders' },
         (payload) => {
-          console.log('New key order for admin:', payload);
-          const order = payload.new as any;
+          logger.debug('[AdminRealtime] New key order:', payload);
+          const order = payload.new as Record<string, unknown>;
           toast.info('🛒 New Key Order', {
             description: `Order #${order?.id ?? ''} created`,
             duration: 6000,
@@ -398,8 +399,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'key_orders' },
         (payload) => {
-          console.log('Key order updated for admin:', payload);
-          const order = payload.new as any;
+          logger.debug('[AdminRealtime] Key order updated:', payload);
+          const order = payload.new as Record<string, unknown>;
           const status = (order?.status || '').toString();
           const fn = ['completed', 'fulfilled', 'delivered'].includes(status) ? toast.success : toast.info;
           fn('🔄 Key Order Updated', {
@@ -420,8 +421,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'room_assignments' },
         (payload) => {
-          console.log('Room assignment created for admin:', payload);
-          const assignment = payload.new as any;
+          logger.debug('[AdminRealtime] Room assignment created:', payload);
+          const assignment = payload.new as Record<string, unknown>;
           toast.info('🛏️ New Room Assignment', {
             description: `Assignment #${assignment?.id ?? ''} created`,
             duration: 6000,
@@ -434,8 +435,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'room_assignments' },
         (payload) => {
-          console.log('Room assignment updated for admin:', payload);
-          const assignment = payload.new as any;
+          logger.debug('[AdminRealtime] Room assignment updated:', payload);
+          const assignment = payload.new as Record<string, unknown>;
           toast.info('🔄 Room Assignment Updated', {
             description: `Assignment #${assignment?.id ?? ''} updated`,
             duration: 6000,
@@ -448,7 +449,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'room_assignments' },
         (payload) => {
-          console.log('Room assignment deleted for admin:', payload);
+          logger.debug('[AdminRealtime] Room assignment deleted:', payload);
           toast.warning('➖ Room Assignment Removed', {
             description: `An assignment was removed`,
             duration: 6000,
@@ -467,8 +468,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'profiles' },
         (payload) => {
-          console.log('New profile for admin:', payload);
-          const profile = payload.new as any;
+          logger.debug('[AdminRealtime] New profile:', payload);
+          const profile = payload.new as Record<string, unknown>;
           toast.info('🆕 New User Profile', {
             description: `User ${profile?.full_name ?? profile?.email ?? ''} created`,
             duration: 6000,
@@ -481,8 +482,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles' },
         (payload) => {
-          console.log('Profile updated for admin:', payload);
-          const profile = payload.new as any;
+          logger.debug('[AdminRealtime] Profile updated:', payload);
+          const profile = payload.new as Record<string, unknown>;
           toast.info('👤 User Profile Updated', {
             description: `${profile?.full_name ?? profile?.email ?? 'A user'} was updated`,
             duration: 6000,
@@ -501,8 +502,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'court_assignments' },
         (payload) => {
-          console.log('Court assignment created for admin:', payload);
-          const assignment = payload.new as any;
+          logger.debug('[AdminRealtime] Court assignment created:', payload);
+          const assignment = payload.new as Record<string, unknown>;
           toast.info('⚖️ New Court Assignment', {
             description: `Assignment created for ${assignment?.room_number || 'courtroom'}`,
             duration: 6000,
@@ -517,9 +518,9 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'court_assignments' },
         (payload) => {
-          console.log('Court assignment updated for admin:', payload);
-          const oldAssignment = payload.old as any;
-          const newAssignment = payload.new as any;
+          logger.debug('[AdminRealtime] Court assignment updated:', payload);
+          const oldAssignment = payload.old as Record<string, unknown>;
+          const newAssignment = payload.new as Record<string, unknown>;
           
           // Determine what changed
           let changeType = 'Assignment';
@@ -558,8 +559,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'court_assignments' },
         (payload) => {
-          console.log('Court assignment deleted for admin:', payload);
-          const assignment = payload.old as any;
+          logger.debug('[AdminRealtime] Court assignment deleted:', payload);
+          const assignment = payload.old as Record<string, unknown>;
           toast.warning('⚖️ Court Assignment Removed', {
             description: `Assignment deleted for ${assignment?.room_number || 'courtroom'}`,
             duration: 6000,
@@ -574,7 +575,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
     channels.push(courtAssignmentsChannel);
 
     return () => {
-      console.log('Cleaning up admin realtime subscriptions');
+      logger.debug('[AdminRealtime] Cleaning up subscriptions');
       channels.forEach((ch) => {
         try { supabase.removeChannel(ch); } catch (_) {}
       });

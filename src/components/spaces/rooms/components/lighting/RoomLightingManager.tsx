@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -87,7 +88,7 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
         }
         setHasLoadedFromDb(true);
       } catch (error) {
-        console.error('Error fetching fixtures:', error);
+        logger.error('Error fetching fixtures:', error);
         // Fallback to default fixtures
         const defaultFixtures: LightingFixture[] = [];
         for (let i = 1; i <= 4; i++) {
@@ -259,7 +260,7 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
       
       setIsOpen(false);
     } catch (error) {
-      console.error('Error saving lighting configuration:', error);
+      logger.error('Error saving lighting configuration:', error);
       toast({
         title: "Error",
         description: "Failed to save lighting configuration.",

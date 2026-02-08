@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -120,10 +122,10 @@ export default function MaintenanceRequestFormPage() {
       toast.success('Maintenance request submitted successfully!', {
         description: 'Your request will be reviewed shortly.',
       });
-    } catch (error: any) {
-      console.error('Error submitting maintenance request:', error);
+    } catch (error) {
+      logger.error('Error submitting maintenance request:', error);
       toast.error('Failed to submit request', {
-        description: error.message || 'Please try again later.',
+        description: getErrorMessage(error) || 'Please try again later.',
       });
     } finally {
       setIsSubmitting(false);

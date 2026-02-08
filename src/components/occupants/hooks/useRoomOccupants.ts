@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 interface Occupant {
   id: string;
@@ -32,25 +33,25 @@ export function useRoomOccupants(selectedRoom: string, authError: boolean | null
         .eq("room_id", selectedRoom);
 
       if (error) {
-        console.error('Error fetching room occupants:', error);
+        logger.error('Error fetching room occupants:', error);
         throw error;
       }
       
       if (!occupantsData) {
-        console.log('No occupants data found');
+        logger.debug('No occupants data found');
         return [];
       }
 
       const mappedOccupants = occupantsData
         .filter(assignment => assignment.occupants)
         .map(assignment => ({
-          id: (assignment.occupants as any)?.id,
-          first_name: (assignment.occupants as any)?.first_name,
-          last_name: (assignment.occupants as any)?.last_name,
+          id: (assignment.occupants as Record<string, unknown>)?.id,
+          first_name: (assignment.occupants as Record<string, unknown>)?.first_name,
+          last_name: (assignment.occupants as Record<string, unknown>)?.last_name,
           is_primary: assignment.is_primary
         }));
 
-      console.log('Current occupants:', mappedOccupants);
+      logger.debug('Current occupants:', mappedOccupants);
       return mappedOccupants;
     }
   });

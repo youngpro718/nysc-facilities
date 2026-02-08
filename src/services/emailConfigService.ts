@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 const DEFAULT_EMAIL = 'facilities@example.com';
 const DEFAULT_PHONE = '(555) 123-4567';
@@ -19,7 +20,7 @@ export async function getFacilityEmail(): Promise<string> {
       .single();
 
     if (error) {
-      console.error('Error fetching facility email:', error);
+      logger.error('Error fetching facility email:', error);
       return DEFAULT_EMAIL;
     }
 
@@ -31,7 +32,7 @@ export async function getFacilityEmail(): Promise<string> {
     cachedEmail = data.admin_email;
     return cachedEmail;
   } catch (error) {
-    console.error('Error in getFacilityEmail:', error);
+    logger.error('Error in getFacilityEmail:', error);
     return DEFAULT_EMAIL;
   }
 }

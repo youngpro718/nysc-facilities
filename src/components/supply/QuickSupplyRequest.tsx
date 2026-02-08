@@ -36,7 +36,7 @@ export function QuickSupplyRequest() {
 
   // Filter items based on search and category
   const filteredItems = useMemo(() => {
-    return (inventoryItems as any[]).filter((item) => {
+    return (inventoryItems as unknown[]).filter((item) => {
       // Only show allowed categories
       const categoryName = item.inventory_categories?.name || '';
       if (!ALLOWED_CATEGORIES.includes(categoryName)) return false;
@@ -56,7 +56,7 @@ export function QuickSupplyRequest() {
     });
   }, [inventoryItems, searchTerm, selectedCategory]);
 
-  const handleAddItem = (item: any) => {
+  const handleAddItem = (item: Record<string, unknown>) => {
     addItem(
       {
         id: item.id,
@@ -69,7 +69,7 @@ export function QuickSupplyRequest() {
     );
   };
 
-  const handleIncrement = (item: any) => {
+  const handleIncrement = (item: Record<string, unknown>) => {
     const currentQty = cartItems.find((i) => i.item_id === item.id)?.quantity || 0;
     if (currentQty > 0) {
       updateQuantity(item.id, currentQty + 1);
@@ -78,7 +78,7 @@ export function QuickSupplyRequest() {
     }
   };
 
-  const handleDecrement = (item: any) => {
+  const handleDecrement = (item: Record<string, unknown>) => {
     const currentQty = cartItems.find((i) => i.item_id === item.id)?.quantity || 0;
     if (currentQty > 1) {
       updateQuantity(item.id, currentQty - 1);

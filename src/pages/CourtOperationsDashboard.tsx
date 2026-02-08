@@ -33,7 +33,7 @@ export const CourtOperationsDashboard = () => {
 
   const showAssignmentsGlow = useMemo(() => {
     const attentionFromIssues = (recentlyAffectedRooms?.length || 0) > 0;
-    const attentionFromAdmin = !!(lastAdminNotification && ['new_issue', 'issue_status_change'].includes((lastAdminNotification as any).notification_type));
+    const attentionFromAdmin = !!(lastAdminNotification && ['new_issue', 'issue_status_change'].includes((lastAdminNotification as unknown).notification_type));
     // Only glow when not already on the assignments tab
     return (attentionFromIssues || attentionFromAdmin) && tab !== 'assignments';
   }, [recentlyAffectedRooms, lastAdminNotification, tab]);

@@ -15,6 +15,7 @@ import {
   Settings
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import { EnhancedHallwayLightingPage } from '../../enhanced/EnhancedHallwayLightingPage';
 
 export function LocationCentricView() {
@@ -25,7 +26,7 @@ export function LocationCentricView() {
   const { data: buildingData, isLoading, error } = useQuery({
     queryKey: ['location-centric-lighting'],
     queryFn: async () => {
-      console.log("Starting data fetch with separate queries...");
+      logger.debug("Starting data fetch with separate queries...");
       
       try {
         // Step 1: Fetch buildings
@@ -38,7 +39,7 @@ export function LocationCentricView() {
         if (buildingsError) throw buildingsError;
         if (!buildingsData?.length) return [];
 
-        console.log("Buildings fetched:", buildingsData.length);
+        logger.debug("Buildings fetched:", buildingsData.length);
 
         // Step 2: Fetch floors for all buildings
         const buildingIds = buildingsData.map(b => b.id);
@@ -49,7 +50,7 @@ export function LocationCentricView() {
           .order('building_id, floor_number');
 
         if (floorsError) throw floorsError;
-        console.log("Floors fetched:", floorsData?.length || 0);
+        logger.debug("Floors fetched:", floorsData?.length || 0);
 
         // Step 3: Fetch unified_spaces for all floors
         const floorIds = floorsData?.map(f => f.id) || [];
@@ -61,7 +62,7 @@ export function LocationCentricView() {
           : { data: [], error: null };
 
         if (spacesError) throw spacesError;
-        console.log("Spaces fetched:", spacesData?.length || 0);
+        logger.debug("Spaces fetched:", spacesData?.length || 0);
 
         // Step 4: Fetch lighting fixtures for all spaces
         const spaceIds = spacesData?.map(s => s.id) || [];
@@ -73,7 +74,7 @@ export function LocationCentricView() {
           : { data: [], error: null };
 
         if (fixturesError) throw fixturesError;
-        console.log("Fixtures fetched:", fixturesData?.length || 0);
+        logger.debug("Fixtures fetched:", fixturesData?.length || 0);
 
         // Step 5: Manually join the data
         const result = buildingsData.map(building => {
@@ -100,10 +101,10 @@ export function LocationCentricView() {
           };
         });
 
-        console.log("Final result:", result);
+        logger.debug("Final result:", result);
         return result;
       } catch (error) {
-        console.error('Error in data fetching:', error);
+        logger.error('Error in data fetching:', error);
         throw error;
       }
     },
@@ -137,7 +138,7 @@ export function LocationCentricView() {
   }
 
   if (error) {
-    console.error('LocationCentricView error:', error);
+    logger.error('LocationCentricView error:', error);
     return (
       <div className="space-y-6">
         <Card className="border-destructive">
@@ -154,7 +155,7 @@ export function LocationCentricView() {
 
   // Transform data for UI
   const buildingStructure = (buildingData || []).map(building => {
-    console.log('Processing building:', building.name, 'floors:', building.floors?.length);
+    logger.debug(`Processing building: ${building.name}, floors: ${building.floors?.length}`);
     
     return {
       id: building.id,
@@ -170,7 +171,7 @@ export function LocationCentricView() {
           const hallwayFixtures = hallways.flatMap(h => h.lighting_fixtures || []);
           const roomFixtures = rooms.flatMap(r => r.lighting_fixtures || []);
           
-          console.log(`Floor ${floor.floor_number}:`, {
+          logger.debug(`Floor ${floor.floor_number}:`, {
             spaces: spaces.length,
             hallways: hallways.length,
             rooms: rooms.length,
@@ -216,7 +217,7 @@ export function LocationCentricView() {
     };
   });
 
-  console.log('Final building structure:', buildingStructure);
+  logger.debug('Final building structure:', buildingStructure);
 
   const toggleFloor = (floorId: string) => {
     const newExpanded = new Set(expandedFloors);

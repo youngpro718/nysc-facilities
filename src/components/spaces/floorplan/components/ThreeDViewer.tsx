@@ -1,5 +1,5 @@
-// @ts-nocheck
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { Card } from '@/components/ui/card';
 import { Canvas } from '@react-three/fiber';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
@@ -41,9 +41,9 @@ import { cn } from '@/lib/utils';
 
 interface ThreeDViewerProps {
   floorId: string | null;
-  onObjectSelect?: (object: any) => void;
+  onObjectSelect?: (object: Record<string, unknown>) => void;
   selectedObjectId?: string | null;
-  previewData?: any;
+  previewData?: Record<string, unknown>;
 }
 
 export function ThreeDViewer({ 
@@ -63,15 +63,15 @@ export function ThreeDViewer({
   const [cameraMode, setCameraMode] = useState<'orbit' | 'top' | 'perspective'>('perspective');
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [showStats, setShowStats] = useState<boolean>(true);
-  const canvasRef = useRef<any>(null);
-  const sceneRef = useRef<any>(null);
+  const canvasRef = useRef<unknown>(null);
+  const sceneRef = useRef<unknown>(null);
 
   useEffect(() => {
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
 
-  const handleObjectSelect = useCallback((object: any) => {
+  const handleObjectSelect = useCallback((object: Record<string, unknown>) => {
     if (onObjectSelect) {
       const selectedObj = objects.find(obj => obj.id === object.id || obj.id === object);
       if (selectedObj) {
@@ -101,8 +101,8 @@ export function ThreeDViewer({
     }
   }, [objects, onObjectSelect]);
 
-  const handleCanvasError = (error: any) => {
-    console.error('Canvas error:', error);
+  const handleCanvasError = (error: unknown) => {
+    logger.error('Canvas error:', error);
     setViewerError(error);
     toast.error('Error loading 3D view. Please try refreshing the page.');
   };
@@ -117,7 +117,7 @@ export function ThreeDViewer({
         toast.success('Screenshot downloaded!');
       }
     } catch (err) {
-      console.error('Screenshot error:', err);
+      logger.error('Screenshot error:', err);
       toast.error('Failed to take screenshot');
     }
   };

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { logger } from '@/lib/logger';
 import * as THREE from 'three';
 
 interface SimpleConnectionProps {
@@ -16,10 +17,10 @@ export function SimpleConnection({
 }: SimpleConnectionProps) {
   // Prepare safe coordinates and validation flags (checked after hooks)
   const hasEndpoints = !!from && !!to;
-  const fromX = hasEndpoints ? (from as any)?.x : NaN;
-  const fromY = hasEndpoints ? (from as any)?.y : NaN;
-  const toX = hasEndpoints ? (to as any)?.x : NaN;
-  const toY = hasEndpoints ? (to as any)?.y : NaN;
+  const fromX = hasEndpoints ? (from as Record<string, unknown>)?.x : NaN;
+  const fromY = hasEndpoints ? (from as Record<string, unknown>)?.y : NaN;
+  const toX = hasEndpoints ? (to as Record<string, unknown>)?.x : NaN;
+  const toY = hasEndpoints ? (to as Record<string, unknown>)?.y : NaN;
   const coordsValid =
     typeof fromX === 'number' && typeof fromY === 'number' &&
     typeof toX === 'number' && typeof toY === 'number' &&
@@ -57,14 +58,14 @@ export function SimpleConnection({
       
       return new THREE.Line(geometry, material);
     } catch (error) {
-      console.error('SimpleConnection: Error creating line object', error, { from, to, type, isHighlighted });
+      logger.error('SimpleConnection: Error creating line object', error, { from, to, type, isHighlighted });
       return null;
     }
   }, [fromX, fromY, toX, toY, type, isHighlighted]);
 
   // Post-hook validation
   if (!coordsValid) {
-    console.warn('SimpleConnection: Invalid from/to coordinates', { from, to });
+    logger.warn('SimpleConnection: Invalid from/to coordinates', { from, to });
     return null;
   }
   if (!line) {

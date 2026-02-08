@@ -32,14 +32,14 @@ export function NewConnectionForm({
     setSubmitting(true);
     
     // Make sure direction is valid
-    const validDirection = ConnectionDirections.includes(direction as any) 
+    const validDirection = ConnectionDirections.includes(direction as unknown) 
       ? direction 
       : "north";
       
     onSubmit({
       toSpaceId,
       connectionType,
-      direction: validDirection as any
+      direction: validDirection as unknown
     });
     
     setSubmitting(false);

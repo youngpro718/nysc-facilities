@@ -1,5 +1,6 @@
 
 import { supabase } from "@/lib/supabase";
+import { logger } from '@/lib/logger';
 
 export interface Category {
   id: string;
@@ -15,7 +16,7 @@ export async function fetchAllCategories(): Promise<Category[]> {
     .order('name');
   
   if (error) {
-    console.error('Error fetching categories:', error);
+    logger.error('Error fetching categories:', error);
     throw error;
   }
   
@@ -41,13 +42,13 @@ export function findCategoryByName(categories: Category[], categoryName: string)
   return match || null;
 }
 
-export function validateCategoryData(importedItems: any[], categories: Category[]): {
-  validItems: any[];
-  invalidItems: any[];
+export function validateCategoryData(importedItems: unknown[], categories: Category[]): {
+  validItems: unknown[];
+  invalidItems: unknown[];
   missingCategories: string[];
 } {
-  const validItems: any[] = [];
-  const invalidItems: any[] = [];
+  const validItems: unknown[] = [];
+  const invalidItems: unknown[] = [];
   const missingCategories: string[] = [];
   const foundMissingCategories = new Set<string>();
 

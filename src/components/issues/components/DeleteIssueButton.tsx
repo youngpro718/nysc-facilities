@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,20 +59,20 @@ export function DeleteIssueButton({
     setErrorMessage(null);
     
     try {
-      console.log(`[DeleteIssueButton] Attempting to delete issue ID: ${issueId}, force: ${forceDelete}`);
+      logger.debug(`[DeleteIssueButton] Attempting to delete issue ID: ${issueId}, force: ${forceDelete}`);
       
       await deleteIssueMutation.mutateAsync({ 
         issueId, 
         force: forceDelete 
       });
       
-      console.log(`[DeleteIssueButton] Delete succeeded for issue ID: ${issueId}`);
+      logger.debug(`[DeleteIssueButton] Delete succeeded for issue ID: ${issueId}`);
       setOpen(false);
       if (onDelete) {
         onDelete();
       }
-    } catch (error: any) {
-      console.error("[DeleteIssueButton] Error deleting issue:", error);
+    } catch (error) {
+      logger.error("[DeleteIssueButton] Error deleting issue:", error);
       const normalized = normalizeSupabaseError(error);
       setErrorMessage(normalized.userMessage);
     }

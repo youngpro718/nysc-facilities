@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -49,7 +50,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
   
   // Voice dictation state
   const [isRecording, setIsRecording] = useState(false);
-  const [recognition, setRecognition] = useState<any>(null);
+  const [recognition, setRecognition] = useState<Record<string, unknown> | null>(null);
   
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -110,8 +111,8 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       onSuccess?.();
     },
-    onError: (error: any) => {
-      console.error('Error creating issue:', error);
+    onError: (error: unknown) => {
+      logger.error('Error creating issue:', error);
       toast.error(error.message || "Failed to report issue");
     }
   });
@@ -126,7 +127,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      const newRecognition = new (window as any).webkitSpeechRecognition();
+      const newRecognition = new ((window as Record<string, unknown>)).webkitSpeechRecognition();
       newRecognition.continuous = true;
       newRecognition.interimResults = true;
       newRecognition.lang = 'en-US';
@@ -136,7 +137,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
         toast.success("Listening...");
       };
 
-      newRecognition.onresult = (event: any) => {
+      newRecognition.onresult = (event: Record<string, unknown>) => {
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {

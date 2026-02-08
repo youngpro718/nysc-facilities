@@ -1,5 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { KeyAssignment } from "../types/assignmentTypes";
 
@@ -36,11 +37,11 @@ export function useKeyAssignments() {
         .order('assigned_at', { ascending: false });
 
       if (assignmentError) {
-        console.error("Error fetching assignments:", assignmentError);
+        logger.error("Error fetching assignments:", assignmentError);
         throw assignmentError;
       }
 
-      return assignments as any;
+      return assignments as unknown;
     },
   });
 }

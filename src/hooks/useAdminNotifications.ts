@@ -9,7 +9,7 @@ export interface AdminNotification {
   urgency: string;
   related_table: string | null;
   related_id: string | null;
-  metadata: any;
+  metadata: unknown;
   read_by: string[] | null;
   created_at: string;
   expires_at: string | null;

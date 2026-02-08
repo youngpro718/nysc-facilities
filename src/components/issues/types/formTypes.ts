@@ -37,6 +37,6 @@ export interface FormData {
   lighting_details?: {
     fixture_status?: string;
     detected_issues?: string[];
-    maintenance_history?: any[];
+    maintenance_history?: unknown[];
   };
 }

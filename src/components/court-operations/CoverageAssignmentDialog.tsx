@@ -13,6 +13,7 @@ import { CoverageAssignment, SessionPeriod, BuildingCode } from '@/types/courtSe
 import { useCreateCoverageAssignment, useUpdateCoverageAssignment } from '@/hooks/useCoverageAssignments';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 interface CoverageAssignmentDialogProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function CoverageAssignmentDialog({
     absence_reason: '',
     notes: '',
   });
-  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<Record<string, unknown> | null>(null);
   const [coveringStaffSearch, setCoveringStaffSearch] = useState('');
   const [showCoveringStaffDropdown, setShowCoveringStaffDropdown] = useState(false);
 
@@ -113,18 +114,18 @@ export function CoverageAssignmentDialog({
         .rpc('list_personnel_profiles_minimal');
       
       if (error) {
-        console.error('Error fetching personnel:', error);
+        logger.error('Error fetching personnel:', error);
         throw error;
       }
       
       // Map to consistent format
-      const mapped = (data || []).map((person: any) => ({
+      const mapped = (data || []).map((person: Record<string, unknown>) => ({
         id: person.id,
         name: person.display_name || person.full_name || '',
         role: person.title || person.primary_role || 'Staff',
       }));
       
-      console.log('Personnel loaded for autocomplete:', mapped.length, 'people');
+      logger.debug(`Personnel loaded for autocomplete: ${mapped.length} people`);
       return mapped;
     },
     enabled: open,
@@ -142,10 +143,10 @@ export function CoverageAssignmentDialog({
   // Debug logging
   useEffect(() => {
     if (coveringStaffSearch) {
-      console.log('Search term:', coveringStaffSearch);
-      console.log('Total personnel:', personnelList?.length || 0);
-      console.log('Filtered results:', filteredPersonnel.length);
-      console.log('Show dropdown:', showCoveringStaffDropdown);
+      logger.debug('Search term:', coveringStaffSearch);
+      logger.debug('Total personnel:', personnelList?.length || 0);
+      logger.debug('Filtered results:', filteredPersonnel.length);
+      logger.debug('Show dropdown:', showCoveringStaffDropdown);
     }
   }, [coveringStaffSearch, filteredPersonnel.length, personnelList?.length, showCoveringStaffDropdown]);
 
@@ -235,7 +236,7 @@ export function CoverageAssignmentDialog({
       }
       onOpenChange(false);
     } catch (error) {
-      console.error('Error saving coverage:', error);
+      logger.error('Error saving coverage:', error);
     }
   };
 

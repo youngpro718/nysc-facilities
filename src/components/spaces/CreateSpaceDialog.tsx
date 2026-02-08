@@ -44,13 +44,13 @@ export function CreateSpaceDialog() {
   const watchType = form.watch('type');
   useEffect(() => {
     if (watchType === 'hallway') {
-      if (!form.getValues('hallwayType')) form.setValue('hallwayType', 'public_main' as any, { shouldDirty: true });
-      if (!form.getValues('section')) form.setValue('section', 'connector' as any, { shouldDirty: true });
-      if (!form.getValues('size')) form.setValue('size', { width: 300, height: 50 } as any, { shouldDirty: true });
-      if (!form.getValues('position')) form.setValue('position', { x: 0, y: 0 } as any, { shouldDirty: true });
+      if (!form.getValues('hallwayType')) form.setValue('hallwayType', 'public_main' as unknown, { shouldDirty: true });
+      if (!form.getValues('section')) form.setValue('section', 'connector' as unknown, { shouldDirty: true });
+      if (!form.getValues('size')) form.setValue('size', { width: 300, height: 50 } as unknown, { shouldDirty: true });
+      if (!form.getValues('position')) form.setValue('position', { x: 0, y: 0 } as unknown, { shouldDirty: true });
     }
     if (watchType === 'door') {
-      if (!form.getValues('doorType')) form.setValue('doorType', 'standard' as any, { shouldDirty: true });
+      if (!form.getValues('doorType')) form.setValue('doorType', 'standard' as unknown, { shouldDirty: true });
     }
   }, [watchType]);
 

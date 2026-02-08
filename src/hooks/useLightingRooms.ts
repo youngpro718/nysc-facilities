@@ -39,7 +39,7 @@ export function useLightingRooms() {
 
       // Get fixture counts for each room
       const roomsWithLighting = await Promise.all(
-        (rooms || []).map(async (room: any) => {
+        (rooms || []).map(async (room: Record<string, unknown>) => {
           const { data: fixtures, error: fixturesError } = await supabase
             .from('lighting_fixtures')
             .select('status')

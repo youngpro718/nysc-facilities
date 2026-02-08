@@ -16,7 +16,7 @@ export async function signUp(email: string, password: string, fullName?: string)
     password,
     options: {
       data: { full_name: fullName ?? '' },
-      emailRedirectTo: `${location.origin}/auth/verify`
+      emailRedirectTo: `${location.origin}/`
     }
   });
   
@@ -68,15 +68,6 @@ export async function requestPasswordReset(email: string) {
     redirectTo: `${location.origin}/auth/reset`,
   });
   if (error) throw error;
-}
-
-/**
- * Subscribe to authentication state changes
- * @param cb - Callback function that receives the session
- * @returns Unsubscribe function
- */
-export function onAuthStateChange(cb: (session: any) => void) {
-  return supabase.auth.onAuthStateChange((_event, session) => cb(session));
 }
 
 /**

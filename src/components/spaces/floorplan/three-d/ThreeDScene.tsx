@@ -7,6 +7,7 @@ import { GridSystem } from './systems/GridSystem';
 import { SceneLighting } from './SceneLighting';
 import { PositionUtils } from './utils/PositionUtils';
 import * as THREE from 'three';
+import { logger } from '@/lib/logger';
 import { 
   FloorPlanObject, 
   Connection, 
@@ -79,23 +80,23 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
   // Memoized object validation to prevent re-initialization on every data change
   const validatedObjects = useMemo(() => {
     if (!Array.isArray(objects)) {
-      if (enableDebugLogs) console.warn('Objects is not an array:', typeof objects);
+      if (enableDebugLogs) logger.error('Objects is not an array:', typeof objects);
       return [];
     }
 
     return objects.filter(obj => {
       if (!obj || typeof obj !== 'object') {
-        if (enableDebugLogs) console.warn('Invalid object:', obj);
+        if (enableDebugLogs) logger.error('Invalid object:', obj);
         return false;
       }
       
       if (!obj.position || typeof obj.position.x !== 'number' || typeof obj.position.y !== 'number') {
-        if (enableDebugLogs) console.warn('Invalid position:', obj.position);
+        if (enableDebugLogs) logger.error('Invalid position:', obj.position);
         return false;
       }
       
       if (!obj.size || typeof obj.size.width !== 'number' || typeof obj.size.height !== 'number') {
-        if (enableDebugLogs) console.warn('Invalid size:', obj.size);
+        if (enableDebugLogs) logger.error('Invalid size:', obj.size);
         return false;
       }
       
@@ -104,7 +105,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
   }, [objects, enableDebugLogs]); // Remove rooms and connections from dependency array
 
   const { camera } = useThree();
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<unknown>(null);
   
   // Initialize loading state based on rendering mode
   const [sceneState, setSceneState] = useState<SceneState>({
@@ -254,7 +255,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
     // Cleanup function
     return () => {
       if (enableDebugLogs) {
-        console.log('ThreeDScene effect cleanup');
+        logger.debug('ThreeDScene effect cleanup');
       }
     };
   }, [camera, sceneState.hasInitialized, enableDebugLogs]); // visibleObjects intentionally omitted
@@ -274,7 +275,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
   }, [selectedObjectId, visibleObjects]);
 
   // Improved connection type detection
-  const getConnectionType = useCallback((conn: any): 'hallway' | 'emergency' | 'direct' => {
+  const getConnectionType = useCallback((conn: Record<string, unknown>): 'hallway' | 'emergency' | 'direct' => {
     if (conn.data?.type === 'emergency' || conn.is_emergency_exit) return 'emergency';
     const sourceObj = visibleObjects.find(obj => obj.id === conn.source);
     const targetObj = visibleObjects.find(obj => obj.id === conn.target);
@@ -296,7 +297,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
           target: objectId 
         };
         if (enableDebugLogs) {
-          console.log('Creating connection:', connection);
+          logger.debug('Creating connection:', connection);
         }
         // onConnectionCreate?.(connection);
       }
@@ -381,7 +382,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
               position={renderPos}
               size={renderSize}
               rotation={rotation}
-              label={obj.label || obj.data?.name || (obj.data as any)?.room_number || `${obj.type}-${obj.id}`}
+              label={obj.label || obj.data?.name || (obj.data as Record<string, unknown>)?.room_number || `${obj.type}-${obj.id}`}
               properties={objectData.data?.properties}
               isSelected={isSelected}
               showLabels={showLabels}

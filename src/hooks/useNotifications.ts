@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useEffect } from "react";
-import { logger } from "@/utils/logger";
+import { logger } from "@/lib/logger";
 
 export interface Notification {
   id: string;
@@ -13,7 +13,7 @@ export interface Notification {
   created_at: string;
   urgency?: 'low' | 'medium' | 'high';
   action_url?: string;
-  metadata?: any;
+  metadata?: unknown;
   related_id?: string;
 }
 
@@ -60,7 +60,7 @@ export const useNotifications = (userId?: string) => {
 
       if (error) throw error;
 
-      return (notifications || []).map((notification: any) => ({
+      return (notifications || []).map((notification: Record<string, unknown>) => ({
         id: notification.id,
         type: notification.type,
         title: notification.title,

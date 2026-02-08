@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
 import { FloorPlanLayerDB, FloorPlanNode, FloorPlanEdge } from "../types/floorPlanTypes";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
@@ -27,7 +28,7 @@ export function useFloorPlanData(floorId: string | null) {
     queryFn: async () => {
       if (!floorId) return { objects: [], edges: [] };
       
-      console.log('Fetching floor plan objects for floor:', floorId);
+      logger.debug('Fetching floor plan objects for floor:', floorId);
       
       const { data: floorObjects, error } = await supabase
         .from('floor_plan_objects')
@@ -35,11 +36,11 @@ export function useFloorPlanData(floorId: string | null) {
         .eq('floor_id', floorId);
 
       if (error) {
-        console.error('Error fetching floor plan objects:', error);
+        logger.error('Error fetching floor plan objects:', error);
         throw error;
       }
 
-      console.log('Retrieved floor objects:', floorObjects);
+      logger.debug('Retrieved floor objects:', floorObjects);
 
       // Transform the objects to match our FloorPlanNode type
       const nodes: FloorPlanNode[] = (floorObjects || []).map(obj => ({
@@ -61,7 +62,7 @@ export function useFloorPlanData(floorId: string | null) {
         zIndex: obj.z_index || 0
       }));
 
-      console.log('Transformed nodes:', nodes);
+      logger.debug('Transformed nodes:', nodes);
 
       return {
         objects: nodes,

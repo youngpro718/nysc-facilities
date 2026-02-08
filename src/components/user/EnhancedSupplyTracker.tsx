@@ -57,7 +57,7 @@ interface SupplyRequest {
   created_at: string;
   updated_at: string;
   fulfilled_at?: string;
-  supply_request_items?: any[];
+  supply_request_items?: unknown[];
   notes?: string;
   assigned_fulfiller?: StaffProfile | null;
   completed_by?: StaffProfile | null;
@@ -174,7 +174,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
   });
 
   // Filter out archived requests and optionally hide completed
-  const visibleRequests = requests.filter(r => !(r.metadata as any)?.archived);
+  const visibleRequests = requests.filter(r => !(r.metadata as Record<string, unknown>)?.archived);
   const displayedRequests = showCompleted 
     ? visibleRequests 
     : visibleRequests.filter(r => r.status !== 'completed');
@@ -456,7 +456,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                     <div>
                       <h4 className="font-medium mb-2 text-sm">Items Requested</h4>
                       <div className="space-y-1">
-                        {request.supply_request_items?.slice(0, 5).map((item: any, idx: number) => (
+                        {request.supply_request_items?.slice(0, 5).map((item: Record<string, unknown>, idx: number) => (
                           <div key={idx} className="text-sm text-muted-foreground flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                             <span>
@@ -581,7 +581,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
         <ReceiptDialog
           open={!!selectedReceiptRequestId}
           onOpenChange={(open) => !open && setSelectedReceiptRequestId(null)}
-          receiptData={receipts[0].pdf_data as any}
+          receiptData={receipts[0].pdf_data as unknown}
         />
       )}
     </Card>

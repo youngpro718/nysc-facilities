@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -57,7 +59,7 @@ export function MaintenanceDialog({ fixture, onComplete }: MaintenanceDialogProp
       const { error } = await supabase
         .from('lighting_fixtures')
         .update({
-          maintenance_history: [...currentHistory, maintenanceRecord] as any,
+          maintenance_history: [...currentHistory, maintenanceRecord] as unknown,
           status: 'functional', // Reset status to functional after maintenance
           maintenance_notes: notes || null,
           updated_at: new Date().toISOString()
@@ -73,9 +75,9 @@ export function MaintenanceDialog({ fixture, onComplete }: MaintenanceDialogProp
       toast.success("Maintenance record added successfully");
       onComplete();
       setOpen(false);
-    } catch (error: any) {
-      console.error('Error adding maintenance record:', error);
-      toast.error(error.message || "Failed to add maintenance record");
+    } catch (error) {
+      logger.error('Error adding maintenance record:', error);
+      toast.error(getErrorMessage(error) || "Failed to add maintenance record");
     } finally {
       setIsSubmitting(false);
     }

@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,8 +11,8 @@ export interface MonitoredItem {
   item_name: string;
   item_description?: string;
   monitored_by: string;
-  monitoring_criteria: any;
-  alert_thresholds: any;
+  monitoring_criteria: unknown;
+  alert_thresholds: unknown;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -31,7 +32,7 @@ export const useMonitoring = () => {
       try {
         return await operation();
       } catch (error) {
-        console.warn(`Operation failed (attempt ${i + 1}/${maxRetries}):`, error);
+        logger.warn(`Operation failed (attempt ${i + 1}/${maxRetries}):`, error);
         if (i === maxRetries - 1) throw error;
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -44,7 +45,7 @@ export const useMonitoring = () => {
     itemId: string,
     itemName: string,
     itemDescription?: string,
-    criteria?: Record<string, any>
+    criteria?: Record<string, unknown>
   ) => {
     if (!user) {
       toast({
@@ -97,7 +98,7 @@ export const useMonitoring = () => {
         return true;
       });
     } catch (error) {
-      console.error("Error adding to monitoring:", error);
+      logger.error("Error adding to monitoring:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to add item to monitoring.",
@@ -140,7 +141,7 @@ export const useMonitoring = () => {
         return true;
       });
     } catch (error) {
-      console.error("Error removing from monitoring:", error);
+      logger.error("Error removing from monitoring:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to remove item from monitoring.",
@@ -167,7 +168,7 @@ export const useMonitoring = () => {
 
       return !!data;
     } catch (error) {
-      console.warn("Error checking monitoring status:", error);
+      logger.warn("Error checking monitoring status:", error);
       return false;
     }
   }, [user]);
@@ -186,7 +187,7 @@ export const useMonitoring = () => {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error("Error fetching monitored items:", error);
+      logger.error("Error fetching monitored items:", error);
       return [];
     }
   }, [user]);

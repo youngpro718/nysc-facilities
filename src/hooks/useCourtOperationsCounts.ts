@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 
@@ -36,7 +37,7 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
         .eq('session_date', today);
 
       if (error) {
-        console.error('Error counting today sessions:', error);
+        logger.error('Error counting today sessions:', error);
         return 0;
       }
 
@@ -55,7 +56,7 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
         .in('status', ['scheduled', 'in_progress']);
 
       if (error) {
-        console.error('Error counting daily sessions:', error);
+        logger.error('Error counting daily sessions:', error);
         return 0;
       }
 
@@ -74,7 +75,7 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
         .select('id, justice, clerks, sergeant, room_number');
 
       if (error) {
-        console.error('Error fetching assignments:', error);
+        logger.error('Error fetching assignments:', error);
         return { needAttention: 0, details: '' };
       }
 
@@ -144,7 +145,7 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
         .eq('priority', 'high');
 
       if (error) {
-        console.error('Error counting maintenance issues:', error);
+        logger.error('Error counting maintenance issues:', error);
         return 0;
       }
 

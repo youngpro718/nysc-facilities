@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,7 +86,7 @@ export function RoomPreviewCard({
             });
             setRoomNumber(newRoomNumber);
           } catch (error) {
-            console.error('Error regenerating room number:', error);
+            logger.error('Error regenerating room number:', error);
           }
         }
       }

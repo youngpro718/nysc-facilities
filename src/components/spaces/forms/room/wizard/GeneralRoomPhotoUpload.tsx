@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "../RoomFormSchema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,7 +63,7 @@ export function GeneralRoomPhotoUpload({ form, roomId }: GeneralRoomPhotoUploadP
       form.setValue("generalPhotos", updatedPhotos, { shouldValidate: true });
       toast.success(`${uploadedPhotos.length} photo(s) uploaded successfully`);
     } catch (error) {
-      console.error("Error uploading photos:", error);
+      logger.error("Error uploading photos:", error);
       toast.error("Failed to upload photos");
     } finally {
       setUploading(false);

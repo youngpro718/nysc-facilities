@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -93,14 +94,14 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       if (fixture) {
         const { error } = await supabase
           .from('lighting_fixtures')
-          .update(fixtureData as any)  // Using type assertion to avoid complex type mapping
+          .update(fixtureData as Record<string, unknown>)  // Using type assertion to avoid complex type mapping
           .eq('id', fixture.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('lighting_fixtures')
-          .insert([fixtureData as any]);  // Using type assertion to avoid complex type mapping
+          .insert([fixtureData as Record<string, unknown>]);  // Using type assertion to avoid complex type mapping
 
         if (error) throw error;
       }
@@ -108,8 +109,8 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       toast.success(`Lighting configuration ${fixture ? 'updated' : 'created'} successfully`);
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
       setOpen(false);
-    } catch (error: any) {
-      console.error('Error saving lighting configuration:', error);
+    } catch (error) {
+      logger.error('Error saving lighting configuration:', error);
       toast.error('Failed to save lighting configuration');
     }
   };

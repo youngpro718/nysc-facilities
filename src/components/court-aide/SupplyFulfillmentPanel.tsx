@@ -72,10 +72,10 @@ export function SupplyFulfillmentPanel() {
       if (error) throw error;
       
       // Transform the data to match our interface (profiles comes as array from supabase)
-      return (data || []).map((item: any) => ({
+      return (data || []).map((item: Record<string, unknown>) => ({
         ...item,
         profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
-        supply_request_items: item.supply_request_items?.map((sri: any) => ({
+        supply_request_items: item.supply_request_items?.map((sri: Record<string, unknown>) => ({
           ...sri,
           inventory_items: Array.isArray(sri.inventory_items) ? sri.inventory_items[0] : sri.inventory_items,
         })) || [],
@@ -102,7 +102,7 @@ export function SupplyFulfillmentPanel() {
       toast.success('Request marked as ready for pickup');
       queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error('Failed to update request', { description: error.message });
     },
   });
@@ -124,7 +124,7 @@ export function SupplyFulfillmentPanel() {
       toast.success('Started fulfilling request');
       queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error('Failed to update request', { description: error.message });
     },
   });

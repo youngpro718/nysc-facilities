@@ -69,10 +69,10 @@ export function ModernThreeDViewer({
   const sceneRef = useRef<SceneHandle | null>(null);
 
   // Typed validators and helpers
-  const isValidViewerObject = (obj: any): obj is ViewerObject => {
+  const isValidViewerObject = (obj: Record<string, unknown>): obj is ViewerObject => {
     if (!obj || typeof obj !== 'object') return false;
-    const pos = (obj as any).position;
-    const size = (obj as any).data?.size;
+    const pos = ((obj as Record<string, unknown>)).position;
+    const size = ((obj as Record<string, unknown>)).data?.size;
     return (
       pos &&
       Number.isFinite(pos.x) &&
@@ -84,9 +84,9 @@ export function ModernThreeDViewer({
   };
 
   type ViewerEdge = { id?: string; from: string; to: string; type?: string };
-  const filterValidEdges = (list: any[] | undefined | null): ViewerEdge[] => {
+  const filterValidEdges = (list: unknown[] | undefined | null): ViewerEdge[] => {
     if (!Array.isArray(list)) return [];
-    return list.filter((edge: any): edge is ViewerEdge => {
+    return list.filter((edge: Record<string, unknown>): edge is ViewerEdge => {
       return (
         edge && typeof edge === 'object' &&
         typeof edge.from === 'string' &&
@@ -99,12 +99,12 @@ export function ModernThreeDViewer({
   // Safe data filtering to prevent undefined errors
   const safeObjects = useMemo<ViewerObject[]>(() => {
     if (!Array.isArray(objects)) return [];
-    const base = (objects as any[]).filter(isValidViewerObject) as ViewerObject[];
+    const base = (objects as unknown[]).filter(isValidViewerObject) as ViewerObject[];
     if (!filterType || filterType === 'all') return base;
-    return base.filter((o: any) => (o?.type || '') === filterType);
+    return base.filter((o: Record<string, unknown>) => (o?.type || '') === filterType);
   }, [objects, filterType]);
 
-  const safeEdges = useMemo(() => filterValidEdges(edges as any[]), [edges]);
+  const safeEdges = useMemo(() => filterValidEdges(edges as unknown[]), [edges]);
 
   // Map string-id edges to geometric connections using object positions
   const sceneConnections = useMemo(() => {
@@ -112,7 +112,7 @@ export function ModernThreeDViewer({
     return safeEdges.flatMap((e) => {
       const fromObj = safeObjects.find(o => o.id === e.from);
       const toObj = safeObjects.find(o => o.id === e.to);
-      if (!fromObj || !toObj) return [] as any[];
+      if (!fromObj || !toObj) return [] as unknown[];
       return [{
         id: e.id ?? `${e.from}-${e.to}`,
         from: { x: fromObj.position.x, y: fromObj.position.y },

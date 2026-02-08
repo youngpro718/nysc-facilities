@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +65,7 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
 
     setIsUpdating(true);
     try {
-      const updates: any = {
+      const updates: Record<string, unknown> = {
         label: label.trim(),
         room_id: roomId,
         room_number: roomNumber || null,
@@ -107,14 +109,14 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
           note: noteText
         });
 
-      if (logError) console.error('Error logging activity:', logError);
+      if (logError) logger.error('Error logging activity:', logError);
 
       toast.success(isMoving ? "Slot moved successfully" : "Slot updated successfully");
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      console.error('Error updating slot:', error);
-      toast.error(error.message || "Failed to update slot");
+    } catch (error) {
+      logger.error('Error updating slot:', error);
+      toast.error(getErrorMessage(error) || "Failed to update slot");
     } finally {
       setIsUpdating(false);
     }

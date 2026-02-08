@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { 
   CoverageAssignment, 
@@ -59,7 +60,7 @@ export function useCreateCoverageAssignment() {
       toast.success('Coverage assigned successfully');
     },
     onError: (error: Error) => {
-      console.error('Error creating coverage:', error);
+      logger.error('Error creating coverage:', error);
       toast.error('Failed to assign coverage');
     },
   });
@@ -89,7 +90,7 @@ export function useUpdateCoverageAssignment() {
       toast.success('Coverage updated successfully');
     },
     onError: (error: Error) => {
-      console.error('Error updating coverage:', error);
+      logger.error('Error updating coverage:', error);
       toast.error('Failed to update coverage');
     },
   });
@@ -113,7 +114,7 @@ export function useDeleteCoverageAssignment() {
       toast.success('Coverage assignment deleted');
     },
     onError: (error: Error) => {
-      console.error('Error deleting coverage:', error);
+      logger.error('Error deleting coverage:', error);
       toast.error('Failed to delete coverage');
     },
   });

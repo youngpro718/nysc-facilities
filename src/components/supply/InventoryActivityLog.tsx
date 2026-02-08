@@ -83,7 +83,7 @@ export function InventoryActivityLog({ itemId, limit = 50 }: InventoryActivityLo
   };
 
   const getTransactionBadge = (type: string) => {
-    const typeMap: Record<string, { label: string; variant: any }> = {
+    const typeMap: Record<string, { label: string; variant: unknown }> = {
       'add': { label: 'Added', variant: 'default' },
       'remove': { label: 'Removed', variant: 'destructive' },
       'fulfilled': { label: 'Fulfilled Order', variant: 'secondary' },

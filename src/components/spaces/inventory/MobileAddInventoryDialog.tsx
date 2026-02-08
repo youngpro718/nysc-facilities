@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { logger } from '@/lib/logger';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -123,7 +124,7 @@ export function MobileAddInventoryDialog({
 
       return publicUrl;
     } catch (error) {
-      console.error('Error uploading photo:', error);
+      logger.error('Error uploading photo:', error);
       toast({
         title: "Error",
         description: "Failed to upload photo. Please try again.",
@@ -168,7 +169,7 @@ export function MobileAddInventoryDialog({
       form.reset();
       removePhoto();
     } catch (error) {
-      console.error('Error submitting form:', error);
+      logger.error('Error submitting form:', error);
     }
   };
 

@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { logger } from '@/lib/logger';
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Database, History, Shield } from "lucide-react";
@@ -42,7 +43,7 @@ export function DatabaseSection() {
       const versions = await fetchBackupVersions();
       setBackupVersions(versions);
     } catch (error) {
-      console.error('Error loading backup history:', error);
+      logger.error('Error loading backup history:', error);
       toast({
         title: "Error Loading History",
         description: "Could not load backup history.",
@@ -60,7 +61,7 @@ export function DatabaseSection() {
         description: "Database has been exported to Excel successfully.",
       });
     } catch (error) {
-      console.error('Export error:', error);
+      logger.error('Export error:', error);
       toast({
         title: "Export Failed",
         description: "There was an error exporting the database.",
@@ -83,7 +84,7 @@ export function DatabaseSection() {
         description: "Database has been updated from Excel successfully.",
       });
     } catch (error) {
-      console.error('Import error:', error);
+      logger.error('Import error:', error);
       toast({
         title: "Import Failed",
         description: "There was an error importing the database.",
@@ -102,7 +103,7 @@ export function DatabaseSection() {
         description: "Backup restoration has been initiated.",
       });
     } catch (error) {
-      console.error('Restore error:', error);
+      logger.error('Restore error:', error);
       toast({
         title: "Restore Failed",
         description: "There was an error starting the backup restoration.",
@@ -126,7 +127,7 @@ export function DatabaseSection() {
         description: "Backup retention policy has been created successfully.",
       });
     } catch (error) {
-      console.error('Policy creation error:', error);
+      logger.error('Policy creation error:', error);
       toast({
         title: "Policy Creation Failed",
         description: "There was an error creating the backup policy.",

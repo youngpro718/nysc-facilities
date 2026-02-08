@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import type { ReceiptData } from '@/types/receipt';
@@ -65,7 +66,7 @@ export function useGenerateReceipt() {
       toast.success('Receipt generated successfully');
     },
     onError: (error) => {
-      console.error('Error generating receipt:', error);
+      logger.error('Error generating receipt:', error);
       toast.error('Failed to generate receipt');
     },
   });

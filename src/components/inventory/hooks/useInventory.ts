@@ -1,5 +1,7 @@
     import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { toast } from "@/components/ui/use-toast";
 
 export interface InventoryItem {
@@ -64,9 +66,9 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
               }
             : undefined,
         })) as InventoryItem[];
-      } catch (error: any) {
-        console.error("Error fetching inventory:", error);
-        throw new Error(error.message || "Failed to fetch inventory items");
+      } catch (error) {
+        logger.error("Error fetching inventory:", error);
+        throw new Error(getErrorMessage(error) || "Failed to fetch inventory items");
       }
     },
     enabled,
@@ -91,9 +93,9 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
 
         if (error) throw error;
         return data;
-      } catch (error: any) {
-        console.error("Error creating item:", error);
-        throw new Error(error.message || "Failed to create inventory item");
+      } catch (error) {
+        logger.error("Error creating item:", error);
+        throw new Error(getErrorMessage(error) || "Failed to create inventory item");
       }
     },
     onSuccess: () => {
@@ -106,7 +108,7 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -125,9 +127,9 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
 
         if (error) throw error;
         return updatedData;
-      } catch (error: any) {
-        console.error("Error updating item:", error);
-        throw new Error(error.message || "Failed to update inventory item");
+      } catch (error) {
+        logger.error("Error updating item:", error);
+        throw new Error(getErrorMessage(error) || "Failed to update inventory item");
       }
     },
     onSuccess: () => {
@@ -140,7 +142,7 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -155,9 +157,9 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
           .eq("id", id);
 
         if (error) throw error;
-      } catch (error: any) {
-        console.error("Error deleting item:", error);
-        throw new Error(error.message || "Failed to delete inventory item");
+      } catch (error) {
+        logger.error("Error deleting item:", error);
+        throw new Error(getErrorMessage(error) || "Failed to delete inventory item");
       }
     },
     onSuccess: () => {
@@ -170,7 +172,7 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     },

@@ -15,11 +15,11 @@ export interface LightingFixture {
   status: string;
   technology?: string;
   zone_id?: string;
-  maintenance_history?: any[];
+  maintenance_history?: unknown[];
   last_maintenance_date?: string;
   next_maintenance_date?: string;
   installation_date?: string;
-  electrical_issues?: any;
+  electrical_issues?: Record<string, unknown>;
   lighting_zones?: {
     name: string;
   };
@@ -54,7 +54,7 @@ export interface ReportTemplate {
   id: string;
   name: string;
   description?: string;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   is_public: boolean;
   created_at?: string;
   updated_at?: string;
@@ -76,7 +76,7 @@ export interface FloorplanReportData {
   building_name: string;
   floor_name: string;
   floor_id: string;
-  floorplan_data: Record<string, any>;
+  floorplan_data: Record<string, unknown>;
 }
 
 export interface RoomHealthData {
@@ -145,7 +145,7 @@ export interface IssueReportMetrics {
 
 export interface IssueReportSection {
   title: string;
-  data: any;
+  data: unknown;
 }
 
 export interface FormattedIssueReport {
@@ -159,7 +159,7 @@ export interface FormattedIssueReport {
 export interface ReportMetrics {
   totalRecords: number;
   categories: Record<string, number>;
-  trends?: Record<string, any>;
+  trends?: Record<string, unknown>;
 }
 
 export interface ReportSummary {

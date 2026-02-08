@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export function useEnhancedAdminMutation(refetchUsers: () => void) {
   const getCurrentUserId = async (): Promise<string | null> => {
@@ -16,7 +17,7 @@ export function useEnhancedAdminMutation(refetchUsers: () => void) {
   };
 
   const promoteToAdmin = async (userId: string, userName: string): Promise<void> => {
-    console.log('[useEnhancedAdminMutation] Promoting user to admin:', { userId, userName });
+    logger.debug('[useEnhancedAdminMutation] Promoting user to admin:', { userId, userName });
     
     try {
       // Use unified RPC function
@@ -24,21 +25,21 @@ export function useEnhancedAdminMutation(refetchUsers: () => void) {
         .rpc('promote_to_admin', { target_user_id: userId });
 
       if (error) {
-        console.error('[useEnhancedAdminMutation] RPC error:', error);
+        logger.error('[useEnhancedAdminMutation] RPC error:', error);
         throw error;
       }
 
       if (!data?.success) {
         const errorMsg = data?.message || 'Failed to promote user';
-        console.error('[useEnhancedAdminMutation] RPC returned error:', errorMsg);
+        logger.error('[useEnhancedAdminMutation] RPC returned error:', errorMsg);
         throw new Error(errorMsg);
       }
 
-      console.log('[useEnhancedAdminMutation] Successfully promoted user:', data);
+      logger.debug('[useEnhancedAdminMutation] Successfully promoted user:', data);
       toast.success(`${userName} has been promoted to admin`);
       refetchUsers();
     } catch (error) {
-      console.error('[useEnhancedAdminMutation] Error promoting user to admin:', error);
+      logger.error('[useEnhancedAdminMutation] Error promoting user to admin:', error);
       toast.error('Failed to promote user to admin');
       throw error;
     }
@@ -73,7 +74,7 @@ export function useEnhancedAdminMutation(refetchUsers: () => void) {
       toast.success(`${userName} admin privileges have been revoked`);
       refetchUsers();
     } catch (error) {
-      console.error('Error demoting admin:', error);
+      logger.error('Error demoting admin:', error);
       toast.error('Failed to remove admin privileges');
       throw error;
     }

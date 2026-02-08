@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { Profile, EmergencyContact } from "../types";
 import { toast } from "sonner";
@@ -40,7 +41,7 @@ export function useAdminProfile() {
               parsedEmergencyContact = data.emergency_contact as EmergencyContact;
             }
           } catch (e) {
-            console.warn('Failed to parse emergency contact:', e);
+            logger.warn('Failed to parse emergency contact:', e);
             parsedEmergencyContact = undefined;
           }
         }
@@ -55,7 +56,7 @@ export function useAdminProfile() {
         setError(null);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      logger.error("Error fetching profile:", error);
       setError("Failed to fetch profile");
       toast.error("Failed to fetch profile");
     } finally {
@@ -89,7 +90,7 @@ export function useAdminProfile() {
       setIsEditing(false);
       toast.success("Profile updated successfully");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      logger.error("Error updating profile:", error);
       setError("Failed to update profile");
       toast.error("Failed to update profile");
     }

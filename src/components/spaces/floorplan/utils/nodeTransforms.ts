@@ -1,6 +1,7 @@
 import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
+import { logger } from '@/lib/logger';
 
-export function getSpaceColor(space: any): string {
+export function getSpaceColor(space: Record<string, unknown>): string {
   if (!space) return '#e2e8f0'; // Default color for undefined spaces
   
   if (space.object_type === 'room' || space.type === 'room') {
@@ -22,10 +23,10 @@ export function getSpaceColor(space: any): string {
   }
 }
 
-export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
+export function transformSpaceToNode(space: Record<string, unknown>, index: number): FloorPlanNode {
   // Validate space object
   if (!space || typeof space !== 'object') {
-    console.warn('Invalid space object:', space);
+    logger.warn('Invalid space object:', space);
     // Return a fallback node to prevent crashes
     return {
       id: `fallback-${index}`,
@@ -68,7 +69,7 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
       spacePosition = defaultPosition;
     }
   } catch (error) {
-    console.warn('Error parsing position:', error);
+    logger.warn('Error parsing position:', error);
     spacePosition = defaultPosition;
   }
 
@@ -96,7 +97,7 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
       spaceSize = defaultSize;
     }
   } catch (error) {
-    console.warn('Error parsing size:', error);
+    logger.warn('Error parsing size:', error);
     spaceSize = defaultSize;
   }
 
@@ -140,7 +141,7 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
   // Handle hallway connections for positioning
   if (objectType === 'hallway' && Array.isArray(space.connections) && space.connections.length > 0) {
     // Look for connected spaces
-    const hallwayConnection = space.connections.find((conn: any) => 
+    const hallwayConnection = space.connections.find((conn: Record<string, unknown>) => 
       conn && typeof conn === 'object' && 
       (conn.direction === 'left_of_hallway' || conn.direction === 'right_of_hallway')
     );

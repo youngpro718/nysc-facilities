@@ -62,7 +62,7 @@ export interface Room {
   created_at: string;
   updated_at: string;
   function_change_date?: string;
-  previous_functions?: any[];
+  previous_functions?: unknown[];
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
@@ -81,9 +81,9 @@ export interface Room {
   };
   
   // Related data
-  lighting_fixture?: any;
+  lighting_fixture?: Record<string, unknown>;
   space_connections?: RoomConnection[];
-  issues?: any[];
-  room_history?: any[];
-  current_occupants?: any[];
+  issues?: unknown[];
+  room_history?: unknown[];
+  current_occupants?: unknown[];
 }

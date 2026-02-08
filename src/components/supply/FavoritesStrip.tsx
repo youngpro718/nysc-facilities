@@ -10,9 +10,9 @@ import type { CartItem } from '@/hooks/useOrderCart';
 
 interface FavoritesStripProps {
   cartItems: CartItem[];
-  onAdd: (item: any) => void;
-  onIncrement: (item: any) => void;
-  onDecrement: (item: any) => void;
+  onAdd: (item: Record<string, unknown>) => void;
+  onIncrement: (item: Record<string, unknown>) => void;
+  onDecrement: (item: Record<string, unknown>) => void;
 }
 
 export function FavoritesStrip({
@@ -27,8 +27,8 @@ export function FavoritesStrip({
 
   // Get favorite items with their full details
   const favoriteItems = favorites
-    .map(fav => inventoryItems.find((item: any) => item.id === fav.item_id))
-    .filter(Boolean) as any[];
+    .map(fav => inventoryItems.find((item: Record<string, unknown>) => item.id === fav.item_id))
+    .filter(Boolean) as unknown[];
 
   if (favoritesLoading || itemsLoading) {
     return null;

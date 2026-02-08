@@ -151,9 +151,9 @@ export default function UserDashboard() {
           <CompactHeader
             firstName={firstName}
             lastName={lastName}
-            title={(profile as any)?.title || personnelInfo?.title}
-            department={(profile as any)?.department || (personnelInfo as any)?.department}
-            roomNumber={(profile as any)?.room_number || personnelInfo?.roomNumber}
+            title={((profile as Record<string, unknown>))?.title || personnelInfo?.title}
+            department={((profile as Record<string, unknown>))?.department || (personnelInfo as Record<string, unknown>)?.department}
+            roomNumber={((profile as Record<string, unknown>))?.room_number || personnelInfo?.roomNumber}
             avatarUrl={profile?.avatar_url}
             role={personnelInfo?.role}
           />

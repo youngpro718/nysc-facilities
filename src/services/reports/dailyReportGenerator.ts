@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { CourtSession, CoverageAssignment, SessionPeriod, BuildingCode } from '@/types/courtSessions';
 
 // Initialize pdfMake with fonts
-(pdfMake as any).vfs = pdfFonts;
+((pdfMake as Record<string, unknown>)).vfs = pdfFonts;
 
 export interface DailyReportOptions {
   date: Date;
@@ -26,7 +26,7 @@ export class DailyReportGenerator {
    */
   static async generateReport(options: DailyReportOptions): Promise<void> {
     const docDefinition = this.createDocumentDefinition(options);
-    (pdfMake as any).createPdf(docDefinition).download(this.getFileName(options));
+    ((pdfMake as Record<string, unknown>)).createPdf(docDefinition).download(this.getFileName(options));
   }
 
   /**
@@ -34,7 +34,7 @@ export class DailyReportGenerator {
    */
   static async openReport(options: DailyReportOptions): Promise<void> {
     const docDefinition = this.createDocumentDefinition(options);
-    (pdfMake as any).createPdf(docDefinition).open();
+    ((pdfMake as Record<string, unknown>)).createPdf(docDefinition).open();
   }
 
   /**
@@ -43,7 +43,7 @@ export class DailyReportGenerator {
   static async getReportBlob(options: DailyReportOptions): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const docDefinition = this.createDocumentDefinition(options);
-      (pdfMake as any).createPdf(docDefinition).getBlob((blob) => {
+      ((pdfMake as Record<string, unknown>)).createPdf(docDefinition).getBlob((blob) => {
         resolve(blob);
       });
     });
@@ -244,15 +244,15 @@ export class DailyReportGenerator {
         : '';
 
       tableBody.push([
-        { text: partJudge, style: 'tableCell', fontSize: 8 } as any,
-        { text: session.parts_entered_by || '-', style: 'tableCell', fontSize: 8 } as any,
-        { text: session.defendants || '-', style: 'tableCell', fontSize: 8 } as any,
-        { text: session.purpose || '-', style: 'tableCell', fontSize: 8 } as any,
-        { text: dateTranStart || '-', style: 'tableCell', fontSize: 8 } as any,
-        { text: session.top_charge || '-', style: 'tableCell', fontSize: 8 } as any,
-        { text: status, style: 'tableCell', fontSize: 8 } as any,
-        { text: session.attorney || '-', style: 'tableCell', fontSize: 8 } as any,
-        { text: estFinDate || '-', style: 'tableCell', fontSize: 8 } as any,
+        { text: partJudge, style: 'tableCell', fontSize: 8 } as unknown,
+        { text: session.parts_entered_by || '-', style: 'tableCell', fontSize: 8 } as unknown,
+        { text: session.defendants || '-', style: 'tableCell', fontSize: 8 } as unknown,
+        { text: session.purpose || '-', style: 'tableCell', fontSize: 8 } as unknown,
+        { text: dateTranStart || '-', style: 'tableCell', fontSize: 8 } as unknown,
+        { text: session.top_charge || '-', style: 'tableCell', fontSize: 8 } as unknown,
+        { text: status, style: 'tableCell', fontSize: 8 } as unknown,
+        { text: session.attorney || '-', style: 'tableCell', fontSize: 8 } as unknown,
+        { text: estFinDate || '-', style: 'tableCell', fontSize: 8 } as unknown,
       ]);
     });
 

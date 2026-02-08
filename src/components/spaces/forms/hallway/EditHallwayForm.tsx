@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ export function EditHallwayForm({
         throw new Error('Invalid space type for hallway edit form');
       }
       
-      console.log('Updating hallway with data:', data);
+      logger.debug('Updating hallway with data:', data);
       
       // Update hallway directly in the hallways table
       const hallwayData = {
@@ -80,7 +81,7 @@ export function EditHallwayForm({
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
-      console.error("Update error:", error);
+      logger.error("Update error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to update hallway");
     },
   });

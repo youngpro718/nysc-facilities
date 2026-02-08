@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { MobileSearchBar } from "@/components/mobile/MobileSearchBar";
 import { MobileFilterSheet } from "@/components/mobile/MobileFilterSheet";
 import { MobileDetailsDialog } from "@/components/mobile/MobileDetailsDialog";
+import { EditLightingDialog } from "@/components/lighting/EditLightingDialog";
 import { MobileLightingFilters } from "./MobileLightingFilters";
 import { MobileLightingFixtureCard } from "./MobileLightingFixtureCard";
 import { WalkthroughMode } from "./WalkthroughMode";
@@ -29,6 +30,7 @@ interface MobileLightingListProps {
   onFixtureSelect?: (fixtureIds: string[]) => void;
   onAddFixture?: () => void;
   onBulkAction?: (action: string, fixtureIds: string[]) => void;
+  onFixtureDelete?: (fixtureId: string) => Promise<boolean>;
   refetch?: () => void;
 }
 
@@ -39,6 +41,7 @@ export function MobileLightingList({
   onFixtureSelect,
   onAddFixture,
   onBulkAction,
+  onFixtureDelete,
   refetch
 }: MobileLightingListProps) {
   const [mode, setMode] = useState<'list' | 'walkthrough'>('list');
@@ -47,6 +50,7 @@ export function MobileLightingList({
   const [showFilters, setShowFilters] = useState(false);
   const [selectedFixture, setSelectedFixture] = useState<LightingFixture | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [editingFixture, setEditingFixture] = useState<LightingFixture | null>(null);
 
   const [filters, setFilters] = useState({
     status: "all",
@@ -262,14 +266,16 @@ export function MobileLightingList({
             fixture={fixture}
             isSelected={selectedFixtures.includes(fixture.id)}
             onSelect={(checked) => handleSelectFixture(fixture.id, checked)}
-            onDelete={() => {
+            onDelete={async () => {
               if (confirm('Are you sure you want to delete this fixture?')) {
-                toast.success('Fixture deleted successfully');
-                // Trigger refresh if available
+                const success = await onFixtureDelete?.(fixture.id);
+                if (success) {
+                  // Toast handled in hook
+                }
               }
             }}
             onEdit={() => {
-              toast.info('Edit functionality available in desktop view');
+              setEditingFixture(fixture);
             }}
             onMaintenance={() => {
               toast.success('Maintenance scheduled for fixture');
@@ -308,7 +314,14 @@ export function MobileLightingList({
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule Maintenance
               </Button>
-              <Button variant="outline" className="flex-1">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  setEditingFixture(selectedFixture);
+                  setShowDetails(false);
+                }}
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Edit
               </Button>
@@ -365,6 +378,18 @@ export function MobileLightingList({
             )}
           </div>
         </MobileDetailsDialog>
+      )}
+
+      {editingFixture && (
+        <EditLightingDialog
+          fixture={editingFixture}
+          open={!!editingFixture}
+          onOpenChange={(open) => !open && setEditingFixture(null)}
+          onFixtureUpdated={() => {
+            refetch?.();
+            setEditingFixture(null);
+          }}
+        />
       )}
     </div>
   );

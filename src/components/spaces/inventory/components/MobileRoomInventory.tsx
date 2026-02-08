@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { useInventory } from "../hooks/useInventory";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -73,7 +74,7 @@ export function MobileRoomInventory({ roomId }: { roomId: string }) {
         description: "Item updated successfully.",
       });
     } catch (error) {
-      console.error('Error editing item:', error);
+      logger.error('Error editing item:', error);
       toast({
         title: "Error",
         description: "Failed to update item. Please try again.",

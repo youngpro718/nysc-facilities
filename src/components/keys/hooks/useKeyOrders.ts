@@ -1,5 +1,7 @@
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyOrder, CreateKeyOrderData, ReceiveKeysData } from "../types/OrderTypes";
@@ -60,9 +62,9 @@ export function useKeyOrders() {
       toast.success("Key order created successfully");
       await refetchOrders();
       return data;
-    } catch (error: any) {
-      console.error("Error creating key order:", error);
-      toast.error(error.message || "Failed to create key order");
+    } catch (error) {
+      logger.error("Error creating key order:", error);
+      toast.error(getErrorMessage(error) || "Failed to create key order");
       return null;
     } finally {
       setIsCreatingOrder(false);
@@ -98,9 +100,9 @@ export function useKeyOrders() {
       ]);
       
       return true;
-    } catch (error: any) {
-      console.error("Error receiving keys:", error);
-      toast.error(error.message || "Failed to receive keys");
+    } catch (error) {
+      logger.error("Error receiving keys:", error);
+      toast.error(getErrorMessage(error) || "Failed to receive keys");
       return false;
     } finally {
       setIsReceivingOrder(false);
@@ -120,9 +122,9 @@ export function useKeyOrders() {
       toast.success("Order canceled successfully");
       await refetchOrders();
       return true;
-    } catch (error: any) {
-      console.error("Error canceling order:", error);
-      toast.error(error.message || "Failed to cancel order");
+    } catch (error) {
+      logger.error("Error canceling order:", error);
+      toast.error(getErrorMessage(error) || "Failed to cancel order");
       return false;
     }
   };

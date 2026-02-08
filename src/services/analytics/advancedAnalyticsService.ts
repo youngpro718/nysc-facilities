@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import { OptimizedSpacesService } from '@/services/optimized/spacesService';
 
 // Analytics interfaces
@@ -115,7 +116,7 @@ export class AdvancedAnalyticsService {
 
       return utilizationData;
     } catch (error) {
-      console.error('Error getting facility utilization:', error);
+      logger.error('Error getting facility utilization:', error);
       throw error;
     }
   }
@@ -167,7 +168,7 @@ export class AdvancedAnalyticsService {
 
       return trendData.sort((a, b) => b.average_occupancy - a.average_occupancy);
     } catch (error) {
-      console.error('Error getting occupancy trends:', error);
+      logger.error('Error getting occupancy trends:', error);
       throw error;
     }
   }
@@ -235,7 +236,7 @@ export class AdvancedAnalyticsService {
 
       return analyticsData.sort((a, b) => b.total_count - a.total_count);
     } catch (error) {
-      console.error('Error getting issue analytics:', error);
+      logger.error('Error getting issue analytics:', error);
       throw error;
     }
   }
@@ -294,7 +295,7 @@ export class AdvancedAnalyticsService {
 
       return maintenanceData.sort((a, b) => a.maintenance_score - b.maintenance_score);
     } catch (error) {
-      console.error('Error getting maintenance analytics:', error);
+      logger.error('Error getting maintenance analytics:', error);
       throw error;
     }
   }
@@ -340,7 +341,7 @@ export class AdvancedAnalyticsService {
 
       return efficiencyData.sort((a, b) => a.efficiency_score - b.efficiency_score);
     } catch (error) {
-      console.error('Error getting energy efficiency data:', error);
+      logger.error('Error getting energy efficiency data:', error);
       throw error;
     }
   }
@@ -403,7 +404,7 @@ export class AdvancedAnalyticsService {
 
       return recommendations.sort((a, b) => b.confidence_score - a.confidence_score);
     } catch (error) {
-      console.error('Error getting space optimization recommendations:', error);
+      logger.error('Error getting space optimization recommendations:', error);
       throw error;
     }
   }
@@ -447,7 +448,7 @@ export class AdvancedAnalyticsService {
         },
       };
     } catch (error) {
-      console.error('Error generating facility report:', error);
+      logger.error('Error generating facility report:', error);
       throw error;
     }
   }

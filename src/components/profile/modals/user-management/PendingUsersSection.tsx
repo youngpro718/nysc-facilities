@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { UserCheck, UserX, Mail, Clock, AlertCircle, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import type { User } from "./types";
 
 interface PendingUsersSectionProps {
@@ -20,7 +21,7 @@ export function PendingUsersSection({
   onReject 
 }: PendingUsersSectionProps) {
   const handleQuickApprove = async (userId: string, userName: string) => {
-    console.log('[PendingUsersSection] Quick approving user:', { userId, userName });
+    logger.debug('[PendingUsersSection] Quick approving user:', { userId, userName });
     
     try {
       // Use the new approve_user_verification function with standard role
@@ -32,17 +33,17 @@ export function PendingUsersSection({
         });
 
       if (error) {
-        console.error('[PendingUsersSection] RPC error:', error);
+        logger.error('[PendingUsersSection] RPC error:', error);
         throw error;
       }
 
-      console.log('[PendingUsersSection] Successfully approved user:', data);
+      logger.debug('[PendingUsersSection] Successfully approved user:', data);
       toast.success(`${userName} has been verified and approved as standard user`);
       
       // Trigger parent component refresh
       onVerify(userId);
     } catch (error) {
-      console.error('[PendingUsersSection] Error approving user:', error);
+      logger.error('[PendingUsersSection] Error approving user:', error);
       toast.error('Failed to verify and approve user');
     }
   };
@@ -143,7 +144,7 @@ export function PendingUsersSection({
                   <span className="font-medium">Requested Access:</span>
                   <span className="ml-2 text-slate-800">
                     {(() => {
-                      const raw = (user as any)?.metadata?.requested_access_level as string | undefined;
+                      const raw = ((user as Record<string, unknown>))?.metadata?.requested_access_level as string | undefined;
                       if (!raw) return 'Not specified';
                       return (raw === 'administrative' || raw === 'admin') ? 'Administrative' : 'Standard';
                     })()}

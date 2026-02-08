@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -171,7 +172,7 @@ export function ReportsView() {
       
       if (error) throw error;
       
-      const statusCounts = data?.reduce((acc: any, fixture) => {
+      const statusCounts = data?.reduce((acc: Record<string, unknown>, fixture) => {
         acc[fixture.status] = (acc[fixture.status] || 0) + 1;
         return acc;
       }, {});
@@ -195,7 +196,7 @@ export function ReportsView() {
   ];
 
   const exportReport = (type: string) => {
-    console.log('Exporting report:', type);
+    logger.debug('Exporting report:', type);
     // Implementation would generate and download reports
   };
 

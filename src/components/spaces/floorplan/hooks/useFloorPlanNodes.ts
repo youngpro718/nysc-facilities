@@ -4,13 +4,14 @@ import { NodeChange, OnNodesChange, useReactFlow } from 'reactflow';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
+import { logger } from '@/lib/logger';
 
 type NodeUpdateData = {
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
-  data?: Record<string, any>;
-  properties?: Record<string, any>;
+  data?: Record<string, unknown>;
+  properties?: Record<string, unknown>;
   type?: string;
   status?: 'active' | 'inactive' | 'under_maintenance';
 };
@@ -28,7 +29,7 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           return;
         }
 
-        console.log(`Preparing to update node in database:`, node);
+        logger.debug(`Preparing to update node in database:`, node);
 
         // Determine the correct table based on node type
         let table: 'rooms' | 'doors' | 'hallways';
@@ -63,7 +64,7 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           updateData.properties = node.data.properties;
         }
 
-        console.log(`Updating ${node.type} in ${table}:`, nodeId, updateData);
+        logger.debug(`Updating ${node.type} in ${table}: ${nodeId}`, updateData);
 
         // Update in the database
         const { error } = await supabase
@@ -72,17 +73,17 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           .eq('id', nodeId);
 
         if (error) {
-          console.error(`Error updating ${node.type}:`, error);
+          logger.error(`Error updating ${node.type}:`, error);
           toast.error(`Failed to update ${node.type}: ${error.message}`);
         } else {
-          console.log(`Successfully updated ${node.type} in ${table}`);
+          logger.debug(`Successfully updated ${node.type} in ${table}`);
           
           // If the node was a hallway, also update hallway_properties table if needed
           if (node.type === 'hallway' && node.data?.properties) {
             const { section, traffic_flow, accessibility, emergency_route, maintenance_priority, capacity_limit } = node.data.properties;
             
             if (section || traffic_flow || accessibility || emergency_route || maintenance_priority || capacity_limit) {
-              console.log('Updating hallway properties:', {
+              logger.debug('Updating hallway properties:', {
                 section, traffic_flow, accessibility, emergency_route, maintenance_priority, capacity_limit
               });
               
@@ -103,7 +104,7 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
                 .single();
                 
               if (checkError && checkError.code !== 'PGRST116') { // Not found error
-                console.error('Error checking hallway properties:', checkError);
+                logger.error('Error checking hallway properties:', checkError);
               }
               
               // If record exists, update it, otherwise insert new
@@ -114,9 +115,9 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
                   .eq('space_id', nodeId);
                   
                 if (propsError) {
-                  console.error('Error updating hallway properties:', propsError);
+                  logger.error('Error updating hallway properties:', propsError);
                 } else {
-                  console.log('Successfully updated hallway properties');
+                  logger.debug('Successfully updated hallway properties');
                 }
               } else {
                 const { error: insertError } = await supabase
@@ -124,9 +125,9 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
                   .insert([{ space_id: nodeId, ...hallwayProps }]);
                   
                 if (insertError) {
-                  console.error('Error inserting hallway properties:', insertError);
+                  logger.error('Error inserting hallway properties:', insertError);
                 } else {
-                  console.log('Successfully inserted hallway properties');
+                  logger.debug('Successfully inserted hallway properties');
                 }
               }
             }
@@ -137,7 +138,7 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
         pendingUpdates.current.delete(nodeId);
       }
     } catch (err) {
-      console.error('Error in updateNodeInDatabase:', err);
+      logger.error('Error in updateNodeInDatabase:', err);
       pendingUpdates.current.delete(nodeId);
     }
   }, 500), [getNode]);

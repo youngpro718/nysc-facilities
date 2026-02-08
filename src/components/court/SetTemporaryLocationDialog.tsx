@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ export const SetTemporaryLocationDialog = ({
     notes: "",
   });
   const [isUpdating, setIsUpdating] = useState(false);
-  const [courtroomInfo, setCourtroomInfo] = useState<any>(null);
+  const [courtroomInfo, setCourtroomInfo] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (courtroomId && open) {
@@ -54,7 +55,7 @@ export const SetTemporaryLocationDialog = ({
         });
       }
     } catch (error) {
-      console.error("Error fetching courtroom info:", error);
+      logger.error("Error fetching courtroom info:", error);
     }
   };
 

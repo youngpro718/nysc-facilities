@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 
 interface StaffTasksPendingCounts {
@@ -21,7 +22,7 @@ export function useStaffTasksPendingCounts() {
         .eq('status', 'pending_approval');
 
       if (approvalError) {
-        console.error('Error fetching pending approval count:', approvalError);
+        logger.error('Error fetching pending approval count:', approvalError);
       }
 
       // Count approved tasks available to claim (for workers)
@@ -32,7 +33,7 @@ export function useStaffTasksPendingCounts() {
         .is('claimed_by', null);
 
       if (claimError) {
-        console.error('Error fetching available to claim count:', claimError);
+        logger.error('Error fetching available to claim count:', claimError);
       }
 
       return {

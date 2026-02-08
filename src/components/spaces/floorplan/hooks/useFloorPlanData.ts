@@ -5,6 +5,7 @@ import { processFloorPlanObjects } from "../utils/floorPlanTransformers";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
 import { FloorPlanLayerDB, RawFloorPlanObject, Position, Size } from "../types/floorPlanTypes";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
@@ -23,7 +24,7 @@ export function useFloorPlanData(floorId: string | null) {
     queryKey: ['floorplan-objects', floorId],
     queryFn: async () => {
       if (!floorId) return { objects: [], connections: [] };
-      console.log('Fetching floor plan objects for floor:', floorId);
+      logger.debug('Fetching floor plan objects for floor:', floorId);
       return fetchFloorPlanObjects(floorId);
     },
     enabled: !!floorId
@@ -44,7 +45,7 @@ export function useFloorPlanData(floorId: string | null) {
       if (error) throw error;
       
       // Group fixtures by space_id for easier access
-      const fixturesBySpace: Record<string, any[]> = {};
+      const fixturesBySpace: Record<string, unknown[]> = {};
       
       if (data && Array.isArray(data)) {
         data.forEach(fixture => {
@@ -67,7 +68,7 @@ export function useFloorPlanData(floorId: string | null) {
   
   // Assign default positions to objects without positions
   const objectsWithPositions = Array.isArray(safeSpaceData.objects) ? 
-    safeSpaceData.objects.map((rawObj: any, index) => {
+    safeSpaceData.objects.map((rawObj: Record<string, unknown>, index) => {
       // Default values
       const defaultPosition: Position = {
         x: (index % 4) * 250 + 100, // Create a grid layout with 4 columns
@@ -136,7 +137,7 @@ export function useFloorPlanData(floorId: string | null) {
       // Use null check before trying to access lighting data
       if (lightingData && rawObj.id && lightingData[rawObj.id]) {
         const fixtures = lightingData[rawObj.id];
-        const functionalLights = fixtures.filter((f: any) => f.status === 'functional').length;
+        const functionalLights = fixtures.filter((f: Record<string, unknown>) => f.status === 'functional').length;
         const totalLights = fixtures.length;
         
         enhancedProperties = {
@@ -175,13 +176,13 @@ export function useFloorPlanData(floorId: string | null) {
     
   const FP_DEBUG = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLOORPLAN_DEBUG === 'true';
   if (FP_DEBUG) {
-    console.log('Transformed objects:', objects);
-    console.log('Created edges:', edges);
+    logger.debug('Transformed objects:', objects);
+    logger.debug('Created edges:', edges);
     
     if (objects.length > 0) {
-      console.log('=== DETAILED OBJECT ANALYSIS ===');
+      logger.debug('=== DETAILED OBJECT ANALYSIS ===');
       objects.forEach((obj, index) => {
-        console.log(`Object ${index + 1}:`, {
+        logger.debug(`Object ${index + 1}:`, {
           id: obj.id,
           type: obj.type,
           position: obj.position,
@@ -192,7 +193,7 @@ export function useFloorPlanData(floorId: string | null) {
           properties: obj.data?.properties
         });
       });
-      console.log('=== END OBJECT ANALYSIS ===');
+      logger.debug('=== END OBJECT ANALYSIS ===');
     }
   }
 

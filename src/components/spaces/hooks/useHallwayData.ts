@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 interface HallwayFilters {
   selectedBuilding?: string;
@@ -14,7 +15,7 @@ export function useHallwayData({ selectedBuilding, selectedFloor }: HallwayFilte
   const query = useQuery({
     queryKey: ['hallways', selectedBuilding, selectedFloor],
     queryFn: async () => {
-      console.log("Fetching hallways with filters:", { selectedBuilding, selectedFloor });
+      logger.debug("Fetching hallways with filters:", { selectedBuilding, selectedFloor });
       
       let query = supabase
         .from('hallways')
@@ -43,7 +44,7 @@ export function useHallwayData({ selectedBuilding, selectedFloor }: HallwayFilte
       const { data, error } = await query;
       
       if (error) {
-        console.error('Error fetching hallways:', error);
+        logger.error('Error fetching hallways:', error);
         throw error;
       }
 
@@ -54,7 +55,7 @@ export function useHallwayData({ selectedBuilding, selectedFloor }: HallwayFilte
         floor_name: hallway.floors?.name || 'Unknown Floor'
       })) || [];
 
-      console.log('Transformed hallway data:', transformedData);
+      logger.debug('Transformed hallway data:', transformedData);
       return transformedData;
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
@@ -75,7 +76,7 @@ export function useHallwayData({ selectedBuilding, selectedFloor }: HallwayFilte
       toast.success('Hallway deleted successfully');
     },
     onError: (error) => {
-      console.error('Error deleting hallway:', error);
+      logger.error('Error deleting hallway:', error);
       toast.error('Failed to delete hallway');
     }
   });

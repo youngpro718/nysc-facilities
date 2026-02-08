@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import {
@@ -26,10 +27,10 @@ import {
 import { useState } from "react";
 
 export interface EditPropertiesPanelProps {
-  object: any;
+  object: Record<string, unknown>;
   onClose: () => void;
-  onUpdate: (data: any) => void;
-  onPreview: (data: any) => void;
+  onUpdate: (data: Record<string, unknown>) => void;
+  onPreview: (data: Record<string, unknown>) => void;
 }
 
 export function EditPropertiesPanel({
@@ -53,13 +54,13 @@ export function EditPropertiesPanel({
     },
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: Record<string, unknown>) => {
     setIsSubmitting(true);
     try {
       await onUpdate(data);
       onClose();
     } catch (error) {
-      console.error("Error updating properties:", error);
+      logger.error("Error updating properties:", error);
     } finally {
       setIsSubmitting(false);
     }

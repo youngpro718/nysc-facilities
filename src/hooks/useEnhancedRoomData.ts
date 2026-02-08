@@ -24,18 +24,18 @@ export function useEnhancedRoomData(roomId: string) {
     queryKey: ['enhanced-room', roomId],
     queryFn: async (): Promise<EnhancedRoom | null> => {
       // Try optimized RPC to reduce round trips (room + issues + court data)
-      let room: any = null;
-      let issues: any[] | null = null;
-      let courtRoomData: any = null;
+      let room: Record<string, unknown> = null;
+      let issues: unknown[] | null = null;
+      let courtRoomData: Record<string, unknown> = null;
       let courtAssignment: { id: string } | null = null;
       try {
         const { data: rpcData, error: rpcError } = await supabase.rpc('get_enhanced_room', { p_room_id: roomId });
         if (rpcError) throw rpcError;
         if (rpcData) {
-          room = (rpcData as any).room;
-          issues = (rpcData as any).issues ?? [];
-          courtRoomData = (rpcData as any).court_room ?? null;
-          courtAssignment = (rpcData as any).court_assignment ?? null;
+          room = ((rpcData as Record<string, unknown>)).room;
+          issues = ((rpcData as Record<string, unknown>)).issues ?? [];
+          courtRoomData = ((rpcData as Record<string, unknown>)).court_room ?? null;
+          courtAssignment = ((rpcData as Record<string, unknown>)).court_assignment ?? null;
         }
       } catch (e) {
         logger.warn('RPC get_enhanced_room failed, falling back to separate queries', { roomId, error: e });
@@ -66,7 +66,7 @@ export function useEnhancedRoomData(roomId: string) {
           .single();
 
         if (roomError || !roomData) {
-          console.error('Error fetching room:', roomError);
+          logger.error('Error fetching room:', roomError);
           return null;
         }
         room = roomData;
@@ -127,7 +127,7 @@ export function useEnhancedRoomData(roomId: string) {
       // Calculate room size category using the database function and actual room size data
       let roomSizeCategory: 'small' | 'medium' | 'large' = 'medium';
       if (room.size) {
-        const sizeData = safeJsonParse<any>(room.size);
+        const sizeData = safeJsonParse<Record<string, unknown>>(room.size);
         if (sizeData) {
           const { data: sizeResult } = await supabase
             .rpc('get_room_size_from_data', { room_size_data: sizeData });
@@ -137,7 +137,7 @@ export function useEnhancedRoomData(roomId: string) {
 
       // Check for persistent issues
       const safeIssues = Array.isArray(issues) ? issues : [];
-      const openIssues = safeIssues.filter((issue: any) => ['open', 'in_progress'].includes(issue.status));
+      const openIssues = safeIssues.filter((issue: Record<string, unknown>) => ['open', 'in_progress'].includes(issue.status));
       const hasPersistentIssues = openIssues.length >= 3;
 
       // Calculate vacancy status
@@ -146,7 +146,7 @@ export function useEnhancedRoomData(roomId: string) {
       if (room.room_type === 'courtroom') {
         // Courtrooms are considered occupied if they have an assignment and the courtroom is active
         const hasAssignment = !!courtAssignment?.id;
-        const isActiveCourtRoom = (courtRoomData as any)?.is_active !== false;
+        const isActiveCourtRoom = ((courtRoomData as Record<string, unknown>))?.is_active !== false;
         vacancyStatus = hasAssignment && isActiveCourtRoom ? 'occupied' : 'vacant';
       } else {
         if (occupantCount > 0) {
@@ -174,7 +174,7 @@ export function useEnhancedRoomData(roomId: string) {
       const totalIssues = safeIssues.length || 0;
       const lastIssueDate = safeIssues.length > 0
         ? safeIssues
-            .map((i: any) => new Date(i.created_at).getTime())
+            .map((i: Record<string, unknown>) => new Date(i.created_at).getTime())
             .reduce((a: number, b: number) => Math.max(a, b), 0)
         : undefined;
 
@@ -184,18 +184,18 @@ export function useEnhancedRoomData(roomId: string) {
         .select('occupant_id')
         .eq('room_id', roomId);
       const uniqueOccupants = Array.isArray(occHistory)
-        ? new Set(occHistory.map((o: any) => o.occupant_id)).size
+        ? new Set(occHistory.map((o: Record<string, unknown>) => o.occupant_id)).size
         : 0;
 
       // Construct enhanced room object
       const enhancedRoom: EnhancedRoom = {
         ...room,
-        room_type: room.room_type as any,
-        status: room.status as any,
-        storage_type: room.storage_type as any,
-        simplified_storage_type: room.simplified_storage_type as any,
-        position: room.position ? (safeJsonParse<any>(room.position) ?? undefined) : undefined,
-        size: room.size ? (safeJsonParse<any>(room.size) ?? undefined) : undefined,
+        room_type: room.room_type as unknown,
+        status: room.status as unknown,
+        storage_type: room.storage_type as unknown,
+        simplified_storage_type: room.simplified_storage_type as unknown,
+        position: room.position ? (safeJsonParse<Record<string, unknown>>(room.position) ?? undefined) : undefined,
+        size: room.size ? (safeJsonParse<Record<string, unknown>>(room.size) ?? undefined) : undefined,
         courtroom_photos: room.courtroom_photos ? (safeJsonParse<any[]>(room.courtroom_photos) ?? undefined) : undefined,
         court_room: courtRoomData,
         lighting_fixtures: enhancedLightingFixtures,

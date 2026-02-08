@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export function useKeyAssignments(occupantId: string) {
   const queryClient = useQueryClient();
@@ -9,7 +10,7 @@ export function useKeyAssignments(occupantId: string) {
   const { data: keyAssignments, isLoading } = useQuery({
     queryKey: ["occupant-keys", occupantId],
     queryFn: async () => {
-      console.log("Fetching key assignments for occupant:", occupantId);
+      logger.debug("Fetching key assignments for occupant:", occupantId);
       
       const { data: assignments, error: assignmentError } = await supabase
         .from("key_assignments")
@@ -39,11 +40,11 @@ export function useKeyAssignments(occupantId: string) {
         .order('assigned_at', { ascending: false });
 
       if (assignmentError) {
-        console.error("Error fetching key assignments:", assignmentError);
+        logger.error("Error fetching key assignments:", assignmentError);
         throw assignmentError;
       }
 
-      console.log("Fetched key assignments:", assignments);
+      logger.debug("Fetched key assignments:", assignments);
       return assignments || [];
     },
     enabled: !!occupantId,
@@ -73,8 +74,8 @@ export function useKeyAssignments(occupantId: string) {
       queryClient.invalidateQueries({ queryKey: ["keys"] });
       toast.success("Key returned successfully");
     },
-    onError: (error: any) => {
-      console.error("Error returning key:", error);
+    onError: (error: unknown) => {
+      logger.error("Error returning key:", error);
       toast.error(error.message || "Failed to return key");
     }
   });

@@ -8,6 +8,7 @@
  */
 
 import { db, handleSupabaseError, validateData } from '../core/supabaseClient';
+import { logger } from '@/lib/logger';
 import type {
   IssueWithRelations,
   IssueFilters,
@@ -61,7 +62,7 @@ export const operationsService = {
       if (error) handleSupabaseError(error, 'Failed to fetch issues');
       return (data || []) as IssueWithRelations[];
     } catch (error) {
-      console.error('[operationsService.getIssues]:', error);
+      logger.error('[operationsService.getIssues]:', error);
       throw error;
     }
   },
@@ -87,7 +88,7 @@ export const operationsService = {
       if (error) handleSupabaseError(error, 'Failed to fetch issue');
       return validateData(data, 'Issue not found') as IssueWithRelations;
     } catch (error) {
-      console.error('[operationsService.getIssueById]:', error);
+      logger.error('[operationsService.getIssueById]:', error);
       throw error;
     }
   },
@@ -106,7 +107,7 @@ export const operationsService = {
       if (error) handleSupabaseError(error, 'Failed to create issue');
       return validateData(data, 'Failed to create issue') as IssueWithRelations;
     } catch (error) {
-      console.error('[operationsService.createIssue]:', error);
+      logger.error('[operationsService.createIssue]:', error);
       throw error;
     }
   },
@@ -126,7 +127,7 @@ export const operationsService = {
       if (error) handleSupabaseError(error, 'Failed to update issue');
       return validateData(data, 'Failed to update issue') as IssueWithRelations;
     } catch (error) {
-      console.error('[operationsService.updateIssue]:', error);
+      logger.error('[operationsService.updateIssue]:', error);
       throw error;
     }
   },
@@ -151,7 +152,7 @@ export const operationsService = {
       if (error) handleSupabaseError(error, 'Failed to resolve issue');
       return validateData(data, 'Failed to resolve issue') as IssueWithRelations;
     } catch (error) {
-      console.error('[operationsService.resolveIssue]:', error);
+      logger.error('[operationsService.resolveIssue]:', error);
       throw error;
     }
   },
@@ -175,7 +176,7 @@ export const operationsService = {
       if (error) handleSupabaseError(error, 'Failed to assign issue');
       return validateData(data, 'Failed to assign issue') as IssueWithRelations;
     } catch (error) {
-      console.error('[operationsService.assignIssue]:', error);
+      logger.error('[operationsService.assignIssue]:', error);
       throw error;
     }
   },
@@ -241,12 +242,12 @@ export const operationsService = {
         });
 
       if (auditError) {
-        console.error('[operationsService.updateRoomStatus] Audit log failed:', auditError);
+        logger.error('[operationsService.updateRoomStatus] Audit log failed:', auditError);
       }
 
       return validateData(updatedRoom, 'Failed to update room status') as RoomWithRelations;
     } catch (error) {
-      console.error('[operationsService.updateRoomStatus]:', error);
+      logger.error('[operationsService.updateRoomStatus]:', error);
       throw error;
     }
   },
@@ -274,7 +275,7 @@ export const operationsService = {
       if (error) handleSupabaseError(error, 'Failed to fetch audit trail');
       return (data || []) as AuditLogEntry[];
     } catch (error) {
-      console.error('[operationsService.getAuditTrail]:', error);
+      logger.error('[operationsService.getAuditTrail]:', error);
       throw error;
     }
   },
@@ -302,7 +303,7 @@ export const operationsService = {
       if (error) handleSupabaseError(error, 'Failed to fetch key requests');
       return (data || []) as KeyRequestWithRelations[];
     } catch (error) {
-      console.error('[operationsService.getKeyRequests]:', error);
+      logger.error('[operationsService.getKeyRequests]:', error);
       throw error;
     }
   },
@@ -328,7 +329,7 @@ export const operationsService = {
       if (error) handleSupabaseError(error, 'Failed to fetch supply requests');
       return (data || []) as SupplyRequestWithRelations[];
     } catch (error) {
-      console.error('[operationsService.getSupplyRequests]:', error);
+      logger.error('[operationsService.getSupplyRequests]:', error);
       throw error;
     }
   },

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useContext, createContext, ReactNode, useRef } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -111,15 +112,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.success('Welcome back!', {
         description: "You've successfully signed in."
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Sign in error', error);
       
       // Handle specific error types with enhanced messaging
-      if (error.message?.includes('Invalid login credentials')) {
+      if (getErrorMessage(error)?.includes('Invalid login credentials')) {
         toast.error('Invalid email or password', {
           description: 'Please check your credentials and try again.'
         });
-      } else if (error.message?.includes('Email not verified')) {
+      } else if (getErrorMessage(error)?.includes('Email not verified')) {
         // Enhanced error handling for unverified emails
         toast.error('Email not verified', {
           description: 'Please check your email and click the verification link.',
@@ -131,21 +132,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 toast.success('Verification email sent!', {
                   description: 'Please check your inbox.'
                 });
-              } catch (resendError: any) {
+              } catch (resendError) {
                 toast.error('Failed to resend email', {
-                  description: resendError.message
+                  description: getErrorMessage(resendError)
                 });
               }
             }
           }
         });
-      } else if (error.message?.includes('Email not confirmed')) {
+      } else if (getErrorMessage(error)?.includes('Email not confirmed')) {
         // Fallback for alternative error message
         toast.error('Email not verified', {
           description: 'Please check your email and verify your account.'
         });
       } else {
-        toast.error(error.message || 'Authentication failed', {
+        toast.error(getErrorMessage(error) || 'Authentication failed', {
           description: 'Please try again or contact support if the issue persists.'
         });
       }
@@ -158,9 +159,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       logger.debug('Starting sign up process with email verification');
       
-      // Use new auth service that sets up email verification
-      const fullName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim();
-      await authServices.signUp(email, password, fullName || undefined);
+      // Pass full user metadata so DB trigger handle_new_user() receives all fields
+      const redirectUrl = `${window.location.origin}/`;
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            first_name: userData.first_name || '',
+            last_name: userData.last_name || '',
+            full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+            title: userData.title || undefined,
+            phone: userData.phone || undefined,
+            department_id: userData.department_id || undefined,
+            court_position: userData.court_position || undefined,
+            room_number: userData.room_number || undefined,
+            emergency_contact: userData.emergency_contact || undefined,
+            requested_role: userData.requested_role || 'standard',
+          }
+        }
+      });
+      
+      if (error) throw error;
       
       // Set onboarding flags to trigger onboarding after verification for this user only
       try {
@@ -180,24 +201,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTimeout(() => {
         navigate('/verification-pending');
       }, 0);
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Sign up error', error);
       
       // Handle specific error types
-      if (error.message?.includes("User already registered")) {
+      if (getErrorMessage(error)?.includes("User already registered")) {
         toast.error("This email is already registered", {
           description: "Please sign in instead or use a different email address."
         });
-      } else if (error.message?.includes("Password should be at least")) {
+      } else if (getErrorMessage(error)?.includes("Password should be at least")) {
         toast.error("Password too weak", {
           description: "Password must be at least 6 characters long."
         });
-      } else if (error.message?.includes("Invalid email")) {
+      } else if (getErrorMessage(error)?.includes("Invalid email")) {
         toast.error("Invalid email address", {
           description: "Please enter a valid email address."
         });
       } else {
-        toast.error(error.message || 'Registration failed', {
+        toast.error(getErrorMessage(error) || 'Registration failed', {
           description: 'Please try again or contact support if the issue persists.'
         });
       }
@@ -251,9 +272,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Navigate to login page
       navigate('/login', { replace: true });
       toast.success('Successfully signed out!');
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Sign out error', error);
-      toast.error(error.message || 'Error signing out');
+      toast.error(getErrorMessage(error) || 'Error signing out');
     } finally {
       setIsLoading(false);
     }
@@ -375,7 +396,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               navigate('/login', { replace: true });
             }
           }
-        } catch (error: any) {
+        } catch (error) {
           logger.error('Auth initialization failed', error);
         
         if (mounted) {
@@ -385,7 +406,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false);
           
           // Only show network errors to avoid spam
-          if (error.message?.includes('network') || error.message?.includes('fetch')) {
+          if (getErrorMessage(error)?.includes('network') || getErrorMessage(error)?.includes('fetch')) {
             toast.error('Connection Error', {
               description: 'Unable to connect to authentication service.'
             });

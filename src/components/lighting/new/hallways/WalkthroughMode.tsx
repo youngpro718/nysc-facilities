@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -73,7 +74,7 @@ export function WalkthroughMode({ hallwayId, fixtures, onComplete, onCancel }: W
     },
     onError: (error) => {
       toast.error('Failed to update fixture status');
-      console.error(error);
+      logger.error('Failed to update fixture status:', error);
     }
   });
 

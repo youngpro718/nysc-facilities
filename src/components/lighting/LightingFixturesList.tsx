@@ -140,7 +140,7 @@ export const LightingFixturesList = ({
     }
   };
 
-  const handleHeaderBulkStatusUpdate = async (status: any) => {
+  const handleHeaderBulkStatusUpdate = async (status: unknown) => {
     if (selectedFixtures.length > 0) {
       await handleBulkStatusUpdate(selectedFixtures, status);
       setSelectedFixtures([]);
@@ -170,6 +170,8 @@ export const LightingFixturesList = ({
             handleBulkStatusUpdate(fixtureIds, 'maintenance_needed');
           }
         }}
+        onFixtureDelete={handleDelete}
+        refetch={refetch}
       />
     );
   }

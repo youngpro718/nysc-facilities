@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ interface SecurityConfiguration {
   id: string;
   name: string;
   type: 'rate_limit' | 'access_control' | 'audit' | 'encryption';
-  configuration: any;
+  configuration: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -81,7 +82,7 @@ export const SecuritySettings = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error loading security configurations:', error);
+        logger.error('Error loading security configurations:', error);
         toast.error('Failed to load security configurations');
       } else {
         setConfigurations(data || []);
@@ -105,14 +106,14 @@ export const SecuritySettings = () => {
         });
       }
     } catch (error) {
-      console.error('Error loading configurations:', error);
+      logger.error('Error loading configurations:', error);
       toast.error('Failed to load security configurations');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateConfiguration = async (type: string, configuration: any) => {
+  const updateConfiguration = async (type: string, configuration: Record<string, unknown>) => {
     try {
       const { error } = await supabase
         .from('security_configurations')
@@ -123,14 +124,14 @@ export const SecuritySettings = () => {
         .eq('type', type);
 
       if (error) {
-        console.error('Error updating configuration:', error);
+        logger.error('Error updating configuration:', error);
         toast.error('Failed to update security configuration');
       } else {
         toast.success('Security configuration updated');
         loadConfigurations();
       }
     } catch (error) {
-      console.error('Error updating configuration:', error);
+      logger.error('Error updating configuration:', error);
       toast.error('Failed to update security configuration');
     }
   };
@@ -143,7 +144,7 @@ export const SecuritySettings = () => {
         .eq('id', id);
 
       if (error) {
-        console.error('Error toggling configuration:', error);
+        logger.error('Error toggling configuration:', error);
         toast.error('Failed to toggle configuration');
       } else {
         setConfigurations(prev => prev.map(config => 
@@ -152,7 +153,7 @@ export const SecuritySettings = () => {
         toast.success(`Configuration ${isActive ? 'enabled' : 'disabled'}`);
       }
     } catch (error) {
-      console.error('Error toggling configuration:', error);
+      logger.error('Error toggling configuration:', error);
       toast.error('Failed to toggle configuration');
     }
   };

@@ -42,7 +42,7 @@ const typeConfig = {
   notification: { icon: Activity, color: 'text-purple-600', label: 'Update' },
 };
 
-const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', icon: any }> = {
+const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', icon: unknown }> = {
   pending: { variant: 'secondary', icon: Clock },
   approved: { variant: 'default', icon: CheckCircle },
   in_progress: { variant: 'secondary', icon: Clock },

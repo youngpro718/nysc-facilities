@@ -1,6 +1,8 @@
 
 import { supabase } from "@/lib/supabase";
+import { getErrorMessage } from "@/lib/errorUtils";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 /**
  * Service for handling courtroom photo operations
@@ -18,7 +20,7 @@ export const courtroomPhotoService = {
     errors: string[];
   }> {
     try {
-      console.log(`Clearing courtroom photos for room: ${roomId}`);
+      logger.debug(`Clearing courtroom photos for room: ${roomId}`);
       
       // First, get the current room data to find photo URLs
       const { data: room, error: roomError } = await supabase
@@ -28,7 +30,7 @@ export const courtroomPhotoService = {
         .single();
         
       if (roomError) {
-        console.error('Error fetching room data:', roomError);
+        logger.error('Error fetching room data:', roomError);
         return {
           success: false,
           message: `Failed to fetch room data: ${roomError.message}`,
@@ -63,11 +65,11 @@ export const courtroomPhotoService = {
             const bucketName = pathParts[publicIndex + 1];
             const filePath = pathParts.slice(publicIndex + 2).join('/');
             
-            console.log(`Found judge view photo in bucket ${bucketName}, path: ${filePath}`);
+            logger.debug(`Found judge view photo in bucket ${bucketName}, path: ${filePath}`);
             filesToDelete.push({ bucketName, filePath });
           }
         } catch (e) {
-          console.error('Error parsing judge view URL:', e);
+          logger.error('Error parsing judge view URL:', e);
           errors.push(`Failed to parse judge view URL`);
         }
       }
@@ -83,11 +85,11 @@ export const courtroomPhotoService = {
             const bucketName = pathParts[publicIndex + 1];
             const filePath = pathParts.slice(publicIndex + 2).join('/');
             
-            console.log(`Found audience view photo in bucket ${bucketName}, path: ${filePath}`);
+            logger.debug(`Found audience view photo in bucket ${bucketName}, path: ${filePath}`);
             filesToDelete.push({ bucketName, filePath });
           }
         } catch (e) {
-          console.error('Error parsing audience view URL:', e);
+          logger.error('Error parsing audience view URL:', e);
           errors.push(`Failed to parse audience view URL`);
         }
       }
@@ -101,14 +103,14 @@ export const courtroomPhotoService = {
             .remove([file.filePath]);
             
           if (deleteError) {
-            console.error(`Error deleting file ${file.filePath}:`, deleteError);
+            logger.error(`Error deleting file ${file.filePath}:`, deleteError);
             errors.push(`Failed to delete file ${file.filePath}: ${deleteError.message}`);
           } else {
             filesDeleted++;
           }
-        } catch (e: any) {
-          console.error(`Error in storage deletion:`, e);
-          errors.push(`Unexpected error deleting file: ${e.message}`);
+        } catch (e) {
+          logger.error(`Error in storage deletion:`, e);
+          errors.push(`Unexpected error deleting file: ${getErrorMessage(e)}`);
         }
       }
       
@@ -119,7 +121,7 @@ export const courtroomPhotoService = {
         .eq('id', roomId);
         
       if (updateError) {
-        console.error('Error updating room data:', updateError);
+        logger.error('Error updating room data:', updateError);
         errors.push(`Failed to update room data: ${updateError.message}`);
         return {
           success: false,
@@ -135,13 +137,13 @@ export const courtroomPhotoService = {
         filesDeleted,
         errors
       };
-    } catch (error: any) {
-      console.error('Error clearing photos:', error);
+    } catch (error) {
+      logger.error('Error clearing photos:', error);
       return {
         success: false,
-        message: `Unexpected error: ${error.message || 'Unknown error'}`,
+        message: `Unexpected error: ${getErrorMessage(error) || 'Unknown error'}`,
         filesDeleted: 0,
-        errors: [error.message || 'Unknown error']
+        errors: [getErrorMessage(error) || 'Unknown error']
       };
     }
   }

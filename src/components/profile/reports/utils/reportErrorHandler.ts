@@ -1,10 +1,11 @@
 import { ReportCallback } from '../types';
+import { logger } from '@/lib/logger';
 
 export class ReportError extends Error {
   constructor(
     message: string,
     public type: 'database' | 'validation' | 'generation' | 'timeout' | 'unknown' = 'unknown',
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = 'ReportError';
@@ -16,7 +17,7 @@ export function handleReportError(
   progressCallback: ReportCallback,
   context: string
 ): never {
-  console.error(`Report error in ${context}:`, error);
+  logger.error(`Report error in ${context}:`, error);
   
   let errorMessage = 'An unexpected error occurred';
   let errorType: ReportError['type'] = 'unknown';
@@ -63,7 +64,7 @@ export function validateReportData<T>(
   progressCallback: ReportCallback
 ): T[] {
   if (!data) {
-    console.log(`No ${dataType} data found, returning empty array`);
+    logger.debug(`No ${dataType} data found, returning empty array`);
     progressCallback({
       status: 'generating',
       progress: 50,
@@ -80,7 +81,7 @@ export function validateReportData<T>(
     );
   }
   
-  console.log(`Validated ${data.length} ${dataType} records`);
+  logger.debug(`Validated ${data.length} ${dataType} records`);
   return data;
 }
 
@@ -103,7 +104,7 @@ export function createRetryableQuery<T>(
           resolve(result);
           return;
         } catch (error) {
-          console.log(`Query attempt ${attempt} failed:`, error);
+          logger.debug(`Query attempt ${attempt} failed:`, error);
 
           // Reject on the final attempt
           if (attempt === attempts) {

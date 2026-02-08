@@ -56,7 +56,7 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
   gridSize = 800
 }, ref) => {
   const { camera } = useThree();
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<unknown>(null);
   const initialCameraPos = useRef<THREE.Vector3 | null>(null);
 
   // Store initial camera position

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,9 +67,9 @@ export function CreateLockboxDialog({ open, onOpenChange, onSuccess }: CreateLoc
       setLocation("");
       setSlotCount(10);
       setNotes("");
-    } catch (error: any) {
-      console.error('Error creating lockbox:', error);
-      toast.error(error.message || "Failed to create lockbox");
+    } catch (error) {
+      logger.error('Error creating lockbox:', error);
+      toast.error(getErrorMessage(error) || "Failed to create lockbox");
     } finally {
       setIsCreating(false);
     }

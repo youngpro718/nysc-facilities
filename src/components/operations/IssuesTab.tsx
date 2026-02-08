@@ -18,7 +18,7 @@ import { IssueGroupingControls } from "@/components/admin-issues/IssueGroupingCo
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/types/issues";
 
 interface IssuesTabProps {
-  allIssues: any[];
+  allIssues: unknown[];
   enhancedMetrics: {
     activeIssues: number;
     criticalCount: number;

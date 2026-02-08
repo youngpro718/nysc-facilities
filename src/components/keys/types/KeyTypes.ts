@@ -26,7 +26,7 @@ export interface KeyProperties {
   serial_number?: string;
   purchase_date?: string;
   warranty_expiry?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface KeyData {
@@ -74,7 +74,7 @@ export interface KeyAuditLog {
   key_id: string;
   action_type: string;
   performed_by: string;
-  changes: Record<string, any>;
+  changes: Record<string, unknown>;
   created_at: string;
   username?: string;
   email?: string;

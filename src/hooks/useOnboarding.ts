@@ -1,60 +1,54 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./useAuth";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 export function useOnboarding() {
   const { user, profile } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const onboardingId = user?.id ?? profile?.id;
-  const onboardingEmail = profile?.email || (user as any)?.email || null;
 
   useEffect(() => {
-    // Only show onboarding after explicit sign-up flow
-    if (!onboardingId) {
+    if (!onboardingId || !profile) {
       setShowOnboarding(false);
       return;
     }
 
-    // Admins bypass verification - they get immediate access
-    if (profile?.access_level === 'admin') {
-      console.log('[useOnboarding] Admin user detected, bypassing verification');
+    // Admins bypass onboarding wizard - they get immediate access
+    if (profile?.access_level === 'admin' || profile?.role === 'admin') {
+      logger.debug('[useOnboarding] Admin user detected, bypassing onboarding wizard');
       setShowOnboarding(false);
+      setOnboardingComplete(true);
       return;
     }
 
-    // Do not show onboarding until the user's email/account is verified
+    // Only show onboarding for verified & approved users
     if (profile?.verification_status !== 'verified') {
-      console.log('[useOnboarding] User not verified, blocking onboarding:', {
-        verification_status: profile?.verification_status,
-        is_approved: profile?.is_approved,
-        access_level: profile?.access_level
-      });
+      logger.debug('[useOnboarding] User not verified, blocking onboarding');
       setShowOnboarding(false);
       return;
     }
 
-    // Check database for onboarding completion status
+    // Check if onboarding was already completed or skipped (DB is source of truth)
     const hasCompletedInDb = profile?.onboarding_completed || profile?.onboarding_skipped;
-    
     // Fallback to localStorage for backward compatibility
-    const shouldOnboardNow = localStorage.getItem('ONBOARD_AFTER_SIGNUP') === 'true';
-    const shouldOnboardEmail = localStorage.getItem('ONBOARD_AFTER_SIGNUP_EMAIL');
     const hasCompletedInLocalStorage = localStorage.getItem(`onboarding-${onboardingId}`);
 
-    if (shouldOnboardNow && !hasCompletedInDb && !hasCompletedInLocalStorage && onboardingEmail && shouldOnboardEmail === onboardingEmail) {
-      setShowOnboarding(true);
-    } else {
+    if (hasCompletedInDb || hasCompletedInLocalStorage) {
+      logger.debug('[useOnboarding] Onboarding already completed/skipped');
       setShowOnboarding(false);
-      if (hasCompletedInDb || hasCompletedInLocalStorage) {
-        setOnboardingComplete(true);
-      }
+      setOnboardingComplete(true);
+    } else {
+      // Verified user who hasn't completed onboarding — show wizard
+      logger.debug('[useOnboarding] Showing onboarding wizard for verified user');
+      setShowOnboarding(true);
+      setOnboardingComplete(false);
     }
-  }, [onboardingId, onboardingEmail, profile?.verification_status, profile?.onboarding_completed, profile?.onboarding_skipped]);
+  }, [onboardingId, profile?.verification_status, profile?.onboarding_completed, profile?.onboarding_skipped, profile?.access_level, profile?.role]);
 
   const completeOnboarding = async () => {
     if (onboardingId) {
-      // Update database
       try {
         await supabase
           .from('profiles')
@@ -64,12 +58,11 @@ export function useOnboarding() {
           })
           .eq('id', onboardingId);
       } catch (error) {
-        console.error('[useOnboarding] Failed to update database:', error);
+        logger.error('[useOnboarding] Failed to update database:', error);
       }
-      
-      // Keep localStorage for backward compatibility
       localStorage.setItem(`onboarding-${onboardingId}`, 'completed');
     }
+    // Clean up legacy localStorage flags
     try {
       localStorage.removeItem('ONBOARD_AFTER_SIGNUP');
       localStorage.removeItem('ONBOARD_AFTER_SIGNUP_EMAIL');
@@ -80,7 +73,6 @@ export function useOnboarding() {
 
   const skipOnboarding = async () => {
     if (onboardingId) {
-      // Update database
       try {
         await supabase
           .from('profiles')
@@ -90,10 +82,8 @@ export function useOnboarding() {
           })
           .eq('id', onboardingId);
       } catch (error) {
-        console.error('[useOnboarding] Failed to update database:', error);
+        logger.error('[useOnboarding] Failed to update database:', error);
       }
-      
-      // Keep localStorage for backward compatibility
       localStorage.setItem(`onboarding-${onboardingId}`, 'skipped');
     }
     try {

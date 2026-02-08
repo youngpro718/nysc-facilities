@@ -1,5 +1,7 @@
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -63,7 +65,7 @@ export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName:
     try {
       setIsSubmitting(true);
       
-      console.log("Processing stock adjustment:", {
+      logger.debug("Processing stock adjustment:", {
         keyId,
         transactionType: data.transactionType,
         quantity: data.quantity,
@@ -110,12 +112,12 @@ export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName:
       
       setOpen(false);
       form.reset();
-    } catch (error: any) {
-      console.error("Error adjusting stock:", error);
+    } catch (error) {
+      logger.error("Error adjusting stock:", error);
       toast({
         variant: "destructive",
         title: "Error adjusting stock",
-        description: error.message || "An unexpected error occurred",
+        description: getErrorMessage(error) || "An unexpected error occurred",
       });
     } finally {
       setIsSubmitting(false);

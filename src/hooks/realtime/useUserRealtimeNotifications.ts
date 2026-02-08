@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface RealtimeNotificationHook {
   isConnected: boolean;
-  lastNotification: any;
+  lastNotification: unknown;
 }
 
 /**
@@ -16,12 +17,12 @@ interface RealtimeNotificationHook {
 export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
-  const [lastNotification, setLastNotification] = useState<any>(null);
+  const [lastNotification, setLastNotification] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
 
-    console.log('[UserRealtime] Setting up consolidated user notifications for:', user.id);
+    logger.debug('[UserRealtime] Setting up consolidated user notifications for:', user.id);
 
     // Single multiplexed channel for all user updates
     const channel = supabase
@@ -36,7 +37,7 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[UserRealtime] New notification:', payload);
+          logger.debug('[UserRealtime] New notification:', payload);
           const notification = payload.new;
           setLastNotification(notification);
 
@@ -73,7 +74,7 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[UserRealtime] Key request updated:', payload);
+          logger.debug('[UserRealtime] Key request updated:', payload);
           const request = payload.new;
 
           const statusMessages: Record<string, { message: string; type: 'success' | 'error' | 'info' }> = {
@@ -103,7 +104,7 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[UserRealtime] Key order updated:', payload);
+          logger.debug('[UserRealtime] Key order updated:', payload);
           const order = payload.new;
 
           if (order.status === 'ready_for_pickup') {
@@ -128,7 +129,7 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           filter: `requester_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[UserRealtime] Supply request updated:', payload);
+          logger.debug('[UserRealtime] Supply request updated:', payload);
           const request = payload.new;
 
           const statusMessages: Record<string, { message: string; type: 'success' | 'error' | 'info' }> = {
@@ -159,7 +160,7 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           filter: `reported_by=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[UserRealtime] Issue updated:', payload);
+          logger.debug('[UserRealtime] Issue updated:', payload);
           const issue = payload.new;
 
           const statusMessages: Record<string, { message: string; type: 'success' | 'info' }> = {
@@ -188,7 +189,7 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           filter: `occupant_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[UserRealtime] New room assignment:', payload);
+          logger.debug('[UserRealtime] New room assignment:', payload);
           const assignment = payload.new;
 
           toast.success('🏠 New Room Assignment', {
@@ -211,7 +212,7 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           filter: `occupant_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[UserRealtime] Room assignment updated:', payload);
+          logger.debug('[UserRealtime] Room assignment updated:', payload);
           toast.info('📋 Room Assignment Updated', {
             description: 'Your room assignment has been modified',
             action: {
@@ -224,13 +225,13 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
       .subscribe((status) => {
         // Only log non-cleanup status changes
         if (status !== 'CLOSED') {
-          console.log('[UserRealtime] Channel status:', status);
+          logger.debug('[UserRealtime] Channel status:', status);
         }
         setIsConnected(status === 'SUBSCRIBED');
       });
 
     return () => {
-      console.log('[UserRealtime] Cleaning up');
+      logger.debug('[UserRealtime] Cleaning up');
       supabase.removeChannel(channel);
     };
   }, [user?.id]);

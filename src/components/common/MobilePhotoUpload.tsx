@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Upload, X, AlertTriangle, Eye, RotateCw } from "lucide-react";
@@ -73,7 +74,7 @@ export function MobilePhotoUpload({
       };
       sessionStorage.setItem(sessionKey, JSON.stringify(persistData));
     } catch (error) {
-      console.warn('Failed to persist upload state:', error);
+      logger.warn('Failed to persist upload state:', error);
     }
   }, [sessionKey]);
 
@@ -93,7 +94,7 @@ export function MobilePhotoUpload({
         }));
       }
     } catch (error) {
-      console.warn('Failed to restore upload state:', error);
+      logger.warn('Failed to restore upload state:', error);
     }
   }, [sessionKey, existingUrl]);
 
@@ -275,7 +276,7 @@ export function MobilePhotoUpload({
       if (error.name === 'AbortError') {
         toast.info('Upload cancelled');
       } else {
-        console.error('Upload error:', error);
+        logger.error('Upload error:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setUploadState(prev => ({
           ...prev,
@@ -320,7 +321,7 @@ export function MobilePhotoUpload({
       sessionStorage.removeItem(sessionKey);
 
     } catch (error) {
-      console.error('Remove error:', error);
+      logger.error('Remove error:', error);
       toast.error(`Failed to remove ${label.toLowerCase()}`);
     }
   }, [uploadState.uploadedUrl, uploadPath, bucketName, onRemove, label, sessionKey]);
@@ -378,7 +379,7 @@ export function MobilePhotoUpload({
                 alt={label}
                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 onError={(e) => {
-                  console.error(`Error loading ${label.toLowerCase()} image:`, currentImageUrl);
+                  logger.error(`Error loading ${label.toLowerCase()} image:`, currentImageUrl);
                   e.currentTarget.src = "/placeholder.svg";
                 }}
               />

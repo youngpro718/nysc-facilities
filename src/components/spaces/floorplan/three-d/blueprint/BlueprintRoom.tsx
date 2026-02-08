@@ -87,19 +87,19 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
     }
   });
 
-  const handlePointerOver = (e: any) => {
+  const handlePointerOver = (e: Record<string, unknown>) => {
     e.stopPropagation?.();
     onHover?.(true);
     document.body.style.cursor = 'pointer';
   };
 
-  const handlePointerOut = (e: any) => {
+  const handlePointerOut = (e: Record<string, unknown>) => {
     e.stopPropagation?.();
     onHover?.(false);
     document.body.style.cursor = 'auto';
   };
 
-  const handleClick = (e: any) => {
+  const handleClick = (e: Record<string, unknown>) => {
     e.stopPropagation?.();
     onClick?.();
   };

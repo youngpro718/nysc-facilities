@@ -1,5 +1,6 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getErrorMessage } from "@/lib/errorUtils";
 import { toast } from 'sonner';
 import { LightStatus } from '@/types/lighting';
 import { 
@@ -27,8 +28,8 @@ export function useLightingFixtures() {
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
       queryClient.invalidateQueries({ queryKey: ['room-lighting-stats'] });
       return true;
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete lighting fixture");
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Failed to delete lighting fixture");
       return false;
     }
   };
@@ -40,8 +41,8 @@ export function useLightingFixtures() {
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
       queryClient.invalidateQueries({ queryKey: ['room-lighting-stats'] });
       return true;
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete fixtures");
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Failed to delete fixtures");
       return false;
     }
   };
@@ -53,8 +54,8 @@ export function useLightingFixtures() {
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
       queryClient.invalidateQueries({ queryKey: ['room-lighting-stats'] });
       return true;
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update fixtures status");
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Failed to update fixtures status");
       return false;
     }
   };

@@ -5,7 +5,7 @@ import { exportMultipleSheets, sanitizeForExcel } from "@/utils/excelExport";
 
 export async function exportDatabase(selectedTables: ExportableTable[], exportableTables: readonly ExportableTable[]) {
   const exportTables = selectedTables.length > 0 ? selectedTables : [...exportableTables];
-  const sheets: Array<{ name: string; data: any[] }> = [];
+  const sheets: Array<{ name: string; data: unknown[] }> = [];
   
   for (const table of exportTables) {
     const { data, error } = await supabase
@@ -15,7 +15,7 @@ export async function exportDatabase(selectedTables: ExportableTable[], exportab
     if (error) throw error;
     
     // Sanitize data for Excel export
-    const sanitized = (data || []).map((row: any) =>
+    const sanitized = (data || []).map((row: Record<string, unknown>) =>
       Object.fromEntries(
         Object.entries(row).map(([k, v]) => [k, sanitizeForExcel(v)])
       )

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle, XCircle, Package, User } from "lucide-react";
 import { format } from "date-fns";
@@ -70,7 +71,7 @@ export function PendingSupplyApprovals() {
       return (data || []).map(r => ({
         ...r,
         profiles: Array.isArray(r.profiles) ? r.profiles[0] || null : r.profiles,
-        supply_request_items: (r.supply_request_items || []).map((item: any) => ({
+        supply_request_items: (r.supply_request_items || []).map((item: Record<string, unknown>) => ({
           ...item,
           inventory_items: Array.isArray(item.inventory_items) ? item.inventory_items[0] || null : item.inventory_items,
         })),
@@ -87,7 +88,7 @@ export function PendingSupplyApprovals() {
       if (!user) throw new Error('Authentication required');
 
       const newStatus = actionType === 'approve' ? 'approved' : 'rejected';
-      const statusUpdates: Record<string, any> = {};
+      const statusUpdates: Record<string, unknown> = {};
 
       if (actionType === 'approve') {
         statusUpdates.approved_by = user.id;
@@ -121,7 +122,7 @@ export function PendingSupplyApprovals() {
       setActionType(null);
       setNotes("");
     } catch (error) {
-      console.error('Failed to update request:', error);
+      logger.error('Failed to update request:', error);
       toast.error('Failed to update request');
     }
   };

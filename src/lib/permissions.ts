@@ -56,7 +56,7 @@ export function hasPermission(userRole: string, permission: Permission): boolean
   const allowedRoles = PERMISSIONS[permission];
   if (!allowedRoles) return false;
   
-  return allowedRoles.includes(userRole as any);
+  return allowedRoles.includes(userRole as unknown);
 }
 
 /**

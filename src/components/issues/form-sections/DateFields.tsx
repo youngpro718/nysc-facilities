@@ -1,5 +1,6 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { logger } from '@/lib/logger';
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { FormData } from "../types/formTypes";
@@ -22,7 +23,7 @@ export function DateFields({ form }: DateFieldsProps) {
                 type="datetime-local" 
                 {...field}
                 onChange={(e) => {
-                  console.log('New date value:', e.target.value);
+                  logger.debug('New date value:', e.target.value);
                   field.onChange(e.target.value);
                 }}
                 value={field.value || ''}

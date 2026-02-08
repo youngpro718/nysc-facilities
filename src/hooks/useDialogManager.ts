@@ -1,12 +1,13 @@
 
 import { useState, useCallback, useRef } from "react";
+import { logger } from "@/lib/logger";
 
 type DialogType = "issueDetails" | "resolution" | "deletion" | "propertyEdit" | "roomDetails";
 
 export interface DialogState {
   type: DialogType | null;
   isOpen: boolean;
-  data?: any;
+  data?: unknown;
 }
 
 export function useDialogManager() {
@@ -17,18 +18,18 @@ export function useDialogManager() {
   
   // Use a ref to track dialog closing to prevent race conditions
   const isClosingRef = useRef(false);
-  const dataRef = useRef<any>(null);
+  const dataRef = useRef<unknown>(null);
 
-  const openDialog = useCallback((type: DialogType, data?: any) => {
+  const openDialog = useCallback((type: DialogType, data?: unknown) => {
     if (isClosingRef.current) return; // Don't open if we're in the process of closing
     
-    console.log(`Opening dialog: ${type}`, data);
+    logger.debug(`Opening dialog: ${type}`, data);
     dataRef.current = data; // Store data in ref for consistent access
     setDialogState({ type, isOpen: true, data });
   }, []);
 
   const closeDialog = useCallback(() => {
-    console.log("Closing dialog");
+    logger.debug("Closing dialog");
     // Set the closing flag to prevent opening new dialogs during state update
     isClosingRef.current = true;
     
@@ -46,10 +47,10 @@ export function useDialogManager() {
     }, 100);
   }, []);
 
-  const updateDialogData = useCallback((newData: any) => {
+  const updateDialogData = useCallback((newData: unknown) => {
     if (!dialogState.isOpen || isClosingRef.current) return;
     
-    console.log("Updating dialog data:", newData);
+    logger.debug("Updating dialog data:", newData);
     dataRef.current = { ...dataRef.current, ...newData };
     setDialogState(prev => ({
       ...prev,

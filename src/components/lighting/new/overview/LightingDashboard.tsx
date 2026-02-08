@@ -287,8 +287,8 @@ export function LightingDashboard() {
                 try {
                   setChecking(true);
                   const result = await refetch();
-                  if ((result as any)?.error) {
-                    throw (result as any).error;
+                  if ((result as Record<string, unknown>)?.error) {
+                    throw ((result as Record<string, unknown>)).error;
                   }
                   toast.success('System check complete', { description: 'Fixture data refreshed.' });
                 } catch (err) {

@@ -141,7 +141,7 @@ export function StatusCentricView() {
       );
       setSelectedFixtures(new Set());
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message || 'Failed to update lights');
     }
   };
@@ -156,7 +156,7 @@ export function StatusCentricView() {
       );
       setSelectedFixtures(new Set());
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message || 'Failed to update lights');
     }
   };
@@ -173,7 +173,7 @@ export function StatusCentricView() {
       );
       setSelectedFixtures(new Set());
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message || 'Failed to update electrician requirement');
     }
   };

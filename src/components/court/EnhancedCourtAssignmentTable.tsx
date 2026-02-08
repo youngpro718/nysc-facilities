@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandGroup, CommandItem } from "@/components/ui/command";
@@ -431,7 +432,7 @@ const SortableRow = ({
       <td className="p-2">
         {(() => {
           let text = "Assigned";
-          let variant: any = "default";
+          let variant: unknown = "default";
           if (hasMaintenance) {
             text = "Maintenance";
             variant = "destructive";
@@ -488,7 +489,7 @@ export const EnhancedCourtAssignmentTable = () => {
     },
   });
 
-  const maintenanceSet = useMemo(() => new Set((shutdowns || []).map((s: any) => s.court_room_id)), [shutdowns]);
+  const maintenanceSet = useMemo(() => new Set((shutdowns || []).map((s: Record<string, unknown>) => s.court_room_id)), [shutdowns]);
 
   // Get impact summary
   const impactSummary = getCourtImpactSummary();
@@ -502,12 +503,12 @@ export const EnhancedCourtAssignmentTable = () => {
   );
   const updateAssignmentMutation = useMutation({
     mutationFn: async ({ roomId, field, value }: { roomId: string; field: string; value: string | string[] }) => {
-      console.log('💾 Saving assignment:', { roomId, field, value });
+      logger.debug('💾 Saving assignment:', { roomId, field, value });
       const existingAssignment = assignments?.find(row => row.room_id === roomId);
-      console.log('📋 Existing assignment:', existingAssignment);
+      logger.debug('📋 Existing assignment:', existingAssignment);
       
       // Normalize calendar_day for storage
-      let normalizedValue: any;
+      let normalizedValue: unknown;
       if (field === 'calendar_day') {
         if (Array.isArray(value)) {
           normalizedValue = value.join(',');
@@ -527,14 +528,14 @@ export const EnhancedCourtAssignmentTable = () => {
         const isCreatingJustice = field === 'justice' && normalizedValue;
         
         if (!isCreatingPart && !isCreatingJustice) {
-          console.warn('⚠️ Creating assignment without Part or Justice - may be incomplete');
+          logger.warn('⚠️ Creating assignment without Part or Justice - may be incomplete');
         }
       }
       
       if (existingAssignment?.assignment_id) {
         // Update existing assignment
-        const updateData: any = { [field]: normalizedValue };
-        console.log('✏️ Updating existing assignment:', updateData);
+        const updateData: Record<string, unknown> = { [field]: normalizedValue };
+        logger.debug('✏️ Updating existing assignment:', updateData);
         const { error } = await supabase
           .from("court_assignments")
           .update(updateData)
@@ -548,13 +549,13 @@ export const EnhancedCourtAssignmentTable = () => {
             .filter(a => !!a.assignment_id)
             .map(a => a.sort_order || 0))
         );
-        const insertData: any = {
+        const insertData: Record<string, unknown> = {
           room_id: existingAssignment?.room_id || roomId,
           room_number: existingAssignment?.room_number || "",
           [field]: normalizedValue,
           sort_order: maxSort + 1
         };
-        console.log('➕ Creating new assignment:', insertData);
+        logger.debug('➕ Creating new assignment:', insertData);
         const { error } = await supabase
           .from("court_assignments")
           .insert(insertData);
@@ -603,7 +604,7 @@ export const EnhancedCourtAssignmentTable = () => {
         description: "Court assignment has been deleted successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "Error",
@@ -624,11 +625,11 @@ export const EnhancedCourtAssignmentTable = () => {
       
       // Update sort_order for all affected assignments
       newAssignments.forEach(async (assignment, index) => {
-        if ((assignment as any).assignment_id) {
+        if (((assignment as Record<string, unknown>)).assignment_id) {
           await supabase
             .from('court_assignments')
             .update({ sort_order: index + 1 })
-            .eq('id', (assignment as any).assignment_id);
+            .eq('id', ((assignment as Record<string, unknown>)).assignment_id);
         }
       });
 
@@ -687,7 +688,7 @@ export const EnhancedCourtAssignmentTable = () => {
         .from("court_attendance")
         .select("room_id, judge_present, clerks_present_count");
 
-      if (attendanceError) console.error("Attendance fetch error:", attendanceError);
+      if (attendanceError) logger.error("Attendance fetch error:", attendanceError);
 
       // Create maps for quick lookup
       const assignmentMap = new Map();
@@ -717,7 +718,7 @@ export const EnhancedCourtAssignmentTable = () => {
           tel: assignment?.tel || null,
           fax: assignment?.fax || null,
           calendar_day: assignment?.calendar_day || null,
-          is_active: (room as any)?.is_active ?? true,
+          is_active: (room as Record<string, unknown>)?.is_active ?? true,
           sort_order: assignment?.sort_order ?? index + 1,
           judge_present: attendance?.judge_present || false,
           clerks_present_count: attendance?.clerks_present_count || 0,
@@ -783,7 +784,7 @@ export const EnhancedCourtAssignmentTable = () => {
               } else if (hasIssues) {
                 const issueList = roomIssues
                   .slice(0, 3)
-                  .map((issue: any) => `• ${issue.title || issue.description}`)
+                  .map((issue: Record<string, unknown>) => `• ${issue.title || issue.description}`)
                   .join('\n');
                 const moreCount = roomIssues.length > 3 ? `\n...and ${roomIssues.length - 3} more` : '';
                 const severity = urgentIssues ? '🚨 URGENT ISSUES' : '⚠️ OPEN ISSUES';
@@ -796,7 +797,6 @@ export const EnhancedCourtAssignmentTable = () => {
                 <SortableRow
                   key={row.room_id}
                   // Expose DOM id for deep-link scrolling
-                  // @ts-ignore - forwarded via rest props on the <tr/>
                   rowElementId={`row-${row.room_id}`}
                   row={row}
                   tooltipText={tooltipText}
@@ -808,7 +808,7 @@ export const EnhancedCourtAssignmentTable = () => {
                   editingValue={editingValue}
                   setEditingValue={setEditingValue}
                   onSave={() => {
-                    console.log('💾 Save button clicked:', { editingCell, editingValue });
+                    logger.debug('💾 Save button clicked:', { editingCell, editingValue });
                     if (editingCell) {
                       updateAssignmentMutation.mutate({
                         roomId: editingCell.rowId,
@@ -823,7 +823,7 @@ export const EnhancedCourtAssignmentTable = () => {
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      console.log('⏎ Enter key pressed:', { editingCell, editingValue });
+                      logger.debug('⏎ Enter key pressed:', { editingCell, editingValue });
                       if (editingCell) {
                         updateAssignmentMutation.mutate({
                           roomId: editingCell.rowId,

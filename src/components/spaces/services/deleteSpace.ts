@@ -1,8 +1,9 @@
 
 import { supabase } from "@/lib/supabase";
+import { logger } from '@/lib/logger';
 
 export async function deleteSpace(id: string, type: 'room' | 'hallway' | 'door') {
-  console.log(`Deleting ${type} with ID: ${id}`);
+  logger.debug(`Deleting ${type} with ID: ${id}`);
   
   try {
     // Delete the space based on its type
@@ -13,7 +14,7 @@ export async function deleteSpace(id: string, type: 'room' | 'hallway' | 'door')
         .eq("id", id);
         
       if (roomError) {
-        console.error("Error deleting room:", roomError);
+        logger.error("Error deleting room:", roomError);
         throw roomError;
       }
     } else if (type === 'hallway') {
@@ -23,7 +24,7 @@ export async function deleteSpace(id: string, type: 'room' | 'hallway' | 'door')
         .eq("id", id);
         
       if (hallwayError) {
-        console.error("Error deleting hallway:", hallwayError);
+        logger.error("Error deleting hallway:", hallwayError);
         throw hallwayError;
       }
     } else if (type === 'door') {
@@ -33,14 +34,14 @@ export async function deleteSpace(id: string, type: 'room' | 'hallway' | 'door')
         .eq("id", id);
         
       if (doorError) {
-        console.error("Error deleting door:", doorError);
+        logger.error("Error deleting door:", doorError);
         throw doorError;
       }
     }
     
     return { success: true };
   } catch (error) {
-    console.error("Error in deleteSpace:", error);
+    logger.error("Error in deleteSpace:", error);
     throw error;
   }
 }

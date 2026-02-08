@@ -20,7 +20,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
   const { data: supplyCounts } = useSupplyPendingCounts();
   const { data: staffTaskCounts } = useStaffTasksPendingCounts();
 
-  const items = navigation.filter((i) => (i as any).title) as Array<{ title: string; icon: any }>;
+  const items = navigation.filter((i) => ((i as Record<string, unknown>)).title) as Array<{ title: string; icon: unknown }>;
   const primary = items.slice(0, 4);
   const hasMore = items.length > 4;
 

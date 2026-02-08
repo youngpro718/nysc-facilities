@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 
 interface ValidationResult {
@@ -20,7 +21,7 @@ export function useSecurityValidation() {
         errors: data ? [] : ['Invalid email format']
       };
     } catch (error) {
-      console.error('Email validation error:', error);
+      logger.error('Email validation error:', error);
       return {
         isValid: false,
         errors: ['Email validation failed']
@@ -35,7 +36,7 @@ export function useSecurityValidation() {
       if (error) throw error;
       
       // Type guard for the returned data structure
-      const isValidResponse = (obj: any): obj is { is_valid: boolean; errors: string[] } => {
+      const isValidResponse = (obj: Record<string, unknown>): obj is { is_valid: boolean; errors: string[] } => {
         return obj && typeof obj === 'object' && 'is_valid' in obj && 'errors' in obj;
       };
 
@@ -51,7 +52,7 @@ export function useSecurityValidation() {
         errors: ['Invalid response from password validation']
       };
     } catch (error) {
-      console.error('Password validation error:', error);
+      logger.error('Password validation error:', error);
       return {
         isValid: false,
         errors: ['Password validation failed']
@@ -67,7 +68,7 @@ export function useSecurityValidation() {
       
       return data || input;
     } catch (error) {
-      console.error('Input sanitization error:', error);
+      logger.error('Input sanitization error:', error);
       return input; // Return original input if sanitization fails
     }
   }, []);
@@ -88,13 +89,13 @@ export function useSecurityValidation() {
       });
       
       if (error) {
-        console.warn('Rate limit check error (allowing attempt by default):', error);
+        logger.warn('Rate limit check error (allowing attempt by default):', error);
         return true; // Allow on error to prevent blocking login due to RPC issues
       }
       
       return Boolean(data);
     } catch (error) {
-      console.warn('Rate limit check error (allowing attempt by default):', error);
+      logger.warn('Rate limit check error (allowing attempt by default):', error);
       return true; // Allow on error to prevent blocking login due to RPC issues
     }
   }, []);
@@ -107,7 +108,7 @@ export function useSecurityValidation() {
       
       return data;
     } catch (error) {
-      console.error('Session validation error:', error);
+      logger.error('Session validation error:', error);
       return false;
     }
   }, []);
@@ -116,7 +117,7 @@ export function useSecurityValidation() {
     action: string,
     resourceType: string,
     resourceId?: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ) => {
     try {
       const { error } = await supabase.rpc('log_security_event', {
@@ -128,7 +129,7 @@ export function useSecurityValidation() {
       
       if (error) throw error;
     } catch (error) {
-      console.warn('Security event logging error (non-blocking):', error);
+      logger.warn('Security event logging error (non-blocking):', error);
       // Fallback logging - continue operation even if audit logging fails
     }
   }, []);

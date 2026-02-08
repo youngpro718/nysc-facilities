@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,11 +98,11 @@ export function ItemPhotoUpload({
         title: "Success",
         description: "Photo uploaded successfully",
       });
-    } catch (error: any) {
-      console.error('Upload error:', error);
+    } catch (error) {
+      logger.error('Upload error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to upload photo",
+        description: getErrorMessage(error) || "Failed to upload photo",
         variant: "destructive",
       });
     } finally {
@@ -144,11 +146,11 @@ export function ItemPhotoUpload({
         title: "Success",
         description: "Photo removed successfully",
       });
-    } catch (error: any) {
-      console.error('Remove error:', error);
+    } catch (error) {
+      logger.error('Remove error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to remove photo",
+        description: getErrorMessage(error) || "Failed to remove photo",
         variant: "destructive",
       });
     }

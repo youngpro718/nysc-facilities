@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { logger } from '@/lib/logger';
 import { Dialog } from "@/components/ui/dialog";
 import { ModalFrame } from "@/components/common/ModalFrame";
 import { Button } from "@/components/ui/button";
@@ -126,14 +127,14 @@ export function ImportKeysDialog({ open, onOpenChange, onImported }: ImportKeysD
           _raw: obj,
         };
         if (!rec.name) rec._error = "Missing name";
-        if (Number.isNaN(rec.total_quantity as any)) rec._error = (rec._error ? rec._error+"; " : "")+"Invalid total_quantity";
-        if (Number.isNaN(rec.available_quantity as any)) rec._error = (rec._error ? rec._error+"; " : "")+"Invalid available_quantity";
+        if (Number.isNaN(rec.total_quantity as unknown)) rec._error = (rec._error ? rec._error+"; " : "")+"Invalid total_quantity";
+        if (Number.isNaN(rec.available_quantity as unknown)) rec._error = (rec._error ? rec._error+"; " : "")+"Invalid available_quantity";
         out.push(rec);
       }
       setRows(out);
       if (out.length) toast.success(`Parsed ${out.length} rows`);
     } catch (e:any) {
-      console.error(e);
+      logger.error('Failed to parse CSV:', e);
       toast.error("Failed to parse CSV");
     } finally {
       setIsParsing(false);
@@ -155,7 +156,7 @@ export function ImportKeysDialog({ open, onOpenChange, onImported }: ImportKeysD
           .maybeSingle();
         if (selErr) { failed++; continue; }
 
-        const payload: any = {
+        const payload: Record<string, unknown> = {
           name: r.name,
           type: r.type ?? 'physical',
           total_quantity: r.total_quantity ?? 0,
@@ -185,7 +186,7 @@ export function ImportKeysDialog({ open, onOpenChange, onImported }: ImportKeysD
       setRows([]);
       setFile(null);
     } catch (e:any) {
-      console.error(e);
+      logger.error('Import failed:', e);
       toast.error('Import failed');
     } finally {
       setIsImporting(false);

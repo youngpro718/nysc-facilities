@@ -148,7 +148,7 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
           <select
             className="border border-input rounded-md px-3 py-1.5 text-sm bg-background text-foreground"
             value={issueType}
-            onChange={e => setIssueType(e.target.value as any)}
+            onChange={e => setIssueType(e.target.value as unknown)}
           >
             {ISSUE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>

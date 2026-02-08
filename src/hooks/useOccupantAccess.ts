@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 export interface OccupantAccessSummary {
   occupant_id: string;
@@ -32,7 +33,7 @@ export const useOccupantAccess = (occupantId?: string) => {
     queryFn: async () => {
       if (!occupantId) throw new Error('No occupant ID provided');
 
-      console.log('Fetching occupant access for:', occupantId);
+      logger.debug('Fetching occupant access for:', occupantId);
 
       // Get occupant details
       const { data: occupant, error: occupantError } = await supabase
@@ -42,12 +43,12 @@ export const useOccupantAccess = (occupantId?: string) => {
         .single();
 
       if (occupantError) {
-        console.error('Occupant error:', occupantError);
+        logger.error('Occupant error:', occupantError);
         throw occupantError;
       }
       if (!occupant) return null;
 
-      console.log('Occupant found:', occupant);
+      logger.debug('Occupant found:', occupant);
 
       // Get room assignments
       const { data: roomAssignments, error: roomError } = await supabase
@@ -73,11 +74,11 @@ export const useOccupantAccess = (occupantId?: string) => {
         .eq('occupant_id', occupantId);
 
       if (roomError) {
-        console.error('Room assignments error:', roomError);
+        logger.error('Room assignments error:', roomError);
         throw roomError;
       }
 
-      console.log('Room assignments found:', roomAssignments);
+      logger.debug('Room assignments found:', roomAssignments);
 
       // Get key assignments (simplified - no door mappings needed)
       const { data: keyAssignments, error: keyError } = await supabase
@@ -96,11 +97,11 @@ export const useOccupantAccess = (occupantId?: string) => {
         .is('returned_at', null);
 
       if (keyError) {
-        console.error('Key assignments error:', keyError);
+        logger.error('Key assignments error:', keyError);
         throw keyError;
       }
 
-      console.log('Key assignments found:', keyAssignments);
+      logger.debug('Key assignments found:', keyAssignments);
 
       const room_assignments = roomAssignments?.map(assignment => {
         const room = Array.isArray(assignment.rooms) ? assignment.rooms[0] : assignment.rooms;
@@ -162,7 +163,7 @@ export const useOccupantAccess = (occupantId?: string) => {
         key_assignments
       };
 
-      console.log('Final occupant access result:', result);
+      logger.debug('Final occupant access result:', result);
       return result;
     },
     enabled: !!occupantId,

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { User, Save, X } from "lucide-react";
 interface ProfileEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  profile: any;
+  profile: Record<string, unknown>;
   onProfileUpdate: () => void;
 }
 
@@ -49,7 +50,7 @@ export function ProfileEditModal({ open, onOpenChange, profile, onProfileUpdate 
       onProfileUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile:', error);
       toast({
         title: "Error",
         description: "Failed to update profile",

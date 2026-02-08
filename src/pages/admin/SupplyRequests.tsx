@@ -93,7 +93,7 @@ export default function AdminSupplyRequests() {
   const fetchRequests = async () => {
     try {
       const data = await getSupplyRequests();
-      setRequests(data as any);
+      setRequests(data as unknown);
     } catch (error) {
       toast({
         title: "Error",

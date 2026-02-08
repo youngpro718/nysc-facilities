@@ -50,8 +50,8 @@ export interface RoomIssue {
 export interface RoomHistoryItem {
   id: string;
   changeType: string;
-  previousValues?: any;
-  newValues?: any;
+  previousValues?: Record<string, unknown>;
+  newValues?: Record<string, unknown>;
   createdAt: string;
 }
 

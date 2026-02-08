@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { useSecurityValidation } from './useSecurityValidation';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -36,7 +37,7 @@ export function useSecureAuth() {
         blockedUntil: status.blocked_until
       };
     } catch (error) {
-      console.warn('Error getting remaining attempts:', error);
+      logger.warn('Error getting remaining attempts:', error);
       return { remaining: 10, total: 10, blocked: false };
     }
   }, []);
@@ -111,7 +112,7 @@ export function useSecureAuth() {
           p_attempt_type: 'login'
         });
       } catch (resetError) {
-        console.warn('Failed to reset rate limit after successful login:', resetError);
+        logger.warn('Failed to reset rate limit after successful login:', resetError);
       }
 
       // Log successful login
@@ -122,14 +123,14 @@ export function useSecureAuth() {
 
       return data;
     } catch (error) {
-      console.error('Secure sign in error:', error);
+      logger.error('Secure sign in error:', error);
       throw error;
     } finally {
       setIsLoading(false);
     }
   }, [validateEmail, sanitizeInput, checkRateLimit, logSecurityEvent, getRemainingAttempts]);
 
-  const secureSignUp = useCallback(async (email: string, password: string, userData: any) => {
+  const secureSignUp = useCallback(async (email: string, password: string, userData: Record<string, unknown>) => {
     setIsLoading(true);
     
     try {
@@ -198,7 +199,7 @@ export function useSecureAuth() {
 
       return data;
     } catch (error) {
-      console.error('Secure sign up error:', error);
+      logger.error('Secure sign up error:', error);
       throw error;
     } finally {
       setIsLoading(false);

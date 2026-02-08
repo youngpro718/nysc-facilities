@@ -20,7 +20,7 @@ export interface FixtureScan {
   scanned_at: string;
   action_taken: string | null;
   scan_location: string | null;
-  device_info: Record<string, any>;
+  device_info: Record<string, unknown>;
 }
 
 export interface HallwayWithHierarchy {

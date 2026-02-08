@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { logger } from '@/lib/logger';
 import { Dialog } from "@/components/ui/dialog";
 import { ModalFrame } from "@/components/common/ModalFrame";
 import { Button } from "@/components/ui/button";
@@ -107,8 +108,8 @@ export function EditElevatorPassDialog({ open, onOpenChange, assignment, onUpdat
       toast.success("Assignment updated successfully");
       onUpdated?.();
       onOpenChange(false);
-    } catch (e: any) {
-      console.error(e);
+    } catch (e) {
+      logger.error('Failed to update assignment:', e);
       toast.error("Failed to update assignment");
     } finally {
       setLoading(false);

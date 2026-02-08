@@ -8,6 +8,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 export { supabase };
 
@@ -20,9 +21,9 @@ export const db = supabase;
 /**
  * Helper function to handle Supabase errors
  */
-export function handleSupabaseError(error: any, context: string): never {
+export function handleSupabaseError(error: unknown, context: string): never {
   const message = error?.message || 'Unknown error occurred';
-  console.error(`[Supabase Error - ${context}]:`, error);
+  logger.error(`[Supabase Error - ${context}]:`, error);
   throw new Error(`${context}: ${message}`);
 }
 

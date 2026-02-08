@@ -1,4 +1,6 @@
 import React from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { SecureForm } from '@/components/security/SecureForm';
 import { toast } from 'sonner';
 import { useSecureAuth } from '@/hooks/security/useSecureAuth';
@@ -25,9 +27,9 @@ export const SecureLoginForm = ({
       toast.success("Welcome back!", {
         description: "You've successfully signed in."
       });
-    } catch (error: any) {
-      console.error("Auth error:", error);
-      toast.error(error.message || "Authentication failed");
+    } catch (error) {
+      logger.error("Auth error:", error);
+      toast.error(getErrorMessage(error) || "Authentication failed");
       throw error; // Re-throw to let SecureForm handle it
     } finally {
       setLoading(false);

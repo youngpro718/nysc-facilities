@@ -2,6 +2,7 @@
  * Service Worker Registration for iOS 18+ PWA Support
  * Handles installation, updates, and push notifications
  */
+import { logger } from '@/lib/logger';
 
 export interface ServiceWorkerConfig {
   onSuccess?: (registration: ServiceWorkerRegistration) => void;
@@ -12,7 +13,7 @@ export interface ServiceWorkerConfig {
 export async function registerServiceWorker(config: ServiceWorkerConfig = {}) {
   // Check if service workers are supported
   if (!('serviceWorker' in navigator)) {
-    console.warn('Service Workers are not supported in this browser');
+    logger.warn('Service Workers are not supported in this browser');
     return null;
   }
 
@@ -22,7 +23,7 @@ export async function registerServiceWorker(config: ServiceWorkerConfig = {}) {
       scope: '/',
     });
 
-    console.log('Service Worker registered successfully:', registration);
+    logger.debug('Service Worker registered successfully:', registration);
 
     // Handle updates
     registration.addEventListener('updatefound', () => {
@@ -33,7 +34,7 @@ export async function registerServiceWorker(config: ServiceWorkerConfig = {}) {
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
           // New service worker available
-          console.log('New service worker available');
+          logger.debug('New service worker available');
           config.onUpdate?.(registration);
         }
       });
@@ -47,7 +48,7 @@ export async function registerServiceWorker(config: ServiceWorkerConfig = {}) {
     config.onSuccess?.(registration);
     return registration;
   } catch (error) {
-    console.error('Service Worker registration failed:', error);
+    logger.error('Service Worker registration failed:', error);
     config.onError?.(error as Error);
     return null;
   }
@@ -64,10 +65,10 @@ export async function unregisterServiceWorker() {
   try {
     const registration = await navigator.serviceWorker.ready;
     const success = await registration.unregister();
-    console.log('Service Worker unregistered:', success);
+    logger.debug('Service Worker unregistered:', success);
     return success;
   } catch (error) {
-    console.error('Service Worker unregistration failed:', error);
+    logger.error('Service Worker unregistration failed:', error);
     return false;
   }
 }
@@ -77,7 +78,7 @@ export async function unregisterServiceWorker() {
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!('Notification' in window)) {
-    console.warn('Notifications are not supported');
+    logger.warn('Notifications are not supported');
     return 'denied';
   }
 
@@ -93,10 +94,10 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   // Request permission
   try {
     const permission = await Notification.requestPermission();
-    console.log('Notification permission:', permission);
+    logger.debug('Notification permission:', permission);
     return permission;
   } catch (error) {
-    console.error('Notification permission request failed:', error);
+    logger.error('Notification permission request failed:', error);
     return 'denied';
   }
 }
@@ -108,7 +109,7 @@ export async function subscribeToPushNotifications(
   vapidPublicKey: string
 ): Promise<PushSubscription | null> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.warn('Push notifications are not supported');
+    logger.warn('Push notifications are not supported');
     return null;
   }
 
@@ -119,7 +120,7 @@ export async function subscribeToPushNotifications(
     let subscription = await registration.pushManager.getSubscription();
     
     if (subscription) {
-      console.log('Already subscribed to push notifications');
+      logger.debug('Already subscribed to push notifications');
       return subscription;
     }
 
@@ -127,7 +128,7 @@ export async function subscribeToPushNotifications(
     const permission = await requestNotificationPermission();
     
     if (permission !== 'granted') {
-      console.warn('Notification permission not granted');
+      logger.warn('Notification permission not granted');
       return null;
     }
 
@@ -137,10 +138,10 @@ export async function subscribeToPushNotifications(
       applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
     });
 
-    console.log('Subscribed to push notifications:', subscription);
+    logger.debug('Subscribed to push notifications:', subscription);
     return subscription;
   } catch (error) {
-    console.error('Push notification subscription failed:', error);
+    logger.error('Push notification subscription failed:', error);
     return null;
   }
 }
@@ -158,15 +159,15 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
     const subscription = await registration.pushManager.getSubscription();
     
     if (!subscription) {
-      console.log('No push subscription found');
+      logger.debug('No push subscription found');
       return false;
     }
 
     const success = await subscription.unsubscribe();
-    console.log('Unsubscribed from push notifications:', success);
+    logger.debug('Unsubscribed from push notifications:', success);
     return success;
   } catch (error) {
-    console.error('Push notification unsubscription failed:', error);
+    logger.error('Push notification unsubscription failed:', error);
     return false;
   }
 }
@@ -176,7 +177,7 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
  */
 export function isStandalone(): boolean {
   // iOS Safari
-  if ('standalone' in navigator && (navigator as any).standalone) {
+  if ('standalone' in navigator && ((navigator as Record<string, unknown>)).standalone) {
     return true;
   }
 
@@ -192,7 +193,7 @@ export function isStandalone(): boolean {
  * Check if app is running on iOS
  */
 export function isIOS(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !((window as Record<string, unknown>)).MSStream;
 }
 
 /**
@@ -224,9 +225,9 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 /**
  * Send message to service worker
  */
-export function sendMessageToSW(message: any): void {
+export function sendMessageToSW(message: unknown): void {
   if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-    console.warn('No active service worker to send message to');
+    logger.warn('No active service worker to send message to');
     return;
   }
 
@@ -244,8 +245,8 @@ export async function clearAllCaches(): Promise<void> {
   try {
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map((name) => caches.delete(name)));
-    console.log('All caches cleared');
+    logger.debug('All caches cleared');
   } catch (error) {
-    console.error('Failed to clear caches:', error);
+    logger.error('Failed to clear caches:', error);
   }
 }

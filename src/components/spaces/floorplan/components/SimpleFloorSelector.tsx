@@ -50,7 +50,7 @@ export function SimpleFloorSelector({
         .order("floor_number", { ascending: false });
 
       if (error) throw error;
-      return (data as any)?.map((floor: any) => ({
+      return (data as Record<string, unknown>)?.map((floor: Record<string, unknown>) => ({
         ...floor,
         building: floor.building?.[0] || { name: 'Unknown Building' }
       })) || [];

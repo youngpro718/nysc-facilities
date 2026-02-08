@@ -1,5 +1,6 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { logger } from '@/lib/logger';
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { Camera, User, Building2, Briefcase, Shield, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +36,7 @@ export function ProfileHeader() {
         setUserRole(profileData.role);
       }
     } catch (error) {
-      console.error('Error fetching user role:', error);
+      logger.error('Error fetching user role:', error);
     }
   };
 
@@ -54,7 +55,7 @@ export function ProfileHeader() {
         setAvatarUrl(profile.avatar_url);
       }
     } catch (error) {
-      console.error('Error fetching avatar:', error);
+      logger.error('Error fetching avatar:', error);
     }
   };
 
@@ -98,7 +99,7 @@ export function ProfileHeader() {
         description: "Profile picture updated successfully",
       });
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      logger.error('Error uploading avatar:', error);
       toast({
         title: "Error",
         description: "Failed to update profile picture",
@@ -182,7 +183,7 @@ export function ProfileHeader() {
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">
-              <strong>Department:</strong> {(profile as any)?.department || profile?.department_id || (
+              <strong>Department:</strong> {((profile as Record<string, unknown>))?.department || profile?.department_id || (
                 <span className="text-muted-foreground italic">Not specified</span>
               )}
             </span>

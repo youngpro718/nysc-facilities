@@ -28,7 +28,7 @@ interface OperationsOverviewTabProps {
     maintenanceScheduled: number;
     totalMaintenanceItems: number;
   };
-  criticalIssues: any[];
+  criticalIssues: unknown[];
   isLoading: boolean;
   onCreateIssue: () => void;
   onScheduleMaintenance: () => void;

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { AdminStats } from "../types";
 import { toast } from "sonner";
@@ -59,7 +60,7 @@ export function useAdminStats() {
         managedBuildings: buildingsData?.length || 0,
       });
     } catch (error) {
-      console.error("Error fetching admin stats:", error);
+      logger.error("Error fetching admin stats:", error);
       setError("Failed to fetch admin statistics");
       toast.error("Failed to fetch admin statistics");
     } finally {

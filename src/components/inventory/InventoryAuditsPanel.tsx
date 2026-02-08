@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -91,13 +92,13 @@ export function InventoryAuditsPanel() {
         .in('id', userIds.length ? userIds : ['00000000-0000-0000-0000-000000000000']);
       if (usersErr) throw usersErr;
 
-      const itemsById = new Map((items || []).map((i: any) => [i.id, i]));
-      const catsById = new Map((categories || []).map((c: any) => [c.id, c]));
-      const usersById = new Map((users || []).map((u: any) => [u.id, u]));
+      const itemsById = new Map((items || []).map((i: Record<string, unknown>) => [i.id, i]));
+      const catsById = new Map((categories || []).map((c: Record<string, unknown>) => [c.id, c]));
+      const usersById = new Map((users || []).map((u: Record<string, unknown>) => [u.id, u]));
 
-      const hydrated = (txData || []).map((t: any) => {
+      const hydrated = (txData || []).map((t: Record<string, unknown>) => {
         const item = itemsById.get(t.item_id);
-        const cat = item ? catsById.get((item as any).category_id) : undefined;
+        const cat = item ? catsById.get(((item as Record<string, unknown>)).category_id) : undefined;
         const user = usersById.get(t.performed_by);
         return {
           id: t.id,
@@ -107,15 +108,15 @@ export function InventoryAuditsPanel() {
           new_quantity: t.new_quantity ?? t.quantity,
           reason: t.reason ?? '',
           performed_by: t.performed_by,
-          performed_by_name: user ? `${(user as any).first_name} ${(user as any).last_name}` : 'Unknown User',
+          performed_by_name: user ? `${((user as Record<string, unknown>)).first_name} ${((user as Record<string, unknown>)).last_name}` : 'Unknown User',
           created_at: t.created_at,
           item_id: t.item_id,
-          item_name: (item as any)?.name ?? 'Unknown Item',
-          category_name: (cat as any)?.name,
+          item_name: (item as Record<string, unknown>)?.name ?? 'Unknown Item',
+          category_name: (cat as Record<string, unknown>)?.name,
         } as InventoryTransaction;
       });
 
-      console.debug('[InventoryAuditsPanel] hydrated', { count: hydrated.length });
+      logger.debug('[InventoryAuditsPanel] hydrated', { count: hydrated.length });
       return hydrated;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -198,14 +199,14 @@ export function InventoryAuditsPanel() {
       id: '', date: '', item_name: '', transaction_type: '', quantity: 0,
       previous_quantity: 0, new_quantity: 0, reason: '', performed_by: '', category_name: ''
     });
-    const escape = (v: any) => {
+    const escape = (v: Record<string, unknown>) => {
       const s = String(v ?? '');
       if (s.includes(',') || s.includes('"') || s.includes('\n')) {
         return '"' + s.replace(/"/g, '""') + '"';
       }
       return s;
     };
-    const lines = [header.join(',')].concat(rows.map(r => header.map(k => escape((r as any)[k])).join(',')));
+    const lines = [header.join(',')].concat(rows.map(r => header.map(k => escape(((r as Record<string, unknown>))[k])).join(',')));
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -396,7 +397,7 @@ export function InventoryAuditsPanel() {
           </div>
           {txErrorFlag && (
             <div className="mt-3 rounded border border-destructive/30 bg-destructive/10 text-destructive p-2 text-sm">
-              Failed to load transactions: {String((txError as any)?.message || txError)}
+              Failed to load transactions: {String((txError as Record<string, unknown>)?.message || txError)}
             </div>
           )}
         </CardContent>

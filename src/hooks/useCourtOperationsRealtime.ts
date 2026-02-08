@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -18,7 +19,7 @@ export function useCourtPresence(roomId?: string) {
       const q = supabase.from("court_attendance").select("*");
       const { data, error } = roomId ? await q.eq("room_id", roomId).maybeSingle() : await q.returns<any[]>();
       if (error) throw error;
-      return data as any;
+      return data as unknown;
     },
   });
   return data;
@@ -31,7 +32,7 @@ export function useRoomStatus(roomId?: string) {
       const q = supabase.from("court_room_status").select("*");
       const { data, error } = roomId ? await q.eq("room_id", roomId).maybeSingle() : await q.returns<any[]>();
       if (error) throw error;
-      return data as any;
+      return data as unknown;
     },
   });
   return data;
@@ -147,7 +148,7 @@ export function useCourtOperationsRealtime() {
       queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
       queryClient.invalidateQueries({ queryKey: ["quick-actions"] });
     } catch (e) {
-      console.error("onMoveJudge error", e);
+      logger.error("onMoveJudge error", e);
       throw e;
     }
   };

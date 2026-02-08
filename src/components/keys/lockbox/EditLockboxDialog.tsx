@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,9 +54,9 @@ export function EditLockboxDialog({ lockbox, open, onOpenChange, onSuccess }: Ed
       toast.success(`Lockbox "${name}" updated successfully`);
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      console.error('Error updating lockbox:', error);
-      toast.error(error.message || "Failed to update lockbox");
+    } catch (error) {
+      logger.error('Error updating lockbox:', error);
+      toast.error(getErrorMessage(error) || "Failed to update lockbox");
     } finally {
       setIsUpdating(false);
     }

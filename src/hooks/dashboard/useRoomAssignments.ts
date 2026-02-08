@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import type { UserAssignment } from "@/types/dashboard";
 
 export const useRoomAssignments = (userId?: string) => {
@@ -11,7 +12,7 @@ export const useRoomAssignments = (userId?: string) => {
 
       const identityFilter = `profile_id.eq.${userId},occupant_id.eq.${userId},personnel_profile_id.eq.${userId}`;
       
-      console.log('Fetching room assignments for user:', userId);
+      logger.debug('Fetching room assignments for user:', userId);
       
       try {
         // Get room assignments
@@ -27,12 +28,12 @@ export const useRoomAssignments = (userId?: string) => {
           .or(identityFilter);
 
         if (assignmentsError) {
-          console.error('Error fetching room assignments:', assignmentsError);
+          logger.error('Error fetching room assignments:', assignmentsError);
           return [];
         }
 
         if (!assignments || assignments.length === 0) {
-          console.log('No room assignments found for user');
+          logger.debug('No room assignments found for user');
           return [];
         }
 
@@ -50,12 +51,12 @@ export const useRoomAssignments = (userId?: string) => {
           .in('id', roomIds);
 
         if (roomsError) {
-          console.error('Error fetching room details:', roomsError);
+          logger.error('Error fetching room details:', roomsError);
           return [];
         }
 
         if (!rooms || rooms.length === 0) {
-          console.log('No room details found');
+          logger.debug('No room details found');
           return [];
         }
 
@@ -71,7 +72,7 @@ export const useRoomAssignments = (userId?: string) => {
           .in('id', floorIds);
 
         if (floorsError) {
-          console.error('Error fetching floor details:', floorsError);
+          logger.error('Error fetching floor details:', floorsError);
           return [];
         }
 
@@ -86,7 +87,7 @@ export const useRoomAssignments = (userId?: string) => {
           .in('id', buildingIds);
 
         if (buildingsError) {
-          console.error('Error fetching building details:', buildingsError);
+          logger.error('Error fetching building details:', buildingsError);
           return [];
         }
 
@@ -114,11 +115,11 @@ export const useRoomAssignments = (userId?: string) => {
           };
         }).filter(assignment => assignment !== null);
         
-        console.log('Formatted room assignments:', formattedAssignments);
+        logger.debug('Formatted room assignments:', formattedAssignments);
         
         return formattedAssignments;
       } catch (error) {
-        console.error('Error in room assignments query:', error);
+        logger.error('Error in room assignments query:', error);
         return [];
       }
     },

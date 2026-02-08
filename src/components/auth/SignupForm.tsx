@@ -1,4 +1,6 @@
 import { FormEvent, useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -103,7 +105,7 @@ export const SignupForm = ({
             try {
               await uploadAvatar(avatarFile, user.id);
             } catch (error) {
-              console.error('Avatar upload error:', error);
+              logger.error('Avatar upload error:', error);
               toast.error('Account created but avatar upload failed');
             }
           }
@@ -111,9 +113,9 @@ export const SignupForm = ({
       }
       
       toast.success('Account created successfully! Please check your email for verification.');
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      toast.error(error.message || 'Account creation failed');
+    } catch (error) {
+      logger.error('Signup error:', error);
+      toast.error(getErrorMessage(error) || 'Account creation failed');
     } finally {
       setLoading(false);
     }

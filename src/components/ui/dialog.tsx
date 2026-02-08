@@ -33,13 +33,13 @@ const DialogContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   const childrenArray = React.Children.toArray(children);
 
-  const nodeMatches = (node: any, targets: any[]) => {
+  const nodeMatches = (node: unknown, targets: unknown[]) => {
     const type = (node && node.type) || null;
-    const displayName = (type && (type as any).displayName) || null;
-    return targets.some((t) => type === t || displayName === (t as any).displayName);
+    const displayName = (type && ((type as Record<string, unknown>)).displayName) || null;
+    return targets.some((t) => type === t || displayName === ((t as Record<string, unknown>)).displayName);
   };
 
-  const containsType = (nodes: React.ReactNode[], targets: any[]): boolean => {
+  const containsType = (nodes: React.ReactNode[], targets: unknown[]): boolean => {
     for (const n of nodes) {
       if (!React.isValidElement(n)) continue;
       if (nodeMatches(n, targets)) return true;

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { logger } from '@/lib/logger';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,7 +77,7 @@ export const InventoryOverviewPanel = () => {
         .select("id, quantity, minimum_quantity")
         .gt("quantity", 0);
       if (lowStockError) {
-        console.error('Error counting low stock items:', lowStockError);
+        logger.error('Error counting low stock items:', lowStockError);
       }
       // Filter items where quantity < minimum_quantity (and minimum_quantity > 0)
       const lowStockCount = (allItems || []).filter(
@@ -228,7 +229,7 @@ export const InventoryOverviewPanel = () => {
       if (typeFilter !== "all") query = query.eq("transaction_type", typeFilter);
       const { data, error } = await query.order("created_at", { ascending: false }).limit(5);
       if (error) {
-        console.error('Error fetching transactions:', error);
+        logger.error('Error fetching transactions:', error);
         return [];
       }
 
@@ -245,7 +246,7 @@ export const InventoryOverviewPanel = () => {
             itemsById.set(it.id, { name: it.name });
           }
         } else {
-          console.error('Error fetching item names for recent transactions:', itemsError);
+          logger.error('Error fetching item names for recent transactions:', itemsError);
         }
       }
 
@@ -293,18 +294,18 @@ export const InventoryOverviewPanel = () => {
       );
 
       // Enrich with category names
-      const categoryIds = Array.from(new Set(filteredItems.map((i: any) => i.category_id).filter(Boolean)));
+      const categoryIds = Array.from(new Set(filteredItems.map((i: Record<string, unknown>) => i.category_id).filter(Boolean)));
       const categoriesById = new Map<string, string>();
       if (categoryIds.length > 0) {
         const { data: cats } = await supabase
           .from("inventory_categories")
           .select("id,name")
           .in("id", categoryIds as string[]);
-        for (const c of (cats || []) as any[]) categoriesById.set(c.id, c.name);
+        for (const c of (cats || []) as unknown[]) categoriesById.set(c.id, c.name);
       }
 
       const limited = filteredItems.slice(0, 5); // Limit to 5 items
-      return limited.map((item: any) => ({
+      return limited.map((item: Record<string, unknown>) => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity,
@@ -349,7 +350,7 @@ export const InventoryOverviewPanel = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-[180px]">
-            <Select value={range} onValueChange={(v) => setRange(v as any)}>
+            <Select value={range} onValueChange={(v) => setRange(v as unknown)}>
               <SelectTrigger>
                 <SelectValue placeholder="Time Range" />
               </SelectTrigger>
@@ -362,7 +363,7 @@ export const InventoryOverviewPanel = () => {
             </Select>
           </div>
           <div className="w-[220px]">
-            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
+            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as unknown)}>
               <SelectTrigger>
                 <SelectValue placeholder="Transaction Type" />
               </SelectTrigger>

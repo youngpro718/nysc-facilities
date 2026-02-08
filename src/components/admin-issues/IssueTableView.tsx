@@ -1,4 +1,5 @@
 import { formatDistanceToNow } from "date-fns";
+import { logger } from '@/lib/logger';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,13 +97,13 @@ export function IssueTableView({
               </TableCell>
               
               <TableCell>
-                <Badge variant={getPriorityColor(issue.priority) as any} className="text-xs">
+                <Badge variant={getPriorityColor(issue.priority) as unknown} className="text-xs">
                   {issue.priority.toUpperCase()}
                 </Badge>
               </TableCell>
               
               <TableCell>
-                <Badge variant={getStatusColor(issue.status) as any} className="text-xs">
+                <Badge variant={getStatusColor(issue.status) as unknown} className="text-xs">
                   {issue.status.replace('_', ' ').toUpperCase()}
                 </Badge>
               </TableCell>
@@ -142,7 +143,7 @@ export function IssueTableView({
                   variant="ghost"
                   size="sm"
                   className="h-11"
-                  onClick={() => console.log('View issue:', issue.id)}
+                  onClick={() => logger.debug('View issue:', issue.id)}
                 >
                   <Eye className="h-4 w-4" />
                 </Button>

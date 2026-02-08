@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { BuildingError } from "./types/errors";
 import type { Building, Activity } from "@/types/dashboard";
@@ -69,7 +70,7 @@ export const useBuildingData = (userId?: string) => {
 
             // Build fixtures by room via a direct query (more reliable than nested selects)
             const roomIds = (roomsData || []).map(r => r.id);
-            let fixturesByRoom: Record<string, any[]> = {};
+            let fixturesByRoom: Record<string, unknown[]> = {};
             if (roomIds.length > 0) {
               const { data: fixturesData, error: fixturesError } = await supabase
                 .from('lighting_fixtures')
@@ -79,7 +80,7 @@ export const useBuildingData = (userId?: string) => {
 
               if (fixturesError) throw fixturesError;
 
-              fixturesByRoom = (fixturesData || []).reduce((acc: Record<string, any[]>, fx: any) => {
+              fixturesByRoom = (fixturesData || []).reduce((acc: Record<string, unknown[]>, fx: Record<string, unknown>) => {
                 const key = fx.space_id;
                 if (!acc[key]) acc[key] = [];
                 acc[key].push({
@@ -87,7 +88,7 @@ export const useBuildingData = (userId?: string) => {
                   bulb_count: fx.bulb_count ?? 1,
                 });
                 return acc;
-              }, {} as Record<string, any[]>);
+              }, {} as Record<string, unknown[]>);
             }
 
             // Group rooms by floor and attach fixtures fetched above
@@ -97,18 +98,18 @@ export const useBuildingData = (userId?: string) => {
               }
               acc[room.floor_id].push({
                 ...room,
-                lighting_fixtures: (fixturesByRoom[room.id] || []).map((fixture: any) => ({
+                lighting_fixtures: (fixturesByRoom[room.id] || []).map((fixture: Record<string, unknown>) => ({
                   ...fixture,
                   bulb_count: fixture.bulb_count ?? 1,
                 })),
               });
               return acc;
-            }, {} as Record<string, any[]>) || {};
+            }, {} as Record<string, unknown[]>) || {};
 
             // Precompute building-level lighting stats
             const allFixtures = Object.values(fixturesByRoom).flat();
-            const lightingTotalFixtures = allFixtures.reduce((acc: number, fx: any) => acc + (fx.bulb_count ?? 1), 0);
-            const lightingWorkingFixtures = allFixtures.reduce((acc: number, fx: any) => {
+            const lightingTotalFixtures = allFixtures.reduce((acc: number, fx: Record<string, unknown>) => acc + (fx.bulb_count ?? 1), 0);
+            const lightingWorkingFixtures = allFixtures.reduce((acc: number, fx: Record<string, unknown>) => {
               const status = (fx.status ?? '').toString().toLowerCase();
               const isWorking = status === 'working' || status === 'functional';
               return acc + (isWorking ? (fx.bulb_count ?? 1) : 0);
@@ -142,7 +143,7 @@ export const useBuildingData = (userId?: string) => {
 
         return buildingsWithDetails;
       } catch (error) {
-        console.error('Error fetching buildings:', error);
+        logger.error('Error fetching buildings:', error);
         throw new BuildingError(error instanceof Error ? error.message : 'Failed to fetch buildings');
       }
     },
@@ -174,7 +175,7 @@ export const useBuildingData = (userId?: string) => {
           }
         }));
       } catch (error) {
-        console.error('Error fetching activities:', error);
+        logger.error('Error fetching activities:', error);
         return [];
       }
     },

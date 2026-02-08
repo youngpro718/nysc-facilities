@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { logger } from '@/lib/logger';
 
 export interface ConflictDetectionResult {
   hasConflicts: boolean;
@@ -105,7 +106,7 @@ export class ConflictDetectionService {
           severity: "critical",
           title: `Judge ${judge} is double-booked`,
           description: `${judge} is assigned to ${rooms.length} courtrooms simultaneously`,
-          affectedRooms: rooms.map(r => (r as any).rooms?.room_number || r.room_id),
+          affectedRooms: rooms.map(r => ((r as Record<string, unknown>)).rooms?.room_number || r.room_id),
           affectedPersonnel: [judge],
           suggestedAction: `Remove ${judge} from all but one courtroom or verify if this is intentional (e.g., covering multiple parts)`,
         });
@@ -152,7 +153,7 @@ export class ConflictDetectionService {
           severity: "high",
           title: `Part ${part} is assigned to multiple rooms`,
           description: `Part number ${part} appears in ${rooms.length} different courtroom assignments`,
-          affectedRooms: rooms.map(r => (r as any).rooms?.room_number || r.room_id),
+          affectedRooms: rooms.map(r => ((r as Record<string, unknown>)).rooms?.room_number || r.room_id),
           affectedPersonnel: rooms.map(r => r.justice).filter(Boolean),
           suggestedAction: `Ensure each part number is unique. Update one of the assignments to use a different part number.`,
         });
@@ -184,7 +185,7 @@ export class ConflictDetectionService {
 
     assignments.forEach(assignment => {
       const missing: string[] = [];
-      const roomNumber = (assignment as any).rooms?.room_number || assignment.room_id;
+      const roomNumber = ((assignment as Record<string, unknown>)).rooms?.room_number || assignment.room_id;
 
       // Check for missing judge
       if (!assignment.justice || assignment.justice.trim() === "") {
@@ -240,7 +241,7 @@ export class ConflictDetectionService {
 
     assignments.forEach(assignment => {
       const issues: string[] = [];
-      const roomNumber = (assignment as any).rooms?.room_number || assignment.room_id;
+      const roomNumber = ((assignment as Record<string, unknown>)).rooms?.room_number || assignment.room_id;
 
       // Check for missing part number
       if (!assignment.part || assignment.part.trim() === "") {
@@ -355,7 +356,7 @@ export class ConflictDetectionService {
       .neq('court_room_id', session.court_room_id);
     
     if (existingSessions && existingSessions.length > 0) {
-      errors.push(`Judge ${session.judge_name} already assigned to room ${(existingSessions[0] as any).court_rooms.room_number} for this period`);
+      errors.push(`Judge ${session.judge_name} already assigned to room ${(existingSessions[0] as Record<string, unknown>).court_rooms.room_number} for this period`);
     }
     
     // 2. Check part number unique (if provided)
@@ -370,7 +371,7 @@ export class ConflictDetectionService {
         .neq('court_room_id', session.court_room_id);
       
       if (existingParts && existingParts.length > 0) {
-        errors.push(`Part ${session.part_number} already assigned to room ${(existingParts[0] as any).court_rooms.room_number}`);
+        errors.push(`Part ${session.part_number} already assigned to room ${(existingParts[0] as Record<string, unknown>).court_rooms.room_number}`);
       }
     }
     
@@ -441,8 +442,8 @@ export class ConflictDetectionService {
       // Filter for judges only
       const absentJudgeNames = new Set(
         absences
-          ?.filter((a: any) => a.staff?.role === 'judge')
-          .map((a: any) => a.staff?.display_name)
+          ?.filter((a: Record<string, unknown>) => a.staff?.role === 'judge')
+          .map((a: Record<string, unknown>) => a.staff?.display_name)
           .filter(Boolean) || []
       );
 
@@ -457,13 +458,13 @@ export class ConflictDetectionService {
             type: 'missing_session_coverage',
             severity: 'high',
             title: `Missing Coverage for ${session.judge_name}`,
-            description: `Judge ${session.judge_name} is marked absent but no coverage has been assigned for room ${(session as any).court_rooms?.room_number}`,
-            affectedRooms: [(session as any).court_rooms?.room_number || 'Unknown'],
+            description: `Judge ${session.judge_name} is marked absent but no coverage has been assigned for room ${((session as Record<string, unknown>)).court_rooms?.room_number}`,
+            affectedRooms: [((session as Record<string, unknown>)).court_rooms?.room_number || 'Unknown'],
           });
         }
       }
     } catch (error) {
-      console.error('Error detecting missing session coverage:', error);
+      logger.error('Error detecting missing session coverage:', error);
     }
 
     return warnings;
@@ -509,7 +510,7 @@ export class ConflictDetectionService {
             severity: 'critical',
             title: `Judge ${judge} Double-Booked`,
             description: `Judge ${judge} is assigned to multiple courtrooms for the same period`,
-            affectedRooms: rooms.map(r => (r as any).court_rooms?.room_number || 'Unknown'),
+            affectedRooms: rooms.map(r => ((r as Record<string, unknown>)).court_rooms?.room_number || 'Unknown'),
             affectedPersonnel: [judge],
             suggestedAction: 'Remove duplicate assignments or assign coverage',
           });
@@ -535,14 +536,14 @@ export class ConflictDetectionService {
             severity: 'high',
             title: `Duplicate Part Number: ${part}`,
             description: `Part ${part} is assigned to multiple courtrooms`,
-            affectedRooms: rooms.map(r => (r as any).court_rooms?.room_number || 'Unknown'),
+            affectedRooms: rooms.map(r => ((r as Record<string, unknown>)).court_rooms?.room_number || 'Unknown'),
             affectedPersonnel: [],
             suggestedAction: 'Assign unique part numbers to each courtroom',
           });
         }
       });
     } catch (error) {
-      console.error('Error detecting session conflicts:', error);
+      logger.error('Error detecting session conflicts:', error);
     }
 
     return conflicts;

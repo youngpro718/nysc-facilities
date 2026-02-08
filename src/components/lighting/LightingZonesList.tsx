@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,14 +10,14 @@ import { PlusCircle } from "lucide-react";
 
 // Direct function definition to avoid import issues
 const fetchLightingZones = async (selectedBuilding?: string, selectedFloor?: string) => {
-  console.log("fetchLightingZones: Starting fetch", { selectedBuilding, selectedFloor });
+  logger.debug("fetchLightingZones: Starting fetch", { selectedBuilding, selectedFloor });
   const { data, error } = await supabase
     .from('lighting_zones')
     .select('*')
     .order('name');
   
-  console.log("fetchLightingZones: Result", { data, error });
-  if (error) throw error;
+  logger.debug("fetchLightingZones: Result", { data, error });
+  if (error) logger.error("fetchLightingZones: Error", { error });
   return data || [];
 };
 

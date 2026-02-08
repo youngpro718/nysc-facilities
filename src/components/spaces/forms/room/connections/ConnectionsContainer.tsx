@@ -1,5 +1,6 @@
 
 import { UseFormReturn } from "react-hook-form";
+import { logger } from '@/lib/logger';
 import { RoomFormData } from "../RoomFormSchema";
 import { ConnectionsField } from "./ConnectionFields";
 
@@ -11,7 +12,7 @@ export interface ConnectionsContainerProps {
 
 export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsContainerProps) {
   // Space connections functionality is disabled - no space_connections table exists
-  console.log("Connections disabled for room:", { floorId, roomId });
+  logger.debug("Connections disabled for room:", { floorId, roomId });
 
   return (
     <ConnectionsField

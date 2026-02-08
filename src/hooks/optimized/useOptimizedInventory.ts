@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import { OptimizedInventoryService } from '@/services/optimized/inventoryService';
 import type {
   OptimizedInventoryItem,
@@ -173,7 +174,7 @@ export function useInventoryRealtimeSync() {
           table: 'inventory_items'
         },
         (payload) => {
-          console.log('Inventory changed:', payload);
+          logger.debug('Inventory changed:', payload);
           // Invalidate all inventory-related queries
           queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.all });
         }
@@ -186,7 +187,7 @@ export function useInventoryRealtimeSync() {
           table: 'inventory_item_transactions'
         },
         (payload) => {
-          console.log('Inventory transaction recorded:', payload);
+          logger.debug('Inventory transaction recorded:', payload);
           // Refresh items and stats when transactions occur
           queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.allItems() });
           queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.dashboardStats() });

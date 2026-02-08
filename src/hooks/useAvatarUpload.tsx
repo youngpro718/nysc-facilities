@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -94,9 +96,9 @@ export function useAvatarUpload({
       onSuccess?.(publicUrl);
       return publicUrl;
 
-    } catch (error: any) {
-      const errorMessage = error.message || 'Failed to upload avatar';
-      console.error('Avatar upload error:', error);
+    } catch (error) {
+      const errorMessage = getErrorMessage(error) || 'Failed to upload avatar';
+      logger.error('Avatar upload error:', error);
       toast.error(errorMessage);
       onError?.(errorMessage);
       return null;

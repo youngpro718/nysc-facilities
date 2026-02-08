@@ -1,5 +1,7 @@
 
 import { FormEvent } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -43,9 +45,9 @@ export const LoginForm = ({
       toast.success("Welcome back!", {
         description: "You've successfully signed in."
       });
-    } catch (error: any) {
-      console.error("Auth error:", error);
-      toast.error(error.message || "Authentication failed");
+    } catch (error) {
+      logger.error("Auth error:", error);
+      toast.error(getErrorMessage(error) || "Authentication failed");
     } finally {
       setLoading(false);
     }

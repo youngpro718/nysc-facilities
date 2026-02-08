@@ -1,5 +1,6 @@
 
 import { useForm } from "react-hook-form";
+import { logger } from '@/lib/logger';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -45,7 +46,7 @@ export function useProfileForm() {
           .single();
 
         if (error) {
-          console.error('Error loading profile:', error);
+          logger.error('Error loading profile:', error);
           return;
         }
 
@@ -78,7 +79,7 @@ export function useProfileForm() {
           });
         }
       } catch (error) {
-        console.error('Error loading profile:', error);
+        logger.error('Error loading profile:', error);
         toast({
           title: "Error",
           description: "Failed to load profile information.",
@@ -128,7 +129,7 @@ export function useProfileForm() {
         description: "Your personal information has been updated successfully.",
       });
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile:', error);
       toast({
         title: "Error",
         description: "Failed to update profile information.",

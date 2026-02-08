@@ -1,5 +1,6 @@
 
 import { Issue } from "../types/IssueTypes";
+import { logger } from '@/lib/logger';
 import { IssueCard } from "../card/IssueCard";
 import { DeleteIssueButton } from "../components/DeleteIssueButton";
 
@@ -33,7 +34,7 @@ export const CardView = ({ issues, onIssueSelect }: CardViewProps) => {
                   issueId={issue.id}
                   className=""
                   onDelete={() => {
-                    console.log(`Issue deleted successfully in CardView: ${issue.id}`);
+                    logger.debug(`Issue deleted successfully in CardView: ${issue.id}`);
                     // The query invalidation in the mutation hook will handle UI updates
                   }}
                 />

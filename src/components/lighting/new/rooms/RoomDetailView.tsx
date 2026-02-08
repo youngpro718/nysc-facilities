@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DoorOpen, Lightbulb, CheckCircle, XCircle, AlertTriangle, Zap } from 'lucide-react';
@@ -50,7 +51,7 @@ export function RoomDetailView({ room, fixtures }: RoomDetailViewProps) {
     },
     onError: (error) => {
       toast.error('Failed to update fixture');
-      console.error(error);
+      logger.error('Failed to update fixture:', error);
     }
   });
 

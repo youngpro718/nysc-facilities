@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 // Optimized types for inventory management
 export interface OptimizedInventoryItem {
@@ -94,7 +95,7 @@ export class OptimizedInventoryService {
 
       return stats;
     } catch (error) {
-      console.error('Error fetching inventory dashboard stats:', error);
+      logger.error('Error fetching inventory dashboard stats:', error);
       throw error;
     }
   }
@@ -125,7 +126,7 @@ export class OptimizedInventoryService {
 
       if (error) throw error;
 
-      return data.map((item: any): OptimizedInventoryItem => ({
+      return data.map((item: Record<string, unknown>): OptimizedInventoryItem => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -140,7 +141,7 @@ export class OptimizedInventoryService {
         is_low_stock: item.quantity <= item.minimum_quantity,
       }));
     } catch (error) {
-      console.error('Error fetching inventory items:', error);
+      logger.error('Error fetching inventory items:', error);
       throw error;
     }
   }
@@ -172,9 +173,9 @@ export class OptimizedInventoryService {
       if (error) throw error;
 
       // Filter low stock items using database minimum_quantity
-      const lowStockItems = data.filter((item: any) => item.quantity <= item.minimum_quantity);
+      const lowStockItems = data.filter((item: Record<string, unknown>) => item.quantity <= item.minimum_quantity);
 
-      return lowStockItems.map((item: any): OptimizedInventoryItem => ({
+      return lowStockItems.map((item: Record<string, unknown>): OptimizedInventoryItem => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -189,7 +190,7 @@ export class OptimizedInventoryService {
         is_low_stock: true,
       }));
     } catch (error) {
-      console.error('Error fetching low stock items:', error);
+      logger.error('Error fetching low stock items:', error);
       throw error;
     }
   }
@@ -215,10 +216,10 @@ export class OptimizedInventoryService {
 
       if (error) throw error;
 
-      return data.map((category: any): OptimizedInventoryCategory => {
+      return data.map((category: Record<string, unknown>): OptimizedInventoryCategory => {
         const items = category.inventory_items || [];
-        const lowStockItems = items.filter((item: any) => item.quantity <= item.minimum_quantity);
-        const totalQuantity = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+        const lowStockItems = items.filter((item: Record<string, unknown>) => item.quantity <= item.minimum_quantity);
+        const totalQuantity = items.reduce((sum: number, item: Record<string, unknown>) => sum + item.quantity, 0);
 
         return {
           id: category.id,
@@ -230,7 +231,7 @@ export class OptimizedInventoryService {
         };
       });
     } catch (error) {
-      console.error('Error fetching inventory categories:', error);
+      logger.error('Error fetching inventory categories:', error);
       throw error;
     }
   }
@@ -262,7 +263,7 @@ export class OptimizedInventoryService {
 
       if (error) throw error;
 
-      return data.map((item: any): OptimizedInventoryItem => ({
+      return data.map((item: Record<string, unknown>): OptimizedInventoryItem => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -277,7 +278,7 @@ export class OptimizedInventoryService {
         is_low_stock: item.quantity <= item.minimum_quantity,
       }));
     } catch (error) {
-      console.error('Error searching inventory items:', error);
+      logger.error('Error searching inventory items:', error);
       throw error;
     }
   }
@@ -309,7 +310,7 @@ export class OptimizedInventoryService {
 
       if (error) throw error;
 
-      return data.map((item: any): OptimizedInventoryItem => ({
+      return data.map((item: Record<string, unknown>): OptimizedInventoryItem => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -324,7 +325,7 @@ export class OptimizedInventoryService {
         is_low_stock: item.quantity <= item.minimum_quantity,
       }));
     } catch (error) {
-      console.error('Error fetching items by category:', error);
+      logger.error('Error fetching items by category:', error);
       throw error;
     }
   }

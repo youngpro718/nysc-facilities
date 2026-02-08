@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Edit, Lightbulb, MapPin, Clock } from "lucide-react";
 import { Form } from "@/components/ui/form";
@@ -56,13 +58,39 @@ export function EditLightingDialog({ fixture, onFixtureUpdated, open: externalOp
   const handleSubmit = async (data: LightingFixtureFormData) => {
     setIsSubmitting(true);
     try {
-      // For now, just simulate an update since we don't have the full update function
+      // Map form data to database schema
+      const updateData = {
+        name: data.name,
+        type: data.type,
+        status: data.status,
+        technology: data.technology,
+        space_type: data.space_type,
+        space_id: data.space_id,
+        room_number: data.room_number,
+        position: data.position,
+        zone_id: data.zone_id,
+        bulb_count: data.bulb_count,
+        ballast_issue: data.ballast_issue,
+        ballast_check_notes: data.ballast_check_notes,
+        maintenance_notes: data.maintenance_notes,
+        electrical_issues: data.electrical_issues,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('lighting_fixtures')
+        .update(updateData as Record<string, unknown>)
+        .eq('id', fixture.id);
+
+      if (error) throw error;
+
       toast.success("Fixture updated successfully");
       onFixtureUpdated();
       setOpen(false);
-      form.reset();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update fixture");
+      form.reset(data); // Reset form with new values
+    } catch (error) {
+      logger.error('Error updating fixture:', error);
+      toast.error(getErrorMessage(error) || "Failed to update fixture");
     } finally {
       setIsSubmitting(false);
     }

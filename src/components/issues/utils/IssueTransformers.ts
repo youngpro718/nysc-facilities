@@ -21,7 +21,7 @@ interface DatabaseIssue {
     type: string;
     status: string;
     position: string;
-    electrical_issues: any;
+    electrical_issues: Record<string, unknown>;
   } | null;
 }
 

@@ -1,5 +1,6 @@
 import { BuildingCard } from "./BuildingCard";
 import { BuildingCardSkeleton } from "./BuildingCardSkeleton";
+import { logger } from "@/lib/logger";
 import { calculateBuildingStats } from "@/utils/dashboardUtils";
 import { Building } from "@/types/dashboard";
 
@@ -21,7 +22,7 @@ export interface Activity {
   created_at: string;
   metadata?: {
     building_id: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -61,22 +62,21 @@ export function BuildingsGrid({
         const { floorCount, roomCount, workingFixtures, totalFixtures } = calculateBuildingStats(building);
 
         // Prefer precomputed values from the loader if present
-        const effectiveWorking = typeof (building as any).lightingWorkingFixtures === 'number'
-          ? (building as any).lightingWorkingFixtures
+        const effectiveWorking = typeof ((building as Record<string, unknown>)).lightingWorkingFixtures === 'number'
+          ? ((building as Record<string, unknown>)).lightingWorkingFixtures
           : workingFixtures;
-        const effectiveTotal = typeof (building as any).lightingTotalFixtures === 'number'
-          ? (building as any).lightingTotalFixtures
+        const effectiveTotal = typeof ((building as Record<string, unknown>)).lightingTotalFixtures === 'number'
+          ? ((building as Record<string, unknown>)).lightingTotalFixtures
           : totalFixtures;
 
         // Debug: log computed lighting counts per building
         try {
-          // eslint-disable-next-line no-console
-          console.debug('LightingCounts', {
+          logger.debug('LightingCounts', {
             buildingId: building.id,
-            buildingName: (building as any)?.name,
+            buildingName: (building as Record<string, unknown>)?.name,
             effectiveWorking,
             effectiveTotal,
-            _lightingDebug: (building as any)?._lightingDebug,
+            _lightingDebug: (building as Record<string, unknown>)?._lightingDebug,
           });
         } catch {}
 

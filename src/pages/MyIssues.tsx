@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 import { useSearchParams } from "react-router-dom";
 import { Plus, AlertCircle, CheckCircle, Settings, ArrowUpCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -89,7 +90,7 @@ export default function MyIssues() {
       setSelectedIssueId(null);
     } catch (error) {
       toast.error('Failed to escalate issue');
-      console.error('Escalate error:', error);
+      logger.error('Escalate error:', error);
     }
   };
 

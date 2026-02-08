@@ -23,7 +23,7 @@ export interface IssueTypeOption {
 }
 
 export interface WizardStepProps {
-  form: any; // Replace with proper form type
+  form: unknown; // Replace with proper form type
   onNext?: () => void;
   onBack?: () => void;
   isLoading?: boolean;

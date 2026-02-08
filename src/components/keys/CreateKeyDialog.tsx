@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { MobileOptimizedDialog } from "@/components/ui/mobile-dialog";
 import { CreateKeyForm } from "./CreateKeyForm";
 import type { KeyFormData } from "./types/KeyTypes";
@@ -49,11 +51,11 @@ export function CreateKeyDialog({
 
       if (keyError) throw keyError;
 
-      console.log("Key created successfully:", newKey);
+      logger.debug("Key created successfully:", newKey);
 
       // If it's NOT an elevator card and there's an occupant, handle key assignment
       if (!data.isElevatorCard && data.occupantId) {
-        console.log("Creating key assignment for occupant:", data.occupantId);
+        logger.debug("Creating key assignment for occupant:", data.occupantId);
         
         try {
           // First check for existing assignments
@@ -85,7 +87,7 @@ export function CreateKeyDialog({
 
               if (spareError) throw spareError;
 
-              console.log(`${data.spareKeys} spare keys assigned successfully`);
+              logger.debug(`${data.spareKeys} spare keys assigned successfully`);
             }
           } else {
             // Create primary assignment first
@@ -116,9 +118,9 @@ export function CreateKeyDialog({
               if (spareError) throw spareError;
             }
           }
-        } catch (error: any) {
-          console.error("Key assignment error:", error);
-          throw new Error(error.message || "Failed to assign key");
+        } catch (error) {
+          logger.error("Key assignment error:", error);
+          throw new Error(getErrorMessage(error) || "Failed to assign key");
         }
       }
 
@@ -135,9 +137,9 @@ export function CreateKeyDialog({
       onOpenChange(false);
       onSuccess?.();
       
-    } catch (error: any) {
-      console.error("Error in key creation/assignment:", error);
-      toast.error(error.message);
+    } catch (error) {
+      logger.error("Error in key creation/assignment:", error);
+      toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }

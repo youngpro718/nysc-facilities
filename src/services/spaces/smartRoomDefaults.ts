@@ -1,4 +1,5 @@
 import { generateSmartRoomNumber, suggestRoomName } from '@/components/spaces/utils/roomNumberGenerator';
+import { logger } from '@/lib/logger';
 import { RoomTypeEnum } from '@/components/spaces/rooms/types/roomEnums';
 import { supabase } from '@/lib/supabase';
 
@@ -107,7 +108,7 @@ export async function generateSmartDefaults(
         finalBuildingId
       );
     } catch (error) {
-      console.error('Error generating smart defaults:', error);
+      logger.error('Error generating smart defaults:', error);
       // Fallback to basic defaults
       suggestedRoomNumber = `${floorNumber}01`;
       suggestedName = defaultName;

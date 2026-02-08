@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Optimized React Query Hooks for Spaces
  * Leverages Phase 2 database optimizations with intelligent caching
@@ -6,6 +5,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { 
   OptimizedSpacesService, 
@@ -19,11 +19,11 @@ import {
 export const OPTIMIZED_QUERY_KEYS = {
   spaces: {
     all: ['optimized-spaces'] as const,
-    dashboard: (filters?: any) => ['optimized-spaces', 'dashboard', filters] as const,
+    dashboard: (filters?: Record<string, unknown>) => ['optimized-spaces', 'dashboard', filters] as const,
     hierarchy: () => ['optimized-spaces', 'hierarchy'] as const,
-    search: (term: string, filters?: any) => ['optimized-spaces', 'search', term, filters] as const,
+    search: (term: string, filters?: Record<string, unknown>) => ['optimized-spaces', 'search', term, filters] as const,
     details: (id: string) => ['optimized-spaces', 'details', id] as const,
-    rooms: (filters?: any) => ['optimized-spaces', 'rooms', filters] as const,
+    rooms: (filters?: Record<string, unknown>) => ['optimized-spaces', 'rooms', filters] as const,
     byBuilding: (buildingId: string) => ['optimized-spaces', 'building', buildingId] as const,
     byFloor: (floorId: string) => ['optimized-spaces', 'floor', floorId] as const,
   },
@@ -180,7 +180,7 @@ export function useSpacesCacheManager() {
       
       return { success: true };
     } catch (error) {
-      console.error('Error refreshing cache:', error);
+      logger.error('Error refreshing cache:', error);
       return { success: false, error };
     }
   }, [queryClient]);
@@ -191,7 +191,7 @@ export function useSpacesCacheManager() {
     });
   }, [queryClient]);
 
-  const invalidateDashboard = useCallback((filters?: any) => {
+  const invalidateDashboard = useCallback((filters?: Record<string, unknown>) => {
     queryClient.invalidateQueries({
       queryKey: OPTIMIZED_QUERY_KEYS.spaces.dashboard(filters),
     });

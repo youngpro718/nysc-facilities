@@ -1,5 +1,7 @@
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from '@/lib/logger';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -21,7 +23,7 @@ export function useKeyAssignment(
   const { data: availableKeys, isLoading } = useQuery({
     queryKey: ["available-keys"],
     queryFn: async () => {
-      console.log("Fetching available keys...");
+      logger.debug("Fetching available keys...");
       
       const { data, error } = await supabase
         .from("key_inventory_view")
@@ -30,7 +32,7 @@ export function useKeyAssignment(
         .gt("available_quantity", 0);
 
       if (error) {
-        console.error("Error fetching keys:", error);
+        logger.error("Error fetching keys:", error);
         throw error;
       }
 
@@ -55,7 +57,7 @@ export function useKeyAssignment(
 
       if (error) {
         // Check if error is due to insufficient stock
-        if (error.message.includes("not available") || error.message.includes("available_quantity")) {
+        if (getErrorMessage(error).includes("not available") || getErrorMessage(error).includes("available_quantity")) {
           // Show order prompt instead of error
           setShowCreateOrderPrompt(true);
           return;
@@ -78,9 +80,9 @@ export function useKeyAssignment(
       setShowSpareKeyPrompt(false);
       onOpenChange(false);
       setSelectedKey("");
-    } catch (error: any) {
-      console.error("Error assigning keys:", error);
-      toast.error(error.message || "Failed to assign keys");
+    } catch (error) {
+      logger.error("Error assigning keys:", error);
+      toast.error(getErrorMessage(error) || "Failed to assign keys");
     } finally {
       setIsAssigning(false);
     }
@@ -127,9 +129,9 @@ export function useKeyAssignment(
       setShowCreateOrderPrompt(false);
       onOpenChange(false);
       setSelectedKey("");
-    } catch (error: any) {
-      console.error("Error creating key order:", error);
-      toast.error(error.message || "Failed to create key order");
+    } catch (error) {
+      logger.error("Error creating key order:", error);
+      toast.error(getErrorMessage(error) || "Failed to create key order");
     } finally {
       setIsCreatingOrder(false);
     }

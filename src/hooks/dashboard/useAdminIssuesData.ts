@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import type { UserIssue } from "@/types/dashboard";
 
@@ -76,7 +77,7 @@ export const useAdminIssuesData = () => {
 
         return enhancedIssues;
       } catch (error) {
-        console.error('Error fetching admin issues:', error);
+        logger.error('Error fetching admin issues:', error);
         throw error;
       }
     },

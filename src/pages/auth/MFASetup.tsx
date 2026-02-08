@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { getErrorMessage } from "@/lib/errorUtils";
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,27 @@ export default function MFASetup() {
   const [factorId, setFactorId] = useState<string>('');
   const [verificationCode, setVerificationCode] = useState('');
   const [error, setError] = useState<string>('');
+  const [isPrivileged, setIsPrivileged] = useState(false);
+
+  // Check if user has a privileged role that requires MFA
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        const privilegedRoles = ['admin', 'cmc'];
+        setIsPrivileged(!!data?.role && privilegedRoles.includes(data.role));
+      } catch (err) {
+        logger.warn('[MFASetup] Role check failed:', err);
+      }
+    };
+    checkRole();
+  }, []);
 
   const handleEnrollMFA = async () => {
     try {
@@ -46,9 +68,9 @@ export default function MFASetup() {
         setStep('setup');
         logger.debug('[MFASetup] MFA enrollment initiated');
       }
-    } catch (err: any) {
+    } catch (err) {
       logger.error('[MFASetup] Enrollment error:', err);
-      setError(err.message || 'Failed to start MFA setup');
+      setError(getErrorMessage(err) || 'Failed to start MFA setup');
       toast({
         title: 'Setup Failed',
         description: 'Could not initialize MFA setup. Please try again.',
@@ -89,7 +111,7 @@ export default function MFASetup() {
           navigate('/', { replace: true });
         }, 2000);
       }
-    } catch (err: any) {
+    } catch (err) {
       logger.error('[MFASetup] Verification error:', err);
       setError('Invalid verification code. Please try again.');
       toast({
@@ -103,7 +125,14 @@ export default function MFASetup() {
   };
 
   const handleSkip = () => {
-    // Allow skip for non-privileged users
+    if (isPrivileged) {
+      toast({
+        title: 'MFA Required',
+        description: 'Two-factor authentication is required for your role. Please complete setup.',
+        variant: 'destructive',
+      });
+      return;
+    }
     navigate('/', { replace: true });
   };
 
@@ -173,9 +202,16 @@ export default function MFASetup() {
                 <Button onClick={handleEnrollMFA} disabled={loading} className="w-full">
                   {loading ? 'Setting up...' : 'Get Started'}
                 </Button>
-                <Button variant="ghost" onClick={handleSkip} className="w-full">
-                  Skip for now
-                </Button>
+                {!isPrivileged && (
+                  <Button variant="ghost" onClick={handleSkip} className="w-full">
+                    Skip for now
+                  </Button>
+                )}
+                {isPrivileged && (
+                  <p className="text-xs text-center text-amber-600 font-medium">
+                    MFA is required for your role and cannot be skipped.
+                  </p>
+                )}
               </div>
             </>
           )}

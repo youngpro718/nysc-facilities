@@ -102,13 +102,13 @@ export const TermSheetBoard: React.FC = () => {
 
       // Create a map of rooms by room_id for quick lookup
       const roomMap = new Map();
-      (roomsData || []).forEach((room: any) => {
+      (roomsData || []).forEach((room: Record<string, unknown>) => {
         roomMap.set(room.room_id, room);
       });
 
       // Map assignments to include room data, maintaining sort_order
       const combined = (assignmentsData || [])
-        .map((assignment: any) => {
+        .map((assignment: Record<string, unknown>) => {
           const room = roomMap.get(assignment.room_id);
           if (!room) return null;
           
@@ -125,9 +125,9 @@ export const TermSheetBoard: React.FC = () => {
             sort_order: assignment.sort_order
           };
         })
-        .filter((row: any) => row !== null && row.is_active); // Only show active rooms with assignments
+        .filter((row: Record<string, unknown>) => row !== null && row.is_active); // Only show active rooms with assignments
 
-      return combined.map((row: any): TermAssignment => ({
+      return combined.map((row: Record<string, unknown>): TermAssignment => ({
         part: row.part,
         justice: row.justice,
         room: row.room_number,
