@@ -1,79 +1,101 @@
 
 
-# Audit: Signup, Onboarding, and Admin Verification Flow
+# Mobile Debug, Audit & Build Error Fix Plan
 
-## Issues Found
+## Part 1: Fix All Build Errors (50+ TypeScript errors)
 
-### 1. CRITICAL BUG: `requested_role` not passed to Supabase auth metadata
+The build is currently broken due to overly restrictive typing (`Record<string, unknown>` and `unknown`) applied in previous refactoring passes. These need to be changed to `any` or proper interfaces.
 
-The signup forms (`SimpleSignupForm.tsx` and `SignupForm.tsx`) pass `requested_role` in `userData`, but `useSecureAuth.ts` maps it to `requested_access_level` (a legacy field name) and **never maps `requested_role`** into the sanitized metadata sent to Supabase.
+### Files and fixes:
 
-- `SimpleSignupForm.tsx` line 67: `requested_role: formData.requestedRole`
-- `SignupForm.tsx` line 91: `requested_role: requestedRole`
-- `useSecureAuth.ts` line 169: Only maps `requested_access_level: userData.requested_access_level` (which is undefined since forms send `requested_role`)
+**1. NotificationBox.tsx** - Change all `Record<string, unknown>` parameter types to `any`:
+- Lines 61, 66, 67, 68, 84: Change filter/helper function signatures from `(n: Record<string, unknown>)` to `(n: any)`
+- Lines 109, 116: Change `handleNotificationClick` parameter and metadata access to use `any`
+- Lines 210-211, 285, 294: Change forEach callbacks - notifications are `AdminNotification`, not `Record<string, unknown>`
 
-**Result**: The DB trigger `handle_new_user` reads `NEW.raw_user_meta_data->>'requested_role'` but it's never set, so it always defaults to `'standard'` regardless of what the user picks.
+**2. AdminKeyOrderCard.tsx** - Remove double-cast `as Record<string, unknown>`:
+- Line 91: Change `((order as Record<string, unknown>))?.key_requests?.profiles` to `(order as any)?.key_requests?.profiles`
+- Line 103: Same pattern for `ordered_at` / `created_at` access
+- Line 181: Fix `orderedDateStr` usage with `String()` cast
 
-**Fix**: In `useSecureAuth.ts`, add `requested_role: userData.requested_role` to the sanitized metadata object.
+**3. AdminKeyOrdersSection.tsx** - Fix query return type and property access:
+- Line 37: Change `return (data as unknown[])` to `return (data as any[])`
+- Lines 42-59, 79, 104, 225-226: All property accesses on `order` need `any` typing
 
-### 2. Verification request record never created during signup
+**4. PersonnelQuickAssignDialog.tsx** - Fix `roomDetails` map callback typing:
+- Line 183: Change `(assignment: Record<string, unknown>)` to `(assignment: any)`
+- Lines 189, 195, 198, 213, 222: All downstream property accesses fixed by the `any` type
 
-The `handle_new_user` DB trigger creates the profile and a default `user_roles` entry, but it **does not** insert a row into `verification_requests`. The `AdminCenter` page fetches pending users from `profiles` (checking `verification_status = 'pending'`), which works. However, the `VerificationSection` and `UserManagementTab` components query `verification_requests` for pending items -- so they may show nothing if no verification_request row exists.
+**5. IssueTableView.tsx** - Fix Badge variant casting:
+- Lines 100, 106: Change `as unknown` to `as any`
 
-The `AdminCenter.tsx` approach (querying `profiles` directly for `verification_status`) is the correct one since it doesn't depend on `verification_requests`. The `UserManagementTab.tsx` queries `verification_requests` separately -- this is redundant but functional because it's used alongside a full profiles query.
+**6. IssueTimelineView.tsx** - Fix Badge variant casting:
+- Line 71: Change `as unknown` to `as any`
 
-**Recommendation**: Add `INSERT INTO verification_requests` in the `handle_new_user` trigger to ensure consistent data across all admin views.
+**7. SignupForm.tsx** - Fix `secureSignUp` parameter type:
+- Line 97: Cast `userData` with `as Record<string, unknown>` since the function signature expects it
 
-### 3. `reject_user_verification` does NOT delete the user
+**8. CreateSessionDialog.tsx** - Fix `selectedAssignment` typing and sort function:
+- Line 46: Change `Record<string, unknown> | null` to `any`
+- Lines 146-150: Change sort function parameter types from `Record<string, unknown>` to `any`
+- Line 246: Fix `logger.debug` call with too many arguments (combine into fewer args)
+- Lines 337-341: Property access errors on `selectedAssignment` fixed by `any` type
 
-The `reject_user_verification` function only updates `verification_requests.status` to `'rejected'` but does NOT update `profiles.verification_status` or `profiles.is_approved`. This means rejected users remain in the system as "pending" in the profiles table.
+**9. CoverageAssignmentDialog.tsx** - Fix `selectedAssignment` typing:
+- Line 45: Change `Record<string, unknown> | null` to `any`
+- Lines 172, 178: Property access errors fixed by `any` type
 
-**Fix**: Add profile status update to the reject function:
-```sql
-UPDATE public.profiles
-SET verification_status = 'rejected',
-    is_approved = false,
-    updated_at = NOW()
-WHERE id = p_user_id;
+---
+
+## Part 2: Mobile Dialog/Popup Fix (Input fields going off-screen)
+
+The core issue: When a user taps an input field inside a dialog on mobile, the virtual keyboard pushes the dialog content off-screen because the dialog uses `position: fixed` with `top: 50%; transform: translateY(-50%)` centering. The keyboard reduces the viewport, but the dialog remains centered on the original viewport.
+
+### Fix in `src/components/ui/dialog.tsx`:
+
+Update `DialogContent` to be mobile-friendly:
+- On mobile viewports, change the dialog positioning to anchor to the top of the viewport instead of center, so keyboard appearance doesn't push content off-screen
+- Add `max-h-[85vh] overflow-y-auto` so dialog content scrolls within the dialog
+- Add mobile-specific responsive classes: on small screens use full-width with small margin and top-aligned positioning
+
+The fix will change the DialogContent className from:
+```
+fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] ...
+```
+To include mobile overrides:
+```
+fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]
+max-h-[85vh] overflow-y-auto
+max-sm:top-[5%] max-sm:translate-y-0
 ```
 
-### 4. Stats card references stale role name
-
-In `UserManagementTab.tsx` line 615, the stats card filters by `role === "supply_room_staff"` which is a legacy role not in the current 4-role system. This counter will always show 0.
-
-**Fix**: Replace with `role === "court_aide"` to match the current role hierarchy.
-
-### 5. Admin approval defaults to 'standard' in VerificationSection
-
-In `useVerificationMutations.ts` line 20, when approving a user, the role is hardcoded to `'standard'` rather than letting the admin choose or using the user's `requested_role`.
-
-**Fix**: Pass the user's requested role or admin-selected role through the approval flow.
+This ensures that on mobile (`max-sm` breakpoint), the dialog is positioned near the top of the screen so when the keyboard opens, the input field remains visible.
 
 ---
 
-## Implementation Plan
+## Part 3: Mobile UI Audit Improvements
 
-### Step 1: Fix `requested_role` metadata propagation (useSecureAuth.ts)
-Add `requested_role: userData.requested_role` to the sanitized user data object passed to `supabase.auth.signUp()`.
+### 3a. Dialog close button touch target
+- The close button (`X`) in `dialog.tsx` is small (just the icon). Add minimum touch target size of 44px for mobile.
 
-### Step 2: Database migration -- Fix `reject_user_verification` and `handle_new_user`
-- Update `reject_user_verification` to also set `profiles.verification_status = 'rejected'`
-- Update `handle_new_user` to insert a `verification_requests` row so all admin views show pending users consistently
+### 3b. Textarea and Input keyboard behavior
+- Add `inputMode` attributes where appropriate (e.g., `inputMode="email"` for email fields)
 
-### Step 3: Fix stale role reference (UserManagementTab.tsx)
-Change `"supply_room_staff"` to `"court_aide"` in the stats card.
-
-### Step 4: Fix hardcoded 'standard' role in VerificationSection approval
-Update `useVerificationMutations.ts` to accept and pass the actual role instead of hardcoding `'standard'`.
+### 3c. Large dialogs on mobile
+- `CreateSessionDialog.tsx` uses `max-w-3xl max-h-[90vh] overflow-y-auto` which is good, but ensure padding accounts for safe areas
 
 ---
 
-## Files to Modify
+## Technical Summary
 
-| File | Change |
-|------|--------|
-| `src/hooks/security/useSecureAuth.ts` | Add `requested_role` to sanitized metadata |
-| `src/components/admin/UserManagementTab.tsx` | Fix stats card stale role reference |
-| `src/components/profile/sections/verification/hooks/useVerificationMutations.ts` | Remove hardcoded 'standard' role |
-| *Database migration* | Fix `reject_user_verification` to update profiles; fix `handle_new_user` to create verification_request |
+| Category | Files | Changes |
+|----------|-------|---------|
+| TS Build Fixes | 9 files | Replace `Record<string, unknown>` and `unknown` casts with `any`; fix argument counts |
+| Mobile Dialog Fix | `dialog.tsx` | Top-align on mobile, add overflow scroll, max-height |
+| Mobile Audit | `dialog.tsx` | Enlarge close button touch target |
+
+### Implementation Order
+1. Fix `dialog.tsx` (mobile positioning + touch target) - fixes the popup/keyboard issue
+2. Fix all 9 files with TypeScript errors - restores the build
+3. Test end-to-end on mobile viewport
 
