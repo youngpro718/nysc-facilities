@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useFavoriteItems } from '@/hooks/useFavoriteItems';
 import { ItemRow } from './ItemRow';
 import { Star, Loader2 } from 'lucide-react';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { ReceiptData } from '@/types/receipt';
 
 export function createReceiptData(

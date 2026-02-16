@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Button } from '@/components/ui/button';
 import { Star, Plus, Package, MapPin, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

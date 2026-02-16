@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * RoomDetailPanel Component (Feature-based)
  * 

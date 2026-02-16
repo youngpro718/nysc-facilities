@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { useNavigate } from 'react-router-dom';

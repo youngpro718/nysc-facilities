@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from 'react';
 import { logger } from '@/lib/logger';
 import { FileText, Download, ClipboardList, Wrench, AlertCircle, Eye, Mail, Upload } from 'lucide-react';

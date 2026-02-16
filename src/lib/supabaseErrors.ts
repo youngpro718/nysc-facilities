@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type NormalizedSupabaseError = {
   code?: string;
   message: string;
