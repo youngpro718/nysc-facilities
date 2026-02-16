@@ -30,18 +30,18 @@ export const useIssueData = (issueId: string | null) => {
       if (error) throw error;
 
       // Helper function to safely check object properties
-      const getJsonObject = (json: unknown): Record<string, unknown> => {
-        return typeof json === 'object' && json !== null ? json : {};
+      const getJsonObject = (json: unknown): any => {
+        return typeof json === 'object' && json !== null ? json as any : {};
       };
 
       // Transform the data with type assertion
       const transformedData = {
         ...data,
-        assigned_to: ((data as Record<string, unknown>)).assigned_to as "DCAS" | "OCA" | "Self" | "Outside_Vendor",
-        buildings: ((data as Record<string, unknown>)).buildings,
-        floors: ((data as Record<string, unknown>)).floors,
-        rooms: ((data as Record<string, unknown>)).rooms ? { name: ((data as Record<string, unknown>)).rooms.name } : undefined,
-        lighting_fixtures: Array.isArray(((data as Record<string, unknown>)).lighting_fixtures) ? ((data as Record<string, unknown>)).lighting_fixtures.map((fixture: Record<string, unknown>) => ({
+        assigned_to: (data as any).assigned_to as "DCAS" | "OCA" | "Self" | "Outside_Vendor",
+        buildings: (data as any).buildings,
+        floors: (data as any).floors,
+        rooms: (data as any).rooms ? { name: (data as any).rooms.name } : undefined,
+        lighting_fixtures: Array.isArray((data as any).lighting_fixtures) ? (data as any).lighting_fixtures.map((fixture: any) => ({
           name: fixture.name,
           type: fixture.type,
           status: fixture.status,

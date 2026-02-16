@@ -43,7 +43,7 @@ export function CreateSessionDialog({
   const [customStatus, setCustomStatus] = useState('');
   const [statusDetail, setStatusDetail] = useState('');
   const [notes, setNotes] = useState('');
-  const [selectedAssignment, setSelectedAssignment] = useState<Record<string, unknown> | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
   const [roomSearch, setRoomSearch] = useState('');
   const [statusSearch, setStatusSearch] = useState('');
   const [showCustomStatus, setShowCustomStatus] = useState(false);
@@ -143,7 +143,7 @@ export function CreateSessionDialog({
       });
       
       // Sort all groups by room number
-      const sortByRoomNumber = (a: Record<string, unknown>, b: Record<string, unknown>) => {
+      const sortByRoomNumber = (a: any, b: any) => {
         const numA = parseInt(a.room_number);
         const numB = parseInt(b.room_number);
         if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
@@ -243,7 +243,7 @@ export function CreateSessionDialog({
         const endDate = format(new Date(absence.ends_on), 'MM/dd');
         setStatusDetail(`OUT ${startDate}-${endDate}`);
         
-        logger.debug('✅ Auto-populated absence for', selectedAssignment.justice, ':', `OUT ${startDate}-${endDate}`);
+        logger.debug(`✅ Auto-populated absence for ${selectedAssignment.justice}: OUT ${startDate}-${endDate}`);
       }
     }
   }, [selectedAssignment, absentStaffMap]);

@@ -53,7 +53,7 @@ export const IssueReportForm: React.FC<IssueReportFormProps> = ({ open, onClose,
 
       toast.success("Issue reported successfully");
       form.reset();
-      onSubmit?.(values as unknown);
+      onSubmit?.(values as any);
       onClose();
     } catch (err) {
       logger.error('IssueReportForm submit error:', err);

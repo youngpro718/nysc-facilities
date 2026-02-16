@@ -58,14 +58,14 @@ export const NotificationBox = () => {
   const now = new Date();
   const cutoffIso = new Date(now.getTime() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const nowIso = now.toISOString();
-  const visibleNotifications = (notifications || []).filter((n: Record<string, unknown>) => {
+  const visibleNotifications = (notifications || []).filter((n: any) => {
     const withinRetention = !n.created_at || n.created_at >= cutoffIso;
     const notExpired = !n.expires_at || n.expires_at > nowIso;
     return withinRetention && notExpired;
   });
-  const isServerUnread = (n: Record<string, unknown>) => !n.read_by || n.read_by.length === 0;
-  const isEffectivelyUnread = (n: Record<string, unknown>) => isServerUnread(n) && !recentlyRead.has(n.id);
-  const isNewSinceSeen = (n: Record<string, unknown>) => !!lastSeenAt && n.created_at > lastSeenAt;
+  const isServerUnread = (n: any) => !n.read_by || n.read_by.length === 0;
+  const isEffectivelyUnread = (n: any) => isServerUnread(n) && !recentlyRead.has(n.id);
+  const isNewSinceSeen = (n: any) => !!lastSeenAt && n.created_at > lastSeenAt;
   const rawUnreadNewCount = visibleNotifications.filter(n => isEffectivelyUnread(n) && isNewSinceSeen(n)).length || 0;
   const unreadCount = isOpen ? 0 : rawUnreadNewCount; // show badge only for NEW unread
 
@@ -81,7 +81,7 @@ export const NotificationBox = () => {
   const criticalCount = criticalIssueUnreadCount; // numeric badge shows unread critical only
 
   // Count of items outside retention or expired (for optional purge UX)
-  const oldOrExpiredCount = (notifications || []).filter((n: Record<string, unknown>) => (n.created_at && n.created_at < cutoffIso) || (n.expires_at && n.expires_at <= nowIso)).length;
+  const oldOrExpiredCount = (notifications || []).filter((n: any) => (n.created_at && n.created_at < cutoffIso) || (n.expires_at && n.expires_at <= nowIso)).length;
 
   const purgeOldNotifications = async () => {
     try {
@@ -106,14 +106,14 @@ export const NotificationBox = () => {
     }
   };
 
-  const handleNotificationClick = (notification: Record<string, unknown>) => {
+  const handleNotificationClick = (notification: any) => {
     setIsOpen(false);
     
     // Mark notification as read
     markAsReadMutation.mutate(notification.id);
     
     // Prefer deep link if provided
-    const actionUrl = (notification as Record<string, unknown>)?.metadata?.action_url as string | undefined;
+    const actionUrl = notification?.metadata?.action_url as string | undefined;
     if (actionUrl) {
       navigate(actionUrl);
       return;

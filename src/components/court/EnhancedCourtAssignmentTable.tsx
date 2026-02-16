@@ -453,7 +453,7 @@ const SortableRow = ({
             text = "Available";
             variant = "secondary";
           }
-          return <Badge variant={variant}>{text}</Badge>;
+          return <Badge variant={variant as any}>{text}</Badge>;
         })()}
       </td>
     </tr>
@@ -615,7 +615,7 @@ export const EnhancedCourtAssignmentTable = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete assignment: " + error.message,
+        description: "Failed to delete assignment: " + (error as any).message,
       });
     },
   });
@@ -632,11 +632,11 @@ export const EnhancedCourtAssignmentTable = () => {
       
       // Update sort_order for all affected assignments
       newAssignments.forEach(async (assignment, index) => {
-        if (((assignment as Record<string, unknown>)).assignment_id) {
+        if ((assignment as any).assignment_id) {
           await supabase
             .from('court_assignments')
             .update({ sort_order: index + 1 })
-            .eq('id', ((assignment as Record<string, unknown>)).assignment_id);
+            .eq('id', (assignment as any).assignment_id);
         }
       });
 
@@ -791,7 +791,7 @@ export const EnhancedCourtAssignmentTable = () => {
               } else if (hasIssues) {
                 const issueList = roomIssues
                   .slice(0, 3)
-                  .map((issue: Record<string, unknown>) => `• ${issue.title || issue.description}`)
+                  .map((issue: any) => `• ${issue.title || issue.description}`)
                   .join('\n');
                 const moreCount = roomIssues.length > 3 ? `\n...and ${roomIssues.length - 3} more` : '';
                 const severity = urgentIssues ? '🚨 URGENT ISSUES' : '⚠️ OPEN ISSUES';

@@ -20,7 +20,7 @@ import {
 } from '@/services/forms/formSubmissionService';
 
 interface QuickProcessDialogProps {
-  submission: Record<string, unknown>;
+  submission: any;
   open: boolean;
   onClose: () => void;
 }

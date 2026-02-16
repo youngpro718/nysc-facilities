@@ -82,7 +82,7 @@ export function RoutingRuleDialog({ open, onOpenChange, editingRule }: RoutingRu
   }, [editingRule, open]);
 
   const saveMutation = useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
+    mutationFn: async (data: any) => {
       const payload = {
         ...data,
         form_type: data.form_type || null,

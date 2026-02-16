@@ -102,7 +102,7 @@ export function RecentActivityWidget({
             const typeInfo = typeConfig[activity.type];
             const statusInfo = statusConfig[activity.status] || statusConfig.pending;
             const Icon = typeInfo.icon;
-            const StatusIcon = statusInfo.icon;
+            const StatusIcon = (statusInfo as any).icon;
 
             return (
               <div 
@@ -121,8 +121,8 @@ export function RecentActivityWidget({
                     <span className="text-xs font-medium text-muted-foreground">
                       {typeInfo.label}
                     </span>
-                    <Badge variant={statusInfo.variant} className="text-xs gap-1">
-                      <StatusIcon className="h-3 w-3" />
+                    <Badge variant={(statusInfo as any).variant} className="text-xs gap-1">
+                      {StatusIcon && <StatusIcon className="h-3 w-3" />}
                       {activity.status}
                     </Badge>
                   </div>

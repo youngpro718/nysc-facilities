@@ -42,7 +42,7 @@ export function CoverageAssignmentDialog({
     absence_reason: '',
     notes: '',
   });
-  const [selectedAssignment, setSelectedAssignment] = useState<Record<string, unknown> | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
   const [coveringStaffSearch, setCoveringStaffSearch] = useState('');
   const [showCoveringStaffDropdown, setShowCoveringStaffDropdown] = useState(false);
 

@@ -94,7 +94,7 @@ export const SignupForm = ({
         emergency_contact: Object.values(emergencyContact).some(Boolean) ? emergencyContact : undefined
       };
       
-      await secureSignUp(email, password, userData);
+      await secureSignUp(email, password, userData as any);
       
       // Upload avatar if selected - need to wait for user to be created
       if (avatarFile) {

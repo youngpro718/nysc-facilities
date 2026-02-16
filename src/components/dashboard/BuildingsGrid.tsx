@@ -59,24 +59,24 @@ export function BuildingsGrid({
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {buildings?.filter(building => building != null && building.id)?.map((building, index) => {
-        const { floorCount, roomCount, workingFixtures, totalFixtures } = calculateBuildingStats(building);
+        const { floorCount, roomCount, workingFixtures, totalFixtures } = calculateBuildingStats(building as any);
 
         // Prefer precomputed values from the loader if present
-        const effectiveWorking = typeof ((building as Record<string, unknown>)).lightingWorkingFixtures === 'number'
-          ? ((building as Record<string, unknown>)).lightingWorkingFixtures
+        const effectiveWorking = typeof (building as any).lightingWorkingFixtures === 'number'
+          ? (building as any).lightingWorkingFixtures
           : workingFixtures;
-        const effectiveTotal = typeof ((building as Record<string, unknown>)).lightingTotalFixtures === 'number'
-          ? ((building as Record<string, unknown>)).lightingTotalFixtures
+        const effectiveTotal = typeof (building as any).lightingTotalFixtures === 'number'
+          ? (building as any).lightingTotalFixtures
           : totalFixtures;
 
         // Debug: log computed lighting counts per building
         try {
           logger.debug('LightingCounts', {
             buildingId: building.id,
-            buildingName: (building as Record<string, unknown>)?.name,
+            buildingName: (building as any)?.name,
             effectiveWorking,
             effectiveTotal,
-            _lightingDebug: (building as Record<string, unknown>)?._lightingDebug,
+            _lightingDebug: (building as any)?._lightingDebug,
           });
         } catch {}
 
@@ -98,7 +98,7 @@ export function BuildingsGrid({
         return (
           <BuildingCard
             key={building.id}
-            building={building}
+            building={building as any}
             buildingImage={buildingImages[index % buildingImages.length]}
             floorCount={floorCount}
             roomCount={roomCount}

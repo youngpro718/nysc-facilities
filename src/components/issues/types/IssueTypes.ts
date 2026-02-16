@@ -24,7 +24,7 @@ export interface LightingFixture {
 export interface IssueHistory {
   id: string;
   action_type: string;
-  action_details: Record<string, unknown>;
+  action_details: any;
   performed_by: string;
   performed_at: string;
   previous_status?: IssueStatus;
