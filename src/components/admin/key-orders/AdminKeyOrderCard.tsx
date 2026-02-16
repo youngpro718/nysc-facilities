@@ -88,7 +88,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
   const priorityInfo = priorityConfig[order.priority as keyof typeof priorityConfig] || priorityConfig.medium;
   const StatusIcon = statusInfo.icon;
   
-  const profile = ((order as Record<string, unknown>))?.key_requests?.profiles;
+  const profile = (order as any)?.key_requests?.profiles;
   const userName = (profile?.first_name || '') || (profile?.last_name || '')
     ? `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim()
     : profile?.email || 'Unknown User';
@@ -100,7 +100,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
     .join('')
     .toUpperCase() || 'U';
 
-  const orderedDateStr = ((order as Record<string, unknown>)).ordered_at || ((order as Record<string, unknown>)).created_at;
+  const orderedDateStr = (order as any).ordered_at || (order as any).created_at;
 
   const nextStatus = getNextStatus(order.status);
   const canReceive = order.status === 'pending_fulfillment' || order.status === 'in_progress';
@@ -178,7 +178,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>
-              Ordered: {orderedDateStr ? format(new Date(orderedDateStr), 'MMM dd, yyyy') : 'N/A'}
+              Ordered: {orderedDateStr ? format(new Date(String(orderedDateStr)), 'MMM dd, yyyy') : 'N/A'}
             </span>
           </div>
           {order.request_type && (

@@ -206,7 +206,7 @@ export function InventoryAuditsPanel() {
       }
       return s;
     };
-    const lines = [header.join(',')].concat(rows.map(r => header.map(k => escape(((r as Record<string, unknown>))[k])).join(',')));
+    const lines = [header.join(',')].concat(rows.map(r => header.map(k => escape((r as any)[k])).join(',')));
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -397,7 +397,7 @@ export function InventoryAuditsPanel() {
           </div>
           {txErrorFlag && (
             <div className="mt-3 rounded border border-destructive/30 bg-destructive/10 text-destructive p-2 text-sm">
-              Failed to load transactions: {String((txError as Record<string, unknown>)?.message || txError)}
+              Failed to load transactions: {String((txError as any)?.message || txError)}
             </div>
           )}
         </CardContent>

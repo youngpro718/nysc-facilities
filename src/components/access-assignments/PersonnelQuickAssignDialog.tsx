@@ -180,7 +180,7 @@ export function PersonnelQuickAssignDialog({
             ) : assignments?.roomDetails && assignments.roomDetails.length > 0 ? (
               <ScrollArea className="max-h-[200px]">
                 <div className="space-y-2">
-                  {assignments.roomDetails.map((assignment: Record<string, unknown>) => {
+                  {assignments.roomDetails.map((assignment: any) => {
                     const room = assignment.rooms;
                     if (!room) return null;
                     

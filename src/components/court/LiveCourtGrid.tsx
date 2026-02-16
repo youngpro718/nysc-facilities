@@ -34,7 +34,7 @@ export function LiveCourtGrid() {
   const filteredRooms = useMemo(() => {
     if (!rooms || !Array.isArray(rooms)) return [];
     const term = search.trim().toLowerCase();
-    return rooms.filter((r: Record<string, unknown>) => {
+    return rooms.filter((r: any) => {
       const match = !term || (r.room_number?.toLowerCase().includes(term) || r.courtroom_number?.toLowerCase().includes(term));
       return match;
     });
@@ -86,7 +86,7 @@ export function LiveCourtGrid() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRooms.map((room: Record<string, unknown>) => (
+              {filteredRooms.map((room: any) => (
                 <LiveRow 
                   key={room.id} 
                   room={room} 
@@ -166,7 +166,7 @@ function RecordAbsenceDialog({ open, onOpenChange, judgeName, roomNumber, actorI
       toast({
         variant: "destructive",
         title: "Failed to record absence",
-        description: error.message,
+        description: (error as any).message,
       });
     },
   });
@@ -247,7 +247,7 @@ function RecordAbsenceDialog({ open, onOpenChange, judgeName, roomNumber, actorI
 }
 
 function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMarkClerkPresence }: {
-  room: Record<string, unknown>;
+  room: any;
   actorId: string;
   onMoveJudge: (fromRoomId: string | null, toRoomId: string, judgeName: string, actorId: string, isCovering?: boolean) => Promise<void>;
   onMarkAbsent: (roomId: string, role: "judge" | "clerk", actorId: string) => Promise<void>;
@@ -543,11 +543,11 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
                       return true;
                     } else {
                       // Move mode: Only show EMPTY rooms
-                      if (r.assigned_judge && r.assigned_judge.trim()) return false;
+                      if (r.assigned_judge && (r.assigned_judge as string).trim()) return false;
                       return true;
                     }
                   })
-                  .map((r: Record<string, unknown>) => {
+                  .map((r: any) => {
                     const hasJudge = r.assigned_judge && r.assigned_judge.trim();
                     const label = hasJudge 
                       ? `${r.room_number} · ${r.assigned_judge} (Part ${r.assigned_part || '?'})`

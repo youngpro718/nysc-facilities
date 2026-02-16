@@ -97,13 +97,13 @@ export function IssueTableView({
               </TableCell>
               
               <TableCell>
-                <Badge variant={getPriorityColor(issue.priority) as unknown} className="text-xs">
+                <Badge variant={getPriorityColor(issue.priority) as any} className="text-xs">
                   {issue.priority.toUpperCase()}
                 </Badge>
               </TableCell>
               
               <TableCell>
-                <Badge variant={getStatusColor(issue.status) as unknown} className="text-xs">
+                <Badge variant={getStatusColor(issue.status) as any} className="text-xs">
                   {issue.status.replace('_', ' ').toUpperCase()}
                 </Badge>
               </TableCell>

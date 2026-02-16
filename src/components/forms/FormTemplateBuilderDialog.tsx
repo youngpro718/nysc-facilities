@@ -158,7 +158,7 @@ export function FormTemplateBuilderDialog({
 
             <div className="space-y-2">
               <Label htmlFor="template-type">Template Type</Label>
-              <Select value={templateType} onValueChange={(value: unknown) => setTemplateType(value)}>
+              <Select value={templateType} onValueChange={(value: any) => setTemplateType(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

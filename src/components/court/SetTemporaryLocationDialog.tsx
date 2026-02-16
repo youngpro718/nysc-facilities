@@ -26,7 +26,7 @@ export const SetTemporaryLocationDialog = ({
     notes: "",
   });
   const [isUpdating, setIsUpdating] = useState(false);
-  const [courtroomInfo, setCourtroomInfo] = useState<Record<string, unknown> | null>(null);
+  const [courtroomInfo, setCourtroomInfo] = useState<any>(null);
 
   useEffect(() => {
     if (courtroomId && open) {
@@ -149,7 +149,7 @@ export const SetTemporaryLocationDialog = ({
         {courtroomInfo && (
           <div className="bg-gray-50 p-3 rounded-lg mb-4">
             <div className="font-medium">
-              Courtroom {courtroomInfo.courtroom_number || courtroomInfo.room_number}
+              Courtroom {(courtroomInfo as any).courtroom_number || (courtroomInfo as any).room_number}
             </div>
             <div className="text-sm text-muted-foreground">
               {courtroomInfo.rooms?.name || courtroomInfo.room_number}

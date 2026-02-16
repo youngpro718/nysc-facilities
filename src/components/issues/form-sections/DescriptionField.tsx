@@ -15,7 +15,7 @@ interface DescriptionFieldProps {
 
 export function DescriptionField({ form }: DescriptionFieldProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [recognition, setRecognition] = useState<Record<string, unknown> | null>(null);
+  const [recognition, setRecognition] = useState<any>(null);
   const [isInitializing, setIsInitializing] = useState(false);
 
   const initializeSpeechRecognition = useCallback(() => {
@@ -24,7 +24,7 @@ export function DescriptionField({ form }: DescriptionFieldProps) {
       return null;
     }
 
-    const recognition = new ((window as Record<string, unknown>)).webkitSpeechRecognition();
+    const recognition = new (window as any).webkitSpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
@@ -35,7 +35,7 @@ export function DescriptionField({ form }: DescriptionFieldProps) {
       toast.success("Started recording");
     };
 
-    recognition.onresult = (event: Record<string, unknown>) => {
+    recognition.onresult = (event: any) => {
       let finalTranscript = '';
       let interimTranscript = '';
 
@@ -54,7 +54,7 @@ export function DescriptionField({ form }: DescriptionFieldProps) {
       }
     };
 
-    recognition.onerror = (event: Record<string, unknown>) => {
+    recognition.onerror = (event: any) => {
       logger.error('Speech recognition error', event.error);
       setIsRecording(false);
       setIsInitializing(false);

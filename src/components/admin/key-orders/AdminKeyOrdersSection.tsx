@@ -34,12 +34,12 @@ export const AdminKeyOrdersSection = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data as unknown[]) || [];
+      return (data as any[]) || [];
     },
   });
 
   const filteredOrders = keyOrders?.filter(order => {
-    const profile = ((order as Record<string, unknown>))?.key_requests?.profiles;
+    const profile = (order as any)?.key_requests?.profiles;
     const matchesSearch = searchQuery === "" || 
       profile?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       profile?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -75,7 +75,7 @@ export const AdminKeyOrdersSection = () => {
       refetch();
     } catch (error) {
       logger.error('Error updating order status:', error);
-      const message = (error as Record<string, unknown>)?.message || 'Failed to update order status';
+      const message = (error as any)?.message || 'Failed to update order status';
       toast.error(message);
     }
   };
@@ -100,7 +100,7 @@ export const AdminKeyOrdersSection = () => {
       refetch();
     } catch (error) {
       logger.error('Error receiving keys:', error);
-      const message = (error as Record<string, unknown>)?.message || 'Failed to receive keys';
+      const message = (error as any)?.message || 'Failed to receive keys';
       toast.error(message);
     }
   };

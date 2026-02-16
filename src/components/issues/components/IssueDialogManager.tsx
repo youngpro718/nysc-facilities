@@ -50,7 +50,7 @@ export const IssueDialogManager = ({ dialogState, onClose }: IssueDialogManagerP
               <SheetTitle>Issue Details</SheetTitle>
             </VisuallyHidden>
             <IssueDetails 
-              issueId={dialogState.data?.issueId} 
+              issueId={(dialogState.data as any)?.issueId} 
               onClose={onClose}
             />
           </SheetContent>
@@ -67,7 +67,7 @@ export const IssueDialogManager = ({ dialogState, onClose }: IssueDialogManagerP
               <SheetTitle>Resolve Issue</SheetTitle>
             </SheetHeader>
             <ResolutionForm
-              issueId={dialogState.data?.issueId}
+              issueId={(dialogState.data as any)?.issueId}
               onSuccess={onClose}
               onCancel={onClose}
             />

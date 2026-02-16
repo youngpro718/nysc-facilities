@@ -5,7 +5,7 @@ import { FileText, Calendar, MapPin, Scale } from 'lucide-react';
 import { useState } from 'react';
 
 interface CourtReportPreviewProps {
-  reportData: Record<string, unknown>;
+  reportData: any;
 }
 
 export function CourtReportPreview({ reportData }: CourtReportPreviewProps) {
@@ -57,7 +57,7 @@ export function CourtReportPreview({ reportData }: CourtReportPreviewProps) {
 
         {/* Parts List */}
         <div className="space-y-3">
-          {data.entries.map((entry: Record<string, unknown>, idx: number) => {
+          {data.entries.map((entry: any, idx: number) => {
             const isExpanded = expandedParts.has(entry.part);
             const casesCount = entry.cases?.length || 0;
             
@@ -84,7 +84,7 @@ export function CourtReportPreview({ reportData }: CourtReportPreviewProps) {
 
                 {isExpanded && entry.cases && entry.cases.length > 0 && (
                   <div className="mt-4 space-y-2 pl-8 border-l-2">
-                    {entry.cases.map((courtCase: Record<string, unknown>, caseIdx: number) => (
+                    {entry.cases.map((courtCase: any, caseIdx: number) => (
                       <div key={caseIdx} className="py-2 border-b last:border-0">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">

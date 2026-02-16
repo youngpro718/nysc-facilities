@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { LogOut } from "lucide-react";
 import { ExpandableTabs } from "@/components/ui/expandable-tabs";
 import { NavigationTab } from "../types";

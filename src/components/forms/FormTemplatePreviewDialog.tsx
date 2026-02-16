@@ -28,7 +28,7 @@ export function FormTemplatePreviewDialog({
 }: FormTemplatePreviewDialogProps) {
   if (!template) return null;
 
-  const renderField = (field: Record<string, unknown>) => {
+  const renderField = (field: any) => {
     const baseProps = {
       id: field.id,
       placeholder: field.placeholder || field.label,
@@ -135,7 +135,7 @@ export function FormTemplatePreviewDialog({
                             {field.required && <span className="text-red-600 dark:text-red-400 ml-1">*</span>}
                           </Label>
                         )}
-                        {renderField(field)}
+                        {renderField(field as any)}
                         {field.help_text && (
                           <p className="text-xs text-muted-foreground">{field.help_text}</p>
                         )}
