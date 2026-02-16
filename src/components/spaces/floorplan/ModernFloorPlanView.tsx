@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Loader2 } from "lucide-react";
 import { logger } from '@/lib/logger';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import { OrbitControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';

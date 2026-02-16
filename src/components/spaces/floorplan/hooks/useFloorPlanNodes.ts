@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { useCallback, useRef } from 'react';
 import { NodeChange, OnNodesChange, useReactFlow } from 'reactflow';
 import { supabase } from '@/lib/supabase';

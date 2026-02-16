@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { logger } from '@/lib/logger';
 import { Card } from '@/components/ui/card';

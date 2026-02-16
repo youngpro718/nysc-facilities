@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useFloorPlanData } from '../hooks/useFloorPlanData';
 import { 

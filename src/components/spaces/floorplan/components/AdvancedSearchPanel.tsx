@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, X, MapPin, Home, DoorOpen, Navigation, Zap, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';

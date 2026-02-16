@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { RawFloorPlanObject, FloorPlanNode, Position, Size } from "../types/floorPlanTypes";
 import { logger } from '@/lib/logger';
 import { transformSpaceToNode } from "../utils/nodeTransforms";

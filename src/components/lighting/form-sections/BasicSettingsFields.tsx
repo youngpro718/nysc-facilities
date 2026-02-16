@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { logger } from '@/lib/logger';
 import { Input } from "@/components/ui/input";

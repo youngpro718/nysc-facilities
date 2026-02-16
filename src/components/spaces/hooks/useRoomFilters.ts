@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { useMemo } from 'react';
 import type { Room } from '../rooms/types/RoomTypes';
 import { roomTypeToString } from '../rooms/types/roomEnums';

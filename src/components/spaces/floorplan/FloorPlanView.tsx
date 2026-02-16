@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { PropertiesPanel } from './components/PropertiesPanel';

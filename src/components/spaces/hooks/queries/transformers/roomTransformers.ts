@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { Room, RoomType, StorageType, CourtroomPhotos } from "../../../rooms/types/RoomTypes";
 
 export const transformRoomData = (

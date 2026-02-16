@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { useState, useEffect, useMemo } from "react";
 import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";

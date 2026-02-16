@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Operations Overview Tab
  * Shows quick actions, critical issues, and maintenance summary

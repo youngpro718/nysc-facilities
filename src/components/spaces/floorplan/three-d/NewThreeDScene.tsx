@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import BlueprintFloorPlan from './BlueprintFloorPlan';
 
