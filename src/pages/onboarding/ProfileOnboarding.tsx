@@ -2,12 +2,11 @@ import { getErrorMessage } from "@/lib/errorUtils";
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Building2, AlertCircle } from 'lucide-react';
+import { User, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 
@@ -106,23 +105,28 @@ export default function ProfileOnboarding() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <User className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Complete your profile</CardTitle>
-          <CardDescription>
-            Please provide some basic information to get started
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Safe area top spacer */}
+      <div className="pt-safe" />
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex-1 flex flex-col justify-center px-6 py-8 max-w-md mx-auto w-full">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
+            <User className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">Complete your profile</h1>
+          <p className="text-muted-foreground mt-2">
+            Just a few details to get you started
+          </p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-2 gap-3">
             {/* First Name */}
             <div className="space-y-2">
-              <Label htmlFor="firstName">
+              <Label htmlFor="firstName" className="text-sm font-medium">
                 First Name <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -132,12 +136,14 @@ export default function ProfileOnboarding() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
+                className="h-12 rounded-xl text-base"
+                autoComplete="given-name"
               />
             </div>
 
             {/* Last Name */}
             <div className="space-y-2">
-              <Label htmlFor="lastName">
+              <Label htmlFor="lastName" className="text-sm font-medium">
                 Last Name <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -147,46 +153,59 @@ export default function ProfileOnboarding() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
+                className="h-12 rounded-xl text-base"
+                autoComplete="family-name"
               />
             </div>
+          </div>
 
-            {/* Title (Optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title (Optional)</Label>
-              <Input
-                id="title"
-                type="text"
-                placeholder="Facilities Manager"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
+          {/* Title (Optional) */}
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-sm font-medium">Title (Optional)</Label>
+            <Input
+              id="title"
+              type="text"
+              placeholder="Facilities Manager"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="h-12 rounded-xl text-base"
+              autoComplete="organization-title"
+            />
+          </div>
 
-            {/* Department (Optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="department">Department (Optional)</Label>
-              <Input
-                id="department"
-                type="text"
-                placeholder="Facilities"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-              />
-            </div>
+          {/* Department (Optional) */}
+          <div className="space-y-2">
+            <Label htmlFor="department" className="text-sm font-medium">Department (Optional)</Label>
+            <Input
+              id="department"
+              type="text"
+              placeholder="Facilities"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              className="h-12 rounded-xl text-base"
+              autoComplete="organization"
+            />
+          </div>
 
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+          {error && (
+            <Alert variant="destructive" className="rounded-xl">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Saving...' : 'Save & Continue'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <Button
+            type="submit"
+            className="w-full h-12 rounded-xl text-base font-semibold touch-manipulation active:scale-[0.98] transition-transform"
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : 'Save & Continue'}
+          </Button>
+        </form>
+      </div>
+
+      {/* Safe area bottom spacer */}
+      <div className="pb-safe" />
     </div>
   );
 }

@@ -102,16 +102,16 @@ export function QuickSupplyRequest() {
             placeholder="Search by name or SKU..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+            className={isMobile ? "pl-9 h-11 rounded-xl text-base" : "pl-9"}
           />
         </div>
 
         {/* Category Filter */}
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-          <TabsList className="w-full justify-start">
-            <TabsTrigger value="all">All</TabsTrigger>
+          <TabsList className={isMobile ? "w-full justify-start h-10 rounded-xl" : "w-full justify-start"}>
+            <TabsTrigger value="all" className={isMobile ? "rounded-lg text-sm" : ""}>All</TabsTrigger>
             {ALLOWED_CATEGORIES.map((category) => (
-              <TabsTrigger key={category} value={category}>
+              <TabsTrigger key={category} value={category} className={isMobile ? "rounded-lg text-sm" : ""}>
                 {category.replace(' Supplies', '')}
               </TabsTrigger>
             ))}

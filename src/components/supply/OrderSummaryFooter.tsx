@@ -14,7 +14,7 @@ import {
   SheetTrigger,
   SheetFooter 
 } from '@/components/ui/sheet';
-import { ShoppingCart, Send, Trash2, X, ChevronUp, MapPin, AlertTriangle, Zap } from 'lucide-react';
+import { ShoppingCart, Send, Trash2, X, ChevronUp, MapPin, AlertTriangle, Zap, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRoomAssignments } from '@/hooks/useUserRoomAssignments';
@@ -248,47 +248,64 @@ export function OrderSummaryFooter({
               <div
                 key={item.item_id}
                 className={cn(
-                  "flex items-center gap-3 p-3 rounded-lg",
+                  "flex flex-col gap-2 p-3 rounded-xl",
                   item.requires_justification 
                     ? "bg-amber-500/10 border border-amber-500/30" 
                     : "bg-muted/50"
                 )}
               >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate flex items-center gap-2">
-                    {item.item_name}
-                    {item.requires_justification && (
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                {/* Row 1: Name + Remove */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[15px] leading-tight flex items-center gap-2">
+                      <span className="truncate">{item.item_name}</span>
+                      {item.requires_justification && (
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      )}
+                    </p>
+                    {item.item_sku && (
+                      <span className="text-[11px] font-mono text-muted-foreground mt-0.5 block">
+                        {item.item_sku}
+                      </span>
                     )}
-                  </p>
-                  {item.item_sku && (
-                    <Badge variant="outline" className="text-xs font-mono mt-1">
-                      {item.item_sku}
-                    </Badge>
-                  )}
+                  </div>
+                  <button
+                    className="p-1.5 -m-1 rounded-full text-muted-foreground hover:text-destructive active:scale-90 transition-all touch-manipulation"
+                    onClick={() => onRemove(item.item_id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => 
-                      onUpdateQuantity(item.item_id, parseInt(e.target.value) || 1)
-                    }
-                    className="w-16 h-8 text-center"
-                  />
-                  <span className="text-xs text-muted-foreground w-10">
-                    {item.item_unit || 'units'}
-                  </span>
+                {/* Row 2: Quantity stepper */}
+                <div className="flex items-center justify-between bg-background/60 rounded-lg px-2 py-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full touch-manipulation active:scale-95"
+                    onClick={() => {
+                      if (item.quantity <= 1) onRemove(item.item_id);
+                      else onUpdateQuantity(item.item_id, item.quantity - 1);
+                    }}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg tabular-nums min-w-[2ch] text-center">
+                      {item.quantity}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {item.item_unit || 'units'}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full touch-manipulation active:scale-95"
+                    onClick={() => onUpdateQuantity(item.item_id, item.quantity + 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={() => onRemove(item.item_id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
             ))}
           </div>

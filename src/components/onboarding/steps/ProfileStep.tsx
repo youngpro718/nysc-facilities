@@ -93,53 +93,48 @@ export function ProfileStep() {
   }, [profileData, profile?.id]);
 
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-3">
-        <h2 className="text-xl font-semibold">Complete Your Profile</h2>
-        <p className="text-muted-foreground">
-          Help your colleagues find and connect with you (optional)
-        </p>
-      </div>
-
-      <div className="flex flex-col items-center space-y-4">
-        <div className="relative">
-          <Avatar className="w-20 h-20">
+    <div className="space-y-6 py-2">
+      {/* Avatar + Name header */}
+      <div className="flex items-center gap-4">
+        <div className="relative shrink-0">
+          <Avatar className="w-16 h-16">
             <AvatarImage src={profile?.avatar_url} />
-            <AvatarFallback className="text-lg">
+            <AvatarFallback className="text-lg font-semibold">
               {profile?.first_name?.[0]}{profile?.last_name?.[0]}
             </AvatarFallback>
           </Avatar>
           <Button
             size="icon"
             variant="outline"
-            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full"
+            className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full"
           >
-            <Camera className="w-4 h-4" />
+            <Camera className="w-3.5 h-3.5" />
           </Button>
         </div>
-        <div className="text-center">
-          <p className="font-medium">
+        <div className="min-w-0">
+          <p className="font-semibold text-lg truncate">
             {profile?.first_name} {profile?.last_name}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground truncate">
             {profile?.email}
           </p>
         </div>
       </div>
 
-      <div className="space-y-4 max-w-md mx-auto">
+      {/* Form fields */}
+      <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="department">Department</Label>
+          <Label htmlFor="department" className="text-sm font-medium">Department</Label>
           <Select
             value={profileData.department}
             onValueChange={(value) => setProfileData(prev => ({ ...prev, department: value }))}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-12 rounded-xl text-base">
               <SelectValue placeholder="Select your department" />
             </SelectTrigger>
             <SelectContent>
               {departments.map((dept) => (
-                <SelectItem key={dept.value} value={dept.value}>
+                <SelectItem key={dept.value} value={dept.value} className="py-3">
                   {dept.label}
                 </SelectItem>
               ))}
@@ -148,39 +143,40 @@ export function ProfileStep() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="title">
+          <Label htmlFor="title" className="text-sm font-medium">
             Job Title
-            <span className="text-xs text-muted-foreground ml-2">(Determines your access level)</span>
           </Label>
           <Input
             id="title"
-            placeholder="e.g., Supply Clerk, Facilities Manager, Court Aide"
+            placeholder="e.g., Supply Clerk, Facilities Manager"
             value={profileData.title}
             onChange={(e) => setProfileData(prev => ({ ...prev, title: e.target.value }))}
+            className="h-12 rounded-xl text-base"
           />
           <p className="text-xs text-muted-foreground">
-            Your job title will automatically determine what features you can access
+            Determines what features you can access
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
           <Input
             id="phone"
             type="tel"
             placeholder="(555) 123-4567"
             value={profileData.phone}
             onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+            className="h-12 rounded-xl text-base"
           />
         </div>
       </div>
 
       {/* Access Level Preview */}
       {detectedRole && (
-        <Alert className="max-w-md mx-auto border-primary/50 bg-primary/5">
+        <Alert className="border-primary/50 bg-primary/5 rounded-xl">
           <Shield className="h-4 w-4 text-primary" />
           <AlertDescription>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                 <p className="text-sm font-medium">
@@ -196,23 +192,20 @@ export function ProfileStep() {
       )}
 
       {/* Info about title-based access */}
-      <div className="p-4 rounded-lg bg-muted/50 border max-w-md mx-auto">
+      <div className="p-4 rounded-xl bg-muted/50 border">
         <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-          <div className="space-y-2">
+          <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+          <div className="space-y-1.5">
             <p className="text-sm font-medium">Automatic Access Assignment</p>
-            <p className="text-xs text-muted-foreground">
-              Your job title determines your access level:
-            </p>
-            <ul className="text-xs text-muted-foreground space-y-1 ml-2">
-              <li>• <strong>Supply staff</strong> get full inventory & supply request access</li>
-              <li>• <strong>Facilities managers</strong> get building & maintenance access</li>
-              <li>• <strong>Court personnel</strong> get court operations access</li>
-              <li>• <strong>Standard users</strong> can report issues & make requests</li>
-            </ul>
-            <p className="text-xs text-muted-foreground mt-2">
-              {isSaving && "Saving your information..."}
-            </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p><strong>Supply staff</strong> — inventory & supply access</p>
+              <p><strong>Facilities managers</strong> — building & maintenance</p>
+              <p><strong>Court personnel</strong> — court operations</p>
+              <p><strong>Standard users</strong> — issues & requests</p>
+            </div>
+            {isSaving && (
+              <p className="text-xs text-primary font-medium">Saving...</p>
+            )}
           </div>
         </div>
       </div>

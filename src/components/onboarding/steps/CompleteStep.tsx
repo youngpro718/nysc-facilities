@@ -1,89 +1,84 @@
-import { CheckCircle, Rocket, ArrowRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle, Wrench, LayoutDashboard, Package, User, ChevronRight } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 
-const quickActions = [
+interface QuickAction {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  iconBg: string;
+}
+
+const quickActions: QuickAction[] = [
   {
     title: "Report an Issue",
-    description: "Something broken? Report it to get help quickly",
-    action: "/request/help",
-    icon: "🔧"
+    description: "Something broken? Get help quickly",
+    icon: Wrench,
+    iconBg: "bg-red-500/10 text-red-500"
   },
   {
-    title: "View Your Dashboard",
-    description: "See your personalized overview and recent activity",
-    action: "/dashboard",
-    icon: "📊"
+    title: "View Dashboard",
+    description: "Your personalized overview",
+    icon: LayoutDashboard,
+    iconBg: "bg-blue-500/10 text-blue-500"
   },
   {
     title: "Request Supplies",
-    description: "Order supplies or materials you need",
-    action: "/request/supplies",
-    icon: "📦"
+    description: "Order materials you need",
+    icon: Package,
+    iconBg: "bg-green-500/10 text-green-500"
   },
   {
     title: "Update Profile",
-    description: "Complete your profile with additional details",  
-    action: "/profile",
-    icon: "👤"
+    description: "Add more details about you",
+    icon: User,
+    iconBg: "bg-purple-500/10 text-purple-500"
   }
 ];
 
 export function CompleteStep() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 py-4">
       <div className="text-center space-y-4">
-        <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-          <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+        <div className="mx-auto w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center">
+          <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold">You're All Set!</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Welcome to NYSC Facilities Hub. Your account is ready and you can start using all available features.
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">You're All Set!</h2>
+          <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
+            Your account is ready. Here are some things you can do right away.
           </p>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-center flex items-center justify-center gap-2">
-          <Rocket className="w-5 h-5" />
-          Quick Actions to Get Started
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {quickActions.map((action, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl">{action.icon}</div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm">{action.title}</h4>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {action.description}
-                    </p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <div className="space-y-2">
+        {quickActions.map((action, index) => {
+          const IconComponent = action.icon;
+          return (
+            <div
+              key={index}
+              className="flex items-center gap-3 p-4 rounded-xl border bg-card active:bg-accent/50 transition-colors"
+            >
+              <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${action.iconBg}`}>
+                <IconComponent className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">{action.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {action.description}
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </div>
+          );
+        })}
       </div>
 
-      <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-        <div className="text-center space-y-2">
-          <p className="text-sm font-medium text-primary">
-            🎉 Account Verification Complete
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Your account has been automatically verified. You now have full access to submit requests, 
-            report issues, and use all available features.
-          </p>
-        </div>
-      </div>
-
-      <div className="text-center">
-        <p className="text-xs text-muted-foreground">
-          Need help? Check out the help section or contact support anytime.
+      <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+        <p className="text-sm font-medium text-primary text-center">
+          Account Verified
+        </p>
+        <p className="text-xs text-muted-foreground text-center mt-1">
+          You have full access to submit requests, report issues, and use all available features.
         </p>
       </div>
     </div>

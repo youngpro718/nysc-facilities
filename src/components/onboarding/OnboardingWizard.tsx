@@ -1,12 +1,11 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { CheckCircle, ArrowRight, ArrowLeft, X } from "lucide-react";
 import { WelcomeStep } from "./steps/WelcomeStep";
 import { ProfileStep } from "./steps/ProfileStep";
 import { FeaturesStep } from "./steps/FeaturesStep";
 import { CompleteStep } from "./steps/CompleteStep";
+import { cn } from "@/lib/utils";
 
 export interface OnboardingWizardProps {
   onComplete: () => void;
@@ -22,12 +21,30 @@ const steps = [
 
 export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [direction, setDirection] = useState<'forward' | 'back'>('forward');
+  const [isAnimating, setIsAnimating] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
+  const animateStep = (nextStep: number, dir: 'forward' | 'back') => {
+    if (isAnimating) return;
+    setDirection(dir);
+    setIsAnimating(true);
+    setTimeout(() => {
+      setCurrentStep(nextStep);
+      setIsAnimating(false);
+    }, 200);
+  };
 
   const handleNext = () => {
     setCompletedSteps(prev => new Set([...prev, currentStep]));
     if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      animateStep(currentStep + 1, 'forward');
     } else {
       onComplete();
     }
@@ -35,12 +52,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
 
   const handlePrevious = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      animateStep(currentStep - 1, 'back');
     }
-  };
-
-  const handleSkipStep = () => {
-    handleNext();
   };
 
   const handleSkipAll = () => {
@@ -49,105 +62,121 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
 
   const progress = ((currentStep + 1) / steps.length) * 100;
   const CurrentStepComponent = steps[currentStep].component;
+  const isLastStep = currentStep === steps.length - 1;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl">Welcome to NYSC Facilities Hub</CardTitle>
-              <CardDescription>
-                Let's get you set up in just a few steps
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSkipAll}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                Step {currentStep + 1} of {steps.length}
-              </span>
-              <span className="text-muted-foreground">
-                {Math.round(progress)}% complete
-              </span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
+    <div className="fixed inset-0 bg-background z-50 flex flex-col">
+      {/* Top bar — safe area aware */}
+      <div className="shrink-0 pt-safe">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button
+            onClick={handleSkipAll}
+            className="text-sm text-muted-foreground active:opacity-70 transition-opacity touch-manipulation py-1 px-2 -ml-2"
+          >
+            Skip
+          </button>
+          <span className="text-sm font-medium text-muted-foreground">
+            {currentStep + 1} of {steps.length}
+          </span>
+          <button
+            onClick={handleSkipAll}
+            className="p-2 -mr-2 rounded-full text-muted-foreground active:opacity-70 transition-opacity touch-manipulation"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-          {/* Step indicators */}
-          <div className="flex items-center justify-center gap-2 pt-2">
-            {steps.map((step, index) => (
+        {/* Progress bar */}
+        <div className="px-4 pb-3">
+          <div className="h-1 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Step dots */}
+        <div className="flex items-center justify-center gap-3 pb-4">
+          {steps.map((step, index) => (
+            <div key={step.id} className="flex items-center gap-3">
               <div
-                key={step.id}
-                className={`flex items-center gap-2 ${
-                  index < steps.length - 1 ? 'flex-1' : ''
-                }`}
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300",
+                  completedSteps.has(index)
+                    ? "bg-primary text-primary-foreground scale-100"
+                    : index === currentStep
+                    ? "bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30"
+                    : "bg-muted text-muted-foreground scale-90"
+                )}
               >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                    completedSteps.has(index)
-                      ? 'bg-primary text-primary-foreground'
-                      : index === currentStep
-                      ? 'bg-primary/20 text-primary border-2 border-primary'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {completedSteps.has(index) ? (
-                    <CheckCircle className="w-4 h-4" />
-                  ) : (
-                    index + 1
-                  )}
-                </div>
-                {index < steps.length - 1 && (
-                  <div className="flex-1 h-px bg-border" />
+                {completedSteps.has(index) ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  index + 1
                 )}
               </div>
-            ))}
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6 overflow-y-auto">
+              {index < steps.length - 1 && (
+                <div
+                  className={cn(
+                    "w-8 h-0.5 rounded-full transition-colors duration-300",
+                    completedSteps.has(index) ? "bg-primary" : "bg-muted"
+                  )}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Content area — scrollable */}
+      <div
+        ref={contentRef}
+        className="flex-1 overflow-y-auto overscroll-contain px-5 pb-4"
+      >
+        <div
+          className={cn(
+            "transition-all duration-200 ease-out",
+            isAnimating && direction === 'forward' && "opacity-0 translate-x-8",
+            isAnimating && direction === 'back' && "opacity-0 -translate-x-8",
+            !isAnimating && "opacity-100 translate-x-0"
+          )}
+        >
           <CurrentStepComponent />
-          
-          <div className="flex items-center justify-between pt-4 border-t">
+        </div>
+      </div>
+
+      {/* Bottom navigation — safe area aware */}
+      <div className="shrink-0 border-t bg-background/95 backdrop-blur-sm pb-safe">
+        <div className="flex items-center gap-3 px-5 py-4">
+          {currentStep > 0 ? (
             <Button
               variant="ghost"
+              size="lg"
               onClick={handlePrevious}
-              disabled={currentStep === 0}
-              className="flex items-center gap-2"
+              disabled={isAnimating}
+              className="h-12 px-4 rounded-xl touch-manipulation active:scale-95 transition-transform"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Previous
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                onClick={handleSkipStep}
-                className="text-muted-foreground"
-              >
-                Skip this step
-              </Button>
-              <Button
-                onClick={handleNext}
-                className="flex items-center gap-2"
-              >
-                {currentStep === steps.length - 1 ? 'Get Started' : 'Next'}
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          ) : (
+            <div className="w-12" />
+          )}
+
+          <Button
+            size="lg"
+            onClick={handleNext}
+            disabled={isAnimating}
+            className={cn(
+              "flex-1 h-12 rounded-xl text-base font-semibold touch-manipulation active:scale-[0.98] transition-transform gap-2",
+              isLastStep && "bg-green-600 hover:bg-green-700"
+            )}
+          >
+            {isLastStep ? "Get Started" : "Continue"}
+            <ArrowRight className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

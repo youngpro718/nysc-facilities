@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShoppingCart, X, Send, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ShoppingCart, X, Send, ChevronRight, Minus, Plus } from 'lucide-react';
 import type { CartItem } from '@/hooks/useOrderCart';
 import {
   Sheet,
@@ -96,38 +95,57 @@ export function OrderCart({
             items.map(item => (
               <div 
                 key={item.item_id}
-                className="flex items-start gap-3 p-3 border rounded-lg"
+                className="flex flex-col gap-2 p-3 border rounded-xl"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm mb-1 line-clamp-2">
-                    {item.item_name}
+                {/* Row 1: Name + Remove */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-[15px] leading-tight line-clamp-2">
+                      {item.item_name}
+                    </div>
+                    {item.item_sku && (
+                      <span className="text-[11px] font-mono text-muted-foreground mt-0.5 block">
+                        {item.item_sku}
+                      </span>
+                    )}
                   </div>
-                  {item.item_sku && (
-                    <Badge variant="outline" className="text-xs font-mono mb-2">
-                      {item.item_sku}
-                    </Badge>
-                  )}
+                  <button
+                    className="p-1.5 -m-1 rounded-full text-muted-foreground hover:text-destructive active:scale-90 transition-all touch-manipulation"
+                    onClick={() => onRemove(item.item_id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {/* Row 2: Quantity stepper */}
+                <div className="flex items-center justify-between bg-muted/50 rounded-lg px-2 py-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full touch-manipulation active:scale-95"
+                    onClick={() => {
+                      if (item.quantity <= 1) onRemove(item.item_id);
+                      else onUpdateQuantity(item.item_id, item.quantity - 1);
+                    }}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
                   <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) => onUpdateQuantity(item.item_id, parseInt(e.target.value) || 1)}
-                      className="w-20 h-8 text-sm"
-                    />
+                    <span className="font-bold text-lg tabular-nums min-w-[2ch] text-center">
+                      {item.quantity}
+                    </span>
                     <span className="text-xs text-muted-foreground">
                       {item.item_unit || 'units'}
                     </span>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full touch-manipulation active:scale-95"
+                    onClick={() => onUpdateQuantity(item.item_id, item.quantity + 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onRemove(item.item_id)}
-                  className="flex-shrink-0 touch-manipulation"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
             ))
           )}
