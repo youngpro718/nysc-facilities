@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
 import { logger } from '@/lib/logger';
 

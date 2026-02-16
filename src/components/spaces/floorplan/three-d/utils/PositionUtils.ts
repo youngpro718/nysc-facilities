@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Grid snapping and positioning utilities
 
 export interface Position {

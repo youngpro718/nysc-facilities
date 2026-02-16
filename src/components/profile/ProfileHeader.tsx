@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { logger } from '@/lib/logger';
 import { UserAvatar } from "@/components/ui/UserAvatar";

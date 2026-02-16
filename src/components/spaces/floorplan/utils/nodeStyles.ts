@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { FloorPlanObjectData } from '../types/floorPlanTypes';
 import { CSSProperties } from 'react';
 

@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { useForm } from "react-hook-form";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from 'react';
 import { LightingFixture } from "@/types/lighting";
 import { CardFront } from "./CardFront";

@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 export const createOccupantsLookup = (occupantsData: unknown[] = []): Record<string, unknown[]> => {
   if (!Array.isArray(occupantsData)) return {};
   

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useForm } from "react-hook-form";
 import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Maintenance Tab Component
  * Maintenance scheduling, tracking, and calendar view

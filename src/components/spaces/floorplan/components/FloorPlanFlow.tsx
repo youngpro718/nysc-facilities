@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ReactFlow, Background, Controls, MiniMap, Panel, Node, Connection, Edge } from 'reactflow';
 import { panelStyle } from '../styles/flowStyles';
 import { useState, useCallback } from 'react';

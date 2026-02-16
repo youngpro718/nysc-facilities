@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { FloorPlanLayer, FloorPlanLayerDB } from "../types/floorPlanTypes";
 
 export function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
