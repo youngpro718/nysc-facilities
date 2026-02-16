@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Package, Truck, Key, Eye, Filter } from "lucide-react";

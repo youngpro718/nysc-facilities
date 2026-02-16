@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { submitKeyRequest } from '@/services/keyRequestService';

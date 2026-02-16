@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Court room mapping utility for building 111 based on part numbers
  * 

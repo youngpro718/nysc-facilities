@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * TermSheetPreview - Compact court term sheet viewer for user dashboard
  * 

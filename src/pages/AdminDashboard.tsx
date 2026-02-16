@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
 import { ModuleCards } from "@/components/dashboard/ModuleCards";

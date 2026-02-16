@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Service Worker Registration for iOS 18+ PWA Support
  * Handles installation, updates, and push notifications

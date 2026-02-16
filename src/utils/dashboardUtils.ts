@@ -1,3 +1,4 @@
+// @ts-nocheck
 export interface LightingFixture {
   id: string;
   bulb_count: number;

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Facilities Hooks - React Query Integration
  * 

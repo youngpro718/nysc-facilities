@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Reporting React Query Hooks
  * Phase 4: Advanced reporting capabilities

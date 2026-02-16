@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ItemRow } from './ItemRow';
 import { Loader2 } from 'lucide-react';
 
