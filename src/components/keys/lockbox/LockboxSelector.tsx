@@ -56,17 +56,20 @@ export function LockboxSelector({
       </div>
 
       {selectedLockbox && (
-        <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+        <div className="flex items-center gap-3 p-3 bg-card rounded-lg border shadow-sm">
           <div className="flex items-center gap-2 flex-1">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{selectedLockbox.location_description || 'No location specified'}</span>
+            <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="text-sm font-medium truncate">{selectedLockbox.location_description || 'No location specified'}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
-              {selectedLockbox.available_slots} Available
+              {selectedLockbox.available_slots} In
             </Badge>
             <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20">
               {selectedLockbox.checked_out_slots} Out
+            </Badge>
+            <Badge variant="outline" className="text-muted-foreground">
+              {selectedLockbox.total_slots} Total
             </Badge>
           </div>
         </div>
