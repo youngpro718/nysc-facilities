@@ -1,12 +1,23 @@
 import { Badge } from "@/components/ui/badge";
 import { LockboxSlot, getRoomLinkStatus } from "../types/LockboxTypes";
 import { Key, AlertTriangle, CheckCircle, Archive, Link2, Link2Off, CircleDashed } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface LockboxSlotCardProps {
   slot: LockboxSlot;
   onClick: (slot: LockboxSlot) => void;
   lockboxName?: string;
   lockboxLocation?: string;
+}
+
+function getStatusBorderColor(status: string) {
+  switch (status) {
+    case 'in_box': return 'border-l-green-500';
+    case 'checked_out': return 'border-l-orange-500';
+    case 'missing': return 'border-l-destructive';
+    case 'retired': return 'border-l-muted-foreground/40';
+    default: return 'border-l-border';
+  }
 }
 
 export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }: LockboxSlotCardProps) {
@@ -54,7 +65,11 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
 
   return (
     <div 
-      className="flex items-center justify-between p-3 sm:p-4 border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors active:scale-[0.99] touch-manipulation"
+      className={cn(
+        "flex items-center justify-between p-3 sm:p-4 border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors active:scale-[0.99] touch-manipulation",
+        "border-l-4",
+        getStatusBorderColor(slot.status)
+      )}
       onClick={() => onClick(slot)}
     >
       <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">

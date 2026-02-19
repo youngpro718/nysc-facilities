@@ -7,8 +7,11 @@ import { LockboxSearch } from "./LockboxSearch";
 import { LockboxSlotDialog } from "./LockboxSlotDialog";
 import { LockboxSelector } from "./LockboxSelector";
 import { CreateLockboxDialog } from "./CreateLockboxDialog";
+import { AddSlotDialog } from "./AddSlotDialog";
+import { PrintLockboxReference } from "./PrintLockboxReference";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function LockboxView() {
   const [slots, setSlots] = useState<LockboxSlot[]>([]);
@@ -17,6 +20,7 @@ export function LockboxView() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedLockboxId, setSelectedLockboxId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [addSlotDialogOpen, setAddSlotDialogOpen] = useState(false);
 
   // Fetch all lockboxes with slot counts
   const { data: lockboxes, refetch: refetchLockboxes } = useQuery({
@@ -120,6 +124,13 @@ export function LockboxView() {
     refetchLockboxes();
   };
 
+  const handleAddSlotSuccess = () => {
+    fetchSlots();
+    refetchLockboxes();
+  };
+
+  const selectedLockbox = lockboxes?.find(lb => lb.id === selectedLockboxId);
+
   return (
     <div className="space-y-4">
       <LockboxSelector 
@@ -130,12 +141,28 @@ export function LockboxView() {
         isLoading={isLoading}
       />
 
+      {selectedLockboxId && selectedLockbox && (
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => setAddSlotDialogOpen(true)} 
+            variant="outline" 
+            size="sm"
+            className="gap-1.5"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Add Key Slot</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+          <PrintLockboxReference lockbox={selectedLockbox} slots={slots} />
+        </div>
+      )}
+
       {selectedLockboxId ? (
-        <div className="h-[calc(100vh-350px)]">
+        <div className="h-[calc(100vh-400px)]">
           <LockboxSearch 
             slots={slots} 
             onSlotClick={handleSlotClick}
-            lockboxName={lockboxes?.find(lb => lb.id === selectedLockboxId)?.name}
+            lockboxName={selectedLockbox?.name}
           />
         </div>
       ) : (
@@ -149,7 +176,7 @@ export function LockboxView() {
         open={dialogOpen} 
         onOpenChange={setDialogOpen}
         onSuccess={fetchSlots}
-        lockboxName={lockboxes?.find(lb => lb.id === selectedLockboxId)?.name}
+        lockboxName={selectedLockbox?.name}
       />
 
       <CreateLockboxDialog 
@@ -157,6 +184,17 @@ export function LockboxView() {
         onOpenChange={setCreateDialogOpen}
         onSuccess={handleCreateSuccess}
       />
+
+      {selectedLockboxId && (
+        <AddSlotDialog
+          lockboxId={selectedLockboxId}
+          lockboxName={selectedLockbox?.name}
+          existingSlotCount={slots.length}
+          open={addSlotDialogOpen}
+          onOpenChange={setAddSlotDialogOpen}
+          onSuccess={handleAddSlotSuccess}
+        />
+      )}
     </div>
   );
 }
