@@ -91,7 +91,7 @@ export async function createSupplyRequestFromForm(
 
     // Create supply request items
     if (formData.items && formData.items.length > 0) {
-      const items = formData.items.map((item: Record<string, unknown>) => ({
+      const items = formData.items.map((item: any) => ({
         request_id: request.id,
         item_name: item.item_name,
         quantity_requested: item.quantity,
