@@ -71,16 +71,11 @@ export function OrderCart({
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button 
-          className="fixed bottom-24 right-4 h-14 rounded-full shadow-lg z-50 touch-manipulation pb-safe"
-          size="lg"
+          className="fixed bottom-20 right-3 h-10 px-3 rounded-full shadow-md z-50 touch-manipulation pb-safe text-sm"
+          size="sm"
         >
-          <ShoppingCart className="h-5 w-5 mr-2" />
-          Cart ({totalItems})
-          {totalItems > 0 && (
-            <Badge className="ml-2 bg-background text-foreground">
-              {totalItems}
-            </Badge>
-          )}
+          <ShoppingCart className="h-4 w-4 mr-1.5" />
+          <span className="text-xs">{totalItems}</span>
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md flex flex-col">
@@ -94,10 +89,10 @@ export function OrderCart({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto py-4 space-y-3">
+        <div className="flex-1 overflow-y-auto py-2 space-y-2">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <ShoppingCart className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
+            <div className="flex flex-col items-center justify-center h-full text-center py-8">
+              <ShoppingCart className="h-10 w-10 text-muted-foreground opacity-50 mb-2" />
               <p className="text-muted-foreground">
                 Add items from the catalog to get started
               </p>
@@ -106,7 +101,7 @@ export function OrderCart({
             items.map(item => (
               <div 
                 key={item.item_id}
-                className="flex flex-col gap-1.5 p-2.5 border rounded-xl"
+                className="flex flex-col gap-1 p-2 border rounded-lg"
               >
                 {/* Row 1: Name + Remove */}
                 <div className="flex items-start justify-between gap-2">
@@ -134,33 +129,33 @@ export function OrderCart({
                   </button>
                 </div>
                 {/* Row 2: Quantity stepper */}
-                <div className="flex items-center justify-between bg-muted/50 rounded-lg px-2 py-0.5">
+                <div className="flex items-center justify-between bg-muted/50 rounded-lg px-2 py-1">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
+                    className="h-7 w-7 rounded-full touch-manipulation active:scale-95"
                     onClick={() => {
                       if (item.quantity <= 1) onRemove(item.item_id);
                       else onUpdateQuantity(item.item_id, item.quantity - 1);
                     }}
                   >
-                    <Minus className="h-4 w-4" />
+                    <Minus className="h-3 w-3" />
                   </Button>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-base tabular-nums min-w-[2ch] text-center">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-sm tabular-nums min-w-[1.5ch] text-center">
                       {item.quantity}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground">
                       {item.item_unit || 'units'}
                     </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
+                    className="h-7 w-7 rounded-full touch-manipulation active:scale-95"
                     onClick={() => onUpdateQuantity(item.item_id, item.quantity + 1)}
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
@@ -180,11 +175,11 @@ export function OrderCart({
                     setShowOptions(true);
                   }}
                   variant="outline"
-                  className="w-full min-h-12"
-                  size="lg"
+                  className="w-full h-9 text-sm"
+                  size="sm"
                 >
                   Add Details (Optional)
-                  <ChevronRight className="h-4 w-4 ml-2" />
+                  <ChevronRight className="h-3 w-3 ml-1" />
                 </Button>
                 <Button
                   type="button"
@@ -194,10 +189,10 @@ export function OrderCart({
                     handleSubmit();
                   }}
                   disabled={isSubmitting}
-                  className="w-full min-h-12"
-                  size="lg"
+                  className="w-full h-9 text-sm"
+                  size="sm"
                 >
-                  <Send className="h-4 w-4 mr-2" />
+                  <Send className="h-3 w-3 mr-1.5" />
                   {isSubmitting ? 'Submitting...' : 'Submit Order'}
                 </Button>
                 <Button
@@ -208,7 +203,8 @@ export function OrderCart({
                     onClear();
                   }}
                   variant="ghost"
-                  className="w-full min-h-12"
+                  className="w-full h-9 text-sm"
+                  size="sm"
                 >
                   Clear Cart
                 </Button>
@@ -290,8 +286,8 @@ export function OrderCart({
                       setShowOptions(false);
                     }}
                     variant="outline"
-                    className="flex-1 min-h-12"
-                    size="lg"
+                    className="flex-1 h-9 text-sm"
+                    size="sm"
                   >
                     Back
                   </Button>
@@ -303,10 +299,10 @@ export function OrderCart({
                       handleSubmit();
                     }}
                     disabled={isSubmitting}
-                    className="flex-1 min-h-12"
-                    size="lg"
+                    className="flex-1 h-9 text-sm"
+                    size="sm"
                   >
-                    <Send className="h-4 w-4 mr-2" />
+                    <Send className="h-3 w-3 mr-1.5" />
                     {isSubmitting ? 'Submitting...' : 'Submit'}
                   </Button>
                 </div>
