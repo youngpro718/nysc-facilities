@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShoppingCart, X, Send, ChevronRight, Minus, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { CartItem } from '@/hooks/useOrderCart';
 import {
   Sheet,
@@ -37,6 +38,16 @@ export function OrderCart({
 }: OrderCartProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  const toggleItemName = (itemId: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
   const [options, setOptions] = useState({
     title: '',
     justification: 'Standard supply request',
@@ -95,12 +106,18 @@ export function OrderCart({
             items.map(item => (
               <div 
                 key={item.item_id}
-                className="flex flex-col gap-2 p-3 border rounded-xl"
+                className="flex flex-col gap-1.5 p-2.5 border rounded-xl"
               >
                 {/* Row 1: Name + Remove */}
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-[15px] leading-tight line-clamp-2">
+                  <div
+                    className="flex-1 min-w-0 overflow-hidden cursor-pointer"
+                    onClick={() => toggleItemName(item.item_id)}
+                  >
+                    <div className={cn(
+                      "font-medium text-sm leading-tight",
+                      expandedItems.has(item.item_id) ? "break-words" : "truncate"
+                    )}>
                       {item.item_name}
                     </div>
                     {item.item_sku && (
@@ -117,11 +134,11 @@ export function OrderCart({
                   </button>
                 </div>
                 {/* Row 2: Quantity stepper */}
-                <div className="flex items-center justify-between bg-muted/50 rounded-lg px-2 py-1">
+                <div className="flex items-center justify-between bg-muted/50 rounded-lg px-2 py-0.5">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 rounded-full touch-manipulation active:scale-95"
+                    className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
                     onClick={() => {
                       if (item.quantity <= 1) onRemove(item.item_id);
                       else onUpdateQuantity(item.item_id, item.quantity - 1);
@@ -130,17 +147,17 @@ export function OrderCart({
                     <Minus className="h-4 w-4" />
                   </Button>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg tabular-nums min-w-[2ch] text-center">
+                    <span className="font-bold text-base tabular-nums min-w-[2ch] text-center">
                       {item.quantity}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[11px] text-muted-foreground">
                       {item.item_unit || 'units'}
                     </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 rounded-full touch-manipulation active:scale-95"
+                    className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
                     onClick={() => onUpdateQuantity(item.item_id, item.quantity + 1)}
                   >
                     <Plus className="h-4 w-4" />

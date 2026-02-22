@@ -46,6 +46,16 @@ export function OrderSummaryFooter({
   const [priority, setPriority] = useState('medium');
   const [justification, setJustification] = useState('');
   const [isQuickSubmitting, setIsQuickSubmitting] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  const toggleItemName = (itemId: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
   const { profile, user } = useAuth();
   
   // Fetch user's room assignments for auto-fill
@@ -248,7 +258,7 @@ export function OrderSummaryFooter({
               <div
                 key={item.item_id}
                 className={cn(
-                  "flex flex-col gap-2 p-3 rounded-xl",
+                  "flex flex-col gap-1.5 p-2.5 rounded-xl",
                   item.requires_justification 
                     ? "bg-amber-500/10 border border-amber-500/30" 
                     : "bg-muted/50"
@@ -256,9 +266,14 @@ export function OrderSummaryFooter({
               >
                 {/* Row 1: Name + Remove */}
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[15px] leading-tight flex items-center gap-2">
-                      <span className="truncate">{item.item_name}</span>
+                  <div
+                    className="flex-1 min-w-0 overflow-hidden cursor-pointer"
+                    onClick={() => toggleItemName(item.item_id)}
+                  >
+                    <p className="font-medium text-sm leading-tight flex items-center gap-2">
+                      <span className={expandedItems.has(item.item_id) ? "break-words" : "truncate"}>
+                        {item.item_name}
+                      </span>
                       {item.requires_justification && (
                         <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                       )}
@@ -277,11 +292,11 @@ export function OrderSummaryFooter({
                   </button>
                 </div>
                 {/* Row 2: Quantity stepper */}
-                <div className="flex items-center justify-between bg-background/60 rounded-lg px-2 py-1">
+                <div className="flex items-center justify-between bg-background/60 rounded-lg px-2 py-0.5">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 rounded-full touch-manipulation active:scale-95"
+                    className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
                     onClick={() => {
                       if (item.quantity <= 1) onRemove(item.item_id);
                       else onUpdateQuantity(item.item_id, item.quantity - 1);
@@ -290,17 +305,17 @@ export function OrderSummaryFooter({
                     <Minus className="h-4 w-4" />
                   </Button>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg tabular-nums min-w-[2ch] text-center">
+                    <span className="font-bold text-base tabular-nums min-w-[2ch] text-center">
                       {item.quantity}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[11px] text-muted-foreground">
                       {item.item_unit || 'units'}
                     </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 rounded-full touch-manipulation active:scale-95"
+                    className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
                     onClick={() => onUpdateQuantity(item.item_id, item.quantity + 1)}
                   >
                     <Plus className="h-4 w-4" />

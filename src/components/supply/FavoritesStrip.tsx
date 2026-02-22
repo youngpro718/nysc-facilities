@@ -37,89 +37,72 @@ export function FavoritesStrip({
 
   if (favoriteItems.length === 0) {
     return (
-      <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-        <Star className="h-4 w-4" />
-        <span>Star items to add them to your favorites for quick access</span>
+      <div className="flex items-center gap-2 py-1.5 px-2 bg-muted/50 rounded-lg text-xs text-muted-foreground">
+        <Star className="h-3.5 w-3.5 shrink-0" />
+        <span>Star items for quick access</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-        <span className="text-sm font-medium">Favorites</span>
-      </div>
-      <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex gap-2 pb-2">
-          {favoriteItems.map((item) => {
-            const cartItem = cartItems.find((c) => c.item_id === item.id);
-            const quantity = cartItem?.quantity || 0;
-            const inCart = quantity > 0;
+    <ScrollArea className="w-full whitespace-nowrap">
+      <div className="flex items-center gap-1.5 pb-1">
+        <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
+        {favoriteItems.map((item) => {
+          const cartItem = cartItems.find((c) => c.item_id === item.id);
+          const quantity = cartItem?.quantity || 0;
+          const inCart = quantity > 0;
 
-            return (
-              <div
-                key={item.id}
-                className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-lg border transition-all",
-                  isMobile ? "min-w-[110px]" : "min-w-[100px]",
-                  inCart
-                    ? "bg-primary/10 border-primary/30"
-                    : "bg-card hover:bg-accent/50"
-                )}
-              >
-                <span className="text-xs font-medium text-center line-clamp-2 h-8">
+          return (
+            <div
+              key={item.id}
+              className={cn(
+                "flex items-center gap-1 rounded-full border px-2 transition-all shrink-0",
+                isMobile ? "h-9" : "h-8",
+                inCart
+                  ? "bg-primary/10 border-primary/30"
+                  : "bg-card hover:bg-accent/50"
+              )}
+            >
+              {inCart ? (
+                <>
+                  <button
+                    className="p-0.5 rounded-full touch-manipulation active:scale-90"
+                    onClick={() => onDecrement(item)}
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="text-xs font-bold tabular-nums min-w-[1.25rem] text-center">
+                    {quantity}
+                  </span>
+                  <button
+                    className="p-0.5 rounded-full touch-manipulation active:scale-90"
+                    onClick={() => onIncrement(item)}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="flex items-center gap-1 touch-manipulation active:scale-95"
+                  onClick={() => onAdd(item)}
+                >
+                  <Plus className="h-3 w-3" />
+                  <span className="text-xs font-medium max-w-[80px] truncate">
+                    {item.name}
+                  </span>
+                </button>
+              )}
+              {inCart && (
+                <span className="text-[10px] font-medium max-w-[60px] truncate text-muted-foreground">
                   {item.name}
                 </span>
-                
-                {inCart ? (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "rounded-full touch-manipulation",
-                        isMobile ? "h-9 w-9" : "h-7 w-7"
-                      )}
-                      onClick={() => onDecrement(item)}
-                    >
-                      <Minus className={isMobile ? "h-4 w-4" : "h-3 w-3"} />
-                    </Button>
-                    <Badge variant="secondary" className="min-w-[24px] justify-center">
-                      {quantity}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "rounded-full touch-manipulation",
-                        isMobile ? "h-9 w-9" : "h-7 w-7"
-                      )}
-                      onClick={() => onIncrement(item)}
-                    >
-                      <Plus className={isMobile ? "h-4 w-4" : "h-3 w-3"} />
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "text-xs touch-manipulation",
-                      isMobile ? "h-9 px-3" : "h-7"
-                    )}
-                    onClick={() => onAdd(item)}
-                  >
-                    <Plus className={isMobile ? "h-4 w-4 mr-1" : "h-3 w-3 mr-1"} />
-                    Add
-                  </Button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
-    </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <ScrollBar orientation="horizontal" />
+    </ScrollArea>
   );
 }

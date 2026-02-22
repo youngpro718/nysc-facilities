@@ -17,25 +17,22 @@ export default function SupplyOrderPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="container max-w-3xl mx-auto px-4 py-6 h-[calc(100vh-4rem)] flex flex-col">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-2 sm:pt-6 h-[calc(100dvh-10rem)] sm:h-[calc(100dvh-8rem)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4 shrink-0">
+      <div className="flex items-center gap-2 mb-2 shrink-0">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate(-1)}
-          className="shrink-0"
+          className="shrink-0 h-9 w-9 touch-manipulation"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Order Supplies</h1>
-          <p className="text-muted-foreground text-sm">Add items to your cart and submit</p>
-        </div>
+        <h1 className="text-lg sm:text-2xl font-bold truncate">Order Supplies</h1>
       </div>
 
       {/* Quick Supply Request Component */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0">
         <QuickSupplyRequest />
       </div>
     </div>

@@ -93,30 +93,31 @@ export function QuickSupplyRequest() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-x-hidden">
+    <div className="flex flex-col h-full">
       {/* Search Bar */}
-      <div className="sticky top-0 z-10 bg-background pb-3 space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or SKU..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={isMobile ? "pl-9 h-11 rounded-xl text-base" : "pl-9"}
-          />
+      <div className="shrink-0 bg-background pb-2 space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search supplies..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={isMobile ? "pl-9 h-10 rounded-xl text-[15px]" : "pl-9"}
+            />
+          </div>
+          {/* Category Filter - inline pills */}
+          <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
+            <TabsList className={isMobile ? "h-10 rounded-xl gap-0" : ""}>
+              <TabsTrigger value="all" className={isMobile ? "rounded-lg text-xs px-2.5" : ""}>All</TabsTrigger>
+              {ALLOWED_CATEGORIES.map((category) => (
+                <TabsTrigger key={category} value={category} className={isMobile ? "rounded-lg text-xs px-2.5" : ""}>
+                  {category.replace(' Supplies', '')}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
-
-        {/* Category Filter */}
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-          <TabsList className={isMobile ? "w-full justify-start h-10 rounded-xl" : "w-full justify-start"}>
-            <TabsTrigger value="all" className={isMobile ? "rounded-lg text-sm" : ""}>All</TabsTrigger>
-            {ALLOWED_CATEGORIES.map((category) => (
-              <TabsTrigger key={category} value={category} className={isMobile ? "rounded-lg text-sm" : ""}>
-                {category.replace(' Supplies', '')}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
 
         {/* Favorites Strip */}
         <FavoritesStrip
@@ -128,7 +129,7 @@ export function QuickSupplyRequest() {
       </div>
 
       {/* Items List */}
-      <ScrollArea className={isMobile ? "flex-1 -mx-2 px-2" : "flex-1 -mx-4 px-4"}>
+      <ScrollArea className="flex-1">
         <div className="space-y-2 pb-32">
           {isLoading ? (
             // Loading skeletons
@@ -152,6 +153,8 @@ export function QuickSupplyRequest() {
                   quantity: item.quantity,
                   categoryName: item.inventory_categories?.name,
                   requires_justification: item.requires_justification,
+                  photo_url: item.photo_url,
+                  description: item.description,
                 }}
                 cartQuantity={getCartQuantity(item.id)}
                 isFavorite={isFavorite(item.id)}
