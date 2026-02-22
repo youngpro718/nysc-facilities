@@ -39,23 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isFetchingProfile = useRef(false);
   const navigate = useNavigate();
 
-  // Enhanced hallway lighting system - build trigger v2
-
-  // Function to fetch user profile data
-  const getUserProfile = useCallback(async (userId: string) => {
-    try {
-      const userData = await authService.fetchUserProfile(userId);
-      
-      setIsAdmin(userData.isAdmin);
-      setProfile(userData.profile);
-
-      return userData;
-    } catch (error) {
-      logger.error('Error fetching user data', error);
-      return { isAdmin: false, profile: null };
-    }
-  }, []);
-
   // Refresh session function
   const refreshSession = useCallback(async () => {
     try {

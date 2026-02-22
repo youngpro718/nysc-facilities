@@ -61,7 +61,7 @@ export class ReportGenerationService {
    */
   static async generateFacilityReport(config: ReportConfig): Promise<GeneratedReport> {
     try {
-      const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const reportId = `report_${crypto.randomUUID()}`;
       
       // Gather all required data
       const [
@@ -132,7 +132,7 @@ export class ReportGenerationService {
    * Supports CSV, JSON, and a simple PDF (HTML) format.
    */
   static async generateLightingAuditorReport(options: LightingAuditorReportOptions): Promise<GeneratedReport> {
-    const reportId = `lighting_auditor_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const reportId = `lighting_auditor_${crypto.randomUUID()}`;
     const title = 'Lighting Auditor Export';
 
     // 1) Get fixtures: prefer provided list (e.g., current filtered fixtures in UI); else fetch all
@@ -691,7 +691,7 @@ export class ReportGenerationService {
       // 2. Set up a cron job or scheduled task
       // 3. Configure email delivery
       
-      const scheduleId = `schedule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const scheduleId = `schedule_${crypto.randomUUID()}`;
       
       logger.debug(`Scheduled report "${config.title}" for ${config.schedule} delivery to:`, config.recipients);
       

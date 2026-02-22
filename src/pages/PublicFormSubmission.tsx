@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
 import { useDropzone } from 'react-dropzone';
@@ -12,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { useFacilityEmail } from '@/hooks/useFacilityEmail';
 
 export default function PublicFormSubmission() {
+  const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [trackingCode, setTrackingCode] = useState('');
@@ -68,7 +70,7 @@ export default function PublicFormSubmission() {
 
     try {
       // Generate tracking code
-      const code = `PUB-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      const code = `PUB-${crypto.randomUUID().replace(/-/g, '').toUpperCase()}`;
 
       // Upload to storage
       const fileName = `public/${code}_${file.name}`;
@@ -100,11 +102,8 @@ export default function PublicFormSubmission() {
       setTrackingCode(code);
       setSubmitted(true);
       
-      toast.success('Form submitted successfully!', {
-        description: 'You will receive an email confirmation shortly.',
-      });
+      toast.success('Form submitted successfully!');
 
-      // TODO: Send confirmation email to contactInfo.email
     } catch (error) {
       logger.error('Upload error:', error);
       toast.error('Failed to submit form', {
@@ -140,10 +139,9 @@ export default function PublicFormSubmission() {
             <div className="space-y-3">
               <h3 className="font-semibold">What Happens Next?</h3>
               <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                <li>You'll receive an email confirmation at {contactInfo.email}</li>
-                <li>Our AI will process and extract information from your form</li>
-                <li>Your request will be routed to the appropriate department</li>
-                <li>You'll receive updates via email as your request is processed</li>
+                <li>Your form has been received and assigned tracking code <strong>{trackingCode}</strong></li>
+                <li>Staff will review your submission and process it accordingly</li>
+                <li>Keep your tracking code to reference your submission</li>
               </ol>
             </div>
 
@@ -157,7 +155,7 @@ export default function PublicFormSubmission() {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => window.location.href = '/public-forms'}
+                onClick={() => navigate('/public-forms')}
               >
                 Submit Another Form
               </Button>
@@ -182,7 +180,7 @@ export default function PublicFormSubmission() {
           <Button
             variant="ghost"
             className="mb-4 text-primary-foreground hover:bg-primary-foreground/20"
-            onClick={() => window.location.href = '/public-forms'}
+            onClick={() => navigate('/public-forms')}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Forms
@@ -308,7 +306,7 @@ export default function PublicFormSubmission() {
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => window.location.href = '/public-forms'}
+              onClick={() => navigate('/public-forms')}
             >
               Cancel
             </Button>

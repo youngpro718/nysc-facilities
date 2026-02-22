@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 export interface SecuritySettings {
-  id: boolean;
+  id: true; // Singleton row — the DB uses a boolean PK constrained to true
   max_login_attempts: number;
   block_minutes: number;
   allowed_email_domain: string | null;
@@ -135,20 +135,33 @@ export async function isIdentifierBlocked(identifier: string): Promise<boolean> 
 }
 
 /**
- * Get active user sessions
+ * Get active user sessions from the user_sessions table
  */
 export async function listSessions() {
-  const { data, error } = await supabase.auth.admin.listUsers();
-  
+  const { data, error } = await supabase
+    .from('user_sessions')
+    .select(`
+      user_id,
+      last_active_at,
+      created_at,
+      device_info,
+      profiles!user_sessions_user_id_fkey (
+        email,
+        first_name,
+        last_name
+      )
+    `)
+    .order('last_active_at', { ascending: false })
+    .limit(100);
+
   if (error) throw error;
-  
-  // Note: This requires admin privileges
-  // In production, you'd want a proper session management table
-  return data.users.map(user => ({
-    user_id: user.id,
-    email: user.email,
-    last_sign_in_at: user.last_sign_in_at,
-    created_at: user.created_at,
+
+  return (data ?? []).map((session: Record<string, unknown>) => ({
+    user_id: session.user_id,
+    email: (session.profiles as Record<string, unknown>)?.email ?? null,
+    last_sign_in_at: session.last_active_at,
+    created_at: session.created_at,
+    device_info: session.device_info,
   }));
 }
 

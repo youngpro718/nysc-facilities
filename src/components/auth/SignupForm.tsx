@@ -95,23 +95,21 @@ export const SignupForm = ({
       };
       
       await secureSignUp(email, password, userData as any);
-      
-      // Upload avatar if selected - need to wait for user to be created
+
+      // Upload avatar if one was selected. getUser() is safe here because
+      // secureSignUp awaits the Supabase auth call, so the auth record exists.
       if (avatarFile) {
-        // Small delay to ensure user is fully created
-        setTimeout(async () => {
+        try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
-            try {
-              await uploadAvatar(avatarFile, user.id);
-            } catch (error) {
-              logger.error('Avatar upload error:', error);
-              toast.error('Account created but avatar upload failed');
-            }
+            await uploadAvatar(avatarFile, user.id);
           }
-        }, 1000);
+        } catch (error) {
+          logger.error('Avatar upload error:', error);
+          toast.error('Account created but avatar upload failed. You can update it later in your profile.');
+        }
       }
-      
+
       toast.success('Account created successfully! Please check your email for verification.');
     } catch (error) {
       logger.error('Signup error:', error);
