@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useCallback } from 'react';
 import { logger } from '@/lib/logger';
 import { useSecurityValidation } from './useSecurityValidation';

@@ -1,5 +1,8 @@
 // src/services/auth.ts
-// Enhanced authentication service with email verification enforcement
+// Authentication service
+// NOTE: Email verification enforcement must also be configured in the Supabase
+// project dashboard (Authentication > Settings > "Confirm email"). The check
+// below is defence-in-depth only — a direct API call bypasses client-side code.
 import { supabase } from '@/lib/supabase';
 
 /**

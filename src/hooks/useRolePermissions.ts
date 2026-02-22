@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -46,9 +45,6 @@ export function useRolePermissions() {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  
-  // OPTIMIZATION: Track if we've loaded from cache to show UI faster
-  const [loadedFromCache, setLoadedFromCache] = useState(false);
   
   // Guard to prevent concurrent fetches
   const isFetchingRef = useRef(false);
@@ -114,7 +110,7 @@ export function useRolePermissions() {
     },
   };
 
-  const fetchUserRoleAndPermissions = async (skipCache = false) => {
+  const fetchUserRoleAndPermissions = async () => {
     const startTime = Date.now();
     
     // Guard against concurrent fetches
@@ -135,36 +131,6 @@ export function useRolePermissions() {
       }
 
       logger.debug('[useRolePermissions] User authenticated');
-      
-      // SECURITY FIX: Never cache admin permissions to prevent tampering
-      // Reduce cache TTL from 2 minutes to 30 seconds for non-admin roles
-      if (!skipCache) {
-        try {
-          const cached = localStorage.getItem(`permissions_cache_${user.id}`);
-          if (cached) {
-            const { role, profile: cachedProfile, permissions: cachedPerms, timestamp } = JSON.parse(cached);
-            const age = Date.now() - timestamp;
-            
-            // Never use cached admin permissions - always fetch fresh
-            if (role === 'admin') {
-              logger.info('[useRolePermissions] Admin role detected - skipping cache');
-              localStorage.removeItem(`permissions_cache_${user.id}`);
-            } else if (age < 30000) {
-              // Reduced TTL from 120s to 30s for non-admin roles
-              logger.debug('[useRolePermissions] Using cached permissions');
-              setUserRole(role);
-              setProfile(cachedProfile);
-              setPermissions(cachedPerms);
-              setLoadedFromCache(true);
-              setLoading(false);
-              
-              logger.debug('[useRolePermissions] Fetching fresh data in background');
-            }
-          }
-        } catch (e) {
-          logger.error('[useRolePermissions] Cache read error', e);
-        }
-      }
 
       // OPTIMIZATION: Fetch role and profile in parallel
       const [roleQuery, profileQuery] = await Promise.all([
@@ -247,42 +213,12 @@ export function useRolePermissions() {
         dashboard: null,
       };
       
-      // Check if user is in Supply Department for permission enhancement
-      const isSupplyDepartmentUser = (profileData as Record<string, unknown>)?.departments?.name === 'Supply Department';
-      
-      // Enhance permissions for Supply Department users
-      if (isSupplyDepartmentUser) {
-        finalPermissions = {
-          ...finalPermissions,
-          inventory: 'admin',
-          supply_requests: 'admin',
-          supply_orders: 'admin',
-        };
-        logger.debug('[useRolePermissions] Enhanced permissions for Supply Department user');
-      }
-      
+      // Supply permissions are granted via the user_roles table (court_aide role).
+      // Department name must not be used to elevate permissions.
       setUserRole(effectiveRole);
       setPermissions(finalPermissions);
       setProfile(profileData);
-      
-      // SECURITY FIX: Never cache admin permissions
-      try {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser && effectiveRole !== 'admin') {
-          localStorage.setItem(`permissions_cache_${currentUser.id}`, JSON.stringify({
-            role: effectiveRole,
-            profile: profileData,
-            permissions: finalPermissions,
-            timestamp: Date.now()
-          }));
-        } else if (effectiveRole === 'admin') {
-          // Clear any cached admin permissions
-          localStorage.removeItem(`permissions_cache_${currentUser?.id}`);
-        }
-      } catch (e) {
-        logger.error('[useRolePermissions] Cache write error', e);
-      }
-      
+
       const elapsed = Date.now() - startTime;
       logger.debug(`[useRolePermissions] Fetch completed in ${elapsed}ms`);
       hasFetchedRef.current = true;
@@ -355,14 +291,6 @@ export function useRolePermissions() {
           operations: null,
           dashboard: null,
         });
-        setLoadedFromCache(false);
-        
-        // Clear all permissions caches
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('permissions_cache_')) {
-            localStorage.removeItem(key);
-          }
-        });
         localStorage.removeItem('preview_role');
       } else if (event === 'SIGNED_IN' && session) {
         // Don't refetch here - let useAuth handle it
@@ -372,7 +300,7 @@ export function useRolePermissions() {
     
     // OPTIMIZATION: Reduced timeout from 5s to 3s since we now have cache
     const timeout = setTimeout(() => {
-      if (loading && !loadedFromCache) {
+      if (loading) {
         logger.warn('[useRolePermissions] Timeout: forcing loading=false after 3 seconds');
         setLoading(false);
         

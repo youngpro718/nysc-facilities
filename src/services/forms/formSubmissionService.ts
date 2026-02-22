@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { submitKeyRequest } from '@/services/keyRequestService';
 import type {
   FormSubmissionResult,
@@ -59,7 +59,7 @@ export async function createKeyRequestFromForm(
     return { success: true };
   } catch (error) {
     logger.error('Error creating key request from form:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -121,7 +121,7 @@ export async function createSupplyRequestFromForm(
     return { success: true, requestId: request.id };
   } catch (error) {
     logger.error('Error creating supply request from form:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -177,7 +177,7 @@ export async function createMaintenanceRequestFromForm(
     return { success: true, requestId: request.id };
   } catch (error) {
     logger.error('Error creating maintenance request from form:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -221,7 +221,7 @@ export async function createIssueFromForm(
     return { success: true, requestId: issue.id };
   } catch (error) {
     logger.error('Error creating issue from form:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 

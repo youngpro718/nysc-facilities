@@ -258,10 +258,6 @@ export class AdvancedAnalyticsService {
         // Reduce score based on open issues
         maintenanceScore -= space.open_issue_count * 10;
 
-        // Reduce score based on age (simplified - would use actual dates)
-        const spaceAge = Math.random() * 10; // Simulated age in years
-        maintenanceScore -= spaceAge * 2;
-
         // Reduce score for high-traffic areas
         if (space.occupant_count > 2) {
           maintenanceScore -= 5;
@@ -286,8 +282,8 @@ export class AdvancedAnalyticsService {
           space_id: space.id,
           space_name: space.name,
           space_type: space.space_type,
-          last_maintenance: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-          next_maintenance: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          last_maintenance: null, // Not yet tracked — add a maintenance_logs table to populate this
+          next_maintenance: null, // Not yet tracked — scheduled maintenance dates come from maintenance_logs
           maintenance_score: Math.round(maintenanceScore),
           predicted_issues: predictedIssues,
         });
@@ -324,10 +320,11 @@ export class AdvancedAnalyticsService {
         const buildingName = floors[0]?.building_name || 'Unknown';
         const totalFixtures = floors.reduce((sum, floor) => sum + (floor.total_fixtures || 0), 0);
         
-        // Simulate efficiency calculation (in real app, would query actual fixture data)
-        const efficientFixtures = Math.floor(totalFixtures * (0.6 + Math.random() * 0.3));
-        const efficiencyScore = totalFixtures > 0 ? (efficientFixtures / totalFixtures) * 100 : 0;
-        const potentialSavings = (totalFixtures - efficientFixtures) * 50; // $50 per inefficient fixture
+        // Efficiency data requires actual fixture technology data (LED vs fluorescent, etc).
+        // Until that data is available, report actual fixture counts only.
+        const efficientFixtures = 0; // Requires fixture technology data — not yet available
+        const efficiencyScore = 0;   // Requires fixture technology data — not yet available
+        const potentialSavings = 0;  // Requires fixture technology data — not yet available
 
         efficiencyData.push({
           building_id: buildingId,

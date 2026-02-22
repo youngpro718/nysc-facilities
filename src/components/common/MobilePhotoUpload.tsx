@@ -235,7 +235,7 @@ export function MobilePhotoUpload({
 
       // Generate unique filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${uploadPath}/${fileName}`;
 
       // Upload with progress tracking

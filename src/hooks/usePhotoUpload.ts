@@ -68,7 +68,7 @@ export function usePhotoUpload() {
 
       // Generate a structured file path
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
       
       // Create structured paths using entityId and optional category
       const category = options.category || 'default';
@@ -212,7 +212,7 @@ export function usePhotoUpload() {
 
       // Generate a structured file path
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
       
       // Create structured paths using entityId and optional category
       const category = options.category || 'default';

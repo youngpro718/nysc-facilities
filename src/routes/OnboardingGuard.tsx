@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -82,18 +81,33 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
-        // 3) Check profile completeness and approval status
-        let profile: Record<string, unknown> = null;
+        // 3) Fetch profile and role in parallel
+        let profile: Record<string, unknown> | null = null;
+        let userRoleData: { role: string } | null = null;
         try {
-          profile = await withTimeout(getMyProfile(), 10000, 'loading profile');
+          const roleQuery = async () => {
+            const { data, error } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            if (error) throw error;
+            return data;
+          };
+          [profile, userRoleData] = await Promise.all([
+            withTimeout(getMyProfile(), 10000, 'loading profile'),
+            withTimeout(roleQuery(), 10000, 'loading role').catch((roleError: unknown) => {
+              logger.warn('[OnboardingGuard] Role fetch failed:', roleError);
+              return null;
+            }),
+          ]);
         } catch (profileError) {
           logger.error('[OnboardingGuard] Profile fetch failed:', profileError);
-          // If profile fetch fails, redirect to sign-in for safety
           navigate('/login', { replace: true });
           isCheckingRef.current = false;
           return;
         }
-          
+
         // Check required profile fields
         const needsProfile = !profile?.first_name || !profile?.last_name;
         if (needsProfile) {
@@ -102,10 +116,10 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
-        // 4) Check if user is approved (skip for admins)
-        const isAdmin = profile?.access_level === 'admin';
+        // 4) Check if user is approved — use user_roles table, not the deprecated access_level field
+        const isAdmin = userRoleData?.role === 'admin';
         const isPending = profile?.verification_status === 'pending' || profile?.is_approved === false;
-        
+
         if (!isAdmin && isPending) {
           logger.debug('[OnboardingGuard] User pending approval, redirecting to pending page');
           navigate('/auth/pending-approval', { replace: true });
@@ -120,24 +134,6 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
         }
 
         // 5) MFA enforcement for privileged roles
-        // Fetch user's role from user_roles table
-        let userRoleData: { role: string } | null = null;
-        try {
-          const roleQuery = async () => {
-            const { data, error } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-            if (error) throw error;
-            return data;
-          };
-          userRoleData = await withTimeout(roleQuery(), 10000, 'loading role');
-        } catch (roleError) {
-          logger.warn('[OnboardingGuard] Role fetch failed, proceeding without MFA check:', roleError);
-          // Continue without MFA check if role fetch fails
-        }
-        
         const privilegedRoles = ['admin', 'cmc'];
         const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
         const enforceMfa = profile?.mfa_enforced === true || isPrivileged;

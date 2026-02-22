@@ -74,12 +74,11 @@ export function useSecurityValidation() {
   }, []);
 
   const checkRateLimit = useCallback(async (
-    identifier: string, 
+    identifier: string,
     attemptType: string,
-    maxAttempts: number = 10,  // Increased from 5 to 10 attempts
-    windowMinutes: number = 30  // Increased from 15 to 30 minutes
+    maxAttempts: number = 5,
+    windowMinutes: number = 15
   ): Promise<boolean> => {
-    // More lenient rate limiting to prevent premature lockouts
     try {
       const { data, error } = await supabase.rpc('check_rate_limit', {
         p_identifier: identifier,
@@ -87,16 +86,18 @@ export function useSecurityValidation() {
         p_max_attempts: maxAttempts,
         p_window_minutes: windowMinutes
       });
-      
+
       if (error) {
-        logger.warn('Rate limit check error (allowing attempt by default):', error);
-        return true; // Allow on error to prevent blocking login due to RPC issues
+        // Fail closed: deny the attempt when rate limit cannot be verified
+        logger.warn('Rate limit check error (denying attempt for safety):', error);
+        return false;
       }
-      
+
       return Boolean(data);
     } catch (error) {
-      logger.warn('Rate limit check error (allowing attempt by default):', error);
-      return true; // Allow on error to prevent blocking login due to RPC issues
+      // Fail closed: deny the attempt on unexpected errors
+      logger.warn('Rate limit check error (denying attempt for safety):', error);
+      return false;
     }
   }, []);
 

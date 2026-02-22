@@ -66,12 +66,12 @@ export const storageService = {
         // Create structured paths to organize files
         if (options.entityId) {
           // If entityId is provided, structure files by entity (e.g., rooms/[roomId]/...)
-          const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const entityType = bucketName === 'courtroom-photos' ? 'rooms' : 'entities';
           filePath = `${entityType}/${options.entityId}/${fileName}`;
         } else {
           // Default fallback behavior
-          filePath = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+          filePath = `${crypto.randomUUID()}.${fileExt}`;
         }
       }
       
