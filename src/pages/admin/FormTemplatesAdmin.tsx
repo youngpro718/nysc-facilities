@@ -97,7 +97,7 @@ export default function FormTemplatesAdmin() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Form Template Builder</h1>
+          <h1 className="text-xl sm:text-3xl font-bold">Form Template Builder</h1>
           <p className="text-muted-foreground mt-1">
             Create and manage dynamic form templates for PDF generation
           </p>

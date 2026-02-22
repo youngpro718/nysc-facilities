@@ -53,7 +53,7 @@ export default function Users() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+          <h2 className="text-xl sm:text-3xl font-bold tracking-tight">User Management</h2>
           <p className="text-muted-foreground">
             Manage user accounts, profiles, and room assignments
           </p>

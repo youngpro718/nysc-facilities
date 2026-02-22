@@ -49,7 +49,7 @@ export function MobileActionSheet({
           )}
         </SheetHeader>
         
-        <div className="space-y-2 pb-6">
+        <div className="space-y-2 pb-6 pb-safe">
           {actions.map((action, index) => (
             <div key={action.id}>
               <Button

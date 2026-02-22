@@ -19,7 +19,7 @@ export const MaintenanceDashboard = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Maintenance</h1>
+          <h1 className="text-xl sm:text-3xl font-bold">Maintenance</h1>
           <p className="text-muted-foreground">
             Track schedules, manage issues, and monitor facility upkeep
           </p>
