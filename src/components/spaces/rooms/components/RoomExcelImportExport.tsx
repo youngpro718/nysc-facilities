@@ -5,6 +5,7 @@ import { FileUp, Download, Loader2, CheckCircle, AlertCircle } from "lucide-reac
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/lib/supabase";
 
 interface RoomExcelImportExportProps {
   projectRef: string;
@@ -37,13 +38,21 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
     return `https://${projectRef}.supabase.co/functions/v1/${functionName}`;
   };
 
+  const getAccessToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error("No active session. Please sign in.");
+    return session.access_token;
+  };
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
+      const token = await getAccessToken();
       const response = await fetch(getEdgeFunctionUrl("export-rooms"), {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${(await getSupabaseSession()).access_token}`,
+          "Authorization": `Bearer ${token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE",
         },
       });
 
@@ -89,11 +98,14 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       formData.append("file", file);
       formData.append("dryRun", "true");
 
+      const token = await getAccessToken();
+      const apikey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE";
       const dryRunResponse = await fetch(getEdgeFunctionUrl("import-rooms"), {
         method: "POST",
         body: formData,
         headers: {
-          "Authorization": `Bearer ${(await getSupabaseSession()).access_token}`,
+          "Authorization": `Bearer ${token}`,
+          "apikey": apikey,
         },
       });
 
@@ -116,7 +128,8 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
           method: "POST",
           body: confirmFormData,
           headers: {
-            "Authorization": `Bearer ${(await getSupabaseSession()).access_token}`,
+            "Authorization": `Bearer ${token}`,
+            "apikey": apikey,
           },
         });
 
@@ -263,32 +276,4 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       </Dialog>
     </div>
   );
-}
-
-// Helper function to get Supabase session
-async function getSupabaseSession() {
-  // Get session from localStorage (Supabase stores it there)
-  const storageKey = "sb-fmymhtuiqzhupjyopfvi-auth-token";
-  const sessionData = localStorage.getItem(storageKey);
-  
-  if (sessionData) {
-    try {
-      const session = JSON.parse(sessionData);
-      return {
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      };
-    } catch {
-      // Fall through to fallback
-    }
-  }
-  
-  // Fallback: try to get from Supabase client if available globally
-  // This will be set by the app when it initializes
-  const globalSession = (window as unknown as { __SUPABASE_SESSION__?: { access_token: string } }).__SUPABASE_SESSION__;
-  if (globalSession?.access_token) {
-    return globalSession;
-  }
-  
-  throw new Error("No active session found. Please sign in.");
 }
