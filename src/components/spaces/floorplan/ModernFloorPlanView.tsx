@@ -180,9 +180,15 @@ export function ModernFloorPlanView() {
           }))
         );
         if (data && data.length > 0) {
-          // If a saved floor exists and is still valid, keep it; otherwise default to first
+          // If a saved floor exists and is still valid, keep it; otherwise default to Floor 1 (lowest floor_number)
           const exists = selectedFloor && data.some((f: Record<string, unknown>) => f.id === selectedFloor);
-          setSelectedFloor(exists ? selectedFloor : data[0].id);
+          if (!exists) {
+            // Find the floor with the lowest floor_number (Floor 1)
+            const lowestFloor = [...data].sort((a: Record<string, unknown>, b: Record<string, unknown>) => 
+              (a.floor_number as number) - (b.floor_number as number)
+            )[0];
+            setSelectedFloor(lowestFloor.id);
+          }
         }
       } catch (error) {
         logger.error('Error fetching floors:', error);

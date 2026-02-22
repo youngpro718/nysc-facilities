@@ -208,7 +208,7 @@ const SortableRow = ({
               <div className="mb-1 flex flex-wrap gap-1">
                 {selected.length > 0 ? selected.map(d => (
                   <span key={d} className="text-xs px-2 py-0.5 rounded border bg-muted">{d}</span>
-                )) : <span className="text-xs text-muted-foreground">No calendar days</span>}
+                )) : <span className="text-xs text-muted-foreground">No days selected</span>}
               </div>
               <div className="flex gap-2">
                 <Popover>
@@ -309,7 +309,7 @@ const SortableRow = ({
         .map(s => canonMap[s.toLowerCase()] || s)
         .filter((v, i, a) => a.indexOf(v) === i)
         .sort((a,b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
-      if (parsed.length === 0) return <span className="text-muted-foreground italic">No calendar day</span>;
+      if (parsed.length === 0) return <span className="text-muted-foreground italic">Unscheduled</span>;
       return (
         <div className="flex flex-wrap gap-1">
           {parsed.map(d => (

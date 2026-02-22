@@ -130,13 +130,38 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
         </p>
       </div>
 
-      {/* Alert Banner if issues */}
+      {/* Alert Banner if issues — specific, linked messages */}
       {totalIssues > 0 && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Attention Required</AlertTitle>
+          <AlertTitle>Attention Required Today</AlertTitle>
           <AlertDescription>
-            {totalIssues} {totalIssues === 1 ? 'issue needs' : 'issues need'} your attention today.
+            <ul className="mt-1 space-y-1">
+              {needsCoverage > 0 && (
+                <li>
+                  <button className="underline hover:no-underline" onClick={() => handleNavigate('staff')}>
+                    {needsCoverage} staff {needsCoverage === 1 ? 'absence needs' : 'absences need'} coverage assigned →
+                  </button>
+                </li>
+              )}
+              {judgesOut > 0 && needsCoverage === 0 && (
+                <li>{judgesOut} {judgesOut === 1 ? 'judge is' : 'judges are'} out today</li>
+              )}
+              {activeShutdowns > 0 && (
+                <li>
+                  <button className="underline hover:no-underline" onClick={() => handleNavigate('assignments')}>
+                    {activeShutdowns} {activeShutdowns === 1 ? 'room is' : 'rooms are'} shut down or in maintenance →
+                  </button>
+                </li>
+              )}
+              {conflicts?.hasConflicts && (
+                <li>
+                  <button className="underline hover:no-underline" onClick={() => handleNavigate('staff')}>
+                    {conflicts.conflicts.length} scheduling {conflicts.conflicts.length === 1 ? 'conflict' : 'conflicts'} detected →
+                  </button>
+                </li>
+              )}
+            </ul>
           </AlertDescription>
         </Alert>
       )}

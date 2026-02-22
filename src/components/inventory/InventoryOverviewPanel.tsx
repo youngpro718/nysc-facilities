@@ -103,11 +103,11 @@ export const InventoryOverviewPanel = () => {
       const { data: txs, error } = await supabase
         .from("inventory_item_transactions")
         .select("item_id,quantity")
-        .eq("transaction_type", "remove")
+        .in("transaction_type", ["remove", "fulfilled"])
         .gte("created_at", startDate.toISOString());
       if (error) throw error;
 
-      // Aggregate quantity removed per item
+      // Aggregate quantity removed/fulfilled per item
       const byItem = new Map<string, number>();
       for (const t of txs || []) {
         if (t.item_id) {
@@ -147,11 +147,11 @@ export const InventoryOverviewPanel = () => {
       const { data: txs, error } = await supabase
         .from("inventory_item_transactions")
         .select("item_id,quantity")
-        .eq("transaction_type", "remove")
+        .in("transaction_type", ["remove", "fulfilled"])
         .gte("created_at", startDate.toISOString());
       if (error) throw error;
 
-      // Aggregate quantity removed per item
+      // Aggregate quantity removed/fulfilled per item
       const byItem = new Map<string, number>();
       for (const t of txs || []) {
         if (t.item_id) {

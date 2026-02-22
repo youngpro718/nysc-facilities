@@ -42,9 +42,12 @@ export function FloorPlanView() {
         if (error) throw error;
         
         setFloors(data || []);
-        // If we have floors and no selected floor, select the first one
+        // If we have floors and no selected floor, default to Floor 1 (lowest floor_number)
         if (data && data.length > 0 && !selectedFloor) {
-          setSelectedFloor(data[0].id);
+          const lowestFloor = [...data].sort((a, b) => 
+            (a.floor_number as number) - (b.floor_number as number)
+          )[0];
+          setSelectedFloor(lowestFloor.id);
         }
       } catch (error) {
         logger.error('Error fetching floors:', error);
