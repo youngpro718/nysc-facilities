@@ -183,7 +183,7 @@ export default function FormIntake() {
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Form Intake System</h1>
+          <h1 className="text-xl sm:text-3xl font-bold mb-2">Form Intake System</h1>
           <p className="text-muted-foreground">
             Upload completed forms - All submissions are tracked in the app system
           </p>

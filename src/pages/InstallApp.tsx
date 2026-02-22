@@ -100,7 +100,7 @@ export default function InstallApp() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold">Install {appName}</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold">Install {appName}</h1>
           <p className="text-muted-foreground">
             Get quick access on your phone - no app store needed
           </p>

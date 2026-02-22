@@ -166,7 +166,7 @@ export default function FormTemplates() {
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Form Templates</h1>
+          <h1 className="text-xl sm:text-3xl font-bold mb-2">Form Templates</h1>
           <p className="text-muted-foreground">
             Fill out forms online instantly or download PDFs - All submissions are tracked in the system
           </p>

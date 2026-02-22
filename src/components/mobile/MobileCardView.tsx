@@ -151,6 +151,7 @@ export function MobileCardView({
                       "h-8 gap-1",
                       compact && "h-7 text-xs px-2"
                     )}
+                    aria-label={action.label}
                     onClick={(e) => {
                       e.stopPropagation();
                       action.onClick();
