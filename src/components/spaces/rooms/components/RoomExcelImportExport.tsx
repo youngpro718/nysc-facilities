@@ -20,6 +20,19 @@ interface ImportResult {
   error?: string;
 }
 
+// ── Column width helper ───────────────────────────────────────────
+function autoWidth(ws: XLSX.WorkSheet, data: Record<string, unknown>[]) {
+  if (!data.length) return;
+  const cols = Object.keys(data[0]);
+  ws["!cols"] = cols.map((key) => {
+    const maxLen = Math.max(
+      key.length,
+      ...data.map((r) => String(r[key] ?? "").length)
+    );
+    return { wch: Math.min(maxLen + 2, 50) };
+  });
+}
+
 export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +47,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
     errorMessages: string[];
   } | null>(null);
 
-  // ── EXPORT (client-side) ──────────────────────────────────────────
+  // ── EXPORT ────────────────────────────────────────────────────────
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -43,15 +56,13 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
         .select(`
           id, name, room_number, description, status, room_type,
           current_function, previous_functions, function_change_date,
-          maintenance_history, floor_id,
-          floors:floor_id(name, floor_number),
+          maintenance_history, persistent_issues, floor_id,
+          floors:floor_id(name, floor_number, buildings:building_id(name)),
           capacity, current_occupancy,
           is_storage, storage_type, storage_capacity, storage_notes,
-          phone_number, position, size, rotation,
-          last_inventory_check, next_maintenance_date, last_inspection_date,
-          technology_installed, security_level, environmental_controls,
-          is_parent, parent_room_id, passkey_enabled, original_room_type,
-          temporary_storage_use, temporary_use_timeline,
+          phone_number,
+          last_inspection_date, next_maintenance_date,
+          technology_installed, security_level,
           created_at, updated_at
         `)
         .order("name");
@@ -59,71 +70,176 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       if (error) throw error;
       if (!rooms || rooms.length === 0) throw new Error("No rooms found to export");
 
+      // ── Sheet 1: Room Info (clean, readable) ──
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const exportData = rooms.map((room: any) => {
-        const floor = room.floors as { name?: string; floor_number?: number } | null;
+      const roomInfoData = rooms.map((room: any) => {
+        const floor = room.floors as { name?: string; floor_number?: number; buildings?: { name?: string } | null } | null;
         return {
           "Room ID": room.id,
-          "Name": room.name,
+          "Room Name": room.name || "",
           "Room Number": room.room_number || "",
+          "Building": floor?.buildings?.name || "",
           "Floor": floor?.name || "",
-          "Floor Number": floor?.floor_number ?? "",
-          "Status": room.status,
-          "Room Type": room.room_type,
+          "Floor #": floor?.floor_number ?? "",
+          "Status": room.status || "",
+          "Room Type": room.room_type || "",
           "Current Function": room.current_function || "",
-          "Previous Functions (JSON)": JSON.stringify(room.previous_functions || []),
-          "Function Change Date": room.function_change_date || "",
-          "Maintenance History (JSON)": JSON.stringify(room.maintenance_history || []),
+          "Description": room.description || "",
           "Capacity": room.capacity ?? "",
-          "Current Occupancy": room.current_occupancy ?? 0,
-          "Is Storage": room.is_storage ? "Yes" : "No",
+          "Occupancy": room.current_occupancy ?? 0,
+          "Phone": room.phone_number || "",
+          "Storage Room": room.is_storage ? "Yes" : "No",
           "Storage Type": room.storage_type || "",
           "Storage Capacity": room.storage_capacity ?? "",
           "Storage Notes": room.storage_notes || "",
-          "Position X": room.position?.x ?? 0,
-          "Position Y": room.position?.y ?? 0,
-          "Width": room.size?.width ?? 150,
-          "Height": room.size?.height ?? 100,
-          "Rotation": room.rotation ?? 0,
-          "Phone Number": room.phone_number || "",
-          "Description": room.description || "",
-          "Last Inventory Check": room.last_inventory_check || "",
-          "Next Maintenance Date": room.next_maintenance_date || "",
-          "Last Inspection Date": room.last_inspection_date || "",
-          "Technology Installed": (room.technology_installed || []).join(", "),
           "Security Level": room.security_level || "",
-          "Environmental Controls": room.environmental_controls || "",
-          "Is Parent": room.is_parent ? "Yes" : "No",
-          "Parent Room ID": room.parent_room_id || "",
-          "Passkey Enabled": room.passkey_enabled ? "Yes" : "No",
-          "Original Room Type": room.original_room_type || "",
-          "Temporary Storage Use": room.temporary_storage_use ? "Yes" : "No",
-          "Temporary Use Timeline (JSON)": JSON.stringify(room.temporary_use_timeline || {}),
-          "Created At": room.created_at || "",
-          "Updated At": room.updated_at || "",
+          "Technology": (room.technology_installed || []).join(", "),
+          "Last Inspection": room.last_inspection_date || "",
+          "Next Maintenance": room.next_maintenance_date ? String(room.next_maintenance_date).split("T")[0] : "",
         };
       });
 
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      XLSX.utils.book_append_sheet(wb, ws, "Rooms");
+      // ── Sheet 2: Persistent Issues (one row per issue) ──
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const issuesData: Record<string, any>[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rooms.forEach((room: any) => {
+        const issues = room.persistent_issues || [];
+        if (Array.isArray(issues) && issues.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          issues.forEach((issue: any) => {
+            issuesData.push({
+              "Room ID": room.id,
+              "Room Name": room.name,
+              "Room Number": room.room_number || "",
+              "Category": issue.category || "",
+              "Description": issue.description || "",
+              "Severity": issue.severity || "",
+              "Status": issue.status || "open",
+              "First Reported": issue.first_reported || "",
+              "Last Reported": issue.last_reported || "",
+              "Notes": issue.notes || "",
+            });
+          });
+        } else {
+          issuesData.push({
+            "Room ID": room.id,
+            "Room Name": room.name,
+            "Room Number": room.room_number || "",
+            "Category": "",
+            "Description": "",
+            "Severity": "",
+            "Status": "",
+            "First Reported": "",
+            "Last Reported": "",
+            "Notes": "",
+          });
+        }
+      });
 
-      // Instructions sheet
-      const instructions = [
-        { Column: "Room ID", Description: "DO NOT MODIFY", Editable: "No" },
-        { Column: "Name", Description: "Room name", Editable: "Yes" },
-        { Column: "Status", Description: "active / inactive / under_maintenance", Editable: "Yes" },
-        { Column: "Room Type", Description: "Must be valid room_type_enum", Editable: "Yes" },
-        { Column: "Current Function", Description: "Actual function if different from type", Editable: "Yes" },
-        { Column: "Previous Functions (JSON)", Description: '[{"function":"office","startDate":"2023-01-01","endDate":"2024-01-01"}]', Editable: "Yes" },
-        { Column: "Maintenance History (JSON)", Description: '[{"date":"2024-01-01","type":"HVAC","description":"Filter replacement","vendor":"ABC","cost":150}]', Editable: "Yes" },
+      // ── Sheet 3: Maintenance Log (one row per entry) ──
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const maintenanceData: Record<string, any>[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rooms.forEach((room: any) => {
+        const history = room.maintenance_history || [];
+        if (Array.isArray(history) && history.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          history.forEach((entry: any) => {
+            maintenanceData.push({
+              "Room ID": room.id,
+              "Room Name": room.name,
+              "Room Number": room.room_number || "",
+              "Date": entry.date || "",
+              "Type": entry.type || "",
+              "Description": entry.description || "",
+              "Vendor / Contractor": entry.vendor || "",
+              "Cost": entry.cost ?? "",
+              "Notes": entry.notes || "",
+            });
+          });
+        }
+      });
+      if (maintenanceData.length === 0) {
+        maintenanceData.push({
+          "Room ID": "(example)",
+          "Room Name": "(example room)",
+          "Room Number": "",
+          "Date": "2024-01-15",
+          "Type": "Plumbing",
+          "Description": "Fixed leaking pipe under sink",
+          "Vendor / Contractor": "ABC Plumbing",
+          "Cost": 350,
+          "Notes": "Recurring issue - 3rd time this year",
+        });
+      }
+
+      // ── Sheet 4: Function History (one row per change) ──
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const functionData: Record<string, any>[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rooms.forEach((room: any) => {
+        const funcs = room.previous_functions || [];
+        if (Array.isArray(funcs) && funcs.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          funcs.forEach((f: any) => {
+            functionData.push({
+              "Room ID": room.id,
+              "Room Name": room.name,
+              "Room Number": room.room_number || "",
+              "Function": f.function || f.name || "",
+              "Start Date": f.startDate || f.start_date || "",
+              "End Date": f.endDate || f.end_date || "",
+              "Notes": f.notes || "",
+            });
+          });
+        }
+      });
+      if (functionData.length === 0) {
+        functionData.push({
+          "Room ID": "(example)",
+          "Room Name": "(example room)",
+          "Room Number": "",
+          "Function": "office",
+          "Start Date": "2020-01-01",
+          "End Date": "2023-06-15",
+          "Notes": "Converted to conference room",
+        });
+      }
+
+      // ── Build workbook ──
+      const wb = XLSX.utils.book_new();
+
+      const ws1 = XLSX.utils.json_to_sheet(roomInfoData);
+      autoWidth(ws1, roomInfoData);
+      XLSX.utils.book_append_sheet(wb, ws1, "Room Info");
+
+      const ws2 = XLSX.utils.json_to_sheet(issuesData);
+      autoWidth(ws2, issuesData);
+      XLSX.utils.book_append_sheet(wb, ws2, "Persistent Issues");
+
+      const ws3 = XLSX.utils.json_to_sheet(maintenanceData);
+      autoWidth(ws3, maintenanceData);
+      XLSX.utils.book_append_sheet(wb, ws3, "Maintenance Log");
+
+      const ws4 = XLSX.utils.json_to_sheet(functionData);
+      autoWidth(ws4, functionData);
+      XLSX.utils.book_append_sheet(wb, ws4, "Function History");
+
+      // ── Instructions sheet ──
+      const helpData = [
+        { "Sheet": "Room Info", "What You Can Edit": "Name, Status, Room Type, Current Function, Description, Capacity, Phone, Storage fields, Security Level", "Notes": "Do NOT change Room ID. Status must be: active, inactive, or under_maintenance" },
+        { "Sheet": "Persistent Issues", "What You Can Edit": "Add/edit rows. Category examples: Plumbing, Electrical, HVAC, Structural, Pest, Window, Door, Lighting, Mold, Noise", "Notes": "Severity: low, medium, high, critical. Status: open, monitoring, resolved" },
+        { "Sheet": "Maintenance Log", "What You Can Edit": "Add new rows for maintenance work done. Fill in Room ID, Date, Type, Description", "Notes": "Cost is optional. Use the Room ID from the Room Info sheet" },
+        { "Sheet": "Function History", "What You Can Edit": "Add rows to record when a room changed function. Fill in Room ID, Function, Start Date, End Date", "Notes": "Dates should be YYYY-MM-DD format" },
       ];
-      const wsInst = XLSX.utils.json_to_sheet(instructions);
-      XLSX.utils.book_append_sheet(wb, wsInst, "Instructions");
+      const ws5 = XLSX.utils.json_to_sheet(helpData);
+      autoWidth(ws5, helpData);
+      XLSX.utils.book_append_sheet(wb, ws5, "How To Edit");
 
       XLSX.writeFile(wb, `rooms_export_${new Date().toISOString().split("T")[0]}.xlsx`);
 
-      toast({ title: "Export successful", description: `${rooms.length} rooms exported to Excel.` });
+      toast({ title: "Export successful", description: `${rooms.length} rooms exported across 4 sheets.` });
     } catch (error) {
       toast({
         title: "Export failed",
@@ -135,7 +251,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
     }
   };
 
-  // ── IMPORT (client-side) ──────────────────────────────────────────
+  // ── IMPORT ────────────────────────────────────────────────────────
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -143,132 +259,200 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
     setIsImporting(true);
     const results: ImportResult[] = [];
     const errorMessages: string[] = [];
+    const updatedRoomIds = new Set<string>();
 
     try {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      const sheetName = workbook.SheetNames.find(n => n !== "Instructions") || workbook.SheetNames[0];
-      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as Record<string, unknown>[];
 
-      for (const row of rows) {
-        const roomId = row["Room ID"] as string;
-        if (!roomId) { errorMessages.push("Skipping row: No Room ID"); continue; }
+      // ── Process "Room Info" sheet ──
+      const roomInfoSheet = workbook.Sheets["Room Info"];
+      if (roomInfoSheet) {
+        const rows = XLSX.utils.sheet_to_json(roomInfoSheet) as Record<string, unknown>[];
+        for (const row of rows) {
+          const roomId = row["Room ID"] as string;
+          if (!roomId || roomId === "(example)") continue;
 
-        const changes: string[] = [];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updateData: Record<string, any> = {};
+          const changes: string[] = [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const updateData: Record<string, any> = {};
 
-        try {
-          // Simple fields
-          if (row["Name"] !== undefined) { updateData.name = row["Name"]; changes.push(`name`); }
-          if (row["Room Number"] !== undefined) { updateData.room_number = row["Room Number"] || null; changes.push(`room_number`); }
-          if (row["Description"] !== undefined) { updateData.description = row["Description"] || null; changes.push(`description`); }
-          if (row["Phone Number"] !== undefined) { updateData.phone_number = row["Phone Number"] || null; changes.push(`phone_number`); }
-          if (row["Current Function"] !== undefined) { updateData.current_function = row["Current Function"] || null; changes.push(`current_function`); }
-          if (row["Security Level"] !== undefined) { updateData.security_level = row["Security Level"] || null; changes.push(`security_level`); }
-          if (row["Environmental Controls"] !== undefined) { updateData.environmental_controls = row["Environmental Controls"] || null; changes.push(`environmental_controls`); }
-          if (row["Original Room Type"] !== undefined) { updateData.original_room_type = row["Original Room Type"] || null; changes.push(`original_room_type`); }
+          try {
+            if (row["Room Name"] !== undefined) { updateData.name = row["Room Name"]; changes.push("name"); }
+            if (row["Room Number"] !== undefined) { updateData.room_number = row["Room Number"] || null; changes.push("room_number"); }
+            if (row["Description"] !== undefined) { updateData.description = row["Description"] || null; changes.push("description"); }
+            if (row["Phone"] !== undefined) { updateData.phone_number = row["Phone"] || null; changes.push("phone"); }
+            if (row["Current Function"] !== undefined) { updateData.current_function = row["Current Function"] || null; changes.push("current_function"); }
+            if (row["Security Level"] !== undefined) { updateData.security_level = row["Security Level"] || null; changes.push("security_level"); }
 
-          // Status
-          if (row["Status"] !== undefined) {
-            const s = row["Status"] as string;
-            if (["active", "inactive", "under_maintenance"].includes(s)) { updateData.status = s; changes.push(`status`); }
-            else errorMessages.push(`Room ${roomId}: Invalid status "${s}"`);
-          }
-          if (row["Room Type"] !== undefined) { updateData.room_type = row["Room Type"]; changes.push(`room_type`); }
-
-          // JSON fields
-          const jsonFields: [string, string][] = [
-            ["Previous Functions (JSON)", "previous_functions"],
-            ["Maintenance History (JSON)", "maintenance_history"],
-            ["Temporary Use Timeline (JSON)", "temporary_use_timeline"],
-          ];
-          for (const [col, field] of jsonFields) {
-            if (row[col] !== undefined) {
-              try {
-                const val = row[col] as string;
-                if (val) { updateData[field] = JSON.parse(val); changes.push(field); }
-              } catch { errorMessages.push(`Room ${roomId}: Invalid JSON in "${col}"`); }
+            if (row["Status"] !== undefined) {
+              const s = String(row["Status"]).toLowerCase();
+              if (["active", "inactive", "under_maintenance"].includes(s)) { updateData.status = s; changes.push("status"); }
+              else errorMessages.push(`Room ${roomId}: Invalid status "${row["Status"]}"`);
             }
-          }
+            if (row["Room Type"] !== undefined) { updateData.room_type = row["Room Type"]; changes.push("room_type"); }
+            if (row["Capacity"] !== undefined && row["Capacity"] !== "") { updateData.capacity = parseInt(String(row["Capacity"]), 10) || null; changes.push("capacity"); }
+            if (row["Occupancy"] !== undefined) { updateData.current_occupancy = parseInt(String(row["Occupancy"]), 10) || 0; changes.push("occupancy"); }
+            if (row["Storage Room"] !== undefined) { updateData.is_storage = String(row["Storage Room"]).toLowerCase() === "yes"; changes.push("is_storage"); }
+            if (row["Storage Type"] !== undefined) { updateData.storage_type = row["Storage Type"] || null; changes.push("storage_type"); }
+            if (row["Storage Capacity"] !== undefined && row["Storage Capacity"] !== "") { updateData.storage_capacity = parseFloat(String(row["Storage Capacity"])) || null; changes.push("storage_capacity"); }
+            if (row["Storage Notes"] !== undefined) { updateData.storage_notes = row["Storage Notes"] || null; changes.push("storage_notes"); }
+            if (row["Technology"] !== undefined) {
+              const t = String(row["Technology"]);
+              updateData.technology_installed = t ? t.split(",").map(s => s.trim()).filter(Boolean) : [];
+              changes.push("technology");
+            }
 
-          // Date fields
-          if (row["Function Change Date"] !== undefined) {
-            const d = row["Function Change Date"] as string;
-            updateData.function_change_date = d ? new Date(d).toISOString() : null;
-            changes.push("function_change_date");
-          }
-          if (row["Last Inventory Check"] !== undefined) {
-            const d = row["Last Inventory Check"] as string;
-            updateData.last_inventory_check = d ? new Date(d).toISOString() : null;
-            changes.push("last_inventory_check");
-          }
-          if (row["Next Maintenance Date"] !== undefined) {
-            const d = row["Next Maintenance Date"] as string;
-            updateData.next_maintenance_date = d ? new Date(d).toISOString() : null;
-            changes.push("next_maintenance_date");
-          }
-          if (row["Last Inspection Date"] !== undefined) {
-            updateData.last_inspection_date = (row["Last Inspection Date"] as string) || null;
-            changes.push("last_inspection_date");
-          }
+            if (Object.keys(updateData).length > 0) {
+              updateData.updated_at = new Date().toISOString();
+              const { error: updateError } = await supabase.from("rooms").update(updateData).eq("id", roomId);
+              if (updateError) throw updateError;
+              updatedRoomIds.add(roomId);
+            }
 
-          // Numeric
-          if (row["Capacity"] !== undefined) { updateData.capacity = row["Capacity"] ? parseInt(String(row["Capacity"]), 10) : null; changes.push("capacity"); }
-          if (row["Current Occupancy"] !== undefined) { updateData.current_occupancy = row["Current Occupancy"] ? parseInt(String(row["Current Occupancy"]), 10) : 0; changes.push("current_occupancy"); }
-          if (row["Storage Capacity"] !== undefined) { updateData.storage_capacity = row["Storage Capacity"] ? parseFloat(String(row["Storage Capacity"])) : null; changes.push("storage_capacity"); }
-          if (row["Rotation"] !== undefined) { updateData.rotation = parseFloat(String(row["Rotation"])) || 0; changes.push("rotation"); }
-
-          // Boolean
-          if (row["Is Storage"] !== undefined) { updateData.is_storage = String(row["Is Storage"]).toLowerCase() === "yes"; changes.push("is_storage"); }
-          if (row["Is Parent"] !== undefined) { updateData.is_parent = String(row["Is Parent"]).toLowerCase() === "yes"; changes.push("is_parent"); }
-          if (row["Passkey Enabled"] !== undefined) { updateData.passkey_enabled = String(row["Passkey Enabled"]).toLowerCase() === "yes"; changes.push("passkey_enabled"); }
-          if (row["Temporary Storage Use"] !== undefined) { updateData.temporary_storage_use = String(row["Temporary Storage Use"]).toLowerCase() === "yes"; changes.push("temporary_storage_use"); }
-
-          // Position & Size
-          if (row["Position X"] !== undefined || row["Position Y"] !== undefined) {
-            updateData.position = { x: parseFloat(String(row["Position X"])) || 0, y: parseFloat(String(row["Position Y"])) || 0 };
-            changes.push("position");
+            results.push({ roomId, name: String(row["Room Name"] || "Unknown"), status: "success", changes });
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            results.push({ roomId, name: String(row["Room Name"] || "Unknown"), status: "error", changes: [], error: msg });
+            errorMessages.push(`Room ${roomId}: ${msg}`);
           }
-          if (row["Width"] !== undefined || row["Height"] !== undefined) {
-            updateData.size = { width: parseFloat(String(row["Width"])) || 150, height: parseFloat(String(row["Height"])) || 100 };
-            changes.push("size");
-          }
+        }
+      }
 
-          // Storage & Tech
-          if (row["Storage Type"] !== undefined) { updateData.storage_type = row["Storage Type"] || null; changes.push("storage_type"); }
-          if (row["Storage Notes"] !== undefined) { updateData.storage_notes = row["Storage Notes"] || null; changes.push("storage_notes"); }
-          if (row["Technology Installed"] !== undefined) {
-            const t = row["Technology Installed"] as string;
-            updateData.technology_installed = t ? t.split(",").map(s => s.trim()) : [];
-            changes.push("technology_installed");
-          }
-          if (row["Parent Room ID"] !== undefined) { updateData.parent_room_id = (row["Parent Room ID"] as string) || null; changes.push("parent_room_id"); }
+      // ── Process "Persistent Issues" sheet ──
+      const issuesSheet = workbook.Sheets["Persistent Issues"];
+      if (issuesSheet) {
+        const rows = XLSX.utils.sheet_to_json(issuesSheet) as Record<string, unknown>[];
+        // Group issues by room ID
+        const issuesByRoom = new Map<string, Record<string, unknown>[]>();
+        for (const row of rows) {
+          const roomId = row["Room ID"] as string;
+          if (!roomId || roomId === "(example)") continue;
+          if (!row["Category"] && !row["Description"]) continue;
+          if (!issuesByRoom.has(roomId)) issuesByRoom.set(roomId, []);
+          issuesByRoom.get(roomId)!.push({
+            category: row["Category"] || "",
+            description: row["Description"] || "",
+            severity: row["Severity"] || "medium",
+            status: row["Status"] || "open",
+            first_reported: row["First Reported"] || "",
+            last_reported: row["Last Reported"] || "",
+            notes: row["Notes"] || "",
+          });
+        }
 
-          // Apply update
-          if (Object.keys(updateData).length > 0) {
-            updateData.updated_at = new Date().toISOString();
-            const { error: updateError } = await supabase.from("rooms").update(updateData).eq("id", roomId);
+        for (const [roomId, issues] of issuesByRoom) {
+          try {
+            const { error: updateError } = await supabase
+              .from("rooms")
+              .update({ persistent_issues: issues, updated_at: new Date().toISOString() })
+              .eq("id", roomId);
             if (updateError) throw updateError;
-          }
 
-          results.push({ roomId, name: (row["Name"] as string) || "Unknown", status: "success", changes });
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          results.push({ roomId, name: (row["Name"] as string) || "Unknown", status: "error", changes: [], error: msg });
-          errorMessages.push(`Room ${roomId}: ${msg}`);
+            if (!updatedRoomIds.has(roomId)) {
+              results.push({ roomId, name: roomId.slice(0, 8), status: "success", changes: [`${issues.length} issues`] });
+              updatedRoomIds.add(roomId);
+            } else {
+              const existing = results.find(r => r.roomId === roomId);
+              if (existing) existing.changes.push(`${issues.length} issues`);
+            }
+          } catch (err) {
+            errorMessages.push(`Issues for ${roomId}: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      }
+
+      // ── Process "Maintenance Log" sheet ──
+      const maintSheet = workbook.Sheets["Maintenance Log"];
+      if (maintSheet) {
+        const rows = XLSX.utils.sheet_to_json(maintSheet) as Record<string, unknown>[];
+        const maintByRoom = new Map<string, Record<string, unknown>[]>();
+        for (const row of rows) {
+          const roomId = row["Room ID"] as string;
+          if (!roomId || roomId === "(example)") continue;
+          if (!row["Date"] && !row["Description"]) continue;
+          if (!maintByRoom.has(roomId)) maintByRoom.set(roomId, []);
+          maintByRoom.get(roomId)!.push({
+            date: row["Date"] || "",
+            type: row["Type"] || "",
+            description: row["Description"] || "",
+            vendor: row["Vendor / Contractor"] || "",
+            cost: row["Cost"] ? parseFloat(String(row["Cost"])) : null,
+            notes: row["Notes"] || "",
+          });
+        }
+
+        for (const [roomId, entries] of maintByRoom) {
+          try {
+            const { error: updateError } = await supabase
+              .from("rooms")
+              .update({ maintenance_history: entries, updated_at: new Date().toISOString() })
+              .eq("id", roomId);
+            if (updateError) throw updateError;
+
+            if (!updatedRoomIds.has(roomId)) {
+              results.push({ roomId, name: roomId.slice(0, 8), status: "success", changes: [`${entries.length} maintenance entries`] });
+              updatedRoomIds.add(roomId);
+            } else {
+              const existing = results.find(r => r.roomId === roomId);
+              if (existing) existing.changes.push(`${entries.length} maintenance entries`);
+            }
+          } catch (err) {
+            errorMessages.push(`Maintenance for ${roomId}: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      }
+
+      // ── Process "Function History" sheet ──
+      const funcSheet = workbook.Sheets["Function History"];
+      if (funcSheet) {
+        const rows = XLSX.utils.sheet_to_json(funcSheet) as Record<string, unknown>[];
+        const funcByRoom = new Map<string, Record<string, unknown>[]>();
+        for (const row of rows) {
+          const roomId = row["Room ID"] as string;
+          if (!roomId || roomId === "(example)") continue;
+          if (!row["Function"]) continue;
+          if (!funcByRoom.has(roomId)) funcByRoom.set(roomId, []);
+          funcByRoom.get(roomId)!.push({
+            function: row["Function"] || "",
+            startDate: row["Start Date"] || "",
+            endDate: row["End Date"] || "",
+            notes: row["Notes"] || "",
+          });
+        }
+
+        for (const [roomId, entries] of funcByRoom) {
+          try {
+            const { error: updateError } = await supabase
+              .from("rooms")
+              .update({ previous_functions: entries, updated_at: new Date().toISOString() })
+              .eq("id", roomId);
+            if (updateError) throw updateError;
+
+            if (!updatedRoomIds.has(roomId)) {
+              results.push({ roomId, name: roomId.slice(0, 8), status: "success", changes: [`${entries.length} function history entries`] });
+              updatedRoomIds.add(roomId);
+            } else {
+              const existing = results.find(r => r.roomId === roomId);
+              if (existing) existing.changes.push(`${entries.length} function history entries`);
+            }
+          } catch (err) {
+            errorMessages.push(`Function history for ${roomId}: ${err instanceof Error ? err.message : String(err)}`);
+          }
         }
       }
 
       const successful = results.filter(r => r.status === "success").length;
-      const errors = results.filter(r => r.status === "error").length;
-      setImportResults({ totalRows: rows.length, successful, errors, results, errorMessages });
+      const errCount = results.filter(r => r.status === "error").length;
+      setImportResults({ totalRows: results.length, successful, errors: errCount, results, errorMessages });
       setShowResults(true);
 
-      if (errors === 0 && successful > 0) {
+      if (errCount === 0 && successful > 0) {
         toast({ title: "Import successful", description: `${successful} rooms updated.` });
-      } else if (errors > 0) {
-        toast({ title: "Import completed with errors", description: `${successful} updated, ${errors} failed.`, variant: "destructive" });
+      } else if (errCount > 0) {
+        toast({ title: "Import completed with errors", description: `${successful} updated, ${errCount} failed.`, variant: "destructive" });
+      } else {
+        toast({ title: "No changes", description: "No data to import was found in the file." });
       }
     } catch (error) {
       toast({
