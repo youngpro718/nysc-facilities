@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { 
   ZoomIn, 
@@ -64,6 +64,7 @@ interface FloorPlanPreview {
 
 export function ModernFloorPlanView() {
   const { user, isLoading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const [selectedObject, setSelectedObject] = useState<FloorPlanObject | null>(null);
   const [previewData, setPreviewData] = useState<FloorPlanPreview | null>(null);
@@ -86,6 +87,12 @@ export function ModernFloorPlanView() {
   const [cameraCommand, setCameraCommand] = useState<null | { type: 'fit' } | { type: 'focus'; id: string }>(null);
   const [labelScale, setLabelScale] = useState<number>(1);
   const [moveEnabled, setMoveEnabled] = useState<boolean>(false);
+  
+  // Attach Mode State
+  const [attachMode, setAttachMode] = useState<boolean>(false);
+  const [selectedHallwayId, setSelectedHallwayId] = useState<string | null>(null);
+  const [attachSide, setAttachSide] = useState<'north'|'south'|'east'|'west'>('north');
+  const [offsetPercent, setOffsetPercent] = useState<number>(50);
 
   const { dialogState, openDialog, closeDialog } = useDialogManager();
 
@@ -201,9 +208,101 @@ export function ModernFloorPlanView() {
     fetchFloors();
   }, [user, authLoading]);
 
-  // Handle object selection with improved UX
-  const handleObjectSelect = useCallback((object: FloorPlanObject) => {
-    setSelectedObject(object);
+  // Load objects/edges for the selected floor (drives 3D and panels)
+  const { objects: sceneObjects = [], edges: sceneEdges = [], isLoading: isObjectsLoading } = useFloorPlanData(selectedFloor);
+
+  // Handle object selection with improved UX and Attach Mode logic
+  const handleObjectSelect = useCallback((object: Record<string, any>) => {
+    if (attachMode) {
+      if (object.type === 'hallway') {
+        setSelectedHallwayId(object.id as string);
+        toast.success('Hallway selected. Now click a room to attach.');
+        return;
+      }
+      
+      if (object.type === 'room' && selectedHallwayId) {
+        const hallway = (sceneObjects as any[]).find(n => n.id === selectedHallwayId);
+        if (!hallway) {
+          toast.error('Selected hallway not found');
+          return;
+        }
+
+        const hallSize = hallway.size || hallway.data?.size || { width: 300, height: 50 };
+        const hallPos = hallway.position || { x: 0, y: 0 };
+        const hallCenter = { x: hallPos.x + hallSize.width/2, y: hallPos.y + hallSize.height/2 };
+        
+        const roomSize = object.size || object.data?.size || { width: 150, height: 100 };
+        const roomPos = object.position || { x: 0, y: 0 };
+        const roomCenterInitial = { x: roomPos.x + roomSize.width/2, y: roomPos.y + roomSize.height/2 };
+        
+        const gap = 20;
+        const isHorizontal = hallSize.width >= hallSize.height;
+        let newCenter = { x: roomCenterInitial.x, y: roomCenterInitial.y };
+        let newRotation = 0;
+        
+        if (isHorizontal) {
+          // Place along X using offset percent
+          const minX = hallPos.x + roomSize.width/2;
+          const maxX = hallPos.x + hallSize.width - roomSize.width/2;
+          const targetX = hallPos.x + (offsetPercent / 100) * hallSize.width;
+          newCenter.x = Math.max(minX, Math.min(maxX, targetX));
+          
+          // Perpendicular placement on Y
+          const offsetY = hallSize.height/2 + roomSize.height/2 + gap;
+          if (attachSide === 'north') newCenter.y = hallCenter.y - offsetY; 
+          else if (attachSide === 'south') newCenter.y = hallCenter.y + offsetY; 
+          else newCenter.y = hallCenter.y - offsetY;
+          newRotation = 0; // face hallway
+        } else {
+          // Place along Y using offset percent
+          const minY = hallPos.y + roomSize.height/2;
+          const maxY = hallPos.y + hallSize.height - roomSize.height/2;
+          const targetY = hallPos.y + (offsetPercent / 100) * hallSize.height;
+          newCenter.y = Math.max(minY, Math.min(maxY, targetY));
+          
+          // Perpendicular placement on X
+          const offsetX = hallSize.width/2 + roomSize.width/2 + gap;
+          if (attachSide === 'west') newCenter.x = hallCenter.x - offsetX; 
+          else if (attachSide === 'east') newCenter.x = hallCenter.x + offsetX; 
+          else newCenter.x = hallCenter.x + offsetX;
+          newRotation = 90;
+        }
+        
+        const newTopLeft = { 
+          x: Math.round(newCenter.x - roomSize.width/2), 
+          y: Math.round(newCenter.y - roomSize.height/2) 
+        };
+        
+        // Optimistic local preview update
+        setPreviewData({
+          id: object.id as string,
+          position: newTopLeft,
+          rotation: newRotation,
+          data: { size: roomSize, properties: object.data?.properties || {} }
+        });
+
+        // Persist to DB
+        (async () => {
+          const { error } = await supabase
+            .from('rooms')
+            .update({ position: newTopLeft, rotation: newRotation })
+            .eq('id', object.id);
+            
+          if (error) {
+            logger.error('Failed to update room position', error);
+            toast.error('Failed to attach room');
+            setPreviewData(null); // revert
+          } else {
+            toast.success('Room attached to hallway');
+            queryClient.invalidateQueries({ queryKey: ['floorplan-objects', selectedFloor] });
+          }
+        })();
+        return;
+      }
+    }
+
+    // Normal selection behavior
+    setSelectedObject(object as FloorPlanObject);
     setPreviewData(null);
     
     // Smooth scroll to properties panel
@@ -211,7 +310,7 @@ export function ModernFloorPlanView() {
     if (panel) {
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, []);
+  }, [attachMode, selectedHallwayId, attachSide, offsetPercent, sceneObjects, selectedFloor, queryClient]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -254,6 +353,7 @@ export function ModernFloorPlanView() {
   useEffect(() => {
     setSelectedObject(null);
     setPreviewData(null);
+    setSelectedHallwayId(null);
   }, [selectedFloor]);
 
   // Auto-fit when switching to 3D or changing floors
@@ -397,10 +497,58 @@ export function ModernFloorPlanView() {
                   value={labelScale}
                   onChange={(e) => setLabelScale(parseFloat(e.target.value))}
                 />
-                <Button size="sm" variant={moveEnabled ? 'default' : 'outline'} onClick={() => setMoveEnabled(v => !v)}>
-                  {moveEnabled ? 'Move: On' : 'Move: Off'}
-                </Button>
               </div>
+            </>
+          )}
+
+          {/* Attach Mode Global Controls */}
+          {isAdmin && (
+            <>
+              <div className="w-px h-6 bg-border mx-2" />
+              <Button 
+                size="sm" 
+                variant={attachMode ? 'default' : 'outline'} 
+                onClick={() => setAttachMode(v => !v)} 
+                className="gap-2"
+              >
+                {attachMode ? 'Attach Mode: ON' : 'Attach Mode: OFF'}
+              </Button>
+
+              {attachMode && (
+                <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <span className="text-xs text-muted-foreground ml-1">Side:</span>
+                  <div className="flex items-center gap-1">
+                    {['north', 'south', 'east', 'west'].map((side) => (
+                      <Button
+                        key={side}
+                        size="sm"
+                        variant={attachSide === side ? 'default' : 'ghost'}
+                        onClick={() => setAttachSide(side as any)}
+                        className="h-7 w-7 p-0 text-xs uppercase"
+                      >
+                        {side.charAt(0)}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {selectedHallwayId && (
+                    <>
+                      <div className="w-px h-4 bg-border mx-1" />
+                      <span className="text-xs text-muted-foreground">Offset:</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={offsetPercent}
+                        onChange={(e) => setOffsetPercent(parseInt(e.target.value))}
+                        className="w-20"
+                      />
+                      <span className="text-xs text-muted-foreground w-8">{offsetPercent}%</span>
+                    </>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

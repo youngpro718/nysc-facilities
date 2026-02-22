@@ -11,6 +11,7 @@ interface RoomData {
   id: string;
   position: { x: number; y: number; z?: number };
   size?: { width: number; height: number; depth?: number };
+  rotation?: number;
   name?: string;
   type?: string;
   status?: string;
@@ -225,6 +226,7 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
           roomNumber={room.room_number}
           type={room.type}
           status={room.status}
+          rotation={room.rotation}
           isSelected={selectedRoomId === room.id}
           isHovered={hoveredRoomId === room.id}
           onClick={() => onRoomClick?.(room.id)}

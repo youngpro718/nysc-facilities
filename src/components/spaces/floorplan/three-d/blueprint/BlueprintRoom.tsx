@@ -9,6 +9,7 @@ interface BlueprintRoomProps {
   id: string;
   position: [number, number, number];
   size?: [number, number, number];
+  rotation?: number;
   name?: string;
   roomNumber?: string;
   type?: string;
@@ -25,6 +26,7 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
   id,
   position,
   size = [100, 35, 80],
+  rotation = 0,
   name = '',
   roomNumber = '',
   type = 'default',
@@ -129,6 +131,7 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
     <group
       ref={groupRef}
       position={position}
+      rotation={[0, (rotation * Math.PI) / 180, 0]}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
       onClick={handleClick}
@@ -186,7 +189,6 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
             anchorY="middle"
             maxWidth={size[0] * 0.9}
             textAlign="center"
-            font="/fonts/inter-medium.woff"
             outlineWidth={0.8}
             outlineColor="#0f172a"
           >

@@ -141,7 +141,6 @@ function applyHallwayDynamicSizing(hallwayNode: FloorPlanNode, allNodes: FloorPl
       let maxX = Math.max(...connectedRooms.map(room => room.position?.x || 0));
       let minY = Math.min(...connectedRooms.map(room => room.position?.y || 0));
       let maxY = Math.max(...connectedRooms.map(room => room.position?.y || 0));
-      let maxY = Math.max(...connectedRooms.map(room => room.position.y));
       
       const xDistance = maxX - minX;
       const yDistance = maxY - minY;

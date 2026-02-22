@@ -101,7 +101,7 @@ const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
   onRoomHover,
   showIcons = true,
   showConnections = true,
-  showLegend = true,
+  showLegend = false,
   labelScale = 1,
   className = ''
 }, ref) => {
@@ -174,20 +174,6 @@ const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
           />
         </Canvas>
       </Suspense>
-
-      {/* Legend overlay */}
-      {showLegend && <Legend />}
-
-      {/* Style indicator */}
-      <div className="absolute top-4 right-4 flex items-center gap-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-md text-cyan-300 px-4 py-2 rounded-full text-sm font-medium shadow-lg border border-cyan-500/30">
-        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-        Blueprint View
-      </div>
-
-      {/* Room count indicator */}
-      <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md text-slate-300 px-4 py-2 rounded-full text-sm font-medium shadow-lg border border-slate-700">
-        {rooms.length} {rooms.length === 1 ? 'Room' : 'Rooms'}
-      </div>
     </div>
   );
 });

@@ -124,6 +124,11 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
           depth: obj.size?.depth || 40,
         };
 
+        // Extract rotation from multiple sources
+        const extractedRotation = 
+          obj.rotation !== undefined ? obj.rotation :
+          obj.data?.rotation !== undefined ? obj.data.rotation : 0;
+
         return {
           ...obj,
           name: extractedName,
@@ -131,6 +136,7 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
           status: extractedStatus,
           room_number: extractedRoomNumber,
           size: extractedSize,
+          rotation: extractedRotation,
         };
       });
   }, [objects]);
@@ -156,7 +162,7 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
         onRoomHover={onObjectHover}
         showConnections={showConnections}
         labelScale={labelScale}
-        showLegend={true}
+        showLegend={false}
         showIcons={true}
       />
     </div>
