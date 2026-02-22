@@ -23,6 +23,7 @@ import { RoomsContent } from "../rooms/components/RoomsContent";
 import { MobileRoomDrawer } from "../rooms/components/MobileRoomDrawer";
 import { MobileInventoryDialog } from "../rooms/components/MobileInventoryDialog";
 import { RoomsSidebarList } from "../rooms/components/RoomsSidebarList";
+import { RoomExcelImportExport } from "../rooms/components/RoomExcelImportExport";
 import { RoomCard } from "../rooms/RoomCard";
 import { useRoomFilters } from "../hooks/useRoomFilters";
 import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
@@ -175,32 +176,39 @@ const RoomsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filter Bar */}
-      {isMobile ? (
-        <MobileFilterBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sortBy={sortBy}
-          onSortChange={handleSort}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          roomTypeFilter={roomTypeFilter}
-          onRoomTypeFilterChange={setRoomTypeFilter}
-          onRefresh={handleRefresh}
-        />
-      ) : (
-        <FilterBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sortBy={sortBy}
-          onSortChange={handleSort}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          roomTypeFilter={roomTypeFilter}
-          onRoomTypeFilterChange={setRoomTypeFilter}
-          onRefresh={handleRefresh}
-        />
-      )}
+      {/* Filter Bar with Export/Import */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="flex-1">
+          {isMobile ? (
+            <MobileFilterBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              sortBy={sortBy}
+              onSortChange={handleSort}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              roomTypeFilter={roomTypeFilter}
+              onRoomTypeFilterChange={setRoomTypeFilter}
+              onRefresh={handleRefresh}
+            />
+          ) : (
+            <FilterBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              sortBy={sortBy}
+              onSortChange={handleSort}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              roomTypeFilter={roomTypeFilter}
+              onRoomTypeFilterChange={setRoomTypeFilter}
+              onRefresh={handleRefresh}
+            />
+          )}
+        </div>
+        <div className="flex-shrink-0">
+          <RoomExcelImportExport projectRef="fmymhtuiqzhupjyopfvi" />
+        </div>
+      </div>
 
       {/* Main Content Area - Master Detail View with left sidebar */}
       {!isMobile ? (
