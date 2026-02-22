@@ -94,7 +94,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
             if (error) throw error;
             return data;
           };
-          [profile, userRoleData] = await Promise.all([
+          [profile, userRoleData] = await Promise.all<any>([
             withTimeout(getMyProfile(), 10000, 'loading profile'),
             withTimeout(roleQuery(), 10000, 'loading role').catch((roleError: unknown) => {
               logger.warn('[OnboardingGuard] Role fetch failed:', roleError);
@@ -149,7 +149,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
 
             const hasVerifiedTotp =
               Array.isArray(factorData?.totp) &&
-              factorData.totp.some((f: Record<string, unknown>) => f.status === 'verified');
+              factorData.totp.some((f: any) => f.status === 'verified');
 
             if (!hasVerifiedTotp) {
               logger.debug('[OnboardingGuard] MFA required but not enabled, redirecting to MFA setup');

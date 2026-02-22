@@ -158,13 +158,13 @@ export function useSecureAuth() {
       // Sanitize inputs
       const sanitizedEmail = await sanitizeInput(email);
       const sanitizedUserData = {
-        first_name: await sanitizeInput(userData.first_name || ''),
-        last_name: await sanitizeInput(userData.last_name || ''),
-        title: userData.title ? await sanitizeInput(userData.title) : undefined,
-        phone: userData.phone ? await sanitizeInput(userData.phone) : undefined,
+        first_name: await sanitizeInput(String(userData.first_name || '')),
+        last_name: await sanitizeInput(String(userData.last_name || '')),
+        title: userData.title ? await sanitizeInput(String(userData.title)) : undefined,
+        phone: userData.phone ? await sanitizeInput(String(userData.phone)) : undefined,
         department_id: userData.department_id,
-        court_position: userData.court_position ? await sanitizeInput(userData.court_position) : undefined,
-        room_number: userData.room_number ? await sanitizeInput(userData.room_number) : undefined,
+        court_position: userData.court_position ? await sanitizeInput(String(userData.court_position)) : undefined,
+        room_number: userData.room_number ? await sanitizeInput(String(userData.room_number)) : undefined,
         emergency_contact: userData.emergency_contact,
         // capture requested role in auth metadata so it can be propagated to profile/verification
         requested_role: userData.requested_role
