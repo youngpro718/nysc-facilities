@@ -84,15 +84,15 @@ export function ModernThreeDViewer({
     );
   };
 
-  type ViewerEdge = { id?: string; from: string; to: string; type?: string };
+  type ViewerEdge = { id?: string; source: string; target: string; type?: string };
   const filterValidEdges = (list: unknown[] | undefined | null): ViewerEdge[] => {
     if (!Array.isArray(list)) return [];
     return list.filter((edge: Record<string, unknown>): edge is ViewerEdge => {
       return (
         edge && typeof edge === 'object' &&
-        typeof edge.from === 'string' &&
-        typeof edge.to === 'string' &&
-        edge.from !== edge.to
+        typeof edge.source === 'string' &&
+        typeof edge.target === 'string' &&
+        edge.source !== edge.target
       );
     });
   };
@@ -111,13 +111,14 @@ export function ModernThreeDViewer({
   const sceneConnections = useMemo(() => {
     if (!showConnections) return [] as { id: string; from: { x: number; y: number }; to: { x: number; y: number } }[];
     return safeEdges.flatMap((e) => {
-      const fromObj = safeObjects.find(o => o.id === e.from);
-      const toObj = safeObjects.find(o => o.id === e.to);
+      const fromObj = safeObjects.find(o => o.id === e.source);
+      const toObj = safeObjects.find(o => o.id === e.target);
       if (!fromObj || !toObj) return [] as unknown[];
       return [{
-        id: e.id ?? `${e.from}-${e.to}`,
+        id: e.id ?? `${e.source}-${e.target}`,
         from: { x: fromObj.position.x, y: fromObj.position.y },
-        to: { x: toObj.position.x, y: toObj.position.y }
+        to: { x: toObj.position.x, y: toObj.position.y },
+        type: e.type || 'standard'
       }];
     });
   }, [safeEdges, safeObjects, showConnections]);

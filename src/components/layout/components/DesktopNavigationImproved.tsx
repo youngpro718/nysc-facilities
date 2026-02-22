@@ -81,13 +81,13 @@ export const DesktopNavigationImproved = ({
 
   return (
     <TooltipProvider>
-      <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
+      <nav className="hidden md:flex items-center gap-0.5 lg:gap-1 flex-nowrap">
         {navigation.map((item, index) => {
           if (item.type === "separator") {
             return (
               <div 
                 key={`separator-${index}`} 
-                className="mx-2 h-6 w-px bg-border" 
+                className="mx-0.5 h-5 w-px bg-border" 
                 aria-hidden="true" 
               />
             );
@@ -105,7 +105,7 @@ export const DesktopNavigationImproved = ({
                 <button
                   onClick={() => handleNavigation(navItem.title)}
                   className={cn(
-                    "group relative flex items-center gap-1 px-2 lg:px-2.5 h-10 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                    "group relative flex items-center gap-1 px-1.5 lg:px-2 h-8 rounded-md transition-all duration-200 hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -113,16 +113,16 @@ export const DesktopNavigationImproved = ({
                   aria-label={navItem.title}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
+                  <Icon className="h-4 w-4 shrink-0" />
                   <span
                     className={cn(
-                      "text-sm font-medium whitespace-nowrap transition-all duration-200 overflow-hidden",
-                      // lg+ (≥1024px): always show label
-                      "lg:max-w-[160px] lg:opacity-100 lg:ml-1",
-                      // md-lg (768-1023px): show on active/hover only
+                      "text-xs font-medium whitespace-nowrap transition-all duration-200 overflow-hidden",
+                      // xl+ (≥1280px): always show label
+                      "xl:max-w-[120px] xl:opacity-100 xl:ml-1",
+                      // md-xl (768-1279px): icon only, show label on hover/active
                       isActive
-                        ? "max-w-[160px] opacity-100 ml-1 lg:max-w-[160px]"
-                        : "max-w-0 opacity-0 ml-0 lg:max-w-[160px] lg:opacity-100 lg:ml-1 group-hover:max-w-[160px] group-hover:opacity-100 group-hover:ml-1"
+                        ? "max-w-[120px] opacity-100 ml-1"
+                        : "max-w-0 opacity-0 ml-0 xl:max-w-[120px] xl:opacity-100 xl:ml-1 group-hover:max-w-[100px] group-hover:opacity-100 group-hover:ml-1"
                     )}
                   >
                     {navItem.title}
@@ -150,15 +150,15 @@ export const DesktopNavigationImproved = ({
         {/* Notifications (Admins) - handled by NotificationBox in Layout header to avoid duplicate bells */}
 
         {/* Sign Out Button */}
-        <div className="ml-2 pl-2 border-l border-border">
+        <div className="ml-1 pl-1 border-l border-border">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 onClick={onSignOut}
-                className="flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 hover:scale-[1.02] active:scale-95"
                 aria-label="Sign out"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4 w-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-sm">

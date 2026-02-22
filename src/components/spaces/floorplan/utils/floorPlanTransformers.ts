@@ -130,14 +130,17 @@ function applyHallwayDynamicSizing(hallwayNode: FloorPlanNode, allNodes: FloorPl
   
   if (hallwayConnections.length >= 2) {
     const connectedRooms = hallwayConnections.map(conn => {
-      const roomId = conn.source === hallwayNode.id ? conn.target : conn.source;
-      return allNodes.find(room => room.id === roomId);
+      const connectedObjectId = conn.source === hallwayNode.id ? conn.target : conn.source;
+      const connectedRoom = allNodes.find(room => room.id === connectedObjectId);
+      
+      return connectedRoom;
     }).filter((n): n is FloorPlanNode => !!n);
     
     if (connectedRooms.length >= 2) {
-      let minX = Math.min(...connectedRooms.map(room => room.position.x));
-      let maxX = Math.max(...connectedRooms.map(room => room.position.x));
-      let minY = Math.min(...connectedRooms.map(room => room.position.y));
+      let minX = Math.min(...connectedRooms.map(room => room.position?.x || 0));
+      let maxX = Math.max(...connectedRooms.map(room => room.position?.x || 0));
+      let minY = Math.min(...connectedRooms.map(room => room.position?.y || 0));
+      let maxY = Math.max(...connectedRooms.map(room => room.position?.y || 0));
       let maxY = Math.max(...connectedRooms.map(room => room.position.y));
       
       const xDistance = maxX - minX;
@@ -152,7 +155,7 @@ function applyHallwayDynamicSizing(hallwayNode: FloorPlanNode, allNodes: FloorPl
         };
         hallwayNode.position = {
           x: (minX + maxX) / 2,
-          y: hallwayNode.position.y
+          y: hallwayNode.position?.y || (minY + maxY) / 2
         };
         hallwayNode.data.rotation = 0;
       } else {
@@ -161,7 +164,7 @@ function applyHallwayDynamicSizing(hallwayNode: FloorPlanNode, allNodes: FloorPl
           height: Math.max(yDistance + 200, 300)
         };
         hallwayNode.position = {
-          x: hallwayNode.position.x,
+          x: hallwayNode.position?.x || (minX + maxX) / 2,
           y: (minY + maxY) / 2
         };
         hallwayNode.data.rotation = 90;

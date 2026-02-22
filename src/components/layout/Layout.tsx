@@ -12,7 +12,8 @@ import { DesktopNavigationImproved } from "./components/DesktopNavigationImprove
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@/components/admin/NotificationBox";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
+import { GlobalSearchPalette } from "./components/GlobalSearchPalette";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,19 @@ const Layout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showRefreshButton, setShowRefreshButton] = useState(false);
   const [lastUserId, setLastUserId] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Global ⌘K / Ctrl+K shortcut to open search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
   const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
   const { permissions, userRole, profile, loading: permissionsLoading, refetch } = useRolePermissions();
   const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
@@ -93,6 +107,9 @@ const Layout = () => {
   return (
     <TourProvider>
     <div className="min-h-screen bg-background">
+      {/* Global Search Palette (⌘K) */}
+      {isAdmin && <GlobalSearchPalette open={searchOpen} onOpenChange={setSearchOpen} />}
+
       {/* Dev Mode Preview Banner */}
       {!isLoginPage && isAuthenticated && isPreviewActive && (
         <DevModeBanner realRole="admin" previewRole={previewRole!} />
@@ -100,30 +117,58 @@ const Layout = () => {
       
       {!isLoginPage && isAuthenticated && (
         <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
-          <div className="mx-auto max-w-[1600px] px-3 sm:px-4 lg:px-6 xl:px-8">
-            <div className="flex h-12 sm:h-16 items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
-                <div className="relative h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14">
-                  {/* Light mode logo - navy blue */}
-                  <img 
-                    src="/nysc-logo-light.png" 
-                    alt="NYSC Facilities Hub Logo" 
-                    className="h-full w-full object-contain dark:hidden"
-                  />
-                  {/* Dark mode logo - light/white */}
-                  <img 
-                    src="/nysc-logo-dark.png" 
-                    alt="NYSC Facilities Hub Logo" 
-                    className="h-full w-full object-contain hidden dark:block"
-                  />
-                </div>
-                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate hidden sm:block">
-                  <span className="hidden lg:inline">NYSC Facilities Hub</span>
-                  <span className="lg:hidden">NYSC</span>
-                </h1>
+          <div className="mx-auto px-2 sm:px-3 lg:px-4">
+            <div className="flex h-12 items-center">
+              {/* Logo — fixed small corner mark */}
+              <div className="relative h-7 w-7 shrink-0 mr-2">
+                <img src="/nysc-logo-light.png" alt="NYSC" className="h-full w-full object-contain dark:hidden" />
+                <img src="/nysc-logo-dark.png" alt="NYSC" className="h-full w-full object-contain hidden dark:block" />
               </div>
 
-              <div className="flex items-center gap-2 sm:gap-4">
+              {/* Desktop Navigation — takes available space */}
+              <div className="hidden md:block flex-1 overflow-hidden" data-tour="nav-bar">
+                {navReady ? (
+                  <DesktopNavigationImproved
+                    navigation={navigation}
+                    onSignOut={signOut}
+                  />
+                ) : showRefreshButton ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      logger.debug('[Layout] Manual refresh triggered');
+                      refetch();
+                      setShowRefreshButton(false);
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry
+                  </Button>
+                ) : (
+                  <NavigationSkeleton />
+                )}
+              </div>
+
+              {/* Mobile spacer (pushes right items when nav is hidden) */}
+              <div className="flex-1 md:hidden" />
+
+              {/* Right utilities — never shrink */}
+              <div className="flex items-center gap-1 shrink-0 ml-2">
+                {/* Search button */}
+                {isAdmin && (
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    className="flex items-center gap-1.5 h-8 px-2 rounded-md border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs"
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                    <span className="hidden lg:inline">Search…</span>
+                    <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                      <span className="text-xs">⌘</span>K
+                    </kbd>
+                  </button>
+                )}
+
                 {/* Admin Notifications */}
                 {isAdmin && (
                   <div data-tour="notification-box">
@@ -131,39 +176,26 @@ const Layout = () => {
                   </div>
                 )}
                 
-                {/* Theme Toggle - Hidden on mobile for space */}
+                {/* Theme Toggle — desktop only */}
                 <div className="hidden sm:block" data-tour="theme-toggle">
                   <ThemeToggle />
                 </div>
 
-                {/* Profile Section */}
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="hidden lg:flex flex-col items-end">
-                    <span className="text-sm font-medium">
-                      {profile?.first_name} {profile?.last_name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {profile?.title || (navReady ? (userRole === 'admin' ? 'Administrator' : 'User') : '')}
-                    </span>
-                  </div>
-                  <button
-                    className="focus:outline-none p-1 rounded-full hover:bg-muted/50 transition-colors"
-                    title="Profile"
-                    data-tour="user-avatar"
-                    onClick={() => {
-                      // Navigate to profile page for all users
-                      navigate('/profile');
-                    }}
-                  >
-                    <UserAvatar
-                      src={profile?.avatar_url}
-                      firstName={profile?.first_name}
-                      lastName={profile?.last_name}
-                      className="h-9 w-9 sm:h-8 sm:w-8"
-                      showFallbackIcon
-                    />
-                  </button>
-                </div>
+                {/* Profile Avatar */}
+                <button
+                  className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
+                  title={`${profile?.first_name || ''} ${profile?.last_name || ''} — Profile`}
+                  data-tour="user-avatar"
+                  onClick={() => navigate('/profile')}
+                >
+                  <UserAvatar
+                    src={profile?.avatar_url}
+                    firstName={profile?.first_name}
+                    lastName={profile?.last_name}
+                    className="h-7 w-7"
+                    showFallbackIcon
+                  />
+                </button>
                 
                 {/* Mobile Menu */}
                 <div className="md:hidden">
@@ -188,39 +220,11 @@ const Layout = () => {
                       <RefreshCw className="h-4 w-4" />
                     </Button>
                   ) : (
-                    // OPTIMIZATION: Show skeleton instead of spinner
                     <MobileNavigationSkeleton />
-                  )}
-                </div>
-
-                {/* Desktop Navigation */}
-                <div className="hidden md:flex items-center gap-4" data-tour="nav-bar">
-                  {navReady ? (
-                    <DesktopNavigationImproved
-                      navigation={navigation}
-                      onSignOut={signOut}
-                    />
-                  ) : showRefreshButton ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        logger.debug('[Layout] Manual refresh triggered');
-                        refetch();
-                        setShowRefreshButton(false);
-                      }}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Retry
-                    </Button>
-                  ) : (
-                    // OPTIMIZATION: Show skeleton instead of spinner for better UX
-                    <NavigationSkeleton />
                   )}
                 </div>
               </div>
             </div>
-            
           </div>
         </header>
       )}
