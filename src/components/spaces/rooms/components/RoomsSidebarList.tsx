@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Room } from "../types/RoomTypes";
 import { Badge } from "@/components/ui/badge";
+import { Building2, ChevronDown } from "lucide-react";
 
 interface RoomsSidebarListProps {
   rooms: Room[];
@@ -13,6 +14,34 @@ interface RoomsSidebarListProps {
 }
 
 export function RoomsSidebarList({ rooms, selectedRoomId, onSelect, isLoading }: RoomsSidebarListProps) {
+  // Group rooms by building name
+  const groupedRooms = useMemo(() => {
+    const groups = new Map<string, Room[]>();
+    for (const room of rooms) {
+      const buildingName = room.floor?.building?.name || 'Unknown Building';
+      const list = groups.get(buildingName) || [];
+      list.push(room);
+      groups.set(buildingName, list);
+    }
+    // Sort building names alphabetically
+    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [rooms]);
+
+  // All buildings expanded by default
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const toggleBuilding = (name: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="px-3 py-2 border-b bg-muted/30 rounded-t-md flex items-center justify-between">
@@ -28,38 +57,71 @@ export function RoomsSidebarList({ rooms, selectedRoomId, onSelect, isLoading }:
               <Skeleton key={i} className="h-12 rounded-md" />
             ))}
           </div>
+        ) : groupedRooms.length === 0 ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">No rooms found</div>
         ) : (
-          <ul className="divide-y">
-            {rooms.map((room) => {
-              const isActive = room.id === selectedRoomId;
+          <div>
+            {groupedRooms.map(([buildingName, buildingRooms]) => {
+              const isCollapsed = collapsed.has(buildingName);
               return (
-                <li key={room.id}>
+                <div key={buildingName}>
+                  {/* Building header */}
                   <button
                     type="button"
-                    onClick={() => onSelect(room)}
-                    className={cn(
-                      "w-full text-left px-3 py-2.5 hover:bg-accent/60 transition-colors",
-                      isActive && "bg-accent/50"
-                    )}
+                    onClick={() => toggleBuilding(buildingName)}
+                    className="w-full text-left px-3 py-2 flex items-center gap-2 bg-muted/40 hover:bg-muted/60 transition-colors border-b sticky top-0 z-10"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className="truncate font-medium">{room.room_number || room.name}</div>
-                          <span className="shrink-0 whitespace-nowrap text-xs rounded border px-1.5 py-0.5 leading-tight text-muted-foreground capitalize">
-                            {room.room_type.replace(/_/g, ' ')}
-                          </span>
-                        </div>
-                        {room.room_number && room.name !== room.room_number && (
-                          <div className="truncate text-xs text-muted-foreground mt-0.5">{room.name}</div>
-                        )}
-                      </div>
-                    </div>
+                    <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-xs font-semibold text-muted-foreground truncate flex-1">
+                      {buildingName}
+                    </span>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
+                      {buildingRooms.length}
+                    </Badge>
+                    <ChevronDown className={cn(
+                      "h-3.5 w-3.5 text-muted-foreground transition-transform shrink-0",
+                      isCollapsed && "-rotate-90"
+                    )} />
                   </button>
-                </li>
+
+                  {/* Room list */}
+                  {!isCollapsed && (
+                    <ul className="divide-y">
+                      {buildingRooms.map((room) => {
+                        const isActive = room.id === selectedRoomId;
+                        return (
+                          <li key={room.id}>
+                            <button
+                              type="button"
+                              onClick={() => onSelect(room)}
+                              className={cn(
+                                "w-full text-left px-3 py-2.5 hover:bg-accent/60 transition-colors",
+                                isActive && "bg-accent/50"
+                              )}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="truncate font-medium">{room.room_number || room.name}</div>
+                                    <span className="shrink-0 whitespace-nowrap text-xs rounded border px-1.5 py-0.5 leading-tight text-muted-foreground capitalize">
+                                      {room.room_type.replace(/_/g, ' ')}
+                                    </span>
+                                  </div>
+                                  {room.room_number && room.name !== room.room_number && (
+                                    <div className="truncate text-xs text-muted-foreground mt-0.5">{room.name}</div>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
               );
             })}
-          </ul>
+          </div>
         )}
       </ScrollArea>
     </div>

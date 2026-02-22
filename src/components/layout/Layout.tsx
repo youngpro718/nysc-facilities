@@ -100,10 +100,10 @@ const Layout = () => {
       
       {!isLoginPage && isAuthenticated && (
         <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1600px] px-3 sm:px-4 lg:px-6 xl:px-8">
             <div className="flex h-12 sm:h-16 items-center justify-between">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="relative h-12 w-12 sm:h-14 sm:w-14">
+              <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
+                <div className="relative h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14">
                   {/* Light mode logo - navy blue */}
                   <img 
                     src="/nysc-logo-light.png" 
@@ -117,8 +117,9 @@ const Layout = () => {
                     className="h-full w-full object-contain hidden dark:block"
                   />
                 </div>
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
-                  NYSC Facilities Hub
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate hidden sm:block">
+                  <span className="hidden lg:inline">NYSC Facilities Hub</span>
+                  <span className="lg:hidden">NYSC</span>
                 </h1>
               </div>
 

@@ -15,6 +15,7 @@ interface EnhancedIssuesListProps {
   selectedIssues: string[];
   onSelectionChange: (issueIds: string[]) => void;
   onIssueUpdate: () => void;
+  onIssueSelect?: (issueId: string) => void;
   isLoading: boolean;
   buildingId?: string | null;
   filter?: string | null;
@@ -31,6 +32,7 @@ export function EnhancedIssuesList({
   selectedIssues,
   onSelectionChange,
   onIssueUpdate,
+  onIssueSelect,
   isLoading,
   buildingId,
   filter,
@@ -177,6 +179,7 @@ export function EnhancedIssuesList({
         selectedIssues={selectedIssues}
         onSelectionChange={onSelectionChange}
         onIssueUpdate={onIssueUpdate}
+        onIssueSelect={onIssueSelect}
       />
     );
   }

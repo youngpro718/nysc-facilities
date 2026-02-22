@@ -570,6 +570,11 @@ export default function Operations() {
                       selectedIssues={[]}
                       onSelectionChange={() => {}}
                       onIssueUpdate={refreshAllData}
+                      onIssueSelect={(issueId) => {
+                        const newParams = new URLSearchParams(searchParams);
+                        newParams.set('issue_id', issueId);
+                        setSearchParams(newParams);
+                      }}
                       isLoading={false}
                     />
                   ) : (
@@ -743,6 +748,11 @@ export default function Operations() {
                 selectedIssues={selectedIssues}
                 onSelectionChange={setSelectedIssues}
                 onIssueUpdate={refreshAllData}
+                onIssueSelect={(issueId) => {
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('issue_id', issueId);
+                  setSearchParams(newParams);
+                }}
                 isLoading={isLoading}
                 buildingId={buildingId}
                 filter={filter}

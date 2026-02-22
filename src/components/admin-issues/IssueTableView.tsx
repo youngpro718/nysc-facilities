@@ -12,13 +12,15 @@ interface IssueTableViewProps {
   selectedIssues: string[];
   onSelectionChange: (issueIds: string[]) => void;
   onIssueUpdate: () => void;
+  onIssueSelect?: (issueId: string) => void;
 }
 
 export function IssueTableView({ 
   issues, 
   selectedIssues, 
   onSelectionChange, 
-  onIssueUpdate 
+  onIssueUpdate,
+  onIssueSelect 
 }: IssueTableViewProps) {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -86,14 +88,17 @@ export function IssueTableView({
               </TableCell>
               
               <TableCell className="max-w-xs">
-                <div>
+                <button
+                  className="text-left w-full hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                  onClick={() => onIssueSelect?.(issue.id)}
+                >
                   <div className="font-medium text-sm truncate">
                     {issue.title}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
                     {issue.description}
                   </div>
-                </div>
+                </button>
               </TableCell>
               
               <TableCell>
@@ -143,7 +148,8 @@ export function IssueTableView({
                   variant="ghost"
                   size="sm"
                   className="h-11"
-                  onClick={() => logger.debug('View issue:', issue.id)}
+                  onClick={() => onIssueSelect?.(issue.id)}
+                  title="View issue details"
                 >
                   <Eye className="h-4 w-4" />
                 </Button>

@@ -65,15 +65,39 @@ export const useAdminIssuesData = () => {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
+
+        // Collect unique reporter IDs (reported_by has no FK, so fetch separately)
+        const reporterIds = [...new Set(
+          (data || [])
+            .map(issue => issue.reported_by || issue.created_by)
+            .filter(Boolean)
+        )] as string[];
+
+        // Batch-fetch reporter profiles
+        let reporterMap = new Map<string, { id: string; first_name: string; last_name: string; email: string; title?: string }>();
+        if (reporterIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, email, title')
+            .in('id', reporterIds);
+          if (profiles) {
+            for (const p of profiles) {
+              reporterMap.set(p.id, p);
+            }
+          }
+        }
         
-        // Map to enhanced issues format (reporter info skipped for performance)
-        const enhancedIssues: EnhancedIssue[] = (data || []).map(issue => ({
-          ...issue,
-          reporter: null, // Skip reporter for performance - no FK relationship
-          room_occupants: [], // Skip occupants for performance - can be loaded on-demand
-          comments_count: 0, // Skip comments count for performance - can be loaded on-demand
-          last_activity: issue.updated_at || issue.created_at,
-        }));
+        // Map to enhanced issues format
+        const enhancedIssues: EnhancedIssue[] = (data || []).map(issue => {
+          const reporterId = issue.reported_by || issue.created_by;
+          return {
+            ...issue,
+            reporter: reporterId ? (reporterMap.get(reporterId) || null) : null,
+            room_occupants: [],
+            comments_count: 0,
+            last_activity: issue.updated_at || issue.created_at,
+          };
+        });
 
         return enhancedIssues;
       } catch (error) {

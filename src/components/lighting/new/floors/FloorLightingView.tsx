@@ -206,12 +206,45 @@ export function FloorLightingView() {
 
       return { previous };
     },
-    onSuccess: ({ newStatus }) => {
+    onSuccess: ({ fixtureId, newStatus }, { currentStatus }) => {
       // Also invalidate other caches that depend on fixture data
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
       queryClient.invalidateQueries({ queryKey: ['lighting-hallways'] });
       const label = STATUS_LABELS[newStatus] || newStatus;
-      toast.success(`Light marked as ${label}`);
+      const prevLabel = STATUS_LABELS[currentStatus] || currentStatus;
+      toast.success(`Light marked as ${label}`, {
+        description: `Was: ${prevLabel} — Undo?`,
+        duration: 5000,
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            // Revert in DB
+            await supabase
+              .from('lighting_fixtures')
+              .update({
+                status: currentStatus,
+                ballast_issue: currentStatus === 'maintenance_needed',
+              })
+              .eq('id', fixtureId);
+            // Revert optimistic cache
+            queryClient.setQueryData<FloorWithHallways[]>(['floor-lighting-view'], (old) => {
+              if (!old) return old;
+              return old.map((floor) => ({
+                ...floor,
+                hallways: floor.hallways.map((hw) => ({
+                  ...hw,
+                  fixtures: hw.fixtures.map((f) =>
+                    f.id === fixtureId ? { ...f, status: currentStatus } : f
+                  ),
+                })),
+              }));
+            });
+            queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
+            queryClient.invalidateQueries({ queryKey: ['lighting-hallways'] });
+            toast.success(`Reverted to ${prevLabel}`);
+          },
+        },
+      });
     },
     onError: (_err, _vars, context) => {
       // Roll back on error

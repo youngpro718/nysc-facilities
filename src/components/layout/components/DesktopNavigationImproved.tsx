@@ -81,7 +81,7 @@ export const DesktopNavigationImproved = ({
 
   return (
     <TooltipProvider>
-      <nav className="hidden md:flex items-center gap-2">
+      <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
         {navigation.map((item, index) => {
           if (item.type === "separator") {
             return (
@@ -105,7 +105,7 @@ export const DesktopNavigationImproved = ({
                 <button
                   onClick={() => handleNavigation(navItem.title)}
                   className={cn(
-                    "group relative flex items-center gap-1 px-2 h-10 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                    "group relative flex items-center gap-1 px-2 lg:px-2.5 h-10 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -113,13 +113,16 @@ export const DesktopNavigationImproved = ({
                   aria-label={navItem.title}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5 shrink-0" />
                   <span
                     className={cn(
-                      "text-sm font-medium transition-all duration-200 overflow-hidden",
+                      "text-sm font-medium whitespace-nowrap transition-all duration-200 overflow-hidden",
+                      // lg+ (≥1024px): always show label
+                      "lg:max-w-[160px] lg:opacity-100 lg:ml-1",
+                      // md-lg (768-1023px): show on active/hover only
                       isActive
-                        ? "max-w-[160px] opacity-100 ml-1"
-                        : "max-w-0 opacity-0 ml-0 group-hover:max-w-[160px] group-hover:opacity-100 group-hover:ml-1 group-focus:max-w-[160px] group-focus:opacity-100 group-focus:ml-1"
+                        ? "max-w-[160px] opacity-100 ml-1 lg:max-w-[160px]"
+                        : "max-w-0 opacity-0 ml-0 lg:max-w-[160px] lg:opacity-100 lg:ml-1 group-hover:max-w-[160px] group-hover:opacity-100 group-hover:ml-1"
                     )}
                   >
                     {navItem.title}

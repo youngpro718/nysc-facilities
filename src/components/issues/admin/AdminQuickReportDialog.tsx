@@ -18,6 +18,7 @@ import { useRecentRooms, RecentRoom } from '@/hooks/useRecentRooms';
 import { usePhotoUpload } from '@/components/issues/hooks/usePhotoUpload';
 import { IssuePhotoGrid } from '@/components/issues/card/IssuePhotoGrid';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Search,
   Zap,
@@ -64,6 +65,7 @@ const ISSUE_TYPES = [
 
 export function AdminQuickReportDialog({ open, onOpenChange }: AdminQuickReportDialogProps) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { recentRooms, addRecentRoom } = useRecentRooms();
   const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
 
@@ -155,6 +157,8 @@ export function AdminQuickReportDialog({ open, onOpenChange }: AdminQuickReportD
         floor_id: selectedRoom.floorId,
         building_id: selectedRoom.buildingId,
         photos: selectedPhotos,
+        created_by: user?.id || null,
+        reported_by: user?.id || null,
       });
 
       if (error) throw error;
