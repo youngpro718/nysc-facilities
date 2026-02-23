@@ -13,50 +13,46 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // === Authentication ===
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Fetch all rooms with related data
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Fetch all rooms with related data (RLS will scope to user's access)
     const { data: rooms, error } = await supabase
       .from("rooms")
       .select(`
-        id,
-        name,
-        room_number,
-        description,
-        status,
-        room_type,
-        current_function,
-        previous_functions,
-        function_change_date,
-        maintenance_history,
-        floor_id,
+        id, name, room_number, description, status, room_type,
+        current_function, previous_functions, function_change_date,
+        maintenance_history, floor_id,
         floors:floor_id(name, floor_number, building_id),
-        capacity,
-        current_occupancy,
-        is_storage,
-        storage_type,
-        storage_capacity,
-        storage_notes,
-        phone_number,
-        position,
-        size,
-        rotation,
-        last_inventory_check,
-        next_maintenance_date,
-        last_inspection_date,
-        technology_installed,
-        security_level,
-        environmental_controls,
-        is_parent,
-        parent_room_id,
-        passkey_enabled,
-        original_room_type,
-        temporary_storage_use,
-        temporary_use_timeline,
-        created_at,
-        updated_at
+        capacity, current_occupancy, is_storage, storage_type,
+        storage_capacity, storage_notes, phone_number, position, size,
+        rotation, last_inventory_check, next_maintenance_date,
+        last_inspection_date, technology_installed, security_level,
+        environmental_controls, is_parent, parent_room_id,
+        passkey_enabled, original_room_type, temporary_storage_use,
+        temporary_use_timeline, created_at, updated_at
       `)
       .order("name");
 
@@ -69,63 +65,42 @@ Deno.serve(async (req: Request) => {
       const floor = room.floors as { name?: string; floor_number?: number } | null;
       
       return {
-        // Identification
         "Room ID": room.id,
         "Name": room.name,
         "Room Number": room.room_number || "",
         "Floor": floor?.name || "",
         "Floor Number": floor?.floor_number || "",
-        
-        // Status & Type
         "Status": room.status,
         "Room Type": room.room_type,
         "Current Function": room.current_function || "",
-        
-        // History (editable)
         "Previous Functions (JSON)": JSON.stringify(room.previous_functions || []),
         "Function Change Date": room.function_change_date ? new Date(room.function_change_date).toISOString() : "",
         "Maintenance History (JSON)": JSON.stringify(room.maintenance_history || []),
-        
-        // Capacity & Occupancy
         "Capacity": room.capacity || "",
         "Current Occupancy": room.current_occupancy || 0,
-        
-        // Storage
         "Is Storage": room.is_storage ? "Yes" : "No",
         "Storage Type": room.storage_type || "",
         "Storage Capacity": room.storage_capacity || "",
         "Storage Notes": room.storage_notes || "",
-        
-        // Position & Size
         "Position X": room.position?.x || 0,
         "Position Y": room.position?.y || 0,
         "Width": room.size?.width || 150,
         "Height": room.size?.height || 100,
         "Rotation": room.rotation || 0,
-        
-        // Contact & Details
         "Phone Number": room.phone_number || "",
         "Description": room.description || "",
-        
-        // Maintenance & Inspection
         "Last Inventory Check": room.last_inventory_check ? new Date(room.last_inventory_check).toISOString() : "",
         "Next Maintenance Date": room.next_maintenance_date ? new Date(room.next_maintenance_date).toISOString() : "",
         "Last Inspection Date": room.last_inspection_date || "",
-        
-        // Technology & Security
         "Technology Installed": (room.technology_installed || []).join(", "),
         "Security Level": room.security_level || "",
         "Environmental Controls": room.environmental_controls || "",
-        
-        // Hierarchy
         "Is Parent": room.is_parent ? "Yes" : "No",
         "Parent Room ID": room.parent_room_id || "",
         "Passkey Enabled": room.passkey_enabled ? "Yes" : "No",
         "Original Room Type": room.original_room_type || "",
         "Temporary Storage Use": room.temporary_storage_use ? "Yes" : "No",
         "Temporary Use Timeline (JSON)": JSON.stringify(room.temporary_use_timeline || {}),
-        
-        // System
         "Created At": room.created_at ? new Date(room.created_at).toISOString() : "",
         "Updated At": room.updated_at ? new Date(room.updated_at).toISOString() : "",
       };
@@ -137,44 +112,14 @@ Deno.serve(async (req: Request) => {
     
     // Set column widths
     const colWidths = [
-      { wch: 36 }, // Room ID
-      { wch: 30 }, // Name
-      { wch: 15 }, // Room Number
-      { wch: 20 }, // Floor
-      { wch: 12 }, // Floor Number
-      { wch: 15 }, // Status
-      { wch: 20 }, // Room Type
-      { wch: 25 }, // Current Function
-      { wch: 50 }, // Previous Functions
-      { wch: 25 }, // Function Change Date
-      { wch: 50 }, // Maintenance History
-      { wch: 10 }, // Capacity
-      { wch: 15 }, // Current Occupancy
-      { wch: 10 }, // Is Storage
-      { wch: 15 }, // Storage Type
-      { wch: 15 }, // Storage Capacity
-      { wch: 30 }, // Storage Notes
-      { wch: 12 }, // Position X
-      { wch: 12 }, // Position Y
-      { wch: 10 }, // Width
-      { wch: 10 }, // Height
-      { wch: 10 }, // Rotation
-      { wch: 15 }, // Phone Number
-      { wch: 40 }, // Description
-      { wch: 25 }, // Last Inventory Check
-      { wch: 25 }, // Next Maintenance Date
-      { wch: 15 }, // Last Inspection Date
-      { wch: 30 }, // Technology Installed
-      { wch: 15 }, // Security Level
-      { wch: 20 }, // Environmental Controls
-      { wch: 10 }, // Is Parent
-      { wch: 36 }, // Parent Room ID
-      { wch: 15 }, // Passkey Enabled
-      { wch: 20 }, // Original Room Type
-      { wch: 15 }, // Temporary Storage Use
-      { wch: 50 }, // Temporary Use Timeline
-      { wch: 25 }, // Created At
-      { wch: 25 }, // Updated At
+      { wch: 36 }, { wch: 30 }, { wch: 15 }, { wch: 20 }, { wch: 12 },
+      { wch: 15 }, { wch: 20 }, { wch: 25 }, { wch: 50 }, { wch: 25 },
+      { wch: 50 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 15 },
+      { wch: 15 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 10 },
+      { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 40 }, { wch: 25 },
+      { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 20 },
+      { wch: 10 }, { wch: 36 }, { wch: 15 }, { wch: 20 }, { wch: 15 },
+      { wch: 50 }, { wch: 25 }, { wch: 25 },
     ];
     ws['!cols'] = colWidths;
     
@@ -189,9 +134,9 @@ Deno.serve(async (req: Request) => {
       { "Column": "Status", "Description": "active, inactive, or under_maintenance", "Editable": "Yes" },
       { "Column": "Room Type", "Description": "Type of room", "Editable": "Yes - must be valid room_type_enum value" },
       { "Column": "Current Function", "Description": "Current actual function if different from room_type", "Editable": "Yes" },
-      { "Column": "Previous Functions (JSON)", "Description": "Array of previous functions with dates. Format: [{\"function\":\"office\",\"startDate\":\"2023-01-01\",\"endDate\":\"2024-01-01\"}]", "Editable": "Yes" },
+      { "Column": "Previous Functions (JSON)", "Description": "Array of previous functions with dates", "Editable": "Yes" },
       { "Column": "Function Change Date", "Description": "ISO date string when function last changed", "Editable": "Yes" },
-      { "Column": "Maintenance History (JSON)", "Description": "Array of maintenance records. Format: [{\"date\":\"2024-01-01\",\"type\":\"HVAC\",\"description\":\"Filter replacement\",\"vendor\":\"ABC Co\",\"cost\":150}]", "Editable": "Yes" },
+      { "Column": "Maintenance History (JSON)", "Description": "Array of maintenance records", "Editable": "Yes" },
       { "Column": "Last Inspection Date", "Description": "Date in YYYY-MM-DD format", "Editable": "Yes" },
       { "Column": "Description", "Description": "Room description", "Editable": "Yes" },
       { "Column": "Storage Type / Notes", "Description": "Storage details", "Editable": "Yes" },
@@ -216,7 +161,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error("Export error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: "An error occurred during export." }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
