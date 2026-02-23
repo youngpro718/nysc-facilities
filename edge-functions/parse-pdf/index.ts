@@ -37,9 +37,39 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // === Authentication ===
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+
+    // Verify the user's JWT
+    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userSupabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // === Input validation ===
     const { filePath } = await req.json();
 
-    if (!filePath) {
+    if (!filePath || typeof filePath !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "filePath is required" }),
         {
@@ -48,11 +78,6 @@ Deno.serve(async (req: Request) => {
         }
       );
     }
-
-    // Initialize Supabase client with service role for storage access
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
 
     if (!openaiApiKey) {
       return new Response(
@@ -67,6 +92,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Use service role client for storage/DB operations
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Step 1: Download the PDF from storage
@@ -88,7 +115,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // Step 2: Extract text from PDF
-    // Convert the PDF blob to base64 for the AI model
     const arrayBuffer = await fileData.arrayBuffer();
     const base64Pdf = btoa(
       String.fromCharCode(...new Uint8Array(arrayBuffer))
@@ -299,7 +325,7 @@ The PDF content is provided as a base64-encoded document.`;
 
     // Log extraction summary
     console.log(
-      `✅ Extracted ${cleanedEntries.length} parts from ${extractedData.building || "unknown building"} report dated ${extractedData.report_date || "unknown"}`
+      `✅ Extracted ${cleanedEntries.length} parts from ${extractedData.building || "unknown building"} report dated ${extractedData.report_date || "unknown"} by user ${userId}`
     );
 
     // Store extraction metadata for audit trail
