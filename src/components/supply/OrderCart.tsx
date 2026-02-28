@@ -78,7 +78,7 @@ export function OrderCart({
           <span className="text-xs">{totalItems}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md flex flex-col pb-safe">
+      <SheetContent className="w-full sm:max-w-md flex flex-col pb-20 sm:pb-6">
         <SheetHeader>
           <SheetTitle>Your Order</SheetTitle>
           <SheetDescription>
