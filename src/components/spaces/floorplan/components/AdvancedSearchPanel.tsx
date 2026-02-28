@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, X, MapPin, Home, DoorOpen, Navigation, Zap, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -62,8 +62,8 @@ export function AdvancedSearchPanel({
     objects.forEach(obj => {
       if (!obj) return; // Safety check for null/undefined objects
       if (obj.type) types.add(obj.type);
-      if (obj.data?.properties?.status) statuses.add(obj.data.properties.status);
-      if (obj.data?.properties?.room_type) roomTypes.add(obj.data.properties.room_type);
+      if (obj.data?.properties?.status) statuses.add(String(obj.data.properties.status));
+      if (obj.data?.properties?.room_type) roomTypes.add(String(obj.data.properties.room_type));
     });
 
     return {
@@ -81,7 +81,7 @@ export function AdvancedSearchPanel({
         const searchText = filters.query.toLowerCase();
         const matchesName = obj.data?.label?.toLowerCase().includes(searchText);
         const matchesType = obj.type?.toLowerCase().includes(searchText);
-        const matchesRoomNumber = obj.data?.properties?.room_number?.toLowerCase().includes(searchText);
+        const matchesRoomNumber = String(obj.data?.properties?.room_number || '').toLowerCase().includes(searchText);
         
         if (!matchesName && !matchesType && !matchesRoomNumber) {
           return false;
@@ -310,15 +310,15 @@ export function AdvancedSearchPanel({
                         </p>
                         {obj.data?.properties?.room_number && (
                           <p className="text-xs text-slate-500 dark:text-slate-500">
-                            Room: {obj.data.properties.room_number}
+                            Room: {String(obj.data.properties.room_number)}
                           </p>
                         )}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       {obj.data?.properties?.status && (
-                        <Badge className={`text-xs ${getStatusColor(obj.data.properties.status)}`}>
-                          {obj.data.properties.status}
+                        <Badge className={`text-xs ${getStatusColor(String(obj.data.properties.status))}`}>
+                          {String(obj.data.properties.status)}
                         </Badge>
                       )}
                       {obj.data?.properties?.lighting_status && (

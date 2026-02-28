@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useMemo } from 'react';
 import { logger } from '@/lib/logger';
 import * as THREE from 'three';
@@ -18,10 +18,10 @@ export function SimpleConnection({
 }: SimpleConnectionProps) {
   // Prepare safe coordinates and validation flags (checked after hooks)
   const hasEndpoints = !!from && !!to;
-  const fromX = hasEndpoints ? (from as Record<string, unknown>)?.x : NaN;
-  const fromY = hasEndpoints ? (from as Record<string, unknown>)?.y : NaN;
-  const toX = hasEndpoints ? (to as Record<string, unknown>)?.x : NaN;
-  const toY = hasEndpoints ? (to as Record<string, unknown>)?.y : NaN;
+  const fromX = hasEndpoints ? from.x : NaN;
+  const fromY = hasEndpoints ? from.y : NaN;
+  const toX = hasEndpoints ? to.x : NaN;
+  const toY = hasEndpoints ? to.y : NaN;
   const coordsValid =
     typeof fromX === 'number' && typeof fromY === 'number' &&
     typeof toX === 'number' && typeof toY === 'number' &&
@@ -59,7 +59,7 @@ export function SimpleConnection({
       
       return new THREE.Line(geometry, material);
     } catch (error) {
-      logger.error('SimpleConnection: Error creating line object', error, { from, to, type, isHighlighted });
+      logger.error('SimpleConnection: Error creating line object', error);
       return null;
     }
   }, [fromX, fromY, toX, toY, type, isHighlighted]);

@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
@@ -69,7 +69,7 @@ export function useFloorPlanData(floorId: string | null) {
   
   // Assign default positions to objects without positions
   const objectsWithPositions = Array.isArray(safeSpaceData.objects) ? 
-    safeSpaceData.objects.map((rawObj: Record<string, unknown>, index) => {
+    safeSpaceData.objects.map((rawObj: any, index: number) => {
       // Default values
       const defaultPosition: Position = {
         x: (index % 4) * 250 + 100, // Create a grid layout with 4 columns
@@ -138,7 +138,7 @@ export function useFloorPlanData(floorId: string | null) {
       // Use null check before trying to access lighting data
       if (lightingData && rawObj.id && lightingData[rawObj.id]) {
         const fixtures = lightingData[rawObj.id];
-        const functionalLights = fixtures.filter((f: Record<string, unknown>) => f.status === 'functional').length;
+        const functionalLights = fixtures.filter((f: any) => f.status === 'functional').length;
         const totalLights = fixtures.length;
         
         enhancedProperties = {

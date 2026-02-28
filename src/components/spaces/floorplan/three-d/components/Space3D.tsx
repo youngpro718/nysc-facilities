@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 
@@ -108,7 +108,7 @@ export function Space3D({
     }
   }, [isSelected, hovered, material]);
 
-  const handleClick = (e: Record<string, unknown>) => {
+  const handleClick = (e: any) => {
     e.stopPropagation();
     
     // Handle connection mode
@@ -120,7 +120,7 @@ export function Space3D({
     onClick?.(id);
   };
 
-  const handleDoubleClick = (e: Record<string, unknown>) => {
+  const handleDoubleClick = (e: any) => {
     e.stopPropagation();
     if (onStartConnection) {
       onStartConnection(id);

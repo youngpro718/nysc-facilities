@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,7 +30,7 @@ export function EnhancedPropertiesPanel({
   // We pass an empty string when not a room; the hook itself uses `enabled: !!roomId`.
   const isRoom = selectedObject?.type === 'room';
   const roomId = isRoom ? String(selectedObject?.id) : '';
-  const { data: enhancedRoom } = (useEnhancedRoomData as unknown as (id: string) => { data: Record<string, unknown> })(roomId);
+  const { data: enhancedRoom } = (useEnhancedRoomData as any)(roomId);
 
   return (
     <Card className="h-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -65,17 +65,17 @@ export function EnhancedPropertiesPanel({
                     <Building2 className="h-4 w-4" />
                     {selectedFloorName || 'Unknown Floor'}
                   </div>
-                  <h3 className="text-lg font-semibold">{enhancedRoom.name || enhancedRoom.room_name || 'Room'}</h3>
-                  <div className="text-sm text-muted-foreground">Room {enhancedRoom.room_number || selectedObject?.data?.properties?.label}</div>
+                  <h3 className="text-lg font-semibold">{(enhancedRoom as any).name || (enhancedRoom as any).room_name || 'Room'}</h3>
+                  <div className="text-sm text-muted-foreground">Room {(enhancedRoom as any).room_number || selectedObject?.data?.properties?.label}</div>
                 </div>
 
                 <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border">
                   <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
                     <Users className="h-4 w-4" /> Current Occupants
                   </h4>
-                  {Array.isArray(((enhancedRoom as Record<string, unknown>)).current_occupants) && ((enhancedRoom as Record<string, unknown>)).current_occupants.length > 0 ? (
+                  {Array.isArray((enhancedRoom as any).current_occupants) && (enhancedRoom as any).current_occupants.length > 0 ? (
                     <ul className="space-y-2 text-sm">
-                      {((enhancedRoom as Record<string, unknown>)).current_occupants.map((o: Record<string, unknown>, idx: number) => (
+                      {(enhancedRoom as any).current_occupants.map((o: any, idx: number) => (
                         <li key={idx} className="flex items-center justify-between">
                           <div>
                             {o.occupant?.first_name} {o.occupant?.last_name}
@@ -93,18 +93,18 @@ export function EnhancedPropertiesPanel({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded border">
                     <div className="text-xs text-muted-foreground">Status</div>
-                    <div className="text-sm font-medium capitalize">{((enhancedRoom as Record<string, unknown>)).status || 'unknown'}</div>
+                    <div className="text-sm font-medium capitalize">{(enhancedRoom as any).status || 'unknown'}</div>
                   </div>
                   <div className="p-3 rounded border">
                     <div className="text-xs text-muted-foreground">Type</div>
-                    <div className="text-sm font-medium capitalize">{((enhancedRoom as Record<string, unknown>)).room_type || selectedObject?.type}</div>
+                    <div className="text-sm font-medium capitalize">{(enhancedRoom as any).room_type || selectedObject?.type}</div>
                   </div>
                 </div>
 
-                {Array.isArray(((enhancedRoom as Record<string, unknown>)).lighting_fixtures) && (
+                {Array.isArray((enhancedRoom as any).lighting_fixtures) && (
                   <div className="p-3 rounded border">
                     <div className="text-xs text-muted-foreground mb-1">Lighting</div>
-                    <div className="text-sm">{((enhancedRoom as Record<string, unknown>)).functional_fixtures_count}/{((enhancedRoom as Record<string, unknown>)).total_fixtures_count} functional</div>
+                    <div className="text-sm">{(enhancedRoom as any).functional_fixtures_count}/{(enhancedRoom as any).total_fixtures_count} functional</div>
                   </div>
                 )}
               </div>

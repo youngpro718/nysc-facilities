@@ -1,11 +1,11 @@
-// @ts-nocheck
+
 import React, { useState, useCallback } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
 interface ConnectionManagerProps {
-  objects: unknown[];
-  connections: unknown[];
+  objects: any[];
+  connections: any[];
   onCreateConnection: (from: string, to: string) => void;
   onDeleteConnection: (connectionId: string) => void;
   enabled?: boolean;
@@ -13,8 +13,8 @@ interface ConnectionManagerProps {
 
 interface DragState {
   isConnecting: boolean;
-  fromObject: unknown | null;
-  toObject: unknown | null;
+  fromObject: any | null;
+  toObject: any | null;
   previewLine: THREE.Vector3[] | null;
 }
 
@@ -45,7 +45,7 @@ export function ConnectionManager({
     });
   }, [objects]);
 
-  const startConnection = useCallback((fromObject: Record<string, unknown>) => {
+  const startConnection = useCallback((fromObject: any) => {
     if (!enabled || !fromObject) return;
     
     setDragState({
@@ -56,7 +56,7 @@ export function ConnectionManager({
     });
   }, [enabled]);
 
-  const finishConnection = useCallback((toObject: Record<string, unknown>) => {
+  const finishConnection = useCallback((toObject: any) => {
     if (!dragState.isConnecting || !dragState.fromObject || !toObject) return;
     
     // Don't connect to self

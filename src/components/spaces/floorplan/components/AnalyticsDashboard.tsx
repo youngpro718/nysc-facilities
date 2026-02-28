@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +68,7 @@ export function AnalyticsDashboard({ objects, selectedFloorName }: AnalyticsDash
       roomStats.byType[type] = (roomStats.byType[type] || 0) + 1;
 
       // Count by status - add more safety checks
-      const status = obj.data?.properties?.status || 'unknown';
+      const status = String(obj.data?.properties?.status || 'unknown');
       roomStats.byStatus[status] = (roomStats.byStatus[status] || 0) + 1;
 
       // Count lighting

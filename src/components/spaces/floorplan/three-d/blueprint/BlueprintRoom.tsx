@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
@@ -90,19 +90,19 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
     }
   });
 
-  const handlePointerOver = (e: Record<string, unknown>) => {
+  const handlePointerOver = (e: any) => {
     e.stopPropagation?.();
     onHover?.(true);
     document.body.style.cursor = 'pointer';
   };
 
-  const handlePointerOut = (e: Record<string, unknown>) => {
+  const handlePointerOut = (e: any) => {
     e.stopPropagation?.();
     onHover?.(false);
     document.body.style.cursor = 'auto';
   };
 
-  const handleClick = (e: Record<string, unknown>) => {
+  const handleClick = (e: any) => {
     e.stopPropagation?.();
     onClick?.();
   };

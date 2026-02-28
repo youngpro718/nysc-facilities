@@ -1,8 +1,8 @@
-// @ts-nocheck
+
 import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
 import { logger } from '@/lib/logger';
 
-export function getSpaceColor(space: Record<string, unknown>): string {
+export function getSpaceColor(space: any): string {
   if (!space) return '#e2e8f0'; // Default color for undefined spaces
   
   if (space.object_type === 'room' || space.type === 'room') {
@@ -24,7 +24,7 @@ export function getSpaceColor(space: Record<string, unknown>): string {
   }
 }
 
-export function transformSpaceToNode(space: Record<string, unknown>, index: number): FloorPlanNode {
+export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
   // Validate space object
   if (!space || typeof space !== 'object') {
     logger.warn('Invalid space object:', space);

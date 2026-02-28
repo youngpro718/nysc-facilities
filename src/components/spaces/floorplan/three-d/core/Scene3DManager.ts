@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { logger } from '@/lib/logger';
@@ -420,7 +420,7 @@ export class Scene3DManager {
       // Dispose of renderer and WebGL context
       try {
         // Force context loss to free GPU resources and avoid context-type conflicts
-        (this.renderer as Record<string, unknown>)?.forceContextLoss?.();
+        (this.renderer as any)?.forceContextLoss?.();
       } catch {}
       this.renderer?.dispose?.();
       
@@ -456,7 +456,7 @@ export class Scene3DManager {
         try {
           const cameraPos = this.camera.position.clone();
           this.scene.traverse((obj) => {
-            if (((obj as Record<string, unknown>)).userData?.type === 'label' && obj instanceof THREE.Sprite) {
+            if ((obj as any).userData?.type === 'label' && obj instanceof THREE.Sprite) {
               const sprite = obj as THREE.Sprite;
               const worldPos = new THREE.Vector3();
               sprite.getWorldPosition(worldPos);
