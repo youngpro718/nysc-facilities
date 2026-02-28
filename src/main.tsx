@@ -4,6 +4,7 @@ import App from './App.tsx'
 import './index.css'
 import { initializeStorage } from './services/storage.ts'
 import { registerServiceWorker } from './utils/registerServiceWorker'
+import { toast } from 'sonner'
 
 // Initialize storage buckets
 initializeStorage().catch(err => {
@@ -19,10 +20,14 @@ if (import.meta.env.PROD) {
     },
     onUpdate: (registration) => {
       console.log('🔄 New version available! Please refresh to update.');
-      // Optionally show a toast notification to the user
-      if (confirm('A new version is available. Reload to update?')) {
-        window.location.reload();
-      }
+      toast('A new version is available', {
+        description: 'Reload to get the latest features and fixes.',
+        action: {
+          label: 'Reload',
+          onClick: () => window.location.reload(),
+        },
+        duration: Infinity,
+      });
     },
     onError: (error) => {
       console.error('❌ Service Worker registration failed:', error);
