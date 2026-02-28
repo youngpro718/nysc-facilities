@@ -24,7 +24,7 @@ export function HelpButton() {
   if (isRunning) return null;
 
   return (
-    <div className="fixed bottom-36 md:bottom-6 right-4 z-40">
+    <div className="fixed bottom-[10.5rem] md:bottom-6 right-4 z-50">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,17 +13,7 @@ const LoginPage = () => {
   const { isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Force light theme while on the login page to ensure input backgrounds and text
-  // use light variables (prevents dark inputs on light backgrounds)
-  useEffect(() => {
-    const root = document.documentElement;
-    const prevClassName = root.className;
-    root.classList.remove("dark", "blue", "green", "purple");
-    root.classList.add("light");
-    return () => {
-      root.className = prevClassName;
-    };
-  }, []);
+  // No longer forcing global light theme — login page uses scoped light class
 
   // Show loading while auth state is being determined
   if (isLoading) {
@@ -50,7 +40,7 @@ const LoginPage = () => {
 
 
   return (
-    <div className="min-h-screen relative w-full bg-background flex flex-col items-center justify-center px-4">
+    <div className="light min-h-screen relative w-full bg-background flex flex-col items-center justify-center px-4">
       {/* Subtle watermark in corner */}
       <img
         src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.webp"
