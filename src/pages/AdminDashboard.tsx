@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Admin Dashboard — main admin landing page
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
 import { ModuleCards } from "@/components/dashboard/ModuleCards";
@@ -36,7 +36,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!buildings || buildings.length === 0) {
+  if (!buildings || (buildings as any[]).length === 0) {
     return (
       <div className="space-y-8">
         <DashboardHeader onRefresh={refreshData} isLoading={isLoading} />
@@ -58,7 +58,7 @@ const AdminDashboard = () => {
       <ModuleCards />
       
       <BuildingsGrid
-        buildings={buildings}
+        buildings={buildings as any}
         isLoading={buildingsLoading}
         issues={issues}
         activities={activities}
