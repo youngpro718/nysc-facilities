@@ -1,109 +1,105 @@
 
 
-# Court Officer / Major Dashboard
+# Full Application Audit
 
-## Context
+## 1. BUGS & FUNCTIONAL ISSUES
 
-The system currently has 4 frontend roles (`admin`, `cmc`, `court_aide`, `standard`), but the database `user_role` enum already includes `court_officer` as a valid value. The Major (senior court officer responsible for building security) needs a focused view with access to:
+### BUG: Court Officer dashboard stats never load (HIGH)
+`src/pages/RoleDashboard.tsx` -- The `courtroomStats` query is only enabled when `userRole === 'cmc'` (line 159), but the court_officer dashboard config references `activeCourtrooms` as a stat. Similarly, no queries fetch `totalKeysIssued`, `keysCheckedOut`, or `lockboxStatus` data for the court_officer role. All 4 stat cards will show 0.
 
-- **Keys / Lockbox** -- managing who has access to what
-- **Spaces / Building Layout** -- understanding the physical building (read-only)
-- **Term Sheet** -- knowing which judges are where
+**Fix:** Add key/lockbox queries with `enabled: userRole === 'court_officer'` and wire up the stats values.
 
-They do **not** need access to issues, supply requests, inventory, maintenance, or admin functions.
+### BUG: Recent activity sort is a no-op (LOW)
+`src/pages/RoleDashboard.tsx` line 222: `activities.sort((a, b) => 0)` -- the comparator always returns 0, so the sort does nothing. Should sort by timestamp.
 
-## What Changes
+### BUG: `user_roles` has duplicate/redundant RLS policies (MEDIUM)
+The `user_roles` table has 11 policies including 4 overlapping `ALL` policies and 4 overlapping `SELECT` policies. This creates confusion and potential performance issues. Should be consolidated to a clean set (1 SELECT for own role, 1 ALL for admins, 1 for service_role).
 
-### 1. Add `court_officer` to the frontend role system
+### BUG: `admin/supply-requests` route missing `requireAdmin` (MEDIUM)
+Line 221 of `App.tsx` -- the admin supply requests page only checks `ModuleProtectedRoute` for `supply_requests` module, but doesn't require admin. Any user with the `supply_requests` module (standard, court_aide) could potentially access the admin supply management view.
 
-**`src/config/roles.ts`**
-- Add `'court_officer'` to the `UserRole` type union
-- Add a new entry to `SYSTEM_ROLES` array: value `court_officer`, label "Court Officer", description "Building security, key management, and facility layout access", color `blue`
-- Add to `SIGNUP_ROLE_OPTIONS` (or exclude if only admin-assignable -- recommend excluding, same as admin)
+---
 
-**`src/lib/permissions.ts`**
-- Add `'court_officer'` to `USER_ROLES` constant
-- Add `court_officer` to relevant permission arrays:
-  - `facility.view` -- yes
-  - `facility.update_status` -- no
-  - `audit.view` -- yes (security needs audit trail visibility)
-  - All issue/admin permissions -- no
+## 2. SECURITY ISSUES
 
-### 2. Add permissions and navigation for the role
+### SEC: 185 files use `@ts-nocheck` (HIGH)
+This suppresses all TypeScript type checking, masking potential runtime errors, null reference crashes, and type mismatches. Many of these are in core components (UserDashboard, supply components, layout components, profile sections).
 
-**`src/hooks/useRolePermissions.ts`**
-- Add `court_officer` to `rolePermissionsMap`:
-  - `spaces: 'read'` (view building layout, read-only)
-  - `keys: 'write'` (manage lockbox, issue keys)
-  - `dashboard: 'read'`
-  - Everything else: `null`
+**Fix:** Incrementally remove `@ts-nocheck` and fix type errors. Prioritize auth, profile, and supply-related files.
 
-**`src/components/layout/config/navigation.tsx`**
-- Add a `court_officer` navigation block in `getRoleBasedNavigation`:
-  - Dashboard, Keys, Spaces (read-only), Term Sheet
-- Add matching routes in `getNavigationRoutes`:
-  - `/court-officer-dashboard`, `/keys`, `/spaces`, `/term-sheet`
+### SEC: `user_roles` has permissive `ALL` policy with `qual:true` (HIGH)
+The `service_role_access` policy grants unrestricted `ALL` operations when `qual = true`. While labeled "service role," the linter flags it because `WITH CHECK (true)` is overly broad. If this policy applies to the `anon` or `authenticated` role instead of just `service_role`, it's a privilege escalation vector.
 
-### 3. Add dashboard configuration
+**Fix:** Verify this policy's target role. If it targets `authenticated`, restrict it immediately.
 
-**`src/config/roleDashboardConfig.ts`**
-- Add `'court_officer'` to `DashboardRole` type
-- Add `court_officer` config entry:
-  - Title: "Court Officer Dashboard"
-  - Greeting: "Officer"
-  - Primary action: Keys (/keys)
-  - Secondary action: Building Layout (/spaces)
-  - Stats: Total Keys Issued, Keys Checked Out, Lockbox Status, Active Courtrooms
-  - Quick actions: Key Management, Lockbox, Building Layout, Term Sheet
-  - `showTermSheet: true`, all others false
+### SEC: `auth_rate_limits` and `security_rate_limits` have `ALL` with `true` (MEDIUM)
+Both tables allow unrestricted writes. An attacker could manipulate rate limit tracking to bypass rate limiting.
 
-### 4. Add routing
+### SEC: `pdf_extraction_logs` has `ALL` with `true` for service role (LOW)
+Acceptable if only service_role, but should be verified.
 
-**`src/utils/roleBasedRouting.ts`**
-- Add `court_officer` to `ROLE_DASHBOARDS`: path `/court-officer-dashboard`, name "Court Officer Dashboard"
-- Add `court_officer` to `hasModuleAccess`: grant access to `keys`, `spaces` (read), `dashboard`
+### SEC: Hardcoded Supabase anon key in `src/lib/supabase.ts` (LOW)
+Line 8 has the anon key as a fallback string. While anon keys are public by design, having them hardcoded in two places (`.env` and source code) creates maintenance risk.
 
-**`src/App.tsx`**
-- Add route: `/court-officer-dashboard` pointing to `RoleDashboard` (the unified role dashboard component handles it via config)
+### SEC: `dangerouslySetInnerHTML` used in ChartStyle (LOW)
+Used with validated color values via `SAFE_COLOR_RE`, which is acceptable. No user input flows through.
 
-### 5. Update route protection
+---
 
-**`src/components/auth/ProtectedRoute.tsx`** -- no changes needed (non-admin roles already fall through to permission checks)
+## 3. ARCHITECTURE & CODE QUALITY
 
-**`src/App.tsx`**
-- The `/keys` route currently has `requireAdmin`. Change to allow `court_officer` as well (add `allowDepartments` or remove `requireAdmin` and use permission-based gating)
-- The `/spaces` route currently has `requireAdmin`. Add court_officer access (read-only view)
+### ARCH: Duplicate Supabase client files (MEDIUM)
+Both `src/lib/supabase.ts` (617 lines, the real one) and `src/integrations/supabase/client.ts` exist. The `client.ts` file is auto-generated but uses a different env var name (`VITE_SUPABASE_PUBLISHABLE_KEY`). Confusing for maintainers.
 
-### 6. Update RLS policies (database)
+### ARCH: `src/lib/supabase.ts` is a monolith (MEDIUM)
+This single file contains: Supabase client config, supply request CRUD, lighting fixture queries, auth service, and more. Should be split into domain-specific service files.
 
-No database schema changes needed -- `court_officer` is already in the `user_role` enum. However, RLS policies for `keys`, `key_assignments`, `lockboxes`, and related tables need to grant access to `court_officer`. This means adding `OR public.has_role('court_officer')` to the relevant SELECT/INSERT/UPDATE policies on:
-- `keys` table
-- `key_assignments` table
-- `lockboxes` table
-- `lockbox_slots` table
-- `lockbox_activity_logs` table
-- `rooms` table (SELECT only, for building layout)
-- `floors` / `buildings` tables (SELECT only)
+### ARCH: `roleDashboardConfig.ts` type doesn't include all roles (LOW)
+`DashboardRole` type is `'cmc' | 'court_officer' | 'court_aide' | 'purchasing_staff'` -- `purchasing_staff` is not a real role in the system (not in `SYSTEM_ROLES`). Dead config that could confuse developers.
 
-### 7. Files touched (summary)
+### ARCH: DevModeWrapper stores/reads preview role via localStorage (LOW)
+While only accessible to admins, the localStorage-based preview is client-side only. This is documented and intentional for dev mode, but worth noting it provides no server-side protection.
 
-| File | Change |
-|------|--------|
-| `src/config/roles.ts` | Add `court_officer` to type and `SYSTEM_ROLES` |
-| `src/lib/permissions.ts` | Add `court_officer` to `USER_ROLES` and permission arrays |
-| `src/hooks/useRolePermissions.ts` | Add `court_officer` permission map |
-| `src/components/layout/config/navigation.tsx` | Add court officer nav + routes |
-| `src/config/roleDashboardConfig.ts` | Add court officer dashboard config |
-| `src/utils/roleBasedRouting.ts` | Add court officer dashboard route + module access |
-| `src/App.tsx` | Add `/court-officer-dashboard` route, relax `/keys` and `/spaces` from admin-only |
-| Database (RLS) | Add `has_role('court_officer')` to key/lockbox/room SELECT policies |
+---
 
-### Implementation order
-1. Update role type and config (`roles.ts`, `permissions.ts`)
-2. Add permission map (`useRolePermissions.ts`)
-3. Add dashboard config (`roleDashboardConfig.ts`)
-4. Add routing (`roleBasedRouting.ts`, `App.tsx`)
-5. Add navigation (`navigation.tsx`)
-6. Update RLS policies for key/lockbox/room tables
-7. Test end-to-end with a court_officer user
+## 4. UI/UX ISSUES
+
+### UX: Login page forces light theme globally (MEDIUM)
+`LoginPage.tsx` lines 18-25 forcibly removes dark/blue/green/purple classes and sets light. When navigating away, it restores the old `className`, but this can cause a flash of wrong theme.
+
+### UX: Bottom tab bar limited to 4 items + "More" (LOW)
+Court officer navigation has 4 nav items + separator + Profile = 6 items. The bottom bar shows 4 + "More" overflow. This is fine for most roles, but admin has 10 items, meaning the "More" menu does heavy lifting. Consider if this is optimal for admin mobile UX.
+
+### UX: `RoleDashboard` header buttons may overflow on mobile (MEDIUM)
+Lines 275-293 show primary and secondary action buttons side-by-side with no responsive wrapping. On small screens the "Building Layout" and "Key Management" buttons may clip.
+
+**Fix:** Add `flex-wrap` or stack vertically on mobile.
+
+### UX: Standard user has no "Request Key" in navigation (LOW)
+The UserDashboard has a "Request Key" quick action button, but the standard user navigation only shows Dashboard, My Activity, Profile. The key request dialog opens inline, so this works, but there's no way to access key requests from My Activity. Minor discoverability gap.
+
+---
+
+## 5. DATABASE ISSUES
+
+### DB: 10 permissive RLS policies flagged by linter (MEDIUM)
+Multiple `INSERT` policies use `WITH CHECK (true)` on audit/log tables. This is intentional for append-only audit logging, but should be documented. The `auth_rate_limits` and `security_rate_limits` `ALL` policies are more concerning.
+
+### DB: 1 function with mutable search_path (MEDIUM)
+One database function doesn't set `search_path = public`, which could be exploited via search path hijacking per the project's own security standards.
+
+---
+
+## 6. RECOMMENDED FIXES (Priority Order)
+
+1. **Add court_officer stat queries** to `RoleDashboard.tsx` -- key assignments, lockbox counts, courtroom data
+2. **Fix activity sort** comparator in `RoleDashboard.tsx`
+3. **Verify `user_roles` RLS `service_role_access` policy** targets only `service_role`, not `authenticated`
+4. **Add `requireAdmin` or role gate** to `/admin/supply-requests` route
+5. **Consolidate duplicate `user_roles` RLS policies** (11 -> 3-4 clean policies)
+6. **Fix RoleDashboard mobile header overflow** with responsive layout
+7. **Fix mutable search_path** on flagged database function
+8. **Tighten `auth_rate_limits`/`security_rate_limits`** ALL policies
+9. **Remove `purchasing_staff`** from `DashboardRole` type (dead code)
+10. **Begin incremental `@ts-nocheck` removal** starting with auth and security-critical files
 
