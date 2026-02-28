@@ -1,8 +1,7 @@
-// @ts-nocheck
-export const createOccupantsLookup = (occupantsData: unknown[] = []): Record<string, unknown[]> => {
+export const createOccupantsLookup = (occupantsData: any[] = []): Record<string, any[]> => {
   if (!Array.isArray(occupantsData)) return {};
   
-  return occupantsData.reduce((acc, assignment) => {
+  return occupantsData.reduce((acc: Record<string, any[]>, assignment: any) => {
     if (!acc[assignment.room_id]) {
       acc[assignment.room_id] = [];
     }
@@ -17,10 +16,10 @@ export const createOccupantsLookup = (occupantsData: unknown[] = []): Record<str
   }, {});
 };
 
-export const createIssuesLookup = (issuesData: unknown[] = []): Record<string, unknown[]> => {
+export const createIssuesLookup = (issuesData: any[] = []): Record<string, any[]> => {
   if (!Array.isArray(issuesData)) return {};
 
-  return issuesData.reduce((acc, issue) => {
+  return issuesData.reduce((acc: Record<string, any[]>, issue: any) => {
     if (!acc[issue.room_id]) {
       acc[issue.room_id] = [];
     }
@@ -29,10 +28,10 @@ export const createIssuesLookup = (issuesData: unknown[] = []): Record<string, u
   }, {});
 };
 
-export const createHistoryLookup = (historyData: unknown[] = []): Record<string, unknown[]> => {
+export const createHistoryLookup = (historyData: any[] = []): Record<string, any[]> => {
   if (!Array.isArray(historyData)) return {};
 
-  return historyData.reduce((acc, history) => {
+  return historyData.reduce((acc: Record<string, any[]>, history: any) => {
     if (!acc[history.room_id]) {
       acc[history.room_id] = [];
     }
@@ -41,10 +40,10 @@ export const createHistoryLookup = (historyData: unknown[] = []): Record<string,
   }, {});
 };
 
-export const createFixturesLookup = (fixturesData: unknown[] = []): Record<string, unknown> => {
+export const createFixturesLookup = (fixturesData: any[] = []): Record<string, any> => {
   if (!Array.isArray(fixturesData)) return {};
 
-  return fixturesData.reduce((acc, fixture) => {
+  return fixturesData.reduce((acc: Record<string, any>, fixture: any) => {
     if (fixture.space_id) {
       acc[fixture.space_id] = fixture;
     }
@@ -52,16 +51,14 @@ export const createFixturesLookup = (fixturesData: unknown[] = []): Record<strin
   }, {});
 };
 
-export const createConnectionsLookup = (connectionsData: unknown[] = []): Record<string, unknown[]> => {
+export const createConnectionsLookup = (connectionsData: any[] = []): Record<string, any[]> => {
   if (!Array.isArray(connectionsData)) return {};
 
-  return connectionsData.reduce((acc, connection) => {
-    // For from_space connections
+  return connectionsData.reduce((acc: Record<string, any[]>, connection: any) => {
     if (!acc[connection.from_space_id]) {
       acc[connection.from_space_id] = [];
     }
     
-    // Add connection with direction 
     acc[connection.from_space_id].push({
       id: connection.id,
       connection_type: connection.connection_type,

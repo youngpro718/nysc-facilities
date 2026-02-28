@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useMemo } from 'react';
 import type { Room } from '../rooms/types/RoomTypes';
 import { roomTypeToString } from '../rooms/types/roomEnums';
@@ -60,7 +59,7 @@ export function useRoomFilters({
         } else {
           // For other room types, match exact room_type values
           matchesRoomType = room.room_type === roomTypeFilter || 
-            roomTypeToString(room.room_type as unknown) === roomTypeFilter;
+            roomTypeToString(room.room_type as any) === roomTypeFilter;
         }
       }
 

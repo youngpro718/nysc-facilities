@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { supabase } from "@/lib/supabase";
 import { logger } from '@/lib/logger';
 
@@ -42,17 +41,17 @@ export function findCategoryByName(categories: Category[], categoryName: string)
   return match || null;
 }
 
-export function validateCategoryData(importedItems: unknown[], categories: Category[]): {
-  validItems: unknown[];
-  invalidItems: unknown[];
+export function validateCategoryData(importedItems: any[], categories: Category[]): {
+  validItems: any[];
+  invalidItems: any[];
   missingCategories: string[];
 } {
-  const validItems: unknown[] = [];
-  const invalidItems: unknown[] = [];
+  const validItems: any[] = [];
+  const invalidItems: any[] = [];
   const missingCategories: string[] = [];
   const foundMissingCategories = new Set<string>();
 
-  importedItems.forEach((item, index) => {
+  importedItems.forEach((item: any, index: number) => {
     const categoryName = item.category;
     
     if (!categoryName || categoryName === 'General') {

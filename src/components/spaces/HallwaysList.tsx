@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
@@ -25,7 +24,7 @@ const HallwaysList = () => {
   const filteredAndSortedHallways = useMemo(() => {
     if (!hallways) return [];
     const filtered = filterSpaces(hallways, searchQuery, statusFilter);
-    return sortSpaces(filtered, sortBy as unknown);
+    return sortSpaces(filtered, sortBy as any);
   }, [hallways, searchQuery, sortBy, statusFilter]);
 
   const getAccessibilityColor = (accessibility?: string) => {
@@ -46,7 +45,7 @@ const HallwaysList = () => {
     }
   };
 
-  const renderGridContent = (hallway: Record<string, unknown>) => (
+  const renderGridContent = (hallway: any) => (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">Type: {hallway.type}</p>
       <div className="flex gap-2 items-center">
@@ -91,7 +90,7 @@ const HallwaysList = () => {
     </div>
   );
 
-  const renderListRow = (hallway: Record<string, unknown>) => [
+  const renderListRow = (hallway: any) => [
     <TableCell key="name">{hallway.name}</TableCell>,
     <TableCell key="type">{hallway.type}</TableCell>,
     <TableCell key="building">{hallway.floors?.buildings?.name}</TableCell>,

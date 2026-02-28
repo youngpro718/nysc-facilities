@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,14 +31,14 @@ export function NewConnectionForm({
     setSubmitting(true);
     
     // Make sure direction is valid
-    const validDirection = ConnectionDirections.includes(direction as unknown) 
+    const validDirection = ConnectionDirections.includes(direction as any) 
       ? direction 
       : "north";
       
     onSubmit({
       toSpaceId,
       connectionType,
-      direction: validDirection as unknown
+      direction: validDirection as any
     });
     
     setSubmitting(false);

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -175,7 +174,7 @@ export function RoomDetailPanel({ room, onEdit, onDelete }: RoomDetailPanelProps
                 Recent Issues
               </h4>
               <div className="space-y-2">
-                {room.issues.slice(0, 3).map((issue) => (
+                {room.issues.slice(0, 3).map((issue: any) => (
                   <div key={issue.id} className="p-3 bg-muted/50 rounded-lg">
                     <div className="font-medium text-sm">{issue.title}</div>
                     <div className="text-xs text-muted-foreground">
@@ -195,7 +194,7 @@ export function RoomDetailPanel({ room, onEdit, onDelete }: RoomDetailPanelProps
                 Current Occupants
               </h4>
               <div className="space-y-2">
-                {room.current_occupants.slice(0, 3).map((occupant, index) => (
+                {room.current_occupants.slice(0, 3).map((occupant: any, index: number) => (
                   <div key={occupant.id || index} className="p-3 bg-muted/50 rounded-lg">
                     <div className="font-medium text-sm">{occupant.personnel_name || 'Unknown'}</div>
                     <div className="text-xs text-muted-foreground">

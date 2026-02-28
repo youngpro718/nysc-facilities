@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { logger } from '@/lib/logger';
 import { useInventory } from "./inventory/hooks/useInventory";
@@ -76,7 +75,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     }
   };
 
-  const handleImportSuccess = async (importedItems: unknown[]) => {
+  const handleImportSuccess = async (importedItems: any[]) => {
     try {
       await addBulkItems(importedItems);
       toast({
