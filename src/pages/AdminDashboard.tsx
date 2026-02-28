@@ -1,11 +1,10 @@
 // Admin Dashboard — main admin landing page
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { AdminGreeting } from "@/components/dashboard/AdminGreeting";
+import { GlobalKPIStrip } from "@/components/dashboard/GlobalKPIStrip";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
-import { ModuleCards } from "@/components/dashboard/ModuleCards";
 import { PendingSupplyApprovals } from "@/components/dashboard/PendingSupplyApprovals";
 import { ProductionSecurityGuard } from "@/components/security/ProductionSecurityGuard";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -18,7 +17,7 @@ const AdminDashboard = () => {
     refreshData,
     isLoading,
     isAdmin
-  } = useDashboardData(true); // Pass true for admin dashboard
+  } = useDashboardData(true);
 
   if (isLoading || buildingsLoading) {
     return (
@@ -39,7 +38,8 @@ const AdminDashboard = () => {
   if (!buildings || (buildings as any[]).length === 0) {
     return (
       <div className="space-y-8">
-        <DashboardHeader onRefresh={refreshData} isLoading={isLoading} />
+        <AdminGreeting onRefresh={refreshData} isLoading={isLoading} />
+        <GlobalKPIStrip />
         <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
           <p>No buildings found</p>
         </div>
@@ -49,13 +49,13 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <DashboardHeader onRefresh={refreshData} isLoading={isLoading || buildingsLoading} />
+      <AdminGreeting onRefresh={refreshData} isLoading={isLoading || buildingsLoading} />
+      
+      <GlobalKPIStrip />
       
       <ProductionSecurityGuard />
       
       <PendingSupplyApprovals />
-      
-      <ModuleCards />
       
       <BuildingsGrid
         buildings={buildings as any}
