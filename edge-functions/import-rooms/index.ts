@@ -93,12 +93,34 @@ Deno.serve(async (req: Request) => {
     const results: ImportResult[] = [];
     const errors: string[] = [];
 
+    // Allowed fields whitelist for room updates
+    const ALLOWED_FIELDS = new Set([
+      "name", "room_number", "description", "status", "room_type",
+      "current_function", "previous_functions", "function_change_date",
+      "maintenance_history", "capacity", "current_occupancy",
+      "is_storage", "storage_type", "storage_capacity", "storage_notes",
+      "position", "size", "rotation", "phone_number",
+      "last_inventory_check", "next_maintenance_date", "last_inspection_date",
+      "technology_installed", "security_level", "environmental_controls",
+      "is_parent", "parent_room_id", "passkey_enabled", "original_room_type",
+      "temporary_storage_use", "temporary_use_timeline", "updated_at",
+    ]);
+
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const MAX_STRING_LENGTH = 1000;
+
     // Process each row
     for (const row of jsonData) {
       const roomId = row["Room ID"] as string;
       
       if (!roomId) {
         errors.push(`Skipping row: No Room ID found`);
+        continue;
+      }
+
+      // Validate Room ID is a valid UUID
+      if (!UUID_REGEX.test(roomId)) {
+        errors.push(`Skipping row: Invalid Room ID format "${roomId}"`);
         continue;
       }
 
@@ -286,8 +308,12 @@ Deno.serve(async (req: Request) => {
         
         if (row["Parent Room ID"] !== undefined) {
           const parentId = row["Parent Room ID"] as string;
-          updateData.parent_room_id = parentId || null;
-          changes.push(`parent_room_id: ${parentId || 'null'}`);
+          if (parentId && !UUID_REGEX.test(parentId)) {
+            errors.push(`Room ${roomId}: Invalid Parent Room ID format "${parentId}"`);
+          } else {
+            updateData.parent_room_id = parentId || null;
+            changes.push(`parent_room_id: ${parentId || 'null'}`);
+          }
         }
         
         if (row["Passkey Enabled"] !== undefined) {
@@ -318,6 +344,22 @@ Deno.serve(async (req: Request) => {
           }
         }
 
+        // Enforce field whitelist - strip any unauthorized fields
+        for (const key of Object.keys(updateData)) {
+          if (!ALLOWED_FIELDS.has(key)) {
+            delete updateData[key];
+            errors.push(`Room ${roomId}: Unauthorized field "${key}" removed`);
+          }
+        }
+
+        // Validate string field lengths
+        for (const [key, value] of Object.entries(updateData)) {
+          if (typeof value === "string" && value.length > MAX_STRING_LENGTH) {
+            errors.push(`Room ${roomId}: Field "${key}" exceeds max length, truncated`);
+            updateData[key] = (value as string).substring(0, MAX_STRING_LENGTH);
+          }
+        }
+
         // Apply update if not dry run and has changes
         if (!dryRun && Object.keys(updateData).length > 0) {
           updateData.updated_at = new Date().toISOString();
@@ -330,6 +372,13 @@ Deno.serve(async (req: Request) => {
           if (updateError) {
             throw updateError;
           }
+
+          // Audit log for bulk import
+          await supabase.from("admin_actions_log").insert({
+            admin_id: userId,
+            action_type: "bulk_room_import",
+            details: { room_id: roomId, changes, dry_run: dryRun },
+          }).then(() => {}).catch(() => {});
         }
 
         results.push({
