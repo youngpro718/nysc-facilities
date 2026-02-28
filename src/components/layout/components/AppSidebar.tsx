@@ -50,7 +50,7 @@ export function AppSidebar() {
         <div className={cn("flex items-center h-14 px-3 border-b border-sidebar-border", collapsed ? "justify-center" : "justify-between")}>
           {!collapsed && (
             <div className="flex items-center gap-2 min-w-0">
-              <div className="relative h-8 w-8 shrink-0">
+              <div className="relative h-10 w-10 shrink-0">
                 <img src="/nysc-logo-light.png" alt="NYSC" className="h-full w-full object-contain dark:hidden" />
                 <img src="/nysc-logo-dark.png" alt="NYSC" className="h-full w-full object-contain hidden dark:block" />
               </div>
@@ -58,7 +58,7 @@ export function AppSidebar() {
             </div>
           )}
           {collapsed && (
-            <div className="relative h-8 w-8 shrink-0">
+            <div className="relative h-10 w-10 shrink-0">
               <img src="/nysc-logo-light.png" alt="NYSC" className="h-full w-full object-contain dark:hidden" />
               <img src="/nysc-logo-dark.png" alt="NYSC" className="h-full w-full object-contain hidden dark:block" />
             </div>

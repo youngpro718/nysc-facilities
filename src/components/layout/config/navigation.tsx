@@ -283,6 +283,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/tasks',
       '/lighting',
       '/court-operations',
+      '',          // separator placeholder
       '/admin',
     ];
   }
