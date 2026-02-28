@@ -11,14 +11,6 @@
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
 }
 
-/* Apply safe area padding to body */
-body {
-  padding-top: var(--safe-area-inset-top);
-  padding-right: var(--safe-area-inset-right);
-  padding-bottom: var(--safe-area-inset-bottom);
-  padding-left: var(--safe-area-inset-left);
-}
-
 /* Prevent iOS zoom on input focus */
 input[type="text"],
 input[type="email"],
@@ -79,51 +71,17 @@ select {
   }
 }
 
-/* iOS Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-  }
-
-  /* Ensure proper contrast in dark mode */
-  body {
-    background-color: #000000;
-    color: #ffffff;
-  }
-}
-
-/* Touch-friendly button sizes for iOS */
+/* Touch-friendly utility classes (opt-in, not global) */
 @media (hover: none) and (pointer: coarse) {
   /* Minimum touch target size: 44x44px (Apple HIG) */
-  button,
-  a,
-  input[type="button"],
-  input[type="submit"],
-  .clickable {
+  .touch-target-44 {
     min-height: 44px;
     min-width: 44px;
   }
 
   /* Increase padding for better touch targets */
-  button,
-  .btn {
+  .touch-padded {
     padding: 12px 20px;
-  }
-}
-
-/* iOS Keyboard Adjustments */
-@supports (-webkit-touch-callout: none) {
-  /* Prevent layout shift when keyboard appears */
-  .ios-keyboard-fix {
-    position: fixed;
-    width: 100%;
-  }
-
-  /* Ensure inputs are visible when keyboard is open */
-  input:focus,
-  textarea:focus {
-    transform: translateY(-50px);
-    transition: transform 0.3s ease;
   }
 }
 
@@ -158,9 +116,12 @@ select {
   }
 }
 
-/* iOS Pull-to-Refresh Prevention */
+/* iOS Pull-to-Refresh Prevention & Text Rendering */
 body {
   overscroll-behavior-y: contain;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* iOS Home Indicator Safe Area (iPhone X and later) */
@@ -184,24 +145,6 @@ body {
     padding-left: max(var(--safe-area-inset-left), 16px);
     padding-right: max(var(--safe-area-inset-right), 16px);
   }
-}
-
-/* iOS Haptic Feedback (visual indication) */
-@media (hover: none) and (pointer: coarse) {
-  button:active,
-  .btn:active {
-    transform: scale(0.97);
-    transition: transform 0.1s ease;
-  }
-}
-
-/* iOS Form Validation Styling */
-input:invalid {
-  border-color: #ff3b30; /* iOS red */
-}
-
-input:valid {
-  border-color: #34c759; /* iOS green */
 }
 
 /* iOS Loading Spinner */
@@ -233,13 +176,6 @@ input:valid {
   touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
-}
-
-/* iOS Text Rendering Optimization */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
 /* iOS Video Player Optimization */

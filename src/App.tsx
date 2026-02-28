@@ -100,6 +100,13 @@ function AppContent() {
       {/* Auth Flow Pages - Outside OnboardingGuard */}
       <Route path="/auth/pending-approval" element={<PendingApproval />} />
       <Route path="/auth/account-rejected" element={<AccountRejected />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth/mfa" element={<MFASetup />} />
+      <Route path="/auth/verify" element={<VerifyEmail />} />
+      <Route path="/onboarding/profile" element={<ProfileOnboarding />} />
+      <Route path="/verification-pending" element={<VerificationPending />} />
+      <Route path="/features-preview" element={<FeaturesPreview />} />
+      <Route path="/install" element={<InstallApp />} />
       
       {/* Protected Routes - Wrapped with OnboardingGuard */}
       <Route element={<OnboardingGuard><Layout /></OnboardingGuard>}>
@@ -348,14 +355,6 @@ function AppContent() {
           </ProtectedRoute>
         } />
 
-        {/* Public Routes */}
-        <Route path="login" element={<LoginPage />} />
-        <Route path="auth/mfa" element={<MFASetup />} />
-        <Route path="auth/verify" element={<VerifyEmail />} />
-        <Route path="onboarding/profile" element={<ProfileOnboarding />} />
-        <Route path="verification-pending" element={<VerificationPending />} />
-        <Route path="features-preview" element={<FeaturesPreview />} />
-        <Route path="install" element={<InstallApp />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
