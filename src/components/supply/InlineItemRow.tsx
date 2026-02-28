@@ -244,25 +244,26 @@ export function InlineItemRow({
       {/* Item Detail Sheet */}
       <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
         <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-safe max-h-[80vh]">
-          <div className="flex flex-col">
+          <div className="flex flex-col overflow-y-auto max-h-[calc(80vh-1rem)]">
             {/* Close handle */}
-            <div className="flex justify-center pt-2 pb-3">
+            <div className="flex justify-center pt-2 pb-3 shrink-0">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
             </div>
 
-            {/* Image */}
-            <div className="px-5">
+            {/* Image — full width, shorter aspect ratio */}
+            <div className="px-5 shrink-0">
               {item.photo_url ? (
-                <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-muted">
+                <div className="w-full rounded-xl overflow-hidden bg-muted" style={{ maxHeight: '180px' }}>
                   <img
                     src={item.photo_url}
                     alt={item.name}
                     className="w-full h-full object-cover"
+                    style={{ maxHeight: '180px' }}
                   />
                 </div>
               ) : (
-                <div className="w-full aspect-[4/3] rounded-2xl bg-muted/50 flex flex-col items-center justify-center gap-2">
-                  <Package className="h-12 w-12 text-muted-foreground/30" />
+                <div className="w-full h-28 rounded-xl bg-muted/50 flex flex-col items-center justify-center gap-1.5">
+                  <Package className="h-10 w-10 text-muted-foreground/30" />
                   <span className="text-xs text-muted-foreground/50">No image</span>
                 </div>
               )}
