@@ -18,11 +18,13 @@ interface BuildingCardProps {
 
 export const BuildingCard = ({
   building,
+  buildingImage,
   floorCount,
   roomCount,
   workingFixtures,
   totalFixtures,
   buildingIssues,
+  onMarkAsSeen,
 }: BuildingCardProps) => {
   const navigate = useNavigate();
   const isOperational = building?.status === "active";
@@ -43,27 +45,25 @@ export const BuildingCard = ({
       )}
       onClick={handleClick}
     >
-      {/* Gradient header with status badge */}
-      <div
-        className={cn(
-          "relative h-[140px] sm:h-[160px] flex items-end p-5",
-          isOperational
-            ? "bg-gradient-to-br from-status-operational/20 via-status-operational/5 to-transparent"
-            : "bg-gradient-to-br from-status-warning/20 via-status-warning/5 to-transparent"
-        )}
-      >
-        <Building2 className="absolute top-5 right-5 h-16 w-16 text-foreground/5" />
+      {/* Photo header with status badge */}
+      <div className="relative h-[180px] overflow-hidden">
+        <img
+          src={buildingImage}
+          alt={building?.name}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <Badge
           variant={isOperational ? "default" : "destructive"}
           className="absolute top-4 right-4 text-xs"
         >
           {isOperational ? "Operational" : "Maintenance"}
         </Badge>
-        <div>
-          <h3 className="text-lg font-semibold leading-tight text-foreground">
+        <div className="absolute bottom-4 left-5">
+          <h3 className="text-lg font-semibold leading-tight text-white">
             {building?.name}
           </h3>
-          <p className="text-xs text-text-secondary mt-0.5">{building?.address}</p>
+          <p className="text-xs text-white/70 mt-0.5">{building?.address}</p>
         </div>
       </div>
 
