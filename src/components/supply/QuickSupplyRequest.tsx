@@ -92,7 +92,7 @@ export function QuickSupplyRequest() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-x-hidden">
       {/* Search Bar */}
       <div className="shrink-0 bg-background pb-2 space-y-2">
         <div className="flex items-center gap-2">
