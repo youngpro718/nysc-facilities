@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Loader2 } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, ZoomIn, ZoomOut, Download, FileSpreadsheet, Printer } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { FileText, Download, FileSpreadsheet, Printer, Search, LayoutGrid, List, Users, Gavel, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCourtPersonnel } from '@/hooks/useCourtPersonnel';
 import { JudgeStatusBadge } from '@/components/court/JudgeStatusManager';
@@ -26,8 +28,11 @@ interface TermAssignment {
   building?: string;
 }
 
+type ViewMode = 'table' | 'cards';
+
 export const TermSheetBoard: React.FC = () => {
-  const [isDense, setIsDense] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [search, setSearch] = useState('');
   const { toast } = useToast();
   const { personnel } = useCourtPersonnel();
 
@@ -74,16 +79,14 @@ export const TermSheetBoard: React.FC = () => {
     });
   };
 
-  // Print term sheet
   const printTermSheet = () => {
     window.print();
   };
 
-  // Fetch term assignments (using same query structure as EnhancedCourtAssignmentTable)
+  // Fetch term assignments
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ['term-sheet-board'],
     queryFn: async () => {
-      // Get all court assignments ordered by sort_order (same as Manage Assignments)
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from("court_assignments")
         .select("*")
@@ -91,20 +94,12 @@ export const TermSheetBoard: React.FC = () => {
 
       if (assignmentsError) throw assignmentsError;
 
-      // Get court rooms data
       const { data: roomsData, error: roomsError } = await supabase
         .from("court_rooms")
-        .select(`
-          id,
-          room_id,
-          room_number,
-          courtroom_number,
-          is_active
-        `);
+        .select(`id, room_id, room_number, courtroom_number, is_active`);
 
       if (roomsError) throw roomsError;
 
-      // Create a map of rooms by room_id for quick lookup
       const roomMap = new Map();
       (roomsData || []).forEach((room: Record<string, unknown>) => {
         roomMap.set(room.room_id, room);
@@ -129,12 +124,11 @@ export const TermSheetBoard: React.FC = () => {
         is_active: boolean;
       }
 
-      // Map assignments to include room data, maintaining sort_order
       const combined = ((assignmentsData || []) as AssignmentRow[])
         .map((assignment) => {
           const room = roomMap.get(assignment.room_id) as RoomRow | undefined;
           if (!room) return null;
-          
+
           return {
             room_number: room.room_number || room.courtroom_number || '—',
             part: assignment.part || '—',
@@ -142,7 +136,7 @@ export const TermSheetBoard: React.FC = () => {
             tel: assignment.tel || '—',
             fax: assignment.fax || '—',
             sergeant: assignment.sergeant || '—',
-            clerks: assignment.clerks || ['—'],
+            clerks: assignment.clerks || [],
             calendar_day: assignment.calendar_day || '—',
             is_active: room.is_active,
             sort_order: assignment.sort_order
@@ -157,186 +151,298 @@ export const TermSheetBoard: React.FC = () => {
         fax: row.fax,
         tel: row.tel,
         sergeant: row.sergeant,
-        clerks: Array.isArray(row.clerks) ? row.clerks : [String(row.clerks || '—')],
+        clerks: Array.isArray(row.clerks) ? row.clerks.filter(c => c && c !== '—') : [],
         building: undefined
       }));
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 30, // 30 seconds — faster refresh for accurate data
   });
 
+  // Filter by search
+  const filteredAssignments = search.trim()
+    ? assignments.filter(a => {
+      const q = search.toLowerCase();
+      return (
+        a.part.toLowerCase().includes(q) ||
+        a.justice.toLowerCase().includes(q) ||
+        a.room.toLowerCase().includes(q) ||
+        a.sergeant.toLowerCase().includes(q) ||
+        a.clerks.some(c => c.toLowerCase().includes(q))
+      );
+    })
+    : assignments;
+
+  // Stats
+  const filledParts = assignments.filter(a => a.justice !== '—').length;
+  const vacantParts = assignments.filter(a => a.justice === '—').length;
+  const totalClerks = new Set(assignments.flatMap(a => a.clerks).filter(c => c && c !== '—')).size;
 
   if (isLoading) {
     return (
-      <div className="bg-neutral-900 text-neutral-100 min-h-screen p-3">
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="bg-neutral-900 text-neutral-100 p-3 pb-safe">
-      {/* Header */}
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <FileText className="h-5 w-5 text-blue-400 flex-shrink-0" />
-          <h2 className="text-sm font-semibold truncate">Criminal Term – Board</h2>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 flex-shrink-0">
-            {assignments.length} Parts
-          </Badge>
+    <div className="space-y-4">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 shrink-0">
+            <FileText className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-base font-bold tracking-tight">Criminal Term Sheet</h2>
+            <p className="text-xs text-muted-foreground">
+              {assignments.length} parts • {filledParts} assigned • {vacantParts} vacant
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-8 w-40 text-xs"
+            />
+          </div>
+          {/* View toggle */}
+          <div className="flex rounded-md border overflow-hidden">
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8 px-2 rounded-none"
+              onClick={() => setViewMode('table')}
+            >
+              <List className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8 px-2 rounded-none"
+              onClick={() => setViewMode('cards')}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          {/* Export */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs px-2 py-1 h-7 bg-neutral-800 border-neutral-700 hover:bg-neutral-700 flex-shrink-0"
-              >
-                <Download className="h-3 w-3 mr-1" />
+              <Button variant="outline" size="sm" className="h-8 text-xs px-2">
+                <Download className="h-3.5 w-3.5 mr-1" />
                 Export
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-neutral-900 border-neutral-700">
-              <DropdownMenuItem onClick={exportToCSV} className="text-neutral-100 hover:bg-neutral-800">
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportToCSV}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Export to CSV/Excel
+                Export to CSV
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={printTermSheet} className="text-neutral-100 hover:bg-neutral-800">
+              <DropdownMenuItem onClick={printTermSheet}>
                 <Printer className="h-4 w-4 mr-2" />
-                Print Term Sheet
+                Print
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
-            onClick={() => setIsDense(!isDense)}
-            variant="outline"
-            size="sm"
-            className="text-xs px-2 py-1 h-7 bg-neutral-800 border-neutral-700 hover:bg-neutral-700 flex-shrink-0"
-          >
-            {isDense ? <ZoomOut className="h-3 w-3 mr-1" /> : <ZoomIn className="h-3 w-3 mr-1" />}
-            {isDense ? 'Normal' : 'Dense'}
-          </Button>
         </div>
       </div>
 
-      {/* Info Banner */}
-      <div className="mb-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 text-xs text-blue-300">
-        <p className="flex items-center gap-1">
-          <span className="font-semibold">📱 Tip:</span>
-          <span>Scroll horizontally to see all columns • Toggle density for smaller text</span>
-        </p>
+      {/* Stats Strip */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2">
+          <Gavel className="h-4 w-4 text-blue-500" />
+          <div>
+            <div className="text-lg font-bold leading-none">{filledParts}</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">Justices</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2">
+          <Shield className="h-4 w-4 text-amber-500" />
+          <div>
+            <div className="text-lg font-bold leading-none">
+              {new Set(assignments.map(a => a.sergeant).filter(s => s !== '—')).size}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">Sergeants</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2">
+          <Users className="h-4 w-4 text-green-500" />
+          <div>
+            <div className="text-lg font-bold leading-none">{totalClerks}</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">Clerks</div>
+          </div>
+        </div>
       </div>
 
-      {/* Scrollable Table Container */}
-      <div className="w-full overflow-x-auto -mx-3 px-3 scrollbar-hide">
-        <div className="min-w-max">
-          <div className="rounded-lg border border-neutral-800 bg-neutral-950 shadow-2xl overflow-hidden">
-            <table className={`w-full ${isDense ? 'text-[11px] leading-[1.05]' : 'text-xs leading-tight'}`}>
-              <colgroup>
-                <col style={{ minWidth: '80px' }} />
-                <col style={{ minWidth: '150px' }} />
-                <col style={{ minWidth: '70px' }} />
-                <col style={{ minWidth: '100px' }} />
-                <col style={{ minWidth: '100px' }} />
-                <col style={{ minWidth: '130px' }} />
-                <col style={{ minWidth: '200px' }} />
-              </colgroup>
-              <thead className="bg-neutral-800/70 text-neutral-300">
-                <tr>
-                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">PART</th>
-                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">JUSTICE</th>
-                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">ROOM</th>
-                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">FAX</th>
-                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">TEL</th>
-                  <th className="px-3 py-2 text-left font-semibold border-r border-neutral-700/50 whitespace-nowrap">SGT.</th>
-                  <th className="px-3 py-2 text-left font-semibold whitespace-nowrap">CLERKS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {assignments.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-neutral-400">
-                      No term assignments available
-                    </td>
+      {/* Table View */}
+      {viewMode === 'table' && (
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Part</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Justice</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Room</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px] hidden sm:table-cell">Tel</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px] hidden md:table-cell">Fax</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Sgt.</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Clerks</th>
                   </tr>
-                ) : (
-                  assignments.map((assignment, index) => (
-                    <tr
-                      key={`${assignment.part}-${index}`}
-                      className={`border-t border-neutral-800 hover:bg-neutral-800/30 transition-colors ${
-                        index % 2 === 0 ? 'bg-neutral-900/50' : 'bg-neutral-900/30'
-                      }`}
-                    >
-                      <td className="px-3 py-2 font-semibold text-blue-300 border-r border-neutral-800/50 whitespace-nowrap">
-                        {assignment.part}
-                      </td>
-                      <td className="px-3 py-2 text-neutral-200 border-r border-neutral-800/50">
-                        <span className="inline-flex items-center gap-1.5">
-                          {assignment.justice}
-                          {(() => {
-                            const judge = personnel.judges.find(j => j.name === assignment.justice);
-                            return judge?.judgeStatus ? <JudgeStatusBadge status={judge.judgeStatus} /> : null;
-                          })()}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-neutral-300 border-r border-neutral-800/50 text-center whitespace-nowrap">
-                        {assignment.room}
-                      </td>
-                      <td className="px-3 py-2 text-neutral-300 border-r border-neutral-800/50 tabular-nums whitespace-nowrap">
-                        {assignment.fax}
-                      </td>
-                      <td className="px-3 py-2 text-neutral-300 border-r border-neutral-800/50 tabular-nums whitespace-nowrap">
-                        {assignment.tel}
-                      </td>
-                      <td className="px-3 py-2 text-neutral-200 border-r border-neutral-800/50">
-                        {assignment.sergeant}
-                      </td>
-                      <td className="px-3 py-2 text-neutral-300">
-                        {assignment.clerks.join(' • ')}
+                </thead>
+                <tbody className="divide-y">
+                  {filteredAssignments.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
+                        {search ? 'No matches found' : 'No term assignments available'}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    filteredAssignments.map((a, i) => {
+                      const isVacant = a.justice === '—';
+                      const judge = personnel.judges.find(j => j.name === a.justice);
 
-          {/* Footer Info */}
-          <div className="mt-2 text-[10px] text-neutral-500 flex items-center justify-between">
-            <span>Criminal Term Sheet • All Columns Visible</span>
-            <span>{new Date().toLocaleDateString()}</span>
-          </div>
-        </div>
-      </div>
+                      return (
+                        <tr
+                          key={`${a.part}-${i}`}
+                          className={`hover:bg-muted/40 transition-colors ${isVacant ? 'bg-amber-500/5' : ''}`}
+                        >
+                          <td className="px-3 py-2">
+                            <span className="font-bold text-primary">{a.part}</span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-1.5">
+                              {isVacant ? (
+                                <span className="text-muted-foreground italic">Vacant</span>
+                              ) : (
+                                <>
+                                  <span className="font-medium">{a.justice}</span>
+                                  {judge?.judgeStatus && <JudgeStatusBadge status={judge.judgeStatus} />}
+                                </>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">
+                              {a.room}
+                            </Badge>
+                          </td>
+                          <td className="px-3 py-2 tabular-nums text-muted-foreground hidden sm:table-cell">{a.tel}</td>
+                          <td className="px-3 py-2 tabular-nums text-muted-foreground hidden md:table-cell">{a.fax}</td>
+                          <td className="px-3 py-2">
+                            {a.sergeant !== '—' ? (
+                              <span className="text-amber-600 dark:text-amber-400 font-medium">{a.sergeant}</span>
+                            ) : (
+                              <span className="text-muted-foreground/40">—</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">
+                            {a.clerks.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {a.clerks.map((clerk, ci) => (
+                                  <span key={ci} className="text-muted-foreground">
+                                    {clerk}{ci < a.clerks.length - 1 ? ' ·' : ''}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground/40">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Summary Stats */}
-      <div className="mt-6 grid grid-cols-2 gap-2">
-        <div className="bg-neutral-800/40 rounded-lg p-3 border border-neutral-700/50">
-          <div className="text-neutral-400 text-[10px] uppercase tracking-wide">Total Parts</div>
-          <div className="text-2xl font-bold text-neutral-100 mt-1">{assignments.length}</div>
-        </div>
-        <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
-          <div className="text-blue-400 text-[10px] uppercase tracking-wide">Active Justices</div>
-          <div className="text-2xl font-bold text-blue-300 mt-1">
-            {new Set(assignments.map(a => a.justice).filter(j => j !== '—')).size}
-          </div>
-        </div>
-      </div>
+      {/* Card View */}
+      {viewMode === 'cards' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filteredAssignments.length === 0 ? (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              {search ? 'No matches found' : 'No term assignments available'}
+            </div>
+          ) : (
+            filteredAssignments.map((a, i) => {
+              const isVacant = a.justice === '—';
+              const judge = personnel.judges.find(j => j.name === a.justice);
 
-      {/* Legend */}
-      <div className="mt-4 bg-neutral-800/30 rounded-lg p-3 border border-neutral-700/50">
-        <h3 className="text-xs font-semibold text-neutral-300 mb-2">Column Guide</h3>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-neutral-400">
-          <div><span className="font-semibold text-neutral-300">PART:</span> Court Part/Division</div>
-          <div><span className="font-semibold text-neutral-300">JUSTICE:</span> Presiding Judge</div>
-          <div><span className="font-semibold text-neutral-300">ROOM:</span> Courtroom Number</div>
-          <div><span className="font-semibold text-neutral-300">FAX:</span> Fax Extension</div>
-          <div><span className="font-semibold text-neutral-300">TEL:</span> Phone Extension</div>
-          <div><span className="font-semibold text-neutral-300">SGT:</span> Court Sergeant</div>
-          <div className="col-span-2"><span className="font-semibold text-neutral-300">CLERKS:</span> Court Clerks (• separated)</div>
+              return (
+                <Card key={`${a.part}-${i}`} className={`overflow-hidden ${isVacant ? 'border-amber-500/30' : ''}`}>
+                  {/* Card Header */}
+                  <div className={`px-3 py-2 border-b ${isVacant ? 'bg-amber-500/10' : 'bg-primary/5'}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-primary">{a.part}</span>
+                      <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">
+                        Rm {a.room}
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-3 space-y-2">
+                    {/* Justice */}
+                    <div className="flex items-center gap-1.5">
+                      <Gavel className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                      {isVacant ? (
+                        <span className="text-xs text-muted-foreground italic">Vacant</span>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-semibold">{a.justice}</span>
+                          {judge?.judgeStatus && <JudgeStatusBadge status={judge.judgeStatus} />}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Sergeant */}
+                    <div className="flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      {a.sergeant !== '—' ? (
+                        <span className="text-xs text-amber-600 dark:text-amber-400">{a.sergeant}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/40">No sergeant</span>
+                      )}
+                    </div>
+
+                    {/* Clerks */}
+                    <div className="flex items-start gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
+                      <div className="text-xs text-muted-foreground">
+                        {a.clerks.length > 0
+                          ? a.clerks.join(' · ')
+                          : <span className="text-muted-foreground/40">No clerks</span>
+                        }
+                      </div>
+                    </div>
+
+                    {/* Contact */}
+                    {(a.tel !== '—' || a.fax !== '—') && (
+                      <div className="flex gap-3 text-[10px] text-muted-foreground pt-1 border-t">
+                        {a.tel !== '—' && <span>Tel: {a.tel}</span>}
+                        {a.fax !== '—' && <span>Fax: {a.fax}</span>}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
+      )}
+
+      {/* Footer */}
+      <div className="text-[10px] text-muted-foreground flex items-center justify-between pt-1">
+        <span>Criminal Term Sheet • {new Date().toLocaleDateString()}</span>
+        <span>{filteredAssignments.length} of {assignments.length} shown</span>
       </div>
     </div>
   );

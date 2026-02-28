@@ -113,6 +113,7 @@ export function StaffRosterPanel() {
             queryClient.invalidateQueries({ queryKey: ['court-personnel'] });
             queryClient.invalidateQueries({ queryKey: ['court-assignments'] });
             queryClient.invalidateQueries({ queryKey: ['court-operations'] });
+            queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
             const reasonLabel = DEPARTURE_REASONS.find(r => r.value === departureReason)?.label || departureReason;
             toast.success(`${departTarget?.name} removed — ${reasonLabel}`);
             setDepartTarget(null);
