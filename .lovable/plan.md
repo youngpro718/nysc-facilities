@@ -1,26 +1,26 @@
 
 
-## Bug: Sidebar Navigation Mismatch — Tasks/Lighting/Court Operations
+## Three Fixes
 
-### Root Cause
-When Tasks was added to the admin navigation tabs in `getRoleBasedNavigation()`, the corresponding `/tasks` route was **not added** to `getNavigationRoutes()`. Since `AppSidebar.tsx` matches navigation items to routes by array index (`routes[index]`), every item after Inventory is off by one:
+### 1. Admin Center button does nothing
 
-| Sidebar Label | Expected Route | Actual Route |
-|---|---|---|
-| Tasks | /tasks | /lighting |
-| Lighting | /lighting | /court-operations |
-| Court Operations | /court-operations | /admin |
-| Admin Center | /admin | (undefined) |
+**Root cause:** Same index-offset bug as before. The admin nav tabs include a `{ type: "separator" }` at index 9, but the routes array has no corresponding empty string entry. So "Admin Center" (index 10) maps to `routes[10]` which is `undefined`.
 
-### Fix (1 line change)
-
-**File: `src/components/layout/config/navigation.tsx`** — In `getNavigationRoutes`, admin block: add `'/tasks'` between `'/inventory'` and `'/lighting'`.
+**Fix in `src/components/layout/config/navigation.tsx`:** Add `''` for the separator between `/court-operations` and `/admin`:
 
 ```
-'/inventory',
-'/tasks',        // ← add this line
-'/lighting',
+'/court-operations',
+'',          // ← separator placeholder
+'/admin',
 ```
 
-This realigns the routes array with the navigation tabs array so every index matches correctly.
+### 2. Logo too small
+
+**Fix in `src/components/layout/components/AppSidebar.tsx`:** Change the logo container from `h-8 w-8` to `h-10 w-10` in both collapsed and expanded states (3 occurrences around lines 46, 51, 55).
+
+### 3. Card flip animation is janky
+
+**Root cause in `src/components/spaces/rooms/RoomCard.tsx`:** Line 79 uses `transition-all` which transitions every CSS property (shadows, opacity, etc.) along with the transform, causing visual artifacts during the flip.
+
+**Fix:** Change `transition-all` to `transition-transform` on line 79 so only the 3D rotation animates smoothly.
 
