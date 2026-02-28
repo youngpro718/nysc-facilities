@@ -76,7 +76,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
           style={{ perspective: '1000px', WebkitPerspective: '1000px' as any }}
         >
           <div 
-            className="relative w-full h-full transition-all duration-500"
+            className="relative w-full h-full transition-transform duration-500"
             style={{ 
               transform: (isFlipped) ? 'rotateY(180deg)' : 'rotateY(0)',
               transformStyle: 'preserve-3d',
