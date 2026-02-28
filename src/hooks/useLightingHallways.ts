@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Lighting Hallways — hallway lighting stats hook
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
@@ -50,8 +50,8 @@ export function useLightingHallways() {
             id: hallway.id,
             name: hallway.name,
             floor_id: hallway.floor_id,
-            floor_name: hallway.floors?.name || 'Unknown Floor',
-            floor_number: hallway.floors?.floor_number || 0,
+            floor_name: (hallway as any).floors?.name || 'Unknown Floor',
+            floor_number: (hallway as any).floors?.floor_number || 0,
             total_fixtures: total,
             functional_count: functional,
             non_functional_count: nonFunctional,

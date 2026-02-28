@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Staff Tasks — CRUD operations for staff task management
 /**
  * useStaffTasks Hook
  * 
@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errorUtils';
 import type { 
   StaffTask, 
   StaffTaskHistory, 
@@ -99,7 +100,7 @@ export function useStaffTasks(options?: {
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to create task', { description: error.message });
+      toast.error('Failed to create task', { description: getErrorMessage(error) });
     },
   });
 
@@ -127,7 +128,7 @@ export function useStaffTasks(options?: {
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to submit request', { description: error.message });
+      toast.error('Failed to submit request', { description: getErrorMessage(error) });
     },
   });
 
@@ -154,7 +155,7 @@ export function useStaffTasks(options?: {
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to approve task', { description: error.message });
+      toast.error('Failed to approve task', { description: getErrorMessage(error) });
     },
   });
 
@@ -181,7 +182,7 @@ export function useStaffTasks(options?: {
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to reject task', { description: error.message });
+      toast.error('Failed to reject task', { description: getErrorMessage(error) });
     },
   });
 
@@ -207,7 +208,7 @@ export function useStaffTasks(options?: {
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to claim task', { description: error.message });
+      toast.error('Failed to claim task', { description: getErrorMessage(error) });
     },
   });
 
@@ -232,7 +233,7 @@ export function useStaffTasks(options?: {
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to start task', { description: error.message });
+      toast.error('Failed to start task', { description: getErrorMessage(error) });
     },
   });
 
@@ -258,7 +259,7 @@ export function useStaffTasks(options?: {
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to complete task', { description: error.message });
+      toast.error('Failed to complete task', { description: getErrorMessage(error) });
     },
   });
 
@@ -282,7 +283,7 @@ export function useStaffTasks(options?: {
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to cancel task', { description: error.message });
+      toast.error('Failed to cancel task', { description: getErrorMessage(error) });
     },
   });
 

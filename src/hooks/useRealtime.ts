@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Realtime — Supabase channel subscriptions with centralized invalidation
 import { useEffect, useRef } from 'react';
 import { logger } from '@/lib/logger';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,7 +17,7 @@ interface UseRealtimeOptions {
 export function useRealtime({ table, queryKeys = [], showToasts = false }: UseRealtimeOptions) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const channelRef = useRef<unknown>(null);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     // Create channel for real-time updates
@@ -49,7 +49,7 @@ export function useRealtime({ table, queryKeys = [], showToasts = false }: UseRe
 
           // Show toast notifications for important updates
           if (showToasts) {
-            const { eventType, new: newRecord, old: oldRecord } = payload;
+            const { eventType, new: newRecord, old: oldRecord } = payload as any;
             
             switch (eventType) {
               case 'INSERT':

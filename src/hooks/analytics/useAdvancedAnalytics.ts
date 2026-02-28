@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Advanced Analytics — sophisticated analytics with intelligent caching
 /**
  * Advanced Analytics React Query Hooks
  * Provides sophisticated analytics with intelligent caching
@@ -256,7 +256,7 @@ export function useAnalyticsCacheManager() {
       }[type];
 
       if (queryKey) {
-        await queryClient.invalidateQueries({ queryKey: queryKey as unknown });
+        await queryClient.invalidateQueries({ queryKey: queryKey as any });
       }
       
       return { success: true };

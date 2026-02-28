@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Admin Realtime Notifications — live toast alerts for admin events
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
@@ -68,7 +68,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         },
         (payload) => {
           logger.debug('[AdminRealtime] New admin notification:', payload);
-          const notification = payload.new;
+          const notification = payload.new as any;
           
           setLastNotification(notification);
           // Keep the notifications list in sync
@@ -81,7 +81,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               label: 'View',
               onClick: () => {
                 // Navigate based on notification type
-                const actionUrl = (notification as Record<string, unknown>)?.metadata?.action_url as string | undefined;
+                const actionUrl = (notification as any)?.metadata?.action_url as string | undefined;
                 if (actionUrl) {
                   window.location.href = actionUrl;
                 } else switch (notification.notification_type) {
@@ -296,8 +296,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         },
         (payload) => {
           logger.debug('[AdminRealtime] New issue:', payload);
-          const issue = payload.new as Record<string, unknown>;
-          const priority = (issue?.priority || '').toLowerCase();
+          const issue = payload.new as any;
+          const priority = String(issue?.priority || '').toLowerCase();
           const isCritical = ['high'].includes(priority);
           
           if (isCritical) {

@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Facilities — building/floor/room data fetching and mutations
 /**
  * Facilities Hooks - React Query Integration
  * 
@@ -10,6 +10,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilitiesService } from '@/services/facilities/facilitiesService';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { toast } from 'sonner';
 
 /**
@@ -126,7 +127,7 @@ export function useRoomMutations() {
       toast.success('Room created successfully');
     },
     onError: (error: unknown) => {
-      toast.error(`Failed to create room: ${error.message}`);
+      toast.error(`Failed to create room: ${getErrorMessage(error)}`);
     },
   });
 
@@ -153,7 +154,7 @@ export function useRoomMutations() {
       if (context?.previousRoom) {
         queryClient.setQueryData(facilitiesKeys.room(id), context.previousRoom);
       }
-      toast.error(`Failed to update room: ${error.message}`);
+      toast.error(`Failed to update room: ${getErrorMessage(error)}`);
     },
     onSuccess: (data, { id }) => {
       // Update cache with server data
@@ -172,7 +173,7 @@ export function useRoomMutations() {
       toast.success('Room deleted successfully');
     },
     onError: (error: unknown) => {
-      toast.error(`Failed to delete room: ${error.message}`);
+      toast.error(`Failed to delete room: ${getErrorMessage(error)}`);
     },
   });
 
