@@ -72,16 +72,14 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
       <CardContent className="p-0 h-full">
         {/* Perspective wrapper ensures proper 3D rendering of front/back faces */}
         <div
-          className="w-full h-full"
-          style={{ perspective: '1000px', WebkitPerspective: '1000px' as any }}
+          className="w-full h-full overflow-hidden"
+          style={{ perspective: '1200px', WebkitPerspective: '1200px' as any }}
         >
           <div 
-            className="relative w-full h-full transition-transform duration-500"
+            className="relative w-full h-full transition-transform duration-600 ease-in-out"
             style={{ 
-              transform: (isFlipped) ? 'rotateX(180deg)' : 'rotateX(0)',
+              transform: (isFlipped) ? 'rotateY(180deg)' : 'rotateY(0deg)',
               transformStyle: 'preserve-3d',
-              // Cross-browser hints to avoid flattening/tearing
-              willChange: 'transform',
               WebkitTransformStyle: 'preserve-3d' as any
             }}
           >
@@ -105,7 +103,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
               style={{ 
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden' as any,
-                transform: 'rotateX(180deg)'
+                transform: 'rotateY(180deg)'
               }}
             >
               <CardBack room={displayRoom} onFlip={handleFlip} />
