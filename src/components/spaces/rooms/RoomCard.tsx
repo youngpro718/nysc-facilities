@@ -78,7 +78,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
           <div 
             className="relative w-full h-full transition-transform duration-500"
             style={{ 
-              transform: (isFlipped) ? 'rotateY(180deg)' : 'rotateY(0)',
+              transform: (isFlipped) ? 'rotateX(180deg)' : 'rotateX(0)',
               transformStyle: 'preserve-3d',
               // Cross-browser hints to avoid flattening/tearing
               willChange: 'transform',
@@ -105,7 +105,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
               style={{ 
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden' as any,
-                transform: 'rotateY(180deg)'
+                transform: 'rotateX(180deg)'
               }}
             >
               <CardBack room={displayRoom} onFlip={handleFlip} />
