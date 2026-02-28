@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
@@ -38,7 +37,7 @@ export function QuickOrderGrid() {
   } = useOrderCart();
 
   const filteredItems = useMemo(() => {
-    const filtered = (inventoryItems as unknown[]).filter(item => {
+    const filtered = (inventoryItems as Record<string, any>[]).filter(item => {
       // Only show allowed categories
       const isAllowedCategory = ALLOWED_CATEGORIES.includes(item.inventory_categories?.name || '');
       if (!isAllowedCategory) return false;
@@ -58,7 +57,7 @@ export function QuickOrderGrid() {
   }, [inventoryItems, searchTerm, selectedCategory]);
 
   const selectedItem = selectedItemId 
-    ? inventoryItems.find((item: Record<string, unknown>) => item.id === selectedItemId)
+    ? inventoryItems.find((item: any) => item.id === selectedItemId)
     : null;
 
   const handleSelectItem = (itemId: string) => {
@@ -68,17 +67,17 @@ export function QuickOrderGrid() {
     }
   };
 
-  const handleAddItem = (item: Record<string, unknown>, quantity: number = 1) => {
+  const handleAddItem = (item: any, quantity: number = 1) => {
     addItem({
-      id: item.id,
-      name: item.name,
-      unit: item.unit,
-      sku: item.sku,
+      id: item.id as string,
+      name: item.name as string,
+      unit: item.unit as string,
+      sku: item.sku as string,
     }, quantity);
   };
 
-  const handleIncrement = (item: Record<string, unknown>) => {
-    const currentQty = cartItems.find((i: Record<string, unknown>) => i.item_id === item.id)?.quantity || 0;
+  const handleIncrement = (item: any) => {
+    const currentQty = cartItems.find((i: any) => i.item_id === item.id)?.quantity || 0;
     if (currentQty > 0) {
       updateQuantity(item.id, currentQty + 1);
     } else {
@@ -86,8 +85,8 @@ export function QuickOrderGrid() {
     }
   };
 
-  const handleDecrement = (item: Record<string, unknown>) => {
-    const currentQty = cartItems.find((i: Record<string, unknown>) => i.item_id === item.id)?.quantity || 0;
+  const handleDecrement = (item: any) => {
+    const currentQty = cartItems.find((i: any) => i.item_id === item.id)?.quantity || 0;
     if (currentQty > 1) {
       updateQuantity(item.id, currentQty - 1);
     } else {
@@ -153,7 +152,7 @@ export function QuickOrderGrid() {
               <div className="sticky top-4 h-fit border rounded-lg p-4 bg-card">
                 <ItemDetailPanel
                   item={selectedItem}
-                  cartQuantity={selectedItem ? cartItems.find((i: Record<string, unknown>) => i.item_id === selectedItem.id)?.quantity || 0 : 0}
+              cartQuantity={selectedItem ? cartItems.find((i: any) => i.item_id === selectedItem.id)?.quantity || 0 : 0}
                   isFavorite={selectedItem ? isFavorite(selectedItem.id) : false}
                   onToggleFavorite={() => selectedItem && handleToggleFavorite(selectedItem.id)}
                   onAddToCart={(qty) => selectedItem && handleAddItem(selectedItem, qty)}
@@ -192,7 +191,7 @@ export function QuickOrderGrid() {
               <div className="sticky top-4 h-fit border rounded-lg p-4 bg-card">
                 <ItemDetailPanel
                   item={selectedItem}
-                  cartQuantity={selectedItem ? cartItems.find((i: Record<string, unknown>) => i.item_id === selectedItem.id)?.quantity || 0 : 0}
+              cartQuantity={selectedItem ? cartItems.find((i: any) => i.item_id === selectedItem.id)?.quantity || 0 : 0}
                   isFavorite={selectedItem ? isFavorite(selectedItem.id) : false}
                   onToggleFavorite={() => selectedItem && handleToggleFavorite(selectedItem.id)}
                   onAddToCart={(qty) => selectedItem && handleAddItem(selectedItem, qty)}
@@ -221,7 +220,7 @@ export function QuickOrderGrid() {
         >
           <ItemDetailPanel
             item={selectedItem}
-            cartQuantity={selectedItem ? cartItems.find((i: Record<string, unknown>) => i.item_id === selectedItem.id)?.quantity || 0 : 0}
+            cartQuantity={selectedItem ? cartItems.find((i: any) => i.item_id === selectedItem.id)?.quantity || 0 : 0}
             isFavorite={selectedItem ? isFavorite(selectedItem.id) : false}
             onToggleFavorite={() => {
               if (selectedItem) {

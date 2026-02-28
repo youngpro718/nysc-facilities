@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +40,7 @@ interface InventoryItem {
   sku?: string;
   category: string;
   description?: string;
-  current_stock: number;
+  current_stock: number; // alias for quantity field
   minimum_threshold: number;
   maximum_stock: number;
   supplier?: string;
@@ -50,6 +49,7 @@ interface InventoryItem {
   monthly_usage: number;
   created_at: string;
   updated_at: string;
+  unit_cost?: number;
 }
 
 interface StockAlert {

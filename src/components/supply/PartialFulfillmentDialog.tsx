@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from 'react';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
@@ -42,7 +41,7 @@ interface FulfillmentItem {
 }
 
 interface PartialFulfillmentDialogProps {
-  order: Record<string, unknown>;
+  order: any;
   onClose: () => void;
 }
 

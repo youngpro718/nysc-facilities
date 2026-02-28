@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +27,7 @@ export class SupplyRequestErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    logger.error('SupplyRequestErrorBoundary: Error caught:', error, errorInfo);
+    logger.error('SupplyRequestErrorBoundary: Error caught:', error);
     this.props.onError?.(error, errorInfo);
   }
 

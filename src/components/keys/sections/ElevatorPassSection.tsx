@@ -1,5 +1,5 @@
-// @ts-nocheck
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -572,7 +572,7 @@ export function ElevatorPassSection() {
                   </TableCell>
                 </TableRow>
               ) : (
-                (officeAllocations || []).map((a, idx) => (
+                (officeAllocations || []).map((a: any, idx: number) => (
                   <TableRow key={`${a.allocated_at}-${idx}`}>
                     <TableCell>{format(new Date(a.allocated_at), "yyyy-MM-dd HH:mm")}</TableCell>
                     <TableCell>{a.quantity_delta}</TableCell>
@@ -596,7 +596,7 @@ export function ElevatorPassSection() {
       <EditElevatorPassDialog
         open={editOpen}
         onOpenChange={setEditOpen}
-        assignment={editingAssignment as unknown}
+        assignment={editingAssignment as any}
         onUpdated={() => {
           queryClient.invalidateQueries({ queryKey: ["elevator-pass-assignments"] });
           setEditOpen(false);

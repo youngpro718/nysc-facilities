@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,7 +75,7 @@ export function OrderSummaryFooter({
     }
     
     // Fallback to profile metadata
-    const meta = profile?.metadata as Record<string, unknown> | undefined;
+    const meta = profile?.metadata as Record<string, any> | undefined;
     const roomFromProfile = meta?.room_number || meta?.office || '';
     if (roomFromProfile) {
       setDeliveryLocation(roomFromProfile);
@@ -98,7 +97,7 @@ export function OrderSummaryFooter({
         justification: 'Standard supply request',
       });
       // Reset form
-      const meta = profile?.metadata as Record<string, unknown> | undefined;
+      const meta = profile?.metadata as Record<string, any> | undefined;
       const roomFromProfile = meta?.room_number || meta?.office || '';
       setDeliveryLocation(roomFromProfile);
       setPriority('medium');

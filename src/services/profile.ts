@@ -1,4 +1,3 @@
-// @ts-nocheck
 // src/services/profile.ts
 // Profile management service with role-based access control
 import { supabase } from '@/lib/supabase';
@@ -290,7 +289,7 @@ export async function assignRole(userId: string, role: Role): Promise<Profile> {
   
   // Import dynamically to avoid circular dependency
   const { updateUserRole } = await import('./profile/roleManagement');
-  await updateUserRole(userId, role as unknown);
+  await updateUserRole(userId, role as any);
   
   return getProfileById(userId);
 }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -84,7 +83,7 @@ export function InventoryActivityLog({ itemId, limit = 50 }: InventoryActivityLo
   };
 
   const getTransactionBadge = (type: string) => {
-    const typeMap: Record<string, { label: string; variant: unknown }> = {
+    const typeMap: Record<string, { label: string; variant: "default" | "destructive" | "secondary" | "outline" }> = {
       'add': { label: 'Added', variant: 'default' },
       'remove': { label: 'Removed', variant: 'destructive' },
       'fulfilled': { label: 'Fulfilled Order', variant: 'secondary' },

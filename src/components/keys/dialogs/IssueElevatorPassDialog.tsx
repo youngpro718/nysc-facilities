@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getErrorMessage } from "@/lib/errorUtils";
 import { useEffect, useMemo, useState } from "react";
 import { logger } from '@/lib/logger';
@@ -88,7 +87,7 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
         logger.error('Error searching occupants:', error);
         return;
       }
-      setOccupantOptions((data || []) as unknown[]);
+      setOccupantOptions((data || []) as Occupant[]);
     };
     const t = setTimeout(run, 200);
     return () => clearTimeout(t);
@@ -126,7 +125,7 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
       const { data: userData } = await supabase.auth.getUser();
       const issuedBy = userData?.user?.email || "admin";
       // Narrow-cast supabase to any to bypass missing RPC typings
-      const { error } = await (supabase as Record<string, unknown>).rpc("fn_issue_elevator_pass", {
+      const { error } = await (supabase as any).rpc("fn_issue_elevator_pass", {
         p_key_id: passId,
         p_recipient_type: recipientType,
         p_occupant_id: recipientType === "occupant" ? occupantId : null,

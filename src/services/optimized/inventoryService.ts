@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Optimized Inventory Service
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
@@ -127,7 +127,7 @@ export class OptimizedInventoryService {
 
       if (error) throw error;
 
-      return data.map((item: Record<string, unknown>): OptimizedInventoryItem => ({
+      return data.map((item: any): OptimizedInventoryItem => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -174,9 +174,9 @@ export class OptimizedInventoryService {
       if (error) throw error;
 
       // Filter low stock items using database minimum_quantity
-      const lowStockItems = data.filter((item: Record<string, unknown>) => item.quantity <= item.minimum_quantity);
+      const lowStockItems = data.filter((item: any) => item.quantity <= item.minimum_quantity);
 
-      return lowStockItems.map((item: Record<string, unknown>): OptimizedInventoryItem => ({
+      return lowStockItems.map((item: any): OptimizedInventoryItem => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -217,10 +217,10 @@ export class OptimizedInventoryService {
 
       if (error) throw error;
 
-      return data.map((category: Record<string, unknown>): OptimizedInventoryCategory => {
+      return data.map((category: any): OptimizedInventoryCategory => {
         const items = category.inventory_items || [];
-        const lowStockItems = items.filter((item: Record<string, unknown>) => item.quantity <= item.minimum_quantity);
-        const totalQuantity = items.reduce((sum: number, item: Record<string, unknown>) => sum + item.quantity, 0);
+        const lowStockItems = items.filter((item: any) => item.quantity <= item.minimum_quantity);
+        const totalQuantity = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
         return {
           id: category.id,
@@ -264,7 +264,7 @@ export class OptimizedInventoryService {
 
       if (error) throw error;
 
-      return data.map((item: Record<string, unknown>): OptimizedInventoryItem => ({
+      return data.map((item: any): OptimizedInventoryItem => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -311,7 +311,7 @@ export class OptimizedInventoryService {
 
       if (error) throw error;
 
-      return data.map((item: Record<string, unknown>): OptimizedInventoryItem => ({
+      return data.map((item: any): OptimizedInventoryItem => ({
         id: item.id,
         name: item.name,
         description: item.description,

@@ -1,4 +1,5 @@
 // @ts-nocheck
+// Report Generation Service
 /**
  * Report Generation Service
  * Phase 4: Advanced reporting capabilities
