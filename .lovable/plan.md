@@ -1,36 +1,38 @@
 
 
-## Problem Analysis
+## Problem
 
-Two distinct issues on iPhone:
+The Sheet (cart drawer) uses `h-screen` (100vh) which on iOS includes the area behind the browser chrome and home indicator. Even with `pb-safe`, the bottom buttons get clipped or hidden behind the BottomTabBar on mobile.
 
-1. **Header overlaps the status bar / Dynamic Island**: The sticky header (`h-14`, line 136 in Layout.tsx) uses `sticky top-0` but has no top safe-area padding. Since `viewport-fit=cover` is enabled in the HTML, content extends behind the status bar notch area.
+## Root Cause
 
-2. **Cart button hidden behind bottom tab bar**: The `OrderCart` trigger button is positioned at `fixed bottom-20` (80px), but the `BottomTabBar` is ~56px + safe-area-inset-bottom (~34px on iPhone) = ~90px total. The button sits behind the tab bar. Additionally, the Sheet content may also be clipped at the bottom.
+In `src/components/ui/sheet.tsx` line 27, the right-side variant uses `h-screen` which equals `100vh` — on iOS Safari this includes the area behind toolbars and safe areas, causing content to overflow below the visible area.
 
-## Implementation Plan
+## Fix
 
-### 1. Fix header safe-area overlap (Layout.tsx)
+### 1. Sheet component: use `h-dvh` instead of `h-screen` (sheet.tsx, line 27)
 
-- Add `pt-[env(safe-area-inset-top)]` to the sticky header on mobile so it clears the status bar / Dynamic Island
-- Change `top-0` to account for safe area so the sticky behavior still works correctly
+Change the right-side variant from `h-screen` to `h-dvh` (dynamic viewport height). This uses `100dvh` which accounts for browser chrome and is supported on all modern iOS versions.
 
-**File**: `src/components/layout/Layout.tsx`, line 136
-- Change the header className to include `safe-area-top` (which applies `padding-top: env(safe-area-inset-top)`)
+```
+// Before
+"inset-y-0 right-0 h-screen w-3/4 ..."
 
-### 2. Fix cart button positioning (OrderCart.tsx)
+// After  
+"inset-y-0 right-0 h-dvh w-3/4 ..."
+```
 
-- Increase `bottom-20` to `bottom-24` or use a calc with safe-area-inset-bottom so the cart FAB clears the bottom tab bar + home indicator
-- Add `pb-safe` or safe-area bottom padding to the `SheetContent` so the submit/clear buttons aren't clipped
+### 2. Increase bottom padding in OrderCart SheetContent (OrderCart.tsx, line 81)
 
-**File**: `src/components/supply/OrderCart.tsx`, line 74
-- Change `bottom-20` to `bottom-28` (7rem = 112px) to clear the tab bar + safe area
-- Add safe-area bottom padding to `SheetContent` (line 81)
+Change `pb-safe` to `pb-20` to provide a generous fixed bottom padding that clears the BottomTabBar area on mobile, since the Sheet renders at z-100 (above the tab bar at z-40) but the visual overlap still confuses users.
 
-### 3. Adjust FloatingActionButton for consistency (FloatingActionButton.tsx)
+```
+// Before
+<SheetContent className="w-full sm:max-w-md flex flex-col pb-safe">
 
-- The FAB at `bottom-[4.5rem]` (72px) has the same issue — raise it to match the cart button fix
+// After
+<SheetContent className="w-full sm:max-w-md flex flex-col pb-20 sm:pb-6">
+```
 
-**File**: `src/components/ui/FloatingActionButton.tsx`, line 32
-- Change `bottom-[4.5rem]` to `bottom-28`
+This gives 80px of bottom padding on mobile (clearing the ~90px tab bar + safe area) while keeping normal padding on desktop.
 
