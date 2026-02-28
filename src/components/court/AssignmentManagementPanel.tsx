@@ -255,19 +255,8 @@ export const AssignmentManagementPanel = () => {
             </Card>
           </div>
 
-          {/* Enhanced Assignment Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Court Assignments</CardTitle>
-              <CardDescription>
-                Click on any cell to edit. Use dropdowns to select personnel from the database.
-                Rooms with issues are highlighted and show warning icons.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EnhancedCourtAssignmentTable />
-            </CardContent>
-          </Card>
+          {/* Enhanced Split-Panel Assignment Board */}
+          <EnhancedCourtAssignmentTable />
 
 
 
