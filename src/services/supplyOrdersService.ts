@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { InventoryItemWithFlag, requiresApprovalForItems } from '@/constants/supplyOrders';
@@ -34,9 +33,9 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     .in('id', itemIds);
   if (invErr) throw new Error(`Failed to fetch inventory: ${invErr.message}`);
 
-  const liteItems: InventoryItemWithFlag[] = (inv || []).map((i: Record<string, unknown>) => ({
-    id: i.id,
-    name: i.name,
+  const liteItems: InventoryItemWithFlag[] = (inv || []).map((i: any) => ({
+    id: i.id as string,
+    name: i.name as string,
     categoryName: i.inventory_categories?.name ?? null,
     requires_justification: i.requires_justification ?? false,
   }));

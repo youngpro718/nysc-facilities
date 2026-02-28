@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
@@ -15,7 +14,7 @@ export function KeyAssignmentSection() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<KeyAssignment | null>(null);
-  const { data: assignments, isLoading, refetch } = useKeyAssignments();
+  const { data: assignments, isLoading, refetch } = useKeyAssignments() as { data: KeyAssignment[] | undefined; isLoading: boolean; refetch: () => void };
 
   const getOccupantFullName = (occupant: KeyAssignment['occupant']) => {
     if (!occupant) return 'Unknown';

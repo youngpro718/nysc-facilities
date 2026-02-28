@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
@@ -128,9 +127,9 @@ export function KeyInventorySection() {
             available_quantity: k.available_quantity,
             is_passkey: k.is_passkey ? "yes" : "no",
             key_scope: k.key_scope || "",
-            active_assignments: ((k as Record<string, unknown>)).active_assignments ?? "",
-            returned_assignments: ((k as Record<string, unknown>)).returned_assignments ?? "",
-            lost_count: ((k as Record<string, unknown>)).lost_count ?? "",
+            active_assignments: (k as any).active_assignments ?? "",
+            returned_assignments: (k as any).returned_assignments ?? "",
+            lost_count: (k as any).lost_count ?? "",
           }));
           const headers = Object.keys(rows[0] || { id: "", name: "", type: "", status: "", total_quantity: "", available_quantity: "", is_passkey: "", key_scope: "", active_assignments: "", returned_assignments: "", lost_count: "" });
           const csv = [

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,7 +36,7 @@ export function QuickSupplyRequest() {
 
   // Filter items based on search and category
   const filteredItems = useMemo(() => {
-    return (inventoryItems as unknown[]).filter((item) => {
+    return (inventoryItems as Record<string, any>[]).filter((item) => {
       // Only show allowed categories
       const categoryName = item.inventory_categories?.name || '';
       if (!ALLOWED_CATEGORIES.includes(categoryName)) return false;
@@ -57,7 +56,7 @@ export function QuickSupplyRequest() {
     });
   }, [inventoryItems, searchTerm, selectedCategory]);
 
-  const handleAddItem = (item: Record<string, unknown>) => {
+  const handleAddItem = (item: any) => {
     addItem(
       {
         id: item.id,
@@ -70,7 +69,7 @@ export function QuickSupplyRequest() {
     );
   };
 
-  const handleIncrement = (item: Record<string, unknown>) => {
+  const handleIncrement = (item: any) => {
     const currentQty = cartItems.find((i) => i.item_id === item.id)?.quantity || 0;
     if (currentQty > 0) {
       updateQuantity(item.id, currentQty + 1);
@@ -79,7 +78,7 @@ export function QuickSupplyRequest() {
     }
   };
 
-  const handleDecrement = (item: Record<string, unknown>) => {
+  const handleDecrement = (item: any) => {
     const currentQty = cartItems.find((i) => i.item_id === item.id)?.quantity || 0;
     if (currentQty > 1) {
       updateQuantity(item.id, currentQty - 1);

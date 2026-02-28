@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Courtroom Mapping Service
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
@@ -57,7 +57,7 @@ export async function mapPartToCourtroom(
   }
 
   // Filter by building
-  const buildingFiltered = courtRooms.filter((cr: Record<string, unknown>) => {
+  const buildingFiltered = courtRooms.filter((cr: any) => {
     const address = cr.rooms?.floors?.buildings?.address || '';
     return address.includes(`${buildingCode} Centre`);
   });
@@ -96,7 +96,7 @@ function normalizePartNumber(partNumber: string): string {
 /**
  * Find exact matches (highest confidence)
  */
-function findExactMatches(cleanPart: string, courtRooms: unknown[]): CourtroomMapping[] {
+function findExactMatches(cleanPart: string, courtRooms: any[]): CourtroomMapping[] {
   const matches: CourtroomMapping[] = [];
 
   for (const cr of courtRooms) {
@@ -121,7 +121,7 @@ function findExactMatches(cleanPart: string, courtRooms: unknown[]): CourtroomMa
 /**
  * Find partial matches (medium confidence)
  */
-function findPartialMatches(cleanPart: string, courtRooms: unknown[]): CourtroomMapping[] {
+function findPartialMatches(cleanPart: string, courtRooms: any[]): CourtroomMapping[] {
   const matches: CourtroomMapping[] = [];
 
   // Extract numeric part if exists
@@ -146,7 +146,7 @@ function findPartialMatches(cleanPart: string, courtRooms: unknown[]): Courtroom
 /**
  * Find special format matches (TAP A, PT 75, RTA-73)
  */
-function findSpecialFormatMatches(originalPart: string, courtRooms: unknown[]): CourtroomMapping[] {
+function findSpecialFormatMatches(originalPart: string, courtRooms: any[]): CourtroomMapping[] {
   const matches: CourtroomMapping[] = [];
   const upperPart = originalPart.toUpperCase();
 
@@ -194,7 +194,7 @@ function findSpecialFormatMatches(originalPart: string, courtRooms: unknown[]): 
 /**
  * Create mapping object from court room data
  */
-function createMapping(cr: Record<string, unknown>, confidence: number): CourtroomMapping {
+function createMapping(cr: any, confidence: number): CourtroomMapping {
   const building = cr.rooms?.floors?.buildings;
   const buildingCode = building?.address?.includes('111') ? '111' : '100';
   

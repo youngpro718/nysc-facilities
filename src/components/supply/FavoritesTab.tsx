@@ -1,16 +1,15 @@
-// @ts-nocheck
 import { useFavoriteItems } from '@/hooks/useFavoriteItems';
 import { ItemRow } from './ItemRow';
 import { Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface FavoritesTabProps {
-  cartItems: unknown[];
+  cartItems: Record<string, any>[];
   selectedItemId: string | null;
   onSelectItem: (itemId: string) => void;
-  onAddItem: (item: Record<string, unknown>) => void;
-  onIncrement: (item: Record<string, unknown>) => void;
-  onDecrement: (item: Record<string, unknown>) => void;
+  onAddItem: (item: any) => void;
+  onIncrement: (item: any) => void;
+  onDecrement: (item: any) => void;
 }
 
 export function FavoritesTab({

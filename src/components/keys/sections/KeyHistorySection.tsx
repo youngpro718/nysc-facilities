@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -41,7 +40,7 @@ export function KeyHistorySection() {
   const occupantIds = useMemo(() => {
     const set = new Set<string>();
     (history || []).forEach((log) => {
-      const occId = (log as Record<string, unknown>)?.changes?.occupant_id as string | undefined;
+      const occId = (log.changes as Record<string, unknown>)?.occupant_id as string | undefined;
       if (occId) set.add(occId);
     });
     return Array.from(set);
@@ -57,8 +56,8 @@ export function KeyHistorySection() {
         .in("id", occupantIds);
       if (error) throw error;
       const map: Record<string, string> = {};
-      (data || []).forEach((o: Record<string, unknown>) => {
-        map[o.id] = `${o.first_name ?? ""} ${o.last_name ?? ""}`.trim();
+      (data || []).forEach((o: any) => {
+        map[o.id as string] = `${o.first_name ?? ""} ${o.last_name ?? ""}`.trim();
       });
       return map;
     },
@@ -81,7 +80,7 @@ export function KeyHistorySection() {
       return name ? `${name}` : String(value);
     }
     if (/_at$/.test(key) && value) {
-      try { return format(new Date(value), "MMM d, yyyy HH:mm"); } catch { return String(value); }
+      try { return format(new Date(value as string), "MMM d, yyyy HH:mm"); } catch { return String(value); }
     }
     if (typeof value === "boolean") return value ? "Yes" : "No";
     return String(value);

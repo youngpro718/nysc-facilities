@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -13,8 +12,8 @@ import { Package, CheckCircle, Truck, AlertTriangle, Clock } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns';
 
 interface OrderTableViewProps {
-  orders: unknown[];
-  onFulfill: (order: Record<string, unknown>) => void;
+  orders: any[];
+  onFulfill: (order: any) => void;
   onConfirmPickup?: (orderId: string) => void;
   isConfirmingPickup?: boolean;
 }
@@ -36,7 +35,7 @@ export function OrderTableView({
     }
   };
 
-  const getStatusBadge = (order: Record<string, unknown>) => {
+  const getStatusBadge = (order: any) => {
     const isCompleted = order.status === 'completed';
     const isReady = order.status === 'ready';
     const deliveryMethod = order.metadata?.delivery_method || 'pickup';
@@ -66,7 +65,7 @@ export function OrderTableView({
     return <Badge variant="outline">{order.status}</Badge>;
   };
 
-  const getActionButton = (order: Record<string, unknown>) => {
+  const getActionButton = (order: any) => {
     const isCompleted = order.status === 'completed';
     const isReady = order.status === 'ready';
     const deliveryMethod = order.metadata?.delivery_method || 'pickup';

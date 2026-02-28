@@ -1,9 +1,8 @@
-// @ts-nocheck
 import { Button } from '@/components/ui/button';
 import { Minus, Plus } from 'lucide-react';
 
 interface ItemRowProps {
-  item: Record<string, unknown>;
+  item: any;
   cartQuantity: number;
   isSelected: boolean;
   onSelect: () => void;

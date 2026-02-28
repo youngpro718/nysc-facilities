@@ -1,4 +1,5 @@
 // @ts-nocheck
+// Optimized Spaces Service
 /**
  * Optimized Spaces Service
  * Leverages Phase 2 database optimizations (unified_spaces, materialized views, stored procedures)

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Supabase Client - Core Service
  * 
@@ -23,7 +22,7 @@ export const db = supabase;
  * Helper function to handle Supabase errors
  */
 export function handleSupabaseError(error: unknown, context: string): never {
-  const message = error?.message || 'Unknown error occurred';
+  const message = (error as any)?.message || 'Unknown error occurred';
   logger.error(`[Supabase Error - ${context}]:`, error);
   throw new Error(`${context}: ${message}`);
 }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +7,7 @@ import { Package, User, MapPin, Clock, AlertTriangle, Truck, CheckCircle } from 
 import { formatDistanceToNow } from 'date-fns';
 
 interface SimpleOrderCardProps {
-  order: Record<string, unknown>;
+  order: any;
   onFulfill: () => void;
   onConfirmPickup?: () => void;
   showDeliveryConfirm?: boolean;
@@ -140,7 +139,7 @@ export function SimpleOrderCard({
         <div className="border-t pt-3">
           <p className="text-sm font-semibold mb-2">Items Requested ({itemCount}):</p>
           <div className="space-y-1.5">
-            {order.supply_request_items?.slice(0, 3).map((item: Record<string, unknown>) => {
+            {order.supply_request_items?.slice(0, 3).map((item: any) => {
               const fulfilled = item.quantity_fulfilled || 0;
               const requested = item.quantity_requested;
               const isPartial = fulfilled > 0 && fulfilled < requested;

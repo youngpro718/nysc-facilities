@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useMemo } from "react";
 import { Check, ChevronsUpDown, Plus, Building, Search, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -64,15 +63,18 @@ export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRo
       if (error) throw error;
       
       // Transform data to flatten the nested structure
-      return (data || []).map(room => ({
+      return (data || []).map((room: any) => ({
         id: room.id,
         room_number: room.room_number,
         name: room.name,
         floor: room.floor ? {
-          name: ((room.floor as Record<string, unknown>)).name,
-          building: ((room.floor as Record<string, unknown>)).building ? {
-            name: ((room.floor as Record<string, unknown>)).building.name
-          } : undefined
+          name: Array.isArray(room.floor) ? room.floor[0]?.name : room.floor.name,
+          building: (() => {
+            const f = Array.isArray(room.floor) ? room.floor[0] : room.floor;
+            const b = f?.building;
+            const bObj = Array.isArray(b) ? b[0] : b;
+            return bObj ? { name: bObj.name } : undefined;
+          })()
         } : undefined
       })) as Room[];
     },
