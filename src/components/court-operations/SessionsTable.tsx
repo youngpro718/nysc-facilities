@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { logger } from '@/lib/logger';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,11 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Save, Trash2, UserX, Calendar as CalendarIcon, FileText } from 'lucide-react';
+import { Trash2, FileText } from 'lucide-react';
 import { CourtSession, CoverageAssignment, SessionPeriod, BuildingCode } from '@/types/courtSessions';
 import { useUpdateCourtSession, useDeleteCourtSession } from '@/hooks/useCourtSessions';
 import { useAbsentStaffNames } from '@/hooks/useStaffAbsences';
@@ -27,9 +23,132 @@ interface SessionsTableProps {
   isLoading: boolean;
 }
 
+// Editable fields in each session row
+const EDITABLE_FIELDS = [
+  'parts_entered_by',
+  'defendants',
+  'purpose',
+  'date_transferred_or_started',
+  'top_charge',
+  'status',
+  'status_detail',
+  'attorney',
+  'estimated_finish_date',
+] as const;
+
+type EditableField = typeof EDITABLE_FIELDS[number];
+
 // Building label lookup
 const buildingLabel = (code: string) =>
   BUILDING_CODES.find(b => b.value === code)?.label?.toUpperCase() || code;
+
+// Inline editable cell component
+function InlineCell({
+  value,
+  field,
+  sessionId,
+  onSave,
+  placeholder,
+  isStatus,
+  className = '',
+}: {
+  value: string;
+  field: EditableField;
+  sessionId: string;
+  onSave: (sessionId: string, field: EditableField, value: string) => void;
+  placeholder?: string;
+  isStatus?: boolean;
+  className?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setEditValue(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const handleSave = useCallback(() => {
+    setEditing(false);
+    if (editValue !== value) {
+      onSave(sessionId, field, editValue);
+    }
+  }, [editValue, value, sessionId, field, onSave]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+      // Move to next editable cell
+      const nextCell = (e.target as HTMLElement)
+        .closest('td')
+        ?.nextElementSibling
+        ?.querySelector('[data-editable]') as HTMLElement;
+      if (nextCell) {
+        e.preventDefault();
+        nextCell.click();
+      }
+    } else if (e.key === 'Escape') {
+      setEditValue(value);
+      setEditing(false);
+    } else if (e.key === 'Tab') {
+      handleSave();
+    }
+  }, [handleSave, value]);
+
+  if (isStatus) {
+    return (
+      <Select
+        value={value || 'scheduled'}
+        onValueChange={(v) => onSave(sessionId, field, v)}
+      >
+        <SelectTrigger className="h-6 text-[10px] px-1.5 w-24 border-0 bg-transparent hover:bg-muted/50">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {SESSION_STATUSES.map((s) => (
+            <SelectItem key={s.value} value={s.value} className="text-xs">
+              {s.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  if (editing) {
+    return (
+      <Input
+        ref={inputRef}
+        data-editable
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={handleSave}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        className={`h-6 text-xs px-1.5 py-0 border-primary/30 bg-primary/5 ${className}`}
+      />
+    );
+  }
+
+  return (
+    <div
+      data-editable
+      onClick={() => setEditing(true)}
+      className={`cursor-text min-h-[24px] px-1 py-0.5 rounded hover:bg-muted/60 transition-colors ${value ? 'text-foreground' : 'text-muted-foreground/40 italic'
+        } ${className}`}
+      title="Click to edit"
+    >
+      {value || placeholder || '—'}
+    </div>
+  );
+}
 
 export function SessionsTable({
   date,
@@ -39,60 +158,44 @@ export function SessionsTable({
   coverages,
   isLoading
 }: SessionsTableProps) {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<Partial<CourtSession>>({});
-
   const updateSession = useUpdateCourtSession();
   const deleteSession = useDeleteCourtSession();
+  const { absentStaffMap } = useAbsentStaffNames(date);
 
-  // Get absent staff for this date
-  const { absentStaffMap, isLoading: absencesLoading } = useAbsentStaffNames(date);
-
-  const handleEdit = (session: CourtSession) => {
-    setEditingId(session.id);
-    setEditData(session);
-  };
-
-  const handleSave = async (sessionId: string) => {
-    if (!editData) return;
-
+  // Single cell save handler
+  const handleCellSave = useCallback(async (
+    sessionId: string,
+    field: EditableField,
+    value: string
+  ) => {
     try {
       await updateSession.mutateAsync({
         id: sessionId,
-        ...editData,
+        [field]: value || null,
       });
-      setEditingId(null);
-      setEditData({});
     } catch (error) {
-      logger.error('Error saving session:', error);
+      logger.error('Error saving cell:', error);
+      toast.error('Failed to save');
     }
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
-    setEditData({});
-  };
+  }, [updateSession]);
 
   const handleDelete = async (sessionId: string) => {
-    if (!confirm('Are you sure you want to delete this session?')) return;
+    if (!confirm('Delete this session?')) return;
     await deleteSession.mutateAsync(sessionId);
+  };
+
+  // Get judge absence text inline
+  const getAbsenceText = (judgeName: string | null) => {
+    if (!judgeName) return null;
+    const info = absentStaffMap.get(judgeName.toLowerCase());
+    if (!info) return null;
+    const s = format(new Date(info.starts_on), 'M/dd');
+    const e = format(new Date(info.ends_on), 'M/dd');
+    return `OUT ${s}-${e}`;
   };
 
   const getCoverageForRoom = (courtRoomId: string) => {
     return coverages.find(c => c.court_room_id === courtRoomId);
-  };
-
-  // Get judge absence info as inline text (like the PDF shows)
-  const getJudgeAbsenceText = (judgeName: string | null) => {
-    if (!judgeName) return null;
-    const absenceInfo = absentStaffMap.get(judgeName.toLowerCase());
-    if (!absenceInfo) return null;
-
-    const startStr = format(new Date(absenceInfo.starts_on), 'M/dd');
-    const endStr = format(new Date(absenceInfo.ends_on), 'M/dd');
-    const reason = absenceInfo.absence_reason || 'OUT';
-
-    return `OUT ${startStr}-${endStr}${reason !== 'OUT' ? ` ${reason.toUpperCase()}` : ''}`;
   };
 
   if (isLoading) {
@@ -117,335 +220,194 @@ export function SessionsTable({
     );
   }
 
-  // Format the report date like the PDF: "11-21-25"
   const reportDateStr = format(date, 'M-dd-yy');
 
   return (
     <Card className="overflow-hidden">
-      {/* Report-style header — matches the PDF */}
-      <div className="bg-primary/5 border-b px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
+      {/* Report-style header */}
+      <div className="bg-primary/5 border-b px-4 py-2.5 sm:px-6 sm:py-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
-            <h2 className="text-sm sm:text-base md:text-lg font-bold tracking-tight uppercase">
+            <FileText className="h-4 w-4 text-primary shrink-0" />
+            <h2 className="text-sm sm:text-base font-bold tracking-tight uppercase">
               {reportDateStr} {period} Report — {buildingLabel(buildingCode)}
             </h2>
           </div>
-          <Badge variant="secondary" className="w-fit text-xs">
-            {sessions.length} session{sessions.length !== 1 ? 's' : ''}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-[10px]">
+              {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+            </Badge>
+            <span className="text-[10px] text-muted-foreground hidden sm:inline">
+              Click any cell to edit
+            </span>
+          </div>
         </div>
       </div>
 
       <CardContent className="p-0">
         <div className="overflow-x-auto" style={{ boxShadow: 'inset -12px 0 8px -8px rgba(0,0,0,0.06)' }}>
-          <Table className="text-xs sm:text-sm">
+          <Table className="text-xs">
             <TableHeader>
               <TableRow className="bg-muted/40">
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap w-[140px]">Room / Part</TableHead>
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap">Sending Part</TableHead>
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap">Defendant(s)</TableHead>
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap">P.U.R.P.</TableHead>
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap">Date Trans</TableHead>
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap">Top Charge</TableHead>
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap">Status</TableHead>
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap">Attorneys</TableHead>
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap">Est. Fin.</TableHead>
-                <TableHead className="py-2 px-2 sm:px-3 font-bold whitespace-nowrap w-[80px]"></TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[120px]">Room / Part</TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[70px]">Send Pt</TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[120px]">Defendant(s)</TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[55px]">PURP</TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[65px]">Date Tr</TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[80px]">Top Charge</TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[90px]">Status</TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[90px]">Attorneys</TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[60px]">Est Fin</TableHead>
+                <TableHead className="py-1.5 px-1 w-[36px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sessions.map((session) => {
-                const isEditing = editingId === session.id;
+                const absenceText = getAbsenceText(session.judge_name);
                 const coverage = getCoverageForRoom(session.court_room_id);
-                const absenceText = getJudgeAbsenceText(session.judge_name);
                 const roomNumber = session.court_rooms?.room_number || '—';
 
                 return (
-                  <TableRow
-                    key={session.id}
-                    className={`hover:bg-muted/30 ${isEditing ? 'bg-primary/5' : ''}`}
-                  >
-                    {/* Room / Part / Judge — matches the PDF's first column */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top">
-                      {isEditing ? (
-                        <div className="space-y-1">
-                          <Input
-                            value={editData.part_number || ''}
-                            onChange={(e) => setEditData({ ...editData, part_number: e.target.value })}
-                            placeholder="Part"
-                            className="h-7 text-xs w-20"
-                          />
-                          <Input
-                            value={editData.judge_name || ''}
-                            onChange={(e) => setEditData({ ...editData, judge_name: e.target.value })}
-                            placeholder="Judge"
-                            className="h-7 text-xs w-32"
-                          />
-                        </div>
-                      ) : (
-                        <div className="space-y-0.5 min-w-[110px]">
-                          <div className="font-bold text-xs sm:text-sm">{roomNumber}</div>
-                          {session.part_number && (
-                            <div className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                              {session.part_number}
-                            </div>
-                          )}
-                          <div className="text-xs text-muted-foreground font-medium truncate max-w-[130px]">
-                            {session.judge_name || '—'}
+                  <TableRow key={session.id} className="hover:bg-muted/20 border-b">
+                    {/* Room / Part / Judge — read-only identity column */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <div className="space-y-0 min-w-[100px]">
+                        <div className="font-bold text-xs">{roomNumber}</div>
+                        {session.part_number && (
+                          <div className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                            {session.part_number}
                           </div>
-                          {/* Calendar day — like "Cal Wed" in the PDF */}
-                          {session.calendar_day && (
-                            <div className="text-[10px] text-muted-foreground">
-                              Cal {session.calendar_day}
-                            </div>
-                          )}
-                          {/* Absence info — inline like the PDF shows it */}
-                          {absenceText && (
-                            <div className="text-[10px] font-medium text-red-600 dark:text-red-400">
-                              {absenceText}
-                            </div>
-                          )}
-                          {/* Coverage note */}
-                          {coverage && (
-                            <div className="text-[10px] text-amber-600 dark:text-amber-400">
-                              Cover: {coverage.covering_staff_name}
-                            </div>
-                          )}
+                        )}
+                        <div className="text-[10px] text-muted-foreground truncate max-w-[110px]">
+                          {session.judge_name || '—'}
                         </div>
-                      )}
-                    </TableCell>
-
-                    {/* Sending Part / Parts Entered By */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top">
-                      {isEditing ? (
-                        <Input
-                          value={editData.parts_entered_by || ''}
-                          onChange={(e) => setEditData({ ...editData, parts_entered_by: e.target.value })}
-                          placeholder="PT..."
-                          className="h-7 text-xs w-20"
-                        />
-                      ) : (
-                        <span className={!session.parts_entered_by ? 'text-muted-foreground/40' : ''}>
-                          {session.parts_entered_by || '—'}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Defendants */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top max-w-[160px]">
-                      {isEditing ? (
-                        <Input
-                          value={editData.defendants || ''}
-                          onChange={(e) => setEditData({ ...editData, defendants: e.target.value })}
-                          placeholder="Defendant(s)..."
-                          className="h-7 text-xs"
-                        />
-                      ) : (
-                        <span className={`break-words ${!session.defendants ? 'text-muted-foreground/40' : 'font-medium'}`}>
-                          {session.defendants || '—'}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Purpose */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top">
-                      {isEditing ? (
-                        <Input
-                          value={editData.purpose || ''}
-                          onChange={(e) => setEditData({ ...editData, purpose: e.target.value })}
-                          placeholder="JS, HRG..."
-                          className="h-7 text-xs w-16"
-                        />
-                      ) : (
-                        <span className={`font-medium ${!session.purpose ? 'text-muted-foreground/40 font-normal' : ''}`}>
-                          {session.purpose || '—'}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Date Trans/Start */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top">
-                      {isEditing ? (
-                        <DatePicker
-                          value={editData.date_transferred_or_started ? new Date(editData.date_transferred_or_started) : undefined}
-                          onChange={(d) =>
-                            setEditData({
-                              ...editData,
-                              date_transferred_or_started: d ? format(d, 'yyyy-MM-dd') : null
-                            })
-                          }
-                        />
-                      ) : (
-                        <span className={!session.date_transferred_or_started ? 'text-muted-foreground/40' : ''}>
-                          {session.date_transferred_or_started ?
-                            format(new Date(session.date_transferred_or_started), 'M/dd') :
-                            '—'}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Top Charge */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top max-w-[120px]">
-                      {isEditing ? (
-                        <Input
-                          value={editData.top_charge || ''}
-                          onChange={(e) => setEditData({ ...editData, top_charge: e.target.value })}
-                          placeholder="Top charge..."
-                          className="h-7 text-xs"
-                        />
-                      ) : (
-                        <span className={`break-words ${!session.top_charge ? 'text-muted-foreground/40' : ''}`}>
-                          {session.top_charge || '—'}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Status */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top">
-                      {isEditing ? (
-                        <div className="space-y-1">
-                          <Select
-                            value={editData.status || session.status}
-                            onValueChange={(value) => setEditData({ ...editData, status: value })}
-                          >
-                            <SelectTrigger className="h-7 text-xs w-28">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SESSION_STATUSES.map((status) => (
-                                <SelectItem key={status.value} value={status.value}>
-                                  {status.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <div className="flex gap-1">
-                            <Input
-                              value={editData.status_detail || ''}
-                              onChange={(e) => setEditData({ ...editData, status_detail: e.target.value })}
-                              placeholder="e.g., 10/23"
-                              className="h-7 text-xs w-24"
-                            />
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm" type="button" className="h-7 w-7 p-0">
-                                  <CalendarIcon className="h-3 w-3" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="end">
-                                <Calendar
-                                  mode="single"
-                                  selected={undefined}
-                                  onSelect={(selectedDate) => {
-                                    if (selectedDate) {
-                                      const dateStr = format(selectedDate, 'MM/dd');
-                                      setEditData({
-                                        ...editData,
-                                        status_detail: editData.status_detail ? `${editData.status_detail} ${dateStr}` : dateStr
-                                      });
-                                    }
-                                  }}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
+                        {session.calendar_day && (
+                          <div className="text-[9px] text-muted-foreground">Cal {session.calendar_day}</div>
+                        )}
+                        {absenceText && (
+                          <div className="text-[9px] font-medium text-red-600 dark:text-red-400">{absenceText}</div>
+                        )}
+                        {coverage && (
+                          <div className="text-[9px] text-amber-600 dark:text-amber-400">
+                            Cover: {coverage.covering_staff_name}
                           </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-0.5">
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                            {session.status}
-                          </Badge>
-                          {session.status_detail && (
-                            <div className="text-[10px] text-muted-foreground">{session.status_detail}</div>
-                          )}
-                        </div>
-                      )}
-                    </TableCell>
-
-                    {/* Attorney */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top max-w-[120px]">
-                      {isEditing ? (
-                        <Input
-                          value={editData.attorney || ''}
-                          onChange={(e) => setEditData({ ...editData, attorney: e.target.value })}
-                          placeholder="Attorney..."
-                          className="h-7 text-xs"
-                        />
-                      ) : (
-                        <span className={`break-words ${!session.attorney ? 'text-muted-foreground/40' : ''}`}>
-                          {session.attorney || '—'}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Est. Date Fin */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top">
-                      {isEditing ? (
-                        <DatePicker
-                          value={editData.estimated_finish_date ? new Date(editData.estimated_finish_date) : undefined}
-                          onChange={(d) =>
-                            setEditData({
-                              ...editData,
-                              estimated_finish_date: d ? format(d, 'yyyy-MM-dd') : null
-                            })
-                          }
-                        />
-                      ) : (
-                        <span className={!session.estimated_finish_date ? 'text-muted-foreground/40' : ''}>
-                          {session.estimated_finish_date ?
-                            format(new Date(session.estimated_finish_date), 'M/dd') :
-                            '—'}
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Actions */}
-                    <TableCell className="py-1.5 px-2 sm:px-3 align-top">
-                      <div className="flex gap-1">
-                        {isEditing ? (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              className="h-6 w-6 p-0"
-                              onClick={() => handleSave(session.id)}
-                              disabled={updateSession.isPending}
-                            >
-                              <Save className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-1.5 text-[10px]"
-                              onClick={handleCancel}
-                            >
-                              ✕
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 px-1.5 text-[10px]"
-                              onClick={() => handleEdit(session)}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                              onClick={() => handleDelete(session.id)}
-                              disabled={deleteSession.isPending}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </>
                         )}
                       </div>
+                    </TableCell>
+
+                    {/* Sending Part — editable */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <InlineCell
+                        value={session.parts_entered_by || ''}
+                        field="parts_entered_by"
+                        sessionId={session.id}
+                        onSave={handleCellSave}
+                        placeholder="PT..."
+                        className="w-16"
+                      />
+                    </TableCell>
+
+                    {/* Defendants — editable */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <InlineCell
+                        value={session.defendants || ''}
+                        field="defendants"
+                        sessionId={session.id}
+                        onSave={handleCellSave}
+                        placeholder="Defendant..."
+                      />
+                    </TableCell>
+
+                    {/* Purpose — editable */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <InlineCell
+                        value={session.purpose || ''}
+                        field="purpose"
+                        sessionId={session.id}
+                        onSave={handleCellSave}
+                        placeholder="JS"
+                        className="w-12"
+                      />
+                    </TableCell>
+
+                    {/* Date Transferred — editable */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <InlineCell
+                        value={session.date_transferred_or_started || ''}
+                        field="date_transferred_or_started"
+                        sessionId={session.id}
+                        onSave={handleCellSave}
+                        placeholder="M/dd"
+                        className="w-14"
+                      />
+                    </TableCell>
+
+                    {/* Top Charge — editable */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <InlineCell
+                        value={session.top_charge || ''}
+                        field="top_charge"
+                        sessionId={session.id}
+                        onSave={handleCellSave}
+                        placeholder="Charge..."
+                      />
+                    </TableCell>
+
+                    {/* Status — dropdown + detail text */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <div className="space-y-0.5">
+                        <InlineCell
+                          value={session.status || 'scheduled'}
+                          field="status"
+                          sessionId={session.id}
+                          onSave={handleCellSave}
+                          isStatus
+                        />
+                        <InlineCell
+                          value={session.status_detail || ''}
+                          field="status_detail"
+                          sessionId={session.id}
+                          onSave={handleCellSave}
+                          placeholder="detail..."
+                          className="w-20"
+                        />
+                      </div>
+                    </TableCell>
+
+                    {/* Attorney — editable */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <InlineCell
+                        value={session.attorney || ''}
+                        field="attorney"
+                        sessionId={session.id}
+                        onSave={handleCellSave}
+                        placeholder="ADA..."
+                      />
+                    </TableCell>
+
+                    {/* Est. Finish — editable */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <InlineCell
+                        value={session.estimated_finish_date || ''}
+                        field="estimated_finish_date"
+                        sessionId={session.id}
+                        onSave={handleCellSave}
+                        placeholder="M/dd"
+                        className="w-14"
+                      />
+                    </TableCell>
+
+                    {/* Delete */}
+                    <TableCell className="py-1 px-1 align-top">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDelete(session.id)}
+                        disabled={deleteSession.isPending}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );

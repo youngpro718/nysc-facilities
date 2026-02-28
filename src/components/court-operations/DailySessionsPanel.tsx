@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Copy, RefreshCw, Users, CalendarCheck, FileText, Upload, MoreHorizontal } from 'lucide-react';
+import { Calendar, Copy, RefreshCw, Users, CalendarCheck, FileText, Upload, MoreHorizontal, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ import { useCourtSessions, useCopyYesterdaySessions } from '@/hooks/useCourtSess
 import { useCoverageAssignments } from '@/hooks/useCoverageAssignments';
 import { useSessionConflicts } from '@/hooks/useSessionConflicts';
 import { useBulkCreateCourtSessions } from '@/hooks/useBulkCreateCourtSessions';
+import { useStartTodaysReport } from '@/hooks/useStartTodaysReport';
 import { SessionPeriod, BuildingCode } from '@/types/courtSessions';
 import { BUILDING_CODES, SESSION_PERIODS } from '@/constants/sessionStatuses';
 
@@ -59,6 +60,16 @@ export function DailySessionsPanel() {
 
   const copyYesterday = useCopyYesterdaySessions();
   const bulkCreateSessions = useBulkCreateCourtSessions();
+  const startReport = useStartTodaysReport();
+
+  const handleStartReport = () => {
+    if (!confirm(`Start today's report? This will create session rows for all assigned courtrooms.`)) return;
+    startReport.mutate({
+      date: selectedDate,
+      period: selectedPeriod,
+      buildingCode: selectedBuilding,
+    });
+  };
 
   const handleCopyYesterday = () => {
     const yesterday = subDays(selectedDate, 1);
@@ -165,9 +176,22 @@ export function DailySessionsPanel() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2">
+            {/* Primary CTA — Start Report (only show when no sessions yet) */}
+            {(!sessions || sessions.length === 0) && (
+              <Button
+                size="sm"
+                variant="default"
+                className="text-xs sm:text-sm"
+                onClick={handleStartReport}
+                disabled={startReport.isPending}
+              >
+                <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                {startReport.isPending ? 'Creating...' : 'Start Report'}
+              </Button>
+            )}
             <Button
               size="sm"
-              variant="default"
+              variant={sessions && sessions.length > 0 ? 'default' : 'outline'}
               className="text-xs sm:text-sm"
               onClick={() => setShowUploadDialog(true)}
             >
