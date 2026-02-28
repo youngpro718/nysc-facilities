@@ -1,7 +1,8 @@
-// @ts-nocheck
+// Hallway Rooms — CRUD for hallway-room associations
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 export interface HallwayRoom {
   id: string;
@@ -110,7 +111,7 @@ export function useAddHallwayRoom() {
       toast.success('Room added to hallway');
     },
     onError: (error: unknown) => {
-      toast.error(error.message || 'Failed to add room');
+      toast.error(getErrorMessage(error));
     },
   });
 }
@@ -133,7 +134,7 @@ export function useRemoveHallwayRoom() {
       toast.success('Room removed from hallway');
     },
     onError: (error: unknown) => {
-      toast.error(error.message || 'Failed to remove room');
+      toast.error(getErrorMessage(error));
     },
   });
 }

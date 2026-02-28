@@ -1,4 +1,4 @@
-// @ts-nocheck
+// User Issues — user-scoped issue tracking with realtime
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 import { useCallback } from 'react';
@@ -64,7 +64,7 @@ export function useUserIssues(userId: string | undefined) {
         if (error) throw new IssueError(`Failed to fetch user issues: ${error.message}`);
         if (!data) throw new IssueError('No issues data returned');
         
-        return (data as Record<string, unknown>)?.map((issue: Record<string, unknown>) => ({
+        return (data as any[])?.map((issue: any) => ({
           ...issue,
           buildings: issue.buildings?.[0] || { name: 'Unknown Building' },
           floors: issue.floors?.[0] || { name: 'Unknown Floor' },

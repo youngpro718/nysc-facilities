@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Reporting — report generation and scheduling hooks
 /**
  * Reporting React Query Hooks
  * Phase 4: Advanced reporting capabilities
@@ -151,7 +151,7 @@ export function useExportDashboardCSV() {
     }
 
     // Create download link
-    const blob = new Blob([report.data], { type: 'text/csv' });
+    const blob = new Blob([report.data as any], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -228,7 +228,7 @@ export function useReportDownload() {
     }
 
     // Create download link
-    const blob = new Blob([report.data], { type: mimeType });
+    const blob = new Blob([report.data as any], { type: mimeType });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

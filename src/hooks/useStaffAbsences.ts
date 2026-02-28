@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Staff Absences — fetch and check staff absence status
 import { useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
@@ -47,7 +47,7 @@ export function useStaffAbsencesForDate(date: Date) {
       }
 
       // Map to a cleaner format
-      const absences: StaffAbsence[] = (data || []).map((absence: Record<string, unknown>) => ({
+      const absences: StaffAbsence[] = (data || []).map((absence: any) => ({
         id: absence.id,
         staff_id: absence.staff_id,
         staff_name: absence.staff?.display_name || 'Unknown',

@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Enhanced Room Data — enriched room queries with lighting/occupant data
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
@@ -33,10 +33,10 @@ export function useEnhancedRoomData(roomId: string) {
         const { data: rpcData, error: rpcError } = await supabase.rpc('get_enhanced_room', { p_room_id: roomId });
         if (rpcError) throw rpcError;
         if (rpcData) {
-          room = ((rpcData as Record<string, unknown>)).room;
-          issues = ((rpcData as Record<string, unknown>)).issues ?? [];
-          courtRoomData = ((rpcData as Record<string, unknown>)).court_room ?? null;
-          courtAssignment = ((rpcData as Record<string, unknown>)).court_assignment ?? null;
+          room = (rpcData as any).room;
+          issues = (rpcData as any).issues ?? [];
+          courtRoomData = (rpcData as any).court_room ?? null;
+          courtAssignment = (rpcData as any).court_assignment ?? null;
         }
       } catch (e) {
         logger.warn('RPC get_enhanced_room failed, falling back to separate queries', { roomId, error: e });
@@ -138,16 +138,16 @@ export function useEnhancedRoomData(roomId: string) {
 
       // Check for persistent issues
       const safeIssues = Array.isArray(issues) ? issues : [];
-      const openIssues = safeIssues.filter((issue: Record<string, unknown>) => ['open', 'in_progress'].includes(issue.status));
+      const openIssues = safeIssues.filter((issue: any) => ['open', 'in_progress'].includes(issue.status));
       const hasPersistentIssues = openIssues.length >= 3;
 
       // Calculate vacancy status
-      const occupantCount = room.current_occupants?.length || 0;
+      const occupantCount = (room as any).current_occupants?.length || 0;
       let vacancyStatus: 'vacant' | 'occupied' | 'at_capacity' = 'vacant';
       if (room.room_type === 'courtroom') {
         // Courtrooms are considered occupied if they have an assignment and the courtroom is active
         const hasAssignment = !!courtAssignment?.id;
-        const isActiveCourtRoom = ((courtRoomData as Record<string, unknown>))?.is_active !== false;
+        const isActiveCourtRoom = (courtRoomData as any)?.is_active !== false;
         vacancyStatus = hasAssignment && isActiveCourtRoom ? 'occupied' : 'vacant';
       } else {
         if (occupantCount > 0) {
@@ -174,8 +174,7 @@ export function useEnhancedRoomData(roomId: string) {
       // 1) Total issues and last issue date
       const totalIssues = safeIssues.length || 0;
       const lastIssueDate = safeIssues.length > 0
-        ? safeIssues
-            .map((i: Record<string, unknown>) => new Date(i.created_at).getTime())
+        ? safeIssues.map((i: any) => new Date(i.created_at).getTime())
             .reduce((a: number, b: number) => Math.max(a, b), 0)
         : undefined;
 
@@ -185,20 +184,20 @@ export function useEnhancedRoomData(roomId: string) {
         .select('occupant_id')
         .eq('room_id', roomId);
       const uniqueOccupants = Array.isArray(occHistory)
-        ? new Set(occHistory.map((o: Record<string, unknown>) => o.occupant_id)).size
+        ? new Set(occHistory.map((o: any) => o.occupant_id)).size
         : 0;
 
       // Construct enhanced room object
       const enhancedRoom: EnhancedRoom = {
-        ...room,
-        room_type: room.room_type as unknown,
-        status: room.status as unknown,
-        storage_type: room.storage_type as unknown,
-        simplified_storage_type: room.simplified_storage_type as unknown,
-        position: room.position ? (safeJsonParse<Record<string, unknown>>(room.position) ?? undefined) : undefined,
-        size: room.size ? (safeJsonParse<Record<string, unknown>>(room.size) ?? undefined) : undefined,
-        courtroom_photos: room.courtroom_photos ? (safeJsonParse<any[]>(room.courtroom_photos) ?? undefined) : undefined,
-        court_room: courtRoomData,
+        ...(room as any),
+        room_type: room.room_type as any,
+        status: room.status as any,
+        storage_type: room.storage_type as any,
+        simplified_storage_type: room.simplified_storage_type as any,
+        position: room.position ? (safeJsonParse<any>(room.position) ?? undefined) : undefined,
+        size: room.size ? (safeJsonParse<any>(room.size) ?? undefined) : undefined,
+        courtroom_photos: room.courtroom_photos ? (safeJsonParse<any>(room.courtroom_photos) ?? undefined) : undefined,
+        court_room: courtRoomData as any,
         lighting_fixtures: enhancedLightingFixtures,
         total_fixtures_count: totalFixtures,
         functional_fixtures_count: functionalFixtures,
@@ -211,7 +210,7 @@ export function useEnhancedRoomData(roomId: string) {
           room_id: roomId,
           issue_count: safeIssues.length || 0,
           open_issues: openIssues.length,
-          latest_issue_date: openIssues[0]?.created_at || new Date().toISOString()
+          latest_issue_date: (openIssues[0] as any)?.created_at || new Date().toISOString()
         } : undefined,
         history_stats: {
           total_issues: totalIssues,

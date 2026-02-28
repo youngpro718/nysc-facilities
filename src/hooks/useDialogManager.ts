@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Dialog Manager — centralized dialog state management
 
 import { useState, useCallback, useRef } from "react";
 import { logger } from "@/lib/logger";
@@ -52,10 +52,10 @@ export function useDialogManager() {
     if (!dialogState.isOpen || isClosingRef.current) return;
     
     logger.debug("Updating dialog data:", newData);
-    dataRef.current = { ...dataRef.current, ...newData };
+    dataRef.current = { ...(dataRef.current as any), ...(newData as any) };
     setDialogState(prev => ({
       ...prev,
-      data: { ...prev.data, ...newData }
+      data: { ...(prev.data as any), ...(newData as any) }
     }));
   }, [dialogState.isOpen]);
 

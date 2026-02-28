@@ -1,4 +1,4 @@
-// @ts-nocheck
+// System Settings — admin system configuration management
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
@@ -84,7 +84,7 @@ export function useSystemSettings() {
     queryKey: ['system-status'],
     queryFn: async () => {
       // Use backend RPC for real health status
-      const { data, error } = await supabase.rpc('get_system_health' as unknown);
+      const { data, error } = await supabase.rpc('get_system_health' as any);
       if (error || !data) {
         return {
           system: 'offline',
@@ -136,11 +136,11 @@ export function useSystemSettings() {
       let catalog: { id: string; name: string; description: string; enabled?: boolean }[] = [];
       try {
         const { data: sysMods } = await supabase
-          .from('system_modules' as unknown)
+          .from('system_modules' as any)
           .select('id, name, description, enabled')
           .order('name', { ascending: true });
         // Normalize any inconsistent IDs from the DB (e.g., hyphens to underscores)
-        catalog = ((sysMods ?? []) as unknown[]).map((m) => ({
+        catalog = ((sysMods ?? []) as any[]).map((m: any) => ({
           ...m,
           id: String(m.id).replace(/-/g, '_'),
         }));
@@ -163,11 +163,11 @@ export function useSystemSettings() {
           .select('enabled_modules, departments(name)')
           .eq('id', userId)
           .single();
-        if (((profile as Record<string, unknown>))?.enabled_modules) {
-          profileEnabled = profile.enabled_modules as Record<string, boolean>;
+        if ((profile as any)?.enabled_modules) {
+          profileEnabled = profile!.enabled_modules as Record<string, boolean>;
         }
         // Optional auto-enable for Supply Department (kept consistent with useEnabledModules)
-        if (((profile as Record<string, unknown>))?.departments?.name === 'Supply Department') {
+        if ((profile as any)?.departments?.name === 'Supply Department') {
           profileEnabled.supply_requests = true;
           profileEnabled.inventory = true;
         }
@@ -257,7 +257,7 @@ export function useSystemSettings() {
   const clearCache = useMutation({
     mutationFn: async () => {
       // Call server-side maintenance RPC
-      const { data, error } = await supabase.rpc('clear_app_cache' as unknown);
+      const { data, error } = await supabase.rpc('clear_app_cache' as any);
       // Regardless of server response, refresh client caches to reflect any changes
       queryClient.clear();
       if (error) {

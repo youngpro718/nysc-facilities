@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Building Data — dashboard building stats and issues
 import { useQuery } from "@tanstack/react-query";
 import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
@@ -20,7 +20,7 @@ export type BuildingWithLighting = Building & {
 export const useBuildingData = (userId?: string) => {
   const enabled = !!userId;
   // Fetch buildings with caching
-  const { data: buildings = [], isLoading: buildingsIsLoading, refetch: refetchBuildings } = useQuery<BuildingWithLighting[]>({
+  const { data: buildings = [], isLoading: buildingsIsLoading, refetch: refetchBuildings } = useQuery<any[]>({
     queryKey: ['buildings-v2', userId ?? null],
     queryFn: async () => {
       try {
@@ -81,7 +81,7 @@ export const useBuildingData = (userId?: string) => {
 
               if (fixturesError) throw fixturesError;
 
-              fixturesByRoom = (fixturesData || []).reduce((acc: Record<string, unknown[]>, fx: Record<string, unknown>) => {
+              fixturesByRoom = (fixturesData || []).reduce((acc: Record<string, any[]>, fx: any) => {
                 const key = fx.space_id;
                 if (!acc[key]) acc[key] = [];
                 acc[key].push({
@@ -89,7 +89,7 @@ export const useBuildingData = (userId?: string) => {
                   bulb_count: fx.bulb_count ?? 1,
                 });
                 return acc;
-              }, {} as Record<string, unknown[]>);
+              }, {} as Record<string, any[]>);
             }
 
             // Group rooms by floor and attach fixtures fetched above
@@ -99,18 +99,18 @@ export const useBuildingData = (userId?: string) => {
               }
               acc[room.floor_id].push({
                 ...room,
-                lighting_fixtures: (fixturesByRoom[room.id] || []).map((fixture: Record<string, unknown>) => ({
+                lighting_fixtures: (fixturesByRoom[room.id] || []).map((fixture: any) => ({
                   ...fixture,
                   bulb_count: fixture.bulb_count ?? 1,
                 })),
               });
               return acc;
-            }, {} as Record<string, unknown[]>) || {};
+            }, {} as Record<string, any[]>) || {};
 
             // Precompute building-level lighting stats
             const allFixtures = Object.values(fixturesByRoom).flat();
-            const lightingTotalFixtures = allFixtures.reduce((acc: number, fx: Record<string, unknown>) => acc + (fx.bulb_count ?? 1), 0);
-            const lightingWorkingFixtures = allFixtures.reduce((acc: number, fx: Record<string, unknown>) => {
+            const lightingTotalFixtures = allFixtures.reduce((acc: number, fx: any) => acc + (fx.bulb_count ?? 1), 0);
+            const lightingWorkingFixtures = allFixtures.reduce((acc: number, fx: any) => {
               const status = (fx.status ?? '').toString().toLowerCase();
               const isWorking = status === 'working' || status === 'functional';
               return acc + (isWorking ? (fx.bulb_count ?? 1) : 0);

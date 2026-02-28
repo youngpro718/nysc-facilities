@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Notifications — user notification management with realtime
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useEffect } from "react";
@@ -60,7 +60,7 @@ export const useNotifications = (userId?: string) => {
 
       if (error) throw error;
 
-      return (notifications || []).map((notification: Record<string, unknown>) => ({
+      return (notifications || []).map((notification: any) => ({
         id: notification.id,
         type: notification.type,
         title: notification.title,

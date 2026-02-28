@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Court Issues Integration — realtime courtroom issue tracking
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
@@ -96,7 +96,7 @@ export const useCourtIssuesIntegration = () => {
       if (error) throw error;
 
       // Batch-fetch court room and assignment data to avoid N+1 queries
-      const roomIds = Array.from(new Set((data || []).map((i: Record<string, unknown>) => i.room_id).filter(Boolean)));
+      const roomIds = Array.from(new Set((data || []).map((i: any) => i.room_id).filter(Boolean)));
 
       let roomsByRoomId = new Map<string, { courtroom_number: string | null }>();
       let assignmentsByRoomId = new Map<string, { justice: string; clerks: string[]; sergeant: string }>();
@@ -125,7 +125,7 @@ export const useCourtIssuesIntegration = () => {
         }
       }
 
-      const issuesWithCourtData = (data || []).map((issue: Record<string, unknown>) => {
+      const issuesWithCourtData = (data || []).map((issue: any) => {
         const roomInfo = issue.room_id ? roomsByRoomId.get(issue.room_id) : undefined;
         const assignmentInfo = issue.room_id ? assignmentsByRoomId.get(issue.room_id) : undefined;
         return {
@@ -180,7 +180,7 @@ export const useCourtIssuesIntegration = () => {
         .from("room_shutdowns")
         .insert({
           room_id: roomId,
-          reason: reason as unknown,
+          reason: reason as any,
           start_date: startDate,
           end_date: endDate,
           status: "scheduled",
@@ -191,7 +191,7 @@ export const useCourtIssuesIntegration = () => {
             clerks: false,
             judge: false,
           },
-        } as unknown)
+        } as any)
         .select()
         .single();
 
@@ -232,7 +232,7 @@ export const useCourtIssuesIntegration = () => {
   // Real-time subscription for new issues
   useEffect(() => {
     // Helper to enrich a bare issue record with courtroom and assignment details
-    const enrichIssue = async (issue: Record<string, unknown>) => {
+    const enrichIssue = async (issue: any) => {
       try {
         const [{ data: courtRoom }, { data: courtAssignment }] = await Promise.all([
           supabase.from("court_rooms").select("courtroom_number").eq("room_id", issue.room_id).maybeSingle(),
@@ -272,11 +272,11 @@ export const useCourtIssuesIntegration = () => {
           logger.debug('Court issue change detected:', payload);
           
           // Optimistically update cache for immediate UI updates
-          queryClient.setQueryData(["court-issues"], (old: unknown[] | undefined) => {
+          queryClient.setQueryData(["court-issues"], (old: any[] | undefined) => {
             const current = Array.isArray(old) ? old : [];
             const evt = payload.eventType;
-            const newRow: Record<string, unknown> = ((payload as Record<string, unknown>).new as Record<string, unknown>);
-            const oldRow: Record<string, unknown> = ((payload as Record<string, unknown>).old as Record<string, unknown>);
+            const newRow = (payload as any).new as any;
+            const oldRow = (payload as any).old as any;
 
             if (evt === 'INSERT' && newRow?.room_id) {
               // Prepend lightweight issue immediately
@@ -315,8 +315,8 @@ export const useCourtIssuesIntegration = () => {
           });
 
           // Kick off background enrichment for INSERT to fill courtroom/assignment details
-          if (payload.eventType === 'INSERT' && ((payload as Record<string, unknown>).new as Record<string, unknown>)?.room_id) {
-            const newRow: Record<string, unknown> = ((payload as Record<string, unknown>).new as Record<string, unknown>);
+          if (payload.eventType === 'INSERT' && (payload as any).new?.room_id) {
+            const newRow = (payload as any).new as any;
 
             // Record recent event for UI highlights/banners
             setRecentIssueEvents((prev) => {
@@ -331,7 +331,7 @@ export const useCourtIssuesIntegration = () => {
             // Enqueue enrichment to serialize network + cache updates
             taskQueueRef.current.push(async () => {
               const enriched = await enrichIssue(newRow);
-              queryClient.setQueryData(["court-issues"], (old: unknown[] | undefined) => {
+              queryClient.setQueryData(["court-issues"], (old: any[] | undefined) => {
                 const current = Array.isArray(old) ? old : [];
                 return [enriched, ...current.filter((i) => i.id !== enriched.id)];
               });
@@ -345,9 +345,9 @@ export const useCourtIssuesIntegration = () => {
           // Handle new critical issues (urgent/critical/high)
           if (
             payload.eventType === 'INSERT' &&
-            ['high'].includes(String(((payload as Record<string, unknown>).new as Record<string, unknown>)?.priority || '').toLowerCase())
+            ['high'].includes(String((payload as any).new?.priority || '').toLowerCase())
           ) {
-            const newIssue = ((payload as Record<string, unknown>).new as Record<string, unknown>) as unknown;
+            const newIssue = (payload as any).new as any;
             toast({
               title: "URGENT: New Courtroom Issue",
               description: `Critical issue reported in room ${newIssue.room_id}: ${newIssue.title}`,

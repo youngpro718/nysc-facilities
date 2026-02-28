@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Occupant Assignments — room occupant management queries
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
@@ -85,8 +85,8 @@ const KEY_ASSIGNMENT_SELECT = `
 /**
  * Format raw room assignments into detailed format
  */
-function formatRoomAssignments(rawAssignments: unknown[]): DetailedRoomAssignment[] {
-  return (rawAssignments || []).map((assignment: Record<string, unknown>) => ({
+function formatRoomAssignments(rawAssignments: any[]): DetailedRoomAssignment[] {
+  return (rawAssignments || []).map((assignment: any) => ({
     id: assignment.id,
     room_id: assignment.room_id,
     room_name: assignment.rooms?.name || 'Unknown Room',
@@ -109,8 +109,8 @@ function formatRoomAssignments(rawAssignments: unknown[]): DetailedRoomAssignmen
 /**
  * Format raw key assignments into detailed format
  */
-function formatKeyAssignments(rawAssignments: unknown[]): DetailedKeyAssignment[] {
-  return (rawAssignments || []).map((assignment: Record<string, unknown>) => ({
+function formatKeyAssignments(rawAssignments: any[]): DetailedKeyAssignment[] {
+  return (rawAssignments || []).map((assignment: any) => ({
     id: assignment.id,
     key_id: assignment.key_id,
     key_name: assignment.keys?.name || 'Unknown Key',

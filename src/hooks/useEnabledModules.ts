@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Enabled Modules — user-level feature flag management
 import { useState, useEffect } from 'react';
 import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
@@ -54,13 +54,13 @@ export function useEnabledModules() {
       let systemDefaults: Partial<EnabledModules> = {};
       try {
         const { data: sysMods } = await supabase
-          .from('system_modules' as unknown)
+          .from('system_modules' as any)
           .select('id, enabled');
         if (sysMods && Array.isArray(sysMods)) {
-          sysMods.forEach((m: Record<string, unknown>) => {
+          (sysMods as any[]).forEach((m: any) => {
             const key = m.id as keyof EnabledModules;
             if (key in DEFAULT_MODULES && typeof m.enabled === 'boolean') {
-              systemDefaults[key] = m.enabled as unknown;
+              systemDefaults[key] = m.enabled;
             }
           });
         }
@@ -99,7 +99,7 @@ export function useEnabledModules() {
       }
       
       // Auto-enable supply_requests and inventory for Supply Department users
-      if (((profile as Record<string, unknown>))?.departments?.name === 'Supply Department') {
+      if ((profile as any)?.departments?.name === 'Supply Department') {
         finalModules.supply_requests = true;
         finalModules.inventory = true;
       }
@@ -158,13 +158,13 @@ export function useEnabledModules() {
     let systemDefaults: Partial<EnabledModules> = {};
     try {
       const { data: sysMods } = await supabase
-        .from('system_modules' as unknown)
+        .from('system_modules' as any)
         .select('id, enabled');
       if (sysMods && Array.isArray(sysMods)) {
-        sysMods.forEach((m: Record<string, unknown>) => {
+        (sysMods as any[]).forEach((m: any) => {
           const key = m.id as keyof EnabledModules;
           if (key in DEFAULT_MODULES && typeof m.enabled === 'boolean') {
-            systemDefaults[key] = m.enabled as unknown;
+            systemDefaults[key] = m.enabled;
           }
         });
       }

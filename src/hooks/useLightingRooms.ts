@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Lighting Rooms — room lighting fixture stats hook
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
@@ -59,9 +59,9 @@ export function useLightingRooms() {
             name: room.name,
             room_number: room.room_number,
             floor_id: room.floor_id,
-            floor_name: room.floors?.name || 'Unknown Floor',
-            floor_number: room.floors?.floor_number || 0,
-            building_name: room.floors?.buildings?.name || 'Unknown Building',
+            floor_name: (room as any).floors?.name || 'Unknown Floor',
+            floor_number: (room as any).floors?.floor_number || 0,
+            building_name: (room as any).floors?.buildings?.name || 'Unknown Building',
             total_fixtures: total,
             functional_count: functional,
             non_functional_count: nonFunctional,

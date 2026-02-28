@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Optimized Spaces — fast space queries with realtime updates
 /**
  * Optimized React Query Hooks for Spaces
  * Leverages Phase 2 database optimizations with intelligent caching
@@ -124,8 +124,8 @@ export function useOptimizedRooms(filters?: {
   status?: string;
 }) {
   return useQuery({
-    queryKey: OPTIMIZED_QUERY_KEYS.spaces.rooms(filters),
-    queryFn: () => OptimizedSpacesService.getRooms(filters),
+    queryKey: OPTIMIZED_QUERY_KEYS.spaces.rooms(filters as any),
+    queryFn: () => OptimizedSpacesService.getRooms(filters as any),
     ...CACHE_CONFIG.dashboard,
     refetchOnWindowFocus: false,
     retry: 2,
