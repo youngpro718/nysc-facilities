@@ -233,7 +233,7 @@ function AccessAssignmentsContent() {
       {/* Tabs and Search */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <TabsList>
+          <TabsList data-tour="personnel-search">
             <TabsTrigger value="all" className="gap-2">
               <Users className="h-4 w-4" />
               All ({stats.total})

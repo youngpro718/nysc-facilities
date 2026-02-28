@@ -180,7 +180,7 @@ export default function UserDashboard() {
         />
 
         {/* Quick Actions - All 4 request types accessible directly */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3" data-tour="quick-actions">
           <Button
             variant="default"
             size="lg"
