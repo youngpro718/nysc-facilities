@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Loader2 } from "lucide-react";
 import { logger } from '@/lib/logger';
@@ -132,7 +131,7 @@ export function ModernFloorPlanView() {
       if (saved.filterType) setFilterType(saved.filterType);
       if (typeof saved.showProperties === 'boolean') setShowProperties(saved.showProperties);
       if (saved.selectedFloor) setSelectedFloor(saved.selectedFloor);
-      if (typeof ((saved as Record<string, unknown>)).showConnectionsPref === 'boolean') setShowConnectionsPref(((saved as Record<string, unknown>)).showConnectionsPref);
+      if (typeof (saved as any).showConnectionsPref === 'boolean') setShowConnectionsPref((saved as any).showConnectionsPref as boolean);
       if (typeof saved.labelScale === 'number') setLabelScale(saved.labelScale);
       if (typeof saved.moveEnabled === 'boolean') setMoveEnabled(saved.moveEnabled);
     } catch {}
@@ -171,7 +170,7 @@ export function ModernFloorPlanView() {
 
         if (error) {
           // Only show sign-in message if RLS/auth blocks the request
-          const status = (error as Record<string, unknown>)?.code || (error as Record<string, unknown>)?.status || (error as Record<string, unknown>)?.message;
+          const status = (error as any)?.code || (error as any)?.status || (error as any)?.message;
           if (String(status).includes('401') || String(status).includes('403')) {
             toast.message('Sign in required', {
               description: 'Please sign in to load floors and floorplans.',
@@ -183,17 +182,17 @@ export function ModernFloorPlanView() {
         }
         
         setFloors(
-          (data || []).map((f: Record<string, unknown>) => ({
+          (data || []).map((f: any) => ({
             ...f,
             buildings: Array.isArray(f.buildings) ? f.buildings[0] : f.buildings
-          }))
+          })) as Floor[]
         );
         if (data && data.length > 0) {
           // If a saved floor exists and is still valid, keep it; otherwise default to Floor 1 (lowest floor_number)
-          const exists = selectedFloor && data.some((f: Record<string, unknown>) => f.id === selectedFloor);
+          const exists = selectedFloor && data.some((f: any) => f.id === selectedFloor);
           if (!exists) {
             // Find the floor with the lowest floor_number (Floor 1)
-            const lowestFloor = [...data].sort((a: Record<string, unknown>, b: Record<string, unknown>) => 
+            const lowestFloor = [...data].sort((a: any, b: any) => 
               (a.floor_number as number) - (b.floor_number as number)
             )[0];
             setSelectedFloor(lowestFloor.id);
@@ -377,7 +376,7 @@ export function ModernFloorPlanView() {
   // Filter objects based on search and type
   const filteredObjects = useMemo(() => {
     const q = (searchQuery || '').toLowerCase().trim();
-    return (sceneObjects as unknown[]).filter((obj: Record<string, unknown>) => {
+    return (sceneObjects as any[]).filter((obj: any) => {
       if (!obj) return false;
       if (filterType !== 'all' && obj.type !== filterType) return false;
       if (!q) return true;
@@ -571,7 +570,7 @@ export function ModernFloorPlanView() {
                 key={`2d-${refreshKey}`}
                 floorId={selectedFloor}
                 onObjectSelect={handleObjectSelect}
-                previewData={previewData}
+                previewData={previewData as any}
                 zoom={zoom}
               />
             ) : (
@@ -579,8 +578,8 @@ export function ModernFloorPlanView() {
                 key={`3d-${refreshKey}`}
                 floorId={selectedFloor}
                 onObjectSelect={(objectId) => {
-                  const match = (sceneObjects as unknown[]).find((o: Record<string, unknown>) => o.id === objectId);
-                  if (match) handleObjectSelect(match as Record<string, unknown>);
+                  const match = (sceneObjects as any[]).find((o: any) => o.id === objectId);
+                  if (match) handleObjectSelect(match as any);
                 }}
                 selectedObjectId={selectedObject?.id}
                 previewData={previewData}
@@ -616,7 +615,7 @@ export function ModernFloorPlanView() {
           >
             <EnhancedPropertiesPanel
               selectedObject={selectedObject}
-              allObjects={filteredObjects}
+              allObjects={filteredObjects as any}
               onUpdate={() => {
                 if (selectedObject) {
                   openDialog('propertyEdit', selectedObject);
@@ -639,16 +638,16 @@ export function ModernFloorPlanView() {
         onSearchQueryChange={setSearchQuery}
         filterType={filterType}
         onFilterTypeChange={setFilterType}
-        objects={filteredObjects}
-        onObjectSelect={(obj: Record<string, unknown>) => handleObjectSelect(obj as FloorPlanObject)}
+        objects={filteredObjects as any}
+        onObjectSelect={(obj: any) => handleObjectSelect(obj)}
       />
 
       {/* Advanced Search Panel */}
       <AdvancedSearchPanel
         isOpen={isAdvancedSearchOpen}
         onClose={() => setIsAdvancedSearchOpen(false)}
-        objects={filteredObjects}
-        onObjectSelect={(obj: Record<string, unknown>) => handleObjectSelect(obj as FloorPlanObject)}
+        objects={filteredObjects as any}
+        onObjectSelect={(obj: any) => handleObjectSelect(obj)}
         onHighlightObjects={setHighlightedObjects}
       />
 

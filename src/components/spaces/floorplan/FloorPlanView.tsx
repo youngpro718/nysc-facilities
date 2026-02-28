@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { PropertiesPanel } from './components/PropertiesPanel';
@@ -80,21 +79,21 @@ export function FloorPlanView() {
   }, [selectedFloor]);
 
   // Handle property updates during edit
-  const handlePropertyUpdate = useCallback((updates: Record<string, unknown>) => {
+  const handlePropertyUpdate = useCallback((updates: Record<string, any>) => {
     logger.debug('Property updates:', updates);
     
     // Transform form values to proper object structure
     const position = {
-      x: parseFloat(updates.positionX),
-      y: parseFloat(updates.positionY)
+      x: parseFloat(String(updates.positionX)),
+      y: parseFloat(String(updates.positionY))
     };
     
     const size = {
-      width: parseFloat(updates.width),
-      height: parseFloat(updates.height)
+      width: parseFloat(String(updates.width)),
+      height: parseFloat(String(updates.height))
     };
     
-    const rotation = parseFloat(updates.rotation);
+    const rotation = parseFloat(String(updates.rotation));
     
     // Build properties object based on object type
     let properties: Record<string, unknown> = {};

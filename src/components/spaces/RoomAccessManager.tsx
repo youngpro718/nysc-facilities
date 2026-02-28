@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,9 +65,9 @@ export function RoomAccessManager() {
         .order('room_number');
 
       if (error) throw error;
-      return (data as Record<string, unknown>)?.map((room: Record<string, unknown>) => ({
+      return (data as any[])?.map((room: any) => ({
         ...room,
-        floors: room.floors?.[0] || { name: 'Unknown Floor', buildings: { name: 'Unknown Building' } }
+        floors: Array.isArray(room.floors) ? room.floors[0] : room.floors || { name: 'Unknown Floor', buildings: { name: 'Unknown Building' } }
       })) || [];
     },
   });
@@ -158,7 +157,7 @@ export function RoomAccessManager() {
       queryClient.invalidateQueries({ queryKey: ['room-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['roomAccess'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: any) => {
       toast({ 
         title: "Error", 
         description: error.message || "Failed to assign occupant to room",
@@ -182,7 +181,7 @@ export function RoomAccessManager() {
       queryClient.invalidateQueries({ queryKey: ['room-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['roomAccess'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: any) => {
       toast({ 
         title: "Error", 
         description: error.message || "Failed to remove assignment",

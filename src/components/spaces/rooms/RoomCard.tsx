@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Room } from "./types/RoomTypes";
@@ -74,7 +73,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
         {/* Perspective wrapper ensures proper 3D rendering of front/back faces */}
         <div
           className="w-full h-full"
-          style={{ perspective: '1000px', WebkitPerspective: '1000px' as unknown }}
+          style={{ perspective: '1000px', WebkitPerspective: '1000px' as any }}
         >
           <div 
             className="relative w-full h-full transition-all duration-500"
@@ -83,13 +82,13 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
               transformStyle: 'preserve-3d',
               // Cross-browser hints to avoid flattening/tearing
               willChange: 'transform',
-              WebkitTransformStyle: 'preserve-3d' as unknown
+              WebkitTransformStyle: 'preserve-3d' as any
             }}
           >
             {/* Front of card */}
             <div 
               className="absolute inset-0 w-full h-full bg-card"
-              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' as unknown }}
+              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' as any }}
             >
               <CardFront 
                 room={displayRoom} 
@@ -105,7 +104,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
               className="absolute inset-0 w-full h-full bg-card"
               style={{ 
                 backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden' as unknown,
+                WebkitBackfaceVisibility: 'hidden' as any,
                 transform: 'rotateY(180deg)'
               }}
             >

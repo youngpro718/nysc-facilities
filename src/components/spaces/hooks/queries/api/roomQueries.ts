@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { supabase } from "@/lib/supabase";
 import { logger } from '@/lib/logger';
 
@@ -46,7 +45,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
     // Now fetch the floor and building data separately
     if (roomsData && roomsData.length > 0) {
       // Extract floor IDs from rooms, filtering out any nulls
-      const floorIds = [...new Set(roomsData.map((room: Record<string, unknown>) => room.floor_id))].filter(Boolean);
+      const floorIds = [...new Set(roomsData.map((room: any) => room.floor_id))].filter(Boolean);
       
       if (floorIds.length === 0) {
         return { data: roomsData, error: null };
@@ -68,13 +67,13 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
       }
       
       // Create a map of floor data for quick lookup
-      const floorMap: Record<string, unknown> = {};
-      floorsData?.forEach((floor: Record<string, unknown>) => {
-        floorMap[floor.id] = floor;
+      const floorMap: Record<string, any> = {};
+      floorsData?.forEach((floor: any) => {
+        floorMap[floor.id as string] = floor;
       });
       
       // Attach floor and building data to each room
-      const enrichedRoomsData = roomsData.map((room: Record<string, unknown>) => ({
+      const enrichedRoomsData = roomsData.map((room: any) => ({
         ...room,
         floors: room.floor_id && floorMap[room.floor_id] ? floorMap[room.floor_id] : null
       }));
@@ -82,7 +81,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
       // Filter by building if specified
       let filteredRooms = enrichedRoomsData;
       if (buildingId && buildingId !== 'all') {
-        filteredRooms = enrichedRoomsData.filter((room: Record<string, unknown>) => 
+        filteredRooms = enrichedRoomsData.filter((room: any) => 
           room.floors?.buildings?.id === buildingId
         );
       }

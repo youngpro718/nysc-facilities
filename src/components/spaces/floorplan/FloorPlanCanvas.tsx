@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { 
@@ -55,10 +54,10 @@ function FloorPlanCanvasInner({
   const handleNodesChange = useFloorPlanNodes(onNodesChange);
   const previewingNodeId = useRef<string | null>(null);
 
-  const initializeNodes = useCallback((objects: unknown[]) => {
+  const initializeNodes = useCallback((objects: any[]) => {
     if (!objects?.length) return [];
 
-    const reactFlowNodes = objects.map((obj) => {
+    const reactFlowNodes = objects.map((obj: any) => {
       // Ensure we have valid position and size
       const position = obj.position && 
         typeof obj.position.x === 'number' && 
@@ -132,7 +131,7 @@ function FloorPlanCanvasInner({
   // Apply preview data when it changes
   useEffect(() => {
     if (previewData && nodes.length > 0) {
-      const { id, position, rotation, data } = previewData;
+      const { id, position, rotation, data } = previewData as any;
       previewingNodeId.current = id;
       
       setNodes(nodes => {
