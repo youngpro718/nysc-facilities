@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /**
  * Service Worker Registration for iOS 18+ PWA Support
  * Handles installation, updates, and push notifications
@@ -116,9 +116,10 @@ export async function subscribeToPushNotifications(
 
   try {
     const registration = await navigator.serviceWorker.ready;
+    const pushManager = (registration as unknown as { pushManager: PushManager }).pushManager;
     
     // Check if already subscribed
-    let subscription = await registration.pushManager.getSubscription();
+    let subscription = await pushManager.getSubscription();
     
     if (subscription) {
       logger.debug('Already subscribed to push notifications');
@@ -134,7 +135,7 @@ export async function subscribeToPushNotifications(
     }
 
     // Subscribe to push notifications
-    subscription = await registration.pushManager.subscribe({
+    subscription = await pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
     });
@@ -157,7 +158,8 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
 
   try {
     const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
+    const pushManager = (registration as unknown as { pushManager: PushManager }).pushManager;
+    const subscription = await pushManager.getSubscription();
     
     if (!subscription) {
       logger.debug('No push subscription found');
@@ -178,7 +180,7 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
  */
 export function isStandalone(): boolean {
   // iOS Safari
-  if ('standalone' in navigator && ((navigator as Record<string, unknown>)).standalone) {
+  if ('standalone' in navigator && (navigator as unknown as Record<string, unknown>).standalone) {
     return true;
   }
 
@@ -194,7 +196,7 @@ export function isStandalone(): boolean {
  * Check if app is running on iOS
  */
 export function isIOS(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !((window as Record<string, unknown>)).MSStream;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as Record<string, unknown>).MSStream;
 }
 
 /**

@@ -1,7 +1,6 @@
-// @ts-nocheck
 import { LogOut } from "lucide-react";
 import { ExpandableTabs } from "@/components/ui/expandable-tabs";
-import { NavigationTab } from "../types";
+import type { NavigationTab } from "../types";
 
 interface DesktopNavigationProps {
   navigation: NavigationTab[];
@@ -17,7 +16,7 @@ export const DesktopNavigation = ({
   return (
     <nav className="hidden md:flex items-center gap-4">
       <ExpandableTabs 
-        tabs={navigation as unknown} 
+        tabs={navigation as Parameters<typeof ExpandableTabs>[0]['tabs']} 
         className="border-white/20 bg-transparent"
         onChange={onNavigationChange}
       />

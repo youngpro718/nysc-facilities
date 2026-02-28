@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
@@ -34,17 +33,21 @@ const DialogContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   const childrenArray = React.Children.toArray(children);
 
-  const nodeMatches = (node: unknown, targets: unknown[]) => {
-    const type = (node && node.type) || null;
-    const displayName = (type && ((type as Record<string, unknown>)).displayName) || null;
-    return targets.some((t) => type === t || displayName === ((t as Record<string, unknown>)).displayName);
+  const nodeMatches = (node: React.ReactNode, targets: React.ComponentType[]): boolean => {
+    if (!React.isValidElement(node)) return false;
+    const type = node.type as React.ComponentType & { displayName?: string };
+    return targets.some((t) => {
+      const target = t as React.ComponentType & { displayName?: string };
+      return type === t || (type.displayName != null && type.displayName === target.displayName);
+    });
   };
 
-  const containsType = (nodes: React.ReactNode[], targets: unknown[]): boolean => {
+  const containsType = (nodes: React.ReactNode[], targets: React.ComponentType[]): boolean => {
     for (const n of nodes) {
       if (!React.isValidElement(n)) continue;
       if (nodeMatches(n, targets)) return true;
-      const childArray = React.Children.toArray(n.props?.children ?? []);
+      const childProps = n.props as { children?: React.ReactNode };
+      const childArray = React.Children.toArray(childProps.children ?? []);
       if (childArray.length && containsType(childArray, targets)) return true;
     }
     return false;

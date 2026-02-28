@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 export type NormalizedSupabaseError = {
   code?: string;
   message: string;
@@ -10,8 +10,8 @@ export type NormalizedSupabaseError = {
 export function normalizeSupabaseError(err: unknown): NormalizedSupabaseError {
   // Supabase can throw strings, Error objects, or PostgREST error payloads
   const anyErr = err as Record<string, unknown>;
-  const rawMessage: string = anyErr?.message || anyErr?.error_description || anyErr?.error || String(err);
-  const code: string | undefined = anyErr?.code || anyErr?.status || anyErr?.hint || undefined;
+  const rawMessage: string = String(anyErr?.message || anyErr?.error_description || anyErr?.error || err);
+  const code: string | undefined = (anyErr?.code || anyErr?.status || anyErr?.hint) as string | undefined;
 
   // Detect common permission/authorization denials
   const text = (rawMessage || '').toLowerCase();
