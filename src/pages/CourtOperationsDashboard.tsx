@@ -6,6 +6,7 @@ import { TodaysStatusDashboard } from "@/components/court-operations/TodaysStatu
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
 import { StaffAbsenceManager } from "@/components/court-operations/StaffAbsenceManager";
+import { StaffRosterPanel } from "@/components/court/StaffRosterPanel";
 import { ConflictDetectionPanel } from "@/components/court-operations/ConflictDetectionPanel";
 import { DailySessionsPanel } from "@/components/court-operations/DailySessionsPanel";
 import { LiveCourtGrid } from "@/components/court/LiveCourtGrid";
@@ -208,6 +209,7 @@ export const CourtOperationsDashboard = () => {
         {/* Staff & Conflicts (merged) */}
         <TabsContent value="staff" className="mt-4">
           <div className="space-y-6">
+            <StaffRosterPanel />
             <StaffAbsenceManager />
             <ConflictDetectionPanel />
           </div>

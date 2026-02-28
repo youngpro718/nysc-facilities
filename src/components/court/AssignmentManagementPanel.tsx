@@ -2,6 +2,7 @@ import { useState } from "react";
 import { EnhancedCourtAssignmentTable } from "./EnhancedCourtAssignmentTable";
 import { TermSheetBoard } from "@/components/court-operations/personnel/TermSheetBoard";
 import { AddJudgeDialog } from "./JudgeStatusManager";
+import { AddStaffDialog } from "./AddStaffDialog";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export const AssignmentManagementPanel = () => {
   const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
   const [addJudgeOpen, setAddJudgeOpen] = useState(false);
+  const [addStaffOpen, setAddStaffOpen] = useState(false);
   const { getCourtImpactSummary, getRecentlyAffectedRooms } = useCourtIssuesIntegration();
   const { personnel } = useCourtPersonnel();
   const impactSummary = getCourtImpactSummary();
@@ -128,6 +130,10 @@ export const AssignmentManagementPanel = () => {
           <Button variant="outline" size="sm" onClick={() => setAddJudgeOpen(true)}>
             <UserPlus className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Add Judge</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setAddStaffOpen(true)}>
+            <Users className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Staff</span>
           </Button>
         </div>
       </div>
@@ -266,6 +272,7 @@ export const AssignmentManagementPanel = () => {
 
 
           <AddJudgeDialog open={addJudgeOpen} onOpenChange={setAddJudgeOpen} />
+          <AddStaffDialog open={addStaffOpen} onOpenChange={setAddStaffOpen} />
 
           {/* Instructions */}
           <Card>
