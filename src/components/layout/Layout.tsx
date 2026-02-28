@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Layout component — app shell with navigation, header, and floating controls
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -184,14 +184,14 @@ const Layout = () => {
                 {/* Profile Avatar */}
                 <button
                   className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
-                  title={`${profile?.first_name || ''} ${profile?.last_name || ''} — Profile`}
+                  title={`${(profile as any)?.first_name || ''} ${(profile as any)?.last_name || ''} — Profile`}
                   data-tour="user-avatar"
                   onClick={() => navigate('/profile')}
                 >
                   <UserAvatar
-                    src={profile?.avatar_url}
-                    firstName={profile?.first_name}
-                    lastName={profile?.last_name}
+                    src={(profile as any)?.avatar_url as string | undefined}
+                    firstName={(profile as any)?.first_name as string | undefined}
+                    lastName={(profile as any)?.last_name as string | undefined}
                     className="h-8 w-8"
                     showFallbackIcon
                   />
