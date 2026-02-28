@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusCard } from "@/components/ui/StatusCard";
 import { 
   ClipboardList, 
   Clock, 
@@ -105,66 +106,7 @@ export default function Tasks() {
     await completeTask.mutateAsync({ taskId, notes });
   };
 
-  // Stats vary based on role
-  const stats = isCourtAide ? [
-    {
-      label: "My Active Tasks",
-      value: myTasks.length,
-      icon: User,
-      color: "text-green-500",
-      bgColor: "bg-green-500/10"
-    },
-    {
-      label: "Available to Claim",
-      value: availableTasks.length,
-      icon: Clock,
-      color: "text-amber-500",
-      bgColor: "bg-amber-500/10"
-    },
-    {
-      label: "Completed",
-      value: completedTasks.length,
-      icon: CheckCircle2,
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10"
-    },
-    {
-      label: "All Active",
-      value: activeTasks.length,
-      icon: ClipboardList,
-      color: "text-purple-500",
-      bgColor: "bg-purple-500/10"
-    }
-  ] : [
-    {
-      label: "Pending Approval",
-      value: pendingTasks.length,
-      icon: Clock,
-      color: "text-amber-500",
-      bgColor: "bg-amber-500/10"
-    },
-    {
-      label: "Active Tasks",
-      value: activeTasks.length,
-      icon: ClipboardList,
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10"
-    },
-    {
-      label: "Completed",
-      value: completedTasks.length,
-      icon: CheckCircle2,
-      color: "text-green-500",
-      bgColor: "bg-green-500/10"
-    },
-    {
-      label: "Rejected/Cancelled",
-      value: rejectedTasks.length,
-      icon: XCircle,
-      color: "text-muted-foreground",
-      bgColor: "bg-muted"
-    }
-  ];
+  // (stats rendered inline as StatusCards below)
 
   const renderTaskList = (taskList: typeof tasks, emptyMessage: string, showClaimActions: boolean = false) => {
     const filtered = filterBySearch(taskList);
@@ -232,21 +174,21 @@ export default function Tasks() {
 
       {/* Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {stats.map(stat => (
-          <Card key={stat.label} className="relative overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {isCourtAide ? (
+          <>
+            <StatusCard statusVariant="info" title="My Active Tasks" value={myTasks.length} subLabel="Claimed by you" icon={User} />
+            <StatusCard statusVariant={availableTasks.length > 0 ? "warning" : "operational"} title="Available to Claim" value={availableTasks.length} subLabel="Ready for pickup" icon={Clock} />
+            <StatusCard statusVariant="operational" title="Completed" value={completedTasks.length} subLabel="Successfully done" icon={CheckCircle2} />
+            <StatusCard statusVariant="neutral" title="All Active" value={activeTasks.length} subLabel="In pipeline" icon={ClipboardList} />
+          </>
+        ) : (
+          <>
+            <StatusCard statusVariant="info" title="Active Tasks" value={activeTasks.length} subLabel="In pipeline" icon={ClipboardList} />
+            <StatusCard statusVariant={pendingTasks.length > 0 ? "warning" : "operational"} title="Pending Approval" value={pendingTasks.length} subLabel="Awaiting review" icon={Clock} />
+            <StatusCard statusVariant="operational" title="Completed" value={completedTasks.length} subLabel="Successfully done" icon={CheckCircle2} />
+            <StatusCard statusVariant="neutral" title="Rejected" value={rejectedTasks.length} subLabel="Rejected or cancelled" icon={XCircle} />
+          </>
+        )}
       </div>
 
       {/* Search */}

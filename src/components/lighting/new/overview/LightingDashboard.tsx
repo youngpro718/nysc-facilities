@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusCard } from "@/components/ui/StatusCard";
 import { 
   Lightbulb, 
   AlertTriangle, 
@@ -120,70 +121,36 @@ export function LightingDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Quick Stats Grid */}
+      {/* Quick Stats Grid — reordered: Critical first */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Fixtures</CardTitle>
-            <Lightbulb className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{fixtureStats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all buildings
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Health</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center gap-2">
-              {functionalPercentage}%
-              {functionalPercentage >= 90 ? (
-                <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-800 border-green-200 dark:border-green-800">
-                  Excellent
-                </Badge>
-              ) : functionalPercentage >= 75 ? (
-                <Badge variant="secondary">Good</Badge>
-              ) : (
-                <Badge variant="destructive">Needs Attention</Badge>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {fixtureStats.functional} of {fixtureStats.total} functional
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Critical Issues</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{criticalIssues}</div>
-            <p className="text-xs text-muted-foreground">
-              Require immediate attention
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Maintenance Due</CardTitle>
-            <Wrench className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{needsAttention}</div>
-            <p className="text-xs text-muted-foreground">
-              Schedule maintenance soon
-            </p>
-          </CardContent>
-        </Card>
+        <StatusCard
+          statusVariant={criticalIssues > 0 ? "critical" : "operational"}
+          title="Critical Issues"
+          value={criticalIssues}
+          subLabel="Require immediate attention"
+          icon={AlertTriangle}
+        />
+        <StatusCard
+          statusVariant={functionalPercentage >= 90 ? "operational" : functionalPercentage >= 75 ? "warning" : "critical"}
+          title="System Health"
+          value={`${functionalPercentage}%`}
+          subLabel={`${fixtureStats.functional} of ${fixtureStats.total} functional`}
+          icon={CheckCircle}
+        />
+        <StatusCard
+          statusVariant="neutral"
+          title="Total Fixtures"
+          value={fixtureStats.total}
+          subLabel="Across all buildings"
+          icon={Lightbulb}
+        />
+        <StatusCard
+          statusVariant={needsAttention > 0 ? "warning" : "operational"}
+          title="Maintenance Due"
+          value={needsAttention}
+          subLabel="Schedule maintenance soon"
+          icon={Wrench}
+        />
       </div>
 
       {/* Room vs Hallway Breakdown */}
