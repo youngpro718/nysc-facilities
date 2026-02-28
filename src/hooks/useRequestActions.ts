@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Request Actions — cancel and resubmit key requests
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
@@ -45,18 +45,20 @@ export const useRequestActions = () => {
       if (fetchError) throw fetchError;
 
       // Create new request with updated data
+      const newRequest = {
+        ...(originalRequest as any),
+        id: undefined,
+        ...(newData as any),
+        status: 'pending',
+        admin_notes: null,
+        rejection_reason: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       const { error: insertError } = await supabase
         .from('key_requests')
-        .insert({
-          ...originalRequest,
-          id: undefined, // Let it generate a new ID
-          ...newData,
-          status: 'pending',
-          admin_notes: null,
-          rejection_reason: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+        .insert(newRequest);
 
       if (insertError) throw insertError;
     },

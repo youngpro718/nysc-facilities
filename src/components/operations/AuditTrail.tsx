@@ -1,4 +1,4 @@
-// @ts-nocheck
+// AuditTrail — timeline of changes for a specific record
 /**
  * AuditTrail Component
  * 
@@ -63,7 +63,7 @@ export function AuditTrail({
   };
 
   const getActionBadge = (action: string) => {
-    const variants: Record<string, unknown> = {
+    const variants: Record<string, any> = {
       INSERT: 'default',
       UPDATE: 'secondary',
       DELETE: 'destructive',

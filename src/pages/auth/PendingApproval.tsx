@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Pending Approval — shown to users awaiting admin approval
 import { useEffect, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { useNavigate } from 'react-router-dom';
@@ -101,11 +101,11 @@ export default function PendingApproval() {
             <div className="text-sm text-muted-foreground space-y-1">
               <p><strong>Name:</strong> {profile?.first_name} {profile?.last_name}</p>
               <p><strong>Email:</strong> {user?.email}</p>
-              {((profile as Record<string, unknown>))?.department && (
-                <p><strong>Department:</strong> {((profile as Record<string, unknown>)).department}</p>
+              {(profile as any)?.department && (
+                <p><strong>Department:</strong> {(profile as any).department}</p>
               )}
-              {((profile as Record<string, unknown>))?.title && (
-                <p><strong>Title:</strong> {((profile as Record<string, unknown>)).title}</p>
+              {(profile as any)?.title && (
+                <p><strong>Title:</strong> {(profile as any).title}</p>
               )}
             </div>
           </div>

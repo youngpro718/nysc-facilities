@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Pending Users Section — admin verification queue
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -179,7 +179,7 @@ export function PendingUsersSection({
                   <span className="font-medium">Requested Access:</span>
                   <span className="ml-2 text-slate-800">
                     {(() => {
-                      const raw = ((user as Record<string, unknown>))?.metadata?.requested_access_level as string | undefined;
+                      const raw = (user as any)?.metadata?.requested_access_level as string | undefined;
                       if (!raw) return 'Not specified';
                       return (raw === 'administrative' || raw === 'admin') ? 'Administrative' : 'Standard';
                     })()}

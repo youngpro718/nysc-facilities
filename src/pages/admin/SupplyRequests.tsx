@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Admin Supply Requests — audit view of all supply requests
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Package, Clock, CheckCircle, XCircle, User, AlertTriangle } from "lucide-react";
@@ -94,7 +94,7 @@ export default function AdminSupplyRequests() {
   const fetchRequests = async () => {
     try {
       const data = await getSupplyRequests();
-      setRequests(data as unknown);
+      setRequests(data as SupplyRequestWithUser[]);
     } catch (error) {
       toast({
         title: "Error",
