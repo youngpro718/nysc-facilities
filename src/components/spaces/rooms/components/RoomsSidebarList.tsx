@@ -89,6 +89,17 @@ export function RoomsSidebarList({ rooms, selectedRoomId, onSelect, isLoading }:
                     <ul className="divide-y">
                       {buildingRooms.map((room) => {
                         const isActive = room.id === selectedRoomId;
+                        const issueCount = Array.isArray(room.issues) ? room.issues.length : 0;
+                        const statusDotColor =
+                          room.status === 'active' && issueCount === 0
+                            ? 'bg-status-operational'
+                            : issueCount > 0
+                            ? 'bg-status-warning'
+                            : 'bg-status-neutral';
+                        const floorLabel = room.floor?.name
+                          ? `FL ${room.floor.name.replace(/[^0-9]/g, '') || room.floor.name}`
+                          : null;
+
                         return (
                           <li key={room.id}>
                             <button
@@ -99,19 +110,29 @@ export function RoomsSidebarList({ rooms, selectedRoomId, onSelect, isLoading }:
                                 isActive && "bg-accent/50"
                               )}
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <div className="truncate font-medium">{room.room_number || room.name}</div>
-                                    <span className="shrink-0 whitespace-nowrap text-xs rounded border px-1.5 py-0.5 leading-tight text-muted-foreground capitalize">
-                                      {room.room_type.replace(/_/g, ' ')}
-                                    </span>
-                                  </div>
-                                  {room.room_number && room.name !== room.room_number && (
-                                    <div className="truncate text-xs text-muted-foreground mt-0.5">{room.name}</div>
-                                  )}
+                              <div className="flex items-center gap-2">
+                                {/* Status dot */}
+                                <span className={cn("h-2 w-2 rounded-full shrink-0", statusDotColor)} />
+
+                                <div className="min-w-0 flex-1 flex items-center gap-2">
+                                  <span className="truncate font-medium text-sm">
+                                    {room.room_number || room.name}
+                                  </span>
+                                  <span className="shrink-0 whitespace-nowrap text-[11px] rounded border px-1.5 py-0.5 leading-tight text-muted-foreground capitalize">
+                                    {room.room_type.replace(/_/g, ' ')}
+                                  </span>
                                 </div>
+
+                                {/* Floor badge */}
+                                {floorLabel && (
+                                  <span className="shrink-0 text-[11px] rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                                    {floorLabel}
+                                  </span>
+                                )}
                               </div>
+                              {room.room_number && room.name !== room.room_number && (
+                                <div className="truncate text-xs text-muted-foreground mt-0.5 pl-4">{room.name}</div>
+                              )}
                             </button>
                           </li>
                         );
