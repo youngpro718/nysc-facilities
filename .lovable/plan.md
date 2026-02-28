@@ -1,26 +1,21 @@
 
 
-## Three Fixes
+## Two Fixes
 
-### 1. Admin Center button does nothing
+### 1. Card flip: replace sideways (Y-axis) flip with a regular vertical (X-axis) flip
 
-**Root cause:** Same index-offset bug as before. The admin nav tabs include a `{ type: "separator" }` at index 9, but the routes array has no corresponding empty string entry. So "Admin Center" (index 10) maps to `routes[10]` which is `undefined`.
+The current animation uses `rotateY(180deg)` which flips the card sideways like a door. Change to `rotateX(180deg)` for a top-over-bottom flip (like flipping a page/card face-down on a table).
 
-**Fix in `src/components/layout/config/navigation.tsx`:** Add `''` for the separator between `/court-operations` and `/admin`:
+**File: `src/components/spaces/rooms/RoomCard.tsx`**
+- Line 81: `rotateY(180deg)` → `rotateX(180deg)`, `rotateY(0)` → `rotateX(0)`
+- Line 108 (back face): `rotateY(180deg)` → `rotateX(180deg)`
 
-```
-'/court-operations',
-'',          // ← separator placeholder
-'/admin',
-```
+### 2. Logo: make it bigger
 
-### 2. Logo too small
+Currently `h-10 w-10`. Increase to `h-14 w-14` in the expanded state and `h-12 w-12` in collapsed state. Also bump the header height from `h-14` to `h-16` to accommodate.
 
-**Fix in `src/components/layout/components/AppSidebar.tsx`:** Change the logo container from `h-8 w-8` to `h-10 w-10` in both collapsed and expanded states (3 occurrences around lines 46, 51, 55).
-
-### 3. Card flip animation is janky
-
-**Root cause in `src/components/spaces/rooms/RoomCard.tsx`:** Line 79 uses `transition-all` which transitions every CSS property (shadows, opacity, etc.) along with the transform, causing visual artifacts during the flip.
-
-**Fix:** Change `transition-all` to `transition-transform` on line 79 so only the 3D rotation animates smoothly.
+**File: `src/components/layout/components/AppSidebar.tsx`**
+- Line 50: header height `h-14` → `h-16`
+- Line 53: expanded logo `h-10 w-10` → `h-14 w-14`
+- Line 61: collapsed logo `h-10 w-10` → `h-12 w-12`
 
