@@ -26,6 +26,7 @@ select {
 
 /* iOS-specific touch improvements */
 @supports (-webkit-touch-callout: none) {
+
   /* Smooth scrolling on iOS */
   * {
     -webkit-overflow-scrolling: touch;
@@ -60,10 +61,6 @@ select {
 
 /* Standalone mode (installed PWA) adjustments */
 @media (display-mode: standalone) {
-  /* Add top padding for status bar in standalone mode */
-  body {
-    padding-top: max(var(--safe-area-inset-top), 20px);
-  }
 
   /* Hide elements that shouldn't show in standalone mode */
   .hide-in-standalone {
@@ -73,6 +70,7 @@ select {
 
 /* Touch-friendly utility classes (opt-in, not global) */
 @media (hover: none) and (pointer: coarse) {
+
   /* Minimum touch target size: 44x44px (Apple HIG) */
   .touch-target-44 {
     min-height: 44px;
@@ -140,6 +138,7 @@ body {
 
 /* iOS Landscape Safe Areas */
 @media (orientation: landscape) {
+
   .container,
   .main-content {
     padding-left: max(var(--safe-area-inset-left), 16px);
@@ -154,13 +153,23 @@ body {
 }
 
 @-webkit-keyframes spin {
-  0% { -webkit-transform: rotate(0deg); }
-  100% { -webkit-transform: rotate(360deg); }
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* iOS Modal/Dialog Adjustments */
@@ -192,6 +201,7 @@ img {
 
 /* iOS Accessibility - Reduce Motion */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -204,7 +214,8 @@ img {
 /* iOS Focus Styles */
 @supports (-webkit-touch-callout: none) {
   *:focus {
-    outline: 2px solid #007aff; /* iOS blue */
+    outline: 2px solid #007aff;
+    /* iOS blue */
     outline-offset: 2px;
   }
 
@@ -252,15 +263,14 @@ img {
 
 /* iOS 26 Enhanced Features */
 @supports (padding-top: env(safe-area-inset-top)) {
+
   /* Improved Dynamic Island handling for iOS 26 */
   .header-with-island {
-    padding-top: max(
-      env(safe-area-inset-top),
-      env(titlebar-area-height, 0px),
-      20px
-    );
+    padding-top: max(env(safe-area-inset-top),
+        env(titlebar-area-height, 0px),
+        20px);
   }
-  
+
   /* Enhanced bottom safe area for home indicator */
   .bottom-nav-enhanced {
     padding-bottom: max(env(safe-area-inset-bottom), 8px);
@@ -269,12 +279,13 @@ img {
 
 /* iOS 26 Improved Haptic Feedback (visual) */
 @media (hover: none) and (pointer: coarse) {
+
   button:active:not(:disabled),
   .btn:active:not(:disabled) {
     transform: scale(0.97);
     transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   /* Enhanced touch feedback for interactive elements */
   [role="button"]:active:not([aria-disabled="true"]),
   a:active {
@@ -289,7 +300,7 @@ img {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
   }
-  
+
   /* Prevent scroll chaining on iOS 26 */
   .scroll-container {
     overscroll-behavior: contain;
@@ -304,7 +315,7 @@ img {
     outline-offset: 2px;
     border-radius: 4px;
   }
-  
+
   *:focus:not(:focus-visible) {
     outline: none;
   }

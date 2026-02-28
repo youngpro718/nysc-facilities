@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useInventoryItems } from '@/hooks/useInventoryItems';
 import { useFavoriteItems } from '@/hooks/useFavoriteItems';
 import { useOrderCart } from '@/hooks/useOrderCart';
@@ -95,28 +96,30 @@ export function QuickSupplyRequest() {
     <div className="flex flex-col h-full overflow-x-hidden">
       {/* Search Bar */}
       <div className="shrink-0 bg-background pb-2 space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search supplies..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={isMobile ? "pl-9 h-10 rounded-xl text-[15px]" : "pl-9"}
-            />
-          </div>
-          {/* Category Filter - inline pills */}
-          <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-            <TabsList className={isMobile ? "h-10 rounded-xl gap-0" : ""}>
-              <TabsTrigger value="all" className={isMobile ? "rounded-lg text-xs px-2.5" : ""}>All</TabsTrigger>
-              {ALLOWED_CATEGORIES.map((category) => (
-                <TabsTrigger key={category} value={category} className={isMobile ? "rounded-lg text-xs px-2.5" : ""}>
-                  {category.replace(' Supplies', '')}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+        {/* Search bar — full width */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search supplies..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={isMobile ? "pl-9 h-10 rounded-xl text-[15px]" : "pl-9"}
+          />
         </div>
+        {/* Category Filter — scrollable pills */}
+        <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
+          <TabsList className={cn(
+            "w-full justify-start overflow-x-auto scrollbar-hide",
+            isMobile ? "h-10 rounded-xl gap-0" : ""
+          )}>
+            <TabsTrigger value="all" className={isMobile ? "rounded-lg text-xs px-2.5 shrink-0" : "shrink-0"}>All</TabsTrigger>
+            {ALLOWED_CATEGORIES.map((category) => (
+              <TabsTrigger key={category} value={category} className={isMobile ? "rounded-lg text-xs px-2.5 shrink-0" : "shrink-0"}>
+                {category.replace(' Supplies', '')}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         {/* Favorites Strip */}
         <FavoritesStrip

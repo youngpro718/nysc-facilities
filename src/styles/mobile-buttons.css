@@ -28,12 +28,11 @@
     touch-action: manipulation;
   }
 
-  /* Optimize input fields for mobile */
+  /* Optimize input fields for mobile — min-height is opt-in via .touch-target */
   input,
   textarea,
   select {
     font-size: 16px; /* Prevents iOS zoom */
-    min-height: 44px;
   }
 
   /* Better spacing for stacked buttons */
@@ -86,24 +85,10 @@
 
 /* Optimize for small screens */
 @media (max-width: 430px) {
-  /* Slightly larger touch targets for very small devices */
-  button,
-  [role="button"] {
+  /* Larger touch targets — opt-in only to avoid inflating small UI elements */
+  .touch-target {
     min-height: 48px;
-  }
-
-  /* Optimize button text for readability */
-  button {
-    font-size: 15px;
-  }
-
-  /* More compact spacing on very small screens */
-  .space-y-4 > * + * {
-    margin-top: 0.75rem;
-  }
-
-  .space-y-3 > * + * {
-    margin-top: 0.5rem;
+    min-width: 48px;
   }
 
   /* Reduce dialog padding on small screens */

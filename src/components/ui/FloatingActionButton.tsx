@@ -17,7 +17,7 @@ export function FloatingActionButton() {
   const isMobile = useIsMobile();
 
   // Don't show on form pages, login, auth pages, request hub, or spaces (has its own FAB)
-  const hiddenPaths = ['/forms/', '/login', '/auth/', '/onboarding/', '/request', '/spaces'];
+  const hiddenPaths = ['/forms/', '/login', '/auth/', '/onboarding/', '/request', '/spaces', '/profile', '/settings', '/admin'];
   const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
 
   // Only show on mobile
@@ -28,16 +28,16 @@ export function FloatingActionButton() {
   return (
     <AnimatePresence>
       {!shouldHide && (
-        <motion.div 
-          className="fixed bottom-20 right-4 z-50 md:hidden safe-area-bottom"
+        <motion.div
+          className="fixed bottom-[4.5rem] right-4 z-50 md:hidden"
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0, opacity: 0 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 400, 
+          transition={{
+            type: "spring",
+            stiffness: 400,
             damping: 25,
-            delay: 0.2 
+            delay: 0.2
           }}
         >
           <Button

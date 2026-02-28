@@ -49,8 +49,8 @@ function LayoutContent() {
   const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
   const navReady = !!userRole && !permissionsLoading;
-  const navigation = navReady 
-    ? getRoleBasedNavigation(permissions, userRole, profile) 
+  const navigation = navReady
+    ? getRoleBasedNavigation(permissions, userRole, profile)
     : [];
 
   useEffect(() => {
@@ -108,7 +108,7 @@ function LayoutContent() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Global Search Palette (⌘K) */}
       {isAdmin && <GlobalSearchPalette open={searchOpen} onOpenChange={setSearchOpen} />}
 
@@ -170,7 +170,7 @@ function LayoutContent() {
               <div className="flex-1" />
 
               {/* Right utilities */}
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {isAdmin && (
                   <button
                     onClick={() => setSearchOpen(true)}
@@ -189,8 +189,8 @@ function LayoutContent() {
                     <NotificationBox />
                   </div>
                 )}
-                
-                <div className="hidden sm:block" data-tour="theme-toggle">
+
+                <div data-tour="theme-toggle">
                   <ThemeToggle />
                 </div>
 
@@ -247,7 +247,7 @@ function LayoutContent() {
             onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           />
         )}
-        
+
         {/* Floating Action Button for quick actions */}
         {isAuthenticated && !isLoginPage && <FloatingActionButton />}
       </div>

@@ -469,7 +469,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
   const handleImportClick = () => { fileInputRef.current?.click(); };
 
   return (
-    <div className="flex gap-2">
+    <div className="hidden md:flex gap-2">
       <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".xlsx,.xls" className="hidden" />
 
       <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting}>

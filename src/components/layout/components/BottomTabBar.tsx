@@ -35,17 +35,17 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
       }
       return staffTaskCounts.availableToClaim;
     }
-    
+
     // Supply Room: show supply orders to fulfill (for fulfillment staff)
     if (title === 'Supply Room') {
       return supplyCounts?.pendingOrders || 0;
     }
-    
+
     // Supply Requests (Admin): show orders needing approval
     if (title === 'Supply Requests' && isAdmin) {
       return supplyCounts?.pendingApprovals || 0;
     }
-    
+
     return 0;
   };
 
@@ -70,7 +70,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
             const path = getNavigationPath(item.title, isAdmin);
             const isActive = path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
             const badgeCount = getBadgeCount(item.title);
-            
+
             return (
               <button
                 key={item.title}
@@ -79,8 +79,8 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                   "relative flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-2 min-h-[56px] touch-target touch-manipulation",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   "active:scale-95 transition-transform duration-100",
-                  isActive 
-                    ? "text-primary" 
+                  isActive
+                    ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
                 )}
                 aria-current={isActive ? "page" : undefined}
@@ -92,8 +92,8 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                 )}>
                   <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} aria-hidden="true" />
                   {badgeCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
+                    <Badge
+                      variant="destructive"
                       className="absolute -top-1 -right-2 h-4 min-w-[16px] px-1 text-[10px] font-bold"
                     >
                       {badgeCount > 99 ? '99+' : badgeCount}
@@ -104,7 +104,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                   "text-[10px] xs:text-[11px] leading-none font-medium truncate max-w-full",
                   isActive && "font-semibold"
                 )}>
-                  {item.title}
+                  {({ 'Access & Assignments': 'Access', 'Court Operations': 'Courts', 'Issues Management': 'Issues' } as Record<string, string>)[item.title] || item.title}
                 </span>
               </button>
             );

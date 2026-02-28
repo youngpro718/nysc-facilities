@@ -48,8 +48,8 @@ export function InlineItemRow({
       className={cn(
         "rounded-xl border transition-all",
         "flex flex-col gap-1.5 p-2.5 sm:flex-row sm:items-center sm:gap-3 sm:p-3",
-        inCart 
-          ? "bg-primary/5 border-primary/20" 
+        inCart
+          ? "bg-primary/5 border-primary/20"
           : "bg-card hover:bg-accent/50",
         item.requires_justification && "border-l-4 border-l-amber-500",
         compact && "p-2"
@@ -118,11 +118,11 @@ export function InlineItemRow({
       {/* Mobile: Row 2 — Quantity controls + Star */}
       <div className="flex items-center gap-2 sm:hidden justify-between w-full">
         {inCart ? (
-          <div className="flex-1 flex items-center justify-between bg-muted/50 rounded-lg px-2 py-0.5">
+          <div className="flex items-center justify-between bg-muted/50 rounded-lg px-1.5 py-0.5 gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
+              className="h-8 w-8 rounded-full touch-manipulation active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onDecrement();
@@ -130,13 +130,13 @@ export function InlineItemRow({
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <span className="font-bold text-base tabular-nums">
+            <span className="font-bold text-sm tabular-nums min-w-[1.5rem] text-center">
               {cartQuantity}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
+              className="h-8 w-8 rounded-full touch-manipulation active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onIncrement();

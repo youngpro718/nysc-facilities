@@ -17,7 +17,7 @@ export default function SupplyOrderPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-2 sm:pt-6 h-[calc(100dvh-10rem)] sm:h-[calc(100dvh-8rem)] flex flex-col overflow-x-hidden">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-2 sm:pt-6 h-[calc(100dvh-10rem)] sm:h-[calc(100dvh-8rem)] flex flex-col overflow-x-hidden max-w-full">
       {/* Header */}
       <div className="flex items-center gap-2 mb-2 shrink-0">
         <Button

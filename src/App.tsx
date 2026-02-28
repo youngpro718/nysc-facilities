@@ -90,13 +90,13 @@ function AppContent() {
       {/* Public Routes - No Authentication Required */}
       <Route path="/public-forms" element={<PublicForms />} />
       <Route path="/submit-form" element={<PublicFormSubmission />} />
-      
+
       {/* Public Interactive Form Pages - No Layout, No Auth */}
       <Route path="/forms/key-request" element={<KeyRequestFormPage />} />
       <Route path="/forms/supply-request" element={<Navigate to="/request/supplies" replace />} />
       <Route path="/forms/maintenance-request" element={<MaintenanceRequestFormPage />} />
       <Route path="/forms/issue-report" element={<IssueReportFormPage />} />
-      
+
       {/* Auth Flow Pages - Outside OnboardingGuard */}
       <Route path="/auth/pending-approval" element={<PendingApproval />} />
       <Route path="/auth/account-rejected" element={<AccountRejected />} />
@@ -107,7 +107,7 @@ function AppContent() {
       <Route path="/verification-pending" element={<VerificationPending />} />
       <Route path="/features-preview" element={<FeaturesPreview />} />
       <Route path="/install" element={<InstallApp />} />
-      
+
       {/* Protected Routes - Wrapped with OnboardingGuard */}
       <Route element={<OnboardingGuard><Layout /></OnboardingGuard>}>
         {/* Admin Routes */}
@@ -116,7 +116,7 @@ function AppContent() {
             <AdminDashboard />
           </ProtectedRoute>
         } />
-        
+
         {/* Role-Specific Dashboard Routes */}
         <Route path="/cmc-dashboard" element={
           <ProtectedRoute>
@@ -371,15 +371,15 @@ function NotificationsWrapper({ children }: { children: React.ReactNode }) {
 function DevModeWrapper() {
   const { isAdmin } = useAuth();
   const { userRole } = useRolePermissions();
-  
+
   // Only show DevModePanel for actual admins (not preview admins)
   // We need the real role from the database, which we get by checking if preview is active
   const previewRole = typeof window !== 'undefined' ? localStorage.getItem('preview_role') : null;
   const realRole = previewRole && isAdmin ? 'admin' : (userRole as UserRole);
-  
+
   // Only render for actual admins
   if (!isAdmin) return null;
-  
+
   return <DevModePanel realRole="admin" />;
 }
 
@@ -400,9 +400,9 @@ function App() {
                       </NotificationsWrapper>
                     </AuthProvider>
                   </AuthErrorBoundary>
+                  <Toaster />
+                  <InstallPrompt />
                 </BrowserRouter>
-                <Toaster />
-                <InstallPrompt />
               </SimpleDashboardProvider>
             </EnhancedThemeProvider>
           </ThemeProvider>
