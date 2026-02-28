@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Room } from "./types/RoomTypes";
 import { CardFront } from "./components/CardFront";
@@ -75,11 +76,16 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
           className="w-full h-full overflow-hidden"
           style={{ perspective: '1200px', WebkitPerspective: '1200px' as any }}
         >
-          <div 
+          <motion.div 
             className="relative w-full h-full"
+            animate={{ rotateY: isFlipped ? 180 : 0 }}
+            transition={{ 
+              type: "spring", 
+              damping: 20, 
+              stiffness: 200,
+              mass: 0.8
+            }}
             style={{ 
-              transform: (isFlipped) ? 'rotateY(180deg)' : 'rotateY(0deg)',
-              transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
               transformStyle: 'preserve-3d',
               WebkitTransformStyle: 'preserve-3d' as any
             }}
@@ -109,7 +115,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
             >
               <CardBack room={displayRoom} onFlip={handleFlip} />
             </div>
-          </div>
+          </motion.div>
         </div>
       </CardContent>
 
