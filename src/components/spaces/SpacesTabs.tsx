@@ -55,6 +55,7 @@ const SpacesTabs = () => {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => setActiveView('floorplan')}
+                    data-tour="floor-plan-tab"
                     className={`group flex items-center gap-2 px-4 py-2.5 rounded-t-lg border-b-2 transition-all ${
                       activeView === 'floorplan'
                         ? 'border-primary text-foreground bg-accent/50'
