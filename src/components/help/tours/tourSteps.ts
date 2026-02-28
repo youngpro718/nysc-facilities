@@ -345,6 +345,42 @@ export const supplyRoomTour: Step[] = [
   },
 ];
 
+export const profileTour: Step[] = [
+  {
+    target: 'body',
+    content: 'This is your Profile & Settings page. Update your personal info, change your theme, and manage notification preferences.',
+    placement: 'center',
+    disableBeacon: true,
+  },
+];
+
+export const myActivityTour: Step[] = [
+  {
+    target: 'body',
+    content: 'My Activity shows all your supply requests, reported issues, and key requests in one place. Use the tabs to switch between categories.',
+    placement: 'center',
+    disableBeacon: true,
+  },
+];
+
+export const requestHubTour: Step[] = [
+  {
+    target: 'body',
+    content: 'The Request Hub is your starting point for all requests — order supplies, report issues, request keys, or ask for help.',
+    placement: 'center',
+    disableBeacon: true,
+  },
+];
+
+export const roleDashboardTour: Step[] = [
+  {
+    target: 'body',
+    content: 'Welcome to your role dashboard! This shows stats, quick actions, and recent activity tailored to your role.',
+    placement: 'center',
+    disableBeacon: true,
+  },
+];
+
 /** Map route paths to their tour steps */
 export function getTourForRoute(pathname: string): { steps: Step[]; title: string } | null {
   if (pathname === '/') return { steps: adminDashboardTour, title: 'Admin Dashboard' };
@@ -358,6 +394,12 @@ export function getTourForRoute(pathname: string): { steps: Step[]; title: strin
   if (pathname === '/dashboard') return { steps: userDashboardTour, title: 'Your Dashboard' };
   if (pathname === '/tasks') return { steps: tasksTour, title: 'Task Management' };
   if (pathname === '/supply-room') return { steps: supplyRoomTour, title: 'Supply Room' };
+  if (pathname === '/profile') return { steps: profileTour, title: 'Profile & Settings' };
+  if (pathname === '/my-activity') return { steps: myActivityTour, title: 'My Activity' };
+  if (pathname === '/request') return { steps: requestHubTour, title: 'Request Hub' };
+  if (pathname === '/court-officer-dashboard') return { steps: roleDashboardTour, title: 'Court Officer Dashboard' };
+  if (pathname === '/cmc-dashboard') return { steps: roleDashboardTour, title: 'CMC Dashboard' };
+  if (pathname === '/court-aide-dashboard') return { steps: roleDashboardTour, title: 'Court Aide Dashboard' };
   return null;
 }
 
@@ -374,4 +416,7 @@ export const allTours = [
   { id: 'user-dashboard', title: 'User Dashboard', path: '/dashboard', description: 'Your personal hub for requests and activity.', steps: userDashboardTour },
   { id: 'tasks', title: 'Task Management', path: '/tasks', description: 'View, claim, and manage assigned tasks.', steps: tasksTour },
   { id: 'supply-room', title: 'Supply Room', path: '/supply-room', description: 'Fulfill supply requests and manage orders.', steps: supplyRoomTour },
+  { id: 'profile', title: 'Profile & Settings', path: '/profile', description: 'Update your personal info and preferences.', steps: profileTour },
+  { id: 'my-activity', title: 'My Activity', path: '/my-activity', description: 'View all your requests and reported issues.', steps: myActivityTour },
+  { id: 'request-hub', title: 'Request Hub', path: '/request', description: 'Start any type of request from one place.', steps: requestHubTour },
 ];

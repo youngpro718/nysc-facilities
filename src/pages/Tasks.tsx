@@ -189,7 +189,7 @@ export default function Tasks() {
     }
 
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-tour="tasks-list">
         {filtered.map(task => (
           <TaskCard 
             key={task.id} 

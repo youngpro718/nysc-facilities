@@ -460,7 +460,7 @@ export default function Operations() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-4" data-tour="ops-tabs">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             Overview
@@ -492,6 +492,7 @@ export default function Operations() {
                 <Button 
                   onClick={() => setShowCreateIssue(true)} 
                   variant="outline" 
+                  data-tour="ops-report-btn"
                   className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800 transition-colors group"
                 >
                   <AlertTriangle className="h-8 w-8 text-red-500 group-hover:scale-110 transition-transform" />

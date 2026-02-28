@@ -58,7 +58,7 @@ export default function Keys() {
 
       <Tabs defaultValue="lockbox" className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="inline-flex sm:grid w-full sm:grid-cols-6 bg-muted min-w-max sm:min-w-0 h-10 sm:h-10">
+          <TabsList className="inline-flex sm:grid w-full sm:grid-cols-6 bg-muted min-w-max sm:min-w-0 h-10 sm:h-10" data-tour="keys-tabs">
             <TabsTrigger 
               value="lockbox" 
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"

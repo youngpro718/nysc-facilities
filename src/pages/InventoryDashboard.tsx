@@ -147,7 +147,7 @@ export const InventoryDashboard = () => {
                   </Badge>
                 )}
               </Button>
-              <Button onClick={() => handleTabChange("stock")} className="w-full sm:w-auto">
+              <Button onClick={() => handleTabChange("stock")} className="w-full sm:w-auto" data-tour="inventory-add">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
               </Button>
@@ -155,7 +155,7 @@ export const InventoryDashboard = () => {
           </div>
 
           {/* Quick Search Bar */}
-          <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg border">
+          <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg border" data-tour="inventory-search">
             <div className="flex items-center gap-2 flex-1 min-w-[200px]">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input

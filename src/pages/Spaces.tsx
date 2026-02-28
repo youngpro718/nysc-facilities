@@ -7,7 +7,7 @@ const Spaces = () => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="space-y-4 sm:space-y-8 relative">
+    <div className="space-y-4 sm:space-y-8 relative" data-tour="space-list">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">
           <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Space Management</h2>
