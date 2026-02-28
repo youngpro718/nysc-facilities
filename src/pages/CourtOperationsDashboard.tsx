@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatusCard } from "@/components/ui/StatusCard";
 import { TodaysStatusDashboard } from "@/components/court-operations/TodaysStatusDashboard";
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
@@ -11,6 +12,7 @@ import { DailySessionsPanel } from "@/components/court-operations/DailySessionsP
 import { LiveCourtGrid } from "@/components/court/LiveCourtGrid";
 import {
   Activity,
+  AlertCircle,
   Users,
   CalendarCheck,
   Radio,
@@ -135,28 +137,41 @@ export const CourtOperationsDashboard = () => {
         </div>
       </div>
 
-      {/* Term Banner */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="py-3 px-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-              <span className="text-sm font-medium">Criminal Term</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5">
-                {termInfo?.totalParts || 0} Parts
-              </Badge>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{format(new Date(), "EEEE, MMMM d, yyyy")}</span>
-              {counts.todaysSessions > 0 && (
-                <Badge variant="outline" className="text-[10px]">
-                  {counts.todaysSessions} sessions today
-                </Badge>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* KPI Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatusCard
+          statusVariant={counts.todaysSessions > 0 ? "info" : "neutral"}
+          title="Today's Sessions"
+          value={counts.todaysSessions}
+          subLabel={format(new Date(), "EEEE")}
+          icon={CalendarCheck}
+          onClick={() => setTab("sessions")}
+        />
+        <StatusCard
+          statusVariant={counts.assignmentsNeedingAttention > 0 ? "warning" : "operational"}
+          title="Assignments"
+          value={termInfo?.totalParts || 0}
+          subLabel={counts.assignmentsNeedingAttention > 0 ? `${counts.assignmentsNeedingAttention} need attention` : "All covered"}
+          icon={Users}
+          onClick={() => setTab("assignments")}
+        />
+        <StatusCard
+          statusVariant={counts.uncoveredAbsences > 0 ? "critical" : "operational"}
+          title="Staff Absences"
+          value={counts.uncoveredAbsences}
+          subLabel={counts.uncoveredAbsences > 0 ? "Uncovered" : "All covered"}
+          icon={UserX}
+          onClick={() => setTab("staff")}
+        />
+        <StatusCard
+          statusVariant="info"
+          title="Daily Sessions"
+          value={counts.dailySessions}
+          subLabel="Scheduled"
+          icon={Activity}
+          onClick={() => setTab("sessions")}
+        />
+      </div>
 
       {/* Tabs — horizontal scroll on mobile, no grid */}
       <Tabs value={tab} onValueChange={setTab} className="w-full" data-tour="court-term-board">
