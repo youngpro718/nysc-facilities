@@ -21,6 +21,10 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
     path: '/cmc-dashboard',
     name: 'Court Management Dashboard',
   },
+  court_officer: {
+    path: '/court-officer-dashboard',
+    name: 'Court Officer Dashboard',
+  },
   court_aide: {
     path: '/court-aide-dashboard',
     name: 'Work Center',
@@ -69,16 +73,16 @@ export function hasModuleAccess(role: UserRole | string | null | undefined, modu
   
   // Role-specific module access
   const moduleAccess: Record<string, UserRole[]> = {
-    spaces: ['admin'],
+    spaces: ['admin', 'court_officer'],
     operations: ['admin', 'cmc'],
     occupants: ['admin', 'cmc'],
     inventory: ['admin', 'court_aide'],
     supply_requests: ['admin', 'court_aide', 'cmc', 'standard'],
-    keys: ['admin', 'cmc'],
+    keys: ['admin', 'cmc', 'court_officer'],
     lighting: ['admin'],
     maintenance: ['admin'],
     court_operations: ['admin', 'cmc'],
-    dashboard: ['admin', 'cmc', 'court_aide', 'standard'],
+    dashboard: ['admin', 'cmc', 'court_officer', 'court_aide', 'standard'],
   };
   
   const allowedRoles = moduleAccess[moduleKey] || [];

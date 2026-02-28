@@ -26,6 +26,12 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
     { label: 'Tasks', path: '/tasks' },
     { label: 'Operations', path: '/operations' },
   ],
+  court_officer: [
+    { label: 'Dashboard', path: '/court-officer-dashboard' },
+    { label: 'Keys', path: '/keys' },
+    { label: 'Spaces', path: '/spaces' },
+    { label: 'Term Sheet', path: '/term-sheet' },
+  ],
   court_aide: [
     { label: 'Work Center', path: '/court-aide-dashboard' },
     { label: 'Term Sheet', path: '/term-sheet' },

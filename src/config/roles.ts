@@ -9,10 +9,11 @@
 
 // The 4 simplified role values (matches database enum)
 export type UserRole = 
-  | 'standard'      // "User" in UI
-  | 'court_aide'    // "Court Aide" in UI
-  | 'cmc'           // "Management" in UI
-  | 'admin';        // "Admin" in UI
+  | 'standard'        // "User" in UI
+  | 'court_aide'      // "Court Aide" in UI
+  | 'court_officer'   // "Court Officer" in UI
+  | 'cmc'             // "Management" in UI
+  | 'admin';          // "Admin" in UI
 
 // Role configuration with labels and descriptions
 export interface RoleConfig {
@@ -37,6 +38,12 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
     color: 'green',
   },
   {
+    value: 'court_officer',
+    label: 'Court Officer',
+    description: 'Building security, key management, and facility layout access',
+    color: 'blue',
+  },
+  {
     value: 'cmc',
     label: 'Management',
     description: 'Court management, scheduling, and operations oversight',
@@ -53,7 +60,7 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
 // Signup role options (for the signup form)
 // Excludes admin — admin role can only be assigned by existing administrators
 export const SIGNUP_ROLE_OPTIONS = SYSTEM_ROLES
-  .filter(r => r.value !== 'admin')
+  .filter(r => r.value !== 'admin' && r.value !== 'court_officer')
   .map(r => ({
     value: r.value,
     label: r.label,

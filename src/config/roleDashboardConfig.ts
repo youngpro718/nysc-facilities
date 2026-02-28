@@ -8,10 +8,10 @@
 import { 
   Gavel, Package, Warehouse, AlertCircle, TrendingUp, Calendar, 
   Clock, FileText, Wrench, DollarSign, LucideIcon, ClipboardList,
-  CheckCircle, User
+  CheckCircle, User, KeyRound, DoorClosed
 } from 'lucide-react';
 
-export type DashboardRole = 'cmc' | 'court_aide' | 'purchasing_staff';
+export type DashboardRole = 'cmc' | 'court_officer' | 'court_aide' | 'purchasing_staff';
 
 export interface RoleDashboardConfig {
   title: string;
@@ -86,6 +86,35 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
     ],
     showTermSheet: true,
     showPerformanceMetrics: true,
+    showInventoryAlerts: false,
+    showPendingRequests: false,
+  },
+  court_officer: {
+    title: 'Court Officer Dashboard',
+    greeting: 'Officer',
+    primaryAction: {
+      label: 'Key Management',
+      path: '/keys',
+      icon: KeyRound,
+    },
+    secondaryAction: {
+      label: 'Building Layout',
+      path: '/spaces',
+      icon: Warehouse,
+    },
+    statsConfig: [
+      { id: 'totalKeysIssued', label: 'Keys Issued', icon: KeyRound, description: 'Total active keys', clickable: true, clickPath: '/keys' },
+      { id: 'keysCheckedOut', label: 'Checked Out', icon: Clock, description: 'Currently checked out', clickable: true, clickPath: '/keys' },
+      { id: 'lockboxStatus', label: 'Lockbox Status', icon: DoorClosed, description: 'Active lockboxes' },
+      { id: 'activeCourtrooms', label: 'Active Courtrooms', icon: Gavel, description: 'Currently in session' },
+    ],
+    quickActions: [
+      { id: 'keys', title: 'Key Management', description: 'Issue and track key assignments', icon: KeyRound, path: '/keys', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
+      { id: 'spaces', title: 'Building Layout', description: 'View facility layout and rooms', icon: Warehouse, path: '/spaces', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950/30' },
+      { id: 'term-sheet', title: 'Term Sheet', description: 'View current court term assignments', icon: FileText, path: '/term-sheet', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950/30' },
+    ],
+    showTermSheet: true,
+    showPerformanceMetrics: false,
     showInventoryAlerts: false,
     showPendingRequests: false,
   },
