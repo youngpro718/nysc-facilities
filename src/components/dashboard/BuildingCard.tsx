@@ -1,18 +1,8 @@
 
 import { useNavigate } from "react-router-dom";
-import { Building2 } from "lucide-react";
+import { Building2, Layers, DoorClosed, Activity, AlertTriangle, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { BuildingStats } from "./BuildingStats";
-import { BuildingIssues } from "./BuildingIssues";
-import { BuildingActivities } from "./BuildingActivities";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface BuildingCardProps {
   building: any;
@@ -28,128 +18,111 @@ interface BuildingCardProps {
 
 export const BuildingCard = ({
   building,
-  buildingImage,
   floorCount,
   roomCount,
   workingFixtures,
   totalFixtures,
   buildingIssues,
-  buildingActivities,
-  onMarkAsSeen,
 }: BuildingCardProps) => {
   const navigate = useNavigate();
+  const isOperational = building?.status === "active";
+  const healthPct = totalFixtures > 0 ? Math.round((workingFixtures / totalFixtures) * 100) : 100;
+  const activeIssues = buildingIssues.length;
 
-  // Get the most recent unseen issue with photos
-  const mostRecentIssue = buildingIssues
-    .filter(issue => !issue.seen && issue.photos && issue.photos.length > 0)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-
-  const handleImageClick = () => {
-    if (mostRecentIssue) {
-      onMarkAsSeen(mostRecentIssue.id);
-      navigate(`/operations?issue_id=${mostRecentIssue.id}`);
-    }
+  const handleClick = () => {
+    if (building?.id) navigate(`/spaces?building=${building.id}`);
   };
 
   return (
-    <Card className="group overflow-hidden">
-      <AspectRatio ratio={16 / 9}>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div 
-                className={`relative h-full w-full cursor-pointer ${mostRecentIssue ? 'group' : ''}`}
-                onClick={handleImageClick}
-              >
-                <div className="relative h-full w-full transition-opacity duration-300">
-                  <img
-                    src={mostRecentIssue?.photos?.[0] || buildingImage}
-                    alt={mostRecentIssue ? `Active issue in ${building.name}` : building.name}
-                    className={`absolute inset-0 h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${
-                      mostRecentIssue ? 'ring-2 ring-red-500/40' : ''
-                    }`}
-                  />
-                </div>
-                {mostRecentIssue && (
-                  <>
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Badge variant="destructive" className="text-sm ring-1 ring-destructive">
-                        View Active Issue
-                      </Badge>
-                    </div>
-                    <div className="absolute left-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <img
-                        src={buildingImage}
-                        alt="Default building view"
-                        className="h-12 w-12 rounded-md object-cover border-2 border-white dark:border-slate-700"
-                      />
-                    </div>
-                  </>
-                )}
-                {buildingIssues.length > 0 && (
-                  <div className="absolute right-2 top-2">
-                    <Badge 
-                      variant="destructive" 
-                      className="text-xs cursor-pointer hover:scale-105 transition-transform"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (building?.id) {
-                          navigate(`/operations?building=${building.id}&filter=active`);
-                        }
-                      }}
-                    >
-                      {buildingIssues.length} Active Issues
-                    </Badge>
-                  </div>
-                )}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-black text-white">
-              {mostRecentIssue 
-                ? "Click to view the latest issue reported for this building"
-                : "No urgent issues reported for this building"}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </AspectRatio>
-      <CardHeader className="space-y-1.5 p-4">
+    <div
+      className={cn(
+        "rounded-xl border border-border bg-card overflow-hidden cursor-pointer",
+        "transition-all duration-150 ease-in-out",
+        "hover:bg-card-hover hover:-translate-y-px hover:border-border/80",
+        "active:translate-y-0"
+      )}
+      onClick={handleClick}
+    >
+      {/* Gradient header with status badge */}
+      <div
+        className={cn(
+          "relative h-[140px] sm:h-[160px] flex items-end p-5",
+          isOperational
+            ? "bg-gradient-to-br from-status-operational/20 via-status-operational/5 to-transparent"
+            : "bg-gradient-to-br from-status-warning/20 via-status-warning/5 to-transparent"
+        )}
+      >
+        <Building2 className="absolute top-5 right-5 h-16 w-16 text-foreground/5" />
         <Badge
-          variant={building?.status === "active" ? "default" : "destructive"}
-          className="w-fit animate-in fade-in-50 text-xs cursor-pointer hover:scale-105 transition-transform"
-          onClick={() => building?.id && navigate(`/spaces?building=${building.id}`)}
+          variant={isOperational ? "default" : "destructive"}
+          className="absolute top-4 right-4 text-xs"
         >
-          {building?.status === "active" ? "Operational" : "Under Maintenance"}
+          {isOperational ? "Operational" : "Maintenance"}
         </Badge>
-        <div className="flex items-center gap-1.5">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <h3 
-            className="text-lg font-semibold leading-none cursor-pointer hover:text-primary transition-colors"
-            onClick={() => building?.id && navigate(`/spaces?building=${building.id}`)}
-          >
+        <div>
+          <h3 className="text-lg font-semibold leading-tight text-foreground">
             {building?.name}
           </h3>
+          <p className="text-xs text-text-secondary mt-0.5">{building?.address}</p>
         </div>
-        <p className="text-xs text-muted-foreground">{building?.address}</p>
-      </CardHeader>
-      <CardContent className="space-y-4 p-4 pt-0">
-        <BuildingStats
-          floorCount={floorCount}
-          roomCount={roomCount}
-          issues={buildingIssues.length}
-          workingFixtures={workingFixtures}
-          totalFixtures={totalFixtures}
-          buildingId={building.id}
+      </div>
+
+      {/* Stat row */}
+      <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
+        <StatCell icon={Layers} value={floorCount} label="Floors" />
+        <StatCell icon={DoorClosed} value={roomCount} label="Rooms" />
+        <StatCell
+          icon={Activity}
+          value={`${healthPct}%`}
+          label="Health"
+          valueClassName={cn(
+            healthPct >= 90 ? "text-status-operational" :
+            healthPct >= 70 ? "text-status-warning" :
+            "text-status-critical"
+          )}
         />
+      </div>
 
-        {buildingIssues.length > 0 && (
-          <BuildingIssues issues={buildingIssues} onMarkAsSeen={onMarkAsSeen} />
-        )}
-
-        {buildingActivities.length > 0 && (
-          <BuildingActivities activities={buildingActivities} />
-        )}
-      </CardContent>
-    </Card>
+      {/* Issues banner — only when issues exist */}
+      {activeIssues > 0 && (
+        <div
+          className="flex items-center justify-between px-5 py-3 border-t border-border bg-status-critical/[0.06] cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (building?.id) navigate(`/operations?building=${building.id}&filter=active`);
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-status-warning" />
+            <span className="text-sm text-foreground font-medium">
+              {activeIssues} Active Issue{activeIssues !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-text-secondary hover:text-foreground transition-colors">
+            View <ArrowRight className="h-3 w-3" />
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
+
+function StatCell({
+  icon: Icon,
+  value,
+  label,
+  valueClassName,
+}: {
+  icon: any;
+  value: string | number;
+  label: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center py-3 gap-0.5">
+      <Icon className="h-3.5 w-3.5 text-text-secondary mb-1" />
+      <span className={cn("text-base font-bold", valueClassName)}>{value}</span>
+      <span className="text-[11px] text-text-secondary">{label}</span>
+    </div>
+  );
+}
