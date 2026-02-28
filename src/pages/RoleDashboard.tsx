@@ -156,7 +156,36 @@ export default function RoleDashboard() {
       const active = data?.filter(r => r.is_active).length || 0;
       return { total, active };
     },
-    enabled: userRole === 'cmc',
+    enabled: userRole === 'cmc' || userRole === 'court_officer',
+  });
+
+  // Court Officer specific: key assignments
+  const { data: keyStats } = useQuery({
+    queryKey: ['role-dashboard-key-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('key_assignments')
+        .select('id, status');
+      if (error) throw error;
+      const total = data?.length || 0;
+      const checkedOut = data?.filter(k => k.status === 'checked_out').length || 0;
+      return { total, checkedOut };
+    },
+    enabled: userRole === 'court_officer',
+  });
+
+  // Court Officer specific: lockbox status
+  const { data: lockboxCount = 0 } = useQuery({
+    queryKey: ['role-dashboard-lockbox-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('lockboxes')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: userRole === 'court_officer',
   });
 
   const { data: upcomingTermsCount = 0 } = useQuery({
@@ -219,7 +248,7 @@ export default function RoleDashboard() {
         });
       }
 
-      return activities.sort((a, b) => 0).slice(0, 5);
+      return activities.sort((a, b) => b.time.localeCompare(a.time)).slice(0, 5);
     },
   });
 
@@ -237,6 +266,12 @@ export default function RoleDashboard() {
       badge: supplyRequests.length > 0 ? 'In Progress' : undefined,
     },
     upcomingTerms: { value: upcomingTermsCount },
+    totalKeysIssued: { value: keyStats?.total || 0 },
+    keysCheckedOut: { 
+      value: keyStats?.checkedOut || 0, 
+      badge: (keyStats?.checkedOut || 0) > 0 ? 'Active' : undefined 
+    },
+    lockboxStatus: { value: lockboxCount },
     pendingRequests: { value: pendingRequestsCount },
     lowStockItems: { value: lowStockCount },
     activeOrders: { value: activeOrdersCount },
@@ -279,16 +314,18 @@ export default function RoleDashboard() {
             Welcome back, {firstName}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {config.secondaryAction && (
-            <Button variant="outline" onClick={() => navigate(config.secondaryAction!.path)}>
+            <Button variant="outline" size="sm" className="sm:size-default" onClick={() => navigate(config.secondaryAction!.path)}>
               <config.secondaryAction.icon className="mr-2 h-4 w-4" />
-              {config.secondaryAction.label}
+              <span className="hidden xs:inline">{config.secondaryAction.label}</span>
+              <span className="xs:hidden">{config.secondaryAction.label.split(' ')[0]}</span>
             </Button>
           )}
-          <Button onClick={() => navigate(config.primaryAction.path)}>
+          <Button size="sm" className="sm:size-default" onClick={() => navigate(config.primaryAction.path)}>
             <config.primaryAction.icon className="mr-2 h-4 w-4" />
-            {config.primaryAction.label}
+            <span className="hidden xs:inline">{config.primaryAction.label}</span>
+            <span className="xs:hidden">{config.primaryAction.label.split(' ')[0]}</span>
           </Button>
         </div>
       </div>
