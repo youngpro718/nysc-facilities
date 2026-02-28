@@ -56,7 +56,7 @@ export function InlineItemRow({
       )}
     >
       {/* Mobile: Row 1 — Name + Star (top-right) */}
-      <div className="flex items-start gap-2 sm:flex-1 sm:min-w-0 sm:items-center">
+      <div className="flex items-start gap-2 sm:flex-1 sm:min-w-0 sm:items-center overflow-hidden">
         <div className="flex-1 min-w-0 overflow-hidden">
           <div
             className="flex items-center gap-1.5 cursor-pointer sm:cursor-default"
@@ -116,7 +116,7 @@ export function InlineItemRow({
       )}
 
       {/* Mobile: Row 2 — Quantity controls + Star */}
-      <div className="flex items-center gap-2 sm:hidden">
+      <div className="flex items-center gap-2 sm:hidden justify-between w-full">
         {inCart ? (
           <div className="flex-1 flex items-center justify-between bg-muted/50 rounded-lg px-2 py-0.5">
             <Button
@@ -149,7 +149,7 @@ export function InlineItemRow({
           <Button
             variant="secondary"
             size="sm"
-            className="h-8 px-3 touch-manipulation active:scale-[0.98] transition-transform text-xs font-medium rounded-full"
+            className="h-8 px-3 shrink-0 touch-manipulation active:scale-[0.98] transition-transform text-xs font-medium rounded-full"
             onClick={(e) => {
               e.stopPropagation();
               onAdd();
