@@ -41,7 +41,7 @@ export function HelpButton() {
             <HelpCircle className="h-6 w-6" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="top" className="w-56">
+        <DropdownMenuContent align="end" side="top" className="w-56 z-[60]">
           {hasTour && (
             <>
               <DropdownMenuItem
