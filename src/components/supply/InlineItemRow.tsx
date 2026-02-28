@@ -116,52 +116,52 @@ export function InlineItemRow({
       )}
 
       {/* Mobile: Row 2 — Quantity controls + Star */}
-      <div className="flex items-center gap-2 sm:hidden justify-between w-full">
+      <div className="flex items-center gap-1.5 sm:hidden">
         {inCart ? (
-          <div className="flex items-center justify-between bg-muted/50 rounded-lg px-1.5 py-0.5 gap-2">
+          <div className="flex items-center bg-muted/50 rounded-lg px-1 py-0.5 gap-0.5">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full touch-manipulation active:scale-95"
+              className="h-7 w-7 rounded-full touch-manipulation active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onDecrement();
               }}
             >
-              <Minus className="h-4 w-4" />
+              <Minus className="h-3.5 w-3.5" />
             </Button>
-            <span className="font-bold text-sm tabular-nums min-w-[1.5rem] text-center">
+            <span className="font-bold text-sm tabular-nums w-6 text-center">
               {cartQuantity}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full touch-manipulation active:scale-95"
+              className="h-7 w-7 rounded-full touch-manipulation active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onIncrement();
               }}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
             </Button>
           </div>
         ) : (
           <Button
             variant="secondary"
             size="sm"
-            className="h-8 px-3 shrink-0 touch-manipulation active:scale-[0.98] transition-transform text-xs font-medium rounded-full"
+            className="h-7 px-2.5 shrink-0 touch-manipulation active:scale-[0.98] transition-transform text-xs font-medium rounded-full"
             onClick={(e) => {
               e.stopPropagation();
               onAdd();
             }}
           >
-            <Plus className="h-3.5 w-3.5 mr-1" />
+            <Plus className="h-3 w-3 mr-0.5" />
             Add
           </Button>
         )}
         {onToggleFavorite && (
           <button
-            className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full border bg-card active:scale-90 transition-transform touch-manipulation"
+            className="shrink-0 h-7 w-7 flex items-center justify-center rounded-full border bg-card active:scale-90 transition-transform touch-manipulation"
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite();
@@ -169,7 +169,7 @@ export function InlineItemRow({
           >
             <Star
               className={cn(
-                "h-4 w-4",
+                "h-3.5 w-3.5",
                 isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"
               )}
             />
