@@ -3,6 +3,7 @@ import { format, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Copy, RefreshCw, Users, CalendarCheck, FileText, Upload, MoreHorizontal } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,6 +62,8 @@ export function DailySessionsPanel() {
 
   const handleCopyYesterday = () => {
     const yesterday = subDays(selectedDate, 1);
+    const yesterdayStr = format(yesterday, 'MMMM dd');
+    if (!confirm(`Copy all sessions from ${yesterdayStr} to today?`)) return;
     copyYesterday.mutate({
       fromDate: format(yesterday, 'yyyy-MM-dd'),
       toDate: format(selectedDate, 'yyyy-MM-dd'),
@@ -86,6 +89,11 @@ export function DailySessionsPanel() {
           <CardTitle className="flex items-center gap-2">
             <CalendarCheck className="h-5 w-5" />
             Daily Sessions
+            {sessions && sessions.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {sessions.length}
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
