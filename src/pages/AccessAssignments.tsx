@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Users, UserCheck, Key, DoorOpen, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PersonnelAccessRecord } from "@/hooks/usePersonnelAccess";
+import { StatusCard } from "@/components/ui/StatusCard";
 import { PersonnelQuickAssignDialog } from "@/components/access-assignments/PersonnelQuickAssignDialog";
 
 interface PersonnelCardProps {
@@ -123,33 +124,7 @@ function PersonnelGrid({ personnel, isLoading, onPersonClick }: PersonnelGridPro
   );
 }
 
-function StatsCard({ 
-  icon: Icon, 
-  title, 
-  value, 
-  className 
-}: { 
-  icon: React.ElementType; 
-  title: string; 
-  value: number;
-  className?: string;
-}) {
-  return (
-    <Card className={className}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Icon className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold">{value}</p>
-            <p className="text-xs text-muted-foreground">{title}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+// StatsCard replaced by StatusCard design-system component
 
 function AccessAssignmentsContent() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -224,10 +199,10 @@ function AccessAssignmentsContent() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatsCard icon={Users} title="Total Personnel" value={stats.total} />
-        <StatsCard icon={UserCheck} title="Registered Users" value={stats.registeredUsers} />
-        <StatsCard icon={DoorOpen} title="With Room Access" value={stats.withRoomAccess} />
-        <StatsCard icon={Key} title="With Keys" value={stats.withKeyAccess} />
+        <StatusCard statusVariant="info" title="Total Personnel" value={stats.total} subLabel="All staff" icon={Users} />
+        <StatusCard statusVariant="operational" title="Registered Users" value={stats.registeredUsers} subLabel="Active accounts" icon={UserCheck} />
+        <StatusCard statusVariant={stats.withRoomAccess > 0 ? "info" : "neutral"} title="With Room Access" value={stats.withRoomAccess} subLabel="Assigned rooms" icon={DoorOpen} />
+        <StatusCard statusVariant={stats.withKeyAccess > 0 ? "warning" : "neutral"} title="With Keys" value={stats.withKeyAccess} subLabel="Keys issued" icon={Key} />
       </div>
 
       {/* Tabs and Search */}
