@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -17,38 +18,46 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreHorizontal, UserMinus, ArrowUpRight, Users } from 'lucide-react';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Plus, Search, MoreHorizontal, UserMinus, Users, Loader2 } from 'lucide-react';
 import { useCourtPersonnel, PersonnelOption } from '@/hooks/useCourtPersonnel';
 import { useAbsentStaffNames } from '@/hooks/useStaffAbsences';
-import { departStaff, promoteStaff } from '@/services/court/staffManagement';
+import { departStaff } from '@/services/court/staffManagement';
 import { AddStaffDialog } from './AddStaffDialog';
 import { toast } from 'sonner';
 
 type RoleFilter = 'all' | 'judges' | 'clerks' | 'sergeants';
+type DepartureReason = 'promoted' | 'transferred' | 'retired' | 'other';
+
+const DEPARTURE_REASONS: { value: DepartureReason; label: string; description: string }[] = [
+    { value: 'promoted', label: 'Promoted', description: 'Promoted out of this command' },
+    { value: 'transferred', label: 'Transferred', description: 'Transferred to another command' },
+    { value: 'retired', label: 'Retired', description: 'Retired from service' },
+    { value: 'other', label: 'Other', description: 'Left for another reason' },
+];
 
 export function StaffRosterPanel() {
-    const { personnel, isLoading, refetch } = useCourtPersonnel();
+    const { personnel, isLoading } = useCourtPersonnel();
     const { absentStaffMap } = useAbsentStaffNames(new Date());
     const queryClient = useQueryClient();
 
     const [search, setSearch] = useState('');
     const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
     const [showAddDialog, setShowAddDialog] = useState(false);
+
+    // Departure state
     const [departTarget, setDepartTarget] = useState<PersonnelOption | null>(null);
-    const [promoteTarget, setPromoteTarget] = useState<PersonnelOption | null>(null);
+    const [departureReason, setDepartureReason] = useState<DepartureReason>('promoted');
+    const [departureNotes, setDepartureNotes] = useState('');
 
     // Get filtered list
     const getFilteredStaff = (): PersonnelOption[] => {
@@ -102,40 +111,15 @@ export function StaffRosterPanel() {
             queryClient.invalidateQueries({ queryKey: ['court-personnel'] });
             queryClient.invalidateQueries({ queryKey: ['court-assignments'] });
             queryClient.invalidateQueries({ queryKey: ['court-operations'] });
-            toast.success(`${departTarget?.name} marked as departed`);
+            const reasonLabel = DEPARTURE_REASONS.find(r => r.value === departureReason)?.label || departureReason;
+            toast.success(`${departTarget?.name} removed — ${reasonLabel}`);
             setDepartTarget(null);
+            setDepartureReason('promoted');
+            setDepartureNotes('');
         },
         onError: (error: Error) => {
-            logger.error('Error departing staff:', error);
+            logger.error('Error processing departure:', error);
             toast.error('Failed to process departure');
-        },
-    });
-
-    // Promote mutation
-    const promoteMutation = useMutation({
-        mutationFn: async ({ person, newRole }: { person: PersonnelOption; newRole: 'clerk' | 'sergeant' | 'officer' }) => {
-            const currentRole = person.role.toLowerCase();
-            let oldRole: 'clerk' | 'sergeant' | 'officer' = 'clerk';
-            if (currentRole.includes('sergeant') || currentRole.includes('officer')) {
-                oldRole = 'sergeant';
-            }
-
-            await promoteStaff({
-                personnelId: person.id,
-                displayName: person.name,
-                oldRole,
-                newRole,
-            });
-        },
-        onSuccess: (_data, vars) => {
-            queryClient.invalidateQueries({ queryKey: ['court-personnel'] });
-            queryClient.invalidateQueries({ queryKey: ['court-assignments'] });
-            toast.success(`${vars.person.name} promoted to ${vars.newRole}`);
-            setPromoteTarget(null);
-        },
-        onError: (error: Error) => {
-            logger.error('Error promoting staff:', error);
-            toast.error('Failed to promote staff');
         },
     });
 
@@ -223,7 +207,6 @@ export function StaffRosterPanel() {
                                 ) : (
                                     filteredStaff.map((person) => {
                                         const absent = isAbsent(person.name);
-                                        const isJudge = person.role.toLowerCase().includes('judge') || person.role.toLowerCase().includes('justice');
 
                                         return (
                                             <TableRow key={person.id} className="hover:bg-muted/20">
@@ -248,31 +231,22 @@ export function StaffRosterPanel() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="py-2 px-1">
-                                                    {!isJudge && (
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem
-                                                                    onClick={() => setPromoteTarget(person)}
-                                                                >
-                                                                    <ArrowUpRight className="h-4 w-4 mr-2" />
-                                                                    Change Role
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    onClick={() => setDepartTarget(person)}
-                                                                    className="text-destructive"
-                                                                >
-                                                                    <UserMinus className="h-4 w-4 mr-2" />
-                                                                    Mark as Departed
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    )}
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem
+                                                                onClick={() => setDepartTarget(person)}
+                                                                className="text-destructive"
+                                                            >
+                                                                <UserMinus className="h-4 w-4 mr-2" />
+                                                                Remove from Command
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </TableCell>
                                             </TableRow>
                                         );
@@ -290,68 +264,80 @@ export function StaffRosterPanel() {
                 onOpenChange={setShowAddDialog}
             />
 
-            {/* Depart Confirmation */}
-            <AlertDialog open={!!departTarget} onOpenChange={(open) => !open && setDepartTarget(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Mark {departTarget?.name} as Departed?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will mark them as inactive and remove them from all court assignments.
-                            This action can be undone by reactivating them later.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={() => departTarget && departMutation.mutate(departTarget)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            {departMutation.isPending ? 'Processing...' : 'Mark as Departed'}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* Departure Dialog — asks for reason */}
+            <Dialog open={!!departTarget} onOpenChange={(open) => {
+                if (!open) {
+                    setDepartTarget(null);
+                    setDepartureReason('promoted');
+                    setDepartureNotes('');
+                }
+            }}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Remove {departTarget?.name}</DialogTitle>
+                        <DialogDescription>
+                            This will remove them from all court assignments. Select the reason they're leaving.
+                        </DialogDescription>
+                    </DialogHeader>
 
-            {/* Promote Dialog */}
-            <AlertDialog open={!!promoteTarget} onOpenChange={(open) => !open && setPromoteTarget(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Change Role for {promoteTarget?.name}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Current role: {promoteTarget?.role}. Select the new role:
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="flex gap-2 py-4">
-                        <Button
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => promoteTarget && promoteMutation.mutate({ person: promoteTarget, newRole: 'clerk' })}
-                            disabled={promoteMutation.isPending}
-                        >
-                            Court Clerk
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => promoteTarget && promoteMutation.mutate({ person: promoteTarget, newRole: 'sergeant' })}
-                            disabled={promoteMutation.isPending}
-                        >
-                            Sergeant
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => promoteTarget && promoteMutation.mutate({ person: promoteTarget, newRole: 'officer' })}
-                            disabled={promoteMutation.isPending}
-                        >
-                            Court Officer
-                        </Button>
+                    <div className="space-y-4 py-2">
+                        {/* Reason Selection */}
+                        <div className="space-y-2">
+                            <Label>Reason</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {DEPARTURE_REASONS.map((reason) => (
+                                    <Button
+                                        key={reason.value}
+                                        variant={departureReason === reason.value ? 'default' : 'outline'}
+                                        size="sm"
+                                        className="justify-start text-xs h-auto py-2 px-3"
+                                        onClick={() => setDepartureReason(reason.value)}
+                                    >
+                                        <div className="text-left">
+                                            <div className="font-medium">{reason.label}</div>
+                                            <div className={`text-[10px] ${departureReason === reason.value ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                                                {reason.description}
+                                            </div>
+                                        </div>
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Optional Notes */}
+                        <div className="space-y-1.5">
+                            <Label htmlFor="departure-notes">Notes (optional)</Label>
+                            <Input
+                                id="departure-notes"
+                                value={departureNotes}
+                                onChange={(e) => setDepartureNotes(e.target.value)}
+                                placeholder="e.g., Promoted to Bronx Supreme Court"
+                            />
+                        </div>
                     </div>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setDepartTarget(null)}
+                            disabled={departMutation.isPending}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => departTarget && departMutation.mutate(departTarget)}
+                            disabled={departMutation.isPending}
+                        >
+                            {departMutation.isPending ? (
+                                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</>
+                            ) : (
+                                'Remove from Command'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
