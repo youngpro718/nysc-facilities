@@ -1,4 +1,4 @@
-// Layout component — app shell with navigation, header, and floating controls
+// Layout component — app shell with sidebar navigation, header, and floating controls
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,7 @@ import { getRoleBasedNavigation, getNavigationRoutes } from "./config/navigation
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { MobileMenu } from "./components/MobileMenu";
 import { BottomTabBar } from "./components/BottomTabBar";
-import { DesktopNavigationImproved } from "./components/DesktopNavigationImproved";
+import { AppSidebar } from "./components/AppSidebar";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@/components/admin/NotificationBox";
@@ -21,10 +21,10 @@ import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkelet
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { DevModeBanner } from "@/components/dev/DevModeBanner";
 import { TourProvider } from "@/components/help/TourProvider";
-import { HelpButton } from "@/components/help/HelpButton";
+import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import type { UserRole } from "@/config/roles";
 
-const Layout = () => {
+function LayoutContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const isLoginPage = location.pathname === '/login';
@@ -48,24 +48,17 @@ const Layout = () => {
   const { permissions, userRole, profile, loading: permissionsLoading, refetch } = useRolePermissions();
   const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
-  // OPTIMIZATION: Build navigation even while loading to enable progressive rendering
-  // Use userRole if available, or show skeleton instead of blocking
   const navReady = !!userRole && !permissionsLoading;
   const navigation = navReady 
     ? getRoleBasedNavigation(permissions, userRole, profile) 
     : [];
-  
-  // Show partial UI faster - don't wait for full permissions
-  const canShowPartialUI = isAuthenticated && !isLoading;
 
-  // OPTIMIZATION: Reduced timeout from 8s to 5s since we now load faster
   useEffect(() => {
     if (!navReady && isAuthenticated && !isLoginPage) {
       const timer = setTimeout(() => {
         logger.warn('[Layout] Navigation stuck loading for 5s, showing refresh button');
         setShowRefreshButton(true);
       }, 5000);
-      
       return () => clearTimeout(timer);
     } else {
       setShowRefreshButton(false);
@@ -74,11 +67,8 @@ const Layout = () => {
 
   const handleNavigationChange = (index: number | null) => {
     if (index === null) return;
-
-    // If userRole not ready yet, use a safe default (standard user routes)
-    if (!navReady) return; // avoid routing until nav is ready
+    if (!navReady) return;
     const routes = getNavigationRoutes(permissions, userRole!, profile);
-
     const route = routes[index];
     if (route) {
       navigate(route);
@@ -86,26 +76,38 @@ const Layout = () => {
     }
   };
 
-  // Reset navigation when user changes (fixes stale navigation on account switch)
   useEffect(() => {
     if (user?.id && user.id !== lastUserId) {
       setLastUserId(user.id);
-      // Force navigation to refresh by invalidating any cached state
       if (lastUserId !== null) {
-        // This is an account switch, not initial load
         logger.debug('[Layout] User changed - resetting navigation');
       }
     }
   }, [user?.id, lastUserId]);
 
-  // Let AuthProvider handle loading state - no additional loading here
-
-  // Check for preview role to show banner
   const previewRole = typeof window !== 'undefined' ? localStorage.getItem('preview_role') as UserRole | null : null;
   const isPreviewActive = isAdmin && previewRole && previewRole !== 'admin';
 
+  // Get sidebar state for margin offset
+  let sidebarState: "expanded" | "collapsed" = "expanded";
+  try {
+    const ctx = useSidebar();
+    sidebarState = ctx.state;
+  } catch {
+    // Outside SidebarProvider (login page) — default to expanded
+  }
+
+  // Derive page title from current path
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path === '/') return 'Dashboard';
+    const segment = path.split('/').filter(Boolean)[0] || '';
+    return segment
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
   return (
-    <TourProvider>
     <div className="min-h-screen bg-background">
       {/* Global Search Palette (⌘K) */}
       {isAdmin && <GlobalSearchPalette open={searchOpen} onOpenChange={setSearchOpen} />}
@@ -114,22 +116,33 @@ const Layout = () => {
       {!isLoginPage && isAuthenticated && isPreviewActive && (
         <DevModeBanner realRole="admin" previewRole={previewRole!} />
       )}
-      
-      {!isLoginPage && isAuthenticated && (
-        <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
-          <div className="mx-auto px-2 sm:px-3 lg:px-4">
-            <div className="flex h-14 items-center">
-              {/* Logo — fixed small corner mark */}
-              <div className="relative h-9 w-9 shrink-0 mr-2">
-                <img src="/nysc-logo-light.png" alt="NYSC" className="h-full w-full object-contain dark:hidden" />
-                <img src="/nysc-logo-dark.png" alt="NYSC" className="h-full w-full object-contain hidden dark:block" />
-              </div>
 
-              {/* Desktop Navigation — takes available space */}
-              <div className="hidden md:block flex-1 overflow-hidden" data-tour="nav-bar">
+      {/* Sidebar — desktop only, hidden on login */}
+      {!isLoginPage && isAuthenticated && <AppSidebar />}
+
+      {/* Main content area offset by sidebar width */}
+      <div
+        className={cn(
+          "transition-all duration-200 ease-linear",
+          !isLoginPage && isAuthenticated
+            ? sidebarState === "collapsed"
+              ? "md:ml-16"
+              : "md:ml-[220px]"
+            : ""
+        )}
+      >
+        {/* Top header bar — slim, page title + utilities */}
+        {!isLoginPage && isAuthenticated && (
+          <header className="bg-surface sticky top-0 z-30 border-b border-border h-14">
+            <div className="flex items-center h-full px-4 lg:px-8">
+              {/* Sidebar trigger for mobile */}
+              <div className="md:hidden mr-2">
                 {navReady ? (
-                  <DesktopNavigationImproved
+                  <MobileMenu
+                    isOpen={isMobileMenuOpen}
+                    onOpenChange={setIsMobileMenuOpen}
                     navigation={navigation}
+                    onNavigationChange={handleNavigationChange}
                     onSignOut={signOut}
                   />
                 ) : showRefreshButton ? (
@@ -137,25 +150,27 @@ const Layout = () => {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      logger.debug('[Layout] Manual refresh triggered');
                       refetch();
                       setShowRefreshButton(false);
                     }}
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry
+                    <RefreshCw className="h-4 w-4" />
                   </Button>
                 ) : (
-                  <NavigationSkeleton />
+                  <MobileNavigationSkeleton />
                 )}
               </div>
 
-              {/* Mobile spacer (pushes right items when nav is hidden) */}
-              <div className="flex-1 md:hidden" />
+              {/* Page title */}
+              <h1 className="text-lg font-semibold tracking-tight text-foreground truncate">
+                {getPageTitle()}
+              </h1>
 
-              {/* Right utilities — never shrink */}
-              <div className="flex items-center gap-1 shrink-0 ml-2">
-                {/* Search button */}
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Right utilities */}
+              <div className="flex items-center gap-1 shrink-0">
                 {isAdmin && (
                   <button
                     onClick={() => setSearchOpen(true)}
@@ -169,22 +184,20 @@ const Layout = () => {
                   </button>
                 )}
 
-                {/* Admin Notifications */}
                 {isAdmin && (
                   <div data-tour="notification-box">
                     <NotificationBox />
                   </div>
                 )}
                 
-                {/* Theme Toggle — desktop only */}
                 <div className="hidden sm:block" data-tour="theme-toggle">
                   <ThemeToggle />
                 </div>
 
                 {/* Profile Avatar */}
                 <button
-                  className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
-                  title={`${(profile as any)?.first_name || ''} ${(profile as any)?.last_name || ''} — Profile`}
+                  className="hidden md:block focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
+                  title="Profile"
                   data-tour="user-avatar"
                   onClick={() => navigate('/profile')}
                 >
@@ -196,62 +209,58 @@ const Layout = () => {
                     showFallbackIcon
                   />
                 </button>
-                
-                {/* Mobile Menu */}
-                <div className="md:hidden">
-                  {navReady ? (
-                    <MobileMenu
-                      isOpen={isMobileMenuOpen}
-                      onOpenChange={setIsMobileMenuOpen}
-                      navigation={navigation}
-                      onNavigationChange={handleNavigationChange}
-                      onSignOut={signOut}
-                    />
-                  ) : showRefreshButton ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        logger.debug('[Layout] Manual refresh triggered');
-                        refetch();
-                        setShowRefreshButton(false);
-                      }}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <MobileNavigationSkeleton />
-                  )}
-                </div>
+
+                {/* Profile Avatar — mobile only */}
+                <button
+                  className="md:hidden focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
+                  title="Profile"
+                  onClick={() => navigate('/profile')}
+                >
+                  <UserAvatar
+                    src={(profile as any)?.avatar_url as string | undefined}
+                    firstName={(profile as any)?.first_name as string | undefined}
+                    lastName={(profile as any)?.last_name as string | undefined}
+                    className="h-8 w-8"
+                    showFallbackIcon
+                  />
+                </button>
               </div>
             </div>
+          </header>
+        )}
+
+        {/* Global Onboarding Wizard */}
+        {isAuthenticated && !isLoginPage && showOnboarding && (
+          <OnboardingWizard onComplete={completeOnboarding} onSkip={skipOnboarding} />
+        )}
+
+        <main className="flex-1 pb-24 md:pb-0 safe-area-bottom">
+          <div className="mx-auto max-w-none xl:max-w-[95%] 2xl:max-w-[90%] px-3 sm:px-4 lg:px-8 xl:px-12 py-4 sm:py-8 xl:py-12">
+            <Outlet />
           </div>
-        </header>
-      )}
+        </main>
 
-      {/* Global Onboarding Wizard overlay (after header to ensure correct stacking order) */}
-      {isAuthenticated && !isLoginPage && showOnboarding && (
-        <OnboardingWizard onComplete={completeOnboarding} onSkip={skipOnboarding} />
-      )}
-
-      <main className="flex-1 pb-24 md:pb-0 safe-area-bottom">
-        <div className="mx-auto max-w-none xl:max-w-[95%] 2xl:max-w-[90%] px-3 sm:px-4 lg:px-8 xl:px-12 py-4 sm:py-8 xl:py-12">
-          <Outlet />
-        </div>
-      </main>
-      {/* Mobile bottom tab bar */}
-      {isAuthenticated && !isLoginPage && navReady && (
-        <BottomTabBar
-          navigation={navigation}
-          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-        />
-      )}
-      
-      {/* Floating Action Button for quick actions */}
-      {isAuthenticated && !isLoginPage && <FloatingActionButton />}
-      {/* Help Button */}
-      {isAuthenticated && !isLoginPage && <HelpButton />}
+        {/* Mobile bottom tab bar */}
+        {isAuthenticated && !isLoginPage && navReady && (
+          <BottomTabBar
+            navigation={navigation}
+            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+          />
+        )}
+        
+        {/* Floating Action Button for quick actions */}
+        {isAuthenticated && !isLoginPage && <FloatingActionButton />}
+      </div>
     </div>
+  );
+}
+
+const Layout = () => {
+  return (
+    <TourProvider>
+      <SidebarProvider>
+        <LayoutContent />
+      </SidebarProvider>
     </TourProvider>
   );
 };
