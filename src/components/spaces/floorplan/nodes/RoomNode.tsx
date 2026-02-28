@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { Handle, NodeProps, NodeResizer } from 'reactflow';
 import { FloorPlanObjectData } from '../types/floorPlanTypes';
 import { useNodeHandles } from '../hooks/useNodeHandles';
@@ -26,7 +26,7 @@ export function RoomNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
   } as React.CSSProperties;
 
   // Connection count for visual feedback
-  const connectionCount = data.properties?.connected_spaces?.length || 0;
+  const connectionCount = (data.properties as any)?.connected_spaces?.length || 0;
 
   return (
     <div style={nodeStyle}>
@@ -56,13 +56,13 @@ export function RoomNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
         padding: '4px'
       }}>
         {data.label || 'Unnamed Room'}
-        {data.properties?.room_number && (
+        {(data.properties as any)?.room_number && (
           <div style={{ 
             fontSize: '0.75rem', 
             color: 'hsl(var(--muted-foreground))',
             marginTop: '2px'
           }}>
-            Room {data.properties.room_number}
+            Room {(data.properties as any).room_number}
           </div>
         )}
         {isChildRoom && (

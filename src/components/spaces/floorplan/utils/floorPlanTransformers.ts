@@ -1,26 +1,20 @@
-// @ts-nocheck
 import { RawFloorPlanObject, FloorPlanNode, Position, Size } from "../types/floorPlanTypes";
 import { logger } from '@/lib/logger';
 import { transformSpaceToNode } from "../utils/nodeTransforms";
 
 /**
  * Transforms raw objects with positions into processed FloorPlanNodes.
- * Handles:
- * 1. Transformation to node format
- * 2. Error handling with fallback nodes
- * 3. Parent/Child room relationships
- * 4. Dynamic hallway sizing and orientation based on connections
  */
 export function processFloorPlanObjects(
   objectsWithPositions: RawFloorPlanObject[], 
-  edges: unknown[]
+  edges: any[]
 ): FloorPlanNode[] {
   // 1. Basic transformation
   const nodes = objectsWithPositions.map((obj, index) => {
     try {
-      return transformSpaceToNode(obj, index);
+      return transformSpaceToNode(obj as any, index);
     } catch (error) {
-      logger.error('Error transforming object to node:', error, obj);
+      logger.error('Error transforming object to node:', error);
       return createFallbackNode(obj, index);
     }
   });
@@ -99,7 +93,7 @@ function applyParentChildTransform(childNode: FloorPlanNode, parentNode: FloorPl
   childNode.zIndex = (parentNode.zIndex || 0) + 1;
 }
 
-function enrichWithConnectedSpaces(node: FloorPlanNode, allNodes: FloorPlanNode[], edges: unknown[]) {
+function enrichWithConnectedSpaces(node: FloorPlanNode, allNodes: FloorPlanNode[], edges: any[]) {
   const connectedTo = edges
     .filter(edge => edge.source === node.id || edge.target === node.id)
     .map(edge => {
@@ -123,7 +117,7 @@ function enrichWithConnectedSpaces(node: FloorPlanNode, allNodes: FloorPlanNode[
   }
 }
 
-function applyHallwayDynamicSizing(hallwayNode: FloorPlanNode, allNodes: FloorPlanNode[], edges: unknown[]) {
+function applyHallwayDynamicSizing(hallwayNode: FloorPlanNode, allNodes: FloorPlanNode[], edges: any[]) {
   const hallwayConnections = edges.filter(edge => 
     edge.source === hallwayNode.id || edge.target === hallwayNode.id
   );

@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useState } from "react";
 import { logger } from '@/lib/logger';
 import { UseFormReturn, useFieldArray } from "react-hook-form";
@@ -69,7 +69,7 @@ export default function RoomAccessFields({ form }: RoomAccessFieldsProps) {
     const selectedKeyData = keys.find(k => k.id === selectedKey);
     
     const newAccess: RoomAccessData = {
-      accessType: selectedAccessType as unknown,
+      accessType: selectedAccessType as any,
       keyId: selectedKey || undefined,
       keyName: selectedKeyData?.name || undefined,
       description: description || undefined,

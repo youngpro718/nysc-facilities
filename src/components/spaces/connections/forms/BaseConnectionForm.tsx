@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ export interface BaseFormFieldProps {
   placeholder: string;
   options: { value: string; label: string }[];
   disabled?: boolean;
-  form: unknown;
+  form: any;
 }
 
 export const BaseFormField = ({ label, name, placeholder, options, disabled, form }: BaseFormFieldProps) => (

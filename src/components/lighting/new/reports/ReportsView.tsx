@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useState } from "react";
 import { logger } from '@/lib/logger';
 import { useQuery } from "@tanstack/react-query";
@@ -173,10 +173,10 @@ export function ReportsView() {
       
       if (error) throw error;
       
-      const statusCounts = data?.reduce((acc: Record<string, unknown>, fixture) => {
+      const statusCounts = data?.reduce((acc: Record<string, number>, fixture) => {
         acc[fixture.status] = (acc[fixture.status] || 0) + 1;
         return acc;
-      }, {});
+      }, {} as Record<string, number>);
       
       return Object.entries(statusCounts || {}).map(([status, count]) => ({
         name: status.replace('_', ' ').toUpperCase(),

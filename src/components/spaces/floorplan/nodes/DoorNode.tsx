@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { Handle, NodeProps, NodeResizer } from 'reactflow';
 import { FloorPlanObjectData } from '../types/floorPlanTypes';
 import { useNodeHandles } from '../hooks/useNodeHandles';
@@ -33,9 +33,9 @@ export function DoorNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
       
       <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {data.label || 'Door'}
-        {data.properties?.room_number && (
+        {(data.properties as any)?.room_number && (
           <span style={{ marginLeft: '0.25rem', opacity: 0.8 }}>
-            ({data.properties.room_number})
+            ({(data.properties as any).room_number})
           </span>
         )}
       </div>

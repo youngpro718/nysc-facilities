@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
@@ -117,7 +117,7 @@ export function ParentRoomHierarchy({
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex items-center gap-2 text-sm">
-              {parentChain.map((parent: Record<string, unknown>, index: number) => (
+              {parentChain.map((parent: any, index: number) => (
                 <div key={parent.parent_id} className="flex items-center gap-2">
                   <span className="font-medium">
                     {parent.parent_room_number} - {parent.parent_name}
@@ -145,7 +145,7 @@ export function ParentRoomHierarchy({
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid gap-2">
-              {children.map((child: Record<string, unknown>) => (
+              {children.map((child: any) => (
                 <button
                   key={child.child_id}
                   onClick={(e) => handleChildRoomClick(e, child.child_id)}

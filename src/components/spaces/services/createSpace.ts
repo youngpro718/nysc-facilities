@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { supabase } from "@/lib/supabase";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
@@ -23,7 +23,7 @@ export async function createSpace(data: CreateSpaceFormData) {
   }
   
   if (!hasValidSpaceType(data)) {
-    throw new Error(`Invalid or missing space type: ${String((data as Record<string, unknown>)?.type || 'unknown')}`);
+    throw new Error(`Invalid or missing space type: ${String((data as any)?.type || 'unknown')}`);
   }
   
   try {
@@ -72,9 +72,9 @@ export async function createSpace(data: CreateSpaceFormData) {
         .single();
 
       if (roomError) {
-        if (((roomError as Record<string, unknown>)).code === '23505') {
+        if ((roomError as any).code === '23505') {
           toast.error('Room number already exists. Please use a unique room number.');
-        } else if (((roomError as Record<string, unknown>)).code === '42501') {
+        } else if ((roomError as any).code === '42501') {
           toast.error('Permission denied. Please check your authentication status.');
         } else {
           toast.error(`Failed to create room: ${roomError.message}`);
@@ -90,9 +90,9 @@ export async function createSpace(data: CreateSpaceFormData) {
       const TYPE_ALLOWED = new Set(['public_main','private','private_main']);
       const SECTION_ALLOWED = new Set(['left_wing','right_wing','connector']);
       const STATUS_ALLOWED = new Set(['active','inactive','under_maintenance']);
-      const type = TYPE_ALLOWED.has(((data as Record<string, unknown>)).hallwayType as string) ? ((data as Record<string, unknown>)).hallwayType : 'public_main';
-      const section = SECTION_ALLOWED.has(((data as Record<string, unknown>)).section as string) ? ((data as Record<string, unknown>)).section : 'connector';
-      const status = STATUS_ALLOWED.has(((data as Record<string, unknown>)).status as string) ? ((data as Record<string, unknown>)).status : 'active';
+      const type = TYPE_ALLOWED.has((data as any).hallwayType as string) ? (data as any).hallwayType : 'public_main';
+      const section = SECTION_ALLOWED.has((data as any).section as string) ? (data as any).section : 'connector';
+      const status = STATUS_ALLOWED.has((data as any).status as string) ? (data as any).status : 'active';
 
       // Prepare hallway data according to the hallways table schema
       const hallwayData = {
@@ -103,21 +103,21 @@ export async function createSpace(data: CreateSpaceFormData) {
         rotation: data.rotation || 0,
         description: data.description || null,
         status,
-        width_meters: ((data as Record<string, unknown>)).width ?? ((data as Record<string, unknown>)).size?.width ?? 2,
-        accessibility: ((data as Record<string, unknown>)).accessibility || 'fully_accessible',
+        width_meters: (data as any).width ?? (data as any).size?.width ?? 2,
+        accessibility: (data as any).accessibility || 'fully_accessible',
         type,        // hallway_type_enum
         section      // hallway_section_enum
-      } as unknown;
+      } as any;
 
       // Insert into the hallways table
       const { data: hallway, error: hallwayError } = await supabase
         .from('hallways')
-        .insert(hallwayData as Record<string, unknown>) // Type assertion to satisfy TypeScript
+        .insert(hallwayData as any)
         .select()
         .single();
 
       if (hallwayError) {
-        if (((hallwayError as Record<string, unknown>)).code === '42501') {
+        if ((hallwayError as any).code === '42501') {
           toast.error('Permission denied. Please check your authentication status.');
         } else {
           toast.error(`Failed to create hallway: ${hallwayError.message}`);
@@ -137,22 +137,22 @@ export async function createSpace(data: CreateSpaceFormData) {
         size: { width: 60, height: 20 },
         rotation: data.rotation || 0,
         description: data.description || null,
-        status: 'active' as unknown,
+        status: 'active' as any,
         door_type: data.doorType || 'standard',
-        access_type: ((data as Record<string, unknown>)).accessType || 'unrestricted',
-        lock_type: ((data as Record<string, unknown>)).lockType || 'none',
+        access_type: (data as any).accessType || 'unrestricted',
+        lock_type: (data as any).lockType || 'none',
         type: 'door' // Required field for the doors table
       };
 
       // Insert into the doors table
       const { data: door, error: doorError } = await supabase
         .from('doors')
-        .insert(doorData as Record<string, unknown>) // Type assertion to satisfy TypeScript
+        .insert(doorData as any)
         .select()
         .single();
 
       if (doorError) {
-        if (((doorError as Record<string, unknown>)).code === '42501') {
+        if ((doorError as any).code === '42501') {
           toast.error('Permission denied. Please check your authentication status.');
         } else {
           toast.error(`Failed to create door: ${doorError.message}`);

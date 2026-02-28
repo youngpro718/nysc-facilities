@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { UseFormReturn } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
@@ -20,7 +20,7 @@ export function HistoryTab({ form }: HistoryTabProps) {
       </div>
 
       <div className="space-y-4">
-        {form.watch("statusHistory")?.map((entry: Record<string, unknown>, index: number) => (
+        {(form.watch("statusHistory") as any[])?.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2">
             <Badge 
               variant={

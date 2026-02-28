@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useState, useEffect } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
@@ -62,11 +62,11 @@ export function BulkCreateLightingDialog({ onFixtureCreated }: BulkCreateLightin
         supabase.from('hallways').select('id, name, floor_id, floors:floor_id(name, buildings:building_id(name))').eq('status', 'active')
       ]);
       
-      const rooms = (roomsResult.data || []).map((room: Record<string, unknown>) => ({
+      const rooms = (roomsResult.data || []).map((room: any) => ({
         ...room, type: 'room' as const, displayName: `Room ${room.room_number || ''}${room.name ? ` — ${room.name}` : ''}`
       }));
       
-      const hallways = (hallwaysResult.data || []).map((hallway: Record<string, unknown>) => ({
+      const hallways = (hallwaysResult.data || []).map((hallway: any) => ({
         ...hallway, type: 'hallway' as const, displayName: hallway.name, room_number: null
       }));
       
@@ -215,7 +215,7 @@ export function BulkCreateLightingDialog({ onFixtureCreated }: BulkCreateLightin
                       </FormControl>
                       <SelectContent>
                         <ScrollArea className="h-[200px]">
-                          {spaces?.filter(s => s.type === spaceType).map((space: Record<string, unknown>) => (
+                          {spaces?.filter(s => s.type === spaceType).map((space: any) => (
                             <SelectItem key={space.id} value={space.id}>
                               {space.displayName}
                             </SelectItem>

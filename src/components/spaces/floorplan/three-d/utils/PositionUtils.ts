@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Grid snapping and positioning utilities
 
 export interface Position {
@@ -18,9 +17,6 @@ export class PositionUtils {
     this.gridSize = gridSize;
   }
 
-  /**
-   * Snap position to grid
-   */
   snapToGrid(position: Position): Position {
     return {
       x: Math.round(position.x / this.gridSize) * this.gridSize,
@@ -28,13 +24,10 @@ export class PositionUtils {
     };
   }
 
-  /**
-   * Check if position is occupied by any existing objects
-   */
   isPositionFree(
     position: Position, 
     size: Size, 
-    existingObjects: unknown[], 
+    existingObjects: any[], 
     excludeId?: string
   ): boolean {
     const margin = 10; // Minimum spacing between objects
@@ -57,11 +50,8 @@ export class PositionUtils {
     });
   }
 
-  /**
-   * Find optimal position for new object
-   */
   findOptimalPosition(
-    existingObjects: unknown[], 
+    existingObjects: any[], 
     objectSize: Size,
     preferredPosition?: Position
   ): Position {
@@ -114,13 +104,9 @@ export class PositionUtils {
     return positions;
   }
 
-  /**
-   * Auto-arrange objects to prevent overlaps
-   */
-  autoArrangeObjects(objects: unknown[]): unknown[] {
+  autoArrangeObjects(objects: any[]): any[] {
     const arranged = [...objects];
     const positionUtils = new PositionUtils(this.gridSize);
-    
     for (let i = 0; i < arranged.length; i++) {
       const obj = arranged[i];
       const size = obj.data?.size || obj.size || { width: 150, height: 100 };

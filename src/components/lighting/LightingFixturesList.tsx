@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useState, useEffect, useMemo } from "react";
 import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
@@ -140,7 +140,7 @@ export const LightingFixturesList = ({
     }
   };
 
-  const handleHeaderBulkStatusUpdate = async (status: unknown) => {
+  const handleHeaderBulkStatusUpdate = async (status: any) => {
     if (selectedFixtures.length > 0) {
       await handleBulkStatusUpdate(selectedFixtures, status);
       setSelectedFixtures([]);

@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { logger } from '@/lib/logger';
 import { Input } from "@/components/ui/input";
@@ -47,7 +47,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
       if (roomsResult.error) throw roomsResult.error;
       if (hallwaysResult.error) throw hallwaysResult.error;
       
-      const rooms = (roomsResult.data || []).map((room: Record<string, unknown>) => ({
+      const rooms = (roomsResult.data || []).map((room: any) => ({
         id: room.id,
         name: room.name,
         room_number: room.room_number,
@@ -57,7 +57,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
         building: room.floors?.buildings
       }));
       
-      const hallways = (hallwaysResult.data || []).map((hallway: Record<string, unknown>) => ({
+      const hallways = (hallwaysResult.data || []).map((hallway: any) => ({
         id: hallway.id,
         name: hallway.name,
         room_number: null,
@@ -163,7 +163,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {spaces?.filter(space => space.type === spaceType).map((space: Record<string, unknown>) => (
+                {spaces?.filter(space => space.type === spaceType).map((space: any) => (
                   <SelectItem key={space.id} value={space.id}>
                     <div className="flex flex-col">
                       <span>

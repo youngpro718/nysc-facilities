@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { FloorPlanObjectData } from '../types/floorPlanTypes';
 import { CSSProperties } from 'react';
 
@@ -46,7 +46,7 @@ export const getNodeBaseStyle = (
     width: `${size.width}px`,
     height: `${size.height}px`,
     // Standardize on backgroundColor to avoid shorthand/non-shorthand conflicts with React Flow internals
-    backgroundColor: data?.style?.backgroundColor || (data?.style as Record<string, unknown>)?.background || colors.background,
+    backgroundColor: data?.style?.backgroundColor || (data?.style as any)?.background || colors.background,
     border: `${selected ? '2px' : '1px'} solid ${data?.style?.borderColor || colors.border}`,
     transform: data?.rotation ? `rotate(${data.rotation}deg)` : 'none',
     position: 'relative' as const,
