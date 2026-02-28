@@ -511,7 +511,7 @@ export class ConflictDetectionService {
             severity: 'critical',
             title: `Judge ${judge} Double-Booked`,
             description: `Judge ${judge} is assigned to multiple courtrooms for the same period`,
-            affectedRooms: rooms.map(r => ((r as Record<string, unknown>)).court_rooms?.room_number || 'Unknown'),
+            affectedRooms: rooms.map(r => (r as any).court_rooms?.room_number || 'Unknown'),
             affectedPersonnel: [judge],
             suggestedAction: 'Remove duplicate assignments or assign coverage',
           });
@@ -537,7 +537,7 @@ export class ConflictDetectionService {
             severity: 'high',
             title: `Duplicate Part Number: ${part}`,
             description: `Part ${part} is assigned to multiple courtrooms`,
-            affectedRooms: rooms.map(r => ((r as Record<string, unknown>)).court_rooms?.room_number || 'Unknown'),
+            affectedRooms: rooms.map(r => (r as any).court_rooms?.room_number || 'Unknown'),
             affectedPersonnel: [],
             suggestedAction: 'Assign unique part numbers to each courtroom',
           });
