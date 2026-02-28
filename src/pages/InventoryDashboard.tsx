@@ -144,13 +144,13 @@ export const InventoryDashboard = () => {
               <Button
                 onClick={() => navigate('/admin/supply-requests')}
                 variant="outline"
-                className={`w-full sm:w-auto ${newRequestsCount > 0 ? 'ring-2 ring-amber-400/60 shadow-amber-400/30 shadow' : ''}`}
+                className={`w-full sm:w-auto ${newRequestsCount > 0 ? 'ring-2 ring-status-warning/60 shadow-status-warning/30 shadow' : ''}`}
               >
                 <Package className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Requests</span>
                 <span className="sm:hidden">Requests</span>
                 {newRequestsCount > 0 && (
-                  <Badge variant="secondary" className="ml-2 bg-amber-500 text-white">
+                  <Badge variant="secondary" className="ml-2 bg-status-warning text-white">
                     {newRequestsCount}
                   </Badge>
                 )}
