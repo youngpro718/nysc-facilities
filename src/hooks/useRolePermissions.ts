@@ -94,6 +94,20 @@ export function useRolePermissions() {
       operations: 'read',
       dashboard: 'read',
     },
+    court_officer: {
+      spaces: 'read',
+      issues: null,
+      occupants: null,
+      inventory: null,
+      supply_requests: null,
+      supply_orders: null,
+      keys: 'write',
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: null,
+      dashboard: 'read',
+    },
     standard: {
       spaces: null,
       issues: 'write',
@@ -189,7 +203,7 @@ export function useRolePermissions() {
       // Admin-only preview role override - now works site-wide for Dev Mode
       try {
         const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-        const validRoles: CourtRole[] = ['admin', 'cmc', 'court_aide', 'standard'];
+        const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'court_aide', 'standard'];
         if (role === 'admin' && preview && validRoles.includes(preview)) {
           logger.info('[useRolePermissions] Applying preview role override (Dev Mode)');
           effectiveRole = preview;

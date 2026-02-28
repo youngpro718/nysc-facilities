@@ -9,6 +9,7 @@
 export const USER_ROLES = {
   ADMIN: 'admin',
   CMC: 'cmc',
+  COURT_OFFICER: 'court_officer',
   COURT_AIDE: 'court_aide',
   STANDARD: 'standard',
 } as const;
@@ -21,20 +22,20 @@ export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
  */
 export const PERMISSIONS = {
   // Facility permissions
-  'facility.view': ['admin', 'cmc', 'court_aide', 'standard'],
+  'facility.view': ['admin', 'cmc', 'court_officer', 'court_aide', 'standard'],
   'facility.update_status': ['admin', 'cmc', 'court_aide'],
   'facility.edit': ['admin', 'cmc'],
   'facility.delete': ['admin'],
 
   // Issue permissions
-  'issue.view': ['admin', 'cmc', 'court_aide', 'standard'],
+  'issue.view': ['admin', 'cmc', 'court_officer', 'court_aide', 'standard'],
   'issue.create': ['admin', 'cmc', 'court_aide', 'standard'],
   'issue.assign': ['admin', 'cmc'],
   'issue.resolve': ['admin', 'cmc', 'court_aide'],
   'issue.delete': ['admin'],
 
   // Audit trail permissions
-  'audit.view': ['admin', 'cmc', 'court_aide'],
+  'audit.view': ['admin', 'cmc', 'court_officer', 'court_aide'],
 
   // Admin permissions
   'admin.users': ['admin'],

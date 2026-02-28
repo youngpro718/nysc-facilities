@@ -118,6 +118,11 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
+        <Route path="/court-officer-dashboard" element={
+          <ProtectedRoute>
+            <RoleDashboard />
+          </ProtectedRoute>
+        } />
         <Route path="/court-aide-dashboard" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="inventory" moduleName="Supply Management">
@@ -134,7 +139,7 @@ function AppContent() {
         } />
 
         <Route path="/spaces" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="spaces" moduleName="Spaces Management">
               <Spaces />
             </ModuleProtectedRoute>
@@ -171,7 +176,7 @@ function AppContent() {
           </ProtectedRoute>
         } />
         <Route path="/keys" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="keys" moduleName="Keys Management">
               <Keys />
             </ModuleProtectedRoute>

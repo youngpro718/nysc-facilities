@@ -212,6 +212,18 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
   
+  // Court Officer (Major / Security) navigation
+  if (userRole === 'court_officer') {
+    return [
+      { title: 'Dashboard', icon: LayoutDashboard },
+      { title: 'Keys', icon: KeyRound },
+      { title: 'Spaces', icon: Building2 },
+      { title: 'Term Sheet', icon: FileText },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
+    ];
+  }
+  
   // Court Aide (Supply Staff) navigation - task-focused with supply/inventory access
   if (userRole === 'court_aide') {
     return [
@@ -280,6 +292,18 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/cmc-dashboard',
       '/court-operations',
       '/my-activity',
+      '', // Separator
+      '/profile',
+    ];
+  }
+  
+  // Court Officer (Major / Security) routes
+  if (userRole === 'court_officer') {
+    return [
+      '/court-officer-dashboard',
+      '/keys',
+      '/spaces',
+      '/term-sheet',
       '', // Separator
       '/profile',
     ];
