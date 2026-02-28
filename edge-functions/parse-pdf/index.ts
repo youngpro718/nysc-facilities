@@ -66,16 +66,46 @@ Deno.serve(async (req: Request) => {
 
     const userId = claimsData.claims.sub;
 
+    // === Role-based authorization ===
+    const { data: roleData } = await userSupabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .in("role", ["admin", "cmc", "court_aide"])
+      .limit(1);
+
+    if (!roleData || roleData.length === 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Forbidden: insufficient permissions" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // === Input validation ===
-    const { filePath } = await req.json();
+    const body = await req.json();
+    const filePath = body?.filePath;
 
     if (!filePath || typeof filePath !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "filePath is required" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate filePath: prevent path traversal and ensure PDF extension
+    const pathTraversalPattern = /\.\./;
+    const validFilePathPattern = /^[a-zA-Z0-9\/_\-. ]+\.(pdf|PDF)$/;
+    if (pathTraversalPattern.test(filePath) || !validFilePathPattern.test(filePath)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid file path" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (filePath.length > 500) {
+      return new Response(
+        JSON.stringify({ success: false, error: "File path too long" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
