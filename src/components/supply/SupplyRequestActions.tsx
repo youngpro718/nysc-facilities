@@ -1,4 +1,5 @@
-// @ts-nocheck
+// Supply Request Actions — admin delete controls
+import { getErrorMessage } from '@/lib/errorUtils';
 /**
  * Supply Request Actions Component
  * 
@@ -56,7 +57,7 @@ export function SupplyRequestActions({ requestId, requestTitle, onDeleted }: Sup
     onError: (error: unknown) => {
       toast({
         title: 'Delete Failed',
-        description: error.message || 'Could not delete the request',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     },

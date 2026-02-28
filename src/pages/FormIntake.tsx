@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Form Intake — PDF upload and AI extraction system
 import { useState } from 'react';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
@@ -164,7 +164,7 @@ export default function FormIntake() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, unknown> = {
+    const variants: Record<string, any> = {
       processed: 'default',
       completed: 'default',
       failed: 'destructive',

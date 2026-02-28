@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Operations Overview Tab — quick actions, critical issues, maintenance summary
 /**
  * Operations Overview Tab
  * Shows quick actions, critical issues, and maintenance summary
@@ -134,7 +134,7 @@ export function OperationsOverviewTab({
                 </div>
               ) : criticalIssues && criticalIssues.length > 0 ? (
                 <EnhancedIssuesList 
-                  issues={criticalIssues.slice(0, 5)}
+                  issues={criticalIssues.slice(0, 5) as any}
                   viewMode="cards"
                   groupingMode="priority"
                   searchQuery=""

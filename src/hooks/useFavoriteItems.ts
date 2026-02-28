@@ -1,9 +1,9 @@
-// @ts-nocheck
+// Favorite Items — user supply item bookmarks
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-// @ts-nocheck
+import { getErrorMessage } from '@/lib/errorUtils';
 export function useFavoriteItems() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -62,7 +62,7 @@ export function useFavoriteItems() {
     onError: (error: unknown) => {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to add favorite',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     },
@@ -91,7 +91,7 @@ export function useFavoriteItems() {
     onError: (error: unknown) => {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to remove favorite',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     },

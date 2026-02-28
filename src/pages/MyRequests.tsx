@@ -1,4 +1,4 @@
-// @ts-nocheck
+// My Requests — user key request tracking
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Package, Truck, Key, Eye, Filter } from "lucide-react";
@@ -93,7 +93,7 @@ export default function MyRequests() {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showMobileForm, setShowMobileForm] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<Record<string, unknown> | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -135,7 +135,7 @@ export default function MyRequests() {
     statusFilter === "all" || request.status === statusFilter
   );
 
-  const handleSubmitRequest = async (data: Record<string, unknown>) => {
+  const handleSubmitRequest = async (data: any) => {
     setShowRequestForm(false);
     setShowMobileForm(false);
     try {
@@ -164,7 +164,7 @@ export default function MyRequests() {
     setSelectedRequest(null);
   };
 
-  const handleViewDetails = (request: Record<string, unknown>) => {
+  const handleViewDetails = (request: any) => {
     setSelectedRequest(request);
   };
 

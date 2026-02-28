@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Public Forms — no-login form access for external users
 import { useState } from 'react';
 import { logger } from '@/lib/logger';
 import { FileText, Download, ClipboardList, Wrench, AlertCircle, Eye, Mail, Upload } from 'lucide-react';
@@ -115,7 +115,7 @@ export default function PublicForms() {
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         variant="outline"
-                        onClick={() => handlePreview((template.id as unknown))}
+                        onClick={() => handlePreview(template.id as any)}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Preview

@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Form Templates — downloadable and online facility forms
 import { FileText, Download, ClipboardList, Wrench, AlertCircle, Eye, Mail, QrCode, Send, Plus } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -266,7 +266,7 @@ export default function FormTemplates() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handlePreview((template.id as unknown))}
+                          onClick={() => handlePreview(template.id as any)}
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           Preview
@@ -291,7 +291,7 @@ export default function FormTemplates() {
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => handlePreview((template.id as unknown))}
+                        onClick={() => handlePreview((template.id as any))}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Preview Form
