@@ -71,14 +71,14 @@ export function OrderCart({
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button 
-          className="fixed bottom-20 right-3 h-10 px-3 rounded-full shadow-md z-50 touch-manipulation pb-safe text-sm"
+          className="fixed bottom-28 right-3 h-10 px-3 rounded-full shadow-md z-50 touch-manipulation pb-safe text-sm"
           size="sm"
         >
           <ShoppingCart className="h-4 w-4 mr-1.5" />
           <span className="text-xs">{totalItems}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md flex flex-col">
+      <SheetContent className="w-full sm:max-w-md flex flex-col pb-safe">
         <SheetHeader>
           <SheetTitle>Your Order</SheetTitle>
           <SheetDescription>

@@ -133,7 +133,7 @@ function LayoutContent() {
       >
         {/* Top header bar — slim, page title + utilities */}
         {!isLoginPage && isAuthenticated && (
-          <header className="bg-surface sticky top-0 z-30 border-b border-border h-14">
+          <header className="bg-surface sticky top-0 z-30 border-b border-border h-14 safe-area-top">
             <div className="flex items-center h-full px-4 lg:px-8">
               {/* Sidebar trigger for mobile */}
               <div className="md:hidden mr-2">
