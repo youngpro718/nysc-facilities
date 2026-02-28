@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
-type StaffRole = 'clerk' | 'sergeant' | 'officer';
+type StaffRole = 'clerk' | 'sergeant' | 'officer' | 'judge';
 
 /**
  * Add a new staff member (clerk, sergeant, or officer) to personnel_profiles.
@@ -10,7 +10,7 @@ type StaffRole = 'clerk' | 'sergeant' | 'officer';
 export async function addNewStaff(params: {
     firstName: string;
     lastName: string;
-    role: StaffRole;
+    role: 'clerk' | 'sergeant' | 'officer';
     phone?: string;
     extension?: string;
     assignToRoomId?: string; // court_assignments.room_id to add them to
@@ -19,7 +19,7 @@ export async function addNewStaff(params: {
     const fullName = displayName;
 
     // Map role to title for personnel_profiles
-    const titleMap: Record<StaffRole, string> = {
+    const titleMap: Record<'clerk' | 'sergeant' | 'officer', string> = {
         clerk: 'Court Clerk',
         sergeant: 'Sergeant',
         officer: 'Court Officer',
@@ -60,7 +60,7 @@ export async function addNewStaff(params: {
  */
 export async function assignStaffToRoom(
     staffName: string,
-    role: StaffRole,
+    role: 'clerk' | 'sergeant' | 'officer',
     roomId: string
 ): Promise<void> {
     const { data: assignment, error: fetchErr } = await supabase
@@ -97,7 +97,7 @@ export async function assignStaffToRoom(
  */
 export async function removeStaffFromRoom(
     staffName: string,
-    role: StaffRole,
+    role: 'clerk' | 'sergeant' | 'officer',
     roomId: string
 ): Promise<void> {
     const { data: assignment, error: fetchErr } = await supabase
@@ -130,7 +130,7 @@ export async function removeStaffFromRoom(
  */
 export async function reassignStaff(params: {
     staffName: string;
-    role: StaffRole;
+    role: 'clerk' | 'sergeant' | 'officer';
     fromRoomId: string;
     toRoomId: string;
 }): Promise<void> {
@@ -139,8 +139,8 @@ export async function reassignStaff(params: {
 }
 
 /**
- * Mark a staff member as departed/inactive.
- * Removes them from all court_assignments.
+ * Mark any staff member as departed/inactive.
+ * Removes them from all court_assignments — works for judges, clerks, sergeants, officers.
  */
 export async function departStaff(params: {
     personnelId: string;
@@ -148,16 +148,35 @@ export async function departStaff(params: {
     role: StaffRole;
 }): Promise<void> {
     // 1. Mark as inactive in personnel_profiles
+    const profileUpdate: Record<string, unknown> = {
+        is_active: false,
+        is_available_for_assignment: false,
+    };
+    // Judges get a specific departed status
+    if (params.role === 'judge') {
+        profileUpdate.judge_status = 'departed';
+        profileUpdate.departed_date = new Date().toISOString().split('T')[0];
+    }
     await supabase
         .from('personnel_profiles')
-        .update({
-            is_active: false,
-            is_available_for_assignment: false,
-        })
+        .update(profileUpdate)
         .eq('id', params.personnelId);
 
-    // 2. Remove from all court_assignments
-    if (params.role === 'clerk') {
+    // 2. Remove from all court_assignments based on role
+    if (params.role === 'judge') {
+        // Clear justice field from any assignment where they're the judge
+        await supabase
+            .from('court_assignments')
+            .update({ justice: null })
+            .eq('justice', params.displayName);
+
+        // Also clear their chambers and court attorney from personnel_profiles
+        await supabase
+            .from('personnel_profiles')
+            .update({ chambers_room_number: null, court_attorney: null })
+            .eq('id', params.personnelId);
+
+    } else if (params.role === 'clerk') {
         // Get all assignments that include this clerk
         const { data: assignments } = await supabase
             .from('court_assignments')
@@ -176,7 +195,7 @@ export async function departStaff(params: {
             }
         }
     } else {
-        // Remove from sergeant field
+        // Sergeant or officer — remove from sergeant field
         await supabase
             .from('court_assignments')
             .update({ sergeant: null })
@@ -194,7 +213,7 @@ export async function promoteStaff(params: {
     oldRole: StaffRole;
     newRole: StaffRole;
 }): Promise<void> {
-    const titleMap: Record<StaffRole, string> = {
+    const titleMap: Record<'clerk' | 'sergeant' | 'officer', string> = {
         clerk: 'Court Clerk',
         sergeant: 'Sergeant',
         officer: 'Court Officer',

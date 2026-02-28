@@ -96,8 +96,10 @@ export function StaffRosterPanel() {
     const departMutation = useMutation({
         mutationFn: async (person: PersonnelOption) => {
             const role = person.role.toLowerCase();
-            let staffRole: 'clerk' | 'sergeant' | 'officer' = 'clerk';
-            if (role.includes('sergeant') || role.includes('officer')) {
+            let staffRole: 'clerk' | 'sergeant' | 'officer' | 'judge' = 'clerk';
+            if (role.includes('judge') || role.includes('justice')) {
+                staffRole = 'judge';
+            } else if (role.includes('sergeant') || role.includes('officer')) {
                 staffRole = 'sergeant';
             }
 
