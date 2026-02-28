@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { Suspense, useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { BlueprintScene } from './blueprint';

@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useForm } from "react-hook-form";
 import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
@@ -28,10 +28,10 @@ import {
 import { useState } from "react";
 
 export interface EditPropertiesPanelProps {
-  object: Record<string, unknown>;
+  object: any;
   onClose: () => void;
-  onUpdate: (data: Record<string, unknown>) => void;
-  onPreview: (data: Record<string, unknown>) => void;
+  onUpdate: (data: any) => void;
+  onPreview: (data: any) => void;
 }
 
 export function EditPropertiesPanel({

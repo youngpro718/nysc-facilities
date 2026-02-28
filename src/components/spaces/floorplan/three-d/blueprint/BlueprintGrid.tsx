@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { Text } from '@react-three/drei';

@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useEffect, useRef, useState, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -106,7 +106,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
   }, [objects, enableDebugLogs]); // Remove rooms and connections from dependency array
 
   const { camera } = useThree();
-  const controlsRef = useRef<unknown>(null);
+  const controlsRef = useRef<any>(null);
   
   // Initialize loading state based on rendering mode
   const [sceneState, setSceneState] = useState<SceneState>({
@@ -276,7 +276,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
   }, [selectedObjectId, visibleObjects]);
 
   // Improved connection type detection
-  const getConnectionType = useCallback((conn: Record<string, unknown>): 'hallway' | 'emergency' | 'direct' => {
+  const getConnectionType = useCallback((conn: any): 'hallway' | 'emergency' | 'direct' => {
     if (conn.data?.type === 'emergency' || conn.is_emergency_exit) return 'emergency';
     const sourceObj = visibleObjects.find(obj => obj.id === conn.source);
     const targetObj = visibleObjects.find(obj => obj.id === conn.target);
@@ -383,7 +383,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
               position={renderPos}
               size={renderSize}
               rotation={rotation}
-              label={obj.label || obj.data?.name || (obj.data as Record<string, unknown>)?.room_number || `${obj.type}-${obj.id}`}
+              label={obj.label || obj.data?.name || (obj.data as any)?.room_number || `${obj.type}-${obj.id}`}
               properties={objectData.data?.properties}
               isSelected={isSelected}
               showLabels={showLabels}

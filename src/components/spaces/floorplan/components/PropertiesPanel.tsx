@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { RoomType } from '@/components/spaces/rooms/types/RoomTypes';
 
 interface PropertiesPanelProps {
-  selectedObject: Record<string, unknown>;
+  selectedObject: any;
   onUpdate: () => void;
   onPreviewChange?: (values: Record<string, unknown>) => void;
 }
@@ -20,7 +20,7 @@ export function PropertiesPanel({
   onUpdate,
   onPreviewChange
 }: PropertiesPanelProps) {
-  const [localValues, setLocalValues] = useState<Record<string, unknown>>({});
+  const [localValues, setLocalValues] = useState<Record<string, any>>({});
   
   // Reset local values when selected object changes
   useEffect(() => {

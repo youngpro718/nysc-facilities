@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { Handle, NodeProps, NodeResizer } from 'reactflow';
 import { FloorPlanObjectData } from '../types/floorPlanTypes';
 import { useNodeHandles } from '../hooks/useNodeHandles';
@@ -47,9 +47,9 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
     'not_designated';
 
   // Get lighting status for visual indicator if available
-  const lightingStatus = properties.lighting_status || 'unknown';
-  const functionalLights = properties.functional_lights || 0;
-  const totalLights = properties.total_lights || 0;
+  const lightingStatus = String(properties.lighting_status || 'unknown');
+  const functionalLights = Number(properties.functional_lights || 0);
+  const totalLights = Number(properties.total_lights || 0);
   
   // Different appearance based on hallway attributes
   const getHallwayColor = () => {
@@ -97,7 +97,7 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
   const accessibilityInfo = getAccessibilityIndicator();
 
   // Render connection badges if the hallway has connections
-  const hasConnections = properties.connected_spaces && properties.connected_spaces.length > 0;
+  const hasConnections = Array.isArray(properties.connected_spaces) && (properties.connected_spaces as any[]).length > 0;
 
   return (
     <div style={hallwayStyle}>
@@ -187,9 +187,9 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
             borderRadius: '3px',
             fontSize: '0.65rem'
           }}>
-            <span>{hallwaySection.replace('_', ' ')}</span>
+            <span>{String(hallwaySection).replace('_', ' ')}</span>
             <span style={{ margin: '0 2px' }}>•</span>
-            <span>{hallwayType.replace('_', ' ')}</span>
+            <span>{String(hallwayType).replace('_', ' ')}</span>
           </div>
           
           {/* Accessibility indicator */}
@@ -220,7 +220,7 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
                 borderRadius: '3px',
                 fontSize: '0.65rem'
               }}
-              title={`${emergencyRoute.charAt(0).toUpperCase() + emergencyRoute.slice(1)} Emergency Route`}
+              title={`${String(emergencyRoute).charAt(0).toUpperCase() + String(emergencyRoute).slice(1)} Emergency Route`}
             >
               <ShieldAlert size={12} />
             </div>
@@ -244,9 +244,9 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
             justifyContent: 'center',
             border: '1px solid white'
           }}
-          title={`${properties.connected_spaces.length} connected spaces`}
+          title={`${(properties.connected_spaces as any[]).length} connected spaces`}
           >
-            {properties.connected_spaces.length}
+            {(properties.connected_spaces as any[]).length}
           </div>
         )}
       </div>

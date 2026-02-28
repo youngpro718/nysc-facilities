@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import { OrbitControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
@@ -58,7 +58,7 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
   gridSize = 800
 }, ref) => {
   const { camera } = useThree();
-  const controlsRef = useRef<unknown>(null);
+  const controlsRef = useRef<any>(null);
   const initialCameraPos = useRef<THREE.Vector3 | null>(null);
 
   // Store initial camera position

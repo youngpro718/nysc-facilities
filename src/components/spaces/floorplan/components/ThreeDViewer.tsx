@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { logger } from '@/lib/logger';
 import { Card } from '@/components/ui/card';
@@ -64,17 +64,17 @@ export function ThreeDViewer({
   const [cameraMode, setCameraMode] = useState<'orbit' | 'top' | 'perspective'>('perspective');
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [showStats, setShowStats] = useState<boolean>(true);
-  const canvasRef = useRef<unknown>(null);
-  const sceneRef = useRef<unknown>(null);
+  const canvasRef = useRef<any>(null);
+  const sceneRef = useRef<any>(null);
 
   useEffect(() => {
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
 
-  const handleObjectSelect = useCallback((object: Record<string, unknown>) => {
+  const handleObjectSelect = useCallback((object: any) => {
     if (onObjectSelect) {
-      const selectedObj = objects.find(obj => obj.id === object.id || obj.id === object);
+      const selectedObj = objects.find(obj => obj.id === object.id || obj.id === object) as any;
       if (selectedObj) {
         const formattedObj = {
           ...selectedObj,
@@ -102,7 +102,7 @@ export function ThreeDViewer({
     }
   }, [objects, onObjectSelect]);
 
-  const handleCanvasError = (error: unknown) => {
+  const handleCanvasError = (error: any) => {
     logger.error('Canvas error:', error);
     setViewerError(error);
     toast.error('Error loading 3D view. Please try refreshing the page.');
@@ -171,7 +171,7 @@ export function ThreeDViewer({
       <ErrorBoundary>
         <Canvas
           ref={canvasRef}
-          camera={cameraConfig}
+          camera={cameraConfig as any}
           shadows
           gl={{ 
             antialias: true,
@@ -186,14 +186,14 @@ export function ThreeDViewer({
         >
           <ThreeDScene 
             ref={sceneRef}
-            objects={objects || []} 
-            connections={edges || []} 
+            objects={(objects || []) as any} 
+            connections={(edges || []) as any} 
             onObjectSelect={handleObjectSelect}
             selectedObjectId={selectedObjectId}
             showLabels={showLabels}
             showConnections={showConnections}
             lightIntensity={lightIntensity}
-            previewData={previewData}
+            previewData={previewData as any}
             viewMode={viewMode}
             configuration={{
               gridSize: showGrid ? 50 : 0,
@@ -290,7 +290,7 @@ export function ThreeDViewer({
 
   // Use raw selected object data for the inline info panel to match 2D
   const selectedObjectData = selectedObjectId ? (() => {
-    const o = objects.find(obj => obj.id === selectedObjectId);
+    const o = objects.find(obj => obj.id === selectedObjectId) as any;
     if (!o) return null;
     return {
       ...o,

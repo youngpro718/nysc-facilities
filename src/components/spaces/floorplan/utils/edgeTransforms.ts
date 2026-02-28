@@ -1,5 +1,6 @@
-// @ts-nocheck
-export function createEdgesFromConnections(connections: unknown[]): FloorPlanEdge[] {
+
+import { logger } from '@/lib/logger';
+export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] {
   return connections.filter(conn => !!conn).map(conn => {
     // Check for required properties
     if (!conn.from_space_id || !conn.to_space_id) {

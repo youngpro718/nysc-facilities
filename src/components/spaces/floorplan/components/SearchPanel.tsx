@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,8 +18,8 @@ interface SearchPanelProps {
   onSearchQueryChange?: (q: string) => void;
   filterType?: 'all' | 'room' | 'hallway' | 'door';
   onFilterTypeChange?: (t: 'all' | 'room' | 'hallway' | 'door') => void;
-  objects?: unknown[];
-  onObjectSelect?: (obj: Record<string, unknown>) => void;
+  objects?: any[];
+  onObjectSelect?: (obj: any) => void;
 }
 
 // Strong types for search results
@@ -32,7 +32,7 @@ export interface SearchResult {
 }
 
 // Helper: validate result shape
-const isValidResult = (r: Record<string, unknown>): r is SearchResult => {
+const isValidResult = (r: any): r is SearchResult => {
   return (
     r && typeof r === 'object' && typeof r.id === 'string' && typeof r.type === 'string'
   );
@@ -107,7 +107,7 @@ export function SearchPanel({
     if (!Array.isArray(objects)) return [];
     const q = (query || '').toLowerCase().trim();
     return objects
-      .filter((obj: Record<string, unknown>) => {
+      .filter((obj: any) => {
         if (!obj) return false;
         if (filterType !== 'all' && obj?.type !== filterType) return false;
         if (!q) return true;
@@ -115,7 +115,7 @@ export function SearchPanel({
         const desc = String(obj?.data?.properties?.description || '').toLowerCase();
         return name.includes(q) || desc.includes(q);
       })
-      .map((obj: Record<string, unknown>) => ({
+      .map((obj: any) => ({
         id: String(obj.id),
         type: String(obj.type || 'room'),
         name: String(obj?.data?.properties?.label || obj?.data?.name || obj?.name || obj.id),
@@ -126,14 +126,14 @@ export function SearchPanel({
 
   const safeResults = useMemo(() => {
     const incoming = Array.isArray(results) && results.length ? results : derivedResults;
-    return incoming.filter(isValidResult);
+    return incoming.filter((r: any) => isValidResult(r));
   }, [results, derivedResults]);
 
   const handleSelect = useCallback((result: SearchResult) => {
     if (onSelect) {
       onSelect(result);
     } else if (onObjectSelect && Array.isArray(objects)) {
-      const match = objects.find((o: Record<string, unknown>) => String(o?.id) === result.id);
+      const match = objects.find((o: any) => String(o?.id) === result.id);
       if (match) onObjectSelect(match);
     }
     onClose();

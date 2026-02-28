@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { ReactFlow, Background, Controls, MiniMap, Panel, Node, Connection, Edge } from 'reactflow';
 import { panelStyle } from '../styles/flowStyles';
 import { useState, useCallback } from 'react';
@@ -9,11 +9,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface FloorPlanFlowProps {
   nodes: Node[];
   edges: Edge[];
-  onNodesChange: unknown;
-  onEdgesChange: unknown;
-  onConnect: unknown;
-  onNodeClick: unknown;
-  nodeTypes: unknown;
+  onNodesChange: any;
+  onEdgesChange: any;
+  onConnect: any;
+  onNodeClick: any;
+  nodeTypes: any;
   zoom?: number;
 }
 

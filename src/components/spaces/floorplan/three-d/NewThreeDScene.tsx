@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import React, { useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import BlueprintFloorPlan from './BlueprintFloorPlan';
 
@@ -126,8 +126,8 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
 
         // Extract rotation from multiple sources
         const extractedRotation = 
-          obj.rotation !== undefined ? obj.rotation :
-          obj.data?.rotation !== undefined ? obj.data.rotation : 0;
+          (obj as any).rotation !== undefined ? (obj as any).rotation :
+          (obj as any).data?.rotation !== undefined ? (obj as any).data.rotation : 0;
 
         return {
           ...obj,
