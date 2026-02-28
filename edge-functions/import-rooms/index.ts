@@ -389,14 +389,15 @@ Deno.serve(async (req: Request) => {
         });
 
       } catch (error) {
+        console.error(`Room ${roomId} import failed:`, error);
         results.push({
           roomId,
           name: row["Name"] as string || "Unknown",
           status: "error",
           changes: [],
-          error: error.message,
+          error: "Failed to process room. Contact administrator if issue persists.",
         });
-        errors.push(`Room ${roomId}: ${error.message}`);
+        errors.push(`Room ${roomId}: Import failed`);
       }
     }
 
