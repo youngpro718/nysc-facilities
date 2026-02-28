@@ -703,6 +703,7 @@ export default function Operations() {
           </div>
 
           {/* Issues Controls */}
+          <div data-tour="ops-filters">
           <IssueGroupingControls
             groupingMode={groupingMode}
             viewMode={viewMode}
@@ -717,6 +718,7 @@ export default function Operations() {
             onStatusFilterChange={setStatusFilter}
             onPriorityFilterChange={setPriorityFilter}
           />
+          </div>
 
           {/* Quick filter presets */}
           <div className="flex flex-wrap gap-2">
@@ -726,7 +728,7 @@ export default function Operations() {
           </div>
 
           {/* Issues Table */}
-          <Card>
+          <Card data-tour="ops-issue-card">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>

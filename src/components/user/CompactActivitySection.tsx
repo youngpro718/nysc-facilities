@@ -111,7 +111,7 @@ export function CompactActivitySection({
   };
 
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden", className)} data-tour="my-requests">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">My Activity</CardTitle>

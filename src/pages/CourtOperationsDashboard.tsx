@@ -159,7 +159,7 @@ export const CourtOperationsDashboard = () => {
       </Card>
 
       {/* Tabs — horizontal scroll on mobile, no grid */}
-      <Tabs value={tab} onValueChange={setTab} className="w-full">
+      <Tabs value={tab} onValueChange={setTab} className="w-full" data-tour="court-term-board">
         <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 scrollbar-hide">
           <TabsList className="inline-flex w-auto min-w-full sm:w-full h-auto p-1 gap-1 touch-manipulation">
             {tabs.map((t) => {
@@ -195,17 +195,17 @@ export const CourtOperationsDashboard = () => {
         </div>
 
         {/* Today's Status */}
-        <TabsContent value="today" className="mt-4">
+        <TabsContent value="today" className="mt-4" data-tour="court-status-dashboard">
           <TodaysStatusDashboard onNavigateToTab={setTab} />
         </TabsContent>
 
         {/* Daily Sessions */}
-        <TabsContent value="sessions" className="mt-4">
+        <TabsContent value="sessions" className="mt-4" data-tour="court-sessions">
           <DailySessionsPanel />
         </TabsContent>
 
         {/* Assignments */}
-        <TabsContent value="assignments" className="mt-4">
+        <TabsContent value="assignments" className="mt-4" data-tour="court-personnel">
           <AssignmentManagementPanel />
         </TabsContent>
 

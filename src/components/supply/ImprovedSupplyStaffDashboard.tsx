@@ -296,8 +296,8 @@ export function ImprovedSupplyStaffDashboard() {
       </div>
 
       {/* Tabbed Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} data-tour="supply-orders">
+        <TabsList className="grid w-full grid-cols-4" data-tour="supply-status">
           <TabsTrigger value="new" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">New Orders</span>

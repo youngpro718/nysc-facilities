@@ -111,7 +111,7 @@ function PersonnelGrid({ personnel, isLoading, onPersonClick }: PersonnelGridPro
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-tour="personnel-card">
       {personnel.map(person => (
         <PersonnelCard 
           key={person.id} 

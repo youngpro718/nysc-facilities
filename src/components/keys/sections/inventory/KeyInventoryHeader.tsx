@@ -26,7 +26,7 @@ export function KeyInventoryHeader({ onAddKey, onExport, onImport }: KeyInventor
             <Upload className="h-4 w-4 mr-2" /> Import CSV
           </Button>
         )}
-        <Button onClick={onAddKey}>
+        <Button onClick={onAddKey} data-tour="keys-create">
           <Plus className="h-4 w-4 mr-2" />
           Add Key
         </Button>
