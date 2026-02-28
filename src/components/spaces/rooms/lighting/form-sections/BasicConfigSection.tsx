@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 interface BasicConfigSectionProps {
-  form: UseFormReturn<Record<string, unknown>>;
+  form: UseFormReturn<any>;
 }
 
 export function BasicConfigSection({ form }: BasicConfigSectionProps) {

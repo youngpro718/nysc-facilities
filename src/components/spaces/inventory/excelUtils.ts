@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useToast } from "@/hooks/use-toast";
 import { logger } from '@/lib/logger';
 import { exportToExcel as exportToExcelUtil, sanitizeForExcel, parseExcelFile as parseExcelFileUtil } from "@/utils/excelExport";
@@ -46,7 +46,7 @@ const normalizeFieldName = (fieldName: string): string => {
 
 export const exportToExcel = async (data: InventoryExcelRow[], fileName: string) => {
   try {
-    const sanitized = data.map((row: Record<string, unknown>) =>
+    const sanitized = data.map((row: any) =>
       Object.fromEntries(
         Object.entries(row).map(([k, v]) => [k, sanitizeForExcel(v)])
       )
@@ -110,8 +110,8 @@ export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> =
     }
     
     // Process and validate data with flexible field mapping
-    const processedData = jsonData.map((row: Record<string, unknown>, index: number) => {
-      const normalizedRow: Record<string, unknown> = {};
+    const processedData = jsonData.map((row: any, index: number) => {
+      const normalizedRow: Record<string, any> = {};
       
       // Normalize field names
       for (const [key, value] of Object.entries(row)) {

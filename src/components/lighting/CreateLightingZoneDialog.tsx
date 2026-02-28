@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { useForm } from "react-hook-form";
@@ -157,7 +157,7 @@ export function CreateLightingZoneDialog({ onZoneCreated }: { onZoneCreated: () 
                     <SelectContent>
                       {floors?.map((floor) => (
                         <SelectItem key={floor.id} value={floor.id}>
-                          {(floor.buildings as Record<string, unknown>)?.name || floor.name}
+                          {(floor.buildings as any)?.name || floor.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

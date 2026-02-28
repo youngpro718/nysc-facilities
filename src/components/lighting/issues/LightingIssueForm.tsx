@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { LightingIssue, LightingIssueStatus } from '@/types/lightingIssue';
@@ -149,7 +149,7 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
           <select
             className="border border-input rounded-md px-3 py-1.5 text-sm bg-background text-foreground"
             value={issueType}
-            onChange={e => setIssueType(e.target.value as unknown)}
+            onChange={e => setIssueType(e.target.value as 'blown_bulb' | 'ballast_issue' | 'other')}
           >
             {ISSUE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>

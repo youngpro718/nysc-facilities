@@ -9,7 +9,7 @@ import { ZoneField } from "./ZoneField";
 
 interface CreateFixtureFieldsProps {
   form: UseFormReturn<LightingFixtureFormData>;
-  zones?: unknown[];
+  zones?: Array<{ id: string; name: string }>;
   onSpaceOrPositionChange?: () => void;
 }
 

@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +22,9 @@ export function CardBack({ fixture, onFlip }: CardBackProps) {
     return Object.values(fixture.electrical_issues).some(value => value === true);
   };
   
-  const formatMaintenanceHistory = (history: unknown[] | null | undefined) => {
+  const formatMaintenanceHistory = (history: any[] | null | undefined) => {
     if (!history || history.length === 0) return [];
-    return history.slice(0, 3).map((item) => ({
+    return history.slice(0, 3).map((item: any) => ({
       date: item.date ? formatDate(item.date) : "Unknown date",
       type: item.type || "General maintenance",
       notes: item.notes || "No notes"

@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -288,8 +288,8 @@ export function LightingDashboard() {
                 try {
                   setChecking(true);
                   const result = await refetch();
-                  if ((result as Record<string, unknown>)?.error) {
-                    throw ((result as Record<string, unknown>)).error;
+                  if ((result as any)?.error) {
+                    throw (result as any).error;
                   }
                   toast.success('System check complete', { description: 'Fixture data refreshed.' });
                 } catch (err) {

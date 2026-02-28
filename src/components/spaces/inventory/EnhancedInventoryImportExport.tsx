@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useState } from "react";
 import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
@@ -132,7 +132,7 @@ export function EnhancedInventoryImportExport({
     });
 
     try {
-      exportToExcel(exportData, `inventory_export_${new Date().toISOString().split('T')[0]}`);
+      exportToExcel(exportData as any, `inventory_export_${new Date().toISOString().split('T')[0]}`);
       toast({
         title: "Export successful",
         description: `Exported ${exportData.length} items with ${selectedFields.length} fields.`,
@@ -215,7 +215,7 @@ export function EnhancedInventoryImportExport({
       setImportProgress(25);
 
       // Validate category data
-      const { validItems, invalidItems, missingCategories } = validateCategoryData(rawData, categories);
+      const { validItems, invalidItems, missingCategories } = validateCategoryData(rawData, categories) as any;
       
       setImportProgress(50);
 

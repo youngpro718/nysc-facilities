@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
@@ -73,7 +73,7 @@ const DoorsList = () => {
   );
 
   const sortedDoors = useMemo(() => 
-    sortSpaces(filteredDoors, sortBy as unknown),
+    sortSpaces(filteredDoors, sortBy as any),
     [filteredDoors, sortBy]
   );
 

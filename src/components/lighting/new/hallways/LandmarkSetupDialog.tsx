@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -353,7 +353,7 @@ export function LandmarkSetupDialog({ hallwayId, hallwayName }: LandmarkSetupDia
                     <SelectContent>
                       {availableRooms
                         .filter(room => !hallwayRooms.find(hr => hr.room_id === room.id))
-                        .map((room: Record<string, unknown>) => (
+                        .map((room: any) => (
                           <SelectItem key={room.id} value={room.id}>
                             {room.room_number} - {room.name}
                           </SelectItem>

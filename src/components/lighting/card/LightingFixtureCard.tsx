@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { useState } from 'react';
 import { LightingFixture } from "@/types/lighting";
 import { CardFront } from "./CardFront";
@@ -27,7 +27,7 @@ export const LightingFixtureCard = ({
       id={`fixture-card-${fixture.id}`}
       data-fixture-id={fixture.id}
       className="relative w-full h-[320px]"
-      style={{ perspective: '1000px', WebkitPerspective: '1000px' as unknown }}
+      style={{ perspective: '1000px', WebkitPerspective: '1000px' as any }}
     >
       <div 
         className={cn(
@@ -37,7 +37,7 @@ export const LightingFixtureCard = ({
         )}
         style={{ 
           transformStyle: 'preserve-3d',
-          WebkitTransformStyle: 'preserve-3d' as unknown,
+          WebkitTransformStyle: 'preserve-3d' as any,
           willChange: 'transform'
         }}
       >
