@@ -29,7 +29,7 @@ export function FloatingActionButton() {
     <AnimatePresence>
       {!shouldHide && (
         <motion.div
-          className="fixed bottom-[4.5rem] right-4 z-50 md:hidden"
+          className="fixed bottom-28 right-4 z-50 md:hidden"
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0, opacity: 0 }}
