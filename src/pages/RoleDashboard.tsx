@@ -222,7 +222,7 @@ export default function RoleDashboard() {
           .limit(3),
       ]);
 
-      const activities: { id: string; type: string; message: string; time: string; color: string }[] = [];
+      const activities: { id: string; type: string; message: string; time: string; color: string; sortKey: string }[] = [];
 
       if (issuesResult.data) {
         issuesResult.data.forEach(issue => {
@@ -232,6 +232,7 @@ export default function RoleDashboard() {
             message: `Issue: ${issue.title}`,
             time: formatDistanceToNow(new Date(issue.created_at), { addSuffix: true }),
             color: issue.status === 'resolved' ? 'bg-green-600' : 'bg-orange-600',
+            sortKey: issue.created_at,
           });
         });
       }
@@ -244,11 +245,12 @@ export default function RoleDashboard() {
             message: `Supply request ${req.status}`,
             time: formatDistanceToNow(new Date(req.created_at), { addSuffix: true }),
             color: req.status === 'completed' ? 'bg-green-600' : 'bg-blue-600',
+            sortKey: req.created_at,
           });
         });
       }
 
-      return activities.sort((a, b) => b.time.localeCompare(a.time)).slice(0, 5);
+      return activities.sort((a, b) => b.sortKey.localeCompare(a.sortKey)).slice(0, 5);
     },
   });
 

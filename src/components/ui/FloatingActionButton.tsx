@@ -16,8 +16,8 @@ export function FloatingActionButton() {
   const location = useLocation();
   const isMobile = useIsMobile();
 
-  // Don't show on form pages, login, auth pages, or request hub
-  const hiddenPaths = ['/forms/', '/login', '/auth/', '/onboarding/', '/request'];
+  // Don't show on form pages, login, auth pages, request hub, or spaces (has its own FAB)
+  const hiddenPaths = ['/forms/', '/login', '/auth/', '/onboarding/', '/request', '/spaces'];
   const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
 
   // Only show on mobile

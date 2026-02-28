@@ -118,9 +118,9 @@ const Layout = () => {
       {!isLoginPage && isAuthenticated && (
         <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
           <div className="mx-auto px-2 sm:px-3 lg:px-4">
-            <div className="flex h-12 items-center">
+            <div className="flex h-14 items-center">
               {/* Logo — fixed small corner mark */}
-              <div className="relative h-7 w-7 shrink-0 mr-2">
+              <div className="relative h-9 w-9 shrink-0 mr-2">
                 <img src="/nysc-logo-light.png" alt="NYSC" className="h-full w-full object-contain dark:hidden" />
                 <img src="/nysc-logo-dark.png" alt="NYSC" className="h-full w-full object-contain hidden dark:block" />
               </div>
@@ -192,7 +192,7 @@ const Layout = () => {
                     src={profile?.avatar_url}
                     firstName={profile?.first_name}
                     lastName={profile?.last_name}
-                    className="h-7 w-7"
+                    className="h-8 w-8"
                     showFallbackIcon
                   />
                 </button>

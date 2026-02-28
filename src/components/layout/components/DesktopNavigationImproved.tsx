@@ -105,7 +105,7 @@ export const DesktopNavigationImproved = ({
                 <button
                   onClick={() => handleNavigation(navItem.title)}
                   className={cn(
-                    "group relative flex items-center gap-1 px-1.5 lg:px-2 h-8 rounded-md transition-all duration-200 hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                    "group relative flex items-center gap-1 px-1.5 lg:px-2 h-9 rounded-md transition-all duration-200 hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -113,7 +113,7 @@ export const DesktopNavigationImproved = ({
                   aria-label={navItem.title}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <Icon className="h-5 w-5 shrink-0" />
                   <span
                     className={cn(
                       "text-xs font-medium whitespace-nowrap transition-all duration-200 overflow-hidden",

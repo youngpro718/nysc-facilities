@@ -130,13 +130,6 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="/purchasing-dashboard" element={
-          <ProtectedRoute>
-            <ModuleProtectedRoute moduleKey="inventory" moduleName="Purchasing">
-              <RoleDashboard />
-            </ModuleProtectedRoute>
-          </ProtectedRoute>
-        } />
 
         <Route path="/spaces" element={
           <ProtectedRoute>
