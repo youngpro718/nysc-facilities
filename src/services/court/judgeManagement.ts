@@ -174,26 +174,27 @@ export async function processJudgeDeparture(params: {
   // 1. Mark judge as departed
   await updateJudgeStatus(params.personnelId, 'departed');
 
-  // 2. Handle court assignment
-  const { data: assignment } = await supabase
+  // 2. Handle court assignment (case-insensitive match)
+  const { data: allAssignments } = await supabase
     .from('court_assignments')
-    .select('id')
-    .eq('justice', params.displayName)
-    .maybeSingle();
+    .select('id, justice')
+    .not('justice', 'is', null);
 
-  if (assignment) {
+  const matchingAssignment = allAssignments?.find(
+    a => a.justice?.toLowerCase() === params.displayName.toLowerCase()
+  );
+
+  if (matchingAssignment) {
     if (params.assignmentAction === 'reassign' && params.newJusticeForAssignment) {
-      // Reassign the courtroom/part to the new judge
       await supabase
         .from('court_assignments')
         .update({ justice: params.newJusticeForAssignment })
-        .eq('id', assignment.id);
+        .eq('id', matchingAssignment.id);
     } else {
-      // Clear the justice from the assignment (room stays, part stays, judge removed)
       await supabase
         .from('court_assignments')
         .update({ justice: null })
-        .eq('id', assignment.id);
+        .eq('id', matchingAssignment.id);
     }
   }
 

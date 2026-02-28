@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -56,6 +56,8 @@ interface CourtAssignmentRow {
   sort_order: number;
   judge_present?: boolean;
   clerks_present_count?: number;
+  justice_departed?: boolean;
+  justice_inactive?: boolean;
 }
 
 interface EditingCell {
@@ -80,6 +82,8 @@ interface SortableRowProps {
   tooltipText?: string;
   isRecentlyAffected: boolean;
   rowElementId?: string;
+  justiceDeparted?: boolean;
+  justiceInactive?: boolean;
 }
 
 const SortableRow = ({
@@ -98,7 +102,9 @@ const SortableRow = ({
   isIncomplete,
   tooltipText,
   isRecentlyAffected,
-  rowElementId
+  rowElementId,
+  justiceDeparted,
+  justiceInactive
 }: SortableRowProps) => {
   const {
     attributes,
@@ -412,8 +418,16 @@ const SortableRow = ({
             <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${row.judge_present ? 'bg-emerald-500' : 'bg-gray-400'}`}
               title={row.judge_present ? 'Present' : 'Status unknown'} />
           )}
-          {renderEditableCell("justice", row.justice || "")}
-          {row.justice && (
+          <span className={justiceDeparted || justiceInactive ? 'line-through text-muted-foreground' : ''}>
+            {renderEditableCell("justice", row.justice || "")}
+          </span>
+          {justiceDeparted && (
+            <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">Departed</Badge>
+          )}
+          {justiceInactive && !justiceDeparted && (
+            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-orange-400 text-orange-600 dark:text-orange-400">Inactive</Badge>
+          )}
+          {row.justice && !justiceDeparted && !justiceInactive && (
             <>
               <JudgeStatusBadge status={personnel.judges.find(j => j.name === row.justice)?.judgeStatus || 'active'} />
               <JudgeStatusDropdown judgeName={row.justice} compact />
@@ -697,6 +711,23 @@ export const EnhancedCourtAssignmentTable = () => {
 
       if (attendanceError) logger.error("Attendance fetch error:", attendanceError);
 
+      // Fetch all judges from personnel_profiles to detect departed/inactive
+      const { data: judgeProfiles } = await supabase
+        .from("personnel_profiles")
+        .select("display_name, judge_status, is_active")
+        .eq("primary_role", "judge");
+
+      // Build a map of judge display_name -> status
+      const judgeStatusMap = new Map<string, { judgeStatus: string; isActive: boolean }>();
+      judgeProfiles?.forEach(j => {
+        if (j.display_name) {
+          judgeStatusMap.set(j.display_name, {
+            judgeStatus: j.judge_status || 'active',
+            isActive: j.is_active ?? true,
+          });
+        }
+      });
+
       // Create maps for quick lookup
       const assignmentMap = new Map();
       assignmentsData?.forEach(assignment => {
@@ -711,6 +742,11 @@ export const EnhancedCourtAssignmentTable = () => {
       const mappedData = (roomsData || []).map((room, index) => {
         const assignment = assignmentMap.get(room.room_id);
         const attendance = attendanceMap.get(room.room_id);
+
+        // Check if assigned justice is departed or inactive
+        const justiceProfile = assignment?.justice ? judgeStatusMap.get(assignment.justice) : null;
+        const justiceDeparted = justiceProfile?.judgeStatus === 'departed';
+        const justiceInactive = justiceProfile ? !justiceProfile.isActive : false;
 
         return {
           room_id: room.room_id,
@@ -729,6 +765,8 @@ export const EnhancedCourtAssignmentTable = () => {
           sort_order: assignment?.sort_order ?? index + 1,
           judge_present: attendance?.judge_present || false,
           clerks_present_count: attendance?.clerks_present_count || 0,
+          justice_departed: justiceDeparted,
+          justice_inactive: justiceInactive,
         } as CourtAssignmentRow;
       });
 
@@ -737,8 +775,36 @@ export const EnhancedCourtAssignmentTable = () => {
     },
   });
 
-  // Rest of the component implementation would continue here...
-  // This is a partial implementation showing the key enhancements
+  // Detect stale (departed/inactive) judges in assignments
+  const staleJudgeRows = useMemo(() => 
+    (assignments || []).filter(r => r.justice_departed || r.justice_inactive),
+    [assignments]
+  );
+
+  // Mutation to clear departed judges from all assignments
+  const clearDepartedMutation = useMutation({
+    mutationFn: async () => {
+      const staleIds = staleJudgeRows
+        .filter(r => r.assignment_id)
+        .map(r => r.assignment_id!);
+      for (const id of staleIds) {
+        await supabase
+          .from('court_assignments')
+          .update({ justice: null })
+          .eq('id', id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
+      queryClient.invalidateQueries({ queryKey: ["court-personnel"] });
+      queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
+      queryClient.invalidateQueries({ queryKey: ["assignment-stats"] });
+      toast({
+        title: "Cleared departed judges",
+        description: `Removed ${staleJudgeRows.length} departed/inactive judge(s) from assignments.`,
+      });
+    },
+  });
 
   if (isLoading || personnelLoading) {
     return <div>Loading court assignments...</div>;
@@ -747,6 +813,27 @@ export const EnhancedCourtAssignmentTable = () => {
   return (
     <div className="space-y-4">
 
+      {/* Stale judge cleanup banner */}
+      {staleJudgeRows.length > 0 && (
+        <Alert variant="destructive" className="border-orange-400 bg-orange-50 dark:bg-orange-950/30">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              <strong>{staleJudgeRows.length} room{staleJudgeRows.length > 1 ? 's have' : ' has'} departed/inactive judges</strong> still assigned
+              ({staleJudgeRows.map(r => `${r.justice} in ${r.room_number}`).join(', ')})
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-3 shrink-0"
+              onClick={() => clearDepartedMutation.mutate()}
+              disabled={clearDepartedMutation.isPending}
+            >
+              {clearDepartedMutation.isPending ? 'Clearing...' : 'Clear All'}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       {/* Enhanced table with personnel dropdowns and issue indicators */}
       <DndContext
         sensors={sensors}
@@ -864,6 +951,8 @@ export const EnhancedCourtAssignmentTable = () => {
                       hasMaintenance={hasMaintenance}
                       isIncomplete={isIncomplete}
                       isRecentlyAffected={isRecentlyAffected}
+                      justiceDeparted={row.justice_departed}
+                      justiceInactive={row.justice_inactive}
                     />
                   );
                 })}

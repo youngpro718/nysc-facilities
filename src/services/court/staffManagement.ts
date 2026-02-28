@@ -164,11 +164,23 @@ export async function departStaff(params: {
 
     // 2. Remove from all court_assignments based on role
     if (params.role === 'judge') {
-        // Clear justice field from any assignment where they're the judge
-        await supabase
+        // Clear justice field from any assignment where they're the judge (case-insensitive)
+        const { data: matchingAssignments } = await supabase
             .from('court_assignments')
-            .update({ justice: null })
-            .eq('justice', params.displayName);
+            .select('id, justice')
+            .not('justice', 'is', null);
+
+        if (matchingAssignments) {
+            const matching = matchingAssignments.filter(
+                a => a.justice?.toLowerCase() === params.displayName.toLowerCase()
+            );
+            for (const a of matching) {
+                await supabase
+                    .from('court_assignments')
+                    .update({ justice: null })
+                    .eq('id', a.id);
+            }
+        }
 
         // Also clear their chambers and court attorney from personnel_profiles
         await supabase
