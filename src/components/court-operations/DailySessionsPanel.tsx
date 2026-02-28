@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Copy, RefreshCw, Users, CalendarCheck, FileText, Upload } from 'lucide-react';
+import { Calendar, Copy, RefreshCw, Users, CalendarCheck, FileText, Upload, MoreHorizontal } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { SessionsTable } from './SessionsTable';
 import { CoveragePanel } from './CoveragePanel';
 import { GenerateReportDialog } from './GenerateReportDialog';
@@ -150,7 +156,7 @@ export function DailySessionsPanel() {
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               variant="default"
@@ -172,7 +178,7 @@ export function DailySessionsPanel() {
             <Button
               variant="outline"
               size="sm"
-              className="text-xs sm:text-sm"
+              className="text-xs sm:text-sm hidden sm:inline-flex"
               onClick={handleCopyYesterday}
               disabled={copyYesterday.isPending}
             >
@@ -182,7 +188,7 @@ export function DailySessionsPanel() {
             <Button
               variant="outline"
               size="sm"
-              className="text-xs sm:text-sm"
+              className="text-xs sm:text-sm hidden sm:inline-flex"
               onClick={() => setShowCoveragePanel(!showCoveragePanel)}
             >
               <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
@@ -191,13 +197,46 @@ export function DailySessionsPanel() {
             <Button
               variant="outline"
               size="sm"
-              className="text-xs sm:text-sm col-span-2 sm:col-span-1"
+              className="text-xs sm:text-sm hidden sm:inline-flex"
               onClick={() => setShowReportDialog(true)}
               disabled={!sessions || sessions.length === 0}
             >
               <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Generate Report
             </Button>
+            {/* Mobile overflow menu for secondary actions */}
+            <div className="sm:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-xs">
+                    <MoreHorizontal className="h-3.5 w-3.5 mr-1" />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={handleCopyYesterday}
+                    disabled={copyYesterday.isPending}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Yesterday
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setShowCoveragePanel(!showCoveragePanel)}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Coverage
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setShowReportDialog(true)}
+                    disabled={!sessions || sessions.length === 0}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate Report
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </CardContent>
       </Card>

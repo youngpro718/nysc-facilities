@@ -27,7 +27,7 @@ export const AssignmentManagementPanel = () => {
       const { data: courtrooms } = await supabase
         .from("court_rooms")
         .select("id, room_id, room_number, is_active");
-      
+
       const { data: assignments } = await supabase
         .from("court_assignments")
         .select("room_id, part")
@@ -40,12 +40,12 @@ export const AssignmentManagementPanel = () => {
         .or("status.eq.in_progress,status.eq.scheduled");
 
       const totalCourtrooms = courtrooms?.length || 0;
-      
+
 
 
       // Create maps for quick lookup
       const shutdownMap = new Map(shutdowns?.map(s => [s.court_room_id, s]) || []);
-      
+
       // Count rooms by actual availability
       let availableCount = 0;
       let assignedCount = 0;
@@ -105,8 +105,8 @@ export const AssignmentManagementPanel = () => {
         <div className="min-w-0">
           <h2 className="text-lg sm:text-2xl font-bold">Assignments</h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {viewMode === 'edit' 
-              ? 'Manage court assignments with real-time presence tracking' 
+            {viewMode === 'edit'
+              ? 'Manage court assignments with real-time presence tracking'
               : 'View-only term sheet for reference and export'}
           </p>
         </div>
@@ -132,6 +132,17 @@ export const AssignmentManagementPanel = () => {
         </div>
       </div>
 
+      {/* Attention Banner — explains what needs attention */}
+      {viewMode === 'edit' && ((assignmentStats?.unassignedRooms || 0) > 0 || (impactSummary?.totalAffectedRooms || 0) > 0) && (
+        <div className="flex items-center gap-2 p-2.5 sm:p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs sm:text-sm">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>
+            {assignmentStats?.unassignedRooms ? `${assignmentStats.unassignedRooms} room${assignmentStats.unassignedRooms > 1 ? 's' : ''} unassigned` : ''}
+            {assignmentStats?.unassignedRooms && (impactSummary?.totalAffectedRooms || 0) > 0 ? ' · ' : ''}
+            {(impactSummary?.totalAffectedRooms || 0) > 0 ? `${impactSummary?.totalAffectedRooms} with active issues` : ''}
+          </span>
+        </div>
+      )}
 
       {/* Conditional Content Based on View Mode */}
       {viewMode === 'view' ? (
@@ -140,148 +151,148 @@ export const AssignmentManagementPanel = () => {
       ) : (
         // Edit Mode Content
         <>
-      {/* Quick Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Judges</CardTitle>
-            <Gavel className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{personnel.judges.length}</div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              {personnel.jhoJudges.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                  {personnel.jhoJudges.length} JHO
-                </Badge>
-              )}
-              {personnel.departedJudges.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                  {personnel.departedJudges.length} departed
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          {/* Quick Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Judges</CardTitle>
+                <Gavel className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{personnel.judges.length}</div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {personnel.jhoJudges.length > 0 && (
+                    <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                      {personnel.jhoJudges.length} JHO
+                    </Badge>
+                  )}
+                  {personnel.departedJudges.length > 0 && (
+                    <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                      {personnel.departedJudges.length} departed
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Courtrooms</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{assignmentStats?.totalCourtrooms || 0}</div>
-            <p className="text-xs text-muted-foreground">All courtrooms</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Courtrooms</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{assignmentStats?.totalCourtrooms || 0}</div>
+                <p className="text-xs text-muted-foreground">All courtrooms</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Occupied</CardTitle>
-            <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{assignmentStats?.assignedRooms || 0}</div>
-            <p className="text-xs text-muted-foreground">Currently in use</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Occupied</CardTitle>
+                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{assignmentStats?.assignedRooms || 0}</div>
+                <p className="text-xs text-muted-foreground">Currently in use</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available</CardTitle>
-            <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{assignmentStats?.availableRooms || 0}</div>
-            <p className="text-xs text-muted-foreground">Ready for assignment</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Available</CardTitle>
+                <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{assignmentStats?.availableRooms || 0}</div>
+                <p className="text-xs text-muted-foreground">Ready for assignment</p>
+              </CardContent>
+            </Card>
 
-        {/* Removed Under Maintenance card due to unavailable metric */}
+            {/* Removed Under Maintenance card due to unavailable metric */}
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Temporarily Relocated</CardTitle>
-            <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{assignmentStats?.temporarilyRelocated || 0}</div>
-            <p className="text-xs text-muted-foreground">Operating from alternate location</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Temporarily Relocated</CardTitle>
+                <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{assignmentStats?.temporarilyRelocated || 0}</div>
+                <p className="text-xs text-muted-foreground">Operating from alternate location</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Shutdown</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{assignmentStats?.shutdownRooms || 0}</div>
-            <p className="text-xs text-muted-foreground">Temporarily closed</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Shutdown</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{assignmentStats?.shutdownRooms || 0}</div>
+                <p className="text-xs text-muted-foreground">Temporarily closed</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Issues</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {impactSummary?.totalAffectedRooms || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Rooms with issues
-              {impactSummary?.urgentIssues ? ` (${impactSummary.urgentIssues} urgent)` : ''}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Enhanced Assignment Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Court Assignments</CardTitle>
-          <CardDescription>
-            Click on any cell to edit. Use dropdowns to select personnel from the database.
-            Rooms with issues are highlighted and show warning icons.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EnhancedCourtAssignmentTable />
-        </CardContent>
-      </Card>
-
-
-
-      <AddJudgeDialog open={addJudgeOpen} onOpenChange={setAddJudgeOpen} />
-
-      {/* Instructions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Instructions</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-start gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-            <p className="text-sm">
-              <strong>Personnel Selection:</strong> Click on Justice, Clerks, or Sergeant fields to open dropdown menus with available personnel.
-            </p>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Issues</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {impactSummary?.totalAffectedRooms || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Rooms with issues
+                  {impactSummary?.urgentIssues ? ` (${impactSummary.urgentIssues} urgent)` : ''}
+                </p>
+              </CardContent>
+            </Card>
           </div>
-          <div className="flex items-start gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-            <p className="text-sm">
-              <strong>Presence Tracking:</strong> Green dot next to judge name means they are checked in via Live Grid.
-            </p>
-          </div>
-          <div className="flex items-start gap-2">
-            <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
-            <p className="text-sm">
-              <strong>Drag & Drop:</strong> Use the grip handle to reorder assignments. Changes are saved automatically.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+
+          {/* Enhanced Assignment Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Court Assignments</CardTitle>
+              <CardDescription>
+                Click on any cell to edit. Use dropdowns to select personnel from the database.
+                Rooms with issues are highlighted and show warning icons.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EnhancedCourtAssignmentTable />
+            </CardContent>
+          </Card>
+
+
+
+          <AddJudgeDialog open={addJudgeOpen} onOpenChange={setAddJudgeOpen} />
+
+          {/* Instructions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Instructions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <p className="text-sm">
+                  <strong>Personnel Selection:</strong> Click on Justice, Clerks, or Sergeant fields to open dropdown menus with available personnel.
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                <p className="text-sm">
+                  <strong>Presence Tracking:</strong> Green dot next to judge name means they are checked in via Live Grid.
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                <p className="text-sm">
+                  <strong>Drag & Drop:</strong> Use the grip handle to reorder assignments. Changes are saved automatically.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>

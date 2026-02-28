@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { StatusCard } from "@/components/ui/StatusCard";
 import { TodaysStatusDashboard } from "@/components/court-operations/TodaysStatusDashboard";
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
@@ -12,13 +11,10 @@ import { DailySessionsPanel } from "@/components/court-operations/DailySessionsP
 import { LiveCourtGrid } from "@/components/court/LiveCourtGrid";
 import {
   Activity,
-  AlertCircle,
   Users,
   CalendarCheck,
   Radio,
   UserX,
-  FileText,
-  Gavel,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
@@ -26,7 +22,6 @@ import { useConditionalNotifications } from "@/hooks/useConditionalNotifications
 import { useCourtOperationsCounts } from "@/hooks/useCourtOperationsCounts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { format } from "date-fns";
 
 export const CourtOperationsDashboard = () => {
   const [tempLocationOpen, setTempLocationOpen] = useState(false);
@@ -112,7 +107,7 @@ export const CourtOperationsDashboard = () => {
     },
     {
       value: "live",
-      label: "Live Grid",
+      label: "Live Status",
       mobileLabel: "Live",
       icon: Radio,
       badge: null,
@@ -121,29 +116,15 @@ export const CourtOperationsDashboard = () => {
   ];
 
   return (
-    <div className="container mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24 md:pb-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Gavel className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate">
-              Court Operations
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Manage courtrooms, assignments, and daily sessions
-          </p>
-        </div>
-      </div>
+    <div className="container mx-auto px-3 sm:px-6 py-2 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-8">
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         <StatusCard
           statusVariant={counts.todaysSessions > 0 ? "info" : "neutral"}
           title="Today's Sessions"
           value={counts.todaysSessions}
-          subLabel={format(new Date(), "EEEE")}
+          subLabel={counts.todaysSessions > 0 ? "Active" : "None scheduled"}
           icon={CalendarCheck}
           onClick={() => setTab("sessions")}
         />
@@ -164,18 +145,18 @@ export const CourtOperationsDashboard = () => {
           onClick={() => setTab("staff")}
         />
         <StatusCard
-          statusVariant="info"
+          statusVariant={counts.dailySessions > 0 ? "info" : "neutral"}
           title="Daily Sessions"
           value={counts.dailySessions}
-          subLabel="Scheduled"
+          subLabel={counts.dailySessions > 0 ? "Scheduled today" : "None today"}
           icon={Activity}
           onClick={() => setTab("sessions")}
         />
       </div>
 
-      {/* Tabs — horizontal scroll on mobile, no grid */}
+      {/* Tabs — sticky + horizontal scroll on mobile */}
       <Tabs value={tab} onValueChange={setTab} className="w-full" data-tour="court-term-board">
-        <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 scrollbar-hide">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-3 sm:mx-0 px-3 sm:px-0 py-1 scrollbar-hide overflow-x-auto">
           <TabsList className="inline-flex w-auto min-w-full sm:w-full h-auto p-1 gap-1 touch-manipulation">
             {tabs.map((t) => {
               const Icon = t.icon;

@@ -46,17 +46,28 @@ export function LiveCourtGrid() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">Court Operations Live Grid</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">Live Court Status</CardTitle>
+        {/* Out-today summary */}
+        <div className="flex gap-2 mt-2">
+          <div className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+            <span className="font-semibold">{staffOut?.filter(s => s.role === 'judge').length || 0}</span>
+            <span className="text-xs">judges out</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <span className="font-semibold">{staffOut?.filter(s => s.role === 'clerk').length || 0}</span>
+            <span className="text-xs">clerks out</span>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <div className="relative">
+          <div className="relative flex-1 min-w-[150px]">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search room…" className="pl-8 w-56" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search room…" className="pl-8" />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-36">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -66,16 +77,12 @@ export function LiveCourtGrid() {
               <SelectItem value="maintenance">Maintenance</SelectItem>
             </SelectContent>
           </Select>
-          <Button type="button" variant={showImpacted ? "default" : "outline"} onClick={() => setShowImpacted(v => !v)}>
+          <Button type="button" variant={showImpacted ? "default" : "outline"} size="sm" onClick={() => setShowImpacted(v => !v)}>
             Recent changes
           </Button>
-          <div className="ml-auto flex items-center gap-2 text-sm">
-            <Badge variant="secondary">Judges out today: {staffOut?.filter(s => s.role === 'judge').length || 0}</Badge>
-            <Badge variant="secondary">Clerks out today: {staffOut?.filter(s => s.role === 'clerk').length || 0}</Badge>
-          </div>
         </div>
 
-        <div className="rounded-md border overflow-hidden">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -87,10 +94,10 @@ export function LiveCourtGrid() {
             </TableHeader>
             <TableBody>
               {filteredRooms.map((room: any) => (
-                <LiveRow 
-                  key={room.id} 
-                  room={room} 
-                  actorId={actorId} 
+                <LiveRow
+                  key={room.id}
+                  room={room}
+                  actorId={actorId}
                   onMoveJudge={onMoveJudge}
                   onMarkAbsent={onMarkAbsent}
                   onMarkPresent={onMarkPresent}
@@ -153,12 +160,12 @@ function RecordAbsenceDialog({ open, onOpenChange, judgeName, roomNumber, actorI
       queryClient.invalidateQueries({ queryKey: ["staff-absences"] });
       queryClient.invalidateQueries({ queryKey: ["court", "staffOutToday"] });
       queryClient.invalidateQueries({ queryKey: ["court", "rooms"] });
-      
+
       toast({
         title: "✅ Absence recorded",
         description: `${judgeName} marked absent (${absenceReason}) - ${startDate} to ${endDate}`,
       });
-      
+
       onOpenChange(false);
       setNotes("");
     },
@@ -255,7 +262,7 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
   onMarkClerkPresence: (courtRoomId: string, clerkName: string, present: boolean, actorId: string) => Promise<void>;
 }) {
   const { toast } = useToast();
-  
+
   // Use data directly from room (already fetched in useCourtRooms)
   const judgePresent = room.judge_present || false;
   const clerksCount = room.clerks_present_count || 0;
@@ -343,9 +350,9 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
                       onChange={async (e) => {
                         try {
                           await onMarkClerkPresence(room.id, clerk, e.target.checked, actorId);
-                          toast({ 
-                            title: isPresent ? "Clerk checked out" : "Clerk checked in", 
-                            description: `${clerk} - Room ${room.room_number}` 
+                          toast({
+                            title: isPresent ? "Clerk checked out" : "Clerk checked in",
+                            description: `${clerk} - Room ${room.room_number}`
                           });
                         } catch (error) {
                           logger.error('Clerk presence error:', error);
@@ -394,8 +401,8 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
           </Button>
 
           <MoveJudgeDialog open={moveOpen} onOpenChange={setMoveOpen} currentRoomId={room.room_id} currentJudge={room.assigned_judge} actorId={actorId} onMoveJudge={onMoveJudge} />
-          <RecordAbsenceDialog 
-            open={absenceDialogOpen} 
+          <RecordAbsenceDialog
+            open={absenceDialogOpen}
             onOpenChange={setAbsenceDialogOpen}
             judgeName={room.assigned_judge}
             roomNumber={room.room_number}
@@ -423,7 +430,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
   const [isCovering, setIsCovering] = useState(false);
   const [isSwap, setIsSwap] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+
   // Update judge name when dialog opens with current judge
   useEffect(() => {
     if (open && currentJudge) {
@@ -433,21 +440,21 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
 
   const handleMoveJudge = async () => {
     setSaving(true);
-    logger.debug('🔄 Move/Swap Judge clicked:', { 
-      currentRoomId, 
-      toRoom, 
-      judgeName, 
+    logger.debug('🔄 Move/Swap Judge clicked:', {
+      currentRoomId,
+      toRoom,
+      judgeName,
       actorId,
       isSwap,
       isCovering,
       hasJudgeName: !!judgeName,
       hasToRoom: !!toRoom
     });
-    
+
     try {
       const fromRoom = rooms?.find(r => r.room_id === currentRoomId);
       const toRoomData = rooms?.find(r => r.room_id === toRoom);
-      
+
       if (isSwap) {
         // Use swap_courtrooms RPC function
         logger.debug('🔀 Calling swap_courtrooms with:', {
@@ -455,21 +462,21 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
           room_b: toRoom,
           actor: actorId
         });
-        
+
         const { error } = await supabase.rpc('swap_courtrooms', {
           p_room_a_id: currentRoomId,
           p_room_b_id: toRoom,
           p_actor: actorId
         });
-        
+
         if (error) throw error;
-        
+
         // Invalidate all court-related queries
         queryClient.invalidateQueries({ queryKey: ["court", "rooms"] });
         queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
         queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
         queryClient.invalidateQueries({ queryKey: ["court", "attendance"] });
-        
+
         toast({
           title: "✅ Courtrooms swapped successfully",
           description: `${fromRoom?.room_number} ↔ ${toRoomData?.room_number}`,
@@ -483,18 +490,18 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
           actor: actorId,
           isCovering
         });
-        
+
         await onMoveJudge(currentRoomId, toRoom, judgeName, actorId, isCovering);
-        
+
         const moveType = isCovering ? 'covering' : 'moving entire part to';
         toast({
           title: "✅ Judge moved successfully",
           description: `${judgeName} ${moveType} room ${toRoomData?.room_number}`,
         });
       }
-      
+
       logger.debug('✅ Operation successful!');
-      
+
       onOpenChange(false);
       setJudgeName("");
       setToRoom("");
@@ -525,7 +532,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
             <label className="block text-xs mb-1">Judge name</label>
             <Input value={judgeName} onChange={(e) => setJudgeName(e.target.value)} placeholder="e.g., Hon. Jane Doe" />
           </div>
-          
+
           <div>
             <label className="block text-xs mb-1">Destination room</label>
             <Select value={toRoom} onValueChange={setToRoom}>
@@ -537,7 +544,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
                   .filter((r: Record<string, unknown>) => {
                     if (r.room_id === currentRoomId) return false; // Exclude current room
                     if (!r.is_active) return false; // Only active rooms
-                    
+
                     if (isSwap) {
                       // Swap mode: Show ALL active rooms (empty or occupied)
                       return true;
@@ -549,10 +556,10 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
                   })
                   .map((r: any) => {
                     const hasJudge = r.assigned_judge && r.assigned_judge.trim();
-                    const label = hasJudge 
+                    const label = hasJudge
                       ? `${r.room_number} · ${r.assigned_judge} (Part ${r.assigned_part || '?'})`
                       : `${r.room_number}${r.courtroom_number ? ` · Court ${r.courtroom_number}` : ''} (Available)`;
-                    
+
                     return (
                       <SelectItem key={r.room_id} value={r.room_id}>
                         {label}
@@ -567,14 +574,14 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
               </p>
             )}
           </div>
-          
+
           <div className="space-y-2 p-3 bg-muted/50 rounded-md">
             <label className="block text-sm font-medium">Operation Type</label>
             <div className="space-y-2">
               <label className="flex items-start gap-3 cursor-pointer">
-                <input 
-                  type="radio" 
-                  checked={!isSwap && !isCovering} 
+                <input
+                  type="radio"
+                  checked={!isSwap && !isCovering}
                   onChange={() => { setIsSwap(false); setIsCovering(false); }}
                   className="mt-1"
                 />
@@ -585,11 +592,11 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
                   </div>
                 </div>
               </label>
-              
+
               <label className="flex items-start gap-3 cursor-pointer">
-                <input 
-                  type="radio" 
-                  checked={!isSwap && isCovering} 
+                <input
+                  type="radio"
+                  checked={!isSwap && isCovering}
                   onChange={() => { setIsSwap(false); setIsCovering(true); }}
                   className="mt-1"
                 />
@@ -600,11 +607,11 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
                   </div>
                 </div>
               </label>
-              
+
               <label className="flex items-start gap-3 cursor-pointer">
-                <input 
-                  type="radio" 
-                  checked={isSwap} 
+                <input
+                  type="radio"
+                  checked={isSwap}
                   onChange={() => { setIsSwap(true); setIsCovering(false); }}
                   className="mt-1"
                 />
@@ -617,7 +624,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
               </label>
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
               Cancel

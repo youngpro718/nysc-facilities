@@ -753,7 +753,9 @@ export const EnhancedCourtAssignmentTable = () => {
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-md border overflow-x-auto" style={{
+          boxShadow: 'inset -12px 0 8px -8px rgba(0,0,0,0.08)',
+        }}>
           <table className="w-full min-w-[900px] table-fixed">
             <colgroup>
               <col className="w-[80px]" />
