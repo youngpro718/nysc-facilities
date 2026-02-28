@@ -280,6 +280,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/access-assignments',
       '/keys',
       '/inventory',
+      '/tasks',
       '/lighting',
       '/court-operations',
       '/admin',
