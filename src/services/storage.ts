@@ -36,26 +36,9 @@ export const storageService = {
       
       // If bucket doesn't exist, try to create it
       if (!bucketExists) {
-        try {
-          logger.debug(`Attempting to create bucket: ${bucketName}`);
-          const { error } = await supabase.storage.createBucket(bucketName, {
-            public: true,  // Make it public to allow direct access to files
-            fileSizeLimit: 10485760, // 10MB
-          });
-          
-          if (!error) {
-            logger.debug(`Successfully created bucket: ${bucketName}`);
-            bucketExists = true;
-          } else {
-            logger.error(`Failed to create bucket ${bucketName}:`, error);
-            toast.error(`Storage bucket '${bucketName}' could not be created. Please contact your administrator.`);
-            return null;
-          }
-        } catch (createError) {
-          logger.error(`Error creating bucket ${bucketName}:`, createError);
-          toast.error(`Failed to create storage bucket. Please contact your administrator.`);
-          return null;
-        }
+        logger.error(`Storage bucket '${bucketName}' does not exist. Buckets must be created via SQL migrations.`);
+        toast.error(`Storage bucket '${bucketName}' is not available. Please contact your administrator.`);
+        return null;
       }
       
       // Generate structured file path if not provided
