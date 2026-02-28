@@ -29,10 +29,15 @@ export default {
       },
       colors: {
         border: "hsl(var(--border))",
+        "border-subtle": "hsl(var(--border-subtle))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          foreground: "hsl(var(--surface-foreground))",
+        },
         courthouse: {
           DEFAULT: "#000000",
           foreground: "#ffffff",
@@ -65,7 +70,28 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          hover: "hsl(var(--card-hover))",
         },
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          border: "hsl(var(--sidebar-border))",
+        },
+        /* PRD 3.1 — Status semantic colors */
+        status: {
+          critical: "hsl(var(--status-critical))",
+          warning: "hsl(var(--status-warning))",
+          operational: "hsl(var(--status-operational))",
+          info: "hsl(var(--status-info))",
+          neutral: "hsl(var(--status-neutral))",
+        },
+        /* PRD 3.1 — Text hierarchy */
+        text: {
+          primary: "hsl(var(--text-primary))",
+          secondary: "hsl(var(--text-secondary))",
+          muted: "hsl(var(--text-muted))",
+        },
+        "color-accent": "hsl(var(--color-accent))",
       },
       borderRadius: {
         lg: "var(--radius)",
