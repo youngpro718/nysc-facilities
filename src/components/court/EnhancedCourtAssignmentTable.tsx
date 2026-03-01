@@ -35,6 +35,7 @@ import { AssignmentDetailPanel } from "./AssignmentDetailPanel";
 interface CourtAssignmentRow {
   room_id: string;
   room_number: string;
+  room_name?: string | null;
   courtroom_number: string | null;
   court_room_id?: string | null;
   assignment_id: string | null;
@@ -59,6 +60,7 @@ export const EnhancedCourtAssignmentTable = () => {
   const isMobile = useIsMobile();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showNeedsAttention, setShowNeedsAttention] = useState(false);
   const [searchParams] = useSearchParams();
   const scrollToRoomId = searchParams.get('room') || undefined;
 
@@ -202,7 +204,7 @@ export const EnhancedCourtAssignmentTable = () => {
     queryFn: async () => {
       const { data: roomsData, error: roomsError } = await supabase
         .from("court_rooms")
-        .select("id, room_id, room_number, courtroom_number, is_active")
+        .select("id, room_id, room_number, courtroom_number, is_active, rooms:room_id(name)")
         .order("room_number");
       if (roomsError) throw roomsError;
 
@@ -239,9 +241,13 @@ export const EnhancedCourtAssignmentTable = () => {
         const attendance = attendanceMap.get(room.room_id);
         const justiceProfile = assignment?.justice ? judgeStatusMap.get(assignment.justice) : null;
 
+        const roomRecord = (room as any).rooms;
+        const roomName = roomRecord?.name || null;
+
         return {
           room_id: room.room_id,
           room_number: room.room_number,
+          room_name: roomName !== room.room_number ? roomName : null,
           courtroom_number: room.courtroom_number,
           court_room_id: room.id,
           assignment_id: assignment?.id || null,
@@ -286,19 +292,32 @@ export const EnhancedCourtAssignmentTable = () => {
     },
   });
 
+  // Count incomplete assignments
+  const needsAttentionCount = useMemo(() => {
+    if (!assignments) return 0;
+    return assignments.filter(r => r.is_active && (!r.justice?.trim() || !r.clerks?.length || !r.sergeant?.trim())).length;
+  }, [assignments]);
+
   // Filtered list
   const filteredAssignments = useMemo(() => {
     if (!assignments) return [];
-    if (!searchTerm.trim()) return assignments;
-    const term = searchTerm.toLowerCase();
-    return assignments.filter(r =>
-      r.room_number.toLowerCase().includes(term) ||
-      (r.part && r.part.toLowerCase().includes(term)) ||
-      (r.justice && r.justice.toLowerCase().includes(term)) ||
-      (r.sergeant && r.sergeant.toLowerCase().includes(term)) ||
-      (r.clerks && r.clerks.some(c => c.toLowerCase().includes(term)))
-    );
-  }, [assignments, searchTerm]);
+    let filtered = assignments;
+    if (showNeedsAttention) {
+      filtered = filtered.filter(r => r.is_active && (!r.justice?.trim() || !r.clerks?.length || !r.sergeant?.trim()));
+    }
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(r =>
+        r.room_number.toLowerCase().includes(term) ||
+        (r.room_name && r.room_name.toLowerCase().includes(term)) ||
+        (r.part && r.part.toLowerCase().includes(term)) ||
+        (r.justice && r.justice.toLowerCase().includes(term)) ||
+        (r.sergeant && r.sergeant.toLowerCase().includes(term)) ||
+        (r.clerks && r.clerks.some(c => c.toLowerCase().includes(term)))
+      );
+    }
+    return filtered;
+  }, [assignments, searchTerm, showNeedsAttention]);
 
   // Auto-select first room or scroll target
   useEffect(() => {
@@ -366,23 +385,39 @@ export const EnhancedCourtAssignmentTable = () => {
         </Alert>
       )}
 
-      {/* Search bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search rooms, parts, justices..."
-          className="pl-9 h-9"
-        />
-        {searchTerm && (
+      {/* Search bar + filters */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search rooms, parts, justices..."
+            className="pl-9 h-9"
+          />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+              onClick={() => setSearchTerm("")}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+        {needsAttentionCount > 0 && (
           <Button
-            variant="ghost"
+            variant={showNeedsAttention ? "default" : "outline"}
             size="sm"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-            onClick={() => setSearchTerm("")}
+            className="h-9 text-xs gap-1.5 shrink-0"
+            onClick={() => setShowNeedsAttention(!showNeedsAttention)}
           >
-            <X className="h-3.5 w-3.5" />
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Needs Attention
+            <Badge variant={showNeedsAttention ? "secondary" : "destructive"} className="text-[10px] px-1.5 py-0 h-4 ml-0.5">
+              {needsAttentionCount}
+            </Badge>
           </Button>
         )}
       </div>

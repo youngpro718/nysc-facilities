@@ -2,18 +2,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Command, CommandGroup, CommandItem } from "@/components/ui/command";
 import { PersonnelSelector } from "./PersonnelSelector";
 import { JudgeStatusBadge, JudgeStatusDropdown } from "./JudgeStatusManager";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
-import { Save, X, Check, Calendar as CalendarIcon, MapPin, Phone, Printer, Users, Gavel, Shield, Trash2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { Save, X, Check, Calendar as CalendarIcon, MapPin, Phone, Printer, Users, Gavel, Shield, Trash2, Power } from "lucide-react";
 import { useState } from "react";
 import { MaintenanceShutdownSection } from "./MaintenanceShutdownSection";
 
 interface CourtAssignmentRow {
   room_id: string;
   room_number: string;
+  room_name?: string | null;
   courtroom_number: string | null;
   court_room_id?: string | null;
   assignment_id: string | null;
@@ -43,8 +48,29 @@ interface AssignmentDetailPanelProps {
 
 export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgentIssues, hasMaintenance }: AssignmentDetailPanelProps) => {
   const { personnel } = useCourtPersonnel();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string | string[]>("");
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async () => {
+      if (!row.court_room_id) return;
+      const { error } = await supabase
+        .from("court_rooms")
+        .update({ is_active: !row.is_active })
+        .eq("id", row.court_room_id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
+      queryClient.invalidateQueries({ queryKey: ["assignment-stats"] });
+      toast({ title: row.is_active ? "Room deactivated" : "Room activated" });
+    },
+    onError: (error) => {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    },
+  });
 
   const startEdit = (field: string, currentValue: string | string[]) => {
     setEditingField(field);
@@ -206,6 +232,9 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-bold">Room {row.room_number}</h3>
+              {row.room_name && (
+                <span className="text-sm text-muted-foreground font-medium">{row.room_name}</span>
+              )}
               {row.courtroom_number && (
                 <Badge variant="outline" className="text-xs">Ct {row.courtroom_number}</Badge>
               )}
@@ -236,6 +265,19 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
 
       {/* Fields */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        {/* Active toggle */}
+        <div className="flex items-center justify-between rounded-md border px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Power className="h-4 w-4 text-muted-foreground" />
+            <Label className="text-sm font-medium">Room Active</Label>
+          </div>
+          <Switch
+            checked={row.is_active}
+            onCheckedChange={() => toggleActiveMutation.mutate()}
+            disabled={toggleActiveMutation.isPending}
+          />
+        </div>
+
         {hasMaintenance && (
           <MaintenanceShutdownSection courtRoomId={row.court_room_id} />
         )}
