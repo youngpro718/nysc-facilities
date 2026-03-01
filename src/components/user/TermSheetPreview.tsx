@@ -82,7 +82,7 @@ export function TermSheetPreview({
           
           return {
             room_number: room.room_number || room.courtroom_number || '—',
-            part: (room as any).rooms?.name || assignment?.part || '—',
+            part: assignment?.part || '—',
             justice: assignment?.justice || '—',
             tel: assignment?.tel || '—',
             clerks: assignment?.clerks || [],
