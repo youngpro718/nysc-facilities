@@ -10,12 +10,14 @@ import { StaffRosterPanel } from "@/components/court/StaffRosterPanel";
 import { ConflictDetectionPanel } from "@/components/court-operations/ConflictDetectionPanel";
 import { DailySessionsPanel } from "@/components/court-operations/DailySessionsPanel";
 import { LiveCourtGrid } from "@/components/court/LiveCourtGrid";
+import { ShutdownsManagementPanel } from "@/components/court-operations/ShutdownsManagementPanel";
 import {
   Activity,
   Users,
   CalendarCheck,
   Radio,
   UserX,
+  Construction,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
@@ -105,6 +107,14 @@ export const CourtOperationsDashboard = () => {
       icon: Radio,
       badge: null,
       badgeVariant: "secondary" as const,
+    },
+    {
+      value: "shutdowns",
+      label: "Shutdowns",
+      mobileLabel: "Maint",
+      icon: Construction,
+      badge: null,
+      badgeVariant: "destructive" as const,
     },
   ];
 
@@ -231,6 +241,10 @@ export const CourtOperationsDashboard = () => {
         {/* Live Grid (promoted from nested tab) */}
         <TabsContent value="live" className="mt-4">
           <LiveCourtGrid />
+        </TabsContent>
+        {/* Shutdowns */}
+        <TabsContent value="shutdowns" className="mt-4">
+          <ShutdownsManagementPanel />
         </TabsContent>
       </Tabs>
 
