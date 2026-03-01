@@ -64,20 +64,21 @@ export function CreateSessionDialog({
   const dateStr = format(date, 'yyyy-MM-dd');
 
   // Fetch existing sessions for this date/period to detect occupied rooms
-  const { data: existingSessions } = useQuery({
+  const { data: existingSessionsData } = useQuery({
     queryKey: ['existing-sessions-for-create', dateStr, period],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('court_sessions')
-        .select('court_room_id')
+        .select('id, court_room_id')
         .eq('session_date', dateStr)
         .eq('period', period);
       if (error) throw error;
-      return new Set((data || []).map(s => s.court_room_id));
+      return data || [];
     },
     enabled: open,
   });
-  const occupiedRoomIds = existingSessions || new Set<string>();
+  const occupiedRoomIds = new Set((existingSessionsData || []).map(s => s.court_room_id));
+  const selectedRoomHasSession = selectedRoomId && occupiedRoomIds.has(selectedRoomId);
   
   // Ref for auto-focusing the first field after save
   const defendantsInputRef = useRef<HTMLInputElement>(null);
@@ -502,6 +503,30 @@ export function CreateSessionDialog({
                 </div>
               </div>
             )}
+
+            {/* Warning when selected room already has a session */}
+            {selectedRoomHasSession && (
+              <Alert className="border-destructive/50 bg-destructive/10">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span className="text-sm">
+                    A session already exists for this room on {format(date, 'MMM d')} ({period}). 
+                    You can edit it directly in the sessions table.
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="ml-3 shrink-0"
+                    onClick={() => {
+                      onOpenChange(false);
+                    }}
+                  >
+                    Edit Existing Session
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           {/* Assignment Details - Auto-populated from Room */}
@@ -925,7 +950,7 @@ export function CreateSessionDialog({
           </Button>
           <Button
             onClick={() => handleSubmit(false)}
-            disabled={!selectedRoomId || (status === 'CUSTOM' && !customStatus) || createSession.isPending}
+            disabled={!selectedRoomId || !!selectedRoomHasSession || (status === 'CUSTOM' && !customStatus) || createSession.isPending}
           >
             {createSession.isPending && (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -934,7 +959,7 @@ export function CreateSessionDialog({
           </Button>
           <Button
             onClick={() => handleSubmit(true)}
-            disabled={!selectedRoomId || (status === 'CUSTOM' && !customStatus) || createSession.isPending}
+            disabled={!selectedRoomId || !!selectedRoomHasSession || (status === 'CUSTOM' && !customStatus) || createSession.isPending}
             variant="default"
           >
             {createSession.isPending && (
