@@ -829,6 +829,23 @@ export function AddJudgeDialog({
     enabled: open,
   });
 
+  // Fetch existing part codes for autocomplete suggestions
+  const { data: existingParts = [] } = useQuery({
+    queryKey: ["court-parts-for-autocomplete"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("court_assignments")
+        .select("part")
+        .not("part", "is", null)
+        .order("part");
+      if (error) throw error;
+      // Deduplicate
+      const unique = [...new Set((data || []).map(d => d.part).filter(Boolean))];
+      return unique as string[];
+    },
+    enabled: open,
+  });
+
   const resetForm = () => {
     setFirstName("");
     setLastName("");
@@ -1013,10 +1030,17 @@ export function AddJudgeDialog({
               </Label>
               <Input
                 id="part-number"
+                list="part-suggestions"
                 value={part}
                 onChange={(e) => setPart(e.target.value)}
                 placeholder="e.g. 62"
+                autoComplete="off"
               />
+              <datalist id="part-suggestions">
+                {existingParts.map((p) => (
+                  <option key={p} value={p} />
+                ))}
+              </datalist>
             </div>
           </div>
 
