@@ -1,49 +1,45 @@
 
 
-## Current State of Live Grid
+## Problem
 
-After reviewing the code and data, the Live Grid has three operation modes (Move Entire Part, Cover Another Part, Swap Courtrooms) but several gaps prevent it from handling the scenarios you described:
+The current Live Grid has three operation types, but none handle your scenario:
 
-### Problems Identified
+- **Move**: Only targets **empty** rooms (occupied rooms are hidden from the picker)
+- **Swap**: Exchanges two rooms symmetrically (A↔B), but your changes aren't symmetric
+- **Cover**: Temporary — not a permanent reassignment
 
-1. **No building indicator or filter**: The grid shows all rooms together. You can't quickly see which courtroom is in 100 Centre vs 111 Centre, making it hard to manage cross-building switches.
+Your scenario requires **independent reassignments**: Part 77 → Room X, Part 95 → Room Y, Part 66 → Room 1600 — each judge goes to a specific room regardless of who's currently there.
 
-2. **Can't assign a judge to a vacant room directly**: The Move dialog only works from an occupied room. There's no way to place a new judge into an empty courtroom from the grid itself.
+## Plan: Add "Reassign" Operation Type
 
-3. **No "Assign New Judge" action on empty rooms**: Vacant rooms show "No judge assigned" but the only action buttons are Mark Present/Absent and the Move arrow — none of which help assign someone new.
+### 1. Show all rooms in the destination picker (not just empty ones)
+Currently line 612 hides occupied rooms in move mode. Remove that filter so you can pick **any** room as a destination.
 
-4. **Part name not shown in the room picker**: When selecting a destination room in the Move dialog, part names appear but the building doesn't, making it hard to pick the right room across buildings.
+### 2. Add a 4th operation type: "Reassign to Room"
+This directly updates `court_assignments` to place the selected judge into the target room. If someone is already there, they get displaced (unassigned from that room). Unlike "Move" which calls `move_judge` RPC, this does a direct assignment update — simpler and more flexible.
 
-5. **No bulk operations**: If 5 judges switched courtrooms, you have to do 5 individual swaps. No way to queue up multiple changes.
+### 3. Batch workflow for your scenario
+With batch mode ON, you'd queue:
+- Reassign Part 77's judge → Room where 95 currently is
+- Reassign Part 95's judge → wherever they're going
+- Reassign Part 66's judge → Room 1600
 
-### Plan
-
-#### 1. Add building column and filter to the grid
-- Show building (100 or 111) on each row via the `rooms → floors → buildings` join in `useCourtRooms`
-- Add a building filter dropdown next to the existing status filter
-
-#### 2. Add "Assign Judge" action on vacant rooms
-- When a room has no assigned judge, show an "Assign Judge" button instead of presence buttons
-- Opens a dialog where you pick a judge (from personnel_profiles or free text) and optionally set the part
-- Calls an upsert on `court_assignments` to fill the vacant slot
-
-#### 3. Improve the Move/Swap dialog
-- Show building name next to each room in the destination picker (e.g., "1300 · 100 Centre (Part 32 · G. CARRO)")
-- Group rooms by building in the dropdown for easier scanning
-
-#### 4. Add batch mode for multiple swaps
-- Add a "Batch Changes" toggle that lets you queue multiple move/swap operations
-- Shows a preview list of pending changes before committing them all at once
-- Each change is validated for conflicts before execution
+Then hit "Apply All" — all changes execute in sequence.
 
 ### Files to modify
 
-- **`src/hooks/useCourtOperationsRealtime.ts`** — Update `useCourtRooms` query to join through `rooms → floors → buildings` and return building name
-- **`src/components/court/LiveCourtGrid.tsx`** — Add building column, building filter, "Assign Judge" button for vacant rooms, improve Move dialog room picker with building labels, add batch mode UI
+**`src/components/court/LiveCourtGrid.tsx`**:
+- Remove the occupied-room filter from the destination picker (line 612)
+- Add "Reassign" as a 4th radio option in the operation type selector
+- Implement reassign logic: upsert the judge into the target room's `court_assignments`, and clear them from their source room
+- Show a warning when targeting an occupied room ("This will displace Judge X")
 
-### Technical Notes
+### Technical Details
 
-- The building join path is: `court_rooms.room_id → rooms.id → rooms.floor_id → floors.id → floors.building_id → buildings.id`
-- The swap RPC (`swap_courtrooms`) and move RPC (`move_judge`) already exist and work — no database changes needed
-- Assigning a judge to a vacant room will upsert into `court_assignments` using existing patterns from `judgeManagement.ts`
+The reassign handler will:
+1. Update `court_assignments` for the **destination** room with the new judge/part
+2. Clear the judge from the **source** room's assignment
+3. Invalidate all court queries for real-time sync
+
+No new RPCs or database changes needed — this uses existing `court_assignments` upserts.
 
