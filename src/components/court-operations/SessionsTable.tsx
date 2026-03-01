@@ -98,7 +98,33 @@ function InlineCell({
       setEditValue(value);
       setEditing(false);
     } else if (e.key === 'Tab') {
+      e.preventDefault();
       handleSave();
+      // Move to next editable cell in the same row
+      const currentTd = (e.target as HTMLElement).closest('td');
+      if (currentTd) {
+        const row = currentTd.closest('tr');
+        if (row) {
+          const cells = Array.from(row.querySelectorAll('td'));
+          const currentIdx = cells.indexOf(currentTd as HTMLTableCellElement);
+          // Search forward (or backward with Shift) for an editable cell
+          const direction = e.shiftKey ? -1 : 1;
+          for (let i = currentIdx + direction; i >= 0 && i < cells.length; i += direction) {
+            const editable = cells[i].querySelector('[data-editable]') as HTMLElement;
+            if (editable) {
+              editable.click();
+              return;
+            }
+          }
+          // If at end of row, move to next/prev row's first/last editable cell
+          const nextRow = e.shiftKey ? row.previousElementSibling : row.nextElementSibling;
+          if (nextRow) {
+            const nextCells = Array.from(nextRow.querySelectorAll('[data-editable]'));
+            const target = e.shiftKey ? nextCells[nextCells.length - 1] : nextCells[0];
+            if (target) (target as HTMLElement).click();
+          }
+        }
+      }
     }
   }, [handleSave, value]);
 

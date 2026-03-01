@@ -67,36 +67,46 @@ export function useCreateCourtSession() {
     mutationFn: async (input: CreateCourtSessionInput) => {
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase
+      // Insert first without .select().single() to avoid false errors
+      const { error: insertError } = await supabase
         .from('court_sessions')
         .insert({
           ...input,
           created_by: user?.id,
-        })
-        .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, calendar_day, parts_entered_by, defendants, purpose, date_transferred_or_started, top_charge, attorney, notes, created_by, updated_by, created_at, updated_at')
-        .single();
+        });
 
-      if (error) throw error;
-      
-      // Fetch court room data separately if needed
-      if (data && data.court_room_id) {
-        const { data: room } = await supabase
-          .from('court_rooms')
-          .select('id, room_number, courtroom_number, room_id')
-          .eq('id', data.court_room_id)
-          .single();
-        
-        return {
-          ...data,
-          court_rooms: room
-        } as CourtSession;
+      if (insertError) throw insertError;
+
+      // Row was inserted successfully — now try to fetch it back
+      try {
+        const { data: inserted } = await supabase
+          .from('court_sessions')
+          .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, calendar_day, parts_entered_by, defendants, purpose, date_transferred_or_started, top_charge, attorney, notes, created_by, updated_by, created_at, updated_at')
+          .eq('session_date', input.session_date)
+          .eq('period', input.period)
+          .eq('court_room_id', input.court_room_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (inserted?.court_room_id) {
+          const { data: room } = await supabase
+            .from('court_rooms')
+            .select('id, room_number, courtroom_number, room_id')
+            .eq('id', inserted.court_room_id)
+            .single();
+          return { ...inserted, court_rooms: room } as CourtSession;
+        }
+        return inserted as CourtSession;
+      } catch {
+        // Insert succeeded but fetch failed — still a success
+        return {} as CourtSession;
       }
-      
-      return data as CourtSession;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['court-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['conflict-detection'] });
+      queryClient.invalidateQueries({ queryKey: ['existing-sessions-for-create'] });
       toast.success('Session created successfully');
     },
     onError: (error: Error) => {
@@ -104,9 +114,13 @@ export function useCreateCourtSession() {
       const msg = (error?.message || '').toLowerCase();
       if (msg.includes('court_sessions_court_room_id_session_date_period_key') || 
           (msg.includes('duplicate') && msg.includes('court_sessions'))) {
-        toast.error('A session already exists for this courtroom on this date and period. Please edit the existing session instead.');
+        toast.error('Session already exists', {
+          description: 'A session already exists for this courtroom on this date and period. Edit it in the table instead.',
+        });
       } else {
-        toast.error('Failed to create session');
+        toast.error('Failed to create session', {
+          description: error?.message || 'Unknown error',
+        });
       }
     },
   });
