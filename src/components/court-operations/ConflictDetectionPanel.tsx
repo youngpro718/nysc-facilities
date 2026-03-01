@@ -185,78 +185,101 @@ export function ConflictDetectionPanel() {
         </CardContent>
       </Card>
 
-      {/* Conflicts List */}
-      {detectionResult && detectionResult.conflicts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Conflicts Detected</CardTitle>
-            <CardDescription>
-              {detectionResult.conflicts.length} conflict{detectionResult.conflicts.length !== 1 ? "s" : ""} requiring resolution
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {detectionResult.conflicts.map((conflict, index) => (
-                <AccordionItem key={conflict.id} value={`conflict-${index}`}>
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-3 w-full">
-                      <Badge variant={getSeverityColor(conflict.severity)} className="flex items-center gap-1">
-                        {getSeverityIcon(conflict.severity)}
-                        {conflict.severity}
-                      </Badge>
-                      <div className="flex items-center gap-2">
-                        {getConflictIcon(conflict.type)}
-                        <span className="font-medium">{conflict.title}</span>
+      {/* Conflicts List - grouped by type, sorted by severity */}
+      {detectionResult && detectionResult.conflicts.length > 0 && (() => {
+        // Group conflicts by type
+        const grouped = new Map<string, typeof detectionResult.conflicts>();
+        const typeLabels: Record<string, string> = {
+          double_booked_judge: "Double-Booked Judges",
+          duplicate_part: "Duplicate Part Numbers",
+          missing_required_staff: "Missing Required Staff",
+          invalid_assignment: "Invalid Assignments",
+        };
+        const severityOrder = { critical: 0, high: 1, medium: 2 };
+        
+        // Sort all conflicts by severity first
+        const sorted = [...detectionResult.conflicts].sort(
+          (a, b) => (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3)
+        );
+        
+        sorted.forEach(c => {
+          if (!grouped.has(c.type)) grouped.set(c.type, []);
+          grouped.get(c.type)!.push(c);
+        });
+
+        // Sort groups: put groups with critical items first
+        const sortedGroups = [...grouped.entries()].sort(([, a], [, b]) => {
+          const aMin = Math.min(...a.map(c => severityOrder[c.severity] ?? 3));
+          const bMin = Math.min(...b.map(c => severityOrder[c.severity] ?? 3));
+          return aMin - bMin;
+        });
+
+        return sortedGroups.map(([type, conflicts]) => (
+          <Card key={type}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                {getConflictIcon(type)}
+                {typeLabels[type] || type}
+                <Badge variant={conflicts.some(c => c.severity === 'critical') ? 'destructive' : 'default'} className="ml-auto">
+                  {conflicts.length}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                {conflicts.map((conflict, index) => (
+                  <AccordionItem key={conflict.id} value={`conflict-${index}`}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3 w-full">
+                        <Badge variant={getSeverityColor(conflict.severity)} className="flex items-center gap-1">
+                          {getSeverityIcon(conflict.severity)}
+                          {conflict.severity}
+                        </Badge>
+                        <span className="font-medium text-sm">{conflict.title}</span>
                       </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3 pt-2">
-                      <div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-3 pt-2">
                         <p className="text-sm text-muted-foreground">{conflict.description}</p>
+
+                        {conflict.affectedRooms.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-1">Affected Rooms:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {conflict.affectedRooms.map(room => (
+                                <Badge key={room} variant="outline">{room}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {conflict.affectedPersonnel.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-1">Affected Personnel:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {conflict.affectedPersonnel.map(person => (
+                                <Badge key={person} variant="secondary">{person}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <Alert>
+                          <Info className="h-4 w-4" />
+                          <AlertTitle>Suggested Action</AlertTitle>
+                          <AlertDescription>{conflict.suggestedAction}</AlertDescription>
+                        </Alert>
                       </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </CardContent>
+          </Card>
+        ));
+      })()}
 
-                      {conflict.affectedRooms.length > 0 && (
-                        <div>
-                          <p className="text-sm font-medium mb-1">Affected Rooms:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {conflict.affectedRooms.map(room => (
-                              <Badge key={room} variant="outline">
-                                {room}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {conflict.affectedPersonnel.length > 0 && (
-                        <div>
-                          <p className="text-sm font-medium mb-1">Affected Personnel:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {conflict.affectedPersonnel.map(person => (
-                              <Badge key={person} variant="secondary">
-                                {person}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>Suggested Action</AlertTitle>
-                        <AlertDescription>{conflict.suggestedAction}</AlertDescription>
-                      </Alert>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Warnings List */}
+      {/* Warnings List - sorted by severity */}
       {detectionResult && detectionResult.warnings.length > 0 && (
         <Card>
           <CardHeader>
@@ -267,10 +290,20 @@ export function ConflictDetectionPanel() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {detectionResult.warnings.map((warning) => (
+              {[...detectionResult.warnings]
+                .sort((a, b) => {
+                  const order = { high: 0, medium: 1, low: 2 };
+                  return (order[a.severity || 'low'] ?? 3) - (order[b.severity || 'low'] ?? 3);
+                })
+                .map((warning) => (
                 <Alert key={warning.id} variant="default">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>{warning.title}</AlertTitle>
+                  <AlertTitle className="flex items-center gap-2">
+                    {warning.title}
+                    {warning.severity && (
+                      <Badge variant="outline" className="text-[10px]">{warning.severity}</Badge>
+                    )}
+                  </AlertTitle>
                   <AlertDescription>
                     {warning.description}
                     {warning.affectedRooms.length > 0 && (

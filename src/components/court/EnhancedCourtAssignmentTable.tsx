@@ -10,6 +10,7 @@ import { AlertTriangle, Search, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
+import { ConflictDetectionService, Conflict, Warning } from "@/services/court/conflictDetectionService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
@@ -86,6 +87,26 @@ export const EnhancedCourtAssignmentTable = () => {
     () => new Set((shutdowns || []).map((s: Record<string, unknown>) => s.court_room_id)),
     [shutdowns]
   );
+
+  // Fetch scheduling conflicts
+  const { data: conflictResult } = useQuery({
+    queryKey: ["assignment-conflicts"],
+    queryFn: () => ConflictDetectionService.detectConflicts(),
+    staleTime: 30000,
+  });
+
+  // Build a map of room_number -> conflicts for inline markers
+  const roomConflictMap = useMemo(() => {
+    const map = new Map<string, (Conflict | Warning)[]>();
+    if (!conflictResult) return map;
+    [...conflictResult.conflicts, ...conflictResult.warnings].forEach(item => {
+      item.affectedRooms.forEach(roomNum => {
+        if (!map.has(roomNum)) map.set(roomNum, []);
+        map.get(roomNum)!.push(item);
+      });
+    });
+    return map;
+  }, [conflictResult]);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -387,6 +408,7 @@ export const EnhancedCourtAssignmentTable = () => {
                 const hasMaintenance = row.court_room_id ? maintenanceSet.has(row.court_room_id) : false;
                 const isIncomplete = row.is_active && !(row.justice && row.justice.trim());
                 const isRecentlyAffected = recentlyAffectedRooms.includes(row.room_id);
+                const roomConflicts = roomConflictMap.get(row.room_number) || [];
 
                 return (
                   <AssignmentListItem
@@ -399,6 +421,7 @@ export const EnhancedCourtAssignmentTable = () => {
                     hasMaintenance={hasMaintenance}
                     isIncomplete={isIncomplete}
                     isRecentlyAffected={isRecentlyAffected}
+                    conflicts={roomConflicts}
                   />
                 );
               })}

@@ -1,8 +1,17 @@
 import { Badge } from "@/components/ui/badge";
-import { GripVertical, AlertTriangle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { GripVertical, AlertTriangle, XCircle, Users, FileText, AlertCircle } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+
+interface ConflictInfo {
+  id: string;
+  type: string;
+  severity?: string;
+  title: string;
+  description: string;
+}
 
 interface CourtAssignmentRow {
   room_id: string;
@@ -34,6 +43,7 @@ interface AssignmentListItemProps {
   hasMaintenance: boolean;
   isIncomplete: boolean;
   isRecentlyAffected: boolean;
+  conflicts?: ConflictInfo[];
 }
 
 export const AssignmentListItem = ({
@@ -45,6 +55,7 @@ export const AssignmentListItem = ({
   hasMaintenance,
   isIncomplete,
   isRecentlyAffected,
+  conflicts = [],
 }: AssignmentListItemProps) => {
   const {
     attributes,
@@ -127,6 +138,36 @@ export const AssignmentListItem = ({
             <span className="text-xs text-muted-foreground font-medium">Pt {row.part}</span>
           )}
           {urgentIssues && <AlertTriangle className="h-3 w-3 text-destructive shrink-0" />}
+          {/* Inline conflict markers */}
+          {conflicts.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex items-center gap-0.5 shrink-0">
+                  {conflicts.some(c => (c as any).severity === 'critical') ? (
+                    <XCircle className="h-3.5 w-3.5 text-red-500" />
+                  ) : conflicts.some(c => c.type === 'double_booked_judge' || c.type === 'missing_required_staff') ? (
+                    <Users className="h-3.5 w-3.5 text-amber-500" />
+                  ) : conflicts.some(c => c.type === 'duplicate_part') ? (
+                    <FileText className="h-3.5 w-3.5 text-amber-500" />
+                  ) : (
+                    <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                  {conflicts.length > 1 && (
+                    <span className="text-[10px] font-bold text-amber-500">{conflicts.length}</span>
+                  )}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <div className="space-y-1">
+                  {conflicts.map(c => (
+                    <div key={c.id} className="text-xs">
+                      <span className="font-medium">{c.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
         <div className="flex items-center gap-1.5 mt-0.5">
           {row.justice && (
