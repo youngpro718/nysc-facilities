@@ -1,33 +1,39 @@
 
 
-## Problem
+## Audit Results: Session Creation Failures
 
-Three judges (B. LANTRY, M. BEST, S. ANTIGNANI) have `is_active: false` but `judge_status = 'active'` in `personnel_profiles`. The hook filters them out via `is_active` but they never appear in the departed list either — they're ghosts in the system.
+### Root Cause
 
-A. CLOTT is the only one properly marked (`is_active: false` + `judge_status: departed`).
+The database logs show **repeated duplicate key violations** on the `court_sessions_court_room_id_session_date_period_key` unique constraint. Every recent create attempt fails with:
 
-## Fix
+> `duplicate key value violates unique constraint "court_sessions_court_room_id_session_date_period_key"`
 
-### 1. Data fix — correct the 3 inconsistent judge records
-Run a migration to set `judge_status = 'departed'` for the 3 judges who have `is_active = false` but `judge_status = 'active'`:
-```sql
-UPDATE personnel_profiles
-SET judge_status = 'departed'
-WHERE is_active = false AND judge_status = 'active' AND primary_role = 'judge';
-```
+This means you're trying to create a session for a **room + date + period combination that already exists**. The constraint `UNIQUE (court_room_id, session_date, period)` prevents duplicates.
 
-### 2. Code fix — make the hook resilient to this inconsistency going forward
-In `useCourtPersonnel.ts`, update the `judgeStatus` mapping so any judge with `is_active = false` is treated as `departed` regardless of `judge_status` value:
-```ts
-judgeStatus: person.is_active === false ? 'departed' : (person.judge_status as JudgeStatus) || 'active',
-```
+### Why It Feels Broken
 
-This ensures the cards accurately reflect:
-- **Judges count**: only truly active judges
-- **Departed badge**: all removed/inactive judges show in the departed count
-- No judges fall into an invisible limbo state
+The UI gives you a generic "Failed to create session" toast with no explanation of *why*. It doesn't tell you that a session already exists for that room, and doesn't prevent you from selecting rooms that already have sessions.
 
-### Summary of current judge data after fix
-- **28 active judges** (including 1 JHO: R. PICKHOLZ)
-- **4 departed** (A. CLOTT, B. LANTRY, M. BEST, S. ANTIGNANI)
+### Proposed Fixes
+
+#### 1. Filter out rooms that already have sessions for this date/period
+In `CreateSessionDialog.tsx`, the room query already fetches rooms but doesn't check for existing sessions. Add a query to fetch existing sessions for the selected date/period, then:
+- Mark rooms that already have sessions with a "Session exists" badge
+- Disable selecting those rooms, or show a warning
+
+#### 2. Improve error messaging for duplicate constraint violations
+In `useCourtSessions.ts` `useCreateCourtSession`, update the `onError` handler to detect the unique constraint error and show a specific message like "A session already exists for this room on this date/period."
+
+#### 3. Add an "upsert or edit" option
+When a duplicate is detected, offer to navigate to the existing session for editing instead of failing silently.
+
+### Implementation Details
+
+**File: `src/hooks/useCourtSessions.ts`** (lines 102-105)
+- Parse the error message for `court_sessions_court_room_id_session_date_period_key` and show a descriptive toast: "A session already exists for this courtroom on this date and period. Please edit the existing session instead."
+
+**File: `src/components/court-operations/CreateSessionDialog.tsx`**
+- Add a query for existing sessions on the selected date/period/building
+- Cross-reference with room list to mark already-occupied rooms
+- Disable or visually flag those rooms in the dropdown
 
