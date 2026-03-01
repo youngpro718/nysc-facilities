@@ -83,7 +83,7 @@ export const useCourtPersonnel = () => {
           room: undefined,
           floor: undefined,
           department: person.department || undefined,
-          judgeStatus: (person.judge_status as JudgeStatus) || 'active',
+          judgeStatus: person.is_active === false ? 'departed' : (person.judge_status as JudgeStatus) || 'active',
           departedDate: person.departed_date || undefined,
           courtAttorney: person.court_attorney || undefined,
           chambersRoom: person.chambers_room_number || undefined,
