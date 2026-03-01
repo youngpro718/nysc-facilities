@@ -17,7 +17,7 @@ export const AssignmentManagementPanel = () => {
   const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
   const [addJudgeOpen, setAddJudgeOpen] = useState(false);
   const [addStaffOpen, setAddStaffOpen] = useState(false);
-  const { getCourtImpactSummary, getRecentlyAffectedRooms } = useCourtIssuesIntegration();
+  const { getCourtImpactSummary, getRecentlyAffectedRooms, isLoading: issuesLoading } = useCourtIssuesIntegration();
   const { personnel } = useCourtPersonnel();
   const impactSummary = getCourtImpactSummary();
   const recentlyAffectedRooms = getRecentlyAffectedRooms();
@@ -32,7 +32,7 @@ export const AssignmentManagementPanel = () => {
 
       const { data: assignments } = await supabase
         .from("court_assignments")
-        .select("room_id, part")
+        .select("room_id, part, justice")
         .not("part", "is", null)
         .not("part", "eq", "");
 
@@ -55,7 +55,13 @@ export const AssignmentManagementPanel = () => {
       let relocatedCount = 0;
       // track inactive rooms only for flow control; not surfaced in metrics
 
-      const assignedRoomIds = new Set((assignments || []).map((a: Record<string, unknown>) => a.room_id).filter(Boolean));
+      // A room is only truly "assigned" if it has both a part AND a non-empty justice (judge)
+      const assignedRoomIds = new Set(
+        (assignments || [])
+          .filter((a: Record<string, unknown>) => a.justice && String(a.justice).trim() !== "")
+          .map((a: Record<string, unknown>) => a.room_id)
+          .filter(Boolean)
+      );
 
       courtrooms?.forEach(room => {
         const roomShutdown = shutdownMap.get(room.id);
@@ -139,13 +145,13 @@ export const AssignmentManagementPanel = () => {
       </div>
 
       {/* Attention Banner — explains what needs attention */}
-      {viewMode === 'edit' && ((assignmentStats?.unassignedRooms || 0) > 0 || (impactSummary?.totalAffectedRooms || 0) > 0) && (
+      {viewMode === 'edit' && ((assignmentStats?.unassignedRooms || 0) > 0 || (!issuesLoading && (impactSummary?.totalAffectedRooms || 0) > 0)) && (
         <div className="flex items-center gap-2 p-2.5 sm:p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs sm:text-sm">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>
             {assignmentStats?.unassignedRooms ? `${assignmentStats.unassignedRooms} room${assignmentStats.unassignedRooms > 1 ? 's' : ''} unassigned` : ''}
-            {assignmentStats?.unassignedRooms && (impactSummary?.totalAffectedRooms || 0) > 0 ? ' · ' : ''}
-            {(impactSummary?.totalAffectedRooms || 0) > 0 ? `${impactSummary?.totalAffectedRooms} with active issues` : ''}
+            {assignmentStats?.unassignedRooms && !issuesLoading && (impactSummary?.totalAffectedRooms || 0) > 0 ? ' · ' : ''}
+            {!issuesLoading && (impactSummary?.totalAffectedRooms || 0) > 0 ? `${impactSummary?.totalAffectedRooms} with active issues` : ''}
           </span>
         </div>
       )}
