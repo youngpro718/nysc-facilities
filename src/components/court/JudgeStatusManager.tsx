@@ -859,9 +859,18 @@ export function AddJudgeDialog({
       queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
       queryClient.invalidateQueries({ queryKey: ["assignment-stats"] });
       queryClient.invalidateQueries({ queryKey: ["term-sheet-board"] });
+      queryClient.invalidateQueries({ queryKey: ["court-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["court-operations"] });
+      const assignmentNote = part && courtroomId
+        ? ` and assigned to Part ${part}`
+        : part
+        ? ` with Part ${part} assignment (no room yet)`
+        : courtroomId
+        ? ` and assigned to Room ${courtrooms.find(c => c.id === courtroomId)?.room_number || ''}`
+        : '';
       toast({
         title: "Judge added",
-        description: `${firstName.charAt(0).toUpperCase()}. ${lastName.toUpperCase()} has been added${part ? ` and assigned to Part ${part}` : ""}.`,
+        description: `${firstName.charAt(0).toUpperCase()}. ${lastName.toUpperCase()} has been added${assignmentNote}.`,
       });
       resetForm();
       onOpenChange(false);
@@ -1048,12 +1057,14 @@ export function AddJudgeDialog({
               <div className="text-xs text-muted-foreground space-y-0.5">
                 {courtAttorney && <p>Court Attorney: {courtAttorney}</p>}
                 {chambersRoom && <p>Chambers: Room {chambersRoom}</p>}
-                {part && <p>Part: {part}</p>}
-                {courtroomId && (
-                  <p>
-                    Courtroom: Room{" "}
-                    {courtrooms.find((c) => c.id === courtroomId)?.room_number || "—"}
-                  </p>
+                {part && courtroomId && (
+                  <p>✓ Part {part} in Room {courtrooms.find((c) => c.id === courtroomId)?.room_number || "—"}</p>
+                )}
+                {part && !courtroomId && (
+                  <p>✓ Will create Part {part} assignment (can assign room later)</p>
+                )}
+                {!part && courtroomId && (
+                  <p>✓ Assigned to Room {courtrooms.find((c) => c.id === courtroomId)?.room_number || "—"} (no part yet)</p>
                 )}
               </div>
             </div>
