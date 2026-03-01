@@ -81,7 +81,7 @@ export function useCreateCourtSession() {
       try {
         const { data: inserted } = await supabase
           .from('court_sessions')
-          .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, calendar_day, parts_entered_by, defendants, purpose, date_transferred_or_started, top_charge, attorney, notes, created_by, updated_by, created_at, updated_at')
+          .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, calendar_day, parts_entered_by, defendants, purpose, date_transferred_or_started, top_charge, attorney, calendar_count, calendar_count_date, out_dates, notes, created_by, updated_by, created_at, updated_at')
           .eq('session_date', input.session_date)
           .eq('period', input.period)
           .eq('court_room_id', input.court_room_id)
@@ -144,7 +144,7 @@ export function useUpdateCourtSession() {
           updated_by: user?.id,
         })
         .eq('id', id)
-        .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, calendar_day, parts_entered_by, defendants, purpose, date_transferred_or_started, top_charge, attorney, notes, created_by, updated_by, created_at, updated_at')
+        .select('id, session_date, period, building_code, court_room_id, assignment_id, status, status_detail, estimated_finish_date, judge_name, part_number, clerk_names, sergeant_name, calendar_day, parts_entered_by, defendants, purpose, date_transferred_or_started, top_charge, attorney, calendar_count, calendar_count_date, out_dates, notes, created_by, updated_by, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -244,6 +244,15 @@ export function useCopyYesterdaySessions() {
         part_number: session.part_number,
         clerk_names: session.clerk_names,
         sergeant_name: session.sergeant_name,
+        parts_entered_by: session.parts_entered_by,
+        defendants: session.defendants,
+        purpose: session.purpose,
+        date_transferred_or_started: session.date_transferred_or_started,
+        top_charge: session.top_charge,
+        attorney: session.attorney,
+        calendar_count: session.calendar_count,
+        calendar_count_date: session.calendar_count_date,
+        out_dates: session.out_dates,
         notes: session.notes,
         created_by: user?.id,
       }));
@@ -263,6 +272,72 @@ export function useCopyYesterdaySessions() {
     onError: (error: Error) => {
       logger.error('Error copying sessions:', error);
       toast.error(error.message || 'Failed to copy sessions');
+    },
+  });
+}
+
+/**
+ * Copy a single session's data from yesterday (same room) into today's session.
+ */
+export function useCopySessionFromYesterday() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ sessionId, sessionDate, courtRoomId, period, buildingCode }: {
+      sessionId: string;
+      sessionDate: string;
+      courtRoomId: string;
+      period: SessionPeriod;
+      buildingCode: BuildingCode;
+    }) => {
+      // Find yesterday's session for the same room
+      const yesterday = new Date(sessionDate);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+
+      const { data: yesterdaySession, error } = await supabase
+        .from('court_sessions')
+        .select('status, status_detail, defendants, purpose, date_transferred_or_started, top_charge, attorney, parts_entered_by, calendar_count, calendar_count_date, out_dates, estimated_finish_date, notes')
+        .eq('session_date', yesterdayStr)
+        .eq('court_room_id', courtRoomId)
+        .eq('period', period)
+        .eq('building_code', buildingCode)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!yesterdaySession) throw new Error('No session found for this room yesterday');
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error: updateError } = await supabase
+        .from('court_sessions')
+        .update({
+          status: yesterdaySession.status,
+          status_detail: yesterdaySession.status_detail,
+          defendants: yesterdaySession.defendants,
+          purpose: yesterdaySession.purpose,
+          date_transferred_or_started: yesterdaySession.date_transferred_or_started,
+          top_charge: yesterdaySession.top_charge,
+          attorney: yesterdaySession.attorney,
+          parts_entered_by: yesterdaySession.parts_entered_by,
+          calendar_count: yesterdaySession.calendar_count,
+          calendar_count_date: yesterdaySession.calendar_count_date,
+          out_dates: yesterdaySession.out_dates,
+          estimated_finish_date: yesterdaySession.estimated_finish_date,
+          notes: yesterdaySession.notes,
+          updated_by: user?.id,
+        })
+        .eq('id', sessionId);
+
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['court-sessions'] });
+      toast.success('Copied from yesterday');
+    },
+    onError: (error: Error) => {
+      logger.error('Error copying from yesterday:', error);
+      toast.error(error.message || 'Failed to copy from yesterday');
     },
   });
 }
