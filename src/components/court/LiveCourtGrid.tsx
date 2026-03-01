@@ -24,7 +24,7 @@ function PresenceDot({ present }: { present: boolean }) {
 // ─── Batch Change Types ───
 interface BatchChange {
   id: string;
-  type: 'swap' | 'move' | 'assign';
+  type: 'swap' | 'move' | 'assign' | 'reassign';
   description: string;
   fromRoomId?: string;
   toRoomId?: string;
@@ -99,6 +99,20 @@ export function LiveCourtGrid() {
           if (error) throw error;
         } else if (change.type === 'move' && change.toRoomId && change.judgeName) {
           await onMoveJudge(change.fromRoomId || null, change.toRoomId, change.judgeName, actorId, change.isCovering);
+        } else if (change.type === 'reassign' && change.toRoomId && change.judgeName) {
+          // Reassign: put judge in destination, clear from source
+          const { error: destErr } = await supabase
+            .from("court_assignments")
+            .update({ justice: change.judgeName })
+            .eq("room_id", change.toRoomId);
+          if (destErr) throw destErr;
+          if (change.fromRoomId) {
+            const { error: srcErr } = await supabase
+              .from("court_assignments")
+              .update({ justice: null })
+              .eq("room_id", change.fromRoomId);
+            if (srcErr) throw srcErr;
+          }
         } else if (change.type === 'assign' && change.toRoomId) {
           const targetRoom = rooms?.find((r: any) => r.room_id === change.toRoomId);
           if (!targetRoom) throw new Error("Room not found");
@@ -596,6 +610,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
   const [toRoom, setToRoom] = useState<string>("");
   const [isCovering, setIsCovering] = useState(false);
   const [isSwap, setIsSwap] = useState(false);
+  const [isReassign, setIsReassign] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -608,7 +623,8 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
     const filtered = rooms.filter((r: any) => {
       if (r.room_id === currentRoomId) return false;
       if (!r.is_active) return false;
-      if (!isSwap && r.assigned_judge?.trim()) return false;
+      // Show all rooms for swap and reassign; only empty rooms for move
+      if (!isSwap && !isReassign && r.assigned_judge?.trim()) return false;
       return true;
     });
     const groups: Record<string, any[]> = {};
@@ -618,23 +634,34 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
       groups[bldg].push(r);
     }
     return groups;
-  }, [rooms, currentRoomId, isSwap]);
+  }, [rooms, currentRoomId, isSwap, isReassign]);
+
+  // Check if selected destination has a judge (for displacement warning)
+  const destinationRoom = useMemo(() => {
+    if (!toRoom || !rooms) return null;
+    return rooms.find((r: any) => r.room_id === toRoom) as any;
+  }, [toRoom, rooms]);
+  const willDisplace = isReassign && destinationRoom?.assigned_judge?.trim();
 
   const handleMoveJudge = async () => {
     if (batchMode) {
       const toRoomData = rooms?.find((r: any) => r.room_id === toRoom) as any;
+      const opType = isSwap ? 'swap' : isReassign ? 'reassign' : 'move';
+      const desc = isSwap
+        ? `Swap ${currentRoomNumber} ↔ ${toRoomData?.room_number}`
+        : isReassign
+          ? `Reassign ${judgeName} → ${toRoomData?.room_number}${willDisplace ? ` (displaces ${toRoomData.assigned_judge})` : ''}`
+          : `Move ${judgeName} → ${toRoomData?.room_number}`;
       onAddBatchChange({
         id: crypto.randomUUID(),
-        type: isSwap ? 'swap' : 'move',
-        description: isSwap
-          ? `Swap ${currentRoomNumber} ↔ ${toRoomData?.room_number}`
-          : `Move ${judgeName} → ${toRoomData?.room_number}`,
+        type: opType,
+        description: desc,
         fromRoomId: currentRoomId,
         toRoomId: toRoom,
         judgeName,
         isCovering,
       });
-      toast({ title: "Added to batch", description: `Queued ${isSwap ? 'swap' : 'move'} for ${currentRoomNumber}` });
+      toast({ title: "Added to batch", description: `Queued ${opType} for ${currentRoomNumber}` });
       onOpenChange(false);
       return;
     }
@@ -643,7 +670,29 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
     try {
       const toRoomData = rooms?.find((r: any) => r.room_id === toRoom) as any;
 
-      if (isSwap) {
+      if (isReassign) {
+        // Reassign: place judge in destination, clear from source
+        // 1. Update destination assignment
+        const { error: destErr } = await supabase
+          .from("court_assignments")
+          .update({ justice: judgeName })
+          .eq("room_id", toRoom);
+        if (destErr) throw destErr;
+
+        // 2. Clear source assignment
+        const { error: srcErr } = await supabase
+          .from("court_assignments")
+          .update({ justice: null })
+          .eq("room_id", currentRoomId);
+        if (srcErr) throw srcErr;
+
+        queryClient.invalidateQueries({ queryKey: ["court"] });
+        queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
+        const msg = willDisplace
+          ? `${judgeName} → ${toRoomData?.room_number} (displaced ${toRoomData.assigned_judge})`
+          : `${judgeName} → ${toRoomData?.room_number}`;
+        toast({ title: "✅ Judge reassigned", description: msg });
+      } else if (isSwap) {
         const { error } = await supabase.rpc('swap_courtrooms', {
           p_room_a_id: currentRoomId,
           p_room_b_id: toRoom,
@@ -662,6 +711,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
       setJudgeName("");
       setToRoom("");
       setIsSwap(false);
+      setIsReassign(false);
     } catch (error: any) {
       toast({ title: "Failed", description: error?.message || String(error), variant: "destructive" });
     } finally {
@@ -717,21 +767,28 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
             <label className="block text-sm font-medium">Operation Type</label>
             <div className="space-y-2">
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="radio" checked={!isSwap && !isCovering} onChange={() => { setIsSwap(false); setIsCovering(false); }} className="mt-1" />
+                <input type="radio" checked={!isSwap && !isCovering && !isReassign} onChange={() => { setIsSwap(false); setIsCovering(false); setIsReassign(false); }} className="mt-1" />
                 <div>
                   <div className="font-medium text-sm">➡️ Move Entire Part</div>
                   <div className="text-xs text-muted-foreground">Moves judge, clerks, part to an empty room</div>
                 </div>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="radio" checked={!isSwap && isCovering} onChange={() => { setIsSwap(false); setIsCovering(true); }} className="mt-1" />
+                <input type="radio" checked={isReassign} onChange={() => { setIsReassign(true); setIsSwap(false); setIsCovering(false); }} className="mt-1" />
+                <div>
+                  <div className="font-medium text-sm">📌 Reassign to Room</div>
+                  <div className="text-xs text-muted-foreground">Place judge into any room — occupied or empty. Displaces current occupant if any.</div>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="radio" checked={!isSwap && isCovering && !isReassign} onChange={() => { setIsSwap(false); setIsCovering(true); setIsReassign(false); }} className="mt-1" />
                 <div>
                   <div className="font-medium text-sm">🔄 Covering Another Part</div>
                   <div className="text-xs text-muted-foreground">Judge temporarily covers destination room</div>
                 </div>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="radio" checked={isSwap} onChange={() => { setIsSwap(true); setIsCovering(false); }} className="mt-1" />
+                <input type="radio" checked={isSwap} onChange={() => { setIsSwap(true); setIsCovering(false); setIsReassign(false); }} className="mt-1" />
                 <div>
                   <div className="font-medium text-sm">🔀 Swap Courtrooms</div>
                   <div className="text-xs text-muted-foreground">Exchanges all assignments between two courtrooms</div>
@@ -740,11 +797,21 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
             </div>
           </div>
 
+          {/* Displacement warning */}
+          {willDisplace && (
+            <div className="flex items-start gap-2 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div className="text-xs">
+                <span className="font-semibold">This will displace {destinationRoom.assigned_judge}</span> from Room {destinationRoom.room_number}. They will become unassigned.
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
             <Button type="button" disabled={!toRoom || (!isSwap && !judgeName) || saving} onClick={handleMoveJudge}>
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-              {batchMode ? '📋 Add to Batch' : (isSwap ? '🔀 Confirm Swap' : '➡️ Confirm Move')}
+              {batchMode ? '📋 Add to Batch' : isReassign ? '📌 Confirm Reassign' : isSwap ? '🔀 Confirm Swap' : '➡️ Confirm Move'}
             </Button>
           </div>
         </div>
