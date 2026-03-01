@@ -101,15 +101,20 @@ export class ConflictDetectionService {
     const conflicts: Conflict[] = [];
     judgeAssignments.forEach((rooms, judge) => {
       if (rooms.length > 1) {
+        const roomNumbers = rooms.map(r => (r as any).rooms?.room_number || r.room_id);
+        const roomParts = rooms.map(r => {
+          const rn = (r as any).rooms?.room_number || r.room_id;
+          return r.part ? `Room ${rn} (Part ${r.part})` : `Room ${rn}`;
+        });
         conflicts.push({
           id: `double-booked-${judge}`,
           type: "double_booked_judge",
           severity: "critical",
-          title: `Judge ${judge} is double-booked`,
-          description: `${judge} is assigned to ${rooms.length} courtrooms simultaneously`,
-          affectedRooms: rooms.map(r => (r as any).rooms?.room_number || r.room_id),
+          title: `${judge} assigned to ${rooms.length} rooms`,
+          description: `Justice ${judge} appears in ${roomParts.join(" and ")}. Only one assignment should be active at a time.`,
+          affectedRooms: roomNumbers,
           affectedPersonnel: [judge],
-          suggestedAction: `Remove ${judge} from all but one courtroom or verify if this is intentional (e.g., covering multiple parts)`,
+          suggestedAction: `Go to ${roomParts.slice(1).join(" or ")} and either clear the justice field or reassign to a different judge.`,
         });
       }
     });
@@ -148,15 +153,20 @@ export class ConflictDetectionService {
     const conflicts: Conflict[] = [];
     partAssignments.forEach((rooms, part) => {
       if (rooms.length > 1) {
+        const roomNumbers = rooms.map(r => (r as any).rooms?.room_number || r.room_id);
+        const roomDetails = rooms.map(r => {
+          const rn = (r as any).rooms?.room_number || r.room_id;
+          return r.justice ? `Room ${rn} (${r.justice})` : `Room ${rn}`;
+        });
         conflicts.push({
           id: `duplicate-part-${part}`,
           type: "duplicate_part",
           severity: "high",
-          title: `Part ${part} is assigned to multiple rooms`,
-          description: `Part number ${part} appears in ${rooms.length} different courtroom assignments`,
-          affectedRooms: rooms.map(r => (r as any).rooms?.room_number || r.room_id),
+          title: `Part ${part} duplicated across ${rooms.length} rooms`,
+          description: `Part ${part} is assigned to ${roomDetails.join(" and ")}. Each part number must be unique.`,
+          affectedRooms: roomNumbers,
           affectedPersonnel: rooms.map(r => r.justice).filter(Boolean),
-          suggestedAction: `Ensure each part number is unique. Update one of the assignments to use a different part number.`,
+          suggestedAction: `Open ${roomDetails.slice(1).join(" or ")} and change the part number to resolve the duplicate.`,
         });
       }
     });
@@ -188,31 +198,28 @@ export class ConflictDetectionService {
       const missing: string[] = [];
       const roomNumber = (assignment as any).rooms?.room_number || assignment.room_id;
 
-      // Check for missing judge
       if (!assignment.justice || assignment.justice.trim() === "") {
-        missing.push("Judge");
+        missing.push("Justice");
       }
-
-      // Check for missing clerks
       if (!assignment.clerks || assignment.clerks.length === 0) {
-        missing.push("Clerk(s)");
+        missing.push("Clerk");
       }
-
-      // Check for missing sergeant
       if (!assignment.sergeant || assignment.sergeant.trim() === "") {
         missing.push("Sergeant");
       }
 
       if (missing.length > 0) {
+        // Severity based on how many roles are missing
+        const severity: "critical" | "high" | "medium" = missing.length >= 3 ? "critical" : missing.length >= 2 ? "high" : "medium";
         conflicts.push({
           id: `missing-staff-${assignment.room_id}`,
           type: "missing_required_staff",
-          severity: "high",
-          title: `Room ${roomNumber} missing required staff`,
-          description: `Missing: ${missing.join(", ")}`,
+          severity,
+          title: `Room ${roomNumber}: ${missing.join(", ")} needed`,
+          description: `Room ${roomNumber}${assignment.part ? ` (Part ${assignment.part})` : ''} is missing ${missing.join(" and ")}. ${missing.length === 3 ? 'This courtroom is entirely unstaffed.' : `Currently has ${assignment.justice || 'no justice'}.`}`,
           affectedRooms: [roomNumber],
           affectedPersonnel: [],
-          suggestedAction: `Assign ${missing.join(", ")} to complete this courtroom assignment`,
+          suggestedAction: `Open Room ${roomNumber} in the Assignments tab and assign the missing ${missing.join(" and ")}.`,
         });
       }
     });
@@ -244,27 +251,24 @@ export class ConflictDetectionService {
       const issues: string[] = [];
       const roomNumber = (assignment as any).rooms?.room_number || assignment.room_id;
 
-      // Check for missing part number
       if (!assignment.part || assignment.part.trim() === "") {
         issues.push("Part number");
       }
-
-      // Check for missing contact info
       if (!assignment.fax || assignment.fax.trim() === "") {
-        issues.push("Fax number");
+        issues.push("Fax");
       }
-
       if (!assignment.tel || assignment.tel.trim() === "") {
-        issues.push("Phone number");
+        issues.push("Phone");
       }
 
       if (issues.length > 0) {
         warnings.push({
           id: `incomplete-${assignment.room_id}`,
           type: "incomplete_assignment",
-          title: `Incomplete assignment for room ${roomNumber}`,
-          description: `Missing: ${issues.join(", ")}`,
+          title: `Room ${roomNumber}: missing ${issues.join(", ")}`,
+          description: `Room ${roomNumber}${assignment.justice ? ` (${assignment.justice})` : ''} is missing ${issues.join(" and ")}. ${issues.includes("Part number") ? "Part number is required for scheduling." : "Contact info helps with daily operations."}`,
           affectedRooms: [roomNumber],
+          severity: issues.includes("Part number") ? "medium" : "low",
         });
       }
     });
