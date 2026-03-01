@@ -9,6 +9,7 @@ import { JudgeStatusBadge, JudgeStatusDropdown } from "./JudgeStatusManager";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
 import { Save, X, Check, Calendar as CalendarIcon, MapPin, Phone, Printer, Users, Gavel, Shield, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { MaintenanceShutdownSection } from "./MaintenanceShutdownSection";
 
 interface CourtAssignmentRow {
   room_id: string;
@@ -235,6 +236,9 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
 
       {/* Fields */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        {hasMaintenance && (
+          <MaintenanceShutdownSection courtRoomId={row.court_room_id} />
+        )}
         {renderField('part', 'Part', <MapPin className="h-3.5 w-3.5" />, row.part)}
         {renderField('justice', 'Justice', <Gavel className="h-3.5 w-3.5" />, row.justice)}
         {renderField('clerks', 'Clerks', <Users className="h-3.5 w-3.5" />, row.clerks)}
