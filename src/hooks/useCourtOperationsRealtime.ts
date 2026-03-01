@@ -223,7 +223,7 @@ export function useCourtRooms() {
         .from("court_rooms")
         .select("id, room_id, room_number, courtroom_number, is_active, maintenance_status, operational_status")
         .order("room_number");
-      
+
       if (roomsError) throw roomsError;
       if (!rooms) return [];
 
@@ -241,15 +241,43 @@ export function useCourtRooms() {
       
       if (attendanceError) throw attendanceError;
 
+      // Fetch building info via rooms → floors → buildings
+      const roomIds = rooms.map(r => r.room_id);
+      const { data: roomBuildings } = await supabase
+        .from("rooms")
+        .select("id, floor_id")
+        .in("id", roomIds);
+      
+      const floorIds = [...new Set((roomBuildings || []).map(r => r.floor_id).filter(Boolean))] as string[];
+      const { data: floorData } = floorIds.length > 0
+        ? await supabase.from("floors").select("id, building_id").in("id", floorIds)
+        : { data: [] as any[] };
+      
+      const buildingIds = [...new Set((floorData || []).map(f => f.building_id).filter(Boolean))] as string[];
+      const { data: buildingData } = buildingIds.length > 0
+        ? await supabase.from("buildings").select("id, name").in("id", buildingIds)
+        : { data: [] as any[] };
+      
+      // Build lookup: room_id → building short name
+      const buildingLookup: Record<string, string> = {};
+      for (const rb of roomBuildings || []) {
+        const floor = (floorData || []).find(f => f.id === rb.floor_id);
+        const building = floor ? (buildingData || []).find(b => b.id === floor.building_id) : null;
+        if (building) {
+          buildingLookup[rb.id] = building.name.replace(/ Street.*$/, '').trim();
+        }
+      }
+
       // Join all the data
       return rooms.map(room => {
         // Handle duplicate assignments - prefer one with a judge, or take first
         const roomAssignments = assignments?.filter(a => a.room_id === room.room_id) || [];
         const assignment = roomAssignments.find(a => a.justice && a.justice.trim()) || roomAssignments[0];
-        const attendanceData = attendance?.find(a => a.room_id === room.id); // Use room.id not room.room_id!
+        const attendanceData = attendance?.find(a => a.room_id === room.id);
         
         return {
           ...room,
+          building_name: buildingLookup[room.room_id] || null,
           assigned_judge: assignment?.justice || null,
           assigned_clerks: assignment?.clerks || [],
           assigned_part: assignment?.part || null,
