@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { MAINTENANCE_ISSUE_TYPES } from "@/components/issues/constants/issueTypes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, AlertTriangle, Clock, CheckCircle, Wrench, DollarSign } from "lucide-react";
 
@@ -16,7 +17,7 @@ export const MaintenanceStats = () => {
       const { data: issues } = await supabase
         .from("issues")
         .select("status, priority")
-        .eq("issue_type", "maintenance");
+        .in("issue_type", MAINTENANCE_ISSUE_TYPES);
 
       const totalSchedules = schedules?.length || 0;
       const scheduled = schedules?.filter(s => s.status === "scheduled").length || 0;

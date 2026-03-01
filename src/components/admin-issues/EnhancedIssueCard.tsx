@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { 
-  MapPin, 
-  User, 
-  Clock, 
-  MessageCircle, 
-  Users, 
-  ChevronDown, 
+import {
+  MapPin,
+  User,
+  Clock,
+  MessageCircle,
+  Users,
+  ChevronDown,
   ChevronUp,
   AlertTriangle,
   CheckCircle,
@@ -22,6 +22,7 @@ import { QuickUpdateActions } from "./QuickUpdateActions";
 import { ReporterProfile } from "./ReporterProfile";
 import { RoomOccupantContext } from "./RoomOccupantContext";
 import { MonitorButton } from "@/components/monitoring/MonitorButton";
+import { IssueTypeBadge } from "@/components/issues/card/IssueTypeBadge";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
 
 interface EnhancedIssueCardProps {
@@ -68,9 +69,10 @@ export function EnhancedIssueCard({ issue, isSelected, onSelect, onUpdate }: Enh
               <Badge variant={statusInfo?.color} className="text-xs">
                 {statusInfo?.label}
               </Badge>
+              <IssueTypeBadge issueType={issue.issue_type} className="text-[10px]" />
             </div>
           </div>
-          
+
           <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -99,27 +101,27 @@ export function EnhancedIssueCard({ issue, isSelected, onSelect, onUpdate }: Enh
               <span>{issue.rooms.room_number} - {issue.rooms.name}</span>
             </div>
           )}
-          
+
           {issue.reporter && (
             <div className="flex items-center gap-1">
               <User className="h-3 w-3" />
               <span>{issue.reporter.first_name} {issue.reporter.last_name}</span>
             </div>
           )}
-          
+
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               <span>{formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}</span>
             </div>
-            
+
             {issue.comments_count > 0 && (
               <div className="flex items-center gap-1">
                 <MessageCircle className="h-3 w-3" />
                 <span>{issue.comments_count}</span>
               </div>
             )}
-            
+
             {issue.photos && issue.photos.length > 0 && (
               <div className="flex items-center gap-1">
                 <Camera className="h-3 w-3" />
@@ -135,7 +137,7 @@ export function EnhancedIssueCard({ issue, isSelected, onSelect, onUpdate }: Enh
               </div>
             )}
           </div>
-          
+
           {/* Monitor Button */}
           <div className="mt-3" onClick={(e) => e.stopPropagation()}>
             <MonitorButton

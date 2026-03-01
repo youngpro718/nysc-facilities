@@ -3,6 +3,7 @@ import { Issue } from "../../types/IssueTypes";
 import { IssueBadges } from "../../card/IssueBadges";
 import { IssueMetadata } from "../../card/IssueMetadata";
 import { Badge } from "@/components/ui/badge";
+import { IssueTypeBadge } from "../../card/IssueTypeBadge";
 import { Building, MapPin, Calendar, Clock, AlertTriangle } from "lucide-react";
 
 interface IssueDetailsContentProps {
@@ -28,6 +29,7 @@ export const IssueDetailsContent = ({
           seen={issue.seen}
           onMarkAsSeen={onMarkAsSeen}
         />
+        <IssueTypeBadge issueType={issue.issue_type} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -36,7 +38,7 @@ export const IssueDetailsContent = ({
             <Building className="h-4 w-4" />
             <span>{issue.buildings?.name || 'No building assigned'}</span>
           </div>
-          
+
           {(issue.floors?.name || issue.rooms?.name) && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />

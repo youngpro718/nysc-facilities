@@ -14,12 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, MapPin, Clock, CheckCircle, Search, Edit, Trash2, Camera, FileText, Wrench } from "lucide-react";
 import { format } from "date-fns";
+import { MAINTENANCE_ISSUE_TYPES } from "@/components/issues/constants/issueTypes";
 
 type MaintenanceIssue = {
   id: string;
   title: string;
   description: string;
   room_id?: string | null;
+  rooms?: { name: string, room_number: string | null } | null;
   issue_type: string;
   priority: string; // Using priority instead of severity
   status: string;
@@ -34,7 +36,7 @@ export const MaintenanceIssuesList = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [tempFixText, setTempFixText] = useState<{[key: string]: string}>({});
+  const [tempFixText, setTempFixText] = useState<{ [key: string]: string }>({});
   const [editingIssue, setEditingIssue] = useState<MaintenanceIssue | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -43,8 +45,11 @@ export const MaintenanceIssuesList = () => {
     queryFn: async () => {
       let query = supabase
         .from("issues")
-        .select("*")
-        .eq("issue_type", "maintenance")
+        .select(`
+          *,
+          rooms:room_id ( name, room_number )
+        `)
+        .in("issue_type", MAINTENANCE_ISSUE_TYPES)
         .order("created_at", { ascending: false });
 
       if (statusFilter !== "all") {
@@ -269,10 +274,10 @@ export const MaintenanceIssuesList = () => {
                     {issue.title}
                   </CardTitle>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-                    {issue.room_id && (
+                    {issue.rooms && (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        Room ID: {issue.room_id}
+                        Room: {issue.rooms.name}{issue.rooms.room_number ? ` (${issue.rooms.room_number})` : ''}
                       </div>
                     )}
                     <div className="flex items-center gap-1">
@@ -310,7 +315,7 @@ export const MaintenanceIssuesList = () => {
             <CardContent>
               <div className="space-y-3">
                 <p className="text-sm">{issue.description}</p>
-                
+
                 <div className="flex items-center justify-between text-sm">
                   <div>
                     <strong>Issue Type:</strong> <span className="capitalize">{issue.issue_type}</span>
@@ -358,15 +363,15 @@ export const MaintenanceIssuesList = () => {
                       }))}
                     />
                     <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={() => addTemporaryFix(issue.id)}
                         disabled={!tempFixText[issue.id]}
                       >
                         Add Temporary Fix
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={() => markResolved(issue.id)}
                       >
@@ -378,8 +383,8 @@ export const MaintenanceIssuesList = () => {
 
                 {issue.status === "in_progress" && (
                   <div className="flex gap-2 pt-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => markResolved(issue.id)}
                     >
                       Mark as Resolved
@@ -400,7 +405,7 @@ export const MaintenanceIssuesList = () => {
               {searchQuery ? 'No matches found' : 'No maintenance issues'}
             </h3>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              {searchQuery 
+              {searchQuery
                 ? 'Try adjusting your search or filters to find what you\'re looking for.'
                 : 'All maintenance issues have been resolved. Great work!'}
             </p>

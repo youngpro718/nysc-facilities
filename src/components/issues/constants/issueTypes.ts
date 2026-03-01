@@ -14,6 +14,8 @@ export const ISSUE_TYPES: StandardizedIssueType[] = [
   'PLUMBING_NEEDS'
 ] as const;
 
+export const MAINTENANCE_ISSUE_TYPES = ['BUILDING_SYSTEMS', 'ELECTRICAL_NEEDS', 'GENERAL_REQUESTS'] as const;
+
 export const PROBLEM_TYPES: Record<StandardizedIssueType, string[]> = {
   'ACCESS_REQUEST': ['Card Reader', 'Key Issues', 'Door Access', 'Security Clearance'],
   'BUILDING_SYSTEMS': ['HVAC', 'Electrical', 'Plumbing', 'Security'],

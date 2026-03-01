@@ -1,11 +1,13 @@
 import { formatDistanceToNow } from "date-fns";
-import { logger } from '@/lib/logger';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Eye, MapPin, User } from "lucide-react";
+import { IssueTypeBadge } from "@/components/issues/card/IssueTypeBadge";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
+
+type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
 interface IssueTableViewProps {
   issues: EnhancedIssue[];
@@ -15,12 +17,12 @@ interface IssueTableViewProps {
   onIssueSelect?: (issueId: string) => void;
 }
 
-export function IssueTableView({ 
-  issues, 
-  selectedIssues, 
-  onSelectionChange, 
+export function IssueTableView({
+  issues,
+  selectedIssues,
+  onSelectionChange,
   onIssueUpdate,
-  onIssueSelect 
+  onIssueSelect
 }: IssueTableViewProps) {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -38,7 +40,7 @@ export function IssueTableView({
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: string): BadgeVariant => {
     switch (priority) {
       case 'high': return 'destructive';
       case 'medium': return 'secondary';
@@ -47,7 +49,7 @@ export function IssueTableView({
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): BadgeVariant => {
     switch (status) {
       case 'open': return 'destructive';
       case 'in_progress': return 'secondary';
@@ -70,6 +72,7 @@ export function IssueTableView({
             <TableHead>Title</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Type</TableHead>
             <TableHead>Room</TableHead>
             <TableHead>Reporter</TableHead>
             <TableHead>Created</TableHead>
@@ -86,7 +89,7 @@ export function IssueTableView({
                   onCheckedChange={(checked) => handleSelectIssue(issue.id, checked as boolean)}
                 />
               </TableCell>
-              
+
               <TableCell className="max-w-xs">
                 <button
                   className="text-left w-full hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
@@ -100,19 +103,26 @@ export function IssueTableView({
                   </div>
                 </button>
               </TableCell>
-              
+
               <TableCell>
-                <Badge variant={getPriorityColor(issue.priority) as any} className="text-xs">
+                <Badge variant={getPriorityColor(issue.priority)} className="text-xs">
                   {issue.priority.toUpperCase()}
                 </Badge>
               </TableCell>
-              
+
               <TableCell>
-                <Badge variant={getStatusColor(issue.status) as any} className="text-xs">
+                <Badge variant={getStatusColor(issue.status)} className="text-xs">
                   {issue.status.replace('_', ' ').toUpperCase()}
                 </Badge>
               </TableCell>
-              
+
+              <TableCell>
+                <IssueTypeBadge issueType={issue.issue_type} className="text-[10px] whitespace-nowrap" />
+                {(!issue.issue_type || issue.issue_type === 'general') && (
+                  <span className="text-muted-foreground text-sm">—</span>
+                )}
+              </TableCell>
+
               <TableCell>
                 {issue.rooms ? (
                   <div className="flex items-center gap-1 text-sm">
@@ -123,7 +133,7 @@ export function IssueTableView({
                   <span className="text-muted-foreground text-sm">—</span>
                 )}
               </TableCell>
-              
+
               <TableCell>
                 {issue.reporter ? (
                   <div className="flex items-center gap-1 text-sm">
@@ -134,15 +144,15 @@ export function IssueTableView({
                   <span className="text-muted-foreground text-sm">—</span>
                 )}
               </TableCell>
-              
+
               <TableCell className="text-sm">
                 {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
               </TableCell>
-              
+
               <TableCell className="text-sm">
                 {issue.comments_count || 0}
               </TableCell>
-              
+
               <TableCell>
                 <Button
                   variant="ghost"

@@ -75,7 +75,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       const roomInfoData = rooms.map((room: any) => {
         const floor = room.floors as { name?: string; floor_number?: number; buildings?: { name?: string } | null } | null;
         return {
-          "Room ID": room.id,
+          "System ID": room.id,
           "Room Name": room.name || "",
           "Room Number": room.room_number || "",
           "Building": floor?.buildings?.name || "",
@@ -109,7 +109,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           issues.forEach((issue: any) => {
             issuesData.push({
-              "Room ID": room.id,
+              "System ID": room.id,
               "Room Name": room.name,
               "Room Number": room.room_number || "",
               "Category": issue.category || "",
@@ -123,7 +123,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
           });
         } else {
           issuesData.push({
-            "Room ID": room.id,
+            "System ID": room.id,
             "Room Name": room.name,
             "Room Number": room.room_number || "",
             "Category": "",
@@ -147,7 +147,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           history.forEach((entry: any) => {
             maintenanceData.push({
-              "Room ID": room.id,
+              "System ID": room.id,
               "Room Name": room.name,
               "Room Number": room.room_number || "",
               "Date": entry.date || "",
@@ -162,7 +162,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       });
       if (maintenanceData.length === 0) {
         maintenanceData.push({
-          "Room ID": "(example)",
+          "System ID": "(example)",
           "Room Name": "(example room)",
           "Room Number": "",
           "Date": "2024-01-15",
@@ -184,7 +184,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           funcs.forEach((f: any) => {
             functionData.push({
-              "Room ID": room.id,
+              "System ID": room.id,
               "Room Name": room.name,
               "Room Number": room.room_number || "",
               "Function": f.function || f.name || "",
@@ -197,7 +197,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       });
       if (functionData.length === 0) {
         functionData.push({
-          "Room ID": "(example)",
+          "System ID": "(example)",
           "Room Name": "(example room)",
           "Room Number": "",
           "Function": "office",
@@ -228,10 +228,10 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
 
       // ── Instructions sheet ──
       const helpData = [
-        { "Sheet": "Room Info", "What You Can Edit": "Name, Status, Room Type, Current Function, Description, Capacity, Phone, Storage fields, Security Level", "Notes": "Do NOT change Room ID. Status must be: active, inactive, or under_maintenance" },
+        { "Sheet": "Room Info", "What You Can Edit": "Name, Status, Room Type, Current Function, Description, Capacity, Phone, Storage fields, Security Level", "Notes": "Do NOT change System ID. Status must be: active, inactive, or under_maintenance" },
         { "Sheet": "Persistent Issues", "What You Can Edit": "Add/edit rows. Category examples: Plumbing, Electrical, HVAC, Structural, Pest, Window, Door, Lighting, Mold, Noise", "Notes": "Severity: low, medium, high, critical. Status: open, monitoring, resolved" },
-        { "Sheet": "Maintenance Log", "What You Can Edit": "Add new rows for maintenance work done. Fill in Room ID, Date, Type, Description", "Notes": "Cost is optional. Use the Room ID from the Room Info sheet" },
-        { "Sheet": "Function History", "What You Can Edit": "Add rows to record when a room changed function. Fill in Room ID, Function, Start Date, End Date", "Notes": "Dates should be YYYY-MM-DD format" },
+        { "Sheet": "Maintenance Log", "What You Can Edit": "Add new rows for maintenance work done. Fill in Date, Type, Description", "Notes": "Cost is optional. DO NOT edit or remove the System ID." },
+        { "Sheet": "Function History", "What You Can Edit": "Add rows to record when a room changed function. Fill in Function, Start Date, End Date", "Notes": "Dates should be YYYY-MM-DD format. DO NOT edit or remove System ID." },
       ];
       const ws5 = XLSX.utils.json_to_sheet(helpData);
       autoWidth(ws5, helpData);
@@ -270,7 +270,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       if (roomInfoSheet) {
         const rows = XLSX.utils.sheet_to_json(roomInfoSheet) as Record<string, unknown>[];
         for (const row of rows) {
-          const roomId = row["Room ID"] as string;
+          const roomId = row["System ID"] as string;
           if (!roomId || roomId === "(example)") continue;
 
           const changes: string[] = [];
@@ -326,7 +326,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
         // Group issues by room ID
         const issuesByRoom = new Map<string, Record<string, unknown>[]>();
         for (const row of rows) {
-          const roomId = row["Room ID"] as string;
+          const roomId = row["System ID"] as string;
           if (!roomId || roomId === "(example)") continue;
           if (!row["Category"] && !row["Description"]) continue;
           if (!issuesByRoom.has(roomId)) issuesByRoom.set(roomId, []);
@@ -368,7 +368,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
         const rows = XLSX.utils.sheet_to_json(maintSheet) as Record<string, unknown>[];
         const maintByRoom = new Map<string, Record<string, unknown>[]>();
         for (const row of rows) {
-          const roomId = row["Room ID"] as string;
+          const roomId = row["System ID"] as string;
           if (!roomId || roomId === "(example)") continue;
           if (!row["Date"] && !row["Description"]) continue;
           if (!maintByRoom.has(roomId)) maintByRoom.set(roomId, []);
@@ -409,7 +409,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
         const rows = XLSX.utils.sheet_to_json(funcSheet) as Record<string, unknown>[];
         const funcByRoom = new Map<string, Record<string, unknown>[]>();
         for (const row of rows) {
-          const roomId = row["Room ID"] as string;
+          const roomId = row["System ID"] as string;
           if (!roomId || roomId === "(example)") continue;
           if (!row["Function"]) continue;
           if (!funcByRoom.has(roomId)) funcByRoom.set(roomId, []);

@@ -133,10 +133,10 @@ export const useCourtIssuesIntegration = () => {
           courtroom_number: roomInfo?.courtroom_number,
           assignments: assignmentInfo
             ? {
-                justice: assignmentInfo.justice,
-                clerks: assignmentInfo.clerks || [],
-                sergeant: assignmentInfo.sergeant,
-              }
+              justice: assignmentInfo.justice,
+              clerks: assignmentInfo.clerks || [],
+              sergeant: assignmentInfo.sergeant,
+            }
             : undefined,
         };
       });
@@ -217,7 +217,7 @@ export const useCourtIssuesIntegration = () => {
       // This would integrate with your notification system
       // For now, we'll create a toast notification
       const message = `Courtroom ${issue.courtroom_number || issue.room_number} has a ${issue.priority} priority issue: ${issue.title}`;
-      
+
       toast({
         title: "Courtroom Issue Alert",
         description: message,
@@ -244,10 +244,10 @@ export const useCourtIssuesIntegration = () => {
           courtroom_number: courtRoom?.courtroom_number,
           assignments: courtAssignment
             ? {
-                justice: courtAssignment.justice,
-                clerks: courtAssignment.clerks || [],
-                sergeant: courtAssignment.sergeant,
-              }
+              justice: courtAssignment.justice,
+              clerks: courtAssignment.clerks || [],
+              sergeant: courtAssignment.sergeant,
+            }
             : undefined,
           justice: courtAssignment?.justice || '',
           clerks: courtAssignment?.clerks || [],
@@ -270,7 +270,7 @@ export const useCourtIssuesIntegration = () => {
         },
         (payload) => {
           logger.debug('Court issue change detected:', payload);
-          
+
           // Optimistically update cache for immediate UI updates
           queryClient.setQueryData(["court-issues"], (old: any[] | undefined) => {
             const current = Array.isArray(old) ? old : [];

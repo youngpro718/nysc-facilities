@@ -29,6 +29,7 @@ type MaintenanceSchedule = {
   assigned_to?: string | null;
   actual_start_date?: string | null;
   actual_end_date?: string | null;
+  rooms?: { name: string, room_number: string | null } | null;
 };
 
 export const MaintenanceScheduleList = () => {
@@ -44,7 +45,10 @@ export const MaintenanceScheduleList = () => {
     queryFn: async () => {
       let query = supabase
         .from("maintenance_schedules")
-        .select("*")
+        .select(`
+          *,
+          rooms:space_id ( name, room_number )
+        `)
         .order("scheduled_start_date", { ascending: true });
 
       if (statusFilter !== "all") {
@@ -83,7 +87,7 @@ export const MaintenanceScheduleList = () => {
 
   const updateStatus = async (id: string, newStatus: string) => {
     const updates: Record<string, unknown> = { status: newStatus };
-    
+
     if (newStatus === "in_progress" && !schedules?.find(s => s.id === id)?.scheduled_start_date) {
       updates.actual_start_date = new Date().toISOString();
     }
@@ -246,16 +250,16 @@ export const MaintenanceScheduleList = () => {
                 <div>
                   <CardTitle className="text-lg">{schedule.title}</CardTitle>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-                    {schedule.space_id && (
+                    {schedule.rooms && (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        Space ID: {schedule.space_id}
+                        Room: {schedule.rooms.name}{schedule.rooms.room_number ? ` (${schedule.rooms.room_number})` : ''}
                       </div>
                     )}
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
                       {format(new Date(schedule.scheduled_start_date), "MMM dd, yyyy")}
-                      {schedule.scheduled_end_date && 
+                      {schedule.scheduled_end_date &&
                         ` - ${format(new Date(schedule.scheduled_end_date), "MMM dd, yyyy")}`
                       }
                     </div>
@@ -292,7 +296,7 @@ export const MaintenanceScheduleList = () => {
                 {schedule.description && (
                   <p className="text-sm text-muted-foreground">{schedule.description}</p>
                 )}
-                
+
                 <div className="flex items-center gap-6 text-sm">
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
@@ -313,14 +317,14 @@ export const MaintenanceScheduleList = () => {
 
                 {schedule.status === "scheduled" && (
                   <div className="flex gap-2 pt-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => updateStatus(schedule.id, "in_progress")}
                     >
                       Start Maintenance
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => updateStatus(schedule.id, "postponed")}
                     >
@@ -331,8 +335,8 @@ export const MaintenanceScheduleList = () => {
 
                 {schedule.status === "in_progress" && (
                   <div className="flex gap-2 pt-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => updateStatus(schedule.id, "completed")}
                     >
                       Mark Complete
@@ -353,7 +357,7 @@ export const MaintenanceScheduleList = () => {
               {searchQuery ? 'No matches found' : 'No scheduled maintenance'}
             </h3>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              {searchQuery 
+              {searchQuery
                 ? 'Try adjusting your search or filters to find what you\'re looking for.'
                 : 'No maintenance tasks are currently scheduled. Click "Schedule Maintenance" to add one.'}
             </p>
