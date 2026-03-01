@@ -829,6 +829,44 @@ export function AddJudgeDialog({
     enabled: open,
   });
 
+  // Fetch existing part codes for autocomplete suggestions
+  const { data: existingParts = [] } = useQuery({
+    queryKey: ["court-parts-for-autocomplete"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("court_assignments")
+        .select("part")
+        .not("part", "is", null)
+        .order("part");
+      if (error) throw error;
+      const unique = [...new Set((data || []).map(d => d.part).filter(Boolean))];
+      return unique as string[];
+    },
+    enabled: open,
+  });
+
+  // Live conflict check: see if the entered part is already occupied
+  const { data: partConflict } = useQuery({
+    queryKey: ["part-conflict-check", part.trim().toLowerCase()],
+    queryFn: async () => {
+      const trimmedPart = part.trim();
+      if (!trimmedPart) return null;
+      const { data, error } = await supabase
+        .from("court_assignments")
+        .select("id, part, justice, room_number")
+        .not("part", "is", null);
+      if (error) return null;
+      const match = data?.find(
+        a => a.part?.toLowerCase() === trimmedPart.toLowerCase()
+      );
+      if (match && match.justice) {
+        return { justice: match.justice, roomNumber: match.room_number, part: match.part };
+      }
+      return null;
+    },
+    enabled: open && part.trim().length > 0,
+  });
+
   const resetForm = () => {
     setFirstName("");
     setLastName("");
@@ -854,14 +892,27 @@ export function AddJudgeDialog({
         part: part.trim() || undefined,
       });
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["court-personnel"] });
       queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
       queryClient.invalidateQueries({ queryKey: ["assignment-stats"] });
       queryClient.invalidateQueries({ queryKey: ["term-sheet-board"] });
+      queryClient.invalidateQueries({ queryKey: ["court-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["court-operations"] });
+      const judgeName = `${firstName.charAt(0).toUpperCase()}. ${lastName.toUpperCase()}`;
+      const displacedNote = result.displacedJudge
+        ? ` (replaced ${result.displacedJudge})`
+        : '';
+      const assignmentNote = part && courtroomId
+        ? ` and assigned to Part ${part}`
+        : part
+        ? ` with Part ${part} assignment (no room yet)`
+        : courtroomId
+        ? ` and assigned to Room ${courtrooms.find(c => c.id === courtroomId)?.room_number || ''}`
+        : '';
       toast({
-        title: "Judge added",
-        description: `${firstName.charAt(0).toUpperCase()}. ${lastName.toUpperCase()} has been added${part ? ` and assigned to Part ${part}` : ""}.`,
+        title: result.displacedJudge ? "Judge replaced" : "Judge added",
+        description: `${judgeName} has been added${assignmentNote}${displacedNote}.`,
       });
       resetForm();
       onOpenChange(false);
@@ -1004,10 +1055,17 @@ export function AddJudgeDialog({
               </Label>
               <Input
                 id="part-number"
+                list="part-suggestions"
                 value={part}
                 onChange={(e) => setPart(e.target.value)}
                 placeholder="e.g. 62"
+                autoComplete="off"
               />
+              <datalist id="part-suggestions">
+                {existingParts.map((p) => (
+                  <option key={p} value={p} />
+                ))}
+              </datalist>
             </div>
           </div>
 
@@ -1029,6 +1087,18 @@ export function AddJudgeDialog({
             </select>
           </div>
 
+          {/* Conflict warning */}
+          {partConflict && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-2.5 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                Part {partConflict.part} is currently assigned to <span className="font-semibold">{partConflict.justice}</span>
+                {partConflict.roomNumber ? ` (Room ${partConflict.roomNumber})` : ''}.
+                Adding this judge will replace them.
+              </p>
+            </div>
+          )}
+
           {/* Preview */}
           {(firstName || lastName) && (
             <div className="rounded-md border p-2.5 bg-muted/50 space-y-1">
@@ -1048,12 +1118,14 @@ export function AddJudgeDialog({
               <div className="text-xs text-muted-foreground space-y-0.5">
                 {courtAttorney && <p>Court Attorney: {courtAttorney}</p>}
                 {chambersRoom && <p>Chambers: Room {chambersRoom}</p>}
-                {part && <p>Part: {part}</p>}
-                {courtroomId && (
-                  <p>
-                    Courtroom: Room{" "}
-                    {courtrooms.find((c) => c.id === courtroomId)?.room_number || "—"}
-                  </p>
+                {part && courtroomId && (
+                  <p>✓ Part {part} in Room {courtrooms.find((c) => c.id === courtroomId)?.room_number || "—"}</p>
+                )}
+                {part && !courtroomId && (
+                  <p>✓ Will create Part {part} assignment (can assign room later)</p>
+                )}
+                {!part && courtroomId && (
+                  <p>✓ Assigned to Room {courtrooms.find((c) => c.id === courtroomId)?.room_number || "—"} (no part yet)</p>
                 )}
               </div>
             </div>

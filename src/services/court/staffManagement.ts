@@ -14,7 +14,7 @@ export async function addNewStaff(params: {
     phone?: string;
     extension?: string;
     assignToRoomId?: string; // court_assignments.room_id to add them to
-}): Promise<string> {
+}): Promise<{ personnelId: string; displacedStaff: string | null }> {
     const displayName = `${params.firstName} ${params.lastName}`;
     const fullName = displayName;
 
@@ -45,12 +45,15 @@ export async function addNewStaff(params: {
 
     if (error) throw error;
 
+    let displacedStaff: string | null = null;
+
     // 2. If assigning to a courtroom, update court_assignments
     if (params.assignToRoomId) {
-        await assignStaffToRoom(displayName, params.role, params.assignToRoomId);
+        const result = await assignStaffToRoom(displayName, params.role, params.assignToRoomId);
+        displacedStaff = result.displacedStaff;
     }
 
-    return data.id;
+    return { personnelId: data.id, displacedStaff };
 }
 
 /**
@@ -62,7 +65,7 @@ export async function assignStaffToRoom(
     staffName: string,
     role: 'clerk' | 'sergeant' | 'officer',
     roomId: string
-): Promise<void> {
+): Promise<{ displacedStaff: string | null }> {
     const { data: assignment, error: fetchErr } = await supabase
         .from('court_assignments')
         .select('id, clerks, sergeant')
@@ -72,8 +75,10 @@ export async function assignStaffToRoom(
     if (fetchErr) throw fetchErr;
     if (!assignment) {
         logger.warn(`No court assignment found for room_id ${roomId}`);
-        return;
+        return { displacedStaff: null };
     }
+
+    let displacedStaff: string | null = null;
 
     if (role === 'clerk') {
         const currentClerks = (assignment.clerks as string[]) || [];
@@ -85,11 +90,15 @@ export async function assignStaffToRoom(
         }
     } else {
         // Sergeant or officer — goes into sergeant field
+        displacedStaff = assignment.sergeant || null;
+        if (displacedStaff === staffName) displacedStaff = null; // not really displaced
         await supabase
             .from('court_assignments')
             .update({ sergeant: staffName })
             .eq('id', assignment.id);
     }
+
+    return { displacedStaff };
 }
 
 /**
