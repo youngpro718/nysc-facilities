@@ -1,13 +1,17 @@
 import { useState } from 'react';
-import { format, subDays } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { format, subDays, isToday } from 'date-fns';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Copy, RefreshCw, Users, CalendarCheck, FileText, Upload, MoreHorizontal, Play } from 'lucide-react';
+import {
+  Calendar, Copy, Users, CalendarCheck, FileText, Upload,
+  MoreHorizontal, Play, Plus, ChevronLeft, ChevronRight,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SessionsTable } from './SessionsTable';
@@ -18,9 +22,6 @@ import { CreateSessionDialog } from './CreateSessionDialog';
 import { UploadDailyReportDialog } from './UploadDailyReportDialog';
 import { ExtractedDataReview } from './ExtractedDataReview';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCourtSessions, useCopyYesterdaySessions } from '@/hooks/useCourtSessions';
 import { useCoverageAssignments } from '@/hooks/useCoverageAssignments';
 import { useSessionConflicts } from '@/hooks/useSessionConflicts';
@@ -83,185 +84,161 @@ export function DailySessionsPanel() {
     });
   };
 
-  const handleToday = () => {
-    setSelectedDate(new Date());
-  };
+  const prevDay = () => setSelectedDate(subDays(selectedDate, 1));
+  const nextDay = () => setSelectedDate(new Date(selectedDate.getTime() + 86400000));
+  const goToday = () => setSelectedDate(new Date());
+
+  const buildingLabel = BUILDING_CODES.find(b => b.value === selectedBuilding)?.label || selectedBuilding;
+  const hasSessions = sessions && sessions.length > 0;
+  const dateStr = format(selectedDate, 'EEEE, MMMM d, yyyy');
+  const todayTag = isToday(selectedDate);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Conflict Banner */}
-      {conflicts && (
-        <SessionConflictBanner conflicts={conflicts} />
-      )}
+      {conflicts && <SessionConflictBanner conflicts={conflicts} />}
 
-      {/* Filter Bar */}
+      {/* Top Bar: Context + Actions */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarCheck className="h-5 w-5" />
-            Daily Sessions
-            {sessions && sessions.length > 0 && (
-              <Badge variant="secondary" className="ml-1 text-xs">
-                {sessions.length}
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
-            {/* Date Picker */}
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <DatePicker
-                value={selectedDate}
-                onChange={(date) => date && setSelectedDate(date)}
-              />
+        <CardContent className="py-3 px-4">
+          {/* Row 1: Date navigation + Period/Building */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            {/* Left: Date navigation */}
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={prevDay}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-2 min-w-0">
+                <DatePicker
+                  value={selectedDate}
+                  onChange={(date) => date && setSelectedDate(date)}
+                />
+                {todayTag && (
+                  <Badge className="text-[10px] bg-green-600 shrink-0">Today</Badge>
+                )}
+                {!todayTag && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={goToday}>
+                    Today
+                  </Button>
+                )}
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={nextDay}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* Period Selector */}
-            <div className="space-y-2">
-              <Label>Period</Label>
-              <RadioGroup
-                value={selectedPeriod}
-                onValueChange={(value) => setSelectedPeriod(value as SessionPeriod)}
-                className="flex gap-2"
-              >
+            {/* Right: Period + Building toggles */}
+            <div className="flex items-center gap-2">
+              {/* AM/PM toggle */}
+              <div className="flex rounded-md border overflow-hidden">
                 {SESSION_PERIODS.map((period) => (
-                  <div key={period.value} className="flex items-center space-x-2">
-                    <RadioGroupItem value={period.value} id={`period-${period.value}`} />
-                    <Label htmlFor={`period-${period.value}`} className="cursor-pointer">
-                      {period.label}
-                    </Label>
-                  </div>
+                  <Button
+                    key={period.value}
+                    variant={selectedPeriod === period.value ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-8 px-3 rounded-none text-xs font-semibold"
+                    onClick={() => setSelectedPeriod(period.value as SessionPeriod)}
+                  >
+                    {period.label}
+                  </Button>
                 ))}
-              </RadioGroup>
-            </div>
+              </div>
 
-            {/* Building Filter */}
-            <div className="space-y-2">
-              <Label>Building</Label>
-              <Select
-                value={selectedBuilding}
-                onValueChange={(value) => setSelectedBuilding(value as BuildingCode)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {BUILDING_CODES.map((building) => (
-                    <SelectItem key={building.value} value={building.value}>
-                      {building.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="space-y-2">
-              <Label>Quick Actions</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToday}
-                  className="flex-1"
-                >
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Today
-                </Button>
+              {/* Building toggle */}
+              <div className="flex rounded-md border overflow-hidden">
+                {BUILDING_CODES.map((building) => (
+                  <Button
+                    key={building.value}
+                    variant={selectedBuilding === building.value ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-8 px-2.5 rounded-none text-xs"
+                    onClick={() => setSelectedBuilding(building.value as BuildingCode)}
+                  >
+                    {building.value}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2">
-            {/* Primary CTA — Start Report (only show when no sessions yet) */}
-            {(!sessions || sessions.length === 0) && (
+          {/* Row 2: Report header + Action buttons */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t">
+            {/* Report context */}
+            <div className="flex items-center gap-2 min-w-0">
+              <CalendarCheck className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-sm font-semibold truncate">
+                {selectedPeriod} Report — {buildingLabel}
+              </span>
+              {hasSessions && (
+                <Badge variant="secondary" className="text-[10px] shrink-0">
+                  {sessions.length} sessions
+                </Badge>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Primary: Start Report or Upload */}
+              {!hasSessions && (
+                <Button
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleStartReport}
+                  disabled={startReport.isPending}
+                >
+                  <Play className="h-3.5 w-3.5 mr-1" />
+                  {startReport.isPending ? 'Creating...' : 'Start Report'}
+                </Button>
+              )}
+
               <Button
                 size="sm"
-                variant="default"
-                className="text-xs sm:text-sm"
-                onClick={handleStartReport}
-                disabled={startReport.isPending}
+                variant={hasSessions ? 'default' : 'outline'}
+                className="h-8 text-xs"
+                onClick={() => setShowUploadDialog(true)}
               >
-                <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                {startReport.isPending ? 'Creating...' : 'Start Report'}
+                <Upload className="h-3.5 w-3.5 mr-1" />
+                Upload PDF
               </Button>
-            )}
-            <Button
-              size="sm"
-              variant={sessions && sessions.length > 0 ? 'default' : 'outline'}
-              className="text-xs sm:text-sm"
-              onClick={() => setShowUploadDialog(true)}
-            >
-              <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-              Upload
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs sm:text-sm"
-              onClick={() => setShowCreateDialog(true)}
-            >
-              <CalendarCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-              Add Session
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs sm:text-sm hidden sm:inline-flex"
-              onClick={handleCopyYesterday}
-              disabled={copyYesterday.isPending}
-            >
-              <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-              Copy Yesterday
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs sm:text-sm hidden sm:inline-flex"
-              onClick={() => setShowCoveragePanel(!showCoveragePanel)}
-            >
-              <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-              Coverage
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs sm:text-sm hidden sm:inline-flex"
-              onClick={() => setShowReportDialog(true)}
-              disabled={!sessions || sessions.length === 0}
-            >
-              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-              Generate Report
-            </Button>
-            {/* Mobile overflow menu for secondary actions */}
-            <div className="sm:hidden">
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+                onClick={() => setShowCreateDialog(true)}
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Add
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+                onClick={handleCopyYesterday}
+                disabled={copyYesterday.isPending}
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                <span className="hidden sm:inline">Copy Yesterday</span>
+                <span className="sm:hidden">Copy</span>
+              </Button>
+
+              {/* More menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-xs">
-                    <MoreHorizontal className="h-3.5 w-3.5 mr-1" />
-                    More
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={handleCopyYesterday}
-                    disabled={copyYesterday.isPending}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Yesterday
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setShowCoveragePanel(!showCoveragePanel)}
-                  >
+                  <DropdownMenuItem onClick={() => setShowCoveragePanel(!showCoveragePanel)}>
                     <Users className="h-4 w-4 mr-2" />
-                    Coverage
+                    {showCoveragePanel ? 'Hide Coverage' : 'Show Coverage'}
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => setShowReportDialog(true)}
-                    disabled={!sessions || sessions.length === 0}
+                    disabled={!hasSessions}
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Generate Report
@@ -272,6 +249,34 @@ export function DailySessionsPanel() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Empty State */}
+      {!sessionsLoading && !hasSessions && (
+        <Card className="border-dashed">
+          <CardContent className="py-10 text-center">
+            <CalendarCheck className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+            <h3 className="text-base font-semibold mb-1">No sessions for {dateStr}</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+              Get started by clicking <strong>Start Report</strong> to auto-fill from today's assignments,
+              or <strong>Upload PDF</strong> to import from the daily report.
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <Button size="sm" onClick={handleStartReport} disabled={startReport.isPending}>
+                <Play className="h-4 w-4 mr-1.5" />
+                {startReport.isPending ? 'Creating...' : 'Start Report'}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowUploadDialog(true)}>
+                <Upload className="h-4 w-4 mr-1.5" />
+                Upload PDF
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleCopyYesterday} disabled={copyYesterday.isPending}>
+                <Copy className="h-4 w-4 mr-1.5" />
+                Copy Yesterday
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Coverage Panel */}
       {showCoveragePanel && (
@@ -285,16 +290,18 @@ export function DailySessionsPanel() {
       )}
 
       {/* Sessions Table */}
-      <SessionsTable
-        date={selectedDate}
-        period={selectedPeriod}
-        buildingCode={selectedBuilding}
-        sessions={sessions || []}
-        coverages={coverages || []}
-        isLoading={sessionsLoading}
-      />
+      {(hasSessions || sessionsLoading) && (
+        <SessionsTable
+          date={selectedDate}
+          period={selectedPeriod}
+          buildingCode={selectedBuilding}
+          sessions={sessions || []}
+          coverages={coverages || []}
+          isLoading={sessionsLoading}
+        />
+      )}
 
-      {/* Create Session Dialog */}
+      {/* Dialogs */}
       <CreateSessionDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
@@ -303,7 +310,6 @@ export function DailySessionsPanel() {
         buildingCode={selectedBuilding}
       />
 
-      {/* Generate Report Dialog */}
       <GenerateReportDialog
         open={showReportDialog}
         onOpenChange={setShowReportDialog}
@@ -316,7 +322,6 @@ export function DailySessionsPanel() {
         }}
       />
 
-      {/* Upload Daily Report Dialog */}
       <UploadDailyReportDialog
         open={showUploadDialog}
         onOpenChange={setShowUploadDialog}
@@ -326,7 +331,6 @@ export function DailySessionsPanel() {
         }}
       />
 
-      {/* Extracted Data Review Dialog */}
       <ExtractedDataReview
         open={showReviewDialog}
         onOpenChange={setShowReviewDialog}
