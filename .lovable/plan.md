@@ -1,28 +1,49 @@
 
 
-## Problem
+## Current State of Live Grid
 
-Two issues:
+After reviewing the code and data, the Live Grid has three operation modes (Move Entire Part, Cover Another Part, Swap Courtrooms) but several gaps prevent it from handling the scenarios you described:
 
-1. **Room 1300 shows "Lactation Room"**: The current code prioritizes `rooms.name` (from Spaces) for the Part column. But Room 1300's Spaces name is "Lactation Room" — not a part name. The room may serve dual purposes, or was simply named differently in Spaces.
+### Problems Identified
 
-2. **Abbreviations lost**: The `court_assignments.part` field already contains the abbreviations you created (e.g., `"59,59V,59M"`, `"TAP A, TAP G"`, `"ATI, 21"`). By replacing that with `rooms.name`, we lost those — `rooms.name` only says "PART 59", not "59,59V,59M".
+1. **No building indicator or filter**: The grid shows all rooms together. You can't quickly see which courtroom is in 100 Centre vs 111 Centre, making it hard to manage cross-building switches.
 
-## Solution: Revert to using `court_assignments.part` for the Part column
+2. **Can't assign a judge to a vacant room directly**: The Move dialog only works from an occupied room. There's no way to place a new judge into an empty courtroom from the grid itself.
 
-The `court_assignments.part` field is the correct source for Part names — it already has your abbreviations. The Spaces room name is a general-purpose label for the physical room and doesn't always match the court assignment designation.
+3. **No "Assign New Judge" action on empty rooms**: Vacant rooms show "No judge assigned" but the only action buttons are Mark Present/Absent and the Move arrow — none of which help assign someone new.
 
-### Changes
+4. **Part name not shown in the room picker**: When selecting a destination room in the Move dialog, part names appear but the building doesn't, making it hard to pick the right room across buildings.
 
-1. **`src/components/court-operations/personnel/TermSheetBoard.tsx`** (line ~134)
-   - Revert `part` back to: `assignment.part || '—'`
+5. **No bulk operations**: If 5 judges switched courtrooms, you have to do 5 individual swaps. No way to queue up multiple changes.
 
-2. **`src/components/user/TermSheetPreview.tsx`** (line ~84)
-   - Revert `part` back to: `assignment?.part || '—'`
+### Plan
 
-This restores the abbreviations (59,59V,59M etc.) and fixes Room 1300 showing "Lactation Room" instead of "Part 32".
+#### 1. Add building column and filter to the grid
+- Show building (100 or 111) on each row via the `rooms → floors → buildings` join in `useCourtRooms`
+- Add a building filter dropdown next to the existing status filter
 
-### What about syncing Spaces ↔ Term Sheet?
+#### 2. Add "Assign Judge" action on vacant rooms
+- When a room has no assigned judge, show an "Assign Judge" button instead of presence buttons
+- Opens a dialog where you pick a judge (from personnel_profiles or free text) and optionally set the part
+- Calls an upsert on `court_assignments` to fill the vacant slot
 
-The real sync point is: when you **edit an assignment's part name** in Court Operations, that value is stored in `court_assignments.part`. The Spaces room name (`rooms.name`) is a separate concept — it's the physical room's label, which may differ from its court designation. These should remain independent.
+#### 3. Improve the Move/Swap dialog
+- Show building name next to each room in the destination picker (e.g., "1300 · 100 Centre (Part 32 · G. CARRO)")
+- Group rooms by building in the dropdown for easier scanning
+
+#### 4. Add batch mode for multiple swaps
+- Add a "Batch Changes" toggle that lets you queue multiple move/swap operations
+- Shows a preview list of pending changes before committing them all at once
+- Each change is validated for conflicts before execution
+
+### Files to modify
+
+- **`src/hooks/useCourtOperationsRealtime.ts`** — Update `useCourtRooms` query to join through `rooms → floors → buildings` and return building name
+- **`src/components/court/LiveCourtGrid.tsx`** — Add building column, building filter, "Assign Judge" button for vacant rooms, improve Move dialog room picker with building labels, add batch mode UI
+
+### Technical Notes
+
+- The building join path is: `court_rooms.room_id → rooms.id → rooms.floor_id → floors.id → floors.building_id → buildings.id`
+- The swap RPC (`swap_courtrooms`) and move RPC (`move_judge`) already exist and work — no database changes needed
+- Assigning a judge to a vacant room will upsert into `court_assignments` using existing patterns from `judgeManagement.ts`
 
