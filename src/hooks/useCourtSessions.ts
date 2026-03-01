@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
-import { 
-  CourtSession, 
-  CreateCourtSessionInput, 
+import {
+  CourtSession,
+  CreateCourtSessionInput,
   UpdateCourtSessionInput,
   SessionPeriod,
-  BuildingCode 
+  BuildingCode
 } from '@/types/courtSessions';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -26,7 +26,7 @@ import { format } from 'date-fns';
 
 export function useCourtSessions(date: Date, period: SessionPeriod, buildingCode: BuildingCode) {
   const dateStr = format(date, 'yyyy-MM-dd');
-  
+
   return useQuery({
     queryKey: ['court-sessions', dateStr, period, buildingCode],
     queryFn: async () => {
@@ -36,9 +36,9 @@ export function useCourtSessions(date: Date, period: SessionPeriod, buildingCode
         .eq('session_date', dateStr)
         .eq('period', period)
         .eq('building_code', buildingCode);
-      
+
       if (error) throw error;
-      
+
       // Get court rooms separately to avoid schema cache issues
       if (data && data.length > 0) {
         const roomIds = [...new Set(data.map(s => s.court_room_id))];
@@ -46,7 +46,7 @@ export function useCourtSessions(date: Date, period: SessionPeriod, buildingCode
           .from('court_rooms')
           .select('id, room_number, courtroom_number, room_id')
           .in('id', roomIds);
-        
+
         // Attach room data to sessions
         const roomsMap = new Map(rooms?.map(r => [r.id, r]) || []);
         return data.map(session => ({
@@ -54,7 +54,7 @@ export function useCourtSessions(date: Date, period: SessionPeriod, buildingCode
           court_rooms: roomsMap.get(session.court_room_id)
         })) as CourtSession[];
       }
-      
+
       return data as CourtSession[];
     },
   });
@@ -112,8 +112,8 @@ export function useCreateCourtSession() {
     onError: (error: Error) => {
       logger.error('Error creating session:', error);
       const msg = (error?.message || '').toLowerCase();
-      if (msg.includes('court_sessions_court_room_id_session_date_period_key') || 
-          (msg.includes('duplicate') && msg.includes('court_sessions'))) {
+      if (msg.includes('court_sessions_court_room_id_session_date_period_key') ||
+        (msg.includes('duplicate') && msg.includes('court_sessions'))) {
         toast.error('Session already exists', {
           description: 'A session already exists for this courtroom on this date and period. Edit it in the table instead.',
         });
@@ -148,7 +148,7 @@ export function useUpdateCourtSession() {
         .single();
 
       if (error) throw error;
-      
+
       // Fetch court room data separately if needed
       if (data && data.court_room_id) {
         const { data: room } = await supabase
@@ -156,13 +156,13 @@ export function useUpdateCourtSession() {
           .select('id, room_number, courtroom_number, room_id')
           .eq('id', data.court_room_id)
           .single();
-        
+
         return {
           ...data,
           court_rooms: room
         } as CourtSession;
       }
-      
+
       return data as CourtSession;
     },
     onSuccess: () => {
@@ -204,15 +204,15 @@ export function useCopyYesterdaySessions() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      fromDate, 
-      toDate, 
-      period, 
-      buildingCode 
-    }: { 
-      fromDate: string; 
-      toDate: string; 
-      period: SessionPeriod; 
+    mutationFn: async ({
+      fromDate,
+      toDate,
+      period,
+      buildingCode
+    }: {
+      fromDate: string;
+      toDate: string;
+      period: SessionPeriod;
       buildingCode: BuildingCode;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -224,7 +224,7 @@ export function useCopyYesterdaySessions() {
         .eq('session_date', fromDate)
         .eq('period', period)
         .eq('building_code', buildingCode);
-      
+
       if (fetchError) throw fetchError;
       if (!sourceSessions || sourceSessions.length === 0) {
         throw new Error('No sessions found for the selected date');
@@ -260,7 +260,7 @@ export function useCopyYesterdaySessions() {
       const { error: insertError } = await supabase
         .from('court_sessions')
         .insert(newSessions);
-      
+
       if (insertError) throw insertError;
 
       return sourceSessions.length;
@@ -339,5 +339,29 @@ export function useCopySessionFromYesterday() {
       logger.error('Error copying from yesterday:', error);
       toast.error(error.message || 'Failed to copy from yesterday');
     },
+  });
+}
+
+/**
+ * Fetch recent sessions for a specific room to power autocomplete and smart defaults.
+ */
+export function useRecentCourtSessions(courtRoomId: string | undefined, limit = 50) {
+  return useQuery({
+    queryKey: ['recent-sessions', courtRoomId],
+    queryFn: async () => {
+      if (!courtRoomId) return [];
+
+      const { data, error } = await supabase
+        .from('court_sessions')
+        .select('id, session_date, status, defendants, top_charge, attorney, purpose')
+        .eq('court_room_id', courtRoomId)
+        .order('session_date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!courtRoomId,
   });
 }

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { logger } from '@/lib/logger';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Trash2, FileText, Copy } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Trash2, FileText, Copy, CheckCircle2, X, Columns } from 'lucide-react';
 import { CourtSession, CoverageAssignment, SessionPeriod, BuildingCode } from '@/types/courtSessions';
 import { useUpdateCourtSession, useDeleteCourtSession, useCopySessionFromYesterday } from '@/hooks/useCourtSessions';
 import { useAbsentStaffNames } from '@/hooks/useStaffAbsences';
@@ -53,7 +56,7 @@ function parseFreeTextDate(input: string): string {
   if (!input) return input;
   // Already in yyyy-MM-dd format
   if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
-  
+
   // Match M/D, M/DD, MM/DD, M/D/YY, MM/DD/YY, MM/DD/YYYY (also with dashes)
   const match = input.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/);
   if (match) {
@@ -229,6 +232,74 @@ export function SessionsTable({
   const deleteSession = useDeleteCourtSession();
   const copyFromYesterday = useCopySessionFromYesterday();
   const { absentStaffMap } = useAbsentStaffNames(date);
+  const [confirmAction, confirmDialog] = useConfirmDialog();
+
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Column visibility state
+  const [compactView, setCompactView] = useState(() => {
+    return localStorage.getItem('court_ops_compact_view') === 'true';
+  });
+
+  const toggleCompactView = (checked: boolean) => {
+    setCompactView(checked);
+    localStorage.setItem('court_ops_compact_view', String(checked));
+  };
+
+  // Clear selection if sessions array changes drastically (e.g. date change)
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [date, period, buildingCode]);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === sessions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sessions.map(s => s.id)));
+    }
+  }, [sessions, selectedIds]);
+
+  const toggleSelectRow = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const confirmed = await confirmAction({
+      title: 'Delete Multiple Sessions',
+      description: `Are you sure you want to delete ${selectedIds.size} sessions? This cannot be undone.`,
+      confirmLabel: 'Delete All',
+      variant: 'destructive',
+    });
+    if (confirmed) {
+      try {
+        await Promise.all(Array.from(selectedIds).map(id => deleteSession.mutateAsync(id)));
+        toast.success(`Deleted ${selectedIds.size} sessions`);
+        setSelectedIds(new Set());
+      } catch (err) {
+        toast.error('Failed to delete some sessions');
+      }
+    }
+  };
+
+  const handleBulkStatus = async (status: string) => {
+    if (selectedIds.size === 0) return;
+    try {
+      await Promise.all(Array.from(selectedIds).map(id =>
+        updateSession.mutateAsync({ id, status })
+      ));
+      toast.success(`Updated status for ${selectedIds.size} sessions`);
+      setSelectedIds(new Set());
+    } catch (err) {
+      toast.error('Failed to update status');
+    }
+  };
 
   // Single cell save handler
   const handleCellSave = useCallback(async (
@@ -265,7 +336,13 @@ export function SessionsTable({
   }, [updateSession]);
 
   const handleDelete = async (sessionId: string) => {
-    if (!confirm('Delete this session?')) return;
+    const confirmed = await confirmAction({
+      title: 'Delete Session',
+      description: 'Are you sure you want to delete this session?',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await deleteSession.mutateAsync(sessionId);
   };
 
@@ -332,7 +409,34 @@ export function SessionsTable({
             <Badge variant="secondary" className="text-[10px]">
               {sessions.length} session{sessions.length !== 1 ? 's' : ''}
             </Badge>
-            <span className="text-[10px] text-muted-foreground hidden sm:inline">
+
+            {/* Column Visibility Toggle */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-xs px-2 gap-1.5 ml-1">
+                  <Columns className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Columns</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[180px]">
+                <DropdownMenuCheckboxItem
+                  checked={!compactView}
+                  onCheckedChange={(checked) => toggleCompactView(!checked)}
+                  className="text-xs"
+                >
+                  Full View (All Columns)
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={compactView}
+                  onCheckedChange={toggleCompactView}
+                  className="text-xs"
+                >
+                  Compact View
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <span className="text-[10px] text-muted-foreground hidden lg:inline ml-2">
               Click any cell to edit · Type dates as M/dd
             </span>
           </div>
@@ -340,11 +444,73 @@ export function SessionsTable({
       </div>
 
       <CardContent className="p-0">
-        <div className="overflow-x-auto" style={{ boxShadow: 'inset -12px 0 8px -8px rgba(0,0,0,0.06)' }}>
-          <Table className="text-xs">
-            <TableHeader>
-              <TableRow className="bg-muted/40">
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[120px]">Room / Part</TableHead>
+        {/* Floating Bulk Action Bar */}
+        {selectedIds.size > 0 && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg animate-in fade-in slide-in-from-top-4">
+            <Badge variant="secondary" className="px-2 bg-primary-foreground/20 text-primary-foreground border-none">
+              {selectedIds.size} selected
+            </Badge>
+
+            <div className="w-px h-5 bg-primary-foreground/20 mx-1" />
+
+            {/* Quick Status Setter */}
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-medium mr-1 opacity-80">Set Status:</span>
+              <Select onValueChange={handleBulkStatus}>
+                <SelectTrigger className="h-7 w-28 text-xs border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground focus:ring-0">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {SESSION_STATUSES.map(s => (
+                    <SelectItem key={s.value} value={s.value} className="text-xs">
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-px h-5 bg-primary-foreground/20 mx-1" />
+
+            {/* Delete Button */}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-primary-foreground hover:bg-red-500/20 hover:text-red-100"
+              onClick={handleBulkDelete}
+              disabled={deleteSession.isPending}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1" />
+              Delete
+            </Button>
+
+            <div className="w-px h-5 bg-primary-foreground/20 mx-1" />
+
+            {/* Close Button */}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 rounded-full hover:bg-primary-foreground/20"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
+
+        <div className="overflow-auto max-h-[70vh]" style={{ boxShadow: 'inset -12px 0 8px -8px rgba(0,0,0,0.06)' }}>
+          <Table className="text-xs relative">
+            <TableHeader className="sticky top-0 z-20 bg-muted/40 backdrop-blur-sm shadow-sm">
+              <TableRow>
+                <TableHead className="py-1.5 px-2 w-[40px] sticky left-0 z-30 bg-muted/90 backdrop-blur-sm">
+                  <Checkbox
+                    checked={sessions.length > 0 && selectedIds.size === sessions.length}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Select all"
+                    className="translate-y-[2px]"
+                  />
+                </TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[120px] sticky left-[40px] z-30 bg-muted/90 backdrop-blur-sm border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Room / Part</TableHead>
                 <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[70px]">Send Pt</TableHead>
                 <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[120px]">Defendant(s)</TableHead>
                 <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[55px]">PURP</TableHead>
@@ -352,9 +518,13 @@ export function SessionsTable({
                 <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[80px]">Top Charge</TableHead>
                 <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[90px]">Status</TableHead>
                 <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[90px]">Attorneys</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[60px]">Est Fin</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[45px]">Cal #</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[80px]">Out Dates</TableHead>
+                {!compactView && (
+                  <>
+                    <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[60px]">Est Fin</TableHead>
+                    <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[45px]">Cal #</TableHead>
+                    <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[80px]">Out Dates</TableHead>
+                  </>
+                )}
                 <TableHead className="py-1.5 px-1 w-[56px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -363,11 +533,22 @@ export function SessionsTable({
                 const absenceText = getAbsenceText(session.judge_name);
                 const coverage = getCoverageForRoom(session.court_room_id);
                 const roomNumber = session.court_rooms?.room_number || '—';
+                const isSelected = selectedIds.has(session.id);
 
                 return (
-                  <TableRow key={session.id} className="hover:bg-muted/20 border-b">
-                    {/* Room / Part / Judge — read-only identity column */}
-                    <TableCell className="py-1 px-2 align-top">
+                  <TableRow key={session.id} className={`hover:bg-muted/20 border-b ${isSelected ? 'bg-primary/5' : ''}`}>
+                    {/* Checkbox */}
+                    <TableCell className={`py-1 px-2 align-top sticky left-0 z-10 ${isSelected ? 'bg-primary/5' : 'bg-background/95'} backdrop-blur-sm`}>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleSelectRow(session.id)}
+                        aria-label="Select row"
+                        className="translate-y-[2px]"
+                      />
+                    </TableCell>
+
+                    {/* Room / Part / Judge — read-only identity column, frozen on the left */}
+                    <TableCell className={`py-1 px-2 align-top sticky left-[40px] z-10 ${isSelected ? 'bg-primary/5' : 'bg-background/95'} backdrop-blur-sm border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-muted/50`}>
                       <div className="space-y-0 min-w-[100px]">
                         <div className="font-bold text-xs">{roomNumber}</div>
                         {session.part_number && (
@@ -430,20 +611,25 @@ export function SessionsTable({
                       <InlineCell value={session.attorney || ''} field="attorney" sessionId={session.id} onSave={handleCellSave} placeholder="ADA..." />
                     </TableCell>
 
-                    {/* Est. Finish — free-text date */}
-                    <TableCell className="py-1 px-2 align-top">
-                      <InlineCell value={session.estimated_finish_date || ''} field="estimated_finish_date" sessionId={session.id} onSave={handleCellSave} isDateField className="w-14" />
-                    </TableCell>
+                    {/* Conditionally rendered columns */}
+                    {!compactView && (
+                      <>
+                        {/* Est. Finish — free-text date */}
+                        <TableCell className="py-1 px-2 align-top">
+                          <InlineCell value={session.estimated_finish_date || ''} field="estimated_finish_date" sessionId={session.id} onSave={handleCellSave} isDateField className="w-14" />
+                        </TableCell>
 
-                    {/* Calendar Count */}
-                    <TableCell className="py-1 px-2 align-top">
-                      <InlineCell value={session.calendar_count != null ? String(session.calendar_count) : ''} field="calendar_count" sessionId={session.id} onSave={handleCellSave} placeholder="#" className="w-10" />
-                    </TableCell>
+                        {/* Calendar Count */}
+                        <TableCell className="py-1 px-2 align-top">
+                          <InlineCell value={session.calendar_count != null ? String(session.calendar_count) : ''} field="calendar_count" sessionId={session.id} onSave={handleCellSave} placeholder="#" className="w-10" />
+                        </TableCell>
 
-                    {/* Out Dates */}
-                    <TableCell className="py-1 px-2 align-top">
-                      <InlineCell value={session.out_dates?.join(', ') || ''} field="out_dates" sessionId={session.id} onSave={handleCellSave} placeholder="11/26-28" className="w-20" />
-                    </TableCell>
+                        {/* Out Dates */}
+                        <TableCell className="py-1 px-2 align-top">
+                          <InlineCell value={session.out_dates?.join(', ') || ''} field="out_dates" sessionId={session.id} onSave={handleCellSave} placeholder="11/26-28" className="w-20" />
+                        </TableCell>
+                      </>
+                    )}
 
                     {/* Actions: Copy Yesterday + Delete */}
                     <TableCell className="py-1 px-1 align-top">
@@ -484,6 +670,7 @@ export function SessionsTable({
           </Table>
         </div>
       </CardContent>
+      {confirmDialog}
     </Card>
   );
 }

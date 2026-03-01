@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle, AlertCircle, ChevronsUpDown, Check } from 'lucide-react';
 import { CoverageAssignment, SessionPeriod, BuildingCode } from '@/types/courtSessions';
 import { useCreateCoverageAssignment, useUpdateCoverageAssignment } from '@/hooks/useCoverageAssignments';
 import { useQuery } from '@tanstack/react-query';
@@ -43,8 +45,8 @@ export function CoverageAssignmentDialog({
     notes: '',
   });
   const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
-  const [coveringStaffSearch, setCoveringStaffSearch] = useState('');
-  const [showCoveringStaffDropdown, setShowCoveringStaffDropdown] = useState(false);
+  const [personnelDropdownOpen, setPersonnelDropdownOpen] = useState(false);
+  const [personnelSearch, setPersonnelSearch] = useState('');
 
   const createCoverage = useCreateCoverageAssignment();
   const updateCoverage = useUpdateCoverageAssignment();
@@ -55,13 +57,13 @@ export function CoverageAssignmentDialog({
     queryFn: async () => {
       // Get building ID for selected building code
       const buildingName = buildingCode === '100' ? '100 Centre Street Supreme Court' : '111 Centre Street Supreme Court';
-      
+
       const { data: building, error: buildingError } = await supabase
         .from('buildings')
         .select('id')
         .eq('name', buildingName)
         .single();
-      
+
       if (buildingError) throw buildingError;
 
       // Get court rooms for this building
@@ -82,7 +84,7 @@ export function CoverageAssignmentDialog({
         .eq('is_active', true)
         .eq('rooms.floors.building_id', building.id)
         .order('room_number');
-      
+
       if (roomsError) throw roomsError;
 
       // Get court assignments
@@ -90,7 +92,7 @@ export function CoverageAssignmentDialog({
         .from('court_assignments')
         .select('room_id, justice, part, clerks, sergeant')
         .not('justice', 'is', null);
-      
+
       if (assignmentsError) throw assignmentsError;
 
       // Combine data
@@ -107,24 +109,24 @@ export function CoverageAssignmentDialog({
   });
 
   // Fetch personnel for covering staff autocomplete
-  const { data: personnelList } = useQuery({
+  const { data: personnelList, isError: personnelError } = useQuery({
     queryKey: ['personnel-profiles-autocomplete'],
     queryFn: async () => {
       const { data, error } = await supabase
         .rpc('list_personnel_profiles_minimal');
-      
+
       if (error) {
         logger.error('Error fetching personnel:', error);
         throw error;
       }
-      
+
       // Map to consistent format
       const mapped = (data || []).map((person: Record<string, unknown>) => ({
         id: person.id,
         name: person.display_name || person.full_name || '',
         role: person.title || person.primary_role || 'Staff',
       }));
-      
+
       logger.debug(`Personnel loaded for autocomplete: ${mapped.length} people`);
       return mapped;
     },
@@ -133,22 +135,13 @@ export function CoverageAssignmentDialog({
 
   // Filter personnel based on search
   const filteredPersonnel = personnelList?.filter(person => {
-    if (!coveringStaffSearch) return false;
+    if (!personnelSearch) return true;
     const name = person.name.toLowerCase();
-    const searchLower = coveringStaffSearch.toLowerCase();
-    const matches = name.includes(searchLower);
-    return matches;
+    const searchLower = personnelSearch.toLowerCase();
+    return name.includes(searchLower);
   }) || [];
 
-  // Debug logging
-  useEffect(() => {
-    if (coveringStaffSearch) {
-      logger.debug('Search term:', coveringStaffSearch);
-      logger.debug('Total personnel:', personnelList?.length || 0);
-      logger.debug('Filtered results:', filteredPersonnel.length);
-      logger.debug('Show dropdown:', showCoveringStaffDropdown);
-    }
-  }, [coveringStaffSearch, filteredPersonnel.length, personnelList?.length, showCoveringStaffDropdown]);
+
 
   // Auto-populate assignment when room is selected
   useEffect(() => {
@@ -166,7 +159,7 @@ export function CoverageAssignmentDialog({
   useEffect(() => {
     if (selectedAssignment && !coverage) {
       let absentStaffName = '';
-      
+
       switch (formData.absent_staff_role) {
         case 'judge':
           absentStaffName = selectedAssignment.justice || '';
@@ -178,7 +171,7 @@ export function CoverageAssignmentDialog({
           absentStaffName = selectedAssignment.sergeant || '';
           break;
       }
-      
+
       if (absentStaffName) {
         setFormData(prev => ({ ...prev, absent_staff_name: absentStaffName }));
       }
@@ -248,6 +241,17 @@ export function CoverageAssignmentDialog({
             {coverage ? 'Edit' : 'Add'} Coverage Assignment
           </DialogTitle>
         </DialogHeader>
+
+        {personnelError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error loading personnel</AlertTitle>
+            <AlertDescription>
+              Failed to load the staff directory. You can still type the name manually.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -334,50 +338,71 @@ export function CoverageAssignmentDialog({
 
             <div className="space-y-2">
               <Label>Covering Staff Name *</Label>
-              <div className="relative">
-                <Input
-                  value={formData.covering_staff_name}
-                  onChange={(e) => {
-                    setFormData({ ...formData, covering_staff_name: e.target.value });
-                    setCoveringStaffSearch(e.target.value);
-                    setShowCoveringStaffDropdown(true);
-                  }}
-                  onFocus={() => {
-                    setCoveringStaffSearch(formData.covering_staff_name);
-                    setShowCoveringStaffDropdown(true);
-                  }}
-                  onBlur={() => {
-                    // Delay to allow click on dropdown
-                    setTimeout(() => setShowCoveringStaffDropdown(false), 200);
-                  }}
-                  placeholder="Start typing a name..."
-                  required
-                />
-                
-                {/* Autocomplete Dropdown */}
-                {showCoveringStaffDropdown && coveringStaffSearch && filteredPersonnel.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
-                    {filteredPersonnel.map((person) => (
-                      <button
-                        key={person.id}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, covering_staff_name: person.name });
-                          setCoveringStaffSearch('');
-                          setShowCoveringStaffDropdown(false);
-                        }}
-                        className="w-full px-3 py-2 text-left hover:bg-muted transition-colors flex items-center justify-between"
-                      >
-                        <div>
-                          <div className="font-medium">{person.name}</div>
-                          <div className="text-xs text-muted-foreground">{person.role}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">Start typing to see available staff, or enter any name</p>
+              <Popover open={personnelDropdownOpen} onOpenChange={setPersonnelDropdownOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={personnelDropdownOpen}
+                    className="w-full justify-between"
+                  >
+                    {formData.covering_staff_name || "Select staff member..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0" align="start">
+                  <Command>
+                    <CommandInput
+                      placeholder="Start typing a name..."
+                      value={personnelSearch}
+                      onValueChange={setPersonnelSearch}
+                    />
+                    <CommandList className="max-h-[250px] overflow-y-auto">
+                      <CommandEmpty className="p-1 text-center">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="w-full justify-start font-normal text-sm h-8"
+                          onClick={() => {
+                            if (personnelSearch.trim()) {
+                              setFormData({ ...formData, covering_staff_name: personnelSearch });
+                              setPersonnelSearch('');
+                              setPersonnelDropdownOpen(false);
+                            }
+                          }}
+                        >
+                          Use custom: "{personnelSearch}"
+                        </Button>
+                      </CommandEmpty>
+                      {filteredPersonnel.length > 0 && (
+                        <CommandGroup>
+                          {filteredPersonnel.map((person) => (
+                            <CommandItem
+                              key={person.id}
+                              value={person.name}
+                              onSelect={() => {
+                                setFormData({ ...formData, covering_staff_name: person.name });
+                                setPersonnelSearch('');
+                                setPersonnelDropdownOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${formData.covering_staff_name === person.name ? "opacity-100" : "opacity-0"
+                                  }`}
+                              />
+                              <div className="flex flex-col">
+                                <span>{person.name}</span>
+                                <span className="text-xs text-muted-foreground">{person.role}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">Select an available staff member, or type a custom one</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -424,8 +449,8 @@ export function CoverageAssignmentDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={createCoverage.isPending || updateCoverage.isPending}
             >
               {coverage ? 'Update' : 'Add'} Coverage

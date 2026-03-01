@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,17 +17,19 @@ interface CoveragePanelProps {
   isLoading: boolean;
 }
 
-export function CoveragePanel({ 
-  date, 
-  period, 
-  buildingCode, 
-  coverages, 
-  isLoading 
+export function CoveragePanel({
+  date,
+  period,
+  buildingCode,
+  coverages,
+  isLoading
 }: CoveragePanelProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCoverage, setEditingCoverage] = useState<CoverageAssignment | null>(null);
 
   const deleteCoverage = useDeleteCoverageAssignment();
+
+  const [confirmAction, confirmDialog] = useConfirmDialog();
 
   const handleAdd = () => {
     setEditingCoverage(null);
@@ -39,7 +42,13 @@ export function CoveragePanel({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this coverage assignment?')) return;
+    const confirmed = await confirmAction({
+      title: 'Remove Coverage Assignment',
+      description: 'Are you sure you want to remove this coverage assignment?',
+      confirmLabel: 'Remove',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await deleteCoverage.mutateAsync(id);
   };
 
@@ -140,6 +149,7 @@ export function CoveragePanel({
         buildingCode={buildingCode}
         coverage={editingCoverage}
       />
+      {confirmDialog}
     </>
   );
 }

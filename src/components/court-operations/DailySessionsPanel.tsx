@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { format, subDays, isToday } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Calendar, Copy, Users, CalendarCheck, FileText, Upload,
-  MoreHorizontal, Play, Plus, ChevronLeft, ChevronRight,
+  MoreHorizontal, Play, Plus, ChevronLeft, ChevronRight, Zap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -20,8 +21,10 @@ import { GenerateReportDialog } from './GenerateReportDialog';
 import { SessionConflictBanner } from './SessionConflictBanner';
 import { CreateSessionDialog } from './CreateSessionDialog';
 import { UploadDailyReportDialog } from './UploadDailyReportDialog';
+import { QuickSessionEntry } from './QuickSessionEntry';
 import { ExtractedDataReview } from './ExtractedDataReview';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useCourtSessions, useCopyYesterdaySessions } from '@/hooks/useCourtSessions';
 import { useCoverageAssignments } from '@/hooks/useCoverageAssignments';
 import { useSessionConflicts } from '@/hooks/useSessionConflicts';
@@ -32,9 +35,12 @@ import { BUILDING_CODES, SESSION_PERIODS } from '@/constants/sessionStatuses';
 
 export function DailySessionsPanel() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedPeriod, setSelectedPeriod] = useState<SessionPeriod>('AM');
+  const [selectedPeriod, setSelectedPeriod] = useState<SessionPeriod>(
+    new Date().getHours() >= 12 ? 'PM' : 'AM'
+  );
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingCode>('100');
   const [showCoveragePanel, setShowCoveragePanel] = useState(false);
+  const [showQuickEntry, setShowQuickEntry] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -62,9 +68,15 @@ export function DailySessionsPanel() {
   const copyYesterday = useCopyYesterdaySessions();
   const bulkCreateSessions = useBulkCreateCourtSessions();
   const startReport = useStartTodaysReport();
+  const [confirmAction, confirmDialog] = useConfirmDialog();
 
-  const handleStartReport = () => {
-    if (!confirm(`Start today's report? This will create session rows for all assigned courtrooms.`)) return;
+  const handleStartReport = async () => {
+    const confirmed = await confirmAction({
+      title: 'Start Today\'s Report',
+      description: 'This will create session rows for all assigned courtrooms. Continue?',
+      confirmLabel: 'Start Report',
+    });
+    if (!confirmed) return;
     startReport.mutate({
       date: selectedDate,
       period: selectedPeriod,
@@ -72,10 +84,15 @@ export function DailySessionsPanel() {
     });
   };
 
-  const handleCopyYesterday = () => {
+  const handleCopyYesterday = async () => {
     const yesterday = subDays(selectedDate, 1);
     const yesterdayStr = format(yesterday, 'MMMM dd');
-    if (!confirm(`Copy all sessions from ${yesterdayStr} to today?`)) return;
+    const confirmed = await confirmAction({
+      title: 'Copy Yesterday\'s Sessions',
+      description: `Copy all sessions from ${yesterdayStr} to today?`,
+      confirmLabel: 'Copy Sessions',
+    });
+    if (!confirmed) return;
     copyYesterday.mutate({
       fromDate: format(yesterday, 'yyyy-MM-dd'),
       toDate: format(selectedDate, 'yyyy-MM-dd'),
@@ -92,6 +109,14 @@ export function DailySessionsPanel() {
   const hasSessions = sessions && sessions.length > 0;
   const dateStr = format(selectedDate, 'EEEE, MMMM d, yyyy');
   const todayTag = isToday(selectedDate);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    { combo: { key: 'n' }, description: 'New Session', handler: () => setShowCreateDialog(true) },
+    { combo: { key: 'r' }, description: 'Start Report', handler: handleStartReport },
+    { combo: { key: 'c' }, description: 'Copy Yesterday', handler: handleCopyYesterday },
+    { combo: { key: 'u' }, description: 'Upload PDF', handler: () => setShowUploadDialog(true) },
+  ]);
 
   return (
     <div className="space-y-4">
@@ -158,6 +183,30 @@ export function DailySessionsPanel() {
                   </Button>
                 ))}
               </div>
+
+              {/* Shortcut discoverability */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                    <span className="text-xs font-semibold">⌨</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px]">
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Keyboard Shortcuts</div>
+                  <DropdownMenuItem className="flex justify-between text-xs">
+                    <span>New Session</span><kbd className="bg-muted px-1.5 rounded">N</kbd>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex justify-between text-xs">
+                    <span>Start Report</span><kbd className="bg-muted px-1.5 rounded">R</kbd>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex justify-between text-xs">
+                    <span>Copy Yesterday</span><kbd className="bg-muted px-1.5 rounded">C</kbd>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex justify-between text-xs">
+                    <span>Upload PDF</span><kbd className="bg-muted px-1.5 rounded">U</kbd>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -209,6 +258,16 @@ export function DailySessionsPanel() {
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 Add
+              </Button>
+
+              <Button
+                size="sm"
+                variant={showQuickEntry ? 'default' : 'outline'}
+                className={`h-8 text-xs ${showQuickEntry ? '' : 'bg-primary/5 border-primary/20 text-primary hover:bg-primary/10'}`}
+                onClick={() => setShowQuickEntry(!showQuickEntry)}
+              >
+                <Zap className="h-3.5 w-3.5 mr-1" />
+                Quick Entry
               </Button>
 
               <Button
@@ -289,6 +348,15 @@ export function DailySessionsPanel() {
         />
       )}
 
+      {/* Quick Entry Panel */}
+      {showQuickEntry && (
+        <QuickSessionEntry
+          date={selectedDate}
+          period={selectedPeriod}
+          buildingCode={selectedBuilding}
+        />
+      )}
+
       {/* Sessions Table */}
       {(hasSessions || sessionsLoading) && (
         <SessionsTable
@@ -325,6 +393,7 @@ export function DailySessionsPanel() {
       <UploadDailyReportDialog
         open={showUploadDialog}
         onOpenChange={setShowUploadDialog}
+        buildingCode={selectedBuilding}
         onDataExtracted={(data) => {
           setExtractedData(data);
           setShowReviewDialog(true);
@@ -347,6 +416,9 @@ export function DailySessionsPanel() {
           });
         }}
       />
+
+      {/* Styled confirmation dialog */}
+      {confirmDialog}
     </div>
   );
 }

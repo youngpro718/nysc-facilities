@@ -28,7 +28,7 @@ export const CourtOperationsDashboard = () => {
   const [tempLocationOpen, setTempLocationOpen] = useState(false);
   const [selectedCourtRoom, setSelectedCourtRoom] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get("tab") || "today";
+  const tab = searchParams.get("tab") || "sessions";
 
   // Get counts for tab badges
   const counts = useCourtOperationsCounts();
@@ -74,14 +74,6 @@ export const CourtOperationsDashboard = () => {
   // Tab configuration — flat structure, no nesting
   const tabs = [
     {
-      value: "today",
-      label: "Today",
-      mobileLabel: "Today",
-      icon: Activity,
-      badge: counts.todaysSessions > 0 ? counts.todaysSessions : null,
-      badgeVariant: "secondary" as const,
-    },
-    {
       value: "sessions",
       label: "Sessions",
       mobileLabel: "Sessions",
@@ -118,6 +110,9 @@ export const CourtOperationsDashboard = () => {
 
   return (
     <div className="container mx-auto px-3 sm:px-6 py-2 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-8">
+
+      {/* Global Status Alerts (formerly Today Tab) */}
+      <TodaysStatusDashboard onNavigateToTab={setTab} />
 
       {/* KPI Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
@@ -191,11 +186,6 @@ export const CourtOperationsDashboard = () => {
           </TabsList>
         </div>
 
-        {/* Today's Status */}
-        <TabsContent value="today" className="mt-4" data-tour="court-status-dashboard">
-          <TodaysStatusDashboard onNavigateToTab={setTab} />
-        </TabsContent>
-
         {/* Daily Sessions */}
         <TabsContent value="sessions" className="mt-4" data-tour="court-sessions">
           <DailySessionsPanel />
@@ -206,13 +196,36 @@ export const CourtOperationsDashboard = () => {
           <AssignmentManagementPanel />
         </TabsContent>
 
-        {/* Staff & Conflicts (merged) */}
+        {/* Staff & Conflicts (merged via sub-tabs) */}
         <TabsContent value="staff" className="mt-4">
-          <div className="space-y-6">
-            <StaffRosterPanel />
-            <StaffAbsenceManager />
-            <ConflictDetectionPanel />
-          </div>
+          <Tabs defaultValue="roster" className="w-full">
+            <div className="mb-4">
+              <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex">
+                <TabsTrigger value="roster" className="text-xs sm:text-sm">Roster</TabsTrigger>
+                <TabsTrigger value="absences" className="text-xs sm:text-sm">
+                  Absences
+                  {counts.uncoveredAbsences > 0 && (
+                    <Badge variant="destructive" className="ml-1.5 h-4 min-w-[16px] px-1 text-[10px] leading-none">
+                      {counts.uncoveredAbsences}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="conflicts" className="text-xs sm:text-sm">Conflicts</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="roster" className="mt-0">
+              <StaffRosterPanel />
+            </TabsContent>
+
+            <TabsContent value="absences" className="mt-0">
+              <StaffAbsenceManager />
+            </TabsContent>
+
+            <TabsContent value="conflicts" className="mt-0">
+              <ConflictDetectionPanel />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         {/* Live Grid (promoted from nested tab) */}

@@ -18,7 +18,7 @@ function parseFreeTextDate(input: string): string {
   }
   return input;
 }
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -30,11 +30,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Users, CheckCircle, AlertCircle, UserX, Calendar as CalendarIcon, ChevronsUpDown, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { useCreateCourtSession } from '@/hooks/useCourtSessions';
+import { useCreateCourtSession, useRecentCourtSessions } from '@/hooks/useCourtSessions';
 import { useAbsentStaffNames } from '@/hooks/useStaffAbsences';
 import { SessionPeriod, BuildingCode } from '@/types/courtSessions';
 import { SESSION_STATUSES } from '@/constants/sessionStatuses';
@@ -47,12 +48,12 @@ interface CreateSessionDialogProps {
   buildingCode: BuildingCode;
 }
 
-export function CreateSessionDialog({ 
-  open, 
-  onOpenChange, 
-  date, 
-  period, 
-  buildingCode: initialBuildingCode 
+export function CreateSessionDialog({
+  open,
+  onOpenChange,
+  date,
+  period,
+  buildingCode: initialBuildingCode
 }: CreateSessionDialogProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingCode>(initialBuildingCode);
   const [selectedRoomId, setSelectedRoomId] = useState('');
@@ -68,7 +69,7 @@ export function CreateSessionDialog({
   const [partDropdownOpen, setPartDropdownOpen] = useState(false);
   const [statusDetailDateOpen, setStatusDetailDateOpen] = useState(false);
   const [notesDateOpen, setNotesDateOpen] = useState(false);
-  
+
   // New calendar fields
   const [partsEnteredBy, setPartsEnteredBy] = useState('');
   const [defendants, setDefendants] = useState('');
@@ -81,6 +82,23 @@ export function CreateSessionDialog({
 
   const createSession = useCreateCourtSession();
   const dateStr = format(date, 'yyyy-MM-dd');
+
+  // Fetch recent sessions for this room for smart defaults
+  const { data: recentSessions } = useRecentCourtSessions(selectedRoomId);
+
+  // Auto-populate last used status when room changes
+  useEffect(() => {
+    if (selectedRoomId && recentSessions && recentSessions.length > 0) {
+      // Don't overwrite if they've manually changed it or if it's already set 
+      // (Unless it's just 'OUT' which is the default)
+      if (status === 'OUT') {
+        const lastSession = recentSessions[0];
+        if (lastSession.status && lastSession.status !== 'CUSTOM') {
+          setStatus(lastSession.status);
+        }
+      }
+    }
+  }, [selectedRoomId, recentSessions]);
 
   // Fetch existing sessions for this date/period to detect occupied rooms
   const { data: existingSessionsData } = useQuery({
@@ -98,10 +116,10 @@ export function CreateSessionDialog({
   });
   const occupiedRoomIds = new Set((existingSessionsData || []).map(s => s.court_room_id));
   const selectedRoomHasSession = selectedRoomId && occupiedRoomIds.has(selectedRoomId);
-  
+
   // Ref for auto-focusing the first field after save
   const defendantsInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Get absent staff for this date
   const { absentStaffMap } = useAbsentStaffNames(date);
 
@@ -129,14 +147,14 @@ export function CreateSessionDialog({
         `)
         .eq('is_active', true)
         .order('room_number');
-      
+
       if (roomsError) throw roomsError;
 
       // Get all court assignments
       const { data: assignments, error: assignmentsError } = await supabase
         .from('court_assignments')
         .select('room_id, justice, part');
-      
+
       if (assignmentsError) throw assignmentsError;
 
       // Create a map of room_id to assignment
@@ -148,10 +166,10 @@ export function CreateSessionDialog({
       const emptyRooms: Array<{ room_number: string; part?: string; judge?: string }> = [];
       const absentJudgeRooms: Array<{ room_number: string; part?: string; judge: string }> = [];
       const presentJudgeRooms: Array<{ room_number: string; part: string; judge: string }> = [];
-      
+
       rooms?.forEach(room => {
         const assignment = assignmentMap.get(room.room_id);
-        
+
         if (!assignment || !assignment.justice || assignment.justice.trim() === '') {
           // Empty room (no assignment or no judge)
           emptyRooms.push({
@@ -177,7 +195,7 @@ export function CreateSessionDialog({
           }
         }
       });
-      
+
       // Sort all groups by room number
       const sortByRoomNumber = (a: any, b: any) => {
         const numA = parseInt(a.room_number);
@@ -185,7 +203,7 @@ export function CreateSessionDialog({
         if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
         return a.room_number.localeCompare(b.room_number);
       };
-      
+
       return {
         empty: emptyRooms.sort(sortByRoomNumber),
         absent: absentJudgeRooms.sort(sortByRoomNumber),
@@ -202,13 +220,13 @@ export function CreateSessionDialog({
     queryFn: async () => {
       // Get building ID for selected building code
       const buildingName = selectedBuilding === '100' ? '100 Centre Street Supreme Court' : '111 Centre Street Supreme Court';
-      
+
       const { data: building, error: buildingError } = await supabase
         .from('buildings')
         .select('id')
         .eq('name', buildingName)
         .single();
-      
+
       if (buildingError) throw buildingError;
 
       // Get court rooms for this building through rooms → floors → buildings join
@@ -229,7 +247,7 @@ export function CreateSessionDialog({
         .eq('is_active', true)
         .eq('rooms.floors.building_id', building.id)
         .order('room_number');
-      
+
       if (roomsError) throw roomsError;
 
       // Get court assignments
@@ -237,7 +255,7 @@ export function CreateSessionDialog({
         .from('court_assignments')
         .select('room_id, justice, part, clerks, sergeant, calendar_day')
         .not('justice', 'is', null);
-      
+
       if (assignmentsError) throw assignmentsError;
 
       // Combine data
@@ -269,16 +287,16 @@ export function CreateSessionDialog({
     if (selectedAssignment?.justice && absentStaffMap.size > 0) {
       const judgeKey = selectedAssignment.justice.toLowerCase();
       const absence = absentStaffMap.get(judgeKey);
-      
+
       if (absence) {
         // Judge is absent - auto-populate OUT status
         setStatus('OUT');
-        
+
         // Auto-fill status detail with absence dates
         const startDate = format(new Date(absence.starts_on), 'MM/dd');
         const endDate = format(new Date(absence.ends_on), 'MM/dd');
         setStatusDetail(`OUT ${startDate}-${endDate}`);
-        
+
         logger.debug(`✅ Auto-populated absence for ${selectedAssignment.justice}: OUT ${startDate}-${endDate}`);
       }
     }
@@ -298,19 +316,19 @@ export function CreateSessionDialog({
   const filteredStatuses = SESSION_STATUSES.filter(s => {
     if (!statusSearch) return true;
     return s.label.toLowerCase().includes(statusSearch.toLowerCase()) ||
-           s.value.toLowerCase().includes(statusSearch.toLowerCase());
+      s.value.toLowerCase().includes(statusSearch.toLowerCase());
   });
 
   // Filter available rooms based on search
   const filteredAvailableRooms = availableRooms?.all.filter(room => {
     if (!partSearch) return true;
     return room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
-           room.part?.toLowerCase().includes(partSearch.toLowerCase());
+      room.part?.toLowerCase().includes(partSearch.toLowerCase());
   }) || [];
 
   // Track previous open state to detect when dialog first opens
   const prevOpenRef = useRef(false);
-  
+
   // Reset form only when dialog first opens (not on subsequent prop changes)
   useEffect(() => {
     if (open && !prevOpenRef.current) {
@@ -353,7 +371,7 @@ export function CreateSessionDialog({
     setCalendarCount('');
     setOutDates('');
     setNotes('');
-    
+
     // Auto-focus on defendants field for quick data entry
     setTimeout(() => {
       defendantsInputRef.current?.focus();
@@ -409,597 +427,634 @@ export function CreateSessionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Session</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-[90vw] sm:max-w-[700px] overflow-y-auto p-4 sm:p-6" style={{ paddingBottom: '20vh' }}>
+        <SheetHeader>
+          <SheetTitle>Create New Session</SheetTitle>
+          <SheetDescription>
             {format(date, 'EEEE, MMMM d, yyyy')} - {period} Period
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Building Selection */}
-          <div className="space-y-2">
-            <Label>Building *</Label>
-            <RadioGroup
-              value={selectedBuilding}
-              onValueChange={(value) => {
-                setSelectedBuilding(value as BuildingCode);
-                setSelectedRoomId(''); // Reset room selection
-              }}
-              className="flex gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="100" id="building-100" />
-                <Label htmlFor="building-100" className="cursor-pointer font-normal">
-                  100 Centre Street
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="111" id="building-111" />
-                <Label htmlFor="building-111" className="cursor-pointer font-normal">
-                  111 Centre Street
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-          {/* Court Room Selection with Auto-Complete */}
-          <div className="space-y-2">
-            <Label htmlFor="room-search">Courtroom * {filteredRooms.length > 0 && `(${filteredRooms.length} matches)`}</Label>
-            <div className="relative">
-              <Input
-                id="room-search"
-                placeholder="Type room number, part, or judge name..."
-                value={roomSearch}
-                onChange={(e) => setRoomSearch(e.target.value)}
-                onFocus={() => setRoomSearch('')}
-                className="pr-10"
-              />
-              {roomsLoading && (
-                <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
-              )}
-            </div>
-            
-            {/* Auto-filtered results */}
-            {roomSearch && (
-              <div className="border rounded-md max-h-[300px] overflow-y-auto bg-background">
-                {filteredRooms.length === 0 ? (
-                  <div className="p-3 text-sm text-muted-foreground text-center">
-                    No courtrooms found matching "{roomSearch}"
+        {/* Smart Default Datalists for Type-Ahead */}
+        {recentSessions && recentSessions.length > 0 && (
+          <>
+            <datalist id="recent-defendants">
+              {Array.from(new Set(recentSessions.map(s => s.defendants).filter(Boolean))).slice(0, 15).map(def => (
+                <option key={`def-${def}`} value={def as string} />
+              ))}
+            </datalist>
+            <datalist id="recent-purposes">
+              {Array.from(new Set(recentSessions.map(s => s.purpose).filter(Boolean))).slice(0, 15).map(p => (
+                <option key={`purp-${p}`} value={p as string} />
+              ))}
+            </datalist>
+            <datalist id="recent-top-charges">
+              {Array.from(new Set(recentSessions.map(s => s.top_charge).filter(Boolean))).slice(0, 15).map(c => (
+                <option key={`chg-${c}`} value={c as string} />
+              ))}
+            </datalist>
+            <datalist id="recent-attorneys">
+              {Array.from(new Set(recentSessions.map(s => s.attorney).filter(Boolean))).slice(0, 15).map(a => (
+                <option key={`att-${a}`} value={a as string} />
+              ))}
+            </datalist>
+          </>
+        )}
+
+        <div className="py-4">
+          <Tabs defaultValue="core" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="core">Core Details</TabsTrigger>
+              <TabsTrigger value="additional">Case & Additional Info</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="core" className="space-y-4">
+              {/* Building Selection */}
+              <div className="space-y-2">
+                <Label>Building *</Label>
+                <RadioGroup
+                  value={selectedBuilding}
+                  onValueChange={(value) => {
+                    setSelectedBuilding(value as BuildingCode);
+                    setSelectedRoomId(''); // Reset room selection
+                  }}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="100" id="building-100" />
+                    <Label htmlFor="building-100" className="cursor-pointer font-normal">
+                      100 Centre Street
+                    </Label>
                   </div>
-                ) : (
-                  <div className="divide-y">
-                    {filteredRooms.map((room) => (
-                      <button
-                        key={room.id}
-                        type="button"
-                        disabled={occupiedRoomIds.has(room.id)}
-                        onClick={() => {
-                          setSelectedRoomId(room.id);
-                          setRoomSearch('');
-                        }}
-                        className={`w-full p-3 text-left transition-colors flex items-center justify-between ${
-                          occupiedRoomIds.has(room.id) 
-                            ? 'opacity-50 cursor-not-allowed bg-muted' 
-                            : 'hover:bg-muted'
-                        }`}
-                      >
-                        <div className="flex-1">
-                          <div className="font-medium">Room {room.room_number}</div>
-                          {room.assignment && (
-                            <div className="text-sm text-muted-foreground">
-                              Part {room.assignment.part} - {room.assignment.justice}
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="111" id="building-111" />
+                    <Label htmlFor="building-111" className="cursor-pointer font-normal">
+                      111 Centre Street
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              {/* Court Room Selection with Auto-Complete */}
+              <div className="space-y-2">
+                <Label htmlFor="room-search">Courtroom * {filteredRooms.length > 0 && `(${filteredRooms.length} matches)`}</Label>
+                <div className="relative">
+                  <Input
+                    id="room-search"
+                    placeholder="Type room number, part, or judge name..."
+                    value={roomSearch}
+                    onChange={(e) => setRoomSearch(e.target.value)}
+                    onFocus={() => setRoomSearch('')}
+                    className="pr-10"
+                  />
+                  {roomsLoading && (
+                    <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+
+                {/* Auto-filtered results */}
+                {roomSearch && (
+                  <div className="border rounded-md max-h-[300px] overflow-y-auto bg-background">
+                    {filteredRooms.length === 0 ? (
+                      <div className="p-3 text-sm text-muted-foreground text-center">
+                        No courtrooms found matching "{roomSearch}"
+                      </div>
+                    ) : (
+                      <div className="divide-y">
+                        {filteredRooms.map((room) => (
+                          <button
+                            key={room.id}
+                            type="button"
+                            disabled={occupiedRoomIds.has(room.id)}
+                            onClick={() => {
+                              setSelectedRoomId(room.id);
+                              setRoomSearch('');
+                            }}
+                            className={`w-full p-3 text-left transition-colors flex items-center justify-between ${occupiedRoomIds.has(room.id)
+                              ? 'opacity-50 cursor-not-allowed bg-muted'
+                              : 'hover:bg-muted'
+                              }`}
+                          >
+                            <div className="flex-1">
+                              <div className="font-medium">Room {room.room_number}</div>
+                              {room.assignment && (
+                                <div className="text-sm text-muted-foreground">
+                                  Part {room.assignment.part} - {room.assignment.justice}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        {occupiedRoomIds.has(room.id) ? (
-                          <Badge variant="destructive" className="text-xs">Session exists</Badge>
-                        ) : !room.assignment ? (
-                          <Badge variant="outline" className="text-xs">Empty</Badge>
-                        ) : null}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Selected room display */}
-            {selectedRoomId && !roomSearch && (
-              <div className="p-3 border rounded-md bg-muted/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="font-medium">
-                      Room {roomsWithAssignments?.find(r => r.id === selectedRoomId)?.room_number}
-                    </div>
-                    {selectedAssignment && (
-                      <div className="text-sm text-muted-foreground">
-                        Part {selectedAssignment.part} - {selectedAssignment.justice}
+                            {occupiedRoomIds.has(room.id) ? (
+                              <Badge variant="destructive" className="text-xs">Session exists</Badge>
+                            ) : !room.assignment ? (
+                              <Badge variant="outline" className="text-xs">Empty</Badge>
+                            ) : null}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRoomId('');
-                      setSelectedAssignment(null);
-                    }}
-                  >
-                    Change
-                  </Button>
-                </div>
-              </div>
-            )}
+                )}
 
-            {/* Warning when selected room already has a session */}
-            {selectedRoomHasSession && (
-              <Alert className="border-destructive/50 bg-destructive/10">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <AlertDescription className="flex items-center justify-between">
-                  <span className="text-sm">
-                    A session already exists for this room on {format(date, 'MMM d')} ({period}). 
-                    You can edit it directly in the sessions table.
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="ml-3 shrink-0"
-                    onClick={() => {
-                      onOpenChange(false);
-                    }}
-                  >
-                    Edit Existing Session
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          {/* Assignment Details - Auto-populated from Room */}
-          {selectedRoomId && (
-            <div className="rounded-lg border-2 border-primary/20 p-4 bg-primary/5 space-y-3">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <h4 className="font-medium text-primary">Auto-Populated Personnel</h4>
-                <Badge variant="secondary" className="ml-auto text-xs">From Room Assignment</Badge>
-              </div>
-              
-              {selectedAssignment ? (
-                <div className="space-y-2 text-sm">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-2 bg-background rounded border">
-                      <div className="text-xs text-muted-foreground mb-1">Part Number</div>
-                      <div className="font-medium">{selectedAssignment.part}</div>
-                    </div>
-                    <div className="p-2 bg-background rounded border">
-                      <div className="text-xs text-muted-foreground mb-1">Judge</div>
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium">{selectedAssignment.justice}</div>
-                        {selectedAssignment.justice && absentStaffMap.has(selectedAssignment.justice.toLowerCase()) && (
-                          <Badge variant="destructive" className="text-xs flex items-center gap-1">
-                            <UserX className="h-3 w-3" />
-                            Absent
-                          </Badge>
+                {/* Selected room display */}
+                {selectedRoomId && !roomSearch && (
+                  <div className="p-3 border rounded-md bg-muted/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          Room {roomsWithAssignments?.find(r => r.id === selectedRoomId)?.room_number}
+                        </div>
+                        {selectedAssignment && (
+                          <div className="text-sm text-muted-foreground">
+                            Part {selectedAssignment.part} - {selectedAssignment.justice}
+                          </div>
                         )}
                       </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedRoomId('');
+                          setSelectedAssignment(null);
+                        }}
+                      >
+                        Change
+                      </Button>
                     </div>
                   </div>
-                  <div className="p-2 bg-background rounded border">
-                    <div className="text-xs text-muted-foreground mb-1">Court Clerks</div>
-                    <div className="font-medium">{selectedAssignment.clerks?.join(', ') || 'None assigned'}</div>
+                )}
+
+                {/* Warning when selected room already has a session */}
+                {selectedRoomHasSession && (
+                  <Alert className="border-destructive/50 bg-destructive/10">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <AlertDescription className="flex items-center justify-between">
+                      <span className="text-sm">
+                        A session already exists for this room on {format(date, 'MMM d')} ({period}).
+                        You can edit it directly in the sessions table.
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="ml-3 shrink-0"
+                        onClick={() => {
+                          onOpenChange(false);
+                        }}
+                      >
+                        Edit Existing Session
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* Assignment Details - Auto-populated from Room */}
+              {selectedRoomId && (
+                <div className="rounded-lg border-2 border-primary/20 p-4 bg-primary/5 space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <h4 className="font-medium text-primary">Auto-Populated Personnel</h4>
+                    <Badge variant="secondary" className="ml-auto text-xs">From Room Assignment</Badge>
                   </div>
-                  <div className="p-2 bg-background rounded border">
-                    <div className="text-xs text-muted-foreground mb-1">Court Sergeant</div>
-                    <div className="font-medium">{selectedAssignment.sergeant || 'None assigned'}</div>
-                  </div>
-                  {selectedAssignment.calendar_day && (
-                    <div className="p-2 bg-background rounded border">
-                      <div className="text-xs text-muted-foreground mb-1">Calendar Day</div>
-                      <div className="font-medium flex items-center gap-2">
-                        <CalendarIcon className="h-3 w-3" />
-                        {selectedAssignment.calendar_day}
+
+                  {selectedAssignment ? (
+                    <div className="space-y-2 text-sm">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-2 bg-background rounded border">
+                          <div className="text-xs text-muted-foreground mb-1">Part Number</div>
+                          <div className="font-medium">{selectedAssignment.part}</div>
+                        </div>
+                        <div className="p-2 bg-background rounded border">
+                          <div className="text-xs text-muted-foreground mb-1">Judge</div>
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium">{selectedAssignment.justice}</div>
+                            {selectedAssignment.justice && absentStaffMap.has(selectedAssignment.justice.toLowerCase()) && (
+                              <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                                <UserX className="h-3 w-3" />
+                                Absent
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
+                      <div className="p-2 bg-background rounded border">
+                        <div className="text-xs text-muted-foreground mb-1">Court Clerks</div>
+                        <div className="font-medium">{selectedAssignment.clerks?.join(', ') || 'None assigned'}</div>
+                      </div>
+                      <div className="p-2 bg-background rounded border">
+                        <div className="text-xs text-muted-foreground mb-1">Court Sergeant</div>
+                        <div className="font-medium">{selectedAssignment.sergeant || 'None assigned'}</div>
+                      </div>
+                      {selectedAssignment.calendar_day && (
+                        <div className="p-2 bg-background rounded border">
+                          <div className="text-xs text-muted-foreground mb-1">Calendar Day</div>
+                          <div className="font-medium flex items-center gap-2">
+                            <CalendarIcon className="h-3 w-3" />
+                            {selectedAssignment.calendar_day}
+                          </div>
+                        </div>
+                      )}
+                      {selectedAssignment.justice && absentStaffMap.has(selectedAssignment.justice.toLowerCase()) ? (
+                        <Alert className="mt-2 border-amber-500/30 bg-amber-500/5">
+                          <UserX className="h-4 w-4 text-amber-600" />
+                          <AlertDescription className="text-xs">
+                            <strong>✅ Absence Auto-Populated:</strong> {selectedAssignment.justice} is marked as absent on this date ({absentStaffMap.get(selectedAssignment.justice.toLowerCase())?.absence_reason}). The status has been automatically set to "OUT" with absence dates in the status detail field.
+                            <br />
+                            <span className="text-muted-foreground italic mt-1 block">
+                              You can modify these fields if needed before creating the session.
+                            </span>
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        <Alert className="mt-2 border-primary/30 bg-primary/5">
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                          <AlertDescription className="text-xs">
+                            <strong>Automatic Assignment:</strong> These personnel details are automatically populated from the room's current assignment. They will be saved with this session.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </div>
-                  )}
-                  {selectedAssignment.justice && absentStaffMap.has(selectedAssignment.justice.toLowerCase()) ? (
-                    <Alert className="mt-2 border-amber-500/30 bg-amber-500/5">
-                      <UserX className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="text-xs">
-                        <strong>✅ Absence Auto-Populated:</strong> {selectedAssignment.justice} is marked as absent on this date ({absentStaffMap.get(selectedAssignment.justice.toLowerCase())?.absence_reason}). The status has been automatically set to "OUT" with absence dates in the status detail field.
-                        <br/>
-                        <span className="text-muted-foreground italic mt-1 block">
-                          You can modify these fields if needed before creating the session.
-                        </span>
-                      </AlertDescription>
-                    </Alert>
                   ) : (
-                    <Alert className="mt-2 border-primary/30 bg-primary/5">
-                      <CheckCircle className="h-4 w-4 text-primary" />
+                    <Alert className="border-amber-500/30 bg-amber-500/5">
+                      <AlertCircle className="h-4 w-4 text-amber-500" />
                       <AlertDescription className="text-xs">
-                        <strong>Automatic Assignment:</strong> These personnel details are automatically populated from the room's current assignment. They will be saved with this session.
+                        <strong>No Assignment:</strong> This courtroom has no current personnel assignment. The session will be created without assigned personnel.
                       </AlertDescription>
                     </Alert>
                   )}
                 </div>
-              ) : (
-                <Alert className="border-amber-500/30 bg-amber-500/5">
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
-                  <AlertDescription className="text-xs">
-                    <strong>No Assignment:</strong> This courtroom has no current personnel assignment. The session will be created without assigned personnel.
-                  </AlertDescription>
-                </Alert>
               )}
-            </div>
-          )}
 
-          {/* Status */}
-          <div className="space-y-2">
-            <Label htmlFor="status">Status *</Label>
-            <Select 
-              value={status} 
-              onValueChange={(value) => {
-                setStatus(value);
-                setShowCustomStatus(value === 'CUSTOM');
-              }}
-            >
-              <SelectTrigger id="status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SESSION_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-                <SelectItem value="CUSTOM" className="font-medium text-primary">
-                  + Add Custom Status
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Custom Status Input */}
-          {showCustomStatus && (
-            <div className="space-y-2">
-              <Label htmlFor="custom-status">Custom Status *</Label>
-              <Input
-                id="custom-status"
-                placeholder="Enter custom status (e.g., SETTLEMENT, CONFERENCE)"
-                value={customStatus}
-                onChange={(e) => setCustomStatus(e.target.value.toUpperCase())}
-                autoFocus
-              />
-              <p className="text-xs text-muted-foreground">
-                Enter a custom status code. This will be saved and can be used for future sessions.
-              </p>
-            </div>
-          )}
-
-          {/* Status Detail (Optional) */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="status-detail">Status Detail (Optional)</Label>
-              <Popover open={statusDetailDateOpen} onOpenChange={setStatusDetailDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" type="button">
-                    <CalendarIcon className="h-3 w-3 mr-1" />
-                    Insert Date
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={undefined}
-                    onSelect={(selectedDate) => {
-                      if (selectedDate) {
-                        const dateStr = format(selectedDate, 'MM/dd');
-                        setStatusDetail(prev => prev ? `${prev} ${dateStr}` : dateStr);
-                        setStatusDetailDateOpen(false);
-                      }
-                    }}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <Input
-              id="status-detail"
-              placeholder="e.g., HRG CONT'D 10/23"
-              value={statusDetail}
-              onChange={(e) => setStatusDetail(e.target.value)}
-            />
-          </div>
-
-          {/* New Calendar Fields */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Sending Part */}
-            <div className="space-y-2">
-              <Label htmlFor="parts-entered-by">
-                Sending Part {availableRooms && `(${availableRooms.empty.length} empty, ${availableRooms.absent.length} absent, ${availableRooms.present.length} active)`}
-                <span className="text-xs text-muted-foreground ml-2">(Leave blank for OWN)</span>
-              </Label>
-              <Popover open={partDropdownOpen} onOpenChange={setPartDropdownOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={partDropdownOpen}
-                    className="w-full justify-between"
-                  >
-                    {partsEnteredBy || "OWN - Select a room..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0" align="start">
-                  <Command>
-                    <CommandInput 
-                      placeholder="Search rooms or parts..." 
-                      value={partSearch}
-                      onValueChange={setPartSearch}
-                    />
-                    <CommandList className="max-h-[400px] overflow-y-auto">
-                      <CommandEmpty>No available rooms found.</CommandEmpty>
-                      
-                      {/* Empty Rooms Group */}
-                      {availableRooms?.empty && availableRooms.empty.length > 0 && (
-                        <CommandGroup heading="Empty Rooms">
-                          {availableRooms.empty
-                            .filter(room => 
-                              !partSearch || 
-                              room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
-                              room.part?.toLowerCase().includes(partSearch.toLowerCase())
-                            )
-                            .map((room) => (
-                              <CommandItem
-                                key={`empty-${room.room_number}`}
-                                value={`${room.room_number} ${room.part || ''}`}
-                                onSelect={() => {
-                                  setPartsEnteredBy(room.part || room.room_number);
-                                  setPartDropdownOpen(false);
-                                  setPartSearch('');
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <Check
-                                  className={`mr-2 h-4 w-4 ${
-                                    partsEnteredBy === (room.part || room.room_number) ? "opacity-100" : "opacity-0"
-                                  }`}
-                                />
-                                <div className="flex-1">
-                                  <div className="font-medium">Room {room.room_number}</div>
-                                  {room.part ? (
-                                    <div className="text-xs text-muted-foreground">Part {room.part} • Empty</div>
-                                  ) : (
-                                    <div className="text-xs text-muted-foreground">No part assigned</div>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
-                      )}
-                      
-                      {/* Absent Judge Rooms Group */}
-                      {availableRooms?.absent && availableRooms.absent.length > 0 && (
-                        <CommandGroup heading="Judge Absent">
-                          {availableRooms.absent
-                            .filter(room => 
-                              !partSearch || 
-                              room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
-                              room.part?.toLowerCase().includes(partSearch.toLowerCase()) ||
-                              room.judge?.toLowerCase().includes(partSearch.toLowerCase())
-                            )
-                            .map((room) => (
-                              <CommandItem
-                                key={`absent-${room.room_number}`}
-                                value={`${room.room_number} ${room.part || ''} ${room.judge || ''}`}
-                                onSelect={() => {
-                                  setPartsEnteredBy(room.part || room.room_number);
-                                  setPartDropdownOpen(false);
-                                  setPartSearch('');
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <Check
-                                  className={`mr-2 h-4 w-4 ${
-                                    partsEnteredBy === (room.part || room.room_number) ? "opacity-100" : "opacity-0"
-                                  }`}
-                                />
-                                <div className="flex-1">
-                                  <div className="font-medium">Room {room.room_number}</div>
-                                  <div className="text-xs text-amber-600">
-                                    Part {room.part} • {room.judge} (Absent)
-                                  </div>
-                                </div>
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
-                      )}
-                      
-                      {/* Present Judge Rooms Group (May Have Capacity) */}
-                      {availableRooms?.present && availableRooms.present.length > 0 && (
-                        <CommandGroup heading="Judge Present / Available">
-                          {availableRooms.present
-                            .filter(room => 
-                              !partSearch || 
-                              room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
-                              room.part?.toLowerCase().includes(partSearch.toLowerCase()) ||
-                              room.judge?.toLowerCase().includes(partSearch.toLowerCase())
-                            )
-                            .map((room) => (
-                              <CommandItem
-                                key={`present-${room.room_number}`}
-                                value={`${room.room_number} ${room.part} ${room.judge}`}
-                                onSelect={() => {
-                                  setPartsEnteredBy(room.part || room.room_number);
-                                  setPartDropdownOpen(false);
-                                  setPartSearch('');
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <Check
-                                  className={`mr-2 h-4 w-4 ${
-                                    partsEnteredBy === (room.part || room.room_number) ? "opacity-100" : "opacity-0"
-                                  }`}
-                                />
-                                <div className="flex-1">
-                                  <div className="font-medium">Room {room.room_number}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Part {room.part} • {room.judge} (In Session)
-                                  </div>
-                                </div>
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
-                      )}
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              
-              {/* Clear button when part is selected */}
-              {partsEnteredBy && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPartsEnteredBy('')}
-                  className="w-full text-xs"
+              {/* Status */}
+              <div className="space-y-2">
+                <Label htmlFor="status">Status *</Label>
+                <Select
+                  value={status}
+                  onValueChange={(value) => {
+                    setStatus(value);
+                    setShowCustomStatus(value === 'CUSTOM');
+                  }}
                 >
-                  Clear Selection (Default to OWN)
-                </Button>
-              )}
-            </div>
+                  <SelectTrigger id="status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SESSION_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="CUSTOM" className="font-medium text-primary">
+                      + Add Custom Status
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Defendants */}
-            <div className="space-y-2">
-              <Label htmlFor="defendants">Defendants</Label>
-              <Input
-                ref={defendantsInputRef}
-                id="defendants"
-                placeholder="Enter defendants..."
-                value={defendants}
-                onChange={(e) => setDefendants(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Purpose */}
-            <div className="space-y-2">
-              <Label htmlFor="purpose">Purpose</Label>
-              <Input
-                id="purpose"
-                placeholder="Enter purpose..."
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-              />
-            </div>
-
-            {/* Date Tran/Start */}
-            <div className="space-y-2">
-              <Label htmlFor="date-tran-start">Date Tran/Start <span className="text-xs text-muted-foreground">(type M/dd)</span></Label>
-              <Input
-                id="date-tran-start"
-                placeholder="e.g., 10/21"
-                value={dateTranStart}
-                onChange={(e) => setDateTranStart(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Top Charge */}
-            <div className="space-y-2">
-              <Label htmlFor="top-charge">Top Charge</Label>
-              <Input
-                id="top-charge"
-                placeholder="Enter top charge..."
-                value={topCharge}
-                onChange={(e) => setTopCharge(e.target.value)}
-              />
-            </div>
-
-            {/* Attorney */}
-            <div className="space-y-2">
-              <Label htmlFor="attorney">Attorney</Label>
-              <Input
-                id="attorney"
-                placeholder="Enter attorney..."
-                value={attorney}
-                onChange={(e) => setAttorney(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Calendar Count */}
-            <div className="space-y-2">
-              <Label htmlFor="calendar-count">Calendar Count</Label>
-              <Input
-                id="calendar-count"
-                type="number"
-                placeholder="e.g., 5"
-                value={calendarCount}
-                onChange={(e) => setCalendarCount(e.target.value)}
-              />
-            </div>
-
-            {/* Out Dates */}
-            <div className="space-y-2">
-              <Label htmlFor="out-dates">Out Dates <span className="text-xs text-muted-foreground">(comma-separated)</span></Label>
-              <Input
-                id="out-dates"
-                placeholder="e.g., 11/26-11/28, 12/24"
-                value={outDates}
-                onChange={(e) => setOutDates(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="notes">Notes</Label>
-              <Popover open={notesDateOpen} onOpenChange={setNotesDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" type="button">
-                    <CalendarIcon className="h-3 w-3 mr-1" />
-                    Insert Date
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={undefined}
-                    onSelect={(selectedDate) => {
-                      if (selectedDate) {
-                        const dateStr = format(selectedDate, 'MM/dd');
-                        setNotes(prev => prev ? `${prev} ${dateStr}` : dateStr);
-                        setNotesDateOpen(false);
-                      }
-                    }}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
+              {/* Custom Status Input */}
+              {showCustomStatus && (
+                <div className="space-y-2">
+                  <Label htmlFor="custom-status">Custom Status *</Label>
+                  <Input
+                    id="custom-status"
+                    placeholder="Enter custom status (e.g., SETTLEMENT, CONFERENCE)"
+                    value={customStatus}
+                    onChange={(e) => setCustomStatus(e.target.value.toUpperCase())}
+                    autoFocus
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <Textarea
-              id="notes"
-              placeholder="e.g., Cal Thurs OFF 10/23 10/24-10/25"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-            />
-          </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter a custom status code. This will be saved and can be used for future sessions.
+                  </p>
+                </div>
+              )}
+
+              {/* Status Detail (Optional) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="status-detail">Status Detail (Optional)</Label>
+                  <Popover open={statusDetailDateOpen} onOpenChange={setStatusDetailDateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" type="button">
+                        <CalendarIcon className="h-3 w-3 mr-1" />
+                        Insert Date
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={undefined}
+                        onSelect={(selectedDate) => {
+                          if (selectedDate) {
+                            const dateStr = format(selectedDate, 'MM/dd');
+                            setStatusDetail(prev => prev ? `${prev} ${dateStr}` : dateStr);
+                            setStatusDetailDateOpen(false);
+                          }
+                        }}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <Input
+                  id="status-detail"
+                  placeholder="e.g., HRG CONT'D 10/23"
+                  value={statusDetail}
+                  onChange={(e) => setStatusDetail(e.target.value)}
+                />
+              </div>
+
+              {/* New Calendar Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Sending Part */}
+                <div className="space-y-2">
+                  <Label htmlFor="parts-entered-by">
+                    Sending Part {availableRooms && `(${availableRooms.empty.length} empty, ${availableRooms.absent.length} absent, ${availableRooms.present.length} active)`}
+                    <span className="text-xs text-muted-foreground ml-2">(Leave blank for OWN)</span>
+                  </Label>
+                  <Popover open={partDropdownOpen} onOpenChange={setPartDropdownOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={partDropdownOpen}
+                        className="w-full justify-between"
+                      >
+                        {partsEnteredBy || "OWN - Select a room..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0" align="start">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search rooms or parts..."
+                          value={partSearch}
+                          onValueChange={setPartSearch}
+                        />
+                        <CommandList className="max-h-[400px] overflow-y-auto">
+                          <CommandEmpty>No available rooms found.</CommandEmpty>
+
+                          {/* Empty Rooms Group */}
+                          {availableRooms?.empty && availableRooms.empty.length > 0 && (
+                            <CommandGroup heading="Empty Rooms">
+                              {availableRooms.empty
+                                .filter(room =>
+                                  !partSearch ||
+                                  room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                                  room.part?.toLowerCase().includes(partSearch.toLowerCase())
+                                )
+                                .map((room) => (
+                                  <CommandItem
+                                    key={`empty-${room.room_number}`}
+                                    value={`${room.room_number} ${room.part || ''}`}
+                                    onSelect={() => {
+                                      setPartsEnteredBy(room.part || room.room_number);
+                                      setPartDropdownOpen(false);
+                                      setPartSearch('');
+                                    }}
+                                    className="cursor-pointer"
+                                  >
+                                    <Check
+                                      className={`mr-2 h-4 w-4 ${partsEnteredBy === (room.part || room.room_number) ? "opacity-100" : "opacity-0"
+                                        }`}
+                                    />
+                                    <div className="flex-1">
+                                      <div className="font-medium">Room {room.room_number}</div>
+                                      {room.part ? (
+                                        <div className="text-xs text-muted-foreground">Part {room.part} • Empty</div>
+                                      ) : (
+                                        <div className="text-xs text-muted-foreground">No part assigned</div>
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          )}
+
+                          {/* Absent Judge Rooms Group */}
+                          {availableRooms?.absent && availableRooms.absent.length > 0 && (
+                            <CommandGroup heading="Judge Absent">
+                              {availableRooms.absent
+                                .filter(room =>
+                                  !partSearch ||
+                                  room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                                  room.part?.toLowerCase().includes(partSearch.toLowerCase()) ||
+                                  room.judge?.toLowerCase().includes(partSearch.toLowerCase())
+                                )
+                                .map((room) => (
+                                  <CommandItem
+                                    key={`absent-${room.room_number}`}
+                                    value={`${room.room_number} ${room.part || ''} ${room.judge || ''}`}
+                                    onSelect={() => {
+                                      setPartsEnteredBy(room.part || room.room_number);
+                                      setPartDropdownOpen(false);
+                                      setPartSearch('');
+                                    }}
+                                    className="cursor-pointer"
+                                  >
+                                    <Check
+                                      className={`mr-2 h-4 w-4 ${partsEnteredBy === (room.part || room.room_number) ? "opacity-100" : "opacity-0"
+                                        }`}
+                                    />
+                                    <div className="flex-1">
+                                      <div className="font-medium">Room {room.room_number}</div>
+                                      <div className="text-xs text-amber-600">
+                                        Part {room.part} • {room.judge} (Absent)
+                                      </div>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          )}
+
+                          {/* Present Judge Rooms Group (May Have Capacity) */}
+                          {availableRooms?.present && availableRooms.present.length > 0 && (
+                            <CommandGroup heading="Judge Present / Available">
+                              {availableRooms.present
+                                .filter(room =>
+                                  !partSearch ||
+                                  room.room_number.toLowerCase().includes(partSearch.toLowerCase()) ||
+                                  room.part?.toLowerCase().includes(partSearch.toLowerCase()) ||
+                                  room.judge?.toLowerCase().includes(partSearch.toLowerCase())
+                                )
+                                .map((room) => (
+                                  <CommandItem
+                                    key={`present-${room.room_number}`}
+                                    value={`${room.room_number} ${room.part} ${room.judge}`}
+                                    onSelect={() => {
+                                      setPartsEnteredBy(room.part || room.room_number);
+                                      setPartDropdownOpen(false);
+                                      setPartSearch('');
+                                    }}
+                                    className="cursor-pointer"
+                                  >
+                                    <Check
+                                      className={`mr-2 h-4 w-4 ${partsEnteredBy === (room.part || room.room_number) ? "opacity-100" : "opacity-0"
+                                        }`}
+                                    />
+                                    <div className="flex-1">
+                                      <div className="font-medium">Room {room.room_number}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Part {room.part} • {room.judge} (In Session)
+                                      </div>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Clear button when part is selected */}
+                  {partsEnteredBy && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPartsEnteredBy('')}
+                      className="w-full text-xs"
+                    >
+                      Clear Selection (Default to OWN)
+                    </Button>
+                  )}
+                </div>
+
+                {/* Defendants */}
+                <div className="space-y-2">
+                  <Label htmlFor="defendants">Defendants</Label>
+                  <Input
+                    ref={defendantsInputRef}
+                    id="defendants"
+                    list="recent-defendants"
+                    placeholder="Enter defendants..."
+                    value={defendants}
+                    onChange={(e) => setDefendants(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                {/* Purpose */}
+                <div className="space-y-2">
+                  <Label htmlFor="purpose">Purpose</Label>
+                  <Input
+                    id="purpose"
+                    list="recent-purposes"
+                    placeholder="Enter purpose..."
+                    value={purpose}
+                    onChange={(e) => setPurpose(e.target.value)}
+                  />
+                </div>
+
+                {/* Attorney */}
+                <div className="space-y-2">
+                  <Label htmlFor="attorney">Attorney</Label>
+                  <Input
+                    id="attorney"
+                    list="recent-attorneys"
+                    placeholder="Enter attorney..."
+                    value={attorney}
+                    onChange={(e) => setAttorney(e.target.value)}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="additional" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Top Charge */}
+                <div className="space-y-2">
+                  <Label htmlFor="top-charge">Top Charge</Label>
+                  <Input
+                    id="top-charge"
+                    list="recent-top-charges"
+                    placeholder="Enter top charge..."
+                    value={topCharge}
+                    onChange={(e) => setTopCharge(e.target.value)}
+                  />
+                </div>
+
+                {/* Date Tran/Start */}
+                <div className="space-y-2">
+                  <Label htmlFor="date-tran-start">Date Tran/Start <span className="text-xs text-muted-foreground">(type M/dd)</span></Label>
+                  <Input
+                    id="date-tran-start"
+                    placeholder="e.g., 10/21"
+                    value={dateTranStart}
+                    onChange={(e) => setDateTranStart(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Calendar Count */}
+                <div className="space-y-2">
+                  <Label htmlFor="calendar-count">Calendar Count</Label>
+                  <Input
+                    id="calendar-count"
+                    type="number"
+                    placeholder="e.g., 5"
+                    value={calendarCount}
+                    onChange={(e) => setCalendarCount(e.target.value)}
+                  />
+                </div>
+
+                {/* Out Dates */}
+                <div className="space-y-2">
+                  <Label htmlFor="out-dates">Out Dates <span className="text-xs text-muted-foreground">(comma-separated)</span></Label>
+                  <Input
+                    id="out-dates"
+                    placeholder="e.g., 11/26-11/28, 12/24"
+                    value={outDates}
+                    onChange={(e) => setOutDates(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Popover open={notesDateOpen} onOpenChange={setNotesDateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" type="button">
+                        <CalendarIcon className="h-3 w-3 mr-1" />
+                        Insert Date
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={undefined}
+                        onSelect={(selectedDate) => {
+                          if (selectedDate) {
+                            const dateStr = format(selectedDate, 'MM/dd');
+                            setNotes(prev => prev ? `${prev} ${dateStr}` : dateStr);
+                            setNotesDateOpen(false);
+                          }
+                        }}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <Textarea
+                  id="notes"
+                  placeholder="e.g., Cal Thurs OFF 10/23 10/24-10/25"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
 
-        <DialogFooter>
+        <SheetFooter className="mt-8">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -1026,8 +1081,8 @@ export function CreateSessionDialog({
             )}
             Save & Add Another
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
