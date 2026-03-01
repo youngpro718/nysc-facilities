@@ -131,8 +131,8 @@ export const TermSheetBoard: React.FC = () => {
           if (!room) return null;
 
           return {
-            room_number: room.rooms?.name || room.room_number || room.courtroom_number || '—',
-            part: assignment.part || '—',
+            room_number: room.room_number || room.courtroom_number || '—',
+            part: room.rooms?.name || assignment.part || '—',
             justice: assignment.justice || '—',
             tel: assignment.tel || '—',
             fax: assignment.fax || '—',
