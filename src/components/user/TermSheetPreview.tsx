@@ -66,7 +66,7 @@ export function TermSheetPreview({
 
       const { data: roomsData, error: roomsError } = await supabase
         .from("court_rooms")
-        .select(`id, room_id, room_number, courtroom_number, is_active`);
+        .select(`id, room_id, room_number, courtroom_number, is_active, rooms:room_id(name)`);
 
       if (roomsError) throw roomsError;
 
@@ -81,7 +81,7 @@ export function TermSheetPreview({
           if (!room) return null;
           
           return {
-            room_number: room.room_number || room.courtroom_number || '—',
+            room_number: (room as any).rooms?.name || room.room_number || room.courtroom_number || '—',
             part: assignment?.part || '—',
             justice: assignment?.justice || '—',
             tel: assignment?.tel || '—',

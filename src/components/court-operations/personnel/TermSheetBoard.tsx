@@ -96,7 +96,7 @@ export const TermSheetBoard: React.FC = () => {
 
       const { data: roomsData, error: roomsError } = await supabase
         .from("court_rooms")
-        .select(`id, room_id, room_number, courtroom_number, is_active`);
+        .select(`id, room_id, room_number, courtroom_number, is_active, rooms:room_id(name)`);
 
       if (roomsError) throw roomsError;
 
@@ -122,6 +122,7 @@ export const TermSheetBoard: React.FC = () => {
         room_number: string;
         courtroom_number: string | null;
         is_active: boolean;
+        rooms: { name: string } | null;
       }
 
       const combined = ((assignmentsData || []) as AssignmentRow[])
@@ -130,7 +131,7 @@ export const TermSheetBoard: React.FC = () => {
           if (!room) return null;
 
           return {
-            room_number: room.room_number || room.courtroom_number || '—',
+            room_number: room.rooms?.name || room.room_number || room.courtroom_number || '—',
             part: assignment.part || '—',
             justice: assignment.justice || '—',
             tel: assignment.tel || '—',
