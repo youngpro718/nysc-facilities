@@ -25,6 +25,9 @@ export interface CourtSession {
   date_transferred_or_started: string | null;
   top_charge: string | null;
   attorney: string | null;
+  calendar_count: number | null;
+  calendar_count_date: string | null;
+  out_dates: string[] | null;
   notes: string | null;
   created_by: string | null;
   updated_by: string | null;
@@ -64,6 +67,9 @@ export interface CreateCourtSessionInput {
   date_transferred_or_started?: string | null;
   top_charge?: string | null;
   attorney?: string | null;
+  calendar_count?: number | null;
+  calendar_count_date?: string | null;
+  out_dates?: string[] | null;
   notes?: string | null;
 }
 

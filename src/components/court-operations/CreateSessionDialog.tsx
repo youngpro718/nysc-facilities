@@ -1,5 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { logger } from '@/lib/logger';
+
+/**
+ * Parse free-text date like "10/21", "10/21/25" into yyyy-MM-dd.
+ */
+function parseFreeTextDate(input: string): string {
+  if (!input) return input;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+  const match = input.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/);
+  if (match) {
+    const month = match[1].padStart(2, '0');
+    const day = match[2].padStart(2, '0');
+    let year = match[3];
+    if (!year) year = String(new Date().getFullYear());
+    else if (year.length === 2) year = '20' + year;
+    return `${year}-${month}-${day}`;
+  }
+  return input;
+}
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,7 +30,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Loader2, Users, CheckCircle, AlertCircle, UserX, Calendar as CalendarIcon, ChevronsUpDown, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
@@ -56,9 +73,11 @@ export function CreateSessionDialog({
   const [partsEnteredBy, setPartsEnteredBy] = useState('');
   const [defendants, setDefendants] = useState('');
   const [purpose, setPurpose] = useState('');
-  const [dateTranStart, setDateTranStart] = useState<Date | undefined>(undefined);
+  const [dateTranStart, setDateTranStart] = useState('');
   const [topCharge, setTopCharge] = useState('');
   const [attorney, setAttorney] = useState('');
+  const [calendarCount, setCalendarCount] = useState('');
+  const [outDates, setOutDates] = useState('');
 
   const createSession = useCreateCourtSession();
   const dateStr = format(date, 'yyyy-MM-dd');
@@ -314,9 +333,11 @@ export function CreateSessionDialog({
       setPartsEnteredBy('');
       setDefendants('');
       setPurpose('');
-      setDateTranStart(undefined);
+      setDateTranStart('');
       setTopCharge('');
       setAttorney('');
+      setCalendarCount('');
+      setOutDates('');
     }
     prevOpenRef.current = open;
   }, [open, initialBuildingCode]);
@@ -326,9 +347,11 @@ export function CreateSessionDialog({
     setPartsEnteredBy('');
     setDefendants('');
     setPurpose('');
-    setDateTranStart(undefined);
+    setDateTranStart('');
     setTopCharge('');
     setAttorney('');
+    setCalendarCount('');
+    setOutDates('');
     setNotes('');
     
     // Auto-focus on defendants field for quick data entry
@@ -361,9 +384,11 @@ export function CreateSessionDialog({
         parts_entered_by: partsEnteredBy || 'OWN', // Default to OWN if blank
         defendants: defendants || undefined,
         purpose: purpose || undefined,
-        date_transferred_or_started: dateTranStart ? format(dateTranStart, 'yyyy-MM-dd') : undefined,
+        date_transferred_or_started: dateTranStart ? parseFreeTextDate(dateTranStart) : undefined,
         top_charge: topCharge || undefined,
         attorney: attorney || undefined,
+        calendar_count: calendarCount ? parseInt(calendarCount, 10) || undefined : undefined,
+        out_dates: outDates ? outDates.split(',').map(d => d.trim()).filter(Boolean) : undefined,
       });
 
       if (keepOpen) {
@@ -877,10 +902,12 @@ export function CreateSessionDialog({
 
             {/* Date Tran/Start */}
             <div className="space-y-2">
-              <Label htmlFor="date-tran-start">Date Tran/Start</Label>
-              <DatePicker
+              <Label htmlFor="date-tran-start">Date Tran/Start <span className="text-xs text-muted-foreground">(type M/dd)</span></Label>
+              <Input
+                id="date-tran-start"
+                placeholder="e.g., 10/21"
                 value={dateTranStart}
-                onChange={(date) => setDateTranStart(date)}
+                onChange={(e) => setDateTranStart(e.target.value)}
               />
             </div>
           </div>
@@ -905,6 +932,31 @@ export function CreateSessionDialog({
                 placeholder="Enter attorney..."
                 value={attorney}
                 onChange={(e) => setAttorney(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Calendar Count */}
+            <div className="space-y-2">
+              <Label htmlFor="calendar-count">Calendar Count</Label>
+              <Input
+                id="calendar-count"
+                type="number"
+                placeholder="e.g., 5"
+                value={calendarCount}
+                onChange={(e) => setCalendarCount(e.target.value)}
+              />
+            </div>
+
+            {/* Out Dates */}
+            <div className="space-y-2">
+              <Label htmlFor="out-dates">Out Dates <span className="text-xs text-muted-foreground">(comma-separated)</span></Label>
+              <Input
+                id="out-dates"
+                placeholder="e.g., 11/26-11/28, 12/24"
+                value={outDates}
+                onChange={(e) => setOutDates(e.target.value)}
               />
             </div>
           </div>

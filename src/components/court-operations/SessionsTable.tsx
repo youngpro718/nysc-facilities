@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, FileText } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Trash2, FileText, Copy } from 'lucide-react';
 import { CourtSession, CoverageAssignment, SessionPeriod, BuildingCode } from '@/types/courtSessions';
-import { useUpdateCourtSession, useDeleteCourtSession } from '@/hooks/useCourtSessions';
+import { useUpdateCourtSession, useDeleteCourtSession, useCopySessionFromYesterday } from '@/hooks/useCourtSessions';
 import { useAbsentStaffNames } from '@/hooks/useStaffAbsences';
 import { SESSION_STATUSES, BUILDING_CODES } from '@/constants/sessionStatuses';
 import { toast } from 'sonner';
@@ -34,6 +35,8 @@ const EDITABLE_FIELDS = [
   'status_detail',
   'attorney',
   'estimated_finish_date',
+  'calendar_count',
+  'out_dates',
 ] as const;
 
 type EditableField = typeof EDITABLE_FIELDS[number];
@@ -41,6 +44,31 @@ type EditableField = typeof EDITABLE_FIELDS[number];
 // Building label lookup
 const buildingLabel = (code: string) =>
   BUILDING_CODES.find(b => b.value === code)?.label?.toUpperCase() || code;
+
+/**
+ * Parse a free-text date string like "10/21", "10/21/25", "10-21" into a formatted date.
+ * Returns the original string if it can't be parsed.
+ */
+function parseFreeTextDate(input: string): string {
+  if (!input) return input;
+  // Already in yyyy-MM-dd format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+  
+  // Match M/D, M/DD, MM/DD, M/D/YY, MM/DD/YY, MM/DD/YYYY (also with dashes)
+  const match = input.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/);
+  if (match) {
+    const month = match[1].padStart(2, '0');
+    const day = match[2].padStart(2, '0');
+    let year = match[3];
+    if (!year) {
+      year = String(new Date().getFullYear());
+    } else if (year.length === 2) {
+      year = '20' + year;
+    }
+    return `${year}-${month}-${day}`;
+  }
+  return input;
+}
 
 // Inline editable cell component
 function InlineCell({
@@ -50,6 +78,7 @@ function InlineCell({
   onSave,
   placeholder,
   isStatus,
+  isDateField,
   className = '',
 }: {
   value: string;
@@ -58,6 +87,7 @@ function InlineCell({
   onSave: (sessionId: string, field: EditableField, value: string) => void;
   placeholder?: string;
   isStatus?: boolean;
+  isDateField?: boolean;
   className?: string;
 }) {
   const [editing, setEditing] = useState(false);
@@ -77,15 +107,18 @@ function InlineCell({
 
   const handleSave = useCallback(() => {
     setEditing(false);
-    if (editValue !== value) {
-      onSave(sessionId, field, editValue);
+    let saveValue = editValue;
+    if (isDateField) {
+      saveValue = parseFreeTextDate(editValue);
     }
-  }, [editValue, value, sessionId, field, onSave]);
+    if (saveValue !== value) {
+      onSave(sessionId, field, saveValue);
+    }
+  }, [editValue, value, sessionId, field, onSave, isDateField]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSave();
-      // Move to next editable cell
       const nextCell = (e.target as HTMLElement)
         .closest('td')
         ?.nextElementSibling
@@ -100,14 +133,12 @@ function InlineCell({
     } else if (e.key === 'Tab') {
       e.preventDefault();
       handleSave();
-      // Move to next editable cell in the same row
       const currentTd = (e.target as HTMLElement).closest('td');
       if (currentTd) {
         const row = currentTd.closest('tr');
         if (row) {
           const cells = Array.from(row.querySelectorAll('td'));
           const currentIdx = cells.indexOf(currentTd as HTMLTableCellElement);
-          // Search forward (or backward with Shift) for an editable cell
           const direction = e.shiftKey ? -1 : 1;
           for (let i = currentIdx + direction; i >= 0 && i < cells.length; i += direction) {
             const editable = cells[i].querySelector('[data-editable]') as HTMLElement;
@@ -116,7 +147,6 @@ function InlineCell({
               return;
             }
           }
-          // If at end of row, move to next/prev row's first/last editable cell
           const nextRow = e.shiftKey ? row.previousElementSibling : row.nextElementSibling;
           if (nextRow) {
             const nextCells = Array.from(nextRow.querySelectorAll('[data-editable]'));
@@ -127,6 +157,17 @@ function InlineCell({
       }
     }
   }, [handleSave, value]);
+
+  // Display formatted date for date fields
+  const displayValue = isDateField && value ? (() => {
+    // Show as M/dd if it's a yyyy-MM-dd date
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      try {
+        return format(new Date(value + 'T00:00:00'), 'M/dd');
+      } catch { return value; }
+    }
+    return value;
+  })() : value;
 
   if (isStatus) {
     return (
@@ -157,7 +198,7 @@ function InlineCell({
         onChange={(e) => setEditValue(e.target.value)}
         onBlur={handleSave}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={isDateField ? 'M/dd' : placeholder}
         className={`h-6 text-xs px-1.5 py-0 border-primary/30 bg-primary/5 ${className}`}
       />
     );
@@ -167,11 +208,11 @@ function InlineCell({
     <div
       data-editable
       onClick={() => setEditing(true)}
-      className={`cursor-text min-h-[24px] px-1 py-0.5 rounded hover:bg-muted/60 transition-colors ${value ? 'text-foreground' : 'text-muted-foreground/40 italic'
+      className={`cursor-text min-h-[24px] px-1 py-0.5 rounded hover:bg-muted/60 transition-colors ${displayValue ? 'text-foreground' : 'text-muted-foreground/40 italic'
         } ${className}`}
-      title="Click to edit"
+      title={isDateField ? 'Click to edit — type M/dd' : 'Click to edit'}
     >
-      {value || placeholder || '—'}
+      {displayValue || placeholder || '—'}
     </div>
   );
 }
@@ -186,6 +227,7 @@ export function SessionsTable({
 }: SessionsTableProps) {
   const updateSession = useUpdateCourtSession();
   const deleteSession = useDeleteCourtSession();
+  const copyFromYesterday = useCopySessionFromYesterday();
   const { absentStaffMap } = useAbsentStaffNames(date);
 
   // Single cell save handler
@@ -195,6 +237,23 @@ export function SessionsTable({
     value: string
   ) => {
     try {
+      // Handle special fields
+      if (field === 'calendar_count') {
+        await updateSession.mutateAsync({
+          id: sessionId,
+          calendar_count: value ? parseInt(value, 10) || null : null,
+        });
+        return;
+      }
+      if (field === 'out_dates') {
+        // Parse comma-separated date ranges into array
+        const dates = value ? value.split(',').map(d => d.trim()).filter(Boolean) : null;
+        await updateSession.mutateAsync({
+          id: sessionId,
+          out_dates: dates,
+        });
+        return;
+      }
       await updateSession.mutateAsync({
         id: sessionId,
         [field]: value || null,
@@ -208,6 +267,16 @@ export function SessionsTable({
   const handleDelete = async (sessionId: string) => {
     if (!confirm('Delete this session?')) return;
     await deleteSession.mutateAsync(sessionId);
+  };
+
+  const handleCopyFromYesterday = (session: CourtSession) => {
+    copyFromYesterday.mutate({
+      sessionId: session.id,
+      sessionDate: session.session_date,
+      courtRoomId: session.court_room_id,
+      period: session.period as SessionPeriod,
+      buildingCode: session.building_code as BuildingCode,
+    });
   };
 
   // Get judge absence text inline
@@ -264,7 +333,7 @@ export function SessionsTable({
               {sessions.length} session{sessions.length !== 1 ? 's' : ''}
             </Badge>
             <span className="text-[10px] text-muted-foreground hidden sm:inline">
-              Click any cell to edit
+              Click any cell to edit · Type dates as M/dd
             </span>
           </div>
         </div>
@@ -284,7 +353,9 @@ export function SessionsTable({
                 <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[90px]">Status</TableHead>
                 <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[90px]">Attorneys</TableHead>
                 <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[60px]">Est Fin</TableHead>
-                <TableHead className="py-1.5 px-1 w-[36px]"></TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[45px]">Cal #</TableHead>
+                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[80px]">Out Dates</TableHead>
+                <TableHead className="py-1.5 px-1 w-[56px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -321,119 +392,90 @@ export function SessionsTable({
                       </div>
                     </TableCell>
 
-                    {/* Sending Part — editable */}
+                    {/* Sending Part */}
                     <TableCell className="py-1 px-2 align-top">
-                      <InlineCell
-                        value={session.parts_entered_by || ''}
-                        field="parts_entered_by"
-                        sessionId={session.id}
-                        onSave={handleCellSave}
-                        placeholder="PT..."
-                        className="w-16"
-                      />
+                      <InlineCell value={session.parts_entered_by || ''} field="parts_entered_by" sessionId={session.id} onSave={handleCellSave} placeholder="PT..." className="w-16" />
                     </TableCell>
 
-                    {/* Defendants — editable */}
+                    {/* Defendants */}
                     <TableCell className="py-1 px-2 align-top">
-                      <InlineCell
-                        value={session.defendants || ''}
-                        field="defendants"
-                        sessionId={session.id}
-                        onSave={handleCellSave}
-                        placeholder="Defendant..."
-                      />
+                      <InlineCell value={session.defendants || ''} field="defendants" sessionId={session.id} onSave={handleCellSave} placeholder="Defendant..." />
                     </TableCell>
 
-                    {/* Purpose — editable */}
+                    {/* Purpose */}
                     <TableCell className="py-1 px-2 align-top">
-                      <InlineCell
-                        value={session.purpose || ''}
-                        field="purpose"
-                        sessionId={session.id}
-                        onSave={handleCellSave}
-                        placeholder="JS"
-                        className="w-12"
-                      />
+                      <InlineCell value={session.purpose || ''} field="purpose" sessionId={session.id} onSave={handleCellSave} placeholder="JS" className="w-12" />
                     </TableCell>
 
-                    {/* Date Transferred — editable */}
+                    {/* Date Transferred — free-text date */}
                     <TableCell className="py-1 px-2 align-top">
-                      <InlineCell
-                        value={session.date_transferred_or_started || ''}
-                        field="date_transferred_or_started"
-                        sessionId={session.id}
-                        onSave={handleCellSave}
-                        placeholder="M/dd"
-                        className="w-14"
-                      />
+                      <InlineCell value={session.date_transferred_or_started || ''} field="date_transferred_or_started" sessionId={session.id} onSave={handleCellSave} isDateField className="w-14" />
                     </TableCell>
 
-                    {/* Top Charge — editable */}
+                    {/* Top Charge */}
                     <TableCell className="py-1 px-2 align-top">
-                      <InlineCell
-                        value={session.top_charge || ''}
-                        field="top_charge"
-                        sessionId={session.id}
-                        onSave={handleCellSave}
-                        placeholder="Charge..."
-                      />
+                      <InlineCell value={session.top_charge || ''} field="top_charge" sessionId={session.id} onSave={handleCellSave} placeholder="Charge..." />
                     </TableCell>
 
                     {/* Status — dropdown + detail text */}
                     <TableCell className="py-1 px-2 align-top">
                       <div className="space-y-0.5">
-                        <InlineCell
-                          value={session.status || 'scheduled'}
-                          field="status"
-                          sessionId={session.id}
-                          onSave={handleCellSave}
-                          isStatus
-                        />
-                        <InlineCell
-                          value={session.status_detail || ''}
-                          field="status_detail"
-                          sessionId={session.id}
-                          onSave={handleCellSave}
-                          placeholder="detail..."
-                          className="w-20"
-                        />
+                        <InlineCell value={session.status || 'scheduled'} field="status" sessionId={session.id} onSave={handleCellSave} isStatus />
+                        <InlineCell value={session.status_detail || ''} field="status_detail" sessionId={session.id} onSave={handleCellSave} placeholder="detail..." className="w-20" />
                       </div>
                     </TableCell>
 
-                    {/* Attorney — editable */}
+                    {/* Attorney */}
                     <TableCell className="py-1 px-2 align-top">
-                      <InlineCell
-                        value={session.attorney || ''}
-                        field="attorney"
-                        sessionId={session.id}
-                        onSave={handleCellSave}
-                        placeholder="ADA..."
-                      />
+                      <InlineCell value={session.attorney || ''} field="attorney" sessionId={session.id} onSave={handleCellSave} placeholder="ADA..." />
                     </TableCell>
 
-                    {/* Est. Finish — editable */}
+                    {/* Est. Finish — free-text date */}
                     <TableCell className="py-1 px-2 align-top">
-                      <InlineCell
-                        value={session.estimated_finish_date || ''}
-                        field="estimated_finish_date"
-                        sessionId={session.id}
-                        onSave={handleCellSave}
-                        placeholder="M/dd"
-                        className="w-14"
-                      />
+                      <InlineCell value={session.estimated_finish_date || ''} field="estimated_finish_date" sessionId={session.id} onSave={handleCellSave} isDateField className="w-14" />
                     </TableCell>
 
-                    {/* Delete */}
+                    {/* Calendar Count */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <InlineCell value={session.calendar_count != null ? String(session.calendar_count) : ''} field="calendar_count" sessionId={session.id} onSave={handleCellSave} placeholder="#" className="w-10" />
+                    </TableCell>
+
+                    {/* Out Dates */}
+                    <TableCell className="py-1 px-2 align-top">
+                      <InlineCell value={session.out_dates?.join(', ') || ''} field="out_dates" sessionId={session.id} onSave={handleCellSave} placeholder="11/26-28" className="w-20" />
+                    </TableCell>
+
+                    {/* Actions: Copy Yesterday + Delete */}
                     <TableCell className="py-1 px-1 align-top">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDelete(session.id)}
-                        disabled={deleteSession.isPending}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      <div className="flex items-center gap-0.5">
+                        <TooltipProvider delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-5 w-5 p-0 text-muted-foreground hover:text-primary"
+                                onClick={() => handleCopyFromYesterday(session)}
+                                disabled={copyFromYesterday.isPending}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">
+                              Copy from yesterday
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDelete(session.id)}
+                          disabled={deleteSession.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
