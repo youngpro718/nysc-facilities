@@ -1,45 +1,45 @@
 
 
-## Problem
+## Faster Reassignment: Click-to-Select Mode
 
-The current Live Grid has three operation types, but none handle your scenario:
+The current flow requires 7 steps per reassignment (batch toggle, arrow button, radio select, dropdown, add to batch, repeat, apply). That's too many clicks for what should be a quick operation.
 
-- **Move**: Only targets **empty** rooms (occupied rooms are hidden from the picker)
-- **Swap**: Exchanges two rooms symmetrically (A↔B), but your changes aren't symmetric
-- **Cover**: Temporary — not a permanent reassignment
+### New Interaction: "Quick Reassign" Mode
 
-Your scenario requires **independent reassignments**: Part 77 → Room X, Part 95 → Room Y, Part 66 → Room 1600 — each judge goes to a specific room regardless of who's currently there.
+A streamlined click-based workflow:
 
-## Plan: Add "Reassign" Operation Type
+1. **Click "Quick Reassign" button** in the toolbar (one-time toggle)
+2. **Click Room A** (source) — row highlights blue, showing "Selected: Room 1300 · Judge X"
+3. **Click Room B** (destination) — immediately queues "Move Judge X → Room B" and auto-selects Room B as next source if it had a judge (for chaining)
+4. A **floating bar** at the bottom shows all queued changes with an "Apply All" button
+5. **Click "Apply All"** — done
 
-### 1. Show all rooms in the destination picker (not just empty ones)
-Currently line 612 hides occupied rooms in move mode. Remove that filter so you can pick **any** room as a destination.
+This turns a 7-step-per-room process into **2 clicks per reassignment** plus one final "Apply."
 
-### 2. Add a 4th operation type: "Reassign to Room"
-This directly updates `court_assignments` to place the selected judge into the target room. If someone is already there, they get displaced (unassigned from that room). Unlike "Move" which calls `move_judge` RPC, this does a direct assignment update — simpler and more flexible.
+### Chaining Example (Your Scenario)
 
-### 3. Batch workflow for your scenario
-With batch mode ON, you'd queue:
-- Reassign Part 77's judge → Room where 95 currently is
-- Reassign Part 95's judge → wherever they're going
-- Reassign Part 66's judge → Room 1600
+- Click Room with Part 77 → Click Room where Part 95 is → queues "Part 77 judge → Part 95's room"
+- Part 95's judge auto-selects as next source → Click Part 95's new destination → queues that
+- Click Part 66's room → Click Room 1600 → queues that
+- Hit "Apply All" — 3 reassignments done in ~7 clicks total
 
-Then hit "Apply All" — all changes execute in sequence.
-
-### Files to modify
+### Technical Changes
 
 **`src/components/court/LiveCourtGrid.tsx`**:
-- Remove the occupied-room filter from the destination picker (line 612)
-- Add "Reassign" as a 4th radio option in the operation type selector
-- Implement reassign logic: upsert the judge into the target room's `court_assignments`, and clear them from their source room
-- Show a warning when targeting an occupied room ("This will displace Judge X")
 
-### Technical Details
+- Add `quickReassignMode` state and a toolbar toggle button
+- Add `selectedSource` state (room object) — set on first click
+- When a row is clicked in quick-reassign mode:
+  - If no source selected → select it (highlight row blue)
+  - If source already selected → queue the reassignment, auto-chain if destination had a judge
+- Add a sticky floating bar at bottom showing queued changes with "Apply All" / "Undo Last" / "Cancel"
+- Rows become clickable (cursor pointer, hover highlight) in this mode
+- Selected source row gets a distinct blue border/background
+- Disable the normal action buttons while in quick-reassign mode to avoid confusion
 
-The reassign handler will:
-1. Update `court_assignments` for the **destination** room with the new judge/part
-2. Clear the judge from the **source** room's assignment
-3. Invalidate all court queries for real-time sync
+### What stays the same
 
-No new RPCs or database changes needed — this uses existing `court_assignments` upserts.
+- The existing batch mode, move dialog, and all other features remain untouched
+- Quick Reassign uses the same `executeBatch` logic and `BatchChange` interface already in place
+- Same Supabase upserts on `court_assignments` — no database changes needed
 
