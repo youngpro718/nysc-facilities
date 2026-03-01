@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 import {
     Dialog,
@@ -19,11 +19,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { addNewStaff } from '@/services/court/staffManagement';
 import { supabase } from '@/lib/supabase';
-import { useQuery } from '@tanstack/react-query';
 
 interface AddStaffDialogProps {
     open: boolean;
@@ -45,13 +44,30 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('court_assignments')
-                .select('room_id, room_number, part, justice')
+                .select('room_id, room_number, part, justice, sergeant, clerks')
                 .order('sort_order', { ascending: true });
             if (error) throw error;
             return data || [];
         },
         enabled: open,
     });
+
+    // Live conflict check for the selected room
+    const selectedAssignment = assignments?.find(a => a.room_id === assignToRoom);
+    const conflictInfo = (() => {
+        if (!selectedAssignment || assignToRoom === 'none' || !assignToRoom) return null;
+        if (role === 'sergeant' || role === 'officer') {
+            if (selectedAssignment.sergeant) {
+                return { type: 'warning' as const, message: `Room ${selectedAssignment.room_number} already has ${selectedAssignment.sergeant} as sergeant. Adding this ${role} will replace them.` };
+            }
+        } else if (role === 'clerk') {
+            const clerks = (selectedAssignment.clerks as string[]) || [];
+            if (clerks.length > 0) {
+                return { type: 'info' as const, message: `Room ${selectedAssignment.room_number} already has ${clerks.length} clerk${clerks.length > 1 ? 's' : ''} (${clerks.join(', ')}). This clerk will be added alongside them.` };
+            }
+        }
+        return null;
+    })();
 
     const resetForm = () => {
         setFirstName('');
@@ -73,11 +89,14 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                 assignToRoomId: assignToRoom && assignToRoom !== 'none' ? assignToRoom : undefined,
             });
         },
-        onSuccess: () => {
+        onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: ['court-personnel'] });
             queryClient.invalidateQueries({ queryKey: ['court-assignments'] });
             queryClient.invalidateQueries({ queryKey: ['court-operations'] });
-            toast.success(`${firstName} ${lastName} added as ${role}`);
+            const displacedNote = result.displacedStaff
+                ? ` (replaced ${result.displacedStaff})`
+                : '';
+            toast.success(`${firstName} ${lastName} added as ${role}${displacedNote}`);
             resetForm();
             onOpenChange(false);
         },
@@ -178,6 +197,20 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                             </SelectContent>
                         </Select>
                     </div>
+
+                    {/* Conflict warning */}
+                    {conflictInfo && conflictInfo.type === 'warning' && (
+                        <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-2.5 flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                            <p className="text-xs text-amber-800 dark:text-amber-300">{conflictInfo.message}</p>
+                        </div>
+                    )}
+                    {conflictInfo && conflictInfo.type === 'info' && (
+                        <div className="rounded-md border border-blue-300 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-700 p-2.5 flex items-start gap-2">
+                            <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                            <p className="text-xs text-blue-800 dark:text-blue-300">{conflictInfo.message}</p>
+                        </div>
+                    )}
                 </div>
 
                 <DialogFooter>
