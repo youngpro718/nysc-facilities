@@ -1,32 +1,38 @@
 
 
-## Plan: Smart Judge Addition — Auto-Create Assignment from Part or Room
+## Plan: Conflict-Aware Addition for Both Judges and Staff
 
 ### Problem
-When adding a new judge, the form requires **both** a courtroom selection **and** a part number to create the court assignment. If either is missing, no assignment is created at all. The user expects:
-1. Typing a part number alone should be enough — the system should create the assignment even without a courtroom selected (or auto-match a room if one is available)
-2. Selecting a courtroom alone should also work — the system associates the judge with that room
-3. After adding, the judge should appear everywhere in the system (term sheet, sessions grid, etc.)
+When adding a judge to a part that's already occupied (e.g., Part "TAP B" already has Litman), the system blindly creates a duplicate assignment row. The same risk exists for staff — assigning a sergeant to a room that already has one silently overwrites without warning. Both the Add Judge and Add Staff flows need conflict detection and user-facing warnings.
 
-### Current Behavior
-In `addNewJudge()` (judgeManagement.ts line 77): the assignment is **only** created when `courtroomId && part` are **both** provided. If only a part is given, nothing happens — the judge is created in `personnel_profiles` but never appears in `court_assignments`.
+### Changes
 
-### Fix
+**1. Backend: `src/services/court/judgeManagement.ts` — `addNewJudge()`**
+- Before inserting a new `court_assignments` row, query for an existing assignment matching the part (case-insensitive)
+- If found and occupied by another judge: **update** that row's `justice` field instead of inserting a duplicate
+- Return `{ personnelId: string; displacedJudge: string | null }` so the UI knows who was replaced
 
-**File: `src/services/court/judgeManagement.ts` — `addNewJudge()`**
-- If **both** courtroom and part are provided: current behavior (look up room_id, create assignment) — no change
-- If **only part** is provided (no courtroom): create the assignment with `room_id = null`, `room_number = ''`, and the part + justice name. This puts the judge on the term sheet as "unassigned to a room" but still visible
-- If **only courtroom** is provided (no part): create the assignment with the room info but `part = null`. The judge is associated with that courtroom
+**2. UI: `src/components/court/JudgeStatusManager.tsx` — `AddJudgeDialog`**
+- Add a live conflict check: when the part field value changes, query `court_assignments` for a matching part
+- If occupied, show an amber warning banner: "Part TAP B is currently assigned to S. LITMAN. Adding this judge will replace them."
+- After successful add, if a judge was displaced, include the displaced name in the success toast
 
-**File: `src/components/court/JudgeStatusManager.tsx` — `AddJudgeDialog`**
-- When a courtroom is selected, auto-populate the room number in the preview
-- When a part is entered, show a note like "Will create Part 62 assignment" so the user knows it will be created even without selecting a courtroom
-- After successful add, also invalidate `court-sessions` and `court-operations` query keys so the sessions grid picks up the new assignment immediately
+**3. Backend: `src/services/court/staffManagement.ts` — `addNewStaff()` / `assignStaffToRoom()`**
+- `assignStaffToRoom` already handles clerks (appends to array) and sergeants (overwrites). The sergeant case silently replaces — add return value indicating who was displaced
+- Return `{ personnelId: string; displacedStaff: string | null }` from `addNewStaff`
 
-### Technical Detail
-The `court_assignments` table has `room_id` (nullable) and `room_number` (NOT NULL, default `''`). So creating an assignment with just a part is valid — `room_id` can be null and `room_number` can be empty string. The system will show the judge in the term sheet and assignment table, and they can be assigned a room later.
+**4. UI: `src/components/court/AddStaffDialog.tsx`**
+- Add a live conflict check: when a courtroom is selected and role is "sergeant", query the assignment for that room to see if a sergeant already exists
+- If occupied, show a warning: "Room 1130 already has Sgt. Jones. Adding this sergeant will replace them."
+- For clerks, show an informational note: "Room 1130 already has 2 clerks. This clerk will be added alongside them." (no conflict, just awareness)
+- After successful add with displacement, include displaced name in toast
 
-### Files to modify
-1. `src/services/court/judgeManagement.ts` — relax the `courtroomId && part` guard to `courtroomId || part`
-2. `src/components/court/JudgeStatusManager.tsx` — improve preview text, add query invalidations
+### Data Cleanup
+- Delete the duplicate TAP B assignment rows from earlier testing so only one remains
+
+### Files to Modify
+1. `src/services/court/judgeManagement.ts` — upsert logic in `addNewJudge()`
+2. `src/components/court/JudgeStatusManager.tsx` — live part-conflict warning in AddJudgeDialog
+3. `src/services/court/staffManagement.ts` — return displaced info from `assignStaffToRoom()`
+4. `src/components/court/AddStaffDialog.tsx` — live room-conflict warning for staff
 
