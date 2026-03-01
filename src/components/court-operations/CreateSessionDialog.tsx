@@ -367,8 +367,13 @@ export function CreateSessionDialog({
       });
 
       if (keepOpen) {
-        // Reset only case-specific fields, keep judge/room/status
+        // Reset room selection AND case fields for Save & Add Another
+        setSelectedRoomId('');
+        setSelectedAssignment(null);
+        setRoomSearch('');
         resetCaseFields();
+        setStatus('OUT');
+        setStatusDetail('');
       } else {
         onOpenChange(false);
       }
@@ -672,6 +677,7 @@ export function CreateSessionDialog({
                       }
                     }}
                     initialFocus
+                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -926,6 +932,7 @@ export function CreateSessionDialog({
                       }
                     }}
                     initialFocus
+                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>

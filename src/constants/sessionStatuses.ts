@@ -3,11 +3,16 @@
 export const SESSION_STATUSES = [
   { value: 'OUT', label: 'Out', description: 'Judge is out/absent' },
   { value: 'HRG', label: 'Hearing', description: 'Hearing in session' },
+  { value: 'HRG_ARGS', label: 'Hrg (Arguments)', description: 'Hearing - Arguments' },
+  { value: 'JS', label: 'Jury Selection', description: 'Jury selection in progress' },
+  { value: 'JS_COMP', label: 'JS Complete', description: 'Jury selection complete' },
   { value: 'PC_CONTD', label: 'PC Continued', description: 'People continued' },
   { value: 'JD_CONTD', label: 'JD Continued', description: 'Judge continued' },
   { value: 'BT', label: 'Bench Trial', description: 'Bench trial' },
   { value: 'BT_PC', label: 'BT - PC', description: 'Bench trial - People continued' },
   { value: 'TR', label: 'Trial', description: 'Jury trial' },
+  { value: 'SETT', label: 'Settlement', description: 'Settlement' },
+  { value: 'CONF', label: 'Conference', description: 'Conference' },
   { value: 'ADJ', label: 'Adjourned', description: 'Adjourned' },
   { value: 'DARK', label: 'Dark', description: 'Court not in session' },
 ] as const;
