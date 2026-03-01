@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useCourtOperationsRealtime, useCourtRooms, useStaffOutToday } from "@/hooks/useCourtOperationsRealtime";
 import { useAuth } from "@/hooks/useAuth";
 import { logger } from "@/lib/logger";
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { ArrowRightLeft, AlertTriangle, CheckCircle2, XCircle, Users, Search, Loader2, UserPlus, Layers } from "lucide-react";
+import { ArrowRightLeft, AlertTriangle, CheckCircle2, XCircle, Users, Search, Loader2, UserPlus, Layers, MousePointerClick, Undo2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
@@ -33,6 +33,13 @@ interface BatchChange {
   isCovering?: boolean;
 }
 
+interface QuickReassignSource {
+  roomId: string;
+  roomNumber: string;
+  judgeName: string;
+  part: string | null;
+}
+
 export function LiveCourtGrid() {
   const { user } = useAuth();
   const actorId = user?.id || "";
@@ -49,6 +56,11 @@ export function LiveCourtGrid() {
   const [batchMode, setBatchMode] = useState(false);
   const [batchChanges, setBatchChanges] = useState<BatchChange[]>([]);
   const [executingBatch, setExecutingBatch] = useState(false);
+
+  // Quick Reassign mode state
+  const [quickReassignMode, setQuickReassignMode] = useState(false);
+  const [quickReassignSource, setQuickReassignSource] = useState<QuickReassignSource | null>(null);
+  const [quickReassignQueue, setQuickReassignQueue] = useState<BatchChange[]>([]);
 
   // Get unique buildings for filter
   const buildings = useMemo(() => {
@@ -72,6 +84,68 @@ export function LiveCourtGrid() {
     });
   }, [rooms, search, buildingFilter]);
 
+  // ─── Quick Reassign click handler ───
+  const handleQuickReassignClick = useCallback((room: any) => {
+    if (!quickReassignMode) return;
+
+    const hasJudge = room.assigned_judge?.trim();
+
+    if (!quickReassignSource) {
+      // First click: select source
+      if (!hasJudge) return; // Can't select a room with no judge as source
+      setQuickReassignSource({
+        roomId: room.room_id,
+        roomNumber: room.room_number,
+        judgeName: room.assigned_judge,
+        part: room.assigned_part || null,
+      });
+    } else {
+      // Second click: queue the reassignment
+      if (room.room_id === quickReassignSource.roomId) {
+        // Clicked same room — deselect
+        setQuickReassignSource(null);
+        return;
+      }
+
+      const destJudge = hasJudge ? room.assigned_judge : null;
+      const destPart = room.assigned_part || null;
+
+      const change: BatchChange = {
+        id: crypto.randomUUID(),
+        type: 'reassign',
+        description: `${quickReassignSource.judgeName} → Room ${room.room_number}${destJudge ? ` (displaces ${destJudge})` : ''}`,
+        fromRoomId: quickReassignSource.roomId,
+        toRoomId: room.room_id,
+        judgeName: quickReassignSource.judgeName,
+      };
+
+      setQuickReassignQueue(prev => [...prev, change]);
+
+      // Auto-chain: if destination had a judge, auto-select them as next source
+      if (destJudge) {
+        setQuickReassignSource({
+          roomId: room.room_id,
+          roomNumber: room.room_number,
+          judgeName: destJudge,
+          part: destPart,
+        });
+      } else {
+        setQuickReassignSource(null);
+      }
+    }
+  }, [quickReassignMode, quickReassignSource]);
+
+  const undoLastQuickReassign = () => {
+    setQuickReassignQueue(prev => prev.slice(0, -1));
+    setQuickReassignSource(null);
+  };
+
+  const cancelQuickReassign = () => {
+    setQuickReassignMode(false);
+    setQuickReassignSource(null);
+    setQuickReassignQueue([]);
+  };
+
   const addBatchChange = (change: BatchChange) => {
     setBatchChanges(prev => [...prev, change]);
   };
@@ -83,12 +157,12 @@ export function LiveCourtGrid() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const executeBatch = async () => {
+  const executeChanges = async (changes: BatchChange[]) => {
     setExecutingBatch(true);
     let successCount = 0;
     let failCount = 0;
 
-    for (const change of batchChanges) {
+    for (const change of changes) {
       try {
         if (change.type === 'swap' && change.fromRoomId && change.toRoomId) {
           const { error } = await supabase.rpc('swap_courtrooms', {
@@ -100,7 +174,6 @@ export function LiveCourtGrid() {
         } else if (change.type === 'move' && change.toRoomId && change.judgeName) {
           await onMoveJudge(change.fromRoomId || null, change.toRoomId, change.judgeName, actorId, change.isCovering);
         } else if (change.type === 'reassign' && change.toRoomId && change.judgeName) {
-          // Reassign: put judge in destination, clear from source
           const { error: destErr } = await supabase
             .from("court_assignments")
             .update({ justice: change.judgeName })
@@ -131,7 +204,6 @@ export function LiveCourtGrid() {
       }
     }
 
-    // Invalidate all queries
     queryClient.invalidateQueries({ queryKey: ["court"] });
     queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
     queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
@@ -140,9 +212,20 @@ export function LiveCourtGrid() {
       title: `Batch complete: ${successCount} succeeded${failCount ? `, ${failCount} failed` : ''}`,
     });
 
+    setExecutingBatch(false);
+  };
+
+  const executeBatch = async () => {
+    await executeChanges(batchChanges);
     setBatchChanges([]);
     setBatchMode(false);
-    setExecutingBatch(false);
+  };
+
+  const executeQuickReassign = async () => {
+    await executeChanges(quickReassignQueue);
+    setQuickReassignQueue([]);
+    setQuickReassignSource(null);
+    setQuickReassignMode(false);
   };
 
   if (isLoading) {
@@ -199,11 +282,50 @@ export function LiveCourtGrid() {
             variant={batchMode ? "default" : "outline"}
             size="sm"
             onClick={() => { setBatchMode(v => !v); if (batchMode) setBatchChanges([]); }}
+            disabled={quickReassignMode}
           >
             <Layers className="h-4 w-4 mr-1" />
             {batchMode ? `Batch (${batchChanges.length})` : 'Batch Mode'}
           </Button>
+          <Button
+            type="button"
+            variant={quickReassignMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              if (quickReassignMode) {
+                cancelQuickReassign();
+              } else {
+                setQuickReassignMode(true);
+                setBatchMode(false);
+                setBatchChanges([]);
+              }
+            }}
+            className={quickReassignMode ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
+          >
+            <MousePointerClick className="h-4 w-4 mr-1" />
+            {quickReassignMode ? 'Exit Quick Reassign' : 'Quick Reassign'}
+          </Button>
         </div>
+
+        {/* Quick Reassign source indicator */}
+        {quickReassignMode && (
+          <div className="mb-3 p-3 border rounded-md bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300">
+            {quickReassignSource ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  Selected: Room {quickReassignSource.roomNumber} · {quickReassignSource.judgeName}
+                  {quickReassignSource.part && ` (${quickReassignSource.part})`}
+                  <span className="ml-2 text-xs font-normal opacity-75">— now click a destination room</span>
+                </span>
+                <Button size="sm" variant="ghost" className="h-7 text-xs text-blue-600" onClick={() => setQuickReassignSource(null)}>
+                  <X className="h-3 w-3 mr-1" /> Deselect
+                </Button>
+              </div>
+            ) : (
+              <span className="text-sm">Click a room with a judge to select it as the source.</span>
+            )}
+          </div>
+        )}
 
         {/* Batch preview bar */}
         {batchMode && batchChanges.length > 0 && (
@@ -256,11 +378,43 @@ export function LiveCourtGrid() {
                   batchMode={batchMode}
                   onAddBatchChange={addBatchChange}
                   allRooms={rooms || []}
+                  quickReassignMode={quickReassignMode}
+                  quickReassignSourceId={quickReassignSource?.roomId || null}
+                  onQuickReassignClick={handleQuickReassignClick}
                 />
               ))}
             </TableBody>
           </Table>
         </div>
+
+        {/* Quick Reassign floating bar */}
+        {quickReassignMode && quickReassignQueue.length > 0 && (
+          <div className="sticky bottom-0 mt-3 p-4 border rounded-lg bg-background shadow-lg border-blue-500/30 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                {quickReassignQueue.length} reassignment{quickReassignQueue.length > 1 ? 's' : ''} queued
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" onClick={undoLastQuickReassign}>
+                  <Undo2 className="h-4 w-4 mr-1" /> Undo Last
+                </Button>
+                <Button size="sm" variant="outline" onClick={cancelQuickReassign}>Cancel</Button>
+                <Button size="sm" onClick={executeQuickReassign} disabled={executingBatch} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  {executingBatch ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                  Apply All
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              {quickReassignQueue.map((c, i) => (
+                <div key={c.id} className="flex items-center gap-2 text-xs py-1.5 px-2 bg-muted/50 rounded">
+                  <span className="font-medium text-muted-foreground">{i + 1}.</span>
+                  <span>{c.description}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -425,7 +579,7 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
 }
 
 // ─── Live Row ───
-function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMarkClerkPresence, showBuilding, batchMode, onAddBatchChange, allRooms }: {
+function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMarkClerkPresence, showBuilding, batchMode, onAddBatchChange, allRooms, quickReassignMode, quickReassignSourceId, onQuickReassignClick }: {
   room: any;
   actorId: string;
   onMoveJudge: (fromRoomId: string | null, toRoomId: string, judgeName: string, actorId: string, isCovering?: boolean) => Promise<void>;
@@ -436,6 +590,9 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
   batchMode: boolean;
   onAddBatchChange: (change: BatchChange) => void;
   allRooms: any[];
+  quickReassignMode: boolean;
+  quickReassignSourceId: string | null;
+  onQuickReassignClick: (room: any) => void;
 }) {
   const { toast } = useToast();
   const judgePresent = room.judge_present || false;
@@ -443,6 +600,7 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
   const isMaintenance = room.maintenance_status === 'in_progress' || room.operational_status === 'maintenance';
   const statusText = isMaintenance ? 'maintenance' : (room.is_active ? 'open' : 'closed');
   const hasJudge = room.assigned_judge && room.assigned_judge.trim();
+  const isSelectedSource = quickReassignSourceId === room.room_id;
 
   const [moveOpen, setMoveOpen] = useState(false);
   const [absenceDialogOpen, setAbsenceDialogOpen] = useState(false);
@@ -461,8 +619,17 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
     }
   };
 
+  const rowClickHandler = quickReassignMode ? () => onQuickReassignClick(room) : undefined;
+
   return (
-    <TableRow>
+    <TableRow
+      onClick={rowClickHandler}
+      className={[
+        quickReassignMode ? 'cursor-pointer hover:bg-blue-500/10 transition-colors' : '',
+        isSelectedSource ? 'bg-blue-500/15 ring-2 ring-blue-500/40 ring-inset' : '',
+        quickReassignMode && !hasJudge && !quickReassignSourceId ? 'opacity-50' : '',
+      ].filter(Boolean).join(' ')}
+    >
       <TableCell>
         <div className="flex flex-col gap-0.5">
           <div className="font-medium">{room.room_number}</div>
@@ -511,7 +678,7 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
               {room.assigned_clerks.map((clerk: string) => {
                 const isPresent = room.clerks_present_names?.includes(clerk) || false;
                 return (
-                  <label key={clerk} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 p-1 rounded">
+                  <label key={clerk} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 p-1 rounded" onClick={e => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={isPresent}
@@ -536,31 +703,43 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
         </div>
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-1">
-          {hasJudge ? (
-            <>
-              {judgePresent ? (
-                <Button size="sm" variant="secondary" disabled={pending} onClick={() => setAbsenceDialogOpen(true)}>
-                  {pending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
-                  Mark Absent
+        {quickReassignMode ? (
+          <div className="text-xs text-muted-foreground">
+            {isSelectedSource ? (
+              <Badge className="bg-blue-600 text-white">Source</Badge>
+            ) : quickReassignSourceId ? (
+              <span className="text-blue-600 dark:text-blue-400 font-medium">← Click to move here</span>
+            ) : hasJudge ? (
+              <span>Click to select</span>
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex items-center justify-end gap-1">
+            {hasJudge ? (
+              <>
+                {judgePresent ? (
+                  <Button size="sm" variant="secondary" disabled={pending} onClick={() => setAbsenceDialogOpen(true)}>
+                    {pending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
+                    Mark Absent
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="default" disabled={pending} onClick={handleMarkPresent}>
+                    {pending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                    Mark Present
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" disabled={pending || statusText === 'maintenance'} onClick={() => setMoveOpen(true)}>
+                  <ArrowRightLeft className="h-4 w-4" />
                 </Button>
-              ) : (
-                <Button size="sm" variant="default" disabled={pending} onClick={handleMarkPresent}>
-                  {pending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                  Mark Present
-                </Button>
-              )}
-              <Button size="sm" variant="outline" disabled={pending || statusText === 'maintenance'} onClick={() => setMoveOpen(true)}>
-                <ArrowRightLeft className="h-4 w-4" />
+              </>
+            ) : (
+              <Button size="sm" variant="default" onClick={() => setAssignOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-1" />
+                Assign Judge
               </Button>
-            </>
-          ) : (
-            <Button size="sm" variant="default" onClick={() => setAssignOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-1" />
-              Assign Judge
-            </Button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         <MoveJudgeDialog
           open={moveOpen}
@@ -617,13 +796,11 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
     if (open && currentJudge) setJudgeName(currentJudge);
   }, [open, currentJudge]);
 
-  // Group rooms by building for the picker
   const groupedRooms = useMemo(() => {
     if (!rooms) return {};
     const filtered = rooms.filter((r: any) => {
       if (r.room_id === currentRoomId) return false;
       if (!r.is_active) return false;
-      // Show all rooms for swap and reassign; only empty rooms for move
       if (!isSwap && !isReassign && r.assigned_judge?.trim()) return false;
       return true;
     });
@@ -636,7 +813,6 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
     return groups;
   }, [rooms, currentRoomId, isSwap, isReassign]);
 
-  // Check if selected destination has a judge (for displacement warning)
   const destinationRoom = useMemo(() => {
     if (!toRoom || !rooms) return null;
     return rooms.find((r: any) => r.room_id === toRoom) as any;
@@ -671,15 +847,12 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
       const toRoomData = rooms?.find((r: any) => r.room_id === toRoom) as any;
 
       if (isReassign) {
-        // Reassign: place judge in destination, clear from source
-        // 1. Update destination assignment
         const { error: destErr } = await supabase
           .from("court_assignments")
           .update({ justice: judgeName })
           .eq("room_id", toRoom);
         if (destErr) throw destErr;
 
-        // 2. Clear source assignment
         const { error: srcErr } = await supabase
           .from("court_assignments")
           .update({ justice: null })
@@ -797,7 +970,6 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
             </div>
           </div>
 
-          {/* Displacement warning */}
           {willDisplace && (
             <div className="flex items-start gap-2 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
