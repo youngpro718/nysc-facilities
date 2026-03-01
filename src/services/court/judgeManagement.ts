@@ -73,32 +73,40 @@ export async function addNewJudge(params: {
 
   if (error) throw error;
 
-  // Step 2: If a courtroom + part were provided, create the court assignment
-  if (params.courtroomId && params.part) {
-    // Look up the room_id for this court_room
-    const { data: courtRoom } = await supabase
-      .from('court_rooms')
-      .select('room_id, room_number')
-      .eq('id', params.courtroomId)
-      .single();
+  // Step 2: Create court assignment if courtroom OR part is provided
+  if (params.courtroomId || params.part) {
+    let roomId: string | null = null;
+    let roomNumber = '';
 
-    if (courtRoom) {
-      // Get max sort_order
-      const { data: maxSort } = await supabase
-        .from('court_assignments')
-        .select('sort_order')
-        .order('sort_order', { ascending: false })
-        .limit(1)
+    // Look up room info if a courtroom was selected
+    if (params.courtroomId) {
+      const { data: courtRoom } = await supabase
+        .from('court_rooms')
+        .select('room_id, room_number')
+        .eq('id', params.courtroomId)
         .single();
 
-      await supabase.from('court_assignments').insert({
-        room_id: courtRoom.room_id,
-        room_number: courtRoom.room_number || '',
-        part: params.part,
-        justice: displayName,
-        sort_order: ((maxSort?.sort_order as number) || 0) + 1,
-      });
+      if (courtRoom) {
+        roomId = courtRoom.room_id;
+        roomNumber = courtRoom.room_number || '';
+      }
     }
+
+    // Get max sort_order
+    const { data: maxSort } = await supabase
+      .from('court_assignments')
+      .select('sort_order')
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .single();
+
+    await supabase.from('court_assignments').insert({
+      room_id: roomId,
+      room_number: roomNumber,
+      part: params.part || null,
+      justice: displayName,
+      sort_order: ((maxSort?.sort_order as number) || 0) + 1,
+    });
   }
 
   return data.id;
