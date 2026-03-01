@@ -81,8 +81,8 @@ export function TermSheetPreview({
           if (!room) return null;
           
           return {
-            room_number: (room as any).rooms?.name || room.room_number || room.courtroom_number || '—',
-            part: assignment?.part || '—',
+            room_number: room.room_number || room.courtroom_number || '—',
+            part: (room as any).rooms?.name || assignment?.part || '—',
             justice: assignment?.justice || '—',
             tel: assignment?.tel || '—',
             clerks: assignment?.clerks || [],
