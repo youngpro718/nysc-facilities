@@ -132,7 +132,7 @@ export const TermSheetBoard: React.FC = () => {
 
           return {
             room_number: room.room_number || room.courtroom_number || '—',
-            part: room.rooms?.name || assignment.part || '—',
+            part: assignment.part || '—',
             justice: assignment.justice || '—',
             tel: assignment.tel || '—',
             fax: assignment.fax || '—',
