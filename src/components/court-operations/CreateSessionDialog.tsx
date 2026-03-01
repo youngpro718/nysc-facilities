@@ -62,6 +62,22 @@ export function CreateSessionDialog({
 
   const createSession = useCreateCourtSession();
   const dateStr = format(date, 'yyyy-MM-dd');
+
+  // Fetch existing sessions for this date/period to detect occupied rooms
+  const { data: existingSessions } = useQuery({
+    queryKey: ['existing-sessions-for-create', dateStr, period],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('court_sessions')
+        .select('court_room_id')
+        .eq('session_date', dateStr)
+        .eq('period', period);
+      if (error) throw error;
+      return new Set((data || []).map(s => s.court_room_id));
+    },
+    enabled: open,
+  });
+  const occupiedRoomIds = existingSessions || new Set<string>();
   
   // Ref for auto-focusing the first field after save
   const defendantsInputRef = useRef<HTMLInputElement>(null);
@@ -427,11 +443,16 @@ export function CreateSessionDialog({
                       <button
                         key={room.id}
                         type="button"
+                        disabled={occupiedRoomIds.has(room.id)}
                         onClick={() => {
                           setSelectedRoomId(room.id);
                           setRoomSearch('');
                         }}
-                        className="w-full p-3 text-left hover:bg-muted transition-colors flex items-center justify-between"
+                        className={`w-full p-3 text-left transition-colors flex items-center justify-between ${
+                          occupiedRoomIds.has(room.id) 
+                            ? 'opacity-50 cursor-not-allowed bg-muted' 
+                            : 'hover:bg-muted'
+                        }`}
                       >
                         <div className="flex-1">
                           <div className="font-medium">Room {room.room_number}</div>
@@ -441,9 +462,11 @@ export function CreateSessionDialog({
                             </div>
                           )}
                         </div>
-                        {!room.assignment && (
+                        {occupiedRoomIds.has(room.id) ? (
+                          <Badge variant="destructive" className="text-xs">Session exists</Badge>
+                        ) : !room.assignment ? (
                           <Badge variant="outline" className="text-xs">Empty</Badge>
-                        )}
+                        ) : null}
                       </button>
                     ))}
                   </div>

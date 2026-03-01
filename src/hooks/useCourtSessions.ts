@@ -101,7 +101,13 @@ export function useCreateCourtSession() {
     },
     onError: (error: Error) => {
       logger.error('Error creating session:', error);
-      toast.error('Failed to create session');
+      const msg = (error?.message || '').toLowerCase();
+      if (msg.includes('court_sessions_court_room_id_session_date_period_key') || 
+          (msg.includes('duplicate') && msg.includes('court_sessions'))) {
+        toast.error('A session already exists for this courtroom on this date and period. Please edit the existing session instead.');
+      } else {
+        toast.error('Failed to create session');
+      }
     },
   });
 }
