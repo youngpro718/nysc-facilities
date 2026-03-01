@@ -16,6 +16,7 @@ interface ConflictInfo {
 interface CourtAssignmentRow {
   room_id: string;
   room_number: string;
+  room_name?: string | null;
   courtroom_number: string | null;
   court_room_id?: string | null;
   assignment_id: string | null;
@@ -134,6 +135,9 @@ export const AssignmentListItem = ({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm tabular-nums">{row.room_number}</span>
+          {row.room_name && (
+            <span className="text-[10px] text-muted-foreground truncate max-w-[80px]" title={row.room_name}>{row.room_name}</span>
+          )}
           {row.part && (
             <span className="text-xs text-muted-foreground font-medium">Pt {row.part}</span>
           )}
