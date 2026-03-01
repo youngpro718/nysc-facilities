@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { ArrowRightLeft, AlertTriangle, CheckCircle2, XCircle, Users, Search, Loader2, UserPlus, Layers, MousePointerClick, Undo2, X } from "lucide-react";
+import { ArrowRightLeft, AlertTriangle, CheckCircle2, XCircle, Users, Search, Loader2, UserPlus, MousePointerClick, Undo2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
@@ -52,9 +52,6 @@ export function LiveCourtGrid() {
   const [buildingFilter, setBuildingFilter] = useState<string>("all");
   const [showImpacted, setShowImpacted] = useState(false);
 
-  // Batch mode state
-  const [batchMode, setBatchMode] = useState(false);
-  const [batchChanges, setBatchChanges] = useState<BatchChange[]>([]);
   const [executingBatch, setExecutingBatch] = useState(false);
 
   // Quick Reassign mode state
@@ -146,14 +143,6 @@ export function LiveCourtGrid() {
     setQuickReassignQueue([]);
   };
 
-  const addBatchChange = (change: BatchChange) => {
-    setBatchChanges(prev => [...prev, change]);
-  };
-
-  const removeBatchChange = (id: string) => {
-    setBatchChanges(prev => prev.filter(c => c.id !== id));
-  };
-
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -215,12 +204,6 @@ export function LiveCourtGrid() {
     setExecutingBatch(false);
   };
 
-  const executeBatch = async () => {
-    await executeChanges(batchChanges);
-    setBatchChanges([]);
-    setBatchMode(false);
-  };
-
   const executeQuickReassign = async () => {
     await executeChanges(quickReassignQueue);
     setQuickReassignQueue([]);
@@ -279,16 +262,6 @@ export function LiveCourtGrid() {
           </Select>
           <Button
             type="button"
-            variant={batchMode ? "default" : "outline"}
-            size="sm"
-            onClick={() => { setBatchMode(v => !v); if (batchMode) setBatchChanges([]); }}
-            disabled={quickReassignMode}
-          >
-            <Layers className="h-4 w-4 mr-1" />
-            {batchMode ? `Batch (${batchChanges.length})` : 'Batch Mode'}
-          </Button>
-          <Button
-            type="button"
             variant={quickReassignMode ? "default" : "outline"}
             size="sm"
             onClick={() => {
@@ -296,8 +269,6 @@ export function LiveCourtGrid() {
                 cancelQuickReassign();
               } else {
                 setQuickReassignMode(true);
-                setBatchMode(false);
-                setBatchChanges([]);
               }
             }}
             className={quickReassignMode ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
@@ -327,32 +298,6 @@ export function LiveCourtGrid() {
           </div>
         )}
 
-        {/* Batch preview bar */}
-        {batchMode && batchChanges.length > 0 && (
-          <div className="mb-3 p-3 border rounded-md bg-amber-500/5 border-amber-500/20 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                {batchChanges.length} pending change{batchChanges.length > 1 ? 's' : ''}
-              </span>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setBatchChanges([])}>Clear All</Button>
-                <Button size="sm" onClick={executeBatch} disabled={executingBatch}>
-                  {executingBatch ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-                  Apply All Changes
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-1">
-              {batchChanges.map(c => (
-                <div key={c.id} className="flex items-center justify-between text-xs py-1 px-2 bg-background rounded">
-                  <span>{c.description}</span>
-                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => removeBatchChange(c.id)}>✕</Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
@@ -375,8 +320,6 @@ export function LiveCourtGrid() {
                   onMarkPresent={onMarkPresent}
                   onMarkClerkPresence={onMarkClerkPresence}
                   showBuilding={buildings.length > 1}
-                  batchMode={batchMode}
-                  onAddBatchChange={addBatchChange}
                   allRooms={rooms || []}
                   quickReassignMode={quickReassignMode}
                   quickReassignSourceId={quickReassignSource?.roomId || null}
@@ -579,7 +522,7 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
 }
 
 // ─── Live Row ───
-function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMarkClerkPresence, showBuilding, batchMode, onAddBatchChange, allRooms, quickReassignMode, quickReassignSourceId, onQuickReassignClick }: {
+function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMarkClerkPresence, showBuilding, allRooms, quickReassignMode, quickReassignSourceId, onQuickReassignClick }: {
   room: any;
   actorId: string;
   onMoveJudge: (fromRoomId: string | null, toRoomId: string, judgeName: string, actorId: string, isCovering?: boolean) => Promise<void>;
@@ -587,8 +530,6 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
   onMarkPresent: (roomId: string, role: "judge" | "clerk", actorId: string) => Promise<void>;
   onMarkClerkPresence: (courtRoomId: string, clerkName: string, present: boolean, actorId: string) => Promise<void>;
   showBuilding: boolean;
-  batchMode: boolean;
-  onAddBatchChange: (change: BatchChange) => void;
   allRooms: any[];
   quickReassignMode: boolean;
   quickReassignSourceId: string | null;
@@ -748,8 +689,6 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
           currentJudge={room.assigned_judge}
           actorId={actorId}
           onMoveJudge={onMoveJudge}
-          batchMode={batchMode}
-          onAddBatchChange={onAddBatchChange}
           currentRoomNumber={room.room_number}
         />
         <RecordAbsenceDialog
@@ -771,15 +710,13 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMa
 }
 
 // ─── Move / Swap Dialog ───
-function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, actorId, onMoveJudge, batchMode, onAddBatchChange, currentRoomNumber }: {
+function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, actorId, onMoveJudge, currentRoomNumber }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   currentRoomId: string;
   currentJudge: string | null;
   actorId: string;
   onMoveJudge: (fromRoomId: string | null, toRoomId: string, judgeName: string, actorId: string, isCovering?: boolean) => Promise<void>;
-  batchMode: boolean;
-  onAddBatchChange: (change: BatchChange) => void;
   currentRoomNumber: string;
 }) {
   const { toast } = useToast();
@@ -820,28 +757,6 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
   const willDisplace = isReassign && destinationRoom?.assigned_judge?.trim();
 
   const handleMoveJudge = async () => {
-    if (batchMode) {
-      const toRoomData = rooms?.find((r: any) => r.room_id === toRoom) as any;
-      const opType = isSwap ? 'swap' : isReassign ? 'reassign' : 'move';
-      const desc = isSwap
-        ? `Swap ${currentRoomNumber} ↔ ${toRoomData?.room_number}`
-        : isReassign
-          ? `Reassign ${judgeName} → ${toRoomData?.room_number}${willDisplace ? ` (displaces ${toRoomData.assigned_judge})` : ''}`
-          : `Move ${judgeName} → ${toRoomData?.room_number}`;
-      onAddBatchChange({
-        id: crypto.randomUUID(),
-        type: opType,
-        description: desc,
-        fromRoomId: currentRoomId,
-        toRoomId: toRoom,
-        judgeName,
-        isCovering,
-      });
-      toast({ title: "Added to batch", description: `Queued ${opType} for ${currentRoomNumber}` });
-      onOpenChange(false);
-      return;
-    }
-
     setSaving(true);
     try {
       const toRoomData = rooms?.find((r: any) => r.room_id === toRoom) as any;
@@ -896,11 +811,9 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{batchMode ? '🗂️ Queue Change' : 'Move Judge'}</DialogTitle>
+          <DialogTitle>Move Judge</DialogTitle>
           <DialogDescription>
-            {batchMode
-              ? 'This change will be queued and applied with other batch changes.'
-              : 'Choose whether to move the entire courtroom or just have the judge cover another part.'}
+            Choose whether to move the entire courtroom or just have the judge cover another part.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -983,7 +896,7 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, currentJudge, acto
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
             <Button type="button" disabled={!toRoom || (!isSwap && !judgeName) || saving} onClick={handleMoveJudge}>
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-              {batchMode ? '📋 Add to Batch' : isReassign ? '📌 Confirm Reassign' : isSwap ? '🔀 Confirm Swap' : '➡️ Confirm Move'}
+              {isReassign ? '📌 Confirm Reassign' : isSwap ? '🔀 Confirm Swap' : '➡️ Confirm Move'}
             </Button>
           </div>
         </div>
