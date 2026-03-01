@@ -1,38 +1,32 @@
 
 
-## Plan: Conflict-Aware Addition for Both Judges and Staff
+## Investigation Results
 
-### Problem
-When adding a judge to a part that's already occupied (e.g., Part "TAP B" already has Litman), the system blindly creates a duplicate assignment row. The same risk exists for staff — assigning a sergeant to a room that already has one silently overwrites without warning. Both the Add Judge and Add Staff flows need conflict detection and user-facing warnings.
+### What the data actually shows
 
-### Changes
+**"2 rooms unassigned" — count is technically correct but misleading:**
+- The query only checks if a `part` string exists in `court_assignments`. Rooms 572 and 1602 have no part at all.
+- However, Room 1234 (Part 99) and Room 687 (Part 85) have a part but **no justice assigned** (empty string). From the user's perspective, these are also "unassigned" — a part with no judge is not a functioning assignment.
 
-**1. Backend: `src/services/court/judgeManagement.ts` — `addNewJudge()`**
-- Before inserting a new `court_assignments` row, query for an existing assignment matching the part (case-insensitive)
-- If found and occupied by another judge: **update** that row's `justice` field instead of inserting a duplicate
-- Return `{ personnelId: string; displacedJudge: string | null }` so the UI knows who was replaced
+**"1 with active issues" — incorrect, no active issues exist:**
+- All issues in the database have status `resolved`. Zero rows match `status IN ('open', 'in_progress')`.
+- The `useCourtIssuesIntegration` hook's `getCourtImpactSummary()` returns `totalAffectedRooms` based on the court issues query, which should return 0. The "1 with active issues" is likely stale React Query cache or a race condition on initial load.
 
-**2. UI: `src/components/court/JudgeStatusManager.tsx` — `AddJudgeDialog`**
-- Add a live conflict check: when the part field value changes, query `court_assignments` for a matching part
-- If occupied, show an amber warning banner: "Part TAP B is currently assigned to S. LITMAN. Adding this judge will replace them."
-- After successful add, if a judge was displaced, include the displaced name in the success toast
+### Plan
 
-**3. Backend: `src/services/court/staffManagement.ts` — `addNewStaff()` / `assignStaffToRoom()`**
-- `assignStaffToRoom` already handles clerks (appends to array) and sergeants (overwrites). The sergeant case silently replaces — add return value indicating who was displaced
-- Return `{ personnelId: string; displacedStaff: string | null }` from `addNewStaff`
+**1. Fix "unassigned" count logic** (`src/components/court/AssignmentManagementPanel.tsx`)
+- Change the definition of "assigned" from "has a non-empty `part`" to "has a non-empty `part` AND a non-empty `justice`"
+- This way, rooms with a part but no judge are counted as unassigned, matching user expectations
 
-**4. UI: `src/components/court/AddStaffDialog.tsx`**
-- Add a live conflict check: when a courtroom is selected and role is "sergeant", query the assignment for that room to see if a sergeant already exists
-- If occupied, show a warning: "Room 1130 already has Sgt. Jones. Adding this sergeant will replace them."
-- For clerks, show an informational note: "Room 1130 already has 2 clerks. This clerk will be added alongside them." (no conflict, just awareness)
-- After successful add with displacement, include displaced name in toast
+**2. Fix "active issues" count accuracy** (`src/components/court/AssignmentManagementPanel.tsx`)
+- The banner reads `impactSummary?.totalAffectedRooms` from `useCourtIssuesIntegration`, which queries issues with `status IN ('open', 'in_progress')`. Since no such issues exist, this should be 0.
+- Add a guard: only show the "with active issues" portion of the banner when the value is genuinely > 0 AND the issues query has finished loading (not stale/loading state)
+- Also ensure the Issues stat card in the grid shows 0 correctly when there are no active issues
 
-### Data Cleanup
-- Delete the duplicate TAP B assignment rows from earlier testing so only one remains
+**3. Remove phantom issue display** (`src/hooks/useCourtIssuesIntegration.ts`)
+- Ensure `getCourtImpactSummary()` returns `totalAffectedRooms: 0` when `courtIssues` is an empty array (it should already, but verify no edge case with undefined/null)
 
-### Files to Modify
-1. `src/services/court/judgeManagement.ts` — upsert logic in `addNewJudge()`
-2. `src/components/court/JudgeStatusManager.tsx` — live part-conflict warning in AddJudgeDialog
-3. `src/services/court/staffManagement.ts` — return displaced info from `assignStaffToRoom()`
-4. `src/components/court/AddStaffDialog.tsx` — live room-conflict warning for staff
+### Files to modify
+1. `src/components/court/AssignmentManagementPanel.tsx` — fix unassigned count logic and banner guard
+2. `src/hooks/useCourtIssuesIntegration.ts` — verify impact summary returns 0 for empty issues (minor)
 
