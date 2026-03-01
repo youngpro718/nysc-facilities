@@ -70,7 +70,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                 role,
                 phone: phone || undefined,
                 extension: extension || undefined,
-                assignToRoomId: assignToRoom || undefined,
+                assignToRoomId: assignToRoom && assignToRoom !== 'none' ? assignToRoom : undefined,
             });
         },
         onSuccess: () => {
@@ -169,7 +169,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                                 <SelectValue placeholder="Select a courtroom..." />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">None — assign later</SelectItem>
+                                <SelectItem value="none">None — assign later</SelectItem>
                                 {assignments?.map((a) => (
                                     <SelectItem key={a.room_id} value={a.room_id}>
                                         Room {a.room_number} — {a.part || 'No part'}{a.justice ? ` (${a.justice})` : ''}
