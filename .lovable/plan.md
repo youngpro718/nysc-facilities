@@ -1,32 +1,29 @@
 
 
-## Investigation Results
+## Problem
 
-### What the data actually shows
+Room 1600 (Part 1, J. SVETKEY) shows a "Maintenance" badge in the assignment table because there is a **scheduled shutdown** record in the `room_shutdowns` table (id: `b35834b0-ff6b-4fb2-8c48-1d0c25975510`, reason: "Emergency", status: "scheduled"). This is not an "issue" from the `issues` table — it's a shutdown entry, which is why the user can't find or resolve it from the Issues page.
 
-**"2 rooms unassigned" — count is technically correct but misleading:**
-- The query only checks if a `part` string exists in `court_assignments`. Rooms 572 and 1602 have no part at all.
-- However, Room 1234 (Part 99) and Room 687 (Part 85) have a part but **no justice assigned** (empty string). From the user's perspective, these are also "unassigned" — a part with no judge is not a functioning assignment.
+The `maintenanceSet` in `EnhancedCourtAssignmentTable.tsx` pulls all shutdowns with status `in_progress` or `scheduled` and marks those rooms with a red "Maintenance" badge. There's currently no UI to view, manage, or dismiss these shutdown records from the Assignments page.
 
-**"1 with active issues" — incorrect, no active issues exist:**
-- All issues in the database have status `resolved`. Zero rows match `status IN ('open', 'in_progress')`.
-- The `useCourtIssuesIntegration` hook's `getCourtImpactSummary()` returns `totalAffectedRooms` based on the court issues query, which should return 0. The "1 with active issues" is likely stale React Query cache or a race condition on initial load.
+## Plan
 
-### Plan
+### 1. Delete the stale shutdown record (data cleanup)
+Run a SQL migration to delete the orphan shutdown record:
+```sql
+DELETE FROM room_shutdowns WHERE id = 'b35834b0-ff6b-4fb2-8c48-1d0c25975510';
+```
+This immediately clears the phantom maintenance badge from Room 1600.
 
-**1. Fix "unassigned" count logic** (`src/components/court/AssignmentManagementPanel.tsx`)
-- Change the definition of "assigned" from "has a non-empty `part`" to "has a non-empty `part` AND a non-empty `justice`"
-- This way, rooms with a part but no judge are counted as unassigned, matching user expectations
+### 2. Add shutdown visibility to the Assignment Detail Panel (`src/components/court/AssignmentDetailPanel.tsx`)
+When `hasMaintenance` is true, show the shutdown details (reason, status) and a "Clear Shutdown" button so users can resolve these directly from the assignments view instead of hunting through other pages.
 
-**2. Fix "active issues" count accuracy** (`src/components/court/AssignmentManagementPanel.tsx`)
-- The banner reads `impactSummary?.totalAffectedRooms` from `useCourtIssuesIntegration`, which queries issues with `status IN ('open', 'in_progress')`. Since no such issues exist, this should be 0.
-- Add a guard: only show the "with active issues" portion of the banner when the value is genuinely > 0 AND the issues query has finished loading (not stale/loading state)
-- Also ensure the Issues stat card in the grid shows 0 correctly when there are no active issues
-
-**3. Remove phantom issue display** (`src/hooks/useCourtIssuesIntegration.ts`)
-- Ensure `getCourtImpactSummary()` returns `totalAffectedRooms: 0` when `courtIssues` is an empty array (it should already, but verify no edge case with undefined/null)
+- Query `room_shutdowns` for the selected room's `court_room_id` when `hasMaintenance` is true
+- Display reason and status
+- Add a "Clear Shutdown" button that updates the shutdown status to `completed` (or deletes it)
+- Invalidate `room-shutdowns-active` query on success
 
 ### Files to modify
-1. `src/components/court/AssignmentManagementPanel.tsx` — fix unassigned count logic and banner guard
-2. `src/hooks/useCourtIssuesIntegration.ts` — verify impact summary returns 0 for empty issues (minor)
+1. **Database** — delete the stale shutdown row
+2. `src/components/court/AssignmentDetailPanel.tsx` — add shutdown details display and clear action
 
