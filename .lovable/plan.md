@@ -1,27 +1,28 @@
 
 
-## Consolidate: Keep Quick Reassign, Remove Batch Mode
+## Fix: Cascade-delete child records before deleting a room
 
-Quick Reassign is strictly better — it does everything Batch Mode does but with fewer clicks. Batch Mode requires opening a dialog per change, selecting operation types, picking from dropdowns, then clicking "Add to Batch." Quick Reassign does the same thing in 2 clicks per reassignment.
+The delete fails because `deleteSpace.ts` tries to delete the room directly, but 34 other tables have foreign keys pointing to `rooms`. For room 687 specifically, 3 tables have data blocking the delete: `room_lighting_status`, `room_history`, and `lockbox_slots`.
 
-### What changes
+### Approach
 
-**Remove from `LiveCourtGrid.tsx`:**
-- The "Batch Mode" toggle button from the toolbar
-- All `batchMode` / `batchChanges` state and related functions (`executeBatch`, `addBatchChange`, `removeBatchChange`)
-- The yellow batch preview bar UI
-- The `batchMode` and `onAddBatchChange` props from `LiveRow`
-- The "Add to Batch" button inside the Move dialog (the move dialog can still execute single operations immediately)
+**Create a database function** `delete_room_cascade(p_room_id UUID)` that deletes from all referencing tables in the correct order, then deletes the room itself — all within a single transaction. This is safer and faster than making 30+ individual API calls from the client.
 
-**Keep intact:**
-- Quick Reassign mode (click source → click destination → auto-chain → Apply All)
-- The Move/Swap/Reassign dialog for one-off operations (just executes immediately instead of offering "Add to Batch")
-- The `BatchChange` interface and `executeChanges` function (Quick Reassign still uses these internally)
-- Assign Judge dialog for vacant rooms
+**Update `deleteSpace.ts`** to call `supabase.rpc('delete_room_cascade', { p_room_id: id })` instead of a direct `.delete()` on the rooms table.
 
-### Result
-One toolbar button for bulk operations ("Quick Reassign") instead of two competing modes. Single operations still work via the arrow button on each row.
+### Database function will delete from these tables (in order):
+1. `room_lighting_status`, `lighting_fixtures`, `room_health_metrics`, `room_maintenance_schedule`
+2. `room_history`, `room_notes`, `room_finishes_log`, `room_occupancy`
+3. `room_inventory`, `room_key_access`, `lockbox_slots`
+4. `court_assignments`, `court_rooms`, `term_assignments`
+5. `occupant_room_assignments` (all FK columns), `occupants`
+6. `room_relationships` (both columns), `hallway_adjacent_rooms`
+7. `inventory_audits`, `room_relocations` (both columns)
+8. `relocations` (both columns), `renovations`
+9. `key_requests`, `staff_tasks` (both columns), `floorplan_objects` (via constraint)
+10. `rooms` (children with `parent_room_id` first, then the room itself)
 
-### File to modify
-- `src/components/court/LiveCourtGrid.tsx`
+### Files to change:
+- **New migration**: Create `delete_room_cascade` PL/pgSQL function
+- **`src/components/spaces/services/deleteSpace.ts`**: Replace direct delete with RPC call for rooms
 
