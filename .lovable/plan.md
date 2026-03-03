@@ -1,28 +1,20 @@
 
 
-## Fix: Cascade-delete child records before deleting a room
+## Fix: Wrong column name in `delete_room_cascade`
 
-The delete fails because `deleteSpace.ts` tries to delete the room directly, but 34 other tables have foreign keys pointing to `rooms`. For room 687 specifically, 3 tables have data blocking the delete: `room_lighting_status`, `room_history`, and `lockbox_slots`.
+**Root cause**: The database function references `occupants.current_room_id` which doesn't exist — the actual column is `occupants.room_id`. This causes the entire function to fail.
 
-### Approach
+### Change
+**Database migration**: Replace the `delete_room_cascade` function, changing line:
+```sql
+-- Before
+DELETE FROM public.occupants WHERE current_room_id = p_room_id;
+-- After
+DELETE FROM public.occupants WHERE room_id = p_room_id;
+```
 
-**Create a database function** `delete_room_cascade(p_room_id UUID)` that deletes from all referencing tables in the correct order, then deletes the room itself — all within a single transaction. This is safer and faster than making 30+ individual API calls from the client.
+The rest of the function is correct. This single column name fix should resolve the deletion failure.
 
-**Update `deleteSpace.ts`** to call `supabase.rpc('delete_room_cascade', { p_room_id: id })` instead of a direct `.delete()` on the rooms table.
-
-### Database function will delete from these tables (in order):
-1. `room_lighting_status`, `lighting_fixtures`, `room_health_metrics`, `room_maintenance_schedule`
-2. `room_history`, `room_notes`, `room_finishes_log`, `room_occupancy`
-3. `room_inventory`, `room_key_access`, `lockbox_slots`
-4. `court_assignments`, `court_rooms`, `term_assignments`
-5. `occupant_room_assignments` (all FK columns), `occupants`
-6. `room_relationships` (both columns), `hallway_adjacent_rooms`
-7. `inventory_audits`, `room_relocations` (both columns)
-8. `relocations` (both columns), `renovations`
-9. `key_requests`, `staff_tasks` (both columns), `floorplan_objects` (via constraint)
-10. `rooms` (children with `parent_room_id` first, then the room itself)
-
-### Files to change:
-- **New migration**: Create `delete_room_cascade` PL/pgSQL function
-- **`src/components/spaces/services/deleteSpace.ts`**: Replace direct delete with RPC call for rooms
-
+### File
+- **New migration**: `CREATE OR REPLACE FUNCTION delete_room_cascade` with the corrected column name.
+- No client-side code changes needed — `deleteSpace.ts` is already correct.
