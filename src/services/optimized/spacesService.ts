@@ -8,7 +8,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import type { Database } from '@/integrations/supabase/types';
+
 
 // Type definitions for optimized queries
 export interface SpaceDashboardData {
