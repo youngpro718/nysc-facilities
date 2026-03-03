@@ -441,17 +441,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setIsAdmin(userData.isAdmin);
                 setProfile(userData.profile);
                 
-                // Only redirect after explicit sign in when user is on an auth page
-                // This prevents background token refreshes from hijacking navigation
-                const authPages = ['/login', '/auth/', '/onboarding/'];
-                const isOnAuthPage = authPages.some(p => window.location.pathname.startsWith(p));
-                console.log('[useAuth] SIGNED_IN event fired', {
-                  path: window.location.pathname,
-                  isOnAuthPage,
-                  hasCompletedInitialAuth: hasCompletedInitialAuth.current,
-                  role: userData.profile?.role,
-                });
-                if (hasCompletedInitialAuth.current && isOnAuthPage) {
+                // Only redirect after explicit sign in (hasCompletedInitialAuth.current = true means this is NOT initial load)
+                // Pass true to indicate this is an explicit sign in event
+                if (hasCompletedInitialAuth.current) {
                   handleRedirect(userData, true);
                 }
               } catch (error) {

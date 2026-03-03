@@ -23,8 +23,6 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   // Hooks must be called unconditionally at the top level
   const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
-  
-  console.log('[ProtectedRoute]', { isAuthenticated, isAdmin, isLoading, role: profile?.role, requireAdmin, path: window.location.pathname });
 
   // SECURITY: Authentication guard removed - no bypasses allowed in production
 
