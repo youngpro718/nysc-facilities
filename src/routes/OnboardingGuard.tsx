@@ -69,7 +69,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           'getting session'
         );
         if (!session) {
-          logger.debug('[OnboardingGuard] No session found, redirecting to sign-in');
+          console.log('[OnboardingGuard] No session → /login', { path: location.pathname });
           navigate('/login', { replace: true });
           return;
         }
