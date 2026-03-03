@@ -1,20 +1,16 @@
 
 
-## Fix: Wrong column name in `delete_room_cascade`
+## Fix: Build failure caused by missing module
 
-**Root cause**: The database function references `occupants.current_room_id` which doesn't exist — the actual column is `occupants.room_id`. This causes the entire function to fail.
+**Root cause**: `src/services/optimized/spacesService.ts` imports `@/integrations/supabase/types` which doesn't exist (the directory `src/integrations/supabase/` is empty/missing). Despite `@ts-nocheck`, Vite fails at module resolution time — this is a runtime bundler error, not a TypeScript error. This is why the build fails and the app can't load new changes.
 
-### Change
-**Database migration**: Replace the `delete_room_cascade` function, changing line:
-```sql
--- Before
-DELETE FROM public.occupants WHERE current_room_id = p_room_id;
--- After
-DELETE FROM public.occupants WHERE room_id = p_room_id;
-```
+The routing issue ("reroutes to dashboard") is a secondary symptom — the app may be serving a stale build, or the OnboardingGuard/ProtectedRoute logic is redirecting due to incomplete state.
 
-The rest of the function is correct. This single column name fix should resolve the deletion failure.
+### Changes
 
-### File
-- **New migration**: `CREATE OR REPLACE FUNCTION delete_room_cascade` with the corrected column name.
-- No client-side code changes needed — `deleteSpace.ts` is already correct.
+1. **Fix `src/services/optimized/spacesService.ts`** — Remove the dead import `import type { Database } from '@/integrations/supabase/types'`. The file already has `@ts-nocheck` and defines its own types locally, so this import is unused.
+
+2. **Verify no other files reference the missing module** — Already confirmed only this one file imports from `@/integrations/supabase/types`.
+
+This single-line fix should resolve the build failure and restore normal navigation.
+
