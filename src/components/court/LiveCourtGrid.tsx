@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useCourtOperationsRealtime, useCourtRooms, useStaffOutToday } from "@/hooks/useCourtOperationsRealtime";
+import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
 import { useAuth } from "@/hooks/useAuth";
 import { logger } from "@/lib/logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -460,28 +461,79 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { personnel } = useCourtPersonnel();
+  const { onMoveJudge } = useCourtOperationsRealtime();
+  
   const [judgeName, setJudgeName] = useState("");
   const [partName, setPartName] = useState("");
+  const [opType, setOpType] = useState<'assign' | 'cover' | 'reassign'>('assign');
   const [saving, setSaving] = useState(false);
 
+  // Reset state on open
+  useEffect(() => {
+    if (open) {
+      setJudgeName("");
+      setPartName("");
+      setOpType('assign');
+    }
+  }, [open]);
+
+  // Derive active judges list
+  const activeJudges = useMemo(() => {
+    if (!personnel || !personnel.judges) return [];
+    return [...personnel.judges]
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [personnel]);
+
   const handleAssign = async () => {
-    if (!judgeName.trim()) return;
+    const trimmedName = judgeName.trim();
+    if (!trimmedName) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("court_assignments").upsert({
-        room_id: room.room_id,
-        room_number: room.room_number,
-        justice: judgeName.trim(),
-        part: partName.trim() || null,
-      });
-      if (error) throw error;
+      if (opType === 'assign') {
+        // Option 1: Set judge permanently in the new room
+        const { error } = await supabase.from("court_assignments").upsert({
+          room_id: room.room_id,
+          room_number: room.room_number,
+          justice: trimmedName,
+          part: partName.trim() || null,
+        });
+        if (error) throw error;
+        toast({ title: "✅ Judge assigned", description: `${trimmedName} → Room ${room.room_number}` });
+
+      } else if (opType === 'reassign' || opType === 'cover') {
+        // Both reassign and cover need the judge's current room(s)
+        const { data: currentAssignments } = await supabase
+          .from("court_assignments")
+          .select("room_id")
+          .ilike("justice", `%${trimmedName}%`);
+
+        if (opType === 'reassign') {
+          // Option 2: Nullify all current assignments, then upsert here
+          if (currentAssignments && currentAssignments.length > 0) {
+            const roomIds = currentAssignments.map(a => a.room_id);
+            await supabase.from("court_assignments").update({ justice: null }).in("room_id", roomIds);
+          }
+          const { error } = await supabase.from("court_assignments").upsert({
+            room_id: room.room_id,
+            room_number: room.room_number,
+            justice: trimmedName,
+            part: partName.trim() || null,
+          });
+          if (error) throw error;
+          toast({ title: "✅ Judge reassigned", description: `${trimmedName} moved to Room ${room.room_number}` });
+
+        } else {
+          // Option 3: Covering — temporary assignment using move logic
+          const fromRoomId = currentAssignments && currentAssignments.length > 0 ? currentAssignments[0].room_id : null;
+          await onMoveJudge(fromRoomId, room.room_id, trimmedName, actorId, true);
+          toast({ title: "✅ Covering assignment", description: `${trimmedName} covering Room ${room.room_number}` });
+        }
+      }
 
       queryClient.invalidateQueries({ queryKey: ["court"] });
       queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
-      toast({ title: "✅ Judge assigned", description: `${judgeName} → Room ${room.room_number}` });
       onOpenChange(false);
-      setJudgeName("");
-      setPartName("");
     } catch (e: any) {
       toast({ variant: "destructive", title: "Failed to assign judge", description: e.message });
     } finally {
@@ -491,7 +543,7 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Assign Judge to Room {room.room_number}</DialogTitle>
           <DialogDescription>
@@ -499,21 +551,62 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
             {' — '}This room currently has no judge assigned.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <Label>Judge Name</Label>
-            <Input value={judgeName} onChange={e => setJudgeName(e.target.value)} placeholder="e.g., Hon. Jane Doe" />
+            <Label className="mb-2 block">Select Judge</Label>
+            <Select value={judgeName} onValueChange={setJudgeName}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a judge..." />
+              </SelectTrigger>
+              <SelectContent>
+                {activeJudges.map(j => (
+                  <SelectItem key={j.id} value={j.name}>{j.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div>
-            <Label>Part (optional)</Label>
-            <Input value={partName} onChange={e => setPartName(e.target.value)} placeholder="e.g., Part 32" />
+          
+          {(opType === 'assign' || opType === 'reassign') && (
+            <div>
+              <Label className="mb-2 block">Part (optional)</Label>
+              <Input value={partName} onChange={e => setPartName(e.target.value)} placeholder="e.g., Part 32" />
+            </div>
+          )}
+
+          <div className="space-y-2 p-3 bg-muted/50 rounded-md">
+            <Label className="block text-sm font-medium mb-2">Assignment Type</Label>
+            <div className="space-y-3 mt-2">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="radio" checked={opType === 'assign'} onChange={() => setOpType('assign')} className="mt-1" />
+                <div>
+                  <div className="font-medium text-sm">👤 Assign Permanently</div>
+                  <div className="text-xs text-muted-foreground">Sets judge as primary occupant for this room. If they have another room, they'll now be in both.</div>
+                </div>
+              </label>
+              
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="radio" checked={opType === 'reassign'} onChange={() => setOpType('reassign')} className="mt-1" />
+                <div>
+                  <div className="font-medium text-sm">📌 Reassign to Room</div>
+                  <div className="text-xs text-muted-foreground">Removes judge from their current room(s) and assigns them here permanently.</div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="radio" checked={opType === 'cover'} onChange={() => setOpType('cover')} className="mt-1" />
+                <div>
+                  <div className="font-medium text-sm">🔄 Covering Another Part</div>
+                  <div className="text-xs text-muted-foreground">Temporary assignment for today. Does not clear their primary courtroom.</div>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleAssign} disabled={!judgeName.trim() || saving}>
             {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-            Assign Judge
+            Confirm Assignment
           </Button>
         </DialogFooter>
       </DialogContent>

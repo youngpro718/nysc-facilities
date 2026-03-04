@@ -20,7 +20,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
   const [isHovered, setIsHovered] = useState(false);
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const isMobile = useIsMobile();
-  
+
   // Fetch enhanced room data
   const { data: enhancedRoom, isLoading } = useEnhancedRoomData(room.id);
 
@@ -61,12 +61,11 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
   };
 
   return (
-    <Card 
-      className={`relative ${variant === 'panel' ? 'h-full w-full max-w-none' : 'h-[320px]'} group overflow-hidden cursor-default transition-all duration-200 ease-out ${
-        isHovered 
-          ? 'shadow-2xl shadow-black/20 dark:shadow-black/40' 
+    <Card
+      className={`relative ${variant === 'panel' ? 'h-full w-full max-w-none' : 'h-[320px]'} group overflow-hidden cursor-default transition-all duration-200 ease-out ${isHovered
+          ? 'shadow-2xl shadow-black/20 dark:shadow-black/40'
           : 'shadow-md hover:shadow-lg'
-      }`}
+        }`}
       onMouseEnter={() => { setIsHovered(true); }}
       onMouseLeave={() => { setIsHovered(false); }}
     >
@@ -76,44 +75,44 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
           className="w-full h-full overflow-hidden"
           style={{ perspective: '1200px', WebkitPerspective: '1200px' as any }}
         >
-          <motion.div 
+          <motion.div
             className="relative w-full h-full"
             animate={{ rotateY: isFlipped ? 180 : 0 }}
-            transition={{ 
-              type: "spring", 
-              damping: 20, 
+            transition={{
+              type: "spring",
+              damping: 20,
               stiffness: 200,
               mass: 0.8
             }}
-            style={{ 
+            style={{
               transformStyle: 'preserve-3d',
               WebkitTransformStyle: 'preserve-3d' as any
             }}
           >
             {/* Front of card */}
-            <div 
+            <div
               className="absolute inset-0 w-full h-full bg-card"
               style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' as any }}
             >
-              <CardFront 
-                room={displayRoom} 
-                onFlip={handleFlip} 
-                onDelete={onDelete} 
+              <CardFront
+                room={displayRoom}
+                onFlip={handleFlip}
+                onDelete={onDelete}
                 isHovered={variant === 'panel' ? true : isHovered}
                 onQuickNoteClick={handleQuickNoteClick}
               />
             </div>
-            
+
             {/* Back of card */}
-            <div 
+            <div
               className="absolute inset-0 w-full h-full bg-card"
-              style={{ 
+              style={{
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden' as any,
                 transform: 'rotateY(180deg)'
               }}
             >
-              <CardBack room={displayRoom} onFlip={handleFlip} />
+              <CardBack room={displayRoom} onFlip={handleFlip} onDelete={onDelete} />
             </div>
           </motion.div>
         </div>

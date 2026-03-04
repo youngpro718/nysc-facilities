@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { logger } from '@/lib/logger';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Search as SearchIcon } from "lucide-react";
@@ -32,10 +33,10 @@ import { Room } from "../rooms/types/RoomTypes";
 import { useSearchParams } from "react-router-dom";
 
 // Define a type for sort options to fix the TS error
-export type SortOption = 
-  | "name_asc" 
-  | "name_desc" 
-  | "status_asc" 
+export type SortOption =
+  | "name_asc"
+  | "name_desc"
+  | "status_asc"
   | "status_desc"
   | "room_number_asc"
   | "room_number_desc"
@@ -52,27 +53,15 @@ const RoomsPage = () => {
   const [sortBy, setSortBy] = useState<SortOption>("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roomTypeFilter, setRoomTypeFilter] = useState("");
-  
+
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const [selectedRoomForPanel, setSelectedRoomForPanel] = useState<Room | null>(null);
   const [deleteRoomId, setDeleteRoomId] = useState<string | null>(null);
-  
+
   // Read room ID from URL query parameter
   const urlRoomId = searchParams.get('room');
-  
-  // Check if mobile on mount and resize
-  useEffect(() => {
-    const checkIsMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-    };
-    
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({});
   const { filteredAndSortedRooms } = useRoomFilters({
@@ -87,7 +76,7 @@ const RoomsPage = () => {
   // Sync selection with URL query parameter
   useEffect(() => {
     const list = filteredAndSortedRooms ?? [];
-    
+
     // If URL has a room ID, try to select it
     if (urlRoomId) {
       const roomFromUrl = list.find((r) => r.id === urlRoomId);
@@ -96,7 +85,7 @@ const RoomsPage = () => {
         return;
       }
     }
-    
+
     // If current selection exists and is still present in the list, keep it
     if (selectedRoomForPanel && list.some((r) => r.id === selectedRoomForPanel.id)) {
       return;
@@ -226,7 +215,7 @@ const RoomsPage = () => {
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={72}>
             <div className="p-6 h-full min-h-[520px] flex items-center justify-center">
-              { panelRoom ? (
+              {panelRoom ? (
                 <RoomCard
                   room={panelRoom}
                   onDelete={(id) => setDeleteRoomId(id)}
@@ -272,7 +261,7 @@ const RoomsPage = () => {
           deleteRoomMutation.mutate(id);
         }}
       />
-      
+
       {/* Mobile Inventory Dialog */}
       <MobileInventoryDialog />
 

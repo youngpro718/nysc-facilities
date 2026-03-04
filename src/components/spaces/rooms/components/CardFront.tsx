@@ -7,6 +7,7 @@ import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { RoomLightingManager } from "./lighting/RoomLightingManager";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { getNormalizedCurrentUse } from "../utils/currentUse";
+import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
 import { useChildRoomCount } from "@/hooks/useChildRooms";
@@ -26,32 +27,32 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
   const highSeverityCount = unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())).length;
   const currentUse = getNormalizedCurrentUse(room);
   const { data: childRoomCount = 0 } = useChildRoomCount(room.id);
-  
+
   const totalLights = room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0;
   const functionalLights = room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0;
   const lightingPercentage = totalLights > 0 ? Math.round((functionalLights / totalLights) * 100) : 100;
-  
+
   // Courtroom photos
   const isCourtroom = room.room_type === 'courtroom';
   const courtroomPhotos = room.courtroom_photos;
   // Handle both array and legacy string format
-  const judgeViewPhotos = courtroomPhotos?.judge_view 
+  const judgeViewPhotos = courtroomPhotos?.judge_view
     ? (Array.isArray(courtroomPhotos.judge_view) ? courtroomPhotos.judge_view : [courtroomPhotos.judge_view])
     : [];
-  const audienceViewPhotos = courtroomPhotos?.audience_view 
+  const audienceViewPhotos = courtroomPhotos?.audience_view
     ? (Array.isArray(courtroomPhotos.audience_view) ? courtroomPhotos.audience_view : [courtroomPhotos.audience_view])
     : [];
   const hasPhotos = judgeViewPhotos.length > 0 || audienceViewPhotos.length > 0;
   const heroPhoto = judgeViewPhotos[0] || audienceViewPhotos[0];
-  
+
   return (
     <div className="relative flex flex-col h-full bg-gradient-to-br from-background to-muted/20">
       {/* Courtroom Hero Photo */}
       {isCourtroom && hasPhotos && heroPhoto && (
         <div className="relative h-32 w-full overflow-hidden">
-          <img 
-            src={heroPhoto} 
-            alt="Courtroom" 
+          <img
+            src={heroPhoto}
+            alt="Courtroom"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
@@ -60,7 +61,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
           </Badge>
         </div>
       )}
-      
+
       {/* Hero Header with Room Info */}
       <div className={`relative p-6 border-b border-border/40 bg-gradient-to-r from-primary/5 to-transparent ${isCourtroom && hasPhotos ? '-mt-8 pt-2' : ''}`}>
         <div className="flex items-start justify-between gap-4">
@@ -74,14 +75,55 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
               <span className="capitalize">{room.room_type.replace(/_/g, ' ')}</span>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); onFlip(e); }}
-            className="shrink-0 hover:bg-primary/10"
-          >
-            <ArrowRightFromLine className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <TooltipProvider>
+              <div onClick={(e) => e.stopPropagation()}>
+                <EditSpaceDialog
+                  id={room.id}
+                  type="room"
+                  variant="custom"
+                  initialData={buildRoomInitialData(room)}
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Edit</TooltipContent>
+                  </Tooltip>
+                </EditSpaceDialog>
+              </div>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); onDelete(room.id); }}
+                    className="h-8"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); onFlip(e); }}
+                    className="h-8 hover:bg-primary/10"
+                  >
+                    <ArrowRightFromLine className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Go to detail</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
 
@@ -122,11 +164,10 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
                           fill="none"
                           strokeDasharray={`${2 * Math.PI * 32}`}
                           strokeDashoffset={`${2 * Math.PI * 32 * (1 - lightingPercentage / 100)}`}
-                          className={`transition-all duration-500 ${
-                            lightingPercentage >= 80 ? 'text-green-500' : 
-                            lightingPercentage >= 50 ? 'text-yellow-500' : 
-                            'text-red-500'
-                          }`}
+                          className={`transition-all duration-500 ${lightingPercentage >= 80 ? 'text-green-500' :
+                              lightingPercentage >= 50 ? 'text-yellow-500' :
+                                'text-red-500'
+                            }`}
                           strokeLinecap="round"
                         />
                       </svg>
@@ -147,9 +188,8 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
 
           {/* Issues Status - Large Visual */}
           <div className="col-span-2 sm:col-span-1">
-            <div className={`relative h-32 sm:h-40 bg-card border rounded-lg p-4 transition-all ${
-              hasIssues ? 'border-red-500/50 bg-red-500/5' : 'border-green-500/50 bg-green-500/5'
-            }`}>
+            <div className={`relative h-32 sm:h-40 bg-card border rounded-lg p-4 transition-all ${hasIssues ? 'border-red-500/50 bg-red-500/5' : 'border-green-500/50 bg-green-500/5'
+              }`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className={`h-4 w-4 ${hasIssues ? 'text-red-500' : 'text-green-500'}`} />
@@ -209,7 +249,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
           )}
 
           {/* Room Notes / Known Issues */}
-          <div 
+          <div
             className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 relative"
             onClick={(e) => e.stopPropagation()}
           >
@@ -234,7 +274,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
         {/* Status & Badges */}
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            <Badge 
+            <Badge
               variant={room.status === 'active' ? 'default' : 'destructive'}
               className="capitalize"
             >
@@ -253,7 +293,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
               </Badge>
             )}
           </div>
-          
+
           {currentUse && currentUse !== room.room_type.replace(/_/g, ' ') && (
             <div className="text-xs text-muted-foreground">
               Current use: {currentUse}
@@ -284,14 +324,14 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
               {room.is_storage && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       className="h-8"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const event = new CustomEvent('openInventoryDialog', { 
-                          detail: { roomId: room.id, roomName: room.name } 
+                        const event = new CustomEvent('openInventoryDialog', {
+                          detail: { roomId: room.id, roomName: room.name }
                         });
                         window.dispatchEvent(event);
                       }}
@@ -302,62 +342,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
                   <TooltipContent>Inventory</TooltipContent>
                 </Tooltip>
               )}
-
-              <div onClick={(e) => e.stopPropagation()}>
-                <EditSpaceDialog
-                  id={room.id}
-                  type="room"
-                  variant="custom"
-                  initialData={{
-                    id: room.id,
-                    name: room.name,
-                    room_number: room.room_number || '',
-                    room_type: room.room_type,
-                    description: room.description || '',
-                    status: room.status,
-                    floor_id: room.floor_id,
-                    is_storage: room.is_storage || false,
-                    storage_type: room.storage_type || null,
-                    storage_capacity: room.storage_capacity || null,
-                    storage_notes: room.storage_notes || null,
-                    parent_room_id: room.parent_room_id || null,
-                    current_function: room.current_function || null,
-                    phone_number: room.phone_number || null,
-                    courtroom_photos: room.courtroom_photos || null,
-                    connections: room.space_connections?.map(conn => ({
-                      id: conn.id,
-                      connectionType: conn.connection_type,
-                      toSpaceId: conn.to_space_id,
-                      direction: conn.direction || null
-                    })) || [],
-                    type: "room"
-                  }}
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-8">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Edit</TooltipContent>
-                  </Tooltip>
-                </EditSpaceDialog>
-              </div>
             </div>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); onDelete(room.id); }}
-                  className="h-8"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Delete</TooltipContent>
-            </Tooltip>
           </TooltipProvider>
         </div>
       </div>

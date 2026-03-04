@@ -3,6 +3,7 @@ import { RoomFormData } from "../../RoomFormSchema";
 import { BasicRoomFields } from "../../BasicRoomFields";
 import { ParentRoomField } from "../../ParentRoomField";
 import { FunctionRealityCheck } from "../FunctionRealityCheck";
+import { StorageFields } from "../../StorageFields";
 import { Separator } from "@/components/ui/separator";
 
 interface CoreIdentityStepProps {
@@ -31,6 +32,10 @@ export function CoreIdentityStep({ form, roomId }: CoreIdentityStepProps) {
       <Separator />
 
       <FunctionRealityCheck form={form} />
+
+      <Separator />
+
+      <StorageFields form={form} />
     </div>
   );
 }

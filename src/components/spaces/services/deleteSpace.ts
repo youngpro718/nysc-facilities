@@ -4,10 +4,9 @@ import { logger } from '@/lib/logger';
 
 export async function deleteSpace(id: string, type: 'room' | 'hallway' | 'door') {
   logger.debug(`Deleting ${type} with ID: ${id}`);
-  
+
   try {
     if (type === 'room') {
-      // Use cascade delete function to handle all FK dependencies
       const { error } = await supabase.rpc('delete_room_cascade', { p_room_id: id });
       if (error) {
         logger.error("Error deleting room (cascade):", error);
@@ -32,10 +31,11 @@ export async function deleteSpace(id: string, type: 'room' | 'hallway' | 'door')
         throw doorError;
       }
     }
-    
+
     return { success: true };
   } catch (error) {
     logger.error("Error in deleteSpace:", error);
     throw error;
   }
 }
+

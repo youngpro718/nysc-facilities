@@ -164,7 +164,15 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
         ) : (
           <div
             className="min-h-[36px] flex items-center px-3 py-2 rounded-md border border-transparent hover:border-border hover:bg-muted/50 cursor-pointer transition-colors group"
-            onClick={() => startEdit(field, Array.isArray(displayValue) ? displayValue : (displayValue || ""))}
+            onClick={() => {
+              let initValue = displayValue || "";
+              if (field === 'clerks') {
+                initValue = Array.isArray(displayValue) ? displayValue : (displayValue ? [displayValue as string] : []);
+              } else if (Array.isArray(displayValue)) {
+                initValue = displayValue;
+              }
+              startEdit(field, initValue);
+            }}
           >
             {field === 'justice' ? (
               <div className="flex items-center gap-2 flex-wrap">
@@ -285,7 +293,7 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
         {renderField('justice', 'Justice', <Gavel className="h-3.5 w-3.5" />, row.justice)}
         {renderField('clerks', 'Clerks', <Users className="h-3.5 w-3.5" />, row.clerks)}
         {renderField('sergeant', 'Sergeant / Officer', <Shield className="h-3.5 w-3.5" />, row.sergeant)}
-        
+
         <div className="border-t pt-4 space-y-4">
           {renderField('tel', 'Phone', <Phone className="h-3.5 w-3.5" />, row.tel)}
           {renderField('fax', 'Fax', <Printer className="h-3.5 w-3.5" />, row.fax)}
@@ -339,12 +347,12 @@ const CalendarDayDisplay = ({ value }: { value: string }) => {
     fri: 'Friday', friday: 'Friday'
   };
   const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  
+
   let items: string[] = [];
   try {
     const maybe = JSON.parse(value);
     if (Array.isArray(maybe)) items = maybe;
-  } catch {}
+  } catch { }
   if (!items.length) {
     items = value.replace(/[\[\]"]+/g, '').split(',').map(s => s.trim()).filter(Boolean);
   }

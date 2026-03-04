@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from 'react';
+import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap, Pencil, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { RoomInventory } from "../../RoomInventory";
 import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 import { LightingStatusWheel } from "@/components/spaces/LightingStatusWheel";
@@ -18,13 +21,14 @@ import { useLightingWithTickets } from "@/hooks/useLightingWithTickets";
 interface CardBackProps {
   room: EnhancedRoom;
   onFlip: (e?: React.MouseEvent) => void;
+  onDelete: (id: string) => void;
 }
 
-export function CardBack({ room, onFlip }: CardBackProps) {
+export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'lighting' | 'notes' | 'history'>('info');
   const { data: lightingWithTickets = [] } = useLightingWithTickets(room.id);
-  
+
   // Courtroom photos
   const isCourtroom = room.room_type === 'courtroom';
   const courtroomPhotos = room.courtroom_photos;
@@ -36,8 +40,11 @@ export function CardBack({ room, onFlip }: CardBackProps) {
   const mediumPriorityIssues = unresolvedIssues.filter(i => (i.priority || "").toLowerCase() === "medium");
   const lowPriorityIssues = unresolvedIssues.filter(i => !["urgent", "high", "critical", "medium"].includes((i.priority || "").toLowerCase()));
 
-  const totalLights = useMemo(() => room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0, [room]);
-  const functionalLights = useMemo(() => room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0, [room]);
+  const totalLights = room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0;
+  const functionalLights = useMemo(
+    () => room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0,
+    [room.functional_fixtures_count, room.lighting_fixtures],
+  );
 
   const nonFunctionalFixtures = lightingWithTickets.filter(f => f.status !== 'functional');
   const fixturesWithoutTickets = nonFunctionalFixtures.filter(f => !f.issue_id);
@@ -49,31 +56,65 @@ export function CardBack({ room, onFlip }: CardBackProps) {
         <h3 className="text-lg font-semibold text-foreground">
           {room.name}
         </h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onFlip}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <div onClick={(e) => e.stopPropagation()}>
+              <EditSpaceDialog
+                id={room.id}
+                type="room"
+                variant="custom"
+                initialData={buildRoomInitialData(room)}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Edit</TooltipContent>
+                </Tooltip>
+              </EditSpaceDialog>
+            </div>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={(e) => { e.stopPropagation(); onDelete(room.id); }}
+                  className="h-8"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Delete</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onFlip}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Tab Navigation */}
       <div className="flex gap-1 mb-4 p-1 bg-muted/50 rounded-lg overflow-x-auto">
         <button
           onClick={() => setActiveTab('info')}
-          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
-            activeTab === 'info' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'info' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
         >
           <Building className="h-3.5 w-3.5 inline mr-1" />
           Info
         </button>
         <button
           onClick={() => setActiveTab('issues')}
-          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
-            activeTab === 'issues' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'issues' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
         >
           <AlertTriangle className="h-3.5 w-3.5 inline mr-1" />
           Issues
@@ -85,33 +126,30 @@ export function CardBack({ room, onFlip }: CardBackProps) {
         </button>
         <button
           onClick={() => setActiveTab('lighting')}
-          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
-            activeTab === 'lighting' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'lighting' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
         >
           <Lightbulb className="h-3.5 w-3.5 inline mr-1" />
           Lights
         </button>
         <button
           onClick={() => setActiveTab('notes')}
-          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
-            activeTab === 'notes' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'notes' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
         >
           <StickyNote className="h-3.5 w-3.5 inline mr-1" />
           Notes
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
-            activeTab === 'history' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'history' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
         >
           <HistoryIcon className="h-3.5 w-3.5 inline mr-1" />
           History
         </button>
       </div>
-      
+
       <ScrollArea className="flex-1 pr-2">
         {/* Info Tab */}
         {activeTab === 'info' && (
@@ -125,16 +163,16 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
                   {courtroomPhotos?.judge_view && (() => {
-                    const photos = Array.isArray(courtroomPhotos.judge_view) 
-                      ? courtroomPhotos.judge_view 
+                    const photos = Array.isArray(courtroomPhotos.judge_view)
+                      ? courtroomPhotos.judge_view
                       : [courtroomPhotos.judge_view];
                     const firstPhoto = photos[0];
                     return firstPhoto ? (
                       <div className="space-y-1">
                         <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
-                          <img 
-                            src={firstPhoto} 
-                            alt="Judge View" 
+                          <img
+                            src={firstPhoto}
+                            alt="Judge View"
                             className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
                             onClick={() => window.open(firstPhoto, '_blank')}
                           />
@@ -149,16 +187,16 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                     ) : null;
                   })()}
                   {courtroomPhotos?.audience_view && (() => {
-                    const photos = Array.isArray(courtroomPhotos.audience_view) 
-                      ? courtroomPhotos.audience_view 
+                    const photos = Array.isArray(courtroomPhotos.audience_view)
+                      ? courtroomPhotos.audience_view
                       : [courtroomPhotos.audience_view];
                     const firstPhoto = photos[0];
                     return firstPhoto ? (
                       <div className="space-y-1">
                         <div className="relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
-                          <img 
-                            src={firstPhoto} 
-                            alt="Audience View" 
+                          <img
+                            src={firstPhoto}
+                            alt="Audience View"
                             className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
                             onClick={() => window.open(firstPhoto, '_blank')}
                           />
@@ -189,10 +227,10 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                     <div className="bg-muted/50 p-3 rounded-lg">
                       <p className="text-xs font-medium text-muted-foreground mb-1">Defense Table</p>
                       <div className="text-sm space-y-0.5">
-                        {(room as any).court_room.layout_details.defense_table.length_in && 
-                         (room as any).court_room.layout_details.defense_table.depth_in && (
-                          <p>{(room as any).court_room.layout_details.defense_table.length_in}" × {(room as any).court_room.layout_details.defense_table.depth_in}"</p>
-                        )}
+                        {(room as any).court_room.layout_details.defense_table.length_in &&
+                          (room as any).court_room.layout_details.defense_table.depth_in && (
+                            <p>{(room as any).court_room.layout_details.defense_table.length_in}" × {(room as any).court_room.layout_details.defense_table.depth_in}"</p>
+                          )}
                         {(room as any).court_room.layout_details.defense_table.seats && (
                           <p className="text-muted-foreground">{(room as any).court_room.layout_details.defense_table.seats} seats</p>
                         )}
@@ -204,10 +242,10 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                     <div className="bg-muted/50 p-3 rounded-lg">
                       <p className="text-xs font-medium text-muted-foreground mb-1">Prosecution Table</p>
                       <div className="text-sm space-y-0.5">
-                        {(room as any).court_room.layout_details.prosecution_table.length_in && 
-                         (room as any).court_room.layout_details.prosecution_table.depth_in && (
-                          <p>{(room as any).court_room.layout_details.prosecution_table.length_in}" × {(room as any).court_room.layout_details.prosecution_table.depth_in}"</p>
-                        )}
+                        {(room as any).court_room.layout_details.prosecution_table.length_in &&
+                          (room as any).court_room.layout_details.prosecution_table.depth_in && (
+                            <p>{(room as any).court_room.layout_details.prosecution_table.length_in}" × {(room as any).court_room.layout_details.prosecution_table.depth_in}"</p>
+                          )}
                         {(room as any).court_room.layout_details.prosecution_table.seats && (
                           <p className="text-muted-foreground">{(room as any).court_room.layout_details.prosecution_table.seats} seats</p>
                         )}
@@ -232,12 +270,12 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                 <p>{room.floor?.building?.name}, Floor {room.floor?.name}</p>
               </div>
             </div>
-            
+
             {/* Room Hierarchy - show parent chain and child rooms */}
             <div className="space-y-2">
               <ParentRoomHierarchy roomId={room.id} showChildren={true} compact={false} />
             </div>
-            
+
             {/* Type Information */}
             <div className="space-y-2">
               <h4 className="text-sm font-medium flex items-center gap-1">
@@ -265,7 +303,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                 )}
               </div>
             </div>
-            
+
             {/* Contact Information */}
             {room.phone_number && (
               <div className="space-y-2">
@@ -291,9 +329,9 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                   {room.storage_capacity && <p>Capacity: {room.storage_capacity}</p>}
                   {room.storage_notes && <p>Notes: {room.storage_notes}</p>}
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="mt-2 w-full flex items-center justify-center"
                   onClick={() => setIsInventoryDialogOpen(true)}
                   title="View Inventory"
@@ -376,31 +414,28 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               <>
                 {/* Priority Summary */}
                 <div className="grid grid-cols-3 gap-2">
-                  <div className={`text-center p-2.5 rounded-lg border ${
-                    highPriorityIssues.length > 0
+                  <div className={`text-center p-2.5 rounded-lg border ${highPriorityIssues.length > 0
                       ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'
                       : 'bg-muted/30 border-border'
-                  }`}>
+                    }`}>
                     <div className={`text-xl font-bold ${highPriorityIssues.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                       {highPriorityIssues.length}
                     </div>
                     <div className="text-xs text-muted-foreground">High</div>
                   </div>
-                  <div className={`text-center p-2.5 rounded-lg border ${
-                    mediumPriorityIssues.length > 0
+                  <div className={`text-center p-2.5 rounded-lg border ${mediumPriorityIssues.length > 0
                       ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
                       : 'bg-muted/30 border-border'
-                  }`}>
+                    }`}>
                     <div className={`text-xl font-bold ${mediumPriorityIssues.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
                       {mediumPriorityIssues.length}
                     </div>
                     <div className="text-xs text-muted-foreground">Medium</div>
                   </div>
-                  <div className={`text-center p-2.5 rounded-lg border ${
-                    lowPriorityIssues.length > 0
+                  <div className={`text-center p-2.5 rounded-lg border ${lowPriorityIssues.length > 0
                       ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
                       : 'bg-muted/30 border-border'
-                  }`}>
+                    }`}>
                     <div className={`text-xl font-bold ${lowPriorityIssues.length > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`}>
                       {lowPriorityIssues.length}
                     </div>
@@ -497,7 +532,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                           total={totalLights}
                           size={48}
                           title={`${functionalLights}/${totalLights} lights functional - Click to manage`}
-                          onClick={() => {}}
+                          onClick={() => { }}
                         />
                       }
                     />
