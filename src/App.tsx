@@ -29,7 +29,7 @@ import AdminCenter from "@/pages/AdminCenter";
 import SystemSettings from "@/pages/SystemSettings";
 import VerificationPending from "@/pages/VerificationPending";
 import FeaturesPreview from "@/pages/FeaturesPreview";
-import AccessManagement from "@/pages/AccessManagement";
+// AccessManagement page removed — functionality merged into /access-assignments
 // ThemeSettings and SettingsPage removed - consolidated into Profile
 import AdminKeyRequests from "@/pages/admin/KeyRequests";
 import SupplyRoom from "@/pages/SupplyRoom";
@@ -202,11 +202,8 @@ function AppContent() {
             <SystemSettings />
           </ProtectedRoute>
         } />
-        <Route path="access-management" element={
-          <ProtectedRoute requireAdmin>
-            <AccessManagement />
-          </ProtectedRoute>
-        } />
+        {/* Legacy access-management page redirects to unified access-assignments */}
+        <Route path="access-management" element={<Navigate to="/access-assignments" replace />} />
         <Route path="users" element={
           <ProtectedRoute requireAdmin>
             <Users />
