@@ -1,0 +1,1645 @@
+diff --git a/.claude/worktrees/distracted-leavitt b/.claude/worktrees/distracted-leavitt
+--- a/.claude/worktrees/distracted-leavitt
++++ b/.claude/worktrees/distracted-leavitt
+@@ -1 +1 @@
+-Subproject commit 6ab3af4f33a5ca54d1f1e7d772f5f182966b2c2b
++Subproject commit 6ab3af4f33a5ca54d1f1e7d772f5f182966b2c2b-dirty
+diff --git a/src/components/court-operations/ConflictDetectionPanel.tsx b/src/components/court-operations/ConflictDetectionPanel.tsx
+index 5a8d68be..c588436f 100644
+--- a/src/components/court-operations/ConflictDetectionPanel.tsx
++++ b/src/components/court-operations/ConflictDetectionPanel.tsx
+@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
+ import { Button } from "@/components/ui/button";
+ import { Badge } from "@/components/ui/badge";
+ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+-import { 
+-  AlertTriangle, 
+-  AlertCircle, 
+-  CheckCircle2, 
+-  RefreshCw, 
++import {
++  AlertTriangle,
++  AlertCircle,
++  CheckCircle2,
++  RefreshCw,
+   XCircle,
+   Users,
+   FileText,
+@@ -22,12 +22,12 @@ import {
+   AccordionTrigger,
+ } from "@/components/ui/accordion";
+ 
+-export function ConflictDetectionPanel() {
++export function ConflictDetectionPanel({ buildingCode = '100' }: { buildingCode?: string }) {
+   const [isRefreshing, setIsRefreshing] = useState(false);
+ 
+   const { data: detectionResult, isLoading, refetch } = useQuery({
+-    queryKey: ["conflict-detection"],
+-    queryFn: () => ConflictDetectionService.detectConflicts(),
++    queryKey: ["conflict-detection", buildingCode],
++    queryFn: () => ConflictDetectionService.detectConflicts(buildingCode),
+   });
+ 
+   const handleRefresh = async () => {
+@@ -196,12 +196,12 @@ export function ConflictDetectionPanel() {
+           invalid_assignment: "Invalid Assignments",
+         };
+         const severityOrder = { critical: 0, high: 1, medium: 2 };
+-        
++
+         // Sort all conflicts by severity first
+         const sorted = [...detectionResult.conflicts].sort(
+           (a, b) => (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3)
+         );
+-        
++
+         sorted.forEach(c => {
+           if (!grouped.has(c.type)) grouped.set(c.type, []);
+           grouped.get(c.type)!.push(c);
+@@ -296,28 +296,28 @@ export function ConflictDetectionPanel() {
+                   return (order[a.severity || 'low'] ?? 3) - (order[b.severity || 'low'] ?? 3);
+                 })
+                 .map((warning) => (
+-                <Alert key={warning.id} variant="default">
+-                  <AlertCircle className="h-4 w-4" />
+-                  <AlertTitle className="flex items-center gap-2">
+-                    {warning.title}
+-                    {warning.severity && (
+-                      <Badge variant="outline" className="text-[10px]">{warning.severity}</Badge>
+-                    )}
+-                  </AlertTitle>
+-                  <AlertDescription>
+-                    {warning.description}
+-                    {warning.affectedRooms.length > 0 && (
+-                      <div className="mt-2 flex flex-wrap gap-2">
+-                        {warning.affectedRooms.map(room => (
+-                          <Badge key={room} variant="outline" className="text-xs">
+-                            {room}
+-                          </Badge>
+-                        ))}
+-                      </div>
+-                    )}
+-                  </AlertDescription>
+-                </Alert>
+-              ))}
++                  <Alert key={warning.id} variant="default">
++                    <AlertCircle className="h-4 w-4" />
++                    <AlertTitle className="flex items-center gap-2">
++                      {warning.title}
++                      {warning.severity && (
++                        <Badge variant="outline" className="text-[10px]">{warning.severity}</Badge>
++                      )}
++                    </AlertTitle>
++                    <AlertDescription>
++                      {warning.description}
++                      {warning.affectedRooms.length > 0 && (
++                        <div className="mt-2 flex flex-wrap gap-2">
++                          {warning.affectedRooms.map(room => (
++                            <Badge key={room} variant="outline" className="text-xs">
++                              {room}
++                            </Badge>
++                          ))}
++                        </div>
++                      )}
++                    </AlertDescription>
++                  </Alert>
++                ))}
+             </div>
+           </CardContent>
+         </Card>
+diff --git a/src/components/court-operations/DailySessionsPanel.tsx b/src/components/court-operations/DailySessionsPanel.tsx
+index 0c9ec916..3f8269b2 100644
+--- a/src/components/court-operations/DailySessionsPanel.tsx
++++ b/src/components/court-operations/DailySessionsPanel.tsx
+@@ -33,12 +33,18 @@ import { useStartTodaysReport } from '@/hooks/useStartTodaysReport';
+ import { SessionPeriod, BuildingCode } from '@/types/courtSessions';
+ import { BUILDING_CODES, SESSION_PERIODS } from '@/constants/sessionStatuses';
+ 
+-export function DailySessionsPanel() {
++interface DailySessionsPanelProps {
++  buildingCode?: BuildingCode;
++  onBuildingChange?: (code: BuildingCode) => void;
++}
++
++export function DailySessionsPanel({ buildingCode = '100', onBuildingChange }: DailySessionsPanelProps) {
+   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+   const [selectedPeriod, setSelectedPeriod] = useState<SessionPeriod>(
+     new Date().getHours() >= 12 ? 'PM' : 'AM'
+   );
+-  const [selectedBuilding, setSelectedBuilding] = useState<BuildingCode>('100');
++  // Remove local state as we're using props
++  // const [selectedBuilding, setSelectedBuilding] = useState<BuildingCode>('100');
+   const [showCoveragePanel, setShowCoveragePanel] = useState(false);
+   const [showQuickEntry, setShowQuickEntry] = useState(false);
+   const [showReportDialog, setShowReportDialog] = useState(false);
+@@ -50,19 +56,19 @@ export function DailySessionsPanel() {
+   const { data: sessions, isLoading: sessionsLoading } = useCourtSessions(
+     selectedDate,
+     selectedPeriod,
+-    selectedBuilding
++    buildingCode
+   );
+ 
+   const { data: coverages, isLoading: coveragesLoading } = useCoverageAssignments(
+     selectedDate,
+     selectedPeriod,
+-    selectedBuilding
++    buildingCode
+   );
+ 
+   const { data: conflicts } = useSessionConflicts(
+     selectedDate,
+     selectedPeriod,
+-    selectedBuilding
++    buildingCode
+   );
+ 
+   const copyYesterday = useCopyYesterdaySessions();
+@@ -80,7 +86,7 @@ export function DailySessionsPanel() {
+     startReport.mutate({
+       date: selectedDate,
+       period: selectedPeriod,
+-      buildingCode: selectedBuilding,
++      buildingCode: buildingCode,
+     });
+   };
+ 
+@@ -97,7 +103,7 @@ export function DailySessionsPanel() {
+       fromDate: format(yesterday, 'yyyy-MM-dd'),
+       toDate: format(selectedDate, 'yyyy-MM-dd'),
+       period: selectedPeriod,
+-      buildingCode: selectedBuilding,
++      buildingCode: buildingCode,
+     });
+   };
+ 
+@@ -105,7 +111,7 @@ export function DailySessionsPanel() {
+   const nextDay = () => setSelectedDate(new Date(selectedDate.getTime() + 86400000));
+   const goToday = () => setSelectedDate(new Date());
+ 
+-  const buildingLabel = BUILDING_CODES.find(b => b.value === selectedBuilding)?.label || selectedBuilding;
++  const buildingLabel = BUILDING_CODES.find(b => b.value === buildingCode)?.label || buildingCode;
+   const hasSessions = sessions && sessions.length > 0;
+   const dateStr = format(selectedDate, 'EEEE, MMMM d, yyyy');
+   const todayTag = isToday(selectedDate);
+@@ -174,10 +180,10 @@ export function DailySessionsPanel() {
+                 {BUILDING_CODES.map((building) => (
+                   <Button
+                     key={building.value}
+-                    variant={selectedBuilding === building.value ? 'default' : 'ghost'}
++                    variant={buildingCode === building.value ? 'default' : 'ghost'}
+                     size="sm"
+                     className="h-8 px-2.5 rounded-none text-xs"
+-                    onClick={() => setSelectedBuilding(building.value as BuildingCode)}
++                    onClick={() => onBuildingChange?.(building.value as BuildingCode)}
+                   >
+                     {building.value}
+                   </Button>
+@@ -342,7 +348,7 @@ export function DailySessionsPanel() {
+         <CoveragePanel
+           date={selectedDate}
+           period={selectedPeriod}
+-          buildingCode={selectedBuilding}
++          buildingCode={buildingCode}
+           coverages={coverages || []}
+           isLoading={coveragesLoading}
+         />
+@@ -353,7 +359,7 @@ export function DailySessionsPanel() {
+         <QuickSessionEntry
+           date={selectedDate}
+           period={selectedPeriod}
+-          buildingCode={selectedBuilding}
++          buildingCode={buildingCode}
+         />
+       )}
+ 
+@@ -362,7 +368,7 @@ export function DailySessionsPanel() {
+         <SessionsTable
+           date={selectedDate}
+           period={selectedPeriod}
+-          buildingCode={selectedBuilding}
++          buildingCode={buildingCode}
+           sessions={sessions || []}
+           coverages={coverages || []}
+           isLoading={sessionsLoading}
+@@ -375,7 +381,7 @@ export function DailySessionsPanel() {
+         onOpenChange={setShowCreateDialog}
+         date={selectedDate}
+         period={selectedPeriod}
+-        buildingCode={selectedBuilding}
++        buildingCode={buildingCode}
+       />
+ 
+       <GenerateReportDialog
+@@ -384,7 +390,7 @@ export function DailySessionsPanel() {
+         reportOptions={{
+           date: selectedDate,
+           period: selectedPeriod,
+-          buildingCode: selectedBuilding,
++          buildingCode: buildingCode,
+           sessions: sessions || [],
+           coverages: coverages || [],
+         }}
+@@ -393,7 +399,7 @@ export function DailySessionsPanel() {
+       <UploadDailyReportDialog
+         open={showUploadDialog}
+         onOpenChange={setShowUploadDialog}
+-        buildingCode={selectedBuilding}
++        buildingCode={buildingCode}
+         onDataExtracted={(data) => {
+           setExtractedData(data);
+           setShowReviewDialog(true);
+@@ -406,13 +412,13 @@ export function DailySessionsPanel() {
+         data={extractedData}
+         date={selectedDate}
+         period={selectedPeriod}
+-        buildingCode={selectedBuilding}
++        buildingCode={buildingCode}
+         onApprove={(approvedData) => {
+           bulkCreateSessions.mutate({
+             sessions: approvedData,
+             date: selectedDate,
+             period: selectedPeriod,
+-            buildingCode: selectedBuilding,
++            buildingCode: buildingCode,
+           });
+         }}
+       />
+diff --git a/src/components/court-operations/StaffAbsenceManager.tsx b/src/components/court-operations/StaffAbsenceManager.tsx
+index a78a4c0f..58693b63 100644
+--- a/src/components/court-operations/StaffAbsenceManager.tsx
++++ b/src/components/court-operations/StaffAbsenceManager.tsx
+@@ -39,7 +39,7 @@ interface StaffAbsence {
+   };
+ }
+ 
+-export function StaffAbsenceManager() {
++export function StaffAbsenceManager({ buildingCode = '100' }: { buildingCode?: string }) {
+   const { user } = useAuth();
+   const { toast } = useToast();
+   const queryClient = useQueryClient();
+@@ -47,22 +47,24 @@ export function StaffAbsenceManager() {
+   const [showCoverageDialog, setShowCoverageDialog] = useState(false);
+   const [selectedAbsence, setSelectedAbsence] = useState<StaffAbsence | null>(null);
+ 
+-  // Fetch all staff absences
++  // Fetch all staff absences for this building
+   const { data: absences, isLoading } = useQuery({
+-    queryKey: ["staff-absences"],
++    queryKey: ["staff-absences", buildingCode],
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from("staff_absences")
+         .select(`
+           *,
+-          staff:staff_id (
++          staff:staff_id!inner (
+             display_name,
+-            role
++            role,
++            buildings!inner(address)
+           ),
+           covering_staff:covering_staff_id (
+             display_name
+           )
+         `)
++        .ilike('staff.buildings.address', `%${buildingCode}%`)
+         .order("starts_on", { ascending: false });
+ 
+       if (error) throw error;
+@@ -70,13 +72,14 @@ export function StaffAbsenceManager() {
+     },
+   });
+ 
+-  // Fetch available staff for coverage
++  // Fetch available staff for coverage for this building
+   const { data: availableStaff } = useQuery({
+-    queryKey: ["available-staff"],
++    queryKey: ["available-staff", buildingCode],
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from("staff")
+-        .select("id, display_name, role")
++        .select("id, display_name, role, buildings!inner(address)")
++        .ilike('buildings.address', `%${buildingCode}%`)
+         .order("display_name");
+ 
+       if (error) throw error;
+@@ -190,83 +193,83 @@ export function StaffAbsenceManager() {
+               <CardDescription>Manage staff absences and coverage assignments</CardDescription>
+             </CardHeader>
+             <CardContent>
+-          {isLoading ? (
+-            <div className="flex items-center justify-center py-8">
+-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+-            </div>
+-          ) : absences && absences.length > 0 ? (
+-            <div className="rounded-md border">
+-              <Table>
+-                <TableHeader>
+-                  <TableRow>
+-                    <TableHead>Staff Member</TableHead>
+-                    <TableHead>Role</TableHead>
+-                    <TableHead>Reason</TableHead>
+-                    <TableHead>Dates</TableHead>
+-                    <TableHead>Coverage</TableHead>
+-                    <TableHead className="text-right">Actions</TableHead>
+-                  </TableRow>
+-                </TableHeader>
+-                <TableBody>
+-                  {absences.map((absence) => {
+-                    const isActive = new Date(absence.ends_on) >= new Date();
+-                    return (
+-                      <TableRow key={absence.id} className={!isActive ? "opacity-50" : ""}>
+-                        <TableCell className="font-medium">
+-                          {getStaffName(absence.staff as { display_name: string; role?: string } | undefined)}
+-                        </TableCell>
+-                        <TableCell>
+-                          <Badge variant="outline">{absence.staff?.role || "N/A"}</Badge>
+-                        </TableCell>
+-                        <TableCell>{getReasonBadge(absence.absence_reason || absence.kind)}</TableCell>
+-                        <TableCell>
+-                          <div className="text-sm">
+-                            <div>{format(new Date(absence.starts_on), "MMM dd, yyyy")}</div>
+-                            <div className="text-muted-foreground">
+-                              to {format(new Date(absence.ends_on), "MMM dd, yyyy")}
+-                            </div>
+-                          </div>
+-                        </TableCell>
+-                        <TableCell>
+-                          {absence.coverage_assigned ? (
+-                            <div className="flex items-center gap-2">
+-                              <UserCheck className="h-4 w-4 text-green-500" />
+-                              <span className="text-sm">
+-                                {getStaffName(absence.covering_staff as { display_name: string } | undefined)}
+-                              </span>
+-                            </div>
+-                          ) : (
+-                            <div className="flex items-center gap-2">
+-                              <AlertCircle className="h-4 w-4 text-amber-500" />
+-                              <span className="text-sm text-muted-foreground">Not assigned</span>
+-                            </div>
+-                          )}
+-                        </TableCell>
+-                        <TableCell className="text-right">
+-                          {!absence.coverage_assigned && isActive && (
+-                            <Button
+-                              size="sm"
+-                              variant="outline"
+-                              onClick={() => {
+-                                setSelectedAbsence(absence);
+-                                setShowCoverageDialog(true);
+-                              }}
+-                            >
+-                              Assign Coverage
+-                            </Button>
+-                          )}
+-                        </TableCell>
++              {isLoading ? (
++                <div className="flex items-center justify-center py-8">
++                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
++                </div>
++              ) : absences && absences.length > 0 ? (
++                <div className="rounded-md border">
++                  <Table>
++                    <TableHeader>
++                      <TableRow>
++                        <TableHead>Staff Member</TableHead>
++                        <TableHead>Role</TableHead>
++                        <TableHead>Reason</TableHead>
++                        <TableHead>Dates</TableHead>
++                        <TableHead>Coverage</TableHead>
++                        <TableHead className="text-right">Actions</TableHead>
+                       </TableRow>
+-                    );
+-                  })}
+-                </TableBody>
+-              </Table>
+-            </div>
+-          ) : (
+-            <div className="text-center py-8 text-muted-foreground">
+-              No staff absences recorded
+-            </div>
+-          )}
++                    </TableHeader>
++                    <TableBody>
++                      {absences.map((absence) => {
++                        const isActive = new Date(absence.ends_on) >= new Date();
++                        return (
++                          <TableRow key={absence.id} className={!isActive ? "opacity-50" : ""}>
++                            <TableCell className="font-medium">
++                              {getStaffName(absence.staff as { display_name: string; role?: string } | undefined)}
++                            </TableCell>
++                            <TableCell>
++                              <Badge variant="outline">{absence.staff?.role || "N/A"}</Badge>
++                            </TableCell>
++                            <TableCell>{getReasonBadge(absence.absence_reason || absence.kind)}</TableCell>
++                            <TableCell>
++                              <div className="text-sm">
++                                <div>{format(new Date(absence.starts_on), "MMM dd, yyyy")}</div>
++                                <div className="text-muted-foreground">
++                                  to {format(new Date(absence.ends_on), "MMM dd, yyyy")}
++                                </div>
++                              </div>
++                            </TableCell>
++                            <TableCell>
++                              {absence.coverage_assigned ? (
++                                <div className="flex items-center gap-2">
++                                  <UserCheck className="h-4 w-4 text-green-500" />
++                                  <span className="text-sm">
++                                    {getStaffName(absence.covering_staff as { display_name: string } | undefined)}
++                                  </span>
++                                </div>
++                              ) : (
++                                <div className="flex items-center gap-2">
++                                  <AlertCircle className="h-4 w-4 text-amber-500" />
++                                  <span className="text-sm text-muted-foreground">Not assigned</span>
++                                </div>
++                              )}
++                            </TableCell>
++                            <TableCell className="text-right">
++                              {!absence.coverage_assigned && isActive && (
++                                <Button
++                                  size="sm"
++                                  variant="outline"
++                                  onClick={() => {
++                                    setSelectedAbsence(absence);
++                                    setShowCoverageDialog(true);
++                                  }}
++                                >
++                                  Assign Coverage
++                                </Button>
++                              )}
++                            </TableCell>
++                          </TableRow>
++                        );
++                      })}
++                    </TableBody>
++                  </Table>
++                </div>
++              ) : (
++                <div className="text-center py-8 text-muted-foreground">
++                  No staff absences recorded
++                </div>
++              )}
+             </CardContent>
+           </Card>
+         </TabsContent>
+diff --git a/src/components/court/AssignmentListItem.tsx b/src/components/court/AssignmentListItem.tsx
+index cee80c56..1245e01c 100644
+--- a/src/components/court/AssignmentListItem.tsx
++++ b/src/components/court/AssignmentListItem.tsx
+@@ -137,7 +137,11 @@ export const AssignmentListItem = ({
+           {row.part && (
+             <span className="text-xs text-muted-foreground font-medium">Pt {row.part}</span>
+           )}
+-          {urgentIssues && <AlertTriangle className="h-3 w-3 text-destructive shrink-0" />}
++          {urgentIssues ? (
++            <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
++          ) : hasIssues ? (
++            <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
++          ) : null}
+           {/* Inline conflict markers */}
+           {conflicts.length > 0 && (
+             <Tooltip>
+@@ -158,6 +162,9 @@ export const AssignmentListItem = ({
+                 </span>
+               </TooltipTrigger>
+               <TooltipContent side="right" className="max-w-xs">
++                <h3 className="text-sm font-semibold truncate leading-tight group-hover:text-primary transition-colors">
++                  Room {row.room_number || row.courtroom_number || '—'}
++                </h3>
+                 <div className="space-y-1">
+                   {conflicts.map(c => (
+                     <div key={c.id} className="text-xs">
+diff --git a/src/components/court/AssignmentManagementPanel.tsx b/src/components/court/AssignmentManagementPanel.tsx
+index 05788891..94db60fc 100644
+--- a/src/components/court/AssignmentManagementPanel.tsx
++++ b/src/components/court/AssignmentManagementPanel.tsx
+@@ -13,33 +13,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
+ import { Badge } from "@/components/ui/badge";
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+ 
+-export const AssignmentManagementPanel = () => {
++interface AssignmentManagementPanelProps {
++  buildingCode?: string;
++}
++
++export const AssignmentManagementPanel = ({ buildingCode = '100' }: AssignmentManagementPanelProps) => {
+   const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
+   const [addJudgeOpen, setAddJudgeOpen] = useState(false);
+   const [addStaffOpen, setAddStaffOpen] = useState(false);
+-  const { getCourtImpactSummary, getRecentlyAffectedRooms } = useCourtIssuesIntegration();
++  const { getCourtImpactSummary, getRecentlyAffectedRooms } = useCourtIssuesIntegration(buildingCode);
+   const { personnel } = useCourtPersonnel();
+   const impactSummary = getCourtImpactSummary();
+   const recentlyAffectedRooms = getRecentlyAffectedRooms();
+ 
+   const { data: assignmentStats, isLoading, error } = useQuery({
+-    queryKey: ["assignment-stats"],
++    queryKey: ["assignment-stats", buildingCode],
+     queryFn: async () => {
+       // Get all court rooms with their availability status
++      // Get all court rooms with their availability status, filtered by building
+       const { data: courtrooms } = await supabase
+         .from("court_rooms")
+-        .select("id, room_id, room_number, is_active");
++        .select("id, room_id, room_number, is_active, rooms:room_id!inner(floors!inner(buildings!inner(address)))")
++        .ilike('rooms.floors.buildings.address', `%${buildingCode}%`);
+ 
+       const { data: assignments } = await supabase
+         .from("court_assignments")
+-        .select("room_id, part")
+-        .not("part", "is", null)
+-        .not("part", "eq", "");
++        .select("room_id, part, justice, rooms:room_id!inner(floors!inner(buildings!inner(address)))")
++        .ilike('rooms.floors.buildings.address', `%${buildingCode}%`);
+ 
+       const { data: shutdowns } = await supabase
+         .from("room_shutdowns")
+-        .select("court_room_id, status, temporary_location, reason")
+-        .or("status.eq.in_progress,status.eq.scheduled");
++        .select("court_room_id, status, temporary_location, reason, court_rooms:court_room_id!inner(rooms:room_id!inner(floors!inner(buildings!inner(address))))")
++        .or("status.eq.in_progress,status.eq.scheduled")
++        .ilike('court_rooms.rooms.floors.buildings.address', `%${buildingCode}%`);
+ 
+       const totalCourtrooms = courtrooms?.length || 0;
+ 
+@@ -47,20 +53,19 @@ export const AssignmentManagementPanel = () => {
+ 
+       // Create maps for quick lookup
+       const shutdownMap = new Map(shutdowns?.map(s => [s.court_room_id, s]) || []);
++      const assignmentMap = new Map(assignments?.map(a => [a.room_id, a]) || []);
+ 
+       // Count rooms by actual availability
+       let availableCount = 0;
+       let assignedCount = 0;
+       let shutdownCount = 0;
+       let relocatedCount = 0;
+-      // track inactive rooms only for flow control; not surfaced in metrics
+-
+-      const assignedRoomIds = new Set((assignments || []).map((a: Record<string, unknown>) => a.room_id).filter(Boolean));
+ 
+       courtrooms?.forEach(room => {
+         const roomShutdown = shutdownMap.get(room.id);
+-        // Check if room has a part assigned using room_id key
+-        const hasAssignment = assignedRoomIds.has(room.room_id);
++        const assignment = assignmentMap.get(room.room_id);
++        const hasAssignment = !!assignment && !!assignment.part && assignment.part.trim() !== "";
++        const hasJustice = !!assignment && !!assignment.justice && assignment.justice.trim() !== "";
+ 
+         if (roomShutdown && (((roomShutdown as Record<string, unknown>)).status === "in_progress" || ((roomShutdown as Record<string, unknown>)).status === "scheduled")) {
+           shutdownCount++;
+@@ -69,7 +74,7 @@ export const AssignmentManagementPanel = () => {
+           }
+         } else if (!room.is_active) {
+           // skip counting if inactive
+-        } else if (hasAssignment) {
++        } else if (hasAssignment && hasJustice) {
+           assignedCount++;
+         } else {
+           availableCount++;
+@@ -256,7 +261,7 @@ export const AssignmentManagementPanel = () => {
+           </div>
+ 
+           {/* Enhanced Split-Panel Assignment Board */}
+-          <EnhancedCourtAssignmentTable />
++          <EnhancedCourtAssignmentTable buildingCode={buildingCode} />
+ 
+ 
+ 
+diff --git a/src/components/court/EnhancedCourtAssignmentTable.tsx b/src/components/court/EnhancedCourtAssignmentTable.tsx
+index 512a3ddf..d89b8bff 100644
+--- a/src/components/court/EnhancedCourtAssignmentTable.tsx
++++ b/src/components/court/EnhancedCourtAssignmentTable.tsx
+@@ -53,7 +53,11 @@ interface CourtAssignmentRow {
+   justice_inactive?: boolean;
+ }
+ 
+-export const EnhancedCourtAssignmentTable = () => {
++interface EnhancedCourtAssignmentTableProps {
++  buildingCode?: string;
++}
++
++export const EnhancedCourtAssignmentTable = ({ buildingCode = '100' }: EnhancedCourtAssignmentTableProps) => {
+   const { toast } = useToast();
+   const queryClient = useQueryClient();
+   const isMobile = useIsMobile();
+@@ -67,17 +71,18 @@ export const EnhancedCourtAssignmentTable = () => {
+     getIssuesForRoom,
+     hasUrgentIssues,
+     getRecentlyAffectedRooms,
+-  } = useCourtIssuesIntegration();
++  } = useCourtIssuesIntegration(buildingCode);
+   const recentlyAffectedRooms = getRecentlyAffectedRooms();
+ 
+   // Fetch active/scheduled shutdowns
+   const { data: shutdowns } = useQuery({
+-    queryKey: ["room-shutdowns-active"],
++    queryKey: ["room-shutdowns-active", buildingCode],
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from("room_shutdowns")
+-        .select("court_room_id, status")
+-        .or("status.eq.in_progress,status.eq.scheduled");
++        .select("court_room_id, status, court_rooms:court_room_id!inner(rooms:room_id!inner(floors!inner(buildings!inner(address))))")
++        .or("status.eq.in_progress,status.eq.scheduled")
++        .ilike('court_rooms.rooms.floors.buildings.address', `%${buildingCode}%`);
+       if (error) throw error;
+       return data || [];
+     },
+@@ -90,8 +95,8 @@ export const EnhancedCourtAssignmentTable = () => {
+ 
+   // Fetch scheduling conflicts
+   const { data: conflictResult } = useQuery({
+-    queryKey: ["assignment-conflicts"],
+-    queryFn: () => ConflictDetectionService.detectConflicts(),
++    queryKey: ["assignment-conflicts", buildingCode],
++    queryFn: () => ConflictDetectionService.detectConflicts(buildingCode),
+     staleTime: 30000,
+   });
+ 
+@@ -198,17 +203,19 @@ export const EnhancedCourtAssignmentTable = () => {
+ 
+   // Fetch data
+   const { data: assignments, isLoading } = useQuery({
+-    queryKey: ["court-assignments-enhanced"],
++    queryKey: ["court-assignments-enhanced", buildingCode],
+     queryFn: async () => {
+       const { data: roomsData, error: roomsError } = await supabase
+         .from("court_rooms")
+-        .select("id, room_id, room_number, courtroom_number, is_active")
++        .select("id, room_id, room_number, courtroom_number, is_active, rooms:room_id!inner(floors!inner(buildings!inner(address)))")
++        .ilike('rooms.floors.buildings.address', `%${buildingCode}%`)
+         .order("room_number");
+       if (roomsError) throw roomsError;
+ 
+       const { data: assignmentsData, error: assignmentsError } = await supabase
+         .from("court_assignments")
+-        .select("room_id, id, room_number, part, justice, clerks, sergeant, tel, fax, calendar_day, sort_order");
++        .select("room_id, id, room_number, part, justice, clerks, sergeant, tel, fax, calendar_day, sort_order, rooms:room_id!inner(floors!inner(buildings!inner(address)))")
++        .ilike('rooms.floors.buildings.address', `%${buildingCode}%`);
+       if (assignmentsError) throw assignmentsError;
+ 
+       const { data: attendanceData, error: attendanceError } = await supabase
+diff --git a/src/components/court/LiveCourtGrid.tsx b/src/components/court/LiveCourtGrid.tsx
+index 5e457710..b8f6119f 100644
+--- a/src/components/court/LiveCourtGrid.tsx
++++ b/src/components/court/LiveCourtGrid.tsx
+@@ -21,11 +21,11 @@ function PresenceDot({ present }: { present: boolean }) {
+   );
+ }
+ 
+-export function LiveCourtGrid() {
++export function LiveCourtGrid({ buildingCode = '100' }: { buildingCode?: string }) {
+   const { user } = useAuth();
+   const actorId = user?.id || "";
+-  const { data: rooms, isLoading } = useCourtRooms();
+-  const staffOut = useStaffOutToday(); // Already returns array, not { data: ... }
++  const { data: rooms, isLoading } = useCourtRooms(buildingCode);
++  const staffOut = useStaffOutToday(buildingCode); // Already returns array, not { data: ... }
+   const { onMoveJudge, onMarkPresent, onMarkAbsent, onMarkClerkPresence } = useCourtOperationsRealtime();
+ 
+   const [search, setSearch] = useState("");
+diff --git a/src/components/court/StaffRosterPanel.tsx b/src/components/court/StaffRosterPanel.tsx
+index 1bd4ebe4..4e4bfe1d 100644
+--- a/src/components/court/StaffRosterPanel.tsx
++++ b/src/components/court/StaffRosterPanel.tsx
+@@ -45,9 +45,9 @@ const DEPARTURE_REASONS: { value: DepartureReason; label: string; description: s
+     { value: 'other', label: 'Other', description: 'Left for another reason' },
+ ];
+ 
+-export function StaffRosterPanel() {
+-    const { personnel, isLoading } = useCourtPersonnel();
+-    const { absentStaffMap } = useAbsentStaffNames(new Date());
++export function StaffRosterPanel({ buildingCode = '100' }: { buildingCode?: string }) {
++    const { personnel, isLoading } = useCourtPersonnel(buildingCode);
++    const { absentStaffMap } = useAbsentStaffNames(new Date(), buildingCode);
+     const queryClient = useQueryClient();
+ 
+     const [search, setSearch] = useState('');
+diff --git a/src/components/spaces/rooms/components/RoomExcelImportExport.tsx b/src/components/spaces/rooms/components/RoomExcelImportExport.tsx
+index 7a5a3a3a..9e0dc756 100644
+--- a/src/components/spaces/rooms/components/RoomExcelImportExport.tsx
++++ b/src/components/spaces/rooms/components/RoomExcelImportExport.tsx
+@@ -75,7 +75,6 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+       const roomInfoData = rooms.map((room: any) => {
+         const floor = room.floors as { name?: string; floor_number?: number; buildings?: { name?: string } | null } | null;
+         return {
+-          "System ID": room.id,
+           "Room Name": room.name || "",
+           "Room Number": room.room_number || "",
+           "Building": floor?.buildings?.name || "",
+@@ -96,6 +95,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+           "Technology": (room.technology_installed || []).join(", "),
+           "Last Inspection": room.last_inspection_date || "",
+           "Next Maintenance": room.next_maintenance_date ? String(room.next_maintenance_date).split("T")[0] : "",
++          "Internal Ref (Do Not Change)": room.id,
+         };
+       });
+ 
+@@ -109,7 +109,6 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+           // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           issues.forEach((issue: any) => {
+             issuesData.push({
+-              "System ID": room.id,
+               "Room Name": room.name,
+               "Room Number": room.room_number || "",
+               "Category": issue.category || "",
+@@ -119,11 +118,11 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+               "First Reported": issue.first_reported || "",
+               "Last Reported": issue.last_reported || "",
+               "Notes": issue.notes || "",
++              "Internal Ref (Do Not Change)": room.id,
+             });
+           });
+         } else {
+           issuesData.push({
+-            "System ID": room.id,
+             "Room Name": room.name,
+             "Room Number": room.room_number || "",
+             "Category": "",
+@@ -133,6 +132,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+             "First Reported": "",
+             "Last Reported": "",
+             "Notes": "",
++            "Internal Ref (Do Not Change)": room.id,
+           });
+         }
+       });
+@@ -147,7 +147,6 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+           // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           history.forEach((entry: any) => {
+             maintenanceData.push({
+-              "System ID": room.id,
+               "Room Name": room.name,
+               "Room Number": room.room_number || "",
+               "Date": entry.date || "",
+@@ -156,6 +155,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+               "Vendor / Contractor": entry.vendor || "",
+               "Cost": entry.cost ?? "",
+               "Notes": entry.notes || "",
++              "Internal Ref (Do Not Change)": room.id,
+             });
+           });
+         }
+@@ -184,13 +184,13 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+           // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           funcs.forEach((f: any) => {
+             functionData.push({
+-              "System ID": room.id,
+               "Room Name": room.name,
+               "Room Number": room.room_number || "",
+               "Function": f.function || f.name || "",
+               "Start Date": f.startDate || f.start_date || "",
+               "End Date": f.endDate || f.end_date || "",
+               "Notes": f.notes || "",
++              "Internal Ref (Do Not Change)": room.id,
+             });
+           });
+         }
+@@ -228,10 +228,10 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+ 
+       // ── Instructions sheet ──
+       const helpData = [
+-        { "Sheet": "Room Info", "What You Can Edit": "Name, Status, Room Type, Current Function, Description, Capacity, Phone, Storage fields, Security Level", "Notes": "Do NOT change System ID. Status must be: active, inactive, or under_maintenance" },
+-        { "Sheet": "Persistent Issues", "What You Can Edit": "Add/edit rows. Category examples: Plumbing, Electrical, HVAC, Structural, Pest, Window, Door, Lighting, Mold, Noise", "Notes": "Severity: low, medium, high, critical. Status: open, monitoring, resolved" },
+-        { "Sheet": "Maintenance Log", "What You Can Edit": "Add new rows for maintenance work done. Fill in Date, Type, Description", "Notes": "Cost is optional. DO NOT edit or remove the System ID." },
+-        { "Sheet": "Function History", "What You Can Edit": "Add rows to record when a room changed function. Fill in Function, Start Date, End Date", "Notes": "Dates should be YYYY-MM-DD format. DO NOT edit or remove System ID." },
++        { "Sheet": "Room Info", "What You Can Edit": "Name, Status, Room Type, Current Function, Description, Capacity, Phone, Storage fields, Security Level", "Notes": "Do NOT change Internal Ref. Status must be: active, inactive, or under_maintenance" },
++        { "Sheet": "Persistent Issues", "What You Can Edit": "Add/edit rows. Category examples: Plumbing, Electrical, HVAC, Structural, Pest, Window, Door, Lighting, Mold, Noise", "Notes": "Severity: low, medium, high, critical. Status: open, monitoring, resolved. Do NOT edit Internal Ref." },
++        { "Sheet": "Maintenance Log", "What You Can Edit": "Add new rows for maintenance work done. Fill in Date, Type, Description", "Notes": "Cost is optional. DO NOT edit or remove the Internal Ref." },
++        { "Sheet": "Function History", "What You Can Edit": "Add rows to record when a room changed function. Fill in Function, Start Date, End Date", "Notes": "Dates should be YYYY-MM-DD format. DO NOT edit or remove Internal Ref." },
+       ];
+       const ws5 = XLSX.utils.json_to_sheet(helpData);
+       autoWidth(ws5, helpData);
+@@ -270,7 +270,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+       if (roomInfoSheet) {
+         const rows = XLSX.utils.sheet_to_json(roomInfoSheet) as Record<string, unknown>[];
+         for (const row of rows) {
+-          const roomId = row["System ID"] as string;
++          const roomId = (row["Internal Ref (Do Not Change)"] || row["System ID"]) as string;
+           if (!roomId || roomId === "(example)") continue;
+ 
+           const changes: string[] = [];
+@@ -326,7 +326,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+         // Group issues by room ID
+         const issuesByRoom = new Map<string, Record<string, unknown>[]>();
+         for (const row of rows) {
+-          const roomId = row["System ID"] as string;
++          const roomId = (row["Internal Ref (Do Not Change)"] || row["System ID"]) as string;
+           if (!roomId || roomId === "(example)") continue;
+           if (!row["Category"] && !row["Description"]) continue;
+           if (!issuesByRoom.has(roomId)) issuesByRoom.set(roomId, []);
+@@ -368,7 +368,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+         const rows = XLSX.utils.sheet_to_json(maintSheet) as Record<string, unknown>[];
+         const maintByRoom = new Map<string, Record<string, unknown>[]>();
+         for (const row of rows) {
+-          const roomId = row["System ID"] as string;
++          const roomId = (row["Internal Ref (Do Not Change)"] || row["System ID"]) as string;
+           if (!roomId || roomId === "(example)") continue;
+           if (!row["Date"] && !row["Description"]) continue;
+           if (!maintByRoom.has(roomId)) maintByRoom.set(roomId, []);
+@@ -409,7 +409,7 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
+         const rows = XLSX.utils.sheet_to_json(funcSheet) as Record<string, unknown>[];
+         const funcByRoom = new Map<string, Record<string, unknown>[]>();
+         for (const row of rows) {
+-          const roomId = row["System ID"] as string;
++          const roomId = (row["Internal Ref (Do Not Change)"] || row["System ID"]) as string;
+           if (!roomId || roomId === "(example)") continue;
+           if (!row["Function"]) continue;
+           if (!funcByRoom.has(roomId)) funcByRoom.set(roomId, []);
+diff --git a/src/hooks/useCourtIssuesIntegration.ts b/src/hooks/useCourtIssuesIntegration.ts
+index fe1000cd..9a33eae9 100644
+--- a/src/hooks/useCourtIssuesIntegration.ts
++++ b/src/hooks/useCourtIssuesIntegration.ts
+@@ -35,7 +35,7 @@ export interface CourtImpactNotification {
+   created_at: string;
+ }
+ 
+-export const useCourtIssuesIntegration = () => {
++export const useCourtIssuesIntegration = (buildingCode: string = '100') => {
+   const { toast } = useToast();
+   const queryClient = useQueryClient();
+   const [recentIssueEvents, setRecentIssueEvents] = useState<{ id: string; room_id: string; priority: string; ts: number }[]>([]);
+@@ -68,27 +68,34 @@ export const useCourtIssuesIntegration = () => {
+   // Debounce query invalidations to avoid flooding the network and React Query
+   const scheduleInvalidations = () => {
+     if (invalidationTimerRef.current) return;
+-    invalidationTimerRef.current = window.setTimeout(() => {
+-      queryClient.invalidateQueries({ queryKey: ["court-issues"] });
++    const hdl = window.setTimeout(() => {
++      queryClient.invalidateQueries({ queryKey: ["court-issues", buildingCode] });
+       queryClient.invalidateQueries({ queryKey: ["courtroom-availability"] });
+       queryClient.invalidateQueries({ queryKey: ["adminIssues"] });
+       queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
+       invalidationTimerRef.current = null;
+     }, 500);
++    invalidationTimerRef.current = hdl;
+   };
+ 
+   // Fetch active issues affecting courtrooms
+   const { data: courtIssues, isLoading: issuesLoading } = useQuery({
+-    queryKey: ["court-issues"],
++    queryKey: ["court-issues", buildingCode],
+     queryFn: async (): Promise<CourtIssue[]> => {
+       // First get the basic issues data
+       const { data, error } = await supabase
+         .from("issues")
+         .select(`
+           *,
+-          rooms:room_id (room_number)
++          rooms:room_id!inner(
++            room_number,
++            floors!inner(
++              buildings!inner(address)
++            )
++          )
+         `)
+         .in("status", ["open", "in_progress"])
++        .ilike('rooms.floors.buildings.address', `%${buildingCode}%`)
+         .not("room_id", "is", null)
+         .order("priority", { ascending: false })
+         .order("created_at", { ascending: false });
+@@ -272,7 +279,7 @@ export const useCourtIssuesIntegration = () => {
+           logger.debug('Court issue change detected:', payload);
+ 
+           // Optimistically update cache for immediate UI updates
+-          queryClient.setQueryData(["court-issues"], (old: any[] | undefined) => {
++          queryClient.setQueryData(["court-issues", buildingCode], (old: any[] | undefined) => {
+             const current = Array.isArray(old) ? old : [];
+             const evt = payload.eventType;
+             const newRow = (payload as any).new as any;
+@@ -331,7 +338,7 @@ export const useCourtIssuesIntegration = () => {
+             // Enqueue enrichment to serialize network + cache updates
+             taskQueueRef.current.push(async () => {
+               const enriched = await enrichIssue(newRow);
+-              queryClient.setQueryData(["court-issues"], (old: any[] | undefined) => {
++              queryClient.setQueryData(["court-issues", buildingCode], (old: any[] | undefined) => {
+                 const current = Array.isArray(old) ? old : [];
+                 return [enriched, ...current.filter((i) => i.id !== enriched.id)];
+               });
+diff --git a/src/hooks/useCourtOperationsCounts.ts b/src/hooks/useCourtOperationsCounts.ts
+index 81e02e05..e8273e54 100644
+--- a/src/hooks/useCourtOperationsCounts.ts
++++ b/src/hooks/useCourtOperationsCounts.ts
+@@ -24,17 +24,18 @@ export interface CourtOperationsCounts {
+   isLoading: boolean;
+ }
+ 
+-export function useCourtOperationsCounts(): CourtOperationsCounts {
++export function useCourtOperationsCounts(buildingCode: string = '100'): CourtOperationsCounts {
+   const today = format(new Date(), 'yyyy-MM-dd');
+ 
+   // Count today's sessions
+   const { data: todaysCount = 0 } = useQuery({
+-    queryKey: ['court-operations-todays-count', today],
++    queryKey: ['court-operations-todays-count', buildingCode, today],
+     queryFn: async () => {
+       const { count, error } = await supabase
+         .from('court_sessions')
+         .select('*', { count: 'exact', head: true })
+-        .eq('session_date', today);
++        .eq('session_date', today)
++        .eq('building_code', buildingCode);
+ 
+       if (error) {
+         logger.error('Error counting today sessions:', error);
+@@ -48,12 +49,13 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
+ 
+   // Count daily sessions (upcoming/active)
+   const { data: dailyCount = 0 } = useQuery({
+-    queryKey: ['court-operations-daily-count'],
++    queryKey: ['court-operations-daily-count', buildingCode],
+     queryFn: async () => {
+       const { count, error } = await supabase
+         .from('court_sessions')
+         .select('*', { count: 'exact', head: true })
+-        .in('status', ['scheduled', 'in_progress']);
++        .in('status', ['scheduled', 'in_progress'])
++        .eq('building_code', buildingCode);
+ 
+       if (error) {
+         logger.error('Error counting daily sessions:', error);
+@@ -67,12 +69,14 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
+ 
+   // Count assignments needing attention (incomplete assignments)
+   const { data: assignmentsData = { needAttention: 0, details: '' } } = useQuery({
+-    queryKey: ['court-operations-assignments-attention'],
++    queryKey: ['court-operations-assignments-attention', buildingCode],
+     queryFn: async () => {
+       // Get assignments missing required staff
++      // Get assignments missing required staff, filtered by building
+       const { data: assignments, error } = await supabase
+         .from('court_assignments')
+-        .select('id, justice, clerks, sergeant, room_number');
++        .select('id, justice, clerks, sergeant, room_number, rooms:room_id!inner(floors!inner(buildings!inner(address)))')
++        .ilike('rooms.floors.buildings.address', `%${buildingCode}%`);
+ 
+       if (error) {
+         logger.error('Error fetching assignments:', error);
+@@ -91,13 +95,13 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
+       });
+ 
+       const needAttention = missingJudge + missingClerks + missingSgt;
+-      
++
+       const parts = [];
+       if (missingJudge > 0) parts.push(`${missingJudge} missing judge`);
+       if (missingClerks > 0) parts.push(`${missingClerks} missing clerk`);
+       if (missingSgt > 0) parts.push(`${missingSgt} missing sergeant`);
+-      
+-      return { 
++
++      return {
+         needAttention,
+         details: parts.length > 0 ? parts.join(', ') : 'All assignments complete'
+       };
+@@ -107,7 +111,7 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
+ 
+   // Count uncovered absences
+   const { data: uncoveredCount = 0 } = useQuery({
+-    queryKey: ['court-operations-uncovered-absences', today],
++    queryKey: ['court-operations-uncovered-absences', buildingCode, today],
+     queryFn: async () => {
+       // Get today's absences
+       const { data: absences, error: absError } = await supabase
+@@ -122,7 +126,8 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
+       const { data: coverages, error: covError } = await supabase
+         .from('coverage_assignments')
+         .select('absent_staff_id')
+-        .eq('coverage_date', today);
++        .eq('coverage_date', today)
++        .eq('building_code', buildingCode);
+ 
+       if (covError) return 0;
+ 
+@@ -136,13 +141,14 @@ export function useCourtOperationsCounts(): CourtOperationsCounts {
+ 
+   // Count maintenance issues affecting courts
+   const { data: maintenanceCount = 0, isLoading } = useQuery({
+-    queryKey: ['court-operations-maintenance-count'],
++    queryKey: ['court-operations-maintenance-count', buildingCode],
+     queryFn: async () => {
+       const { count, error } = await supabase
+         .from('issues')
+-        .select('*', { count: 'exact', head: true })
++        .select('*, rooms:room_id!inner(floors!inner(buildings!inner(address)))', { count: 'exact', head: true })
+         .in('status', ['open', 'in_progress'])
+-        .eq('priority', 'high');
++        .eq('priority', 'high')
++        .ilike('rooms.floors.buildings.address', `%${buildingCode}%`);
+ 
+       if (error) {
+         logger.error('Error counting maintenance issues:', error);
+diff --git a/src/hooks/useCourtOperationsRealtime.ts b/src/hooks/useCourtOperationsRealtime.ts
+index 59d3840e..50858a47 100644
+--- a/src/hooks/useCourtOperationsRealtime.ts
++++ b/src/hooks/useCourtOperationsRealtime.ts
+@@ -38,11 +38,14 @@ export function useRoomStatus(roomId?: string) {
+   return data;
+ }
+ 
+-export function useStaffOutToday() {
++export function useStaffOutToday(buildingCode: string = '100') {
+   const { data } = useQuery({
+-    queryKey: K.staffOut,
++    queryKey: [...K.staffOut, buildingCode],
+     queryFn: async () => {
+-      const { data, error } = await supabase.from("staff_out_today").select("*");
++      const { data, error } = await supabase
++        .from("staff_out_today")
++        .select("*, staff!inner(buildings!inner(address))")
++        .ilike('staff.buildings.address', `%${buildingCode}%`);
+       if (error) throw error;
+       return data as { staff_id: string; role: "judge" | "clerk"; kind: string }[];
+     },
+@@ -138,7 +141,7 @@ export function useCourtOperationsRealtime() {
+         p_is_covering: isCovering,
+       });
+       if (error) throw error;
+-      
++
+       // Invalidate ALL court-related queries for real-time sync
+       queryClient.invalidateQueries({ queryKey: K.attendance });
+       queryClient.invalidateQueries({ queryKey: K.activity });
+@@ -165,7 +168,7 @@ export function useCourtOperationsRealtime() {
+       p_actor: actorId,
+     });
+     if (error) throw error;
+-    
++
+     // Invalidate queries for real-time sync
+     queryClient.invalidateQueries({ queryKey: K.attendance });
+     queryClient.invalidateQueries({ queryKey: K.rooms });
+@@ -184,7 +187,7 @@ export function useCourtOperationsRealtime() {
+       p_actor: actorId,
+     });
+     if (error) throw error;
+-    
++
+     // Invalidate queries for real-time sync
+     queryClient.invalidateQueries({ queryKey: K.attendance });
+     queryClient.invalidateQueries({ queryKey: K.rooms });
+@@ -204,7 +207,7 @@ export function useCourtOperationsRealtime() {
+       p_actor: actorId,
+     });
+     if (error) throw error;
+-    
++
+     // Invalidate queries for real-time sync
+     queryClient.invalidateQueries({ queryKey: K.attendance });
+     queryClient.invalidateQueries({ queryKey: K.rooms });
+@@ -214,31 +217,34 @@ export function useCourtOperationsRealtime() {
+   return { onMoveJudge, onMarkPresent, onMarkAbsent, onMarkClerkPresence };
+ }
+ 
+-export function useCourtRooms() {
++export function useCourtRooms(buildingCode: string = '100') {
+   return useQuery({
+-    queryKey: K.rooms,
++    queryKey: [...K.rooms, buildingCode],
+     queryFn: async () => {
+       // Fetch court rooms with assignments and attendance in one query
+       const { data: rooms, error: roomsError } = await supabase
+         .from("court_rooms")
+-        .select("id, room_id, room_number, courtroom_number, is_active, maintenance_status, operational_status")
++        .select("id, room_id, room_number, courtroom_number, is_active, maintenance_status, operational_status, rooms:room_id!inner(floors!inner(buildings!inner(address)))")
++        .ilike('rooms.floors.buildings.address', `%${buildingCode}%`)
+         .order("room_number");
+-      
++
+       if (roomsError) throw roomsError;
+       if (!rooms) return [];
+ 
+-      // Fetch court assignments
++      // Fetch court assignments for this building
+       const { data: assignments, error: assignmentsError } = await supabase
+         .from("court_assignments")
+-        .select("room_id, justice, clerks, part, sergeant");
+-      
++        .select("room_id, justice, clerks, part, sergeant, rooms:room_id!inner(floors!inner(buildings!inner(address)))")
++        .ilike('rooms.floors.buildings.address', `%${buildingCode}%`);
++
+       if (assignmentsError) throw assignmentsError;
+ 
+-      // Fetch attendance data
++      // Fetch attendance data for this building
+       const { data: attendance, error: attendanceError } = await supabase
+         .from("court_attendance")
+-        .select("room_id, judge_present, clerks_present_count, clerks_present_names");
+-      
++        .select("room_id, judge_present, clerks_present_count, clerks_present_names, court_rooms!inner(rooms:room_id!inner(floors!inner(buildings!inner(address))))")
++        .ilike('court_rooms.rooms.floors.buildings.address', `%${buildingCode}%`);
++
+       if (attendanceError) throw attendanceError;
+ 
+       // Join all the data
+@@ -247,7 +253,7 @@ export function useCourtRooms() {
+         const roomAssignments = assignments?.filter(a => a.room_id === room.room_id) || [];
+         const assignment = roomAssignments.find(a => a.justice && a.justice.trim()) || roomAssignments[0];
+         const attendanceData = attendance?.find(a => a.room_id === room.id); // Use room.id not room.room_id!
+-        
++
+         return {
+           ...room,
+           assigned_judge: assignment?.justice || null,
+diff --git a/src/hooks/useCourtPersonnel.ts b/src/hooks/useCourtPersonnel.ts
+index 5180706f..04b935f9 100644
+--- a/src/hooks/useCourtPersonnel.ts
++++ b/src/hooks/useCourtPersonnel.ts
+@@ -42,10 +42,10 @@ export interface CourtPersonnelData {
+   jhoJudges: PersonnelOption[];
+ }
+ 
+-export const useCourtPersonnel = () => {
++export const useCourtPersonnel = (buildingCode: string = '100') => {
+   const { data, isLoading, error, refetch } = useQuery({
+     // Align with invalidations elsewhere in the app
+-    queryKey: ["court-personnel"],
++    queryKey: ["court-personnel", buildingCode],
+     queryFn: async (): Promise<CourtPersonnelData> => {
+       // Primary source: personnel_profiles (most complete)
+       let allPersonnel: PersonnelOption[] = [];
+@@ -71,8 +71,8 @@ export const useCourtPersonnel = () => {
+         }
+ 
+         const rows = (personnelData as RpcRow[]) || [];
+-        // Prefer active, but include nulls to avoid dropping everything if the column isn't populated
+-        const filteredRows = rows.filter((r) => r.is_active === true || r.is_active === null || typeof r.is_active === 'undefined');
++        // Include all records (active and inactive) to allow reactivation and history
++        const filteredRows = rows;
+ 
+         allPersonnel = filteredRows.map((person) => ({
+           id: person.id,
+@@ -83,7 +83,7 @@ export const useCourtPersonnel = () => {
+           room: undefined,
+           floor: undefined,
+           department: person.department || undefined,
+-          judgeStatus: person.is_active === false ? 'departed' : (person.judge_status as JudgeStatus) || 'active',
++          judgeStatus: (person.judge_status as JudgeStatus) || (person.is_active === false ? 'departed' : 'active'),
+           departedDate: person.departed_date || undefined,
+           courtAttorney: person.court_attorney || undefined,
+           chambersRoom: person.chambers_room_number || undefined,
+@@ -99,7 +99,8 @@ export const useCourtPersonnel = () => {
+         try {
+           const { data: legacyData, error: legacyError } = await supabase
+             .from('personnel_profiles_view')
+-            .select(`id, display_name, full_name, primary_role, title, department`);
++            .select(`id, display_name, full_name, primary_role, title, department, buildings!inner(address)`)
++            .ilike('buildings.address', `%${buildingCode}%`);
+           if (legacyError) throw legacyError;
+           interface LegacyRow {
+             id: string;
+diff --git a/src/hooks/useStaffAbsences.ts b/src/hooks/useStaffAbsences.ts
+index 130baf1c..50fdf2de 100644
+--- a/src/hooks/useStaffAbsences.ts
++++ b/src/hooks/useStaffAbsences.ts
+@@ -18,11 +18,11 @@ export interface StaffAbsence {
+ /**
+  * Hook to fetch staff absences for a specific date
+  */
+-export function useStaffAbsencesForDate(date: Date) {
++export function useStaffAbsencesForDate(date: Date, buildingCode: string = '100') {
+   const dateStr = format(date, 'yyyy-MM-dd');
+ 
+   return useQuery({
+-    queryKey: ['staff-absences', dateStr],
++    queryKey: ['staff-absences', dateStr, buildingCode],
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from('staff_absences')
+@@ -33,11 +33,13 @@ export function useStaffAbsencesForDate(date: Date) {
+           starts_on,
+           ends_on,
+           notes,
+-          staff:staff_id (
++          staff:staff_id!inner (
+             display_name,
+-            role
++            role,
++            buildings!inner(address)
+           )
+         `)
++        .ilike('staff.buildings.address', `%${buildingCode}%`)
+         .lte('starts_on', dateStr)
+         .gte('ends_on', dateStr);
+ 
+@@ -66,8 +68,8 @@ export function useStaffAbsencesForDate(date: Date) {
+ /**
+  * Check if a specific staff member is absent on a given date
+  */
+-export function useIsStaffAbsent(staffName: string, date: Date) {
+-  const { data: absences } = useStaffAbsencesForDate(date);
++export function useIsStaffAbsent(staffName: string, date: Date, buildingCode: string = '100') {
++  const { data: absences } = useStaffAbsencesForDate(date, buildingCode);
+ 
+   const absence = absences?.find(
+     (a) => a.staff_name.toLowerCase() === staffName.toLowerCase()
+@@ -82,11 +84,11 @@ export function useIsStaffAbsent(staffName: string, date: Date) {
+ /**
+  * Get all absent staff names for a specific date (for quick lookup)
+  */
+-export function useAbsentStaffNames(date: Date) {
+-  const { data: absences, isLoading } = useStaffAbsencesForDate(date);
++export function useAbsentStaffNames(date: Date, buildingCode: string = '100') {
++  const { data: absences, isLoading } = useStaffAbsencesForDate(date, buildingCode);
+ 
+   const absentStaffMap = new Map<string, StaffAbsence>();
+-  
++
+   absences?.forEach((absence) => {
+     absentStaffMap.set(absence.staff_name.toLowerCase(), absence);
+   });
+diff --git a/src/pages/CourtOperationsDashboard.tsx b/src/pages/CourtOperationsDashboard.tsx
+index 7ddee177..ce1ca797 100644
+--- a/src/pages/CourtOperationsDashboard.tsx
++++ b/src/pages/CourtOperationsDashboard.tsx
+@@ -17,6 +17,7 @@ import {
+   Radio,
+   UserX,
+ } from "lucide-react";
++import { Button } from "@/components/ui/button";
+ import { useSearchParams } from "react-router-dom";
+ import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
+ import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
+@@ -29,9 +30,10 @@ export const CourtOperationsDashboard = () => {
+   const [selectedCourtRoom, setSelectedCourtRoom] = useState<string | null>(null);
+   const [searchParams, setSearchParams] = useSearchParams();
+   const tab = searchParams.get("tab") || "sessions";
++  const buildingCode = searchParams.get("building") || "100";
+ 
+   // Get counts for tab badges
+-  const counts = useCourtOperationsCounts();
++  const counts = useCourtOperationsCounts(buildingCode);
+ 
+   // Determine when to glow/highlight the Assignments tab
+   const { getRecentlyAffectedRooms } = useCourtIssuesIntegration();
+@@ -67,6 +69,15 @@ export const CourtOperationsDashboard = () => {
+   const setTab = (val: string) => {
+     setSearchParams({
+       tab: val,
++      building: buildingCode,
++      ...(searchParams.get("room") ? { room: searchParams.get("room")! } : {}),
++    });
++  };
++
++  const setBuilding = (code: string) => {
++    setSearchParams({
++      tab,
++      building: code,
+       ...(searchParams.get("room") ? { room: searchParams.get("room")! } : {}),
+     });
+   };
+@@ -110,6 +121,33 @@ export const CourtOperationsDashboard = () => {
+ 
+   return (
+     <div className="container mx-auto px-3 sm:px-6 py-2 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-8">
++      {/* Header with Building Selector */}
++      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 mb-2">
++        <div>
++          <h1 className="text-2xl font-bold tracking-tight">Court Operations</h1>
++          <p className="text-muted-foreground text-sm">
++            Managing {buildingCode === '100' ? '100 Centre Street' : '111 Centre Street'} Sessions & Assignments
++          </p>
++        </div>
++        <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg self-start sm:self-center">
++          <Button
++            variant={buildingCode === '100' ? 'default' : 'ghost'}
++            size="sm"
++            className="h-8 text-xs px-3"
++            onClick={() => setBuilding('100')}
++          >
++            100 Centre
++          </Button>
++          <Button
++            variant={buildingCode === '111' ? 'default' : 'ghost'}
++            size="sm"
++            className="h-8 text-xs px-3"
++            onClick={() => setBuilding('111')}
++          >
++            111 Centre
++          </Button>
++        </div>
++      </div>
+ 
+       {/* Global Status Alerts (formerly Today Tab) */}
+       <TodaysStatusDashboard onNavigateToTab={setTab} />
+@@ -161,10 +199,10 @@ export const CourtOperationsDashboard = () => {
+                   key={t.value}
+                   value={t.value}
+                   className={`
+-                    relative flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm
+-                    whitespace-nowrap flex-shrink-0 min-w-0 touch-manipulation
+-                    ${t.glow ? "ring-2 ring-amber-400 animate-pulse" : ""}
+-                  `}
++                        relative flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm
++                        whitespace-nowrap flex-shrink-0 min-w-0 touch-manipulation
++                        ${t.glow ? "ring-2 ring-amber-400 animate-pulse" : ""}
++                      `}
+                 >
+                   {t.glow && (
+                     <span className="absolute -top-1 -right-1 inline-flex h-2 w-2 rounded-full bg-amber-500" />
+@@ -188,12 +226,15 @@ export const CourtOperationsDashboard = () => {
+ 
+         {/* Daily Sessions */}
+         <TabsContent value="sessions" className="mt-4" data-tour="court-sessions">
+-          <DailySessionsPanel />
++          <DailySessionsPanel
++            buildingCode={buildingCode as any}
++            onBuildingChange={(code) => setBuilding(code)}
++          />
+         </TabsContent>
+ 
+         {/* Assignments */}
+         <TabsContent value="assignments" className="mt-4" data-tour="court-personnel">
+-          <AssignmentManagementPanel />
++          <AssignmentManagementPanel buildingCode={buildingCode} />
+         </TabsContent>
+ 
+         {/* Staff & Conflicts (merged via sub-tabs) */}
+@@ -215,22 +256,22 @@ export const CourtOperationsDashboard = () => {
+             </div>
+ 
+             <TabsContent value="roster" className="mt-0">
+-              <StaffRosterPanel />
++              <StaffRosterPanel buildingCode={buildingCode} />
+             </TabsContent>
+ 
+             <TabsContent value="absences" className="mt-0">
+-              <StaffAbsenceManager />
++              <StaffAbsenceManager buildingCode={buildingCode} />
+             </TabsContent>
+ 
+             <TabsContent value="conflicts" className="mt-0">
+-              <ConflictDetectionPanel />
++              <ConflictDetectionPanel buildingCode={buildingCode} />
+             </TabsContent>
+           </Tabs>
+         </TabsContent>
+ 
+         {/* Live Grid (promoted from nested tab) */}
+         <TabsContent value="live" className="mt-4">
+-          <LiveCourtGrid />
++          <LiveCourtGrid buildingCode={buildingCode} />
+         </TabsContent>
+       </Tabs>
+ 
+diff --git a/src/services/court/conflictDetectionService.ts b/src/services/court/conflictDetectionService.ts
+index 3f58343a..dc50de8f 100644
+--- a/src/services/court/conflictDetectionService.ts
++++ b/src/services/court/conflictDetectionService.ts
+@@ -37,17 +37,17 @@ export class ConflictDetectionService {
+   /**
+    * Detect all conflicts in court assignments
+    */
+-  static async detectConflicts(): Promise<ConflictDetectionResult> {
++  static async detectConflicts(buildingCode: string = '100'): Promise<ConflictDetectionResult> {
+     const [
+       doubleBookedJudges,
+       duplicateParts,
+       missingRequiredStaff,
+       incompleteAssignments,
+     ] = await Promise.all([
+-      this.detectDoubleBookedJudges(),
+-      this.detectDuplicateParts(),
+-      this.detectMissingRequiredStaff(),
+-      this.detectIncompleteAssignments(),
++      this.detectDoubleBookedJudges(buildingCode),
++      this.detectDuplicateParts(buildingCode),
++      this.detectMissingRequiredStaff(buildingCode),
++      this.detectIncompleteAssignments(buildingCode),
+     ]);
+ 
+     const conflicts = [
+@@ -73,7 +73,7 @@ export class ConflictDetectionService {
+   /**
+    * Detect judges assigned to multiple courtrooms
+    */
+-  private static async detectDoubleBookedJudges(): Promise<Conflict[]> {
++  private static async detectDoubleBookedJudges(buildingCode: string): Promise<Conflict[]> {
+     const { data: assignments, error } = await supabase
+       .from("court_assignments")
+       .select(`
+@@ -81,8 +81,9 @@ export class ConflictDetectionService {
+         room_id,
+         justice, 
+         part,
+-        rooms!inner(room_number)
++        rooms!inner(room_number, floors!inner(buildings!inner(address)))
+       `)
++      .ilike('rooms.floors.buildings.address', `%${buildingCode}%`)
+       .not("justice", "is", null);
+ 
+     if (error || !assignments) return [];
+@@ -125,7 +126,7 @@ export class ConflictDetectionService {
+   /**
+    * Detect duplicate part numbers
+    */
+-  private static async detectDuplicateParts(): Promise<Conflict[]> {
++  private static async detectDuplicateParts(buildingCode: string): Promise<Conflict[]> {
+     const { data: assignments, error } = await supabase
+       .from("court_assignments")
+       .select(`
+@@ -133,8 +134,9 @@ export class ConflictDetectionService {
+         room_id, 
+         part, 
+         justice,
+-        rooms!inner(room_number)
++        rooms!inner(room_number, floors!inner(buildings!inner(address)))
+       `)
++      .ilike('rooms.floors.buildings.address', `%${buildingCode}%`)
+       .not("part", "is", null);
+ 
+     if (error || !assignments) return [];
+@@ -177,7 +179,7 @@ export class ConflictDetectionService {
+   /**
+    * Detect assignments missing required staff
+    */
+-  private static async detectMissingRequiredStaff(): Promise<Conflict[]> {
++  private static async detectMissingRequiredStaff(buildingCode: string): Promise<Conflict[]> {
+     const { data: assignments, error } = await supabase
+       .from("court_assignments")
+       .select(`
+@@ -187,8 +189,9 @@ export class ConflictDetectionService {
+         clerks, 
+         sergeant, 
+         part,
+-        rooms!inner(room_number)
+-      `);
++        rooms!inner(room_number, floors!inner(buildings!inner(address)))
++      `)
++      .ilike('rooms.floors.buildings.address', `%${buildingCode}%`);
+ 
+     if (error || !assignments) return [];
+ 
+@@ -230,7 +233,7 @@ export class ConflictDetectionService {
+   /**
+    * Detect incomplete assignments (warnings, not critical)
+    */
+-  private static async detectIncompleteAssignments(): Promise<Warning[]> {
++  private static async detectIncompleteAssignments(buildingCode: string): Promise<Warning[]> {
+     const { data: assignments, error } = await supabase
+       .from("court_assignments")
+       .select(`
+@@ -240,8 +243,9 @@ export class ConflictDetectionService {
+         part, 
+         fax, 
+         tel,
+-        rooms!inner(room_number)
+-      `);
++        rooms!inner(room_number, floors!inner(buildings!inner(address)))
++      `)
++      .ilike('rooms.floors.buildings.address', `%${buildingCode}%`);
+ 
+     if (error || !assignments) return [];
+ 
+@@ -349,7 +353,7 @@ export class ConflictDetectionService {
+     building_code: string;
+   }): Promise<{ isValid: boolean; errors: string[] }> {
+     const errors: string[] = [];
+-    
++
+     // 1. Check judge not double-booked same date/period
+     const { data: existingSessions } = await supabase
+       .from('court_sessions')
+@@ -359,11 +363,11 @@ export class ConflictDetectionService {
+       .eq('building_code', session.building_code)
+       .eq('judge_name', session.judge_name)
+       .neq('court_room_id', session.court_room_id);
+-    
++
+     if (existingSessions && existingSessions.length > 0) {
+       errors.push(`Judge ${session.judge_name} already assigned to room ${(existingSessions[0] as any).court_rooms?.room_number} for this period`);
+     }
+-    
++
+     // 2. Check part number unique (if provided)
+     if (session.part_number) {
+       const { data: existingParts } = await supabase
+@@ -374,12 +378,12 @@ export class ConflictDetectionService {
+         .eq('building_code', session.building_code)
+         .eq('part_number', session.part_number)
+         .neq('court_room_id', session.court_room_id);
+-      
++
+       if (existingParts && existingParts.length > 0) {
+         errors.push(`Part ${session.part_number} already assigned to room ${(existingParts[0] as any).court_rooms?.room_number}`);
+       }
+     }
+-    
++
+     // 3. Check if room is shutdown/maintenance
+     const { data: shutdown } = await supabase
+       .from('room_shutdowns')
+@@ -387,11 +391,11 @@ export class ConflictDetectionService {
+       .eq('room_id', session.court_room_id)
+       .in('status', ['in_progress', 'scheduled'])
+       .maybeSingle();
+-    
++
+     if (shutdown) {
+       errors.push('Room is under maintenance and cannot be scheduled');
+     }
+-    
++
+     return {
+       isValid: errors.length === 0,
+       errors,
+diff --git a/src/services/court/judgeManagement.ts b/src/services/court/judgeManagement.ts
+index 74c24d24..3f6f139f 100644
+--- a/src/services/court/judgeManagement.ts
++++ b/src/services/court/judgeManagement.ts
+@@ -51,25 +51,57 @@ export async function addNewJudge(params: {
+   const displayName = `${params.firstName.charAt(0).toUpperCase()}. ${params.lastName.toUpperCase()}`;
+   const title = params.status === 'jho' ? 'JHO' : 'Justice';
+ 
+-  // Step 1: Create the judge in personnel_profiles
+-  const { data, error } = await supabase
++  // Step 1: Check for existing judge to avoid duplicates and handle reactivation
++  const { data: existingJudge } = await supabase
+     .from('personnel_profiles')
+-    .insert({
+-      first_name: params.firstName,
+-      last_name: params.lastName,
+-      display_name: displayName,
+-      primary_role: 'judge',
+-      title,
+-      judge_status: params.status || 'active',
+-      is_active: true,
+-      is_available_for_assignment: true,
+-      court_attorney: params.courtAttorney || null,
+-      chambers_room_number: params.chambersRoom || null,
+-    })
+-    .select('id')
+-    .single();
++    .select('id, is_active')
++    .ilike('first_name', params.firstName)
++    .ilike('last_name', params.lastName)
++    .eq('primary_role', 'judge')
++    .maybeSingle();
+ 
+-  if (error) throw error;
++  let personnelId: string;
++
++  if (existingJudge) {
++    personnelId = existingJudge.id;
++    // Update existing record (reactivate if needed)
++    const { error: updateError } = await supabase
++      .from('personnel_profiles')
++      .update({
++        display_name: displayName,
++        title,
++        judge_status: params.status || 'active',
++        is_active: true,
++        is_available_for_assignment: true,
++        court_attorney: params.courtAttorney || null,
++        chambers_room_number: params.chambersRoom || null,
++        updated_at: new Date().toISOString()
++      })
++      .eq('id', personnelId);
++
++    if (updateError) throw updateError;
++  } else {
++    // Create new record
++    const { data: newData, error: insertError } = await supabase
++      .from('personnel_profiles')
++      .insert({
++        first_name: params.firstName,
++        last_name: params.lastName,
++        display_name: displayName,
++        primary_role: 'judge',
++        title,
++        judge_status: params.status || 'active',
++        is_active: true,
++        is_available_for_assignment: true,
++        court_attorney: params.courtAttorney || null,
++        chambers_room_number: params.chambersRoom || null,
++      })
++      .select('id')
++      .single();
++
++    if (insertError) throw insertError;
++    personnelId = newData.id;
++  }
+ 
+   let displacedJudge: string | null = null;
+ 
+@@ -117,7 +149,7 @@ export async function addNewJudge(params: {
+           .update(updateData)
+           .eq('id', existingAssignment.id);
+ 
+-        return { personnelId: data.id, displacedJudge };
++        return { personnelId, displacedJudge };
+       }
+     }
+ 
+@@ -138,7 +170,7 @@ export async function addNewJudge(params: {
+     });
+   }
+ 
+-  return { personnelId: data.id, displacedJudge };
++  return { personnelId, displacedJudge };
+ }
+ 
+ /**

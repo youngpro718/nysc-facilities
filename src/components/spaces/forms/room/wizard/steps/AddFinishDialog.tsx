@@ -38,41 +38,50 @@ interface AddFinishDialogProps {
 
 interface FinishFormData {
   finish_type: FinishType;
+  status: 'scheduled' | 'in_progress' | 'completed';
+  scheduled_date: string;
   completed_date: string;
-  color: string;
+  // Painting
+  color_name: string;
+  color_code: string;
+  color_hex: string;
+  finish: string;
+  brand: string;
+  // Flooring
+  flooring_type: 'carpet' | 'vct' | '';
+  // Blinds
+  style: string;
+  material: string;
+  // Furniture
+  items: string;
+  order_number: string;
+  // Other
+  description: string;
+  // Common
   vendor_contractor: string;
   cost: string;
   notes: string;
-  // Type-specific fields
-  finish: string; // painting
-  brand: string; // painting
-  color_code: string; // painting
-  material: string; // carpeting, blinds
-  pattern: string; // carpeting
-  manufacturer: string; // carpeting
-  style: string; // blinds
-  items: string; // furniture
-  order_number: string; // furniture
-  description: string; // other
 }
 
 const defaultValues: FinishFormData = {
   finish_type: "painting",
+  status: "completed",
+  scheduled_date: "",
   completed_date: "",
-  color: "",
-  vendor_contractor: "",
-  cost: "",
-  notes: "",
+  color_name: "",
+  color_code: "",
+  color_hex: "#ffffff",
   finish: "",
   brand: "",
-  color_code: "",
-  material: "",
-  pattern: "",
-  manufacturer: "",
+  flooring_type: "",
   style: "",
+  material: "",
   items: "",
   order_number: "",
   description: "",
+  vendor_contractor: "",
+  cost: "",
+  notes: "",
 };
 
 export function AddFinishDialog({
@@ -84,32 +93,32 @@ export function AddFinishDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const form = useForm<FinishFormData>({
-    defaultValues,
-  });
-
+  const form = useForm<FinishFormData>({ defaultValues });
   const finishType = form.watch("finish_type");
+  const status = form.watch("status");
 
   useEffect(() => {
     if (editingEntry) {
-      const details = editingEntry.details as Record<string, string>;
+      const details = (editingEntry.details || {}) as Record<string, string>;
       form.reset({
         finish_type: editingEntry.finish_type,
+        status: (editingEntry.status as FinishFormData['status']) || "completed",
+        scheduled_date: editingEntry.scheduled_date || "",
         completed_date: editingEntry.completed_date || "",
-        color: editingEntry.color || "",
-        vendor_contractor: editingEntry.vendor_contractor || "",
-        cost: editingEntry.cost?.toString() || "",
-        notes: editingEntry.notes || "",
+        color_name: editingEntry.color || "",
+        color_code: details?.color_code || "",
+        color_hex: details?.color_hex || "#ffffff",
         finish: details?.finish || "",
         brand: details?.brand || "",
-        color_code: details?.color_code || "",
-        material: details?.material || "",
-        pattern: details?.pattern || "",
-        manufacturer: details?.manufacturer || "",
+        flooring_type: (details?.flooring_type as FinishFormData['flooring_type']) || "",
         style: details?.style || "",
+        material: details?.material || "",
         items: details?.items || "",
         order_number: details?.order_number || "",
         description: details?.description || "",
+        vendor_contractor: editingEntry.vendor_contractor || "",
+        cost: editingEntry.cost?.toString() || "",
+        notes: editingEntry.notes || "",
       });
     } else {
       form.reset(defaultValues);
@@ -118,19 +127,17 @@ export function AddFinishDialog({
 
   const mutation = useMutation({
     mutationFn: async (data: FinishFormData) => {
-      // Build details object based on finish type
       const details: Record<string, string> = {};
-      
+
       switch (data.finish_type) {
         case "painting":
+          if (data.color_code) details.color_code = data.color_code;
+          if (data.color_hex) details.color_hex = data.color_hex;
           if (data.finish) details.finish = data.finish;
           if (data.brand) details.brand = data.brand;
-          if (data.color_code) details.color_code = data.color_code;
           break;
         case "carpeting":
-          if (data.material) details.material = data.material;
-          if (data.pattern) details.pattern = data.pattern;
-          if (data.manufacturer) details.manufacturer = data.manufacturer;
+          if (data.flooring_type) details.flooring_type = data.flooring_type;
           break;
         case "blinds":
           if (data.style) details.style = data.style;
@@ -148,8 +155,10 @@ export function AddFinishDialog({
       const payload = {
         room_id: roomId,
         finish_type: data.finish_type,
-        completed_date: data.completed_date || null,
-        color: data.color || null,
+        status: data.status,
+        scheduled_date: data.status !== 'completed' && data.scheduled_date ? data.scheduled_date : null,
+        completed_date: data.status === 'completed' && data.completed_date ? data.completed_date : null,
+        color: data.color_name || null,
         vendor_contractor: data.vendor_contractor || null,
         cost: data.cost ? parseFloat(data.cost) : null,
         notes: data.notes || null,
@@ -199,6 +208,8 @@ export function AddFinishDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+            {/* Type */}
             <FormField
               control={form.control}
               name="finish_type"
@@ -213,7 +224,7 @@ export function AddFinishDialog({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="painting">Painting</SelectItem>
-                      <SelectItem value="carpeting">Carpeting</SelectItem>
+                      <SelectItem value="carpeting">Flooring</SelectItem>
                       <SelectItem value="blinds">Blinds</SelectItem>
                       <SelectItem value="furniture">Furniture</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
@@ -224,37 +235,107 @@ export function AddFinishDialog({
               )}
             />
 
+            {/* Status */}
             <FormField
               control={form.control}
-              name="completed_date"
+              name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date Completed</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="scheduled">📅 Scheduled</SelectItem>
+                      <SelectItem value="in_progress">🔧 In Progress</SelectItem>
+                      <SelectItem value="completed">✓ Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="color"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Color</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Beige, Navy Blue" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Scheduled Date — shown when not completed */}
+            {status !== 'completed' && (
+              <FormField
+                control={form.control}
+                name="scheduled_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Scheduled Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Completed Date — shown when completed */}
+            {status === 'completed' && (
+              <FormField
+                control={form.control}
+                name="completed_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date Completed</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* Painting-specific fields */}
             {finishType === "painting" && (
               <>
+                <FormField
+                  control={form.control}
+                  name="color_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Color Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., White Dove, Pale Oak" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="color_code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Color Code</FormLabel>
+                      <div className="flex gap-2 items-center">
+                        <FormControl>
+                          <Input placeholder="e.g., OC-17, 2137-50" {...field} />
+                        </FormControl>
+                        <FormField
+                          control={form.control}
+                          name="color_hex"
+                          render={({ field: hexField }) => (
+                            <Input
+                              type="color"
+                              className="w-12 p-1 h-10 shrink-0"
+                              value={hexField.value || "#ffffff"}
+                              onChange={(e) => hexField.onChange(e.target.value)}
+                            />
+                          )}
+                        />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="finish"
@@ -264,7 +345,7 @@ export function AddFinishDialog({
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select finish" />
+                            <SelectValue placeholder="Select finish (optional)" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -286,29 +367,8 @@ export function AddFinishDialog({
                     <FormItem>
                       <FormLabel>Brand</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Benjamin Moore, Sherwin-Williams" {...field} />
+                        <Input placeholder="e.g., Benjamin Moore" {...field} />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="color_code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Color Code</FormLabel>
-                      <div className="flex gap-2">
-                        <FormControl>
-                          <Input placeholder="e.g., OC-17 or #F5F5DC" {...field} />
-                        </FormControl>
-                        <Input
-                          type="color"
-                          className="w-12 p-1 h-10"
-                          value={field.value.startsWith("#") ? field.value : "#ffffff"}
-                          onChange={(e) => field.onChange(e.target.value)}
-                        />
-                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -316,49 +376,29 @@ export function AddFinishDialog({
               </>
             )}
 
-            {/* Carpeting-specific fields */}
+            {/* Flooring-specific fields */}
             {finishType === "carpeting" && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="material"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Material</FormLabel>
+              <FormField
+                control={form.control}
+                name="flooring_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Flooring Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <Input placeholder="e.g., Commercial Grade Nylon" {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select flooring type" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="pattern"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Pattern</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Solid, Loop, Berber" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="manufacturer"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Manufacturer</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Shaw, Mohawk" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
+                      <SelectContent>
+                        <SelectItem value="carpet">Carpet</SelectItem>
+                        <SelectItem value="vct">VCT (Vinyl Composition Tile)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             {/* Blinds-specific fields */}
@@ -414,9 +454,9 @@ export function AddFinishDialog({
                     <FormItem>
                       <FormLabel>Items</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="e.g., Desk, Chair, Bookcase, Filing Cabinet" 
-                          {...field} 
+                        <Textarea
+                          placeholder="e.g., Desk, Chair, Bookcase, Filing Cabinet"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />

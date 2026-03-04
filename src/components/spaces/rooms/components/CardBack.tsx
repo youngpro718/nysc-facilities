@@ -3,7 +3,7 @@ import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap, Pencil, Trash2 } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap, Pencil, Trash2, Paintbrush } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,6 +17,7 @@ import { RoomHistoryTimeline } from "./history/RoomHistoryTimeline";
 import { RoomLightingManager } from "./lighting/RoomLightingManager";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
 import { useLightingWithTickets } from "@/hooks/useLightingWithTickets";
+import { FinishesStep } from "@/components/spaces/forms/room/wizard/steps/FinishesStep";
 
 interface CardBackProps {
   room: EnhancedRoom;
@@ -26,7 +27,7 @@ interface CardBackProps {
 
 export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'lighting' | 'notes' | 'history'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'lighting' | 'notes' | 'history' | 'finishes'>('info');
   const { data: lightingWithTickets = [] } = useLightingWithTickets(room.id);
 
   // Courtroom photos
@@ -147,6 +148,14 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
         >
           <HistoryIcon className="h-3.5 w-3.5 inline mr-1" />
           History
+        </button>
+        <button
+          onClick={() => setActiveTab('finishes')}
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'finishes' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+        >
+          <Paintbrush className="h-3.5 w-3.5 inline mr-1" />
+          Finishes
         </button>
       </div>
 
@@ -415,8 +424,8 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
                 {/* Priority Summary */}
                 <div className="grid grid-cols-3 gap-2">
                   <div className={`text-center p-2.5 rounded-lg border ${highPriorityIssues.length > 0
-                      ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'
-                      : 'bg-muted/30 border-border'
+                    ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'
+                    : 'bg-muted/30 border-border'
                     }`}>
                     <div className={`text-xl font-bold ${highPriorityIssues.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                       {highPriorityIssues.length}
@@ -424,8 +433,8 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
                     <div className="text-xs text-muted-foreground">High</div>
                   </div>
                   <div className={`text-center p-2.5 rounded-lg border ${mediumPriorityIssues.length > 0
-                      ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
-                      : 'bg-muted/30 border-border'
+                    ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
+                    : 'bg-muted/30 border-border'
                     }`}>
                     <div className={`text-xl font-bold ${mediumPriorityIssues.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
                       {mediumPriorityIssues.length}
@@ -433,8 +442,8 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
                     <div className="text-xs text-muted-foreground">Medium</div>
                   </div>
                   <div className={`text-center p-2.5 rounded-lg border ${lowPriorityIssues.length > 0
-                      ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
-                      : 'bg-muted/30 border-border'
+                    ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+                    : 'bg-muted/30 border-border'
                     }`}>
                     <div className={`text-xl font-bold ${lowPriorityIssues.length > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`}>
                       {lowPriorityIssues.length}
@@ -654,6 +663,13 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
             <div className="rounded-lg border bg-gradient-to-br from-muted/30 to-muted/10 p-4">
               <RoomHistoryTimeline room={room} />
             </div>
+          </div>
+        )}
+
+        {/* Finishes Tab */}
+        {activeTab === 'finishes' && (
+          <div className="space-y-3">
+            <FinishesStep roomId={room.id} compact={true} />
           </div>
         )}
       </ScrollArea>

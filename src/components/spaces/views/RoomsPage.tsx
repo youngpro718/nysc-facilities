@@ -214,13 +214,15 @@ const RoomsPage = () => {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={72}>
-            <div className="p-6 h-full min-h-[520px] flex items-center justify-center">
+            <div className="p-6 h-full min-h-[520px] max-h-[calc(100vh-140px)] overflow-hidden flex items-start justify-center">
               {panelRoom ? (
-                <RoomCard
-                  room={panelRoom}
-                  onDelete={(id) => setDeleteRoomId(id)}
-                  variant="panel"
-                />
+                <div className="w-full h-full max-w-2xl">
+                  <RoomCard
+                    room={panelRoom}
+                    onDelete={(id) => setDeleteRoomId(id)}
+                    variant="panel"
+                  />
+                </div>
               ) : (
                 <div className="text-center text-muted-foreground">
                   <div className="mb-4">
