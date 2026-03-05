@@ -438,7 +438,7 @@ export function PersonDetailSheet({ open, onOpenChange, person }: PersonDetailSh
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-md flex flex-col">
+            <SheetContent className="w-full sm:max-w-md flex flex-col" side="right">
                 <SheetHeader className="pb-2 sm:pb-4 border-b">
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">

@@ -1,29 +1,28 @@
 
 
-## Fix iOS Sizing for Sheet Component and App Layout
+## Fix: Cascade-delete child records before deleting a room
 
-### Problem
-The PersonDetailSheet (and sheets in general) don't properly account for iOS safe areas — the Dynamic Island/notch at the top and the home indicator at the bottom. The close button crowds the status bar, and content can be hidden behind the home indicator.
+The delete fails because `deleteSpace.ts` tries to delete the room directly, but 34 other tables have foreign keys pointing to `rooms`. For room 687 specifically, 3 tables have data blocking the delete: `room_lighting_status`, `room_history`, and `lockbox_slots`.
 
-### iOS Device Dimensions (CSS points, for reference)
-- iPhone 16 Pro Max: 440×956
-- iPhone 16 Pro: 402×874
-- iPhone 15 Pro Max / 14 Pro Max: 430×932
-- iPhone 15 Pro / 15 / 14 Pro: 393×852
-- iPhone SE 3: 375×667
+### Approach
 
-The viewport meta tag (`viewport-fit=cover`) is already correct — this tells Safari to extend content into safe areas, but the app must then use `env(safe-area-inset-*)` to pad content away from the notch and home indicator.
+**Create a database function** `delete_room_cascade(p_room_id UUID)` that deletes from all referencing tables in the correct order, then deletes the room itself — all within a single transaction. This is safer and faster than making 30+ individual API calls from the client.
 
-### Changes
+**Update `deleteSpace.ts`** to call `supabase.rpc('delete_room_cascade', { p_room_id: id })` instead of a direct `.delete()` on the rooms table.
 
-**1. `src/components/ui/sheet.tsx`** — Add safe area padding to the right-side sheet variant:
-- Add `pt-safe` (or `padding-top: env(safe-area-inset-top)`) so the header clears the Dynamic Island
-- Add `pb-safe` so bottom content clears the home indicator
-- Make the right-side sheet `w-full` on mobile instead of `w-3/4` (the 75% width looks cramped on phones)
+### Database function will delete from these tables (in order):
+1. `room_lighting_status`, `lighting_fixtures`, `room_health_metrics`, `room_maintenance_schedule`
+2. `room_history`, `room_notes`, `room_finishes_log`, `room_occupancy`
+3. `room_inventory`, `room_key_access`, `lockbox_slots`
+4. `court_assignments`, `court_rooms`, `term_assignments`
+5. `occupant_room_assignments` (all FK columns), `occupants`
+6. `room_relationships` (both columns), `hallway_adjacent_rooms`
+7. `inventory_audits`, `room_relocations` (both columns)
+8. `relocations` (both columns), `renovations`
+9. `key_requests`, `staff_tasks` (both columns), `floorplan_objects` (via constraint)
+10. `rooms` (children with `parent_room_id` first, then the room itself)
 
-**2. `src/components/access-assignments/PersonDetailSheet.tsx`** — Minor adjustments:
-- Ensure the close button has enough top offset to clear the status bar area
-- The sheet content's flex layout already handles overflow well; just needs the safe-area padding from the parent
-
-**3. Add iPhone 16 Pro / 16 Pro Max splash screen entries** to `index.html` (440×956 and 402×874 are new device sizes not currently covered in the splash screen list)
+### Files to change:
+- **New migration**: Create `delete_room_cascade` PL/pgSQL function
+- **`src/components/spaces/services/deleteSpace.ts`**: Replace direct delete with RPC call for rooms
 
