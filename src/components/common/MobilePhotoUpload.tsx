@@ -219,18 +219,12 @@ export function MobilePhotoUpload({
         progress: 0
       }));
 
-      // Ensure bucket exists
+      // Verify bucket exists — buckets must be pre-provisioned via SQL migrations
       const { data: buckets } = await supabase.storage.listBuckets();
       const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
       
       if (!bucketExists) {
-        const { error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true
-        });
-        
-        if (createError && !createError.message?.includes('row-level security policy')) {
-          throw createError;
-        }
+        throw new Error(`Storage bucket "${bucketName}" is not available. Please contact an administrator.`);
       }
 
       // Generate unique filename
