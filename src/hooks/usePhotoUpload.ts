@@ -197,17 +197,11 @@ export function usePhotoUpload() {
         throw new Error("Entity ID is required for uploads");
       }
 
-      // Verify bucket exists 
+      // Verify bucket exists — buckets must be pre-provisioned via SQL migrations
       const bucketExists = await checkBucketExists(options.bucketName);
       if (!bucketExists) {
-        // Try to create bucket
-        const { error: createError } = await supabase.storage.createBucket(options.bucketName, {
-          public: true
-        });
-        
-        if (createError && !createError.message?.includes('row-level security policy')) {
-          throw createError;
-        }
+        logger.error(`Storage bucket "${options.bucketName}" does not exist. Buckets must be created via SQL migrations.`);
+        throw new Error(`Storage bucket "${options.bucketName}" is not available. Please contact an administrator.`);
       }
 
       // Generate a structured file path
