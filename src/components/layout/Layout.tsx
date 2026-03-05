@@ -174,9 +174,9 @@ function LayoutContent() {
                 {isAdmin && (
                   <button
                     onClick={() => setSearchOpen(true)}
-                    className="flex items-center gap-1.5 h-8 px-2 rounded-md border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs"
+                    className="flex items-center justify-center gap-1.5 h-8 w-8 sm:w-auto sm:px-2 rounded-md border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs shrink-0"
                   >
-                    <Search className="h-3.5 w-3.5" />
+                    <Search className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                     <span className="hidden lg:inline">Search…</span>
                     <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                       <span className="text-xs">⌘</span>K
@@ -190,30 +190,15 @@ function LayoutContent() {
                   </div>
                 )}
 
-                <div data-tour="theme-toggle">
+                <div data-tour="theme-toggle" className="hidden sm:block">
                   <ThemeToggle />
                 </div>
 
                 {/* Profile Avatar */}
                 <button
-                  className="hidden md:block focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
+                  className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
                   title="Profile"
                   data-tour="user-avatar"
-                  onClick={() => navigate('/profile')}
-                >
-                  <UserAvatar
-                    src={(profile as any)?.avatar_url as string | undefined}
-                    firstName={(profile as any)?.first_name as string | undefined}
-                    lastName={(profile as any)?.last_name as string | undefined}
-                    className="h-8 w-8"
-                    showFallbackIcon
-                  />
-                </button>
-
-                {/* Profile Avatar — mobile only */}
-                <button
-                  className="md:hidden focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
-                  title="Profile"
                   onClick={() => navigate('/profile')}
                 >
                   <UserAvatar

@@ -9,12 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
-  Search, Users, UserCheck, Key, DoorOpen, Building2, X,
+  Search, Users, UserCheck, Key, DoorOpen, Building2, X, Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PersonnelAccessRecord } from "@/hooks/usePersonnelAccess";
 import { StatusCard } from "@/components/ui/StatusCard";
 import { PersonDetailSheet } from "@/components/access-assignments/PersonDetailSheet";
+import { PersonnelFormDialog } from "@/components/access-assignments/PersonnelFormDialog";
 
 // ── Person Card ───────────────────────────────────────────────────────────────
 
@@ -168,6 +169,7 @@ function AccessAssignmentsContent() {
   const [activeDept, setActiveDept] = useState<string | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<PersonnelAccessRecord | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [autoOpenProcessed, setAutoOpenProcessed] = useState(false);
 
   const { personnel, stats, isLoading } = usePersonnelAccess();
@@ -228,11 +230,17 @@ function AccessAssignmentsContent() {
   return (
     <div className="container mx-auto py-6 px-4 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Access &amp; Assignments</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage room and key assignments for registered users and court personnel
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Access &amp; Assignments</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Manage room and key assignments for registered users and court personnel
+          </p>
+        </div>
+        <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Personnel
+        </Button>
       </div>
 
       {/* Stat cards */}
@@ -346,6 +354,12 @@ function AccessAssignmentsContent() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         person={selectedPerson}
+      />
+
+      {/* Add Personnel Form */}
+      <PersonnelFormDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
       />
     </div>
   );

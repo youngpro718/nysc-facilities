@@ -9,6 +9,7 @@ import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { toast } from 'sonner';
 import type { PersonnelAccessRecord } from '@/hooks/usePersonnelAccess';
+import { PersonnelFormDialog } from '@/components/access-assignments/PersonnelFormDialog';
 
 import {
     Sheet,
@@ -48,6 +49,7 @@ import {
     ChevronsUpDown,
     Check,
     Building2,
+    Edit2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -416,6 +418,7 @@ function RoomsTab({
 
 export function PersonDetailSheet({ open, onOpenChange, person }: PersonDetailSheetProps) {
     const [activeTab, setActiveTab] = useState('rooms');
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     useEffect(() => {
         if (open) setActiveTab('rooms');
@@ -437,35 +440,43 @@ export function PersonDetailSheet({ open, onOpenChange, person }: PersonDetailSh
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="w-full sm:max-w-md flex flex-col">
                 <SheetHeader className="pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12">
-                            {person.avatar_url && <AvatarImage src={person.avatar_url} alt={person.name} />}
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                                {initials}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                            <SheetTitle className="text-base leading-tight">{person.name}</SheetTitle>
-                            <SheetDescription className="text-xs leading-snug mt-0.5">
-                                {[person.title, person.department].filter(Boolean).join(' · ') ||
-                                    (person.is_registered_user ? 'Registered User' : 'Court Personnel')}
-                            </SheetDescription>
-                            <div className="flex items-center gap-2 mt-1.5">
-                                <Badge variant={person.is_registered_user ? 'default' : 'secondary'} className="text-xs h-5">
-                                    {person.is_registered_user ? 'User' : 'Personnel'}
-                                </Badge>
-                                {person.room_count > 0 && (
-                                    <span className="text-xs text-muted-foreground">
-                                        {person.room_count} room{person.room_count !== 1 ? 's' : ''}
-                                    </span>
-                                )}
-                                {person.key_count > 0 && (
-                                    <span className="text-xs text-muted-foreground">
-                                        {person.key_count} key{person.key_count !== 1 ? 's' : ''}
-                                    </span>
-                                )}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-12 w-12">
+                                {person.avatar_url && <AvatarImage src={person.avatar_url} alt={person.name} />}
+                                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                    {initials}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                                <SheetTitle className="text-base leading-tight">{person.name}</SheetTitle>
+                                <SheetDescription className="text-xs leading-snug mt-0.5">
+                                    {[person.title, person.department].filter(Boolean).join(' · ') ||
+                                        (person.is_registered_user ? 'Registered User' : 'Court Personnel')}
+                                </SheetDescription>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                    <Badge variant={person.is_registered_user ? 'default' : 'secondary'} className="text-xs h-5">
+                                        {person.is_registered_user ? 'User' : 'Personnel'}
+                                    </Badge>
+                                    {person.room_count > 0 && (
+                                        <span className="text-xs text-muted-foreground">
+                                            {person.room_count} room{person.room_count !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                    {person.key_count > 0 && (
+                                        <span className="text-xs text-muted-foreground">
+                                            {person.key_count} key{person.key_count !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
+                        {sourceType === 'personnel_profile' && (
+                            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                                <Edit2 className="h-4 w-4 mr-2" />
+                                Edit Info
+                            </Button>
+                        )}
                     </div>
                 </SheetHeader>
 
@@ -496,6 +507,14 @@ export function PersonDetailSheet({ open, onOpenChange, person }: PersonDetailSh
                     </TabsContent>
                 </Tabs>
             </SheetContent>
+
+            {sourceType === 'personnel_profile' && (
+                <PersonnelFormDialog
+                    open={isEditDialogOpen}
+                    onOpenChange={setIsEditDialogOpen}
+                    personnelId={person.id}
+                />
+            )}
         </Sheet>
     );
 }

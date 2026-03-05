@@ -29,7 +29,7 @@ export function AdminGreeting({ onRefresh, isLoading }: AdminGreetingProps) {
   const formattedDate = format(now, "EEEE, MMMM d, yyyy");
 
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex flex-col sm:flex-row sm:items-center items-start justify-between gap-4">
       <div className="space-y-1">
         <h1 className="text-[length:var(--text-page-title)] font-bold tracking-tight">
           {greeting}, {firstName}.

@@ -14,10 +14,10 @@ interface IssueDetailsHeaderProps {
 
 export const IssueDetailsHeader = ({ title, status, onEdit, isEditing }: IssueDetailsHeaderProps) => {
   return (
-    <DialogHeader className="px-6 pt-6">
-      <DialogTitle className="flex items-center justify-between">
-        <div className="flex items-center gap-4 min-w-0">
-          <h2 className="text-xl font-bold truncate">{title}</h2>
+    <DialogHeader className="px-6 pt-6 pr-12">
+      <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-xl font-bold break-words">{title}</h2>
           <Button
             variant="ghost"
             size="icon"
@@ -34,7 +34,7 @@ export const IssueDetailsHeader = ({ title, status, onEdit, isEditing }: IssueDe
             </span>
           </Button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <IssueStatusBadge status={status} />
         </div>
       </DialogTitle>

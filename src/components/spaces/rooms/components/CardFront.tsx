@@ -136,7 +136,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
             <RoomLightingManager
               room={room}
               trigger={
-                <div className="relative h-32 sm:h-40 bg-card border border-border rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-all group">
+                <div className="relative min-h-[8rem] sm:min-h-[10rem] flex flex-col justify-between bg-card border border-border rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-all group">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Lightbulb className="h-4 w-4 text-muted-foreground" />
@@ -165,8 +165,8 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
                           strokeDasharray={`${2 * Math.PI * 32}`}
                           strokeDashoffset={`${2 * Math.PI * 32 * (1 - lightingPercentage / 100)}`}
                           className={`transition-all duration-500 ${lightingPercentage >= 80 ? 'text-green-500' :
-                              lightingPercentage >= 50 ? 'text-yellow-500' :
-                                'text-red-500'
+                            lightingPercentage >= 50 ? 'text-yellow-500' :
+                              'text-red-500'
                             }`}
                           strokeLinecap="round"
                         />
@@ -188,7 +188,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
 
           {/* Issues Status - Large Visual */}
           <div className="col-span-2 sm:col-span-1">
-            <div className={`relative h-32 sm:h-40 bg-card border rounded-lg p-4 transition-all ${hasIssues ? 'border-red-500/50 bg-red-500/5' : 'border-green-500/50 bg-green-500/5'
+            <div className={`relative min-h-[8rem] sm:min-h-[10rem] flex flex-col justify-between bg-card border rounded-lg p-4 transition-all ${hasIssues ? 'border-red-500/50 bg-red-500/5' : 'border-green-500/50 bg-green-500/5'
               }`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -196,7 +196,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
                   <span className="text-xs font-medium text-muted-foreground">Open Issues</span>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center h-16 sm:h-20">
+              <div className="flex flex-col items-center justify-center flex-1 py-1">
                 <div className={`text-4xl sm:text-5xl font-bold ${hasIssues ? 'text-red-500' : 'text-green-500'}`}>
                   {unresolvedIssues.length}
                 </div>
