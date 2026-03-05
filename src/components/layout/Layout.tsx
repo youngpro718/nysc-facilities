@@ -133,8 +133,8 @@ function LayoutContent() {
       >
         {/* Top header bar — slim, page title + utilities */}
         {!isLoginPage && isAuthenticated && (
-          <header className="bg-surface sticky top-0 z-30 border-b border-border h-14 safe-area-top">
-            <div className="flex items-center h-full px-4 lg:px-8">
+          <header className="bg-surface sticky top-0 z-30 border-b border-border h-11 sm:h-14 safe-area-top">
+            <div className="flex items-center h-full px-2 sm:px-4 lg:px-8">
               {/* Sidebar trigger for mobile */}
               <div className="md:hidden mr-2">
                 {navReady ? (
@@ -162,7 +162,7 @@ function LayoutContent() {
               </div>
 
               {/* Page title */}
-              <h1 className="text-lg font-semibold tracking-tight text-foreground truncate">
+              <h1 className="text-sm sm:text-lg font-semibold tracking-tight text-foreground truncate">
                 {getPageTitle()}
               </h1>
 
@@ -170,7 +170,7 @@ function LayoutContent() {
               <div className="flex-1" />
 
               {/* Right utilities */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                 {isAdmin && (
                   <button
                     onClick={() => setSearchOpen(true)}
@@ -205,7 +205,7 @@ function LayoutContent() {
                     src={(profile as any)?.avatar_url as string | undefined}
                     firstName={(profile as any)?.first_name as string | undefined}
                     lastName={(profile as any)?.last_name as string | undefined}
-                    className="h-8 w-8"
+                    className="h-7 w-7 sm:h-8 sm:w-8"
                     showFallbackIcon
                   />
                 </button>
@@ -219,8 +219,8 @@ function LayoutContent() {
           <OnboardingWizard onComplete={completeOnboarding} onSkip={skipOnboarding} />
         )}
 
-        <main className="flex-1 pb-24 md:pb-0 safe-area-bottom">
-          <div className="mx-auto max-w-none xl:max-w-[95%] 2xl:max-w-[90%] px-3 sm:px-4 lg:px-8 xl:px-12 py-4 sm:py-8 xl:py-12">
+        <main className="flex-1 pb-20 md:pb-0 safe-area-bottom">
+          <div className="mx-auto max-w-none xl:max-w-[95%] 2xl:max-w-[90%] px-2 sm:px-4 lg:px-8 xl:px-12 py-2 sm:py-6 xl:py-12">
             <Outlet />
           </div>
         </main>

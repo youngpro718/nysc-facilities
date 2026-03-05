@@ -49,7 +49,7 @@ export function StatusCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-5 transition-all duration-150 ease-in-out",
+        "rounded-xl border border-border bg-card p-3 sm:p-5 transition-all duration-150 ease-in-out",
         "hover:bg-card-hover hover:-translate-y-px hover:border-border/80",
         "active:translate-y-0",
         variantBorderClasses[statusVariant],
@@ -63,11 +63,11 @@ export function StatusCard({
           <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">
             {title}
           </p>
-          <p className="text-3xl font-bold tracking-tight text-foreground">
+          <p className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             {value}
           </p>
           {subLabel && (
-            <p className="text-[13px] text-text-secondary">{subLabel}</p>
+            <p className="text-[11px] sm:text-[13px] text-text-secondary">{subLabel}</p>
           )}
         </div>
         {Icon && (

@@ -76,7 +76,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                 key={item.title}
                 onClick={() => handleNav(item.title)}
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-2 min-h-[56px] touch-target touch-manipulation",
+                  "relative flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[48px] touch-target touch-manipulation",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   "active:scale-95 transition-transform duration-100",
                   isActive
@@ -90,7 +90,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                   "relative p-1 rounded-lg transition-colors",
                   isActive && "bg-primary/10"
                 )}>
-                  <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} aria-hidden="true" />
+                  <Icon className={cn("h-[18px] w-[18px]", isActive && "stroke-[2.5]")} aria-hidden="true" />
                   {badgeCount > 0 && (
                     <Badge
                       variant="destructive"
@@ -114,7 +114,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
             <button
               onClick={onOpenMobileMenu}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-2 min-h-[56px] touch-target touch-manipulation",
+                "flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[48px] touch-target touch-manipulation",
                 "text-muted-foreground hover:text-foreground",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                 "active:scale-95 transition-transform duration-100"
@@ -122,7 +122,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
               aria-label="More options"
             >
               <div className="p-1">
-                <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+                <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden="true" />
               </div>
               <span className="text-[10px] xs:text-[11px] leading-none font-medium">More</span>
             </button>

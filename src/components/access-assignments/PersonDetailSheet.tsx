@@ -439,18 +439,18 @@ export function PersonDetailSheet({ open, onOpenChange, person }: PersonDetailSh
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="w-full sm:max-w-md flex flex-col">
-                <SheetHeader className="pb-4 border-b">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-12 w-12">
+                <SheetHeader className="pb-2 sm:pb-4 border-b">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                            <Avatar className="h-9 w-9 sm:h-12 sm:w-12 shrink-0">
                                 {person.avatar_url && <AvatarImage src={person.avatar_url} alt={person.name} />}
                                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                                     {initials}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0">
-                                <SheetTitle className="text-base leading-tight">{person.name}</SheetTitle>
-                                <SheetDescription className="text-xs leading-snug mt-0.5">
+                                <SheetTitle className="text-sm sm:text-base leading-tight truncate">{person.name}</SheetTitle>
+                                <SheetDescription className="text-[11px] sm:text-xs leading-snug mt-0.5 truncate">
                                     {[person.title, person.department].filter(Boolean).join(' · ') ||
                                         (person.is_registered_user ? 'Registered User' : 'Court Personnel')}
                                 </SheetDescription>
@@ -472,8 +472,8 @@ export function PersonDetailSheet({ open, onOpenChange, person }: PersonDetailSh
                             </div>
                         </div>
                         {sourceType === 'personnel_profile' && (
-                            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-                                <Edit2 className="h-4 w-4 mr-2" />
+                            <Button variant="outline" size="sm" className="shrink-0 h-7 text-xs sm:h-9 sm:text-sm" onClick={() => setIsEditDialogOpen(true)}>
+                                <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                                 Edit Info
                             </Button>
                         )}
@@ -481,16 +481,16 @@ export function PersonDetailSheet({ open, onOpenChange, person }: PersonDetailSh
                 </SheetHeader>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 pt-2">
-                    <TabsList className="w-full">
-                        <TabsTrigger value="rooms" className="flex-1 gap-2">
-                            <DoorOpen className="h-4 w-4" />
+                    <TabsList className="w-full h-9 sm:h-10">
+                        <TabsTrigger value="rooms" className="flex-1 gap-1.5 text-xs sm:text-sm">
+                            <DoorOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             Rooms
                             {person.room_count > 0 && (
                                 <Badge variant="secondary" className="h-4 text-xs">{person.room_count}</Badge>
                             )}
                         </TabsTrigger>
-                        <TabsTrigger value="keys" className="flex-1 gap-2">
-                            <Key className="h-4 w-4" />
+                        <TabsTrigger value="keys" className="flex-1 gap-1.5 text-xs sm:text-sm">
+                            <Key className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             Keys
                             {person.key_count > 0 && (
                                 <Badge variant="secondary" className="h-4 text-xs">{person.key_count}</Badge>

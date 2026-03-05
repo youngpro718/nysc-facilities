@@ -53,7 +53,7 @@ export function EnhancedIssueCard({ issue, isSelected, onSelect, onUpdate }: Enh
 
   return (
     <Card className={`transition-all duration-200 ${isSelected ? 'ring-2 ring-primary' : ''} ${issue.priority === 'high' && issue.status !== 'resolved' ? 'border-destructive' : ''}`}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2 sm:pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <Checkbox

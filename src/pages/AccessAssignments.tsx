@@ -39,9 +39,9 @@ function PersonnelCard({
       className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50 group"
       onClick={onClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <Avatar className="h-10 w-10 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
+      <CardContent className="p-2.5 sm:p-4">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <Avatar className="h-8 w-8 sm:h-10 sm:w-10 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
             {person.avatar_url && (
               <AvatarFallback />
             )}
