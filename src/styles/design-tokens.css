@@ -97,6 +97,7 @@
 }
 
 /* ── Mobile sizing overrides ─────────────────────────────────── */
+/* Standard iPhones (14, 15, 16): 390-430px width */
 @media (max-width: 430px) {
   :root {
     --text-page-title: 1.25rem;
@@ -116,5 +117,28 @@
     /* 20px, down from 32px */
     --space-2xl: 1.5rem;
     /* 24px, down from 48px */
+  }
+}
+
+/* iPhone SE and very small screens: ≤375px width */
+@media (max-width: 375px) {
+  :root {
+    --text-page-title: 1.125rem;
+    /* 18px */
+    --text-section-title: 0.875rem;
+    /* 14px */
+    --text-card-value: 1.25rem;
+    /* 20px */
+    --text-card-sub: 0.6875rem;
+    /* 11px */
+    --text-body: 0.75rem;
+    /* 12px */
+
+    --space-lg: 0.75rem;
+    /* 12px */
+    --space-xl: 1rem;
+    /* 16px */
+    --space-2xl: 1.25rem;
+    /* 20px */
   }
 }

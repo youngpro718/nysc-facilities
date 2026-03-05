@@ -14,21 +14,21 @@ interface MobileRoomDrawerProps {
   onDelete: (id: string) => void;
 }
 
-export function MobileRoomDrawer({ 
-  room, 
-  isOpen, 
-  onClose, 
-  onDelete 
+export function MobileRoomDrawer({
+  room,
+  isOpen,
+  onClose,
+  onDelete
 }: MobileRoomDrawerProps) {
   if (!room) return null;
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-h-[95vh]">
+      <DrawerContent className="max-h-[85dvh]">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{room.name}</DrawerTitle>
         </DrawerHeader>
-        <div className="p-2 h-[85vh] overflow-hidden">
+        <div className="p-2 h-[75dvh] overflow-hidden">
           <RoomCard
             room={room}
             onDelete={(id) => {
