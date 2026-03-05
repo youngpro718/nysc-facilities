@@ -219,7 +219,7 @@ function LayoutContent() {
           <OnboardingWizard onComplete={completeOnboarding} onSkip={skipOnboarding} />
         )}
 
-        <main className="flex-1 pb-20 md:pb-0 safe-area-bottom">
+        <main className="flex-1 pb-28 md:pb-0 safe-area-bottom" style={{ paddingBottom: 'max(7rem, calc(env(safe-area-inset-bottom) + 5rem))' }}>
           <div className="mx-auto max-w-none xl:max-w-[95%] 2xl:max-w-[90%] px-2 sm:px-4 lg:px-8 xl:px-12 py-2 sm:py-6 xl:py-12">
             <Outlet />
           </div>
