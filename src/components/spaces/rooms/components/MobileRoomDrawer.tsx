@@ -24,11 +24,11 @@ export function MobileRoomDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-h-[85dvh]">
+      <DrawerContent className="max-h-[92dvh] flex flex-col">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{room.name}</DrawerTitle>
         </DrawerHeader>
-        <div className="p-2 h-[75dvh] overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto p-2 pb-safe">
           <RoomCard
             room={room}
             onDelete={(id) => {

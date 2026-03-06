@@ -35,6 +35,37 @@ export function getNavigationPath(title: string, isAdmin?: boolean): string {
   return BASE_PATH_MAP[title] || '/';
 }
 
+export function isNavigationPathActive(
+  targetPath: string,
+  pathname: string,
+  search = '',
+): boolean {
+  const [targetPathname, targetQuery = ''] = targetPath.split('?');
+  const isRoot = targetPathname === '/';
+  const pathMatches = isRoot
+    ? pathname === '/'
+    : pathname === targetPathname || pathname.startsWith(`${targetPathname}/`);
+
+  if (!pathMatches) {
+    return false;
+  }
+
+  if (!targetQuery) {
+    return true;
+  }
+
+  const currentParams = new URLSearchParams(search);
+  const targetParams = new URLSearchParams(targetQuery);
+
+  for (const [key, value] of targetParams.entries()) {
+    if (currentParams.get(key) !== value) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function getNavigationDescription(title: string): string {
   const descriptionMap: Record<string, string> = {
     'Dashboard': 'Overview & stats',

@@ -19,7 +19,7 @@ const LoginPage = () => {
   if (isLoading) {
     logger.debug('[LoginPage] isLoading = true, showing spinner');
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[100dvh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -29,7 +29,7 @@ const LoginPage = () => {
   if (isAuthenticated) {
     logger.debug('[LoginPage] isAuthenticated = true, showing spinner');
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[100dvh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -40,7 +40,7 @@ const LoginPage = () => {
 
 
   return (
-    <div className="light min-h-screen relative w-full bg-background flex flex-col items-center justify-center px-4">
+    <div className="light min-h-[100dvh] relative w-full bg-background flex flex-col items-center justify-center px-4">
       {/* Subtle watermark in corner */}
       <img
         src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.webp"

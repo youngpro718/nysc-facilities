@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { LucideIcon, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { isNavigationPathActive } from "../utils/navigationPaths";
 
 interface NavigationItem {
   title: string;
@@ -41,10 +42,7 @@ export const MobileNavigationGrid: React.FC<MobileNavigationGridProps> = ({
       <div className="grid grid-cols-2 gap-3">
         {items.map((item, index) => {
           const Icon = item.icon;
-          const isRoot = item.path === "/";
-          const isActive = isRoot
-            ? location.pathname === "/"
-            : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+          const isActive = isNavigationPathActive(item.path, location.pathname, location.search);
 
           return (
             <button
