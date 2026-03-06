@@ -33,13 +33,13 @@ export function MobileInventoryDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-lg w-[95vw] max-h-[92dvh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] h-[90vh] p-0 gap-0">
         <DialogHeader className="p-4 pb-0 shrink-0">
           <DialogTitle className="text-base">
             {roomData?.roomName || 'Storage Room'} - Inventory
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 min-h-0 overflow-hidden pb-safe">
+        <div className="flex-1 overflow-hidden">
           {roomData && <MobileRoomInventory roomId={roomData.roomId} />}
         </div>
       </DialogContent>

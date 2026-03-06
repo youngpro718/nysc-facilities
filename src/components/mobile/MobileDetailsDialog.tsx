@@ -31,7 +31,7 @@ export function MobileDetailsDialog({
 }: MobileDetailsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${maxWidth} w-[95vw] max-h-[92dvh] flex flex-col p-0 gap-0`}>
+      <DialogContent className={`${maxWidth} w-[95vw] max-h-[90vh] p-0 gap-0`}>
         <DialogHeader className="p-4 pb-0 border-b">
           <div className="flex items-start justify-between">
             <div className="flex-1 mr-4">
@@ -52,14 +52,14 @@ export function MobileDetailsDialog({
           </div>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea className="flex-1 max-h-[calc(90vh-140px)]">
           <div className="p-4">
             {children}
           </div>
         </ScrollArea>
 
         {actions && (
-          <div className="border-t bg-muted/20 p-4 pb-safe">
+          <div className="p-4 border-t bg-muted/20">
             {actions}
           </div>
         )}
