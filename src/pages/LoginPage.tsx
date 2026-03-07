@@ -48,7 +48,7 @@ const LoginPage = () => {
       <img
         src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.webp"
         alt="Court Seal Watermark"
-        fetchpriority="high"
+        fetchPriority="high"
         width={96}
         height={96}
         className="pointer-events-none select-none absolute right-6 top-6 opacity-10 w-24 h-24 -z-10"
