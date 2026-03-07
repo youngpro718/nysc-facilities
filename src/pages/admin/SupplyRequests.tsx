@@ -82,7 +82,7 @@ export default function AdminSupplyRequests() {
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('id');
   const { toast } = useToast();
@@ -109,15 +109,15 @@ export default function AdminSupplyRequests() {
   const filteredRequests = requests.filter(request => {
     const matchesStatus = filterStatus === "all" || request.status === filterStatus;
     const matchesPriority = filterPriority === "all" || request.priority === filterPriority;
-    const matchesSearch = searchQuery === "" || 
+    const matchesSearch = searchQuery === "" ||
       request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (request.profiles?.first_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (request.profiles?.last_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (request.profiles?.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.supply_request_items.some(item => 
+      request.supply_request_items.some(item =>
         item.inventory_items.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
-    
+
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
@@ -125,18 +125,18 @@ export default function AdminSupplyRequests() {
     <PageContainer>
       <Breadcrumb />
       <PageHeader
-        title="Supply Request History" 
+        title="Supply Request History"
         description="View and audit all supply requests. Approvals are handled from the Admin Dashboard."
       >
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Input
             placeholder="Search requests..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-64"
+            className="w-full sm:w-64"
           />
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -153,7 +153,7 @@ export default function AdminSupplyRequests() {
             </SelectContent>
           </Select>
           <Select value={filterPriority} onValueChange={setFilterPriority}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40">
               <SelectValue placeholder="Filter by priority" />
             </SelectTrigger>
             <SelectContent>
@@ -178,7 +178,7 @@ export default function AdminSupplyRequests() {
             <h3 className="text-lg font-medium mb-2">No supply requests</h3>
             <p className="text-muted-foreground">
               {searchQuery || filterStatus !== "all" || filterPriority !== "all"
-                ? "No requests match your current filters." 
+                ? "No requests match your current filters."
                 : "No supply requests have been submitted yet."}
             </p>
           </CardContent>
@@ -192,8 +192,8 @@ export default function AdminSupplyRequests() {
             const isHighlighted = request.id === highlightedId;
 
             return (
-              <Card 
-                key={request.id} 
+              <Card
+                key={request.id}
                 className={`transition-all ${isHighlighted ? 'ring-2 ring-primary border-primary' : ''}`}
               >
                 <CardHeader className="pb-3">
@@ -225,7 +225,7 @@ export default function AdminSupplyRequests() {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className="space-y-4">
                   {request.description && (
                     <div>
@@ -247,10 +247,10 @@ export default function AdminSupplyRequests() {
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{item.inventory_items.name}</span>
                             {item.inventory_items.inventory_categories && (
-                              <Badge 
-                                variant="outline" 
+                              <Badge
+                                variant="outline"
                                 className="text-xs"
-                                style={{ 
+                                style={{
                                   color: item.inventory_items.inventory_categories.color,
                                   borderColor: item.inventory_items.inventory_categories.color + '40'
                                 }}
@@ -282,7 +282,7 @@ export default function AdminSupplyRequests() {
                       <p className="font-medium text-sm text-muted-foreground mb-1">Contact</p>
                       <p className="text-sm">{request.profiles?.email || '—'}</p>
                     </div>
-                    
+
                     {request.requested_delivery_date && (
                       <div>
                         <p className="font-medium text-sm text-muted-foreground mb-1">Delivery Date</p>

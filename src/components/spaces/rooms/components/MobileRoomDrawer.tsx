@@ -1,7 +1,9 @@
+import { X } from "lucide-react";
 import { Room } from "../types/RoomTypes";
 import { RoomCard } from "../RoomCard";
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
@@ -25,8 +27,16 @@ export function MobileRoomDrawer({
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="max-h-[85dvh]">
-        <DrawerHeader className="sr-only">
-          <DrawerTitle>{room.name}</DrawerTitle>
+        <DrawerHeader className="flex items-center justify-between px-4 py-3">
+          <DrawerTitle className="text-base font-semibold truncate">{room.name}</DrawerTitle>
+          <DrawerClose asChild>
+            <button
+              className="p-2 -mr-2 rounded-full text-muted-foreground hover:bg-muted transition-colors touch-manipulation"
+              aria-label="Close drawer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </DrawerClose>
         </DrawerHeader>
         <div className="p-2 h-[75dvh] overflow-hidden">
           <RoomCard

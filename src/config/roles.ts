@@ -8,7 +8,7 @@
  */
 
 // The 4 simplified role values (matches database enum)
-export type UserRole = 
+export type UserRole =
   | 'standard'        // "User" in UI
   | 'court_aide'      // "Court Aide" in UI
   | 'court_officer'   // "Court Officer" in UI
@@ -59,8 +59,9 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
 
 // Signup role options (for the signup form)
 // Excludes admin — admin role can only be assigned by existing administrators
+// Court Officer is included so officers of all levels can request the role (admin approval required)
 export const SIGNUP_ROLE_OPTIONS = SYSTEM_ROLES
-  .filter(r => r.value !== 'admin' && r.value !== 'court_officer')
+  .filter(r => r.value !== 'admin')
   .map(r => ({
     value: r.value,
     label: r.label,
@@ -88,7 +89,7 @@ export function getRoleColor(roleValue: UserRole | string | null | undefined): s
 
 export function getRoleBadgeClasses(roleValue: UserRole | string | null | undefined): string {
   const color = getRoleColor(roleValue);
-  
+
   const colorMap: Record<string, string> = {
     red: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
     blue: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
@@ -97,7 +98,7 @@ export function getRoleBadgeClasses(roleValue: UserRole | string | null | undefi
     orange: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20',
     gray: 'bg-gray-500/10 text-gray-700 border-gray-500/20',
   };
-  
+
   return colorMap[color] || colorMap.gray;
 }
 

@@ -16,6 +16,7 @@ export default function Users() {
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
+      // Try the full query with room assignments
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -28,8 +29,18 @@ export default function Users() {
           )
         `)
         .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+
+      if (error) {
+        // Fallback to profiles-only if the join fails (e.g. FK hint mismatch)
+        console.warn('[Users] Room assignment join failed, falling back to profiles-only:', error.message);
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (fallbackError) throw fallbackError;
+        return (fallbackData || []).map(p => ({ ...p, occupant_room_assignments: [] }));
+      }
       return data;
     }
   });

@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StatusCard } from "@/components/ui/StatusCard";
-import { 
-  AlertTriangle, 
-  Wrench, 
-  Plus, 
+import {
+  AlertTriangle,
+  Wrench,
+  Plus,
   Calendar,
   Clock,
   CheckCircle,
@@ -59,7 +59,7 @@ export default function Operations() {
   const issueIdParam = searchParams.get('issue_id');
   const tabParam = searchParams.get('tab');
   const roomIdParam = searchParams.get('room_id');
-  
+
   const [activeTab, setActiveTab] = useState(tabParam || (buildingId || roomIdParam ? "issues" : "overview"));
   const viewParam = searchParams.get('view');
 
@@ -80,7 +80,7 @@ export default function Operations() {
 
   const [groupingMode, setGroupingMode] = useState<GroupingMode>(persistedGrouping || 'priority');
   const [viewMode, setViewMode] = useState<ViewMode>(
-    viewParam && ['cards','table','timeline','board'].includes(viewParam)
+    viewParam && ['cards', 'table', 'timeline', 'board'].includes(viewParam)
       ? (viewParam as ViewMode)
       : (persistedView || 'table')
   );
@@ -100,16 +100,16 @@ export default function Operations() {
 
   // Persist preferences
   useEffect(() => {
-    try { localStorage.setItem('issues.viewMode', viewMode); } catch {}
+    try { localStorage.setItem('issues.viewMode', viewMode); } catch { }
   }, [viewMode]);
   useEffect(() => {
-    try { localStorage.setItem('issues.groupingMode', groupingMode); } catch {}
+    try { localStorage.setItem('issues.groupingMode', groupingMode); } catch { }
   }, [groupingMode]);
   useEffect(() => {
-    try { localStorage.setItem('issues.statusFilter', statusFilter); } catch {}
+    try { localStorage.setItem('issues.statusFilter', statusFilter); } catch { }
   }, [statusFilter]);
   useEffect(() => {
-    try { localStorage.setItem('issues.priorityFilter', priorityFilter); } catch {}
+    try { localStorage.setItem('issues.priorityFilter', priorityFilter); } catch { }
   }, [priorityFilter]);
 
   // Debounce search input -> searchQuery
@@ -165,7 +165,7 @@ export default function Operations() {
 
   // React to `tab` query param changes
   useEffect(() => {
-    if (tabParam && ['overview','issues','maintenance'].includes(tabParam)) {
+    if (tabParam && ['overview', 'issues', 'maintenance'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -173,7 +173,7 @@ export default function Operations() {
 
   // React to `view` query param changes
   useEffect(() => {
-    if (viewParam && ['cards','table','timeline','board'].includes(viewParam)) {
+    if (viewParam && ['cards', 'table', 'timeline', 'board'].includes(viewParam)) {
       setViewMode(viewParam as ViewMode);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -223,7 +223,7 @@ export default function Operations() {
         .select('*')
         .in('issue_type', ['BUILDING_SYSTEMS', 'ELECTRICAL_NEEDS', 'GENERAL_REQUESTS'])
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data || [];
     },
@@ -234,7 +234,7 @@ export default function Operations() {
   const enhancedMetrics = useMemo(() => {
     const maintenanceInProgress = maintenanceData.filter(item => item.status === 'in_progress').length;
     const maintenanceScheduled = maintenanceData.filter(item => item.status === 'open').length;
-    
+
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const resolvedToday = allIssues?.filter(issue => {
@@ -386,7 +386,7 @@ export default function Operations() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-4" data-tour="ops-tabs">
+        <TabsList className="grid w-full grid-cols-3" data-tour="ops-tabs">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             Overview
@@ -415,9 +415,9 @@ export default function Operations() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button 
-                  onClick={() => setShowCreateIssue(true)} 
-                  variant="outline" 
+                <Button
+                  onClick={() => setShowCreateIssue(true)}
+                  variant="outline"
                   data-tour="ops-report-btn"
                   className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800 transition-colors group"
                 >
@@ -427,9 +427,9 @@ export default function Operations() {
                     <div className="text-xs text-muted-foreground">Create new issue ticket</div>
                   </div>
                 </Button>
-                <Button 
-                  onClick={() => setShowScheduleMaintenance(true)} 
-                  variant="outline" 
+                <Button
+                  onClick={() => setShowScheduleMaintenance(true)}
+                  variant="outline"
                   className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 dark:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-800 dark:border-blue-800 transition-colors group"
                 >
                   <Calendar className="h-8 w-8 text-blue-500 group-hover:scale-110 transition-transform" />
@@ -466,9 +466,9 @@ export default function Operations() {
                     </CardTitle>
                     <CardDescription>Issues requiring immediate attention and action</CardDescription>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleTabChange('issues')}
                     className="hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800"
                   >
@@ -489,13 +489,13 @@ export default function Operations() {
                       ))}
                     </div>
                   ) : criticalIssues && criticalIssues.length > 0 ? (
-                    <EnhancedIssuesList 
+                    <EnhancedIssuesList
                       issues={criticalIssues.slice(0, 5)} // Show only first 5
                       viewMode="cards"
                       groupingMode="priority"
                       searchQuery=""
                       selectedIssues={[]}
-                      onSelectionChange={() => {}}
+                      onSelectionChange={() => { }}
                       onIssueUpdate={refreshAllData}
                       onIssueSelect={(issueId) => {
                         const newParams = new URLSearchParams(searchParams);
@@ -540,9 +540,9 @@ export default function Operations() {
                     </div>
                     <Calendar className="h-10 w-10 text-blue-500" />
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="w-full hover:bg-orange-50 dark:hover:bg-orange-950/30 dark:bg-orange-950/30 hover:border-orange-200 dark:hover:border-orange-800 dark:border-orange-800 transition-colors"
                     onClick={() => handleTabChange('maintenance')}
                   >
@@ -630,20 +630,20 @@ export default function Operations() {
 
           {/* Issues Controls */}
           <div data-tour="ops-filters">
-          <IssueGroupingControls
-            groupingMode={groupingMode}
-            viewMode={viewMode}
-            onGroupingChange={setGroupingMode}
-            onViewModeChange={handleViewModeChange}
-            searchQuery={searchInput}
-            onSearchChange={setSearchInput}
-            totalIssues={allIssues?.length || 0}
-            selectedCount={selectedIssues.length}
-            statusFilter={statusFilter}
-            priorityFilter={priorityFilter}
-            onStatusFilterChange={setStatusFilter}
-            onPriorityFilterChange={setPriorityFilter}
-          />
+            <IssueGroupingControls
+              groupingMode={groupingMode}
+              viewMode={viewMode}
+              onGroupingChange={setGroupingMode}
+              onViewModeChange={handleViewModeChange}
+              searchQuery={searchInput}
+              onSearchChange={setSearchInput}
+              totalIssues={allIssues?.length || 0}
+              selectedCount={selectedIssues.length}
+              statusFilter={statusFilter}
+              priorityFilter={priorityFilter}
+              onStatusFilterChange={setStatusFilter}
+              onPriorityFilterChange={setPriorityFilter}
+            />
           </div>
 
           {/* Quick filter presets */}
@@ -669,7 +669,7 @@ export default function Operations() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <EnhancedIssuesList 
+              <EnhancedIssuesList
                 issues={allIssues || []}
                 viewMode={viewMode}
                 groupingMode={groupingMode}
@@ -802,14 +802,14 @@ export default function Operations() {
       </Tabs>
 
       {/* Issue Details Dialog driven by URL param */}
-      <IssueDialogManager 
-        dialogState={dialogState} 
-        onClose={handleCloseIssueDialog} 
+      <IssueDialogManager
+        dialogState={dialogState}
+        onClose={handleCloseIssueDialog}
       />
 
       {/* Dialogs */}
-      <IssueDialog 
-        open={showCreateIssue} 
+      <IssueDialog
+        open={showCreateIssue}
         onOpenChange={setShowCreateIssue}
         onSuccess={() => {
           // After creating an issue, immediately refresh and take user to Issues tab
@@ -817,17 +817,17 @@ export default function Operations() {
           handleTabChange('issues');
         }}
       />
-      
-      <ScheduleMaintenanceDialog 
-        open={showScheduleMaintenance} 
+
+      <ScheduleMaintenanceDialog
+        open={showScheduleMaintenance}
         onOpenChange={setShowScheduleMaintenance}
       />
-      
-      <ReportIssueDialog 
-        open={showReportIssue} 
+
+      <ReportIssueDialog
+        open={showReportIssue}
         onOpenChange={setShowReportIssue}
       />
-      
+
       <AdminQuickReportDialog
         open={showQuickReport}
         onOpenChange={setShowQuickReport}
