@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useToast } from "@/hooks/use-toast";
-import { getSupplyRequests } from "@/lib/supabase";
+import { getSupplyRequests } from "@/services/supplyService";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { SupplyRequestActions } from "@/components/supply/SupplyRequestActions";
 interface SupplyRequestWithUser {

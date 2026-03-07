@@ -153,7 +153,7 @@ export default function InstallApp() {
                 readOnly
                 className="flex-1"
               />
-              <Button onClick={copyToClipboard} variant="outline">
+              <Button onClick={copyToClipboard} variant="outline" aria-label={copied ? "Copied" : "Copy link"}>
                 {copied ? (
                   <Check className="h-4 w-4" />
                 ) : (

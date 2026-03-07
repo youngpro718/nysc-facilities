@@ -20,7 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import * as locationUtil from "@/components/lighting/utils/location";
 import { StatusBadge } from "@/components/lighting/components/StatusBadge";
-import { markLightsOut, markLightsFixed, toggleElectricianRequired, fetchSiblingFixturesForFixture } from "@/lib/supabase";
+import { markLightsOut, markLightsFixed, toggleElectricianRequired, fetchSiblingFixturesForFixture } from "@/services/lightingService";
 
 
 

@@ -79,14 +79,14 @@ export default function VerificationPending() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[100dvh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative w-full flex flex-col items-center justify-center overflow-hidden">
+    <div className="min-h-[100dvh] relative w-full flex flex-col items-center justify-center overflow-hidden">
       <SparklesCore
         id="tsparticlesfullpage"
         background="transparent"

@@ -60,9 +60,38 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
     space_connections: [],
   };
 
+  // Panel variant (inside mobile drawer): skip 3D flip — WebKit's backfaceVisibility
+  // is unreliable inside Drawer/portal contexts and causes the CardBack to bleed through mirrored.
+  if (variant === 'panel') {
+    return (
+      <Card className="relative h-full w-full max-w-none group overflow-hidden cursor-default shadow-md">
+        <CardContent className="p-0 h-full overflow-y-auto">
+          {isFlipped ? (
+            <CardBack room={displayRoom} onFlip={handleFlip} onDelete={onDelete} />
+          ) : (
+            <CardFront
+              room={displayRoom}
+              onFlip={handleFlip}
+              onDelete={onDelete}
+              isHovered={true}
+              onQuickNoteClick={handleQuickNoteClick}
+            />
+          )}
+        </CardContent>
+        <RoomQuickEditSheet
+          open={showQuickEdit}
+          onClose={() => setShowQuickEdit(false)}
+          roomId={room.id}
+          roomType={room.room_type || 'office'}
+          defaultSection="basic"
+        />
+      </Card>
+    );
+  }
+
   return (
     <Card
-      className={`relative ${variant === 'panel' ? 'h-full w-full max-w-none' : 'h-[320px]'} group overflow-hidden cursor-default transition-all duration-200 ease-out ${isHovered
+      className={`relative h-[320px] group overflow-hidden cursor-default transition-all duration-200 ease-out ${isHovered
           ? 'shadow-2xl shadow-black/20 dark:shadow-black/40'
           : 'shadow-md hover:shadow-lg'
         }`}
@@ -98,7 +127,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
                 room={displayRoom}
                 onFlip={handleFlip}
                 onDelete={onDelete}
-                isHovered={variant === 'panel' ? true : isHovered}
+                isHovered={isHovered}
                 onQuickNoteClick={handleQuickNoteClick}
               />
             </div>

@@ -3,12 +3,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { toast } from 'sonner';
 import { LightStatus } from '@/types/lighting';
-import { 
-  fetchLightingFixtures, 
-  deleteLightingFixture, 
-  deleteLightingFixtures, 
-  updateLightingFixturesStatus 
-} from '@/lib/supabase';
+import {
+  fetchLightingFixtures,
+  deleteLightingFixture,
+  deleteLightingFixtures,
+  updateLightingFixturesStatus
+} from '@/services/lightingService';
 
 export function useLightingFixtures() {
   const queryClient = useQueryClient();

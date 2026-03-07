@@ -3,10 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { toast } from "sonner";
 import { LightStatus } from "@/types/lighting";
-import {
-  fetchLightingFixtures,
-  supabase
-} from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import { fetchLightingFixtures } from "@/services/lightingService";
 
 const deleteLightingFixture = async (id: string) => {
   const { error } = await supabase

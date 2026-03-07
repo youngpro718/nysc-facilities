@@ -17,7 +17,8 @@ import {
   Building,
   Route
 } from "lucide-react";
-import { fetchLightingFixtures, supabaseWithRetry } from "@/lib/supabase";
+import { supabaseWithRetry } from "@/lib/supabase";
+import { fetchLightingFixtures } from "@/services/lightingService";
 import { LightStatus } from "@/types/lighting";
 import { CreateLightingDialog } from "../../CreateLightingDialog";
 import { useNavigate } from "react-router-dom";

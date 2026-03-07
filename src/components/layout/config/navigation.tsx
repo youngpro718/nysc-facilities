@@ -208,11 +208,12 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Court Operations', icon: Gavel },
       { title: 'My Activity', icon: FileText },
+      { title: 'Notifications', icon: MessageSquare },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
   }
-  
+
   // Court Officer (Major / Security) navigation
   if (userRole === 'court_officer') {
     return [
@@ -220,11 +221,12 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Keys', icon: KeyRound },
       { title: 'Spaces', icon: Building2 },
       { title: 'Term Sheet', icon: FileText },
+      { title: 'Notifications', icon: MessageSquare },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
   }
-  
+
   // Court Aide (Supply Staff) navigation - task-focused with supply/inventory access
   if (userRole === 'court_aide') {
     return [
@@ -232,15 +234,17 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Tasks', icon: Package },
       { title: 'Supply Room', icon: Package2 },
       { title: 'Inventory', icon: Boxes },
+      { title: 'Notifications', icon: MessageSquare },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
   }
-  
+
   // Standard user navigation - actions are on dashboard, no separate request page needed
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'My Activity', icon: FileText },
+    { title: 'Notifications', icon: MessageSquare },
     { type: "separator" },
     { title: 'Profile', icon: User },
   ];
@@ -296,11 +300,12 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/cmc-dashboard',
       '/court-operations',
       '/my-activity',
+      '/notifications',
       '', // Separator
       '/profile',
     ];
   }
-  
+
   // Court Officer (Major / Security) routes
   if (userRole === 'court_officer') {
     return [
@@ -308,11 +313,12 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/keys',
       '/spaces',
       '/term-sheet',
+      '/notifications',
       '', // Separator
       '/profile',
     ];
   }
-  
+
   // Court Aide (Supply Staff) routes - task-focused with supply/inventory access
   if (userRole === 'court_aide') {
     return [
@@ -320,15 +326,17 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/tasks',
       '/supply-room',
       '/inventory',
+      '/notifications',
       '', // Separator
       '/profile',
     ];
   }
-  
+
   // Standard user routes - actions are on dashboard
   return [
     '/dashboard', // User Dashboard
     '/my-activity',
+    '/notifications',
     '', // Separator
     '/profile',
   ];

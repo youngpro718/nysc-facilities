@@ -105,7 +105,7 @@ export default function ProfileOnboarding() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-[100dvh] flex flex-col bg-background">
       {/* Safe area top spacer */}
       <div className="pt-safe" />
 

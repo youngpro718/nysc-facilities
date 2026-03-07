@@ -17,7 +17,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { fetchLightingFixtures, markLightsFixed, markLightsOut, supabaseWithRetry, toggleElectricianRequired } from '@/lib/supabase';
+import { supabaseWithRetry } from '@/lib/supabase';
+import { fetchLightingFixtures, markLightsFixed, markLightsOut, toggleElectricianRequired } from '@/services/lightingService';
 import type { LightStatus, LightingFixture } from '@/types/lighting';
 import { getFixtureFullLocationText } from '@/components/lighting/utils/location';
 

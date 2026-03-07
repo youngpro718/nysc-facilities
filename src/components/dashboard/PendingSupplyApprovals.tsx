@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { updateSupplyRequestStatus, updateSupplyRequestItems } from "@/lib/supabase";
+import { updateSupplyRequestStatus, updateSupplyRequestItems } from "@/services/supplyService";
 
 interface PendingRequest {
   id: string;

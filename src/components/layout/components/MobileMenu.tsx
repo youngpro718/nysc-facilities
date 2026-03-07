@@ -54,15 +54,19 @@ export const MobileMenu = ({
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent 
-        side="right" 
-        className="w-[85%] sm:w-[385px] border-l border-border bg-background safe-area-right pt-safe-top pb-safe-bottom flex flex-col"
+      <SheetContent
+        side="right"
+        className="w-[85%] sm:w-[385px] border-l border-border bg-background safe-area-right flex flex-col"
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
       >
         <SheetHeader className="border-b border-border pb-4 shrink-0">
           <SheetTitle className="text-lg font-semibold text-left">Menu</SheetTitle>
         </SheetHeader>
         
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           <MobileNavigationGrid
             items={navigationItems}
             onSignOut={onSignOut}

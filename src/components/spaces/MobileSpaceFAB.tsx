@@ -44,7 +44,8 @@ export function MobileSpaceFAB({
             damping: 25,
             delay: 0.2 
           }}
-          className="fixed bottom-20 right-4 z-50 md:hidden safe-area-bottom"
+          className="fixed right-4 z-50 md:hidden"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom) + 5rem)' }}
         >
           <Button
             size="lg"

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
+import { useAuth } from '@/hooks/useAuth';
 
 // Import the canonical role type from config
 import type { UserRole } from '@/config/roles';
@@ -27,6 +28,7 @@ export interface RolePermissions {
 }
 
 export function useRolePermissions() {
+  const { profile: authProfile, isLoading: authLoading } = useAuth();
   const [userRole, setUserRole] = useState<CourtRole | null>(null);
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [permissions, setPermissions] = useState<RolePermissions>({
@@ -280,6 +282,31 @@ export function useRolePermissions() {
   // Legacy compatibility - map deprecated roles to current ones
   const isFacilitiesManager = userRole === 'admin'; // Facilities manager now maps to admin
   const isPurchasingStaff = userRole === 'court_aide'; // Purchasing staff now maps to court_aide
+
+  // Fast-path: if useAuth already resolved the profile/role, apply permissions immediately
+  // without making additional DB calls.
+  useEffect(() => {
+    if (authLoading || hasFetchedRef.current) return;
+    const role = authProfile?.role as CourtRole | undefined;
+    if (!role) return;
+
+    logger.debug('[useRolePermissions] Fast-path: applying role from auth context:', role);
+
+    let effectiveRole: CourtRole = rolePermissionsMap[role] ? role : 'standard';
+    try {
+      const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
+      const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'court_aide', 'standard'];
+      if (role === 'admin' && preview && validRoles.includes(preview)) {
+        effectiveRole = preview;
+      }
+    } catch (_) { /* ignore */ }
+
+    setUserRole(effectiveRole);
+    setPermissions(rolePermissionsMap[effectiveRole] || rolePermissionsMap.standard);
+    setProfile(authProfile as Record<string, unknown>);
+    setLoading(false);
+    hasFetchedRef.current = true;
+  }, [authProfile, authLoading]);
 
   useEffect(() => {
     logger.debug('[useRolePermissions] Initial mount - setting up');

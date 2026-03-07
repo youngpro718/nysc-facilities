@@ -15,8 +15,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useEnhancedTheme } from '@/providers/EnhancedThemeProvider';
+import { useTheme, useEnhancedTheme } from '@/providers/EnhancedThemeProvider';
 import {
   Bell,
   Mail,

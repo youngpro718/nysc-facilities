@@ -224,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Clear storage and sign out
       logger.debug('Clearing storage and permissions cache');
-      localStorage.removeItem('app-auth');
+      sessionStorage.removeItem('app-auth');
       
       // Clear all permissions caches and preview role
       if (user) {
@@ -375,7 +375,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else {
             logger.debug('No session found');
             const currentPath = window.location.pathname;
-            if (currentPath !== '/login' && currentPath !== '/verification-pending') {
+            const publicPaths = new Set([
+              '/login',
+              '/verification-pending',
+              '/install',
+              '/public-forms',
+              '/submit-form',
+              '/features-preview',
+              '/auth/pending-approval',
+              '/auth/account-rejected',
+              '/forms/key-request',
+              '/forms/maintenance-request',
+              '/forms/issue-report',
+            ]);
+            if (!publicPaths.has(currentPath)) {
               navigate('/login', { replace: true });
             }
           }

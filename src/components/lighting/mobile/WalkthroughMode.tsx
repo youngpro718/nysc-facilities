@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LightingFixture } from "@/types/lighting";
 import { ChevronRight, ArrowLeft, Lightbulb, Zap, CheckCircle, AlertTriangle } from "lucide-react";
-import { markLightsOut, markLightsFixed, toggleElectricianRequired } from "@/lib/supabase";
+import { markLightsOut, markLightsFixed, toggleElectricianRequired } from "@/services/lightingService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 

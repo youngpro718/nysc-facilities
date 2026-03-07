@@ -40,12 +40,15 @@ const LoginPage = () => {
 
 
   return (
-    <div className="light min-h-screen relative w-full bg-background flex flex-col items-center justify-center px-4">
+    <div
+      className="light min-h-[100dvh] relative w-full bg-background flex flex-col items-center justify-center px-4"
+      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
       {/* Subtle watermark in corner */}
       <img
         src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.webp"
         alt="Court Seal Watermark"
-        fetchPriority="high"
+        fetchpriority="high"
         width={96}
         height={96}
         className="pointer-events-none select-none absolute right-6 top-6 opacity-10 w-24 h-24 -z-10"

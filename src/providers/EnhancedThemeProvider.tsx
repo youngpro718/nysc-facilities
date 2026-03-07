@@ -103,3 +103,21 @@ export const useEnhancedTheme = () => {
   }
   return context;
 };
+
+// Compatibility shim: provides the simple { theme, setTheme } API that some
+// components use, bridged from EnhancedThemeProvider.
+export const useTheme = (): { theme: "light" | "dark"; setTheme: (t: "light" | "dark") => void } => {
+  const { settings, updateSettings } = useEnhancedTheme();
+  const theme: "light" | "dark" =
+    settings.variant === "system"
+      ? typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+      : settings.variant === "dark"
+      ? "dark"
+      : "light";
+  return {
+    theme,
+    setTheme: (t: "light" | "dark") => updateSettings({ variant: t }),
+  };
+};

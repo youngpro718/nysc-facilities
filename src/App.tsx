@@ -36,10 +36,7 @@ import SupplyRoom from "@/pages/SupplyRoom";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
 import { InventoryDashboard } from "@/pages/InventoryDashboard";
 import LiveCourtGrid from "@/components/court/LiveCourtGrid";
-import { CardShowcase } from "@/components/spaces/rooms/CardShowcase";
-import { ThemeProvider } from "@/providers/ThemeProvider";
 import { EnhancedThemeProvider } from "@/providers/EnhancedThemeProvider";
-import SimpleDashboardProvider from "@/providers/SimpleDashboardProvider";
 import { Toaster } from "@/components/ui/sonner";
 import RealtimeProvider from "@/providers/RealtimeProvider";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
@@ -145,11 +142,6 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="/card-showcase" element={
-          <ProtectedRoute requireAdmin>
-            <CardShowcase />
-          </ProtectedRoute>
-        } />
         {/* Issues now handled by Operations page */}
         <Route path="/operations" element={
           <ProtectedRoute>
@@ -165,9 +157,6 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        {/* Legacy routes - redirect to new Access & Assignments */}
-        <Route path="occupants" element={<Navigate to="/access-assignments" replace />} />
-        <Route path="occupants/room-assignments" element={<Navigate to="/access-assignments" replace />} />
         <Route path="inventory" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="inventory" moduleName="Inventory Management">
@@ -195,15 +184,11 @@ function AppContent() {
             <AdminCenter />
           </ProtectedRoute>
         } />
-        {/* Legacy redirect from old admin-profile path */}
-        <Route path="admin-profile" element={<Navigate to="/admin" replace />} />
         <Route path="system-settings" element={
           <ProtectedRoute requireAdmin>
             <SystemSettings />
           </ProtectedRoute>
         } />
-        {/* Legacy access-management page redirects to unified access-assignments */}
-        <Route path="access-management" element={<Navigate to="/access-assignments" replace />} />
         <Route path="users" element={
           <ProtectedRoute requireAdmin>
             <Users />
@@ -222,7 +207,7 @@ function AppContent() {
           </ProtectedRoute>
         } />
         <Route path="notifications" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute>
             <Notifications />
           </ProtectedRoute>
         } />
@@ -252,9 +237,6 @@ function AppContent() {
             <Tasks />
           </ProtectedRoute>
         } />
-        {/* Legacy Supply Routes */}
-        <Route path="supplies" element={<Navigate to="/tasks" replace />} />
-        <Route path="supply-requests" element={<Navigate to="/my-activity" replace />} />
         <Route path="my-supply-requests" element={
           <ProtectedRoute>
             <MySupplyRequests />
@@ -285,17 +267,14 @@ function AppContent() {
 
 
         {/* Settings Routes */}
-        {/* Theme settings now in Profile */}
+        {/* Theme and security sub-paths redirect to Profile settings tab */}
         <Route path="settings/theme" element={<Navigate to="/profile?tab=settings" replace />} />
-        {/* Legacy routes redirected to Profile settings tab */}
         <Route path="settings/security/2fa" element={<Navigate to="/profile?tab=settings" replace />} />
         <Route path="settings/security/session" element={<Navigate to="/profile?tab=settings" replace />} />
+        <Route path="profile/settings" element={<Navigate to="/profile?tab=settings" replace />} />
         {/* Legacy operations routes redirected to consolidated Operations hub */}
         <Route path="issues" element={<Navigate to="/operations?tab=issues" replace />} />
         <Route path="maintenance" element={<Navigate to="/operations?tab=maintenance" replace />} />
-        {/* Settings now consolidated into Profile page */}
-        <Route path="settings" element={<Navigate to="/profile?tab=settings" replace />} />
-        <Route path="profile/settings" element={<Navigate to="/profile?tab=settings" replace />} />
 
         {/* User Routes */}
         <Route path="request" element={
@@ -385,24 +364,20 @@ function App() {
     <ErrorBoundary onError={(error) => logger.error('App: Global error caught:', error)}>
       <QueryClientProvider client={queryClient}>
         <RealtimeProvider>
-          <ThemeProvider>
-            <EnhancedThemeProvider>
-              <SimpleDashboardProvider>
-                <BrowserRouter>
+          <EnhancedThemeProvider>
+            <BrowserRouter>
                   <AuthErrorBoundary onError={(error) => logger.error('App: Auth error caught:', error)}>
                     <AuthProvider>
                       <NotificationsWrapper>
                         <AppContent />
-                        <DevModeWrapper />
+                        {import.meta.env.DEV && <DevModeWrapper />}
                       </NotificationsWrapper>
                     </AuthProvider>
                   </AuthErrorBoundary>
                   <Toaster />
                   <InstallPrompt />
-                </BrowserRouter>
-              </SimpleDashboardProvider>
-            </EnhancedThemeProvider>
-          </ThemeProvider>
+            </BrowserRouter>
+          </EnhancedThemeProvider>
         </RealtimeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
