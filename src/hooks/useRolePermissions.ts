@@ -303,7 +303,7 @@ export function useRolePermissions() {
 
     setUserRole(effectiveRole);
     setPermissions(rolePermissionsMap[effectiveRole] || rolePermissionsMap.standard);
-    setProfile(authProfile as Record<string, unknown>);
+    setProfile(authProfile as unknown as Record<string, unknown>);
     setLoading(false);
     hasFetchedRef.current = true;
   }, [authProfile, authLoading]);
