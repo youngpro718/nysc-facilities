@@ -45,17 +45,17 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
   const statusColor = useMemo(() => getStatusColor(status), [status]);
   const typeColor = useMemo(() => getTypeColor(type), [type]);
 
-  // Create materials
+  // Create materials — lighter palette
   const materials = useMemo(() => {
-    const baseColor = isSelected ? '#6366f1' : isHovered ? '#f59e0b' : statusColor;
+    const baseColor = isSelected ? '#818cf8' : isHovered ? '#fbbf24' : statusColor;
     
-    // Main room material with gradient effect
+    // Main room material — slightly more visible
     const main = new THREE.MeshPhongMaterial({
       color: new THREE.Color(typeColor),
-      opacity: isSelected ? 0.4 : isHovered ? 0.3 : 0.15,
+      opacity: isSelected ? 0.45 : isHovered ? 0.35 : 0.2,
       transparent: true,
       side: THREE.DoubleSide,
-      shininess: 50,
+      shininess: 40,
     });
 
     // Edge material
@@ -68,7 +68,7 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
     const glow = new THREE.MeshBasicMaterial({
       color: new THREE.Color(baseColor),
       transparent: true,
-      opacity: isSelected ? 0.15 : isHovered ? 0.1 : 0,
+      opacity: isSelected ? 0.18 : isHovered ? 0.12 : 0,
       side: THREE.DoubleSide,
     });
 
