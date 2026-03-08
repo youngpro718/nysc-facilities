@@ -82,6 +82,13 @@ export function ModernFloorPlanView() {
   const [attachSide, setAttachSide] = useState<'north'|'south'|'east'|'west'>('north');
   const [offsetPercent, setOffsetPercent] = useState<number>(50);
 
+  // Overlay-specific state: tracks the hallway being configured and the room to place
+  const [overlayHallwayId, setOverlayHallwayId] = useState<string | null>(null);
+  const [overlayHallwayName, setOverlayHallwayName] = useState<string>('');
+  const [overlayRoomId, setOverlayRoomId] = useState<string | null>(null);
+  const [overlayRoomName, setOverlayRoomName] = useState<string>('');
+  const [overlayRoomType, setOverlayRoomType] = useState<string>('');
+
   const { dialogState, openDialog, closeDialog } = useDialogManager();
 
   // Set initial properties panel visibility based on screen size
@@ -289,6 +296,26 @@ export function ModernFloorPlanView() {
       }
     }
 
+    // If overlay is open and user clicks a room, set it as the overlay's selected room
+    if (overlayHallwayId && object.type === 'room') {
+      setOverlayRoomId(object.id as string);
+      setOverlayRoomName((object as any).name || (object as any).data?.label || '');
+      setOverlayRoomType((object as any).room_type || (object as any).data?.type || 'room');
+      // Also update the main selection for the properties panel
+      setSelectedObject(object as FloorPlanObject);
+      setPreviewData(null);
+      return;
+    }
+
+    // If user clicks a hallway, open the overlay
+    if (viewMode === '3d' && object.type === 'hallway') {
+      setOverlayHallwayId(object.id as string);
+      setOverlayHallwayName((object as any).name || (object as any).data?.label || 'Hallway');
+      setOverlayRoomId(null);
+      setOverlayRoomName('');
+      setOverlayRoomType('');
+    }
+
     // Normal selection behavior
     setSelectedObject(object as FloorPlanObject);
     setPreviewData(null);
@@ -298,7 +325,7 @@ export function ModernFloorPlanView() {
     if (panel) {
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [attachMode, selectedHallwayId, attachSide, offsetPercent, sceneObjects, selectedFloor, queryClient]);
+  }, [attachMode, selectedHallwayId, attachSide, offsetPercent, sceneObjects, selectedFloor, queryClient, overlayHallwayId, viewMode]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -618,14 +645,17 @@ export function ModernFloorPlanView() {
                   labelScale={labelScale}
                   moveEnabled={moveEnabled}
                 />
-                {selectedObject && (selectedObject.type === 'hallway' || (selectedObject as any).object_type === 'hallway') && (
+                {overlayHallwayId && (
                   <HallwayAttachOverlay
-                    hallwayId={selectedObject.id}
-                    hallwayName={(selectedObject as any).name || (selectedObject as any).data?.label || 'Hallway'}
-                    selectedRoomId={undefined}
-                    selectedRoomName={undefined}
-                    selectedRoomType={undefined}
-                    onClose={() => setSelectedObject(null)}
+                    hallwayId={overlayHallwayId}
+                    hallwayName={overlayHallwayName}
+                    selectedRoomId={overlayRoomId}
+                    selectedRoomName={overlayRoomName}
+                    selectedRoomType={overlayRoomType}
+                    onClose={() => {
+                      setOverlayHallwayId(null);
+                      setOverlayRoomId(null);
+                    }}
                     onRefresh={handleRefresh}
                   />
                 )}
