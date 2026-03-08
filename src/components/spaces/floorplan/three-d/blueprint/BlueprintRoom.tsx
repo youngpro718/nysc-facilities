@@ -145,24 +145,24 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
         </mesh>
       )}
 
-      {/* Floor plane inside room */}
+      {/* Floor plane inside room — brighter fill */}
       <mesh position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[size[0] - 4, size[2] - 4]} />
         <meshPhongMaterial
           color={typeColor}
-          opacity={0.12}
+          opacity={0.18}
           transparent
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Walls */}
+      {/* Walls — lighter default color */}
       <WallSegment
         position={[0, 0, 0]}
         size={size}
         wallHeight={size[1]}
-        color={isSelected ? '#6366f1' : isHovered ? '#f59e0b' : '#334155'}
-        opacity={isSelected ? 0.6 : isHovered ? 0.5 : 0.45}
+        color={isSelected ? '#818cf8' : isHovered ? '#fbbf24' : '#64748b'}
+        opacity={isSelected ? 0.55 : isHovered ? 0.5 : 0.4}
       />
 
       {/* Floor accent line */}
