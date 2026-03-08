@@ -8,26 +8,32 @@ import { FloorPlanLayerDB, RawFloorPlanObject, Position, Size } from "../types/f
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 
-/** Position config for hallway-centric layout */
-const POSITION_OFFSETS: Record<string, number> = {
-  start: 0.2,
-  middle: 0.5,
-  end: 0.8,
+/** Layout config */
+const ROOM_GAP = 10; // gap between adjacent rooms (wall thickness)
+const SIDE_OFFSET = 180; // distance from hallway center to room center
+const HALLWAY_PADDING = 40; // extra padding on each end of hallway
+const POSITION_SEGMENT_PRIORITY: Record<string, number> = {
+  start: 0,
+  middle: 1,
+  end: 2,
 };
 
-const SIDE_OFFSET = 200; // pixels offset from hallway center for left/right rooms
-const SEQUENCE_SPACING = 180; // pixels between rooms in the same segment
+interface LayoutOverrides {
+  positions: Map<string, Position>;
+  sizes: Map<string, Size>;
+}
 
 /**
- * Given hallway-room connections and a map of all objects,
- * compute positions for rooms along the hallway spine.
- * Returns a map of objectId -> computed Position.
+ * Sequential tiling with auto-extending hallway.
+ * Rooms tile side-by-side along the hallway spine.
+ * The hallway auto-extends to fit all connected rooms.
  */
 function computeHallwayCentricLayout(
   connections: HallwayRoomConnection[],
   objectMap: Map<string, RawFloorPlanObject>
-): Map<string, Position> {
-  const positionOverrides = new Map<string, Position>();
+): LayoutOverrides {
+  const positions = new Map<string, Position>();
+  const sizes = new Map<string, Size>();
 
   // Group connections by hallway
   const byHallway = new Map<string, HallwayRoomConnection[]>();
@@ -41,59 +47,111 @@ function computeHallwayCentricLayout(
     const hallway = objectMap.get(hallwayId);
     if (!hallway) continue;
 
-    // Determine hallway center and dimensions
     const hPos = parsePosition(hallway.position) || { x: 400, y: 300 };
     const hSize = parseSize(hallway.size) || { width: 300, height: 50 };
-
-    // Determine orientation: wider = horizontal spine, taller = vertical spine
     const isHorizontal = hSize.width >= hSize.height;
-    const spineLength = isHorizontal ? hSize.width : hSize.height;
 
-    // Place hallway itself at a good center position if unpositioned
+    // Center hallway if unpositioned
     if (hPos.x === 0 && hPos.y === 0) {
-      const centeredPos = { x: 500, y: 400 };
-      positionOverrides.set(hallwayId, centeredPos);
-      hPos.x = centeredPos.x;
-      hPos.y = centeredPos.y;
+      hPos.x = 500;
+      hPos.y = 400;
     }
 
-    // Group connections by position segment for sequence spacing
-    const segmentCounts: Record<string, { left: number; right: number }> = {
-      start: { left: 0, right: 0 },
-      middle: { left: 0, right: 0 },
-      end: { left: 0, right: 0 },
-    };
+    // Split connections by side, sort by segment priority then sequence_order then insertion order
+    const leftRooms: { conn: HallwayRoomConnection; size: Size }[] = [];
+    const rightRooms: { conn: HallwayRoomConnection; size: Size }[] = [];
 
-    // Sort by sequence_order within each segment
-    const sorted = [...conns].sort((a, b) => a.sequence_order - b.sequence_order);
-
-    for (const conn of sorted) {
-      const posKey = conn.position || 'middle';
-      const sideKey = conn.side || 'left';
-      const segment = segmentCounts[posKey] || segmentCounts.middle;
-      const seqIndex = segment[sideKey];
-      segment[sideKey]++;
-
-      const ratio = POSITION_OFFSETS[posKey] || 0.5;
-      const sideSign = sideKey === 'left' ? -1 : 1;
-
-      let roomX: number, roomY: number;
-
-      if (isHorizontal) {
-        // Rooms branch above/below a horizontal hallway
-        roomX = hPos.x + (ratio - 0.5) * spineLength + seqIndex * SEQUENCE_SPACING;
-        roomY = hPos.y + sideSign * SIDE_OFFSET;
+    for (const conn of conns) {
+      const roomObj = objectMap.get(conn.room_id);
+      const roomSize = (roomObj && parseSize(roomObj.size)) || { width: 150, height: 100 };
+      const entry = { conn, size: roomSize };
+      if (conn.side === 'right') {
+        rightRooms.push(entry);
       } else {
-        // Rooms branch left/right of a vertical hallway
-        roomX = hPos.x + sideSign * SIDE_OFFSET;
-        roomY = hPos.y + (ratio - 0.5) * spineLength + seqIndex * SEQUENCE_SPACING;
+        leftRooms.push(entry); // default to left
+      }
+    }
+
+    const sortRooms = (arr: typeof leftRooms) =>
+      arr.sort((a, b) => {
+        const pa = POSITION_SEGMENT_PRIORITY[a.conn.position] ?? 1;
+        const pb = POSITION_SEGMENT_PRIORITY[b.conn.position] ?? 1;
+        if (pa !== pb) return pa - pb;
+        return a.conn.sequence_order - b.conn.sequence_order;
+      });
+
+    sortRooms(leftRooms);
+    sortRooms(rightRooms);
+
+    // Tile rooms sequentially along the spine axis
+    const tileRooms = (
+      rooms: typeof leftRooms,
+      sideSign: number // -1 for left/above, +1 for right/below
+    ) => {
+      let cursor = 0; // running offset along the spine
+
+      for (const { conn, size } of rooms) {
+        const roomSpan = isHorizontal ? size.width : size.height;
+        const roomOffset = cursor + roomSpan / 2;
+
+        let roomX: number, roomY: number;
+        if (isHorizontal) {
+          // Spine runs along X; rooms branch along Y
+          roomX = cursor;
+          roomY = hPos.y + sideSign * (SIDE_OFFSET + (isHorizontal ? size.height / 2 : size.width / 2));
+        } else {
+          // Spine runs along Y; rooms branch along X
+          roomX = hPos.x + sideSign * (SIDE_OFFSET + size.width / 2);
+          roomY = cursor;
+        }
+
+        positions.set(conn.room_id, { x: roomX, y: roomY });
+        cursor += roomSpan + ROOM_GAP;
       }
 
-      positionOverrides.set(conn.room_id, { x: roomX, y: roomY });
+      return cursor - ROOM_GAP; // total span used (minus trailing gap)
+    };
+
+    const leftSpan = tileRooms(leftRooms, -1);
+    const rightSpan = tileRooms(rightRooms, 1);
+    const maxSpan = Math.max(leftSpan, rightSpan, 0);
+
+    // Auto-extend hallway to cover all rooms
+    const totalLength = maxSpan + HALLWAY_PADDING * 2;
+    const hallwayStart = -HALLWAY_PADDING;
+
+    // Shift all room positions to be centered on the hallway
+    const shiftRoomsRelative = (rooms: typeof leftRooms, sideSign: number) => {
+      let cursor = 0;
+      for (const { conn, size } of rooms) {
+        const roomSpan = isHorizontal ? size.width : size.height;
+        const existing = positions.get(conn.room_id);
+        if (existing) {
+          if (isHorizontal) {
+            existing.x = hPos.x - totalLength / 2 + HALLWAY_PADDING + cursor + roomSpan / 2;
+          } else {
+            existing.y = hPos.y - totalLength / 2 + HALLWAY_PADDING + cursor + roomSpan / 2;
+          }
+          positions.set(conn.room_id, existing);
+        }
+        cursor += roomSpan + ROOM_GAP;
+      }
+    };
+
+    shiftRoomsRelative(leftRooms, -1);
+    shiftRoomsRelative(rightRooms, 1);
+
+    // Override hallway size
+    if (isHorizontal) {
+      sizes.set(hallwayId, { width: Math.max(hSize.width, totalLength), height: hSize.height });
+    } else {
+      sizes.set(hallwayId, { width: hSize.width, height: Math.max(hSize.height, totalLength) });
     }
+
+    positions.set(hallwayId, hPos);
   }
 
-  return positionOverrides;
+  return { positions, sizes };
 }
 
 /**
