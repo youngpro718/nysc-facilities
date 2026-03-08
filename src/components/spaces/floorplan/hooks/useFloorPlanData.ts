@@ -366,7 +366,7 @@ export function useFloorPlanData(floorId: string | null) {
   const FP_DEBUG = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLOORPLAN_DEBUG === 'true';
   if (FP_DEBUG) {
     logger.debug('Hallway connections:', hallwayConnections);
-    logger.debug('Position overrides:', [...hallwayPositionOverrides.entries()]);
+    logger.debug('Position overrides:', [...hallwayOverrides.positions.entries()]);
     logger.debug('Transformed objects:', objects);
     logger.debug('Hallway edges:', hallwayEdges);
   }
