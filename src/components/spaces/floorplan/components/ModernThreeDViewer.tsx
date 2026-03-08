@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useFloorPlanData } from '../hooks/useFloorPlanData';
 import { 
   ZoomIn,
