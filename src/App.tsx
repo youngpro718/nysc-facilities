@@ -46,7 +46,7 @@ import { ModuleProtectedRoute } from "@/components/ModuleProtectedRoute";
 import OnboardingGuard from "@/routes/OnboardingGuard";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import AuthErrorBoundary from "@/components/error/AuthErrorBoundary";
-import Users from "@/pages/Users";
+// Users page removed — consolidated into AdminCenter (/admin)
 import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
 import Notifications from "@/pages/Notifications";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
