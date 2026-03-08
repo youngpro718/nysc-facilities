@@ -27,7 +27,7 @@ export function MobileRoomDrawer({
   if (!room) return null;
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <><Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="max-h-[85dvh]">
         <DrawerHeader className="flex items-center justify-between px-4 py-3">
           <DrawerTitle className="text-base font-semibold truncate">{room.name}</DrawerTitle>

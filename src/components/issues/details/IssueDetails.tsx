@@ -77,7 +77,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <><div className="flex flex-col h-full overflow-hidden">
       {isEditing ? (
         <>
           <IssueDetailsHeader
