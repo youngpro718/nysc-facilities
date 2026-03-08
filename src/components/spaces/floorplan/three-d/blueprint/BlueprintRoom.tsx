@@ -2,7 +2,7 @@
 import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Text, Billboard, RoundedBox } from '@react-three/drei';
+import { Text, Billboard } from '@react-three/drei';
 import { getStatusColor, getTypeColor } from './blueprintMaterials';
 import WallSegment from './WallSegment';
 
@@ -45,44 +45,6 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
   const statusColor = useMemo(() => getStatusColor(status), [status]);
   const typeColor = useMemo(() => getTypeColor(type), [type]);
 
-  // Create materials — lighter palette
-  const materials = useMemo(() => {
-    const baseColor = isSelected ? '#818cf8' : isHovered ? '#fbbf24' : statusColor;
-    
-    // Main room material — slightly more visible
-    const main = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(typeColor),
-      opacity: isSelected ? 0.45 : isHovered ? 0.35 : 0.2,
-      transparent: true,
-      side: THREE.DoubleSide,
-      shininess: 40,
-    });
-
-    // Edge material
-    const edge = new THREE.LineBasicMaterial({
-      color: new THREE.Color(baseColor),
-      linewidth: 2,
-    });
-
-    // Glow material for selected/hovered state
-    const glow = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(baseColor),
-      transparent: true,
-      opacity: isSelected ? 0.18 : isHovered ? 0.12 : 0,
-      side: THREE.DoubleSide,
-    });
-
-    return { main, edge, glow };
-  }, [statusColor, typeColor, isSelected, isHovered]);
-
-  // Create wireframe geometry
-  const edgesGeometry = useMemo(() => {
-    const boxGeom = new THREE.BoxGeometry(size[0], size[1], size[2]);
-    const edges = new THREE.EdgesGeometry(boxGeom);
-    boxGeom.dispose();
-    return edges;
-  }, [size]);
-
   // Animate glow effect
   useFrame((state) => {
     if (glowRef.current && (isSelected || isHovered)) {
@@ -108,25 +70,16 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
     onClick?.();
   };
 
-  // Display name - prefer actual name over room number
-  const displayName = name || roomNumber || '';
-  const hasRoomNumber = roomNumber && name && roomNumber !== name;
+  // Display text
+  const displayNumber = roomNumber || '';
+  const displayName = name && name !== roomNumber ? name : '';
 
-  // Get type icon
-  const getTypeIcon = (roomType: string): string => {
-    const icons: Record<string, string> = {
-      courtroom: '⚖️',
-      office: '🏢',
-      conference: '🤝',
-      storage: '📦',
-      hallway: '🚶',
-      jury_room: '👥',
-      judges_chambers: '👨‍⚖️',
-      default: '🏠'
-    };
-    const normalized = roomType?.toLowerCase().replace(/[^a-z_]/g, '') || 'default';
-    return icons[normalized] || icons.default;
-  };
+  // Dynamic font sizes scaled to room width
+  const numberFontSize = Math.min(18, Math.max(10, size[0] / 7)) * labelScale;
+  const nameFontSize = Math.min(10, Math.max(6, size[0] / 14)) * labelScale;
+
+  // Hover/select label lift
+  const labelYOffset = isHovered ? 2 : 0;
 
   return (
     <group
@@ -137,105 +90,117 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
       onPointerOut={handlePointerOut}
       onClick={handleClick}
     >
+      {/* Selection outline ring on floor */}
+      {isSelected && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.4, 0]}>
+          <ringGeometry args={[
+            Math.min(size[0], size[2]) / 2 - 4,
+            Math.min(size[0], size[2]) / 2 - 1,
+            32
+          ]} />
+          <meshBasicMaterial color="#818cf8" opacity={0.7} transparent side={THREE.DoubleSide} />
+        </mesh>
+      )}
+
       {/* Glow effect for selected/hovered */}
       {(isSelected || isHovered) && (
         <mesh ref={glowRef} scale={1.05}>
           <boxGeometry args={[size[0], size[1], size[2]]} />
-          <primitive object={materials.glow} attach="material" />
+          <meshBasicMaterial
+            color={isSelected ? '#818cf8' : '#fbbf24'}
+            transparent
+            opacity={isSelected ? 0.15 : 0.1}
+            side={THREE.DoubleSide}
+          />
         </mesh>
       )}
 
-      {/* Floor plane inside room — brighter fill */}
+      {/* Floor plane — type-colored fill */}
       <mesh position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[size[0] - 4, size[2] - 4]} />
         <meshPhongMaterial
           color={typeColor}
-          opacity={0.18}
+          opacity={isSelected ? 0.35 : isHovered ? 0.3 : 0.25}
           transparent
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Walls — lighter default color */}
+      {/* Type-indicator stripe on floor (subtle accent bar) */}
+      <mesh position={[0, 0.6, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[size[0] * 0.6, 3]} />
+        <meshBasicMaterial color={typeColor} opacity={0.4} transparent side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* Walls — with type-colored accent edges */}
       <WallSegment
         position={[0, 0, 0]}
         size={size}
         wallHeight={size[1]}
         color={isSelected ? '#818cf8' : isHovered ? '#fbbf24' : '#64748b'}
         opacity={isSelected ? 0.55 : isHovered ? 0.5 : 0.4}
+        accentColor={typeColor}
       />
 
-      {/* Floor accent line */}
+      {/* Status accent line */}
       <mesh position={[0, 0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[size[0] - 4, size[2] - 4]} />
         <meshBasicMaterial 
           color={statusColor} 
-          opacity={0.15} 
+          opacity={0.12} 
           transparent 
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Type icon */}
-      {showIcon && (
-        <Billboard position={[0, size[1] / 2 + 20, 0]}>
+      {/* === CENTERED FLOOR LABELS === */}
+
+      {/* Room number — large, centered on floor */}
+      {displayNumber && (
+        <Billboard position={[0, 1.5 + labelYOffset, 0]}>
           <Text
-            fontSize={16 * labelScale}
+            fontSize={numberFontSize}
+            color={isSelected ? '#e0e7ff' : isHovered ? '#fef3c7' : '#f8fafc'}
             anchorX="center"
             anchorY="middle"
+            maxWidth={size[0] * 0.85}
+            textAlign="center"
+            outlineWidth={1.2}
+            outlineColor="#0f172a"
+            fontWeight={700}
           >
-            {getTypeIcon(type)}
+            {displayNumber}
           </Text>
         </Billboard>
       )}
 
-      {/* Room name label */}
+      {/* Room name — smaller, below number */}
       {displayName && (
-        <Billboard position={[0, size[1] / 2 + 8, 0]}>
+        <Billboard position={[0, 1.5 + labelYOffset - numberFontSize * 0.9, 0]}>
           <Text
-            fontSize={Math.min(10, size[0] / 12) * labelScale}
-            color={isSelected ? '#c7d2fe' : isHovered ? '#fde68a' : '#f1f5f9'}
+            fontSize={nameFontSize}
+            color={isSelected ? '#c7d2fe' : isHovered ? '#fde68a' : '#cbd5e1'}
             anchorX="center"
             anchorY="middle"
-            maxWidth={size[0] * 0.9}
+            maxWidth={size[0] * 0.85}
             textAlign="center"
-            outlineWidth={0.8}
-            outlineColor="#1e293b"
+            outlineWidth={0.6}
+            outlineColor="#0f172a"
           >
             {displayName}
           </Text>
         </Billboard>
       )}
 
-      {/* Room number badge (if different from name) */}
-      {hasRoomNumber && (
-        <Billboard position={[size[0] / 2 - 10, size[1] / 2 + 3, size[2] / 2 - 10]}>
-          <mesh>
-            <planeGeometry args={[20, 10]} />
-            <meshBasicMaterial color="#1e293b" opacity={0.85} transparent />
-          </mesh>
-          <Text
-            fontSize={6 * labelScale}
-            color="#cbd5e1"
-            anchorX="center"
-            anchorY="middle"
-            position={[0, 0, 0.1]}
-          >
-            {roomNumber}
-          </Text>
-        </Billboard>
-      )}
-
-      {/* Status indicator */}
-      <mesh position={[size[0] / 2 - 6, size[1] / 2 - 6, size[2] / 2]}>
-        <sphereGeometry args={[4, 16, 16]} />
-        <meshBasicMaterial color={statusColor} />
+      {/* === STATUS INDICATOR — top-edge center pill === */}
+      <mesh position={[0, size[1] + 1, size[2] / 2]}>
+        <boxGeometry args={[12, 4, 2]} />
+        <meshBasicMaterial color={statusColor} opacity={0.9} transparent />
       </mesh>
-
-      {/* Status glow */}
-      <mesh position={[size[0] / 2 - 6, size[1] / 2 - 6, size[2] / 2]}>
-        <sphereGeometry args={[6, 16, 16]} />
-        <meshBasicMaterial color={statusColor} transparent opacity={0.3} />
+      {/* Status pill glow */}
+      <mesh position={[0, size[1] + 1, size[2] / 2 + 1]}>
+        <boxGeometry args={[16, 6, 1]} />
+        <meshBasicMaterial color={statusColor} transparent opacity={0.2} />
       </mesh>
     </group>
   );

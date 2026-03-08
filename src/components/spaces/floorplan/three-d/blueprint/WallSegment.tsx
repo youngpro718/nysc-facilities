@@ -4,11 +4,12 @@ import * as THREE from 'three';
 
 interface WallSegmentProps {
   position: [number, number, number];
-  size: [number, number, number]; // width, height, depth of the room
+  size: [number, number, number];
   wallHeight?: number;
   wallThickness?: number;
   color?: string;
   opacity?: number;
+  accentColor?: string;
   doorOpenings?: { wall: 'front' | 'back' | 'left' | 'right'; offset: number; width: number }[];
 }
 
@@ -19,6 +20,7 @@ const WallSegment: React.FC<WallSegmentProps> = ({
   wallThickness = 2,
   color = '#64748b',
   opacity = 0.5,
+  accentColor = '#38bdf8',
   doorOpenings = []
 }) => {
   const [w, , d] = size;
@@ -35,41 +37,33 @@ const WallSegment: React.FC<WallSegmentProps> = ({
   }), [color, opacity]);
 
   const topEdgeMat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: new THREE.Color('#38bdf8'),
+    color: new THREE.Color(accentColor),
     transparent: true,
     opacity: 0.65,
-  }), []);
+  }), [accentColor]);
 
-  // Check if a wall has a door opening
   const hasDoor = (wall: string) => doorOpenings.some(d => d.wall === wall);
 
   return (
     <group position={position}>
-      {/* Front wall (positive Z) */}
       {!hasDoor('front') && (
         <mesh position={[0, halfH, halfD]}>
           <boxGeometry args={[w, wallHeight, t]} />
           <primitive object={material} attach="material" />
         </mesh>
       )}
-
-      {/* Back wall (negative Z) */}
       {!hasDoor('back') && (
         <mesh position={[0, halfH, -halfD]}>
           <boxGeometry args={[w, wallHeight, t]} />
           <primitive object={material} attach="material" />
         </mesh>
       )}
-
-      {/* Left wall (negative X) */}
       {!hasDoor('left') && (
         <mesh position={[-halfW, halfH, 0]}>
           <boxGeometry args={[t, wallHeight, d]} />
           <primitive object={material} attach="material" />
         </mesh>
       )}
-
-      {/* Right wall (positive X) */}
       {!hasDoor('right') && (
         <mesh position={[halfW, halfH, 0]}>
           <boxGeometry args={[t, wallHeight, d]} />
@@ -77,7 +71,7 @@ const WallSegment: React.FC<WallSegmentProps> = ({
         </mesh>
       )}
 
-      {/* Top edge glow lines */}
+      {/* Top edge glow — uses type accent color */}
       <mesh position={[0, wallHeight + 0.5, halfD]}>
         <boxGeometry args={[w, 1, 0.5]} />
         <primitive object={topEdgeMat} attach="material" />

@@ -6,7 +6,7 @@ import { Text, Billboard } from '@react-three/drei';
 interface BlueprintHallwayProps {
   id: string;
   position: [number, number, number];
-  size?: [number, number, number]; // length, height(ignored), corridor width
+  size?: [number, number, number];
   rotation?: number;
   name?: string;
   isSelected?: boolean;
@@ -33,7 +33,6 @@ const BlueprintHallway: React.FC<BlueprintHallwayProps> = ({
   const halfL = length / 2;
   const halfW = corridorWidth / 2;
 
-  // Lighter floor — slate-700 instead of slate-800
   const floorMat = useMemo(() => new THREE.MeshPhongMaterial({
     color: new THREE.Color('#334155'),
     transparent: true,
@@ -41,7 +40,6 @@ const BlueprintHallway: React.FC<BlueprintHallwayProps> = ({
     side: THREE.DoubleSide,
   }), []);
 
-  // Lighter walls
   const wallMat = useMemo(() => new THREE.MeshPhongMaterial({
     color: new THREE.Color(isSelected ? '#818cf8' : isHovered ? '#fbbf24' : '#64748b'),
     transparent: true,
@@ -87,20 +85,36 @@ const BlueprintHallway: React.FC<BlueprintHallwayProps> = ({
         <primitive object={wallMat} attach="material" />
       </mesh>
 
-      {/* Name label */}
+      {/* Floating label — larger */}
       {name && (
-        <Billboard position={[0, WALL_HEIGHT + 10, 0]}>
+        <Billboard position={[0, WALL_HEIGHT + 12, 0]}>
           <Text
-            fontSize={8}
-            color={isSelected ? '#c7d2fe' : '#cbd5e1'}
+            fontSize={12}
+            color={isSelected ? '#c7d2fe' : '#e2e8f0'}
             anchorX="center"
             anchorY="middle"
-            outlineWidth={0.5}
-            outlineColor="#1e293b"
+            outlineWidth={0.8}
+            outlineColor="#0f172a"
           >
             {name}
           </Text>
         </Billboard>
+      )}
+
+      {/* Floor-rendered name text along the spine */}
+      {name && (
+        <Text
+          position={[0, 0.8, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          fontSize={Math.min(10, corridorWidth * 0.3)}
+          color="#94a3b8"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={length * 0.8}
+          textAlign="center"
+        >
+          {name}
+        </Text>
       )}
 
       {/* Direction arrows on floor */}
