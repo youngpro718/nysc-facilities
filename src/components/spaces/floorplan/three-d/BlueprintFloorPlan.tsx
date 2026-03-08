@@ -35,6 +35,7 @@ interface BlueprintFloorPlanProps {
   labelScale?: number;
   className?: string;
   walkMode?: boolean;
+  onWalkModeExit?: () => void;
 }
 
 const LoadingFallback: React.FC = () => (
