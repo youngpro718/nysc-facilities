@@ -39,14 +39,18 @@ export function EnhancedPropertiesPanel({
     <Card className="h-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
         <div className="border-b border-slate-200 dark:border-slate-700 px-4 pt-4">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-800/30 dark:bg-slate-700">
+          <TabsList className="grid w-full grid-cols-5 bg-slate-100 dark:bg-slate-800/30 dark:bg-slate-700">
             <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs">
               <Users className="h-3.5 w-3.5" />
               Overview
             </TabsTrigger>
             <TabsTrigger value="properties" className="flex items-center gap-1.5 text-xs">
               <Settings className="h-3.5 w-3.5" />
-              Properties
+              Props
+            </TabsTrigger>
+            <TabsTrigger value="attach" className="flex items-center gap-1.5 text-xs">
+              <Link2 className="h-3.5 w-3.5" />
+              Attach
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-1.5 text-xs">
               <BarChart3 className="h-3.5 w-3.5" />
