@@ -95,10 +95,9 @@ export function MobileInventoryGrid({
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         className="text-destructive"
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this item?')) {
-                            onDeleteItem(item.id);
-                          }
+                        onClick={async () => {
+                          const ok = await confirmDeleteItem({ title: 'Delete Item', description: 'Are you sure you want to delete this item? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
+                          if (ok) onDeleteItem(item.id);
                         }}
                       >
                         Delete Item

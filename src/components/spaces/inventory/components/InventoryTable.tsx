@@ -119,10 +119,9 @@ export function InventoryTable({
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      if (window.confirm('Are you sure you want to delete this item?')) {
-                        onDeleteItem(item.id);
-                      }
+                    <DropdownMenuItem onClick={async () => {
+                      const ok = await confirmDeleteItem({ title: 'Delete Item', description: 'Are you sure you want to delete this item? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
+                      if (ok) onDeleteItem(item.id);
                     }}>
                       Delete
                     </DropdownMenuItem>

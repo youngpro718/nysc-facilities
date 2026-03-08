@@ -1,4 +1,5 @@
 
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ import { IssueDetailsHeader } from "./components/IssueDetailsHeader";
 import { IssueTimelineContent } from "./components/IssueTimelineContent";
 import { useIssueData } from "./hooks/useIssueData";
 import { IssueDetailsContent } from "./components/IssueDetailsContent";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface IssueDetailsProps {
   issueId: string | null;
