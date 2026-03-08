@@ -70,7 +70,8 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
   className = '',
   showConnections = true,
   labelScale = 1,
-  walkMode = false
+  walkMode = false,
+  onWalkModeExit
 }, ref) => {
   const blueprintRef = useRef<SceneHandle>(null);
 
