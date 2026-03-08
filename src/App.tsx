@@ -268,11 +268,8 @@ function AppContent() {
         <Route path="maintenance" element={<Navigate to="/operations?tab=maintenance" replace />} />
 
         {/* User Routes */}
-        <Route path="request" element={
-          <ProtectedRoute>
-            <RequestHub />
-          </ProtectedRoute>
-        } />
+        {/* /request redirects to dashboard — quick actions are inline via FAB */}
+        <Route path="request" element={<Navigate to="/dashboard" replace />} />
         <Route path="request/help" element={
           <ProtectedRoute>
             <HelpRequestPage />
