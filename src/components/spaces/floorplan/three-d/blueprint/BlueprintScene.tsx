@@ -4,8 +4,11 @@ import { OrbitControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import BlueprintRoom from './BlueprintRoom';
+import BlueprintHallway from './BlueprintHallway';
+import BlueprintDoor from './BlueprintDoor';
 import BlueprintGrid from './BlueprintGrid';
 import AnimatedConnection from './AnimatedConnection';
+import FirstPersonControls from './FirstPersonControls';
 
 interface RoomData {
   id: string;
@@ -43,6 +46,7 @@ interface BlueprintSceneProps {
   showConnections?: boolean;
   labelScale?: number;
   gridSize?: number;
+  walkMode?: boolean;
 }
 
 const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
@@ -55,7 +59,8 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
   showIcons = true,
   showConnections = true,
   labelScale = 1,
-  gridSize = 800
+  gridSize = 800,
+  walkMode = false
 }, ref) => {
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
@@ -207,8 +212,8 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
       {/* Blueprint Grid */}
       <BlueprintGrid size={gridSize} divisions={40} majorDivisions={8} />
 
-      {/* Rooms */}
-      {normalizedRooms.map(room => (
+      {/* Rooms (filter out hallways and doors) */}
+      {normalizedRooms.filter(r => r.type !== 'hallway' && r.type !== 'door').map(room => (
         <BlueprintRoom
           key={room.id}
           id={room.id}
@@ -236,6 +241,53 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
         />
       ))}
 
+      {/* Hallways */}
+      {normalizedRooms.filter(r => r.type === 'hallway').map(room => (
+        <BlueprintHallway
+          key={room.id}
+          id={room.id}
+          position={[
+            room.normalizedPosition.x,
+            room.normalizedPosition.y,
+            room.normalizedPosition.z
+          ]}
+          size={[
+            room.size?.width ?? 200,
+            room.size?.depth ?? 35,
+            room.size?.height ?? 60
+          ]}
+          name={room.name || room.room_number || 'Hallway'}
+          rotation={room.rotation}
+          isSelected={selectedRoomId === room.id}
+          isHovered={hoveredRoomId === room.id}
+          onClick={() => onRoomClick?.(room.id)}
+          onHover={(hovering) => onRoomHover?.(hovering ? room.id : null)}
+        />
+      ))}
+
+      {/* Doors */}
+      {normalizedRooms.filter(r => r.type === 'door').map(room => (
+        <BlueprintDoor
+          key={room.id}
+          id={room.id}
+          position={[
+            room.normalizedPosition.x,
+            room.normalizedPosition.y,
+            room.normalizedPosition.z
+          ]}
+          size={[
+            room.size?.width ?? 60,
+            room.size?.depth ?? 20,
+            10
+          ]}
+          rotation={room.rotation}
+          isSelected={selectedRoomId === room.id}
+          isHovered={hoveredRoomId === room.id}
+          onClick={() => onRoomClick?.(room.id)}
+          onHover={(hovering) => onRoomHover?.(hovering ? room.id : null)}
+        />
+      ))}
+
       {/* Animated Connections */}
       {showConnections && normalizedConnections.map(conn => (
         <AnimatedConnection
@@ -251,20 +303,24 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
         />
       ))}
 
-      {/* Camera Controls */}
-      <OrbitControls
-        ref={controlsRef}
-        enablePan={true}
-        enableZoom={true}
-        enableRotate={true}
-        minDistance={50}
-        maxDistance={2000}
-        maxPolarAngle={Math.PI / 2.1}
-        minPolarAngle={0.1}
-        target={[0, 0, 0]}
-        dampingFactor={0.05}
-        enableDamping={true}
-      />
+      {/* Camera Controls — toggle between orbit and first-person */}
+      {walkMode ? (
+        <FirstPersonControls enabled={walkMode} />
+      ) : (
+        <OrbitControls
+          ref={controlsRef}
+          enablePan={true}
+          enableZoom={true}
+          enableRotate={true}
+          minDistance={50}
+          maxDistance={2000}
+          maxPolarAngle={Math.PI / 2.1}
+          minPolarAngle={0.1}
+          target={[0, 0, 0]}
+          dampingFactor={0.05}
+          enableDamping={true}
+        />
+      )}
     </>
   );
 });

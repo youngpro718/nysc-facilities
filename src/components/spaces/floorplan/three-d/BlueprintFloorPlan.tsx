@@ -34,6 +34,7 @@ interface BlueprintFloorPlanProps {
   showLegend?: boolean;
   labelScale?: number;
   className?: string;
+  walkMode?: boolean;
 }
 
 const LoadingFallback: React.FC = () => (
@@ -103,7 +104,8 @@ const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
   showConnections = true,
   showLegend = false,
   labelScale = 1,
-  className = ''
+  className = '',
+  walkMode = false
 }, ref) => {
   const sceneRef = useRef<SceneHandle>(null);
 
@@ -171,6 +173,7 @@ const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
             showConnections={showConnections}
             labelScale={labelScale}
             gridSize={gridSize}
+            walkMode={walkMode}
           />
         </Canvas>
       </Suspense>

@@ -6,7 +6,9 @@ import {
   ZoomOut,
   Home,
   Layers,
-  Maximize2
+  Maximize2,
+  Footprints,
+  Eye
 } from 'lucide-react';
 import NewThreeDScene, { SceneHandle } from '../three-d/NewThreeDScene';
 import { Button } from '@/components/ui/button';
@@ -67,6 +69,7 @@ export function ModernThreeDViewer({
   const { objects, edges, isLoading } = useFloorPlanData(floorId);
   const [showConnections, setShowConnections] = useState<boolean>(true);
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
+  const [walkMode, setWalkMode] = useState(false);
   const sceneRef = useRef<SceneHandle | null>(null);
 
   // Typed validators and helpers
@@ -191,6 +194,34 @@ export function ModernThreeDViewer({
 
   return (
     <div className="h-full relative">
+      {/* Walk mode toggle */}
+      <div className="absolute top-3 right-3 z-10 flex gap-1.5">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant={walkMode ? 'default' : 'outline'}
+                className="h-8 w-8 bg-slate-900/80 border-cyan-500/30 hover:bg-slate-800"
+                onClick={() => setWalkMode(!walkMode)}
+              >
+                {walkMode ? <Eye className="h-4 w-4 text-cyan-400" /> : <Footprints className="h-4 w-4 text-slate-300" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>{walkMode ? 'Exit Walk Mode (ESC)' : 'Walk Mode — Click to enter, WASD to move'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* Walk mode instructions overlay */}
+      {walkMode && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-slate-900/90 backdrop-blur-sm rounded-lg px-4 py-2 text-xs text-cyan-300 border border-cyan-500/20">
+          Click to lock mouse • WASD to move • Mouse to look • ESC to exit
+        </div>
+      )}
+
       {/* 3D Scene */}
       <div className="flex-1 h-full">
         <NewThreeDScene
@@ -205,6 +236,7 @@ export function ModernThreeDViewer({
           commandToken={commandToken}
           labelScale={labelScale}
           moveEnabled={moveEnabled}
+          walkMode={walkMode}
           className="w-full h-full"
         />
       </div>

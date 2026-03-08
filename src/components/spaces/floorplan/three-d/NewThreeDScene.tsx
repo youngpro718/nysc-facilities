@@ -51,6 +51,7 @@ interface NewThreeDSceneProps {
   className?: string;
   showConnections?: boolean;
   labelScale?: number;
+  walkMode?: boolean;
   // Legacy props (ignored in blueprint mode)
   enableShadows?: boolean;
   backgroundColor?: number;
@@ -67,7 +68,8 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
   onObjectHover,
   className = '',
   showConnections = true,
-  labelScale = 1
+  labelScale = 1,
+  walkMode = false
 }, ref) => {
   const blueprintRef = useRef<SceneHandle>(null);
 
@@ -164,6 +166,7 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
         labelScale={labelScale}
         showLegend={false}
         showIcons={true}
+        walkMode={walkMode}
       />
     </div>
   );
