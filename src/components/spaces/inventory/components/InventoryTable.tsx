@@ -50,7 +50,7 @@ export function InventoryTable({
   };
 
   return (
-    <Table>
+    <>
       <TableHeader>
         <TableRow>
           <TableHead>Item</TableHead>
