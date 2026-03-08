@@ -25,20 +25,7 @@ export default function Profile() {
 
   if (isMobile) {
     return (
-      <div className="space-y-4 pb-24">
-        {/* Header with back button */}
-        <div className="flex items-center gap-3 px-1">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-11 w-11 touch-manipulation active:scale-95"
-            aria-label="Go back"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-semibold">Profile & Settings</h1>
-        </div>
+      <div className="space-y-4">
         
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-12">
@@ -92,22 +79,9 @@ export default function Profile() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-20 md:pb-8">
+    <div className="space-y-6 sm:space-y-8">
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="h-9 w-9 sm:h-10 sm:w-10"
-            >
-              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Profile & Settings</h1>
-          </div>
-        </div>
-        <p className="text-sm sm:text-base text-muted-foreground ml-12 sm:ml-0">
+        <p className="text-sm sm:text-base text-muted-foreground">
           Manage your account and preferences
         </p>
       </div>

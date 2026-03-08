@@ -34,8 +34,7 @@ export default function SupplyRoom() {
   // Show loading state while checking permissions
   if (isLoading || permissionsLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Breadcrumb />
+      <div className="space-y-4">
         <Card>
           <CardContent className="p-8">
             <div className="flex items-center justify-center">
@@ -69,8 +68,7 @@ export default function SupplyRoom() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Breadcrumb />
+    <div className="space-y-4">
       <ImprovedSupplyStaffDashboard />
     </div>
   );

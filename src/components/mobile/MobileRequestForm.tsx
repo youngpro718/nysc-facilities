@@ -405,7 +405,7 @@ export function MobileRequestForm({
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[90vh] max-h-[90vh]">
+      <SheetContent side="bottom" className="h-[90dvh] max-h-[90dvh]">
         <SheetHeader className="pb-4">
           <SheetTitle>
             {isKeyRequest ? 'Request Key Access' : 'Report an Issue'}

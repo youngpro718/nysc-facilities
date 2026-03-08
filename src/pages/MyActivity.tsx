@@ -113,24 +113,13 @@ export default function MyActivity() {
   const isLoading = supplyLoading || keyLoading || issuesLoading || tasksLoading;
 
   const content = (
-    <div className="space-y-4 pb-20 md:pb-8">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-9 w-9"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">My Activity</h1>
-            <p className="text-sm text-muted-foreground">
-              Track all your requests and issues
-            </p>
-          </div>
+        <div>
+          <p className="text-sm text-muted-foreground">
+            Track all your requests and issues
+          </p>
         </div>
         
         {/* Quick Actions */}
@@ -147,7 +136,7 @@ export default function MyActivity() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card 
           className={`cursor-pointer transition-all ${activeTab === 'supplies' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
           onClick={() => handleTabChange('supplies')}
