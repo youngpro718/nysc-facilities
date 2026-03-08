@@ -212,7 +212,7 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
         <Billboard position={[size[0] / 2 - 10, size[1] / 2 + 3, size[2] / 2 - 10]}>
           <mesh>
             <planeGeometry args={[20, 10]} />
-            <meshBasicMaterial color="#0f172a" opacity={0.9} transparent />
+            <meshBasicMaterial color="#1e293b" opacity={0.85} transparent />
           </mesh>
           <Text
             fontSize={6 * labelScale}
