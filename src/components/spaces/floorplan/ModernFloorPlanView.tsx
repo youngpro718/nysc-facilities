@@ -432,10 +432,11 @@ export function ModernFloorPlanView() {
 
           <div className="h-5 w-px bg-border" />
 
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as '2d' | '3d')}>
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as '2d' | '3d' | 'edit')}>
             <TabsList className="h-7 bg-muted/50 p-0.5">
               <TabsTrigger value="2d" className="text-[11px] px-2 py-0.5 h-6">2D</TabsTrigger>
               <TabsTrigger value="3d" className="text-[11px] px-2 py-0.5 h-6">3D</TabsTrigger>
+              <TabsTrigger value="edit" className="text-[11px] px-2 py-0.5 h-6">✏️ Edit</TabsTrigger>
             </TabsList>
           </Tabs>
 
