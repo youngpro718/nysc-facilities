@@ -68,20 +68,6 @@ export const secondaryNavigationItems: NavigationItem[] = [
     moduleKey: undefined,
   },
   {
-    title: 'Form Templates',
-    href: '/form-templates',
-    icon: FileText,
-    adminOnly: false,
-    moduleKey: undefined,
-  },
-  {
-    title: 'Form Intake',
-    href: '/form-intake',
-    icon: Upload,
-    adminOnly: false,
-    moduleKey: undefined,
-  },
-  {
     title: 'Routing Rules',
     href: '/admin/routing-rules',
     icon: GitFork,
