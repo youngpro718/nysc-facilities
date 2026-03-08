@@ -52,6 +52,7 @@ interface ModernThreeDViewerProps {
   commandToken?: { type: 'fit' } | { type: 'focus'; id: string } | null;
   labelScale?: number;
   moveEnabled?: boolean;
+  onSelectedObjectType?: (type: string | null) => void;
 }
 
 export function ModernThreeDViewer({ 
