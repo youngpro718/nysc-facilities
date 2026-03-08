@@ -15,6 +15,7 @@ interface EnhancedPropertiesPanelProps {
   onUpdate: () => void;
   onPreviewChange?: (values: Record<string, unknown>) => void;
   selectedFloorName?: string;
+  floorId?: string;
 }
 
 export function EnhancedPropertiesPanel({ 
