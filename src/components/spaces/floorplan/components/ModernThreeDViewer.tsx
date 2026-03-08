@@ -147,6 +147,11 @@ export function ModernThreeDViewer({
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && walkMode) {
+        e.preventDefault();
+        setWalkMode(false);
+        return;
+      }
       if (e.key === 'Home') {
         e.preventDefault();
         handleResetCamera();
@@ -161,6 +166,10 @@ export function ModernThreeDViewer({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [walkMode]);
+
+  const handleWalkModeExit = useCallback(() => {
+    setWalkMode(false);
   }, []);
 
   // Determine small screens and tune defaults for performance
