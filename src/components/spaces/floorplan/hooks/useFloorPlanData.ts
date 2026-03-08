@@ -99,7 +99,12 @@ export function useFloorPlanData(floorId: string | null) {
                   rawObj.position !== null &&
                   typeof rawObj.position.x === 'number' &&
                   typeof rawObj.position.y === 'number') {
-          parsedPosition = rawObj.position;
+          // Treat {0,0} as unpositioned — these rooms need auto-layout
+          if (rawObj.position.x === 0 && rawObj.position.y === 0) {
+            parsedPosition = defaultPosition;
+          } else {
+            parsedPosition = rawObj.position;
+          }
         }
       }
       
