@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Plus, Minus, Package2 } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface MobileInventoryGridProps {
   items: InventoryItem[];
