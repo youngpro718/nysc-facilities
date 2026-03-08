@@ -23,6 +23,7 @@ import { ViewControls } from './components/ViewControls';
 import { BulkPositionTool } from './components/BulkPositionTool';
 import { cn } from '@/lib/utils';
 import { FloorPlanNode } from './types/floorPlanTypes';
+import { LayoutEditorCanvas } from './components/LayoutEditorCanvas';
 
 interface Floor {
   id: string;
