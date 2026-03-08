@@ -49,7 +49,16 @@ export async function fetchHallwayRoomConnections(floorId: string): Promise<Hall
     return [];
   }
 
-  return (data || []) as HallwayRoomConnection[];
+  // Flatten room_number from joined rooms data
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    hallway_id: row.hallway_id,
+    room_id: row.room_id,
+    position: row.position,
+    side: row.side,
+    sequence_order: row.sequence_order,
+    room_number: row.rooms?.room_number || '',
+  })) as HallwayRoomConnection[];
 }
 
 export async function fetchFloorPlanObjects(floorId: string) {
