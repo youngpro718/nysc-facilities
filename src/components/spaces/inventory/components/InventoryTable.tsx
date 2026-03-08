@@ -25,6 +25,7 @@ export function InventoryTable({
   onEditItem,
   onDeleteItem
 }: InventoryTableProps) {
+  const [confirmDeleteItem, confirmDeleteDialog] = useConfirmDialog();
   // Sort items by name to maintain stable order
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => a.name.localeCompare(b.name));
