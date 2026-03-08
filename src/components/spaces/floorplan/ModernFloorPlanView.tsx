@@ -14,6 +14,7 @@ import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { EnhancedPropertiesPanel } from './components/EnhancedPropertiesPanel';
 import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ModernThreeDViewer } from './components/ModernThreeDViewer';
+import { HallwayAttachOverlay } from './components/HallwayAttachOverlay';
 import { FloorSelector } from './components/FloorSelector';
 import { useFloorPlanData } from './hooks/useFloorPlanData';
 import { SearchPanel } from './components/SearchPanel';
