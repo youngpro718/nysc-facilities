@@ -145,23 +145,32 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
         </mesh>
       )}
 
-      {/* Main room box with rounded corners */}
-      <RoundedBox
-        args={[size[0], size[1], size[2]]}
-        radius={3}
-        smoothness={4}
-        material={materials.main}
+      {/* Floor plane inside room */}
+      <mesh position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[size[0] - 4, size[2] - 4]} />
+        <meshPhongMaterial
+          color={typeColor}
+          opacity={0.12}
+          transparent
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Walls */}
+      <WallSegment
+        position={[0, 0, 0]}
+        size={size}
+        wallHeight={size[1]}
+        color={isSelected ? '#6366f1' : isHovered ? '#f59e0b' : '#334155'}
+        opacity={isSelected ? 0.6 : isHovered ? 0.5 : 0.45}
       />
 
-      {/* Wireframe edges */}
-      <lineSegments geometry={edgesGeometry} material={materials.edge} />
-
       {/* Floor accent line */}
-      <mesh position={[0, -size[1] / 2 + 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[size[0] - 4, size[2] - 4]} />
         <meshBasicMaterial 
           color={statusColor} 
-          opacity={0.3} 
+          opacity={0.15} 
           transparent 
           side={THREE.DoubleSide}
         />
