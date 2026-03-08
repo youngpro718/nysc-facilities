@@ -645,17 +645,20 @@ export function ModernFloorPlanView() {
                   labelScale={labelScale}
                   moveEnabled={moveEnabled}
                 />
-                {selectedObject && (selectedObject.type === 'hallway' || (selectedObject as any).object_type === 'hallway') && (
+                {overlayHallwayId && (
                   <HallwayAttachOverlay
-                    hallwayId={selectedObject.id}
-                    hallwayName={(selectedObject as any).name || (selectedObject as any).data?.label || 'Hallway'}
-                    selectedRoomId={undefined}
-                    selectedRoomName={undefined}
-                    selectedRoomType={undefined}
-                    onClose={() => setSelectedObject(null)}
+                    hallwayId={overlayHallwayId}
+                    hallwayName={overlayHallwayName}
+                    selectedRoomId={overlayRoomId}
+                    selectedRoomName={overlayRoomName}
+                    selectedRoomType={overlayRoomType}
+                    onClose={() => {
+                      setOverlayHallwayId(null);
+                      setOverlayRoomId(null);
+                    }}
                     onRefresh={handleRefresh}
                   />
-                )}
+                )
               </>
             )}
           </div>
