@@ -1,31 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Loader2 } from "lucide-react";
+import { Loader2, Settings, Link2 } from "lucide-react";
 import { logger } from '@/lib/logger';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  Maximize, 
-  RefreshCw, 
-  Map, 
-  Layers, 
-  Eye, 
-  EyeOff,
-  Settings,
-  Filter,
-  Search,
-  Download,
-  Share2
-} from 'lucide-react';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { FloorPlanCanvas } from './FloorPlanCanvas';
-import { PropertiesPanel } from './components/PropertiesPanel';
 import { EnhancedPropertiesPanel } from './components/EnhancedPropertiesPanel';
 import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ModernThreeDViewer } from './components/ModernThreeDViewer';
