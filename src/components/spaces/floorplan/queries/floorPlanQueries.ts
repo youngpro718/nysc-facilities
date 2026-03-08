@@ -40,7 +40,7 @@ export async function fetchHallwayRoomConnections(floorId: string): Promise<Hall
 
   const { data, error } = await supabase
     .from('hallway_adjacent_rooms')
-    .select('id, hallway_id, room_id, position, side, sequence_order')
+    .select('id, hallway_id, room_id, position, side, sequence_order, rooms!hallway_adjacent_rooms_room_id_fkey(room_number)')
     .in('hallway_id', hallwayIds)
     .order('sequence_order', { ascending: true });
 
