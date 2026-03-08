@@ -26,7 +26,7 @@ import MySupplyRequests from "@/pages/MySupplyRequests";
 import MyActivity from "@/pages/MyActivity";
 import Tasks from "@/pages/Tasks";
 import AdminCenter from "@/pages/AdminCenter";
-import SystemSettings from "@/pages/SystemSettings";
+// SystemSettings merged into AdminCenter
 import VerificationPending from "@/pages/VerificationPending";
 import FeaturesPreview from "@/pages/FeaturesPreview";
 // AccessManagement page removed — functionality merged into /access-assignments
