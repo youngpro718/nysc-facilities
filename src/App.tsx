@@ -209,16 +209,9 @@ function AppContent() {
             <Notifications />
           </ProtectedRoute>
         } />
-        <Route path="form-templates" element={
-          <ProtectedRoute>
-            <FormTemplates />
-          </ProtectedRoute>
-        } />
-        <Route path="form-intake" element={
-          <ProtectedRoute>
-            <FormIntake />
-          </ProtectedRoute>
-        } />
+        {/* /form-templates and /form-intake removed — redirect to dashboard */}
+        <Route path="form-templates" element={<Navigate to="/dashboard" replace />} />
+        <Route path="form-intake" element={<Navigate to="/dashboard" replace />} />
         <Route path="admin/routing-rules" element={
           <ProtectedRoute requireAdmin>
             <RoutingRules />
