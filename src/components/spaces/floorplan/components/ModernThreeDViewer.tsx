@@ -69,6 +69,7 @@ export function ModernThreeDViewer({
   const { objects, edges, isLoading } = useFloorPlanData(floorId);
   const [showConnections, setShowConnections] = useState<boolean>(true);
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
+  const [walkMode, setWalkMode] = useState(false);
   const sceneRef = useRef<SceneHandle | null>(null);
 
   // Typed validators and helpers
