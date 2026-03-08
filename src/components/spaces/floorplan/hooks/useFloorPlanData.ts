@@ -83,13 +83,14 @@ export function useFloorPlanData(floorId: string | null) {
         if (typeof rawObj.position === 'string') {
           try {
             parsedPosition = JSON.parse(rawObj.position);
-            // Validate the parsed position
+            // Validate the parsed position and treat {0,0} as unpositioned
             if (!parsedPosition || 
                 typeof parsedPosition !== 'object' ||
                 typeof parsedPosition.x !== 'number' || 
                 typeof parsedPosition.y !== 'number' ||
                 isNaN(parsedPosition.x) || 
-                isNaN(parsedPosition.y)) {
+                isNaN(parsedPosition.y) ||
+                (parsedPosition.x === 0 && parsedPosition.y === 0)) {
               parsedPosition = defaultPosition;
             }
           } catch {
