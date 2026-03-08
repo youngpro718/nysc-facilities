@@ -285,7 +285,7 @@ export function useFloorPlanData(floorId: string | null) {
     const defaultSize: Size = { width: 150, height: 100 };
 
     // Check if hallway-centric layout gave us a position
-    const hallwayOverride = hallwayPositionOverrides.get(rawObj.id);
+    const hallwayOverride = hallwayOverrides.positions.get(rawObj.id);
 
     // Parse stored position
     let parsedPosition: Position | null = parsePosition(rawObj.position);
