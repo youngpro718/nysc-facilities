@@ -101,8 +101,11 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
           obj.data?.properties?.room_number ||
           '';
 
-        // Extract type
+        // Extract type — prefer specific room_type over generic object_type
         const extractedType = 
+          obj.data?.properties?.space_type ||
+          obj.data?.properties?.room_type ||
+          (obj as any).room_type ||
           obj.type || 
           obj.data?.type || 
           'room';
