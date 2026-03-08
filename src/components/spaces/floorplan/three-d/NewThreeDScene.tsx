@@ -51,6 +51,7 @@ interface NewThreeDSceneProps {
   className?: string;
   showConnections?: boolean;
   labelScale?: number;
+  walkMode?: boolean;
   // Legacy props (ignored in blueprint mode)
   enableShadows?: boolean;
   backgroundColor?: number;
