@@ -23,6 +23,7 @@ export function MobileRoomDrawer({
   onClose,
   onDelete
 }: MobileRoomDrawerProps) {
+  const [confirmDeleteRoom, confirmDeleteDialog] = useConfirmDialog();
   if (!room) return null;
 
   return (
@@ -42,8 +43,9 @@ export function MobileRoomDrawer({
         <div className="p-2 h-[75dvh] overflow-hidden">
           <RoomCard
             room={room}
-            onDelete={(id) => {
-              if (window.confirm('Are you sure you want to delete this room?')) {
+            onDelete={async (id) => {
+              const ok = await confirmDeleteRoom({ title: 'Delete Room', description: 'Are you sure you want to delete this room? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
+              if (ok) {
                 onDelete(id);
                 onClose();
               }

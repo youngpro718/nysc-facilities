@@ -29,6 +29,7 @@ interface MobileRoomCardProps {
 export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardProps) {
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [isSwipedOpen, setIsSwipedOpen] = useState(false);
+  const [confirmDeleteRoom, confirmDeleteDialog] = useConfirmDialog();
   
   // Fetch enhanced room data
   const { data: enhancedRoom } = useEnhancedRoomData(room.id);
