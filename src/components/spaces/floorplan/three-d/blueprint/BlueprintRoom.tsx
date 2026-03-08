@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Text, Billboard, RoundedBox } from '@react-three/drei';
 import { getStatusColor, getTypeColor } from './blueprintMaterials';
+import WallSegment from './WallSegment';
 
 interface BlueprintRoomProps {
   id: string;
