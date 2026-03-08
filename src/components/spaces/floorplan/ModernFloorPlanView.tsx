@@ -14,6 +14,7 @@ import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { EnhancedPropertiesPanel } from './components/EnhancedPropertiesPanel';
 import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ModernThreeDViewer } from './components/ModernThreeDViewer';
+import { HallwayAttachOverlay } from './components/HallwayAttachOverlay';
 import { FloorSelector } from './components/FloorSelector';
 import { useFloorPlanData } from './hooks/useFloorPlanData';
 import { SearchPanel } from './components/SearchPanel';
@@ -600,22 +601,35 @@ export function ModernFloorPlanView() {
                 zoom={zoom}
               />
             ) : (
-              <ModernThreeDViewer
-                key={`3d-${refreshKey}`}
-                floorId={selectedFloor}
-                onObjectSelect={(objectId) => {
-                  const match = (sceneObjects as any[]).find((o: any) => o.id === objectId);
-                  if (match) handleObjectSelect(match as any);
-                }}
-                selectedObjectId={selectedObject?.id}
-                previewData={previewData}
-                showLabels={showLabels}
-                filterType={filterType}
-                showConnectionsExternal={showConnectionsPref}
-                commandToken={cameraCommand}
-                labelScale={labelScale}
-                moveEnabled={moveEnabled}
-              />
+              <>
+                <ModernThreeDViewer
+                  key={`3d-${refreshKey}`}
+                  floorId={selectedFloor}
+                  onObjectSelect={(objectId) => {
+                    const match = (sceneObjects as any[]).find((o: any) => o.id === objectId);
+                    if (match) handleObjectSelect(match as any);
+                  }}
+                  selectedObjectId={selectedObject?.id}
+                  previewData={previewData}
+                  showLabels={showLabels}
+                  filterType={filterType}
+                  showConnectionsExternal={showConnectionsPref}
+                  commandToken={cameraCommand}
+                  labelScale={labelScale}
+                  moveEnabled={moveEnabled}
+                />
+                {selectedObject && (selectedObject.type === 'hallway' || (selectedObject as any).object_type === 'hallway') && (
+                  <HallwayAttachOverlay
+                    hallwayId={selectedObject.id}
+                    hallwayName={(selectedObject as any).name || (selectedObject as any).data?.label || 'Hallway'}
+                    selectedRoomId={undefined}
+                    selectedRoomName={undefined}
+                    selectedRoomType={undefined}
+                    onClose={() => setSelectedObject(null)}
+                    onRefresh={handleRefresh}
+                  />
+                )}
+              </>
             )}
           </div>
 

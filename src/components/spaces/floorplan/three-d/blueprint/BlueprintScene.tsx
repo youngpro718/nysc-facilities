@@ -47,6 +47,7 @@ interface BlueprintSceneProps {
   labelScale?: number;
   gridSize?: number;
   walkMode?: boolean;
+  onWalkModeExit?: () => void;
 }
 
 const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
@@ -60,7 +61,8 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
   showConnections = true,
   labelScale = 1,
   gridSize = 800,
-  walkMode = false
+  walkMode = false,
+  onWalkModeExit
 }, ref) => {
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
@@ -305,7 +307,7 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
 
       {/* Camera Controls — toggle between orbit and first-person */}
       {walkMode ? (
-        <FirstPersonControls enabled={walkMode} />
+        <FirstPersonControls enabled={walkMode} onExit={onWalkModeExit} />
       ) : (
         <OrbitControls
           ref={controlsRef}

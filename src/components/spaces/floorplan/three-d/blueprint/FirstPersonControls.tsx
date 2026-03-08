@@ -9,13 +9,15 @@ interface FirstPersonControlsProps {
   eyeHeight?: number;
   moveSpeed?: number;
   startPosition?: [number, number, number];
+  onExit?: () => void;
 }
 
 const FirstPersonControls: React.FC<FirstPersonControlsProps> = ({
   enabled = true,
   eyeHeight = 16,
   moveSpeed = 120,
-  startPosition = [0, 16, 100]
+  startPosition = [0, 16, 100],
+  onExit
 }) => {
   const { camera, gl } = useThree();
   const controlsRef = useRef<any>(null);
@@ -82,6 +84,19 @@ const FirstPersonControls: React.FC<FirstPersonControlsProps> = ({
     // Lock Y to eye height
     camera.position.y = eyeHeight;
   });
+
+  // Listen for pointer lock unlock to notify parent
+  useEffect(() => {
+    if (!enabled || !controlsRef.current) return;
+    const controls = controlsRef.current;
+    const handleUnlock = () => {
+      onExit?.();
+    };
+    controls.addEventListener('unlock', handleUnlock);
+    return () => {
+      controls.removeEventListener('unlock', handleUnlock);
+    };
+  }, [enabled, onExit]);
 
   if (!enabled) return null;
 

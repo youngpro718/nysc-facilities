@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useFloorPlanData } from '../hooks/useFloorPlanData';
 import { 
   ZoomIn,
@@ -52,6 +52,7 @@ interface ModernThreeDViewerProps {
   commandToken?: { type: 'fit' } | { type: 'focus'; id: string } | null;
   labelScale?: number;
   moveEnabled?: boolean;
+  onSelectedObjectType?: (type: string | null) => void;
 }
 
 export function ModernThreeDViewer({ 
@@ -64,7 +65,8 @@ export function ModernThreeDViewer({
   showConnectionsExternal,
   commandToken = null,
   labelScale = 1,
-  moveEnabled = false
+  moveEnabled = false,
+  onSelectedObjectType
 }: ModernThreeDViewerProps) {
   const { objects, edges, isLoading } = useFloorPlanData(floorId);
   const [showConnections, setShowConnections] = useState<boolean>(true);
@@ -145,6 +147,11 @@ export function ModernThreeDViewer({
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && walkMode) {
+        e.preventDefault();
+        setWalkMode(false);
+        return;
+      }
       if (e.key === 'Home') {
         e.preventDefault();
         handleResetCamera();
@@ -159,6 +166,10 @@ export function ModernThreeDViewer({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [walkMode]);
+
+  const handleWalkModeExit = useCallback(() => {
+    setWalkMode(false);
   }, []);
 
   // Determine small screens and tune defaults for performance
@@ -237,6 +248,7 @@ export function ModernThreeDViewer({
           labelScale={labelScale}
           moveEnabled={moveEnabled}
           walkMode={walkMode}
+          onWalkModeExit={handleWalkModeExit}
           className="w-full h-full"
         />
       </div>

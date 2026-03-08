@@ -35,6 +35,7 @@ interface BlueprintFloorPlanProps {
   labelScale?: number;
   className?: string;
   walkMode?: boolean;
+  onWalkModeExit?: () => void;
 }
 
 const LoadingFallback: React.FC = () => (
@@ -105,7 +106,8 @@ const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
   showLegend = false,
   labelScale = 1,
   className = '',
-  walkMode = false
+  walkMode = false,
+  onWalkModeExit
 }, ref) => {
   const sceneRef = useRef<SceneHandle>(null);
 
@@ -174,6 +176,7 @@ const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
             labelScale={labelScale}
             gridSize={gridSize}
             walkMode={walkMode}
+            onWalkModeExit={onWalkModeExit}
           />
         </Canvas>
       </Suspense>
