@@ -98,7 +98,6 @@ export function FloatingActionButton() {
                   label="Report Issue"
                   showIcon={true}
                   className="rounded-full pl-4 pr-3 py-2.5 h-auto shadow-lg border-border"
-                  onAfterSubmit={() => setIsOpen(false)}
                 />
               </motion.div>
             )}
