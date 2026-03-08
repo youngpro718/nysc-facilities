@@ -13,7 +13,7 @@ export const STATUS_COLORS = {
 
 // Room type accent colors (for floor fills) — lighter, more translucent
 export const TYPE_COLORS = {
-  courtroom: '#818cf8',       // indigo-400
+  courtroom: '#f97316',       // orange-500
   office: '#60a5fa',          // blue-400
   storage: '#a8a29e',         // stone-400
   hallway: '#a78bfa',         // violet-400

@@ -77,7 +77,15 @@ function computeHallwayCentricLayout(
         const pa = POSITION_SEGMENT_PRIORITY[a.conn.position] ?? 1;
         const pb = POSITION_SEGMENT_PRIORITY[b.conn.position] ?? 1;
         if (pa !== pb) return pa - pb;
-        return a.conn.sequence_order - b.conn.sequence_order;
+        const seqDiff = a.conn.sequence_order - b.conn.sequence_order;
+        if (seqDiff !== 0) return seqDiff;
+        // Fallback: sort by room_number (numeric if possible)
+        const rna = a.conn.room_number || '';
+        const rnb = b.conn.room_number || '';
+        const numA = parseInt(rna, 10);
+        const numB = parseInt(rnb, 10);
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        return rna.localeCompare(rnb);
       });
 
     sortRooms(leftRooms);

@@ -1,38 +1,28 @@
 
 
-# Courtroom Color + Smart Hallway Room Ordering
+## Fix: Cascade-delete child records before deleting a room
 
-## Two Changes
+The delete fails because `deleteSpace.ts` tries to delete the room directly, but 34 other tables have foreign keys pointing to `rooms`. For room 687 specifically, 3 tables have data blocking the delete: `room_lighting_status`, `room_history`, and `lockbox_slots`.
 
-### 1. Distinct Courtroom Color
-Currently courtrooms use `#818cf8` (indigo-400) — similar to the general palette. Change to a more distinctive warm/bold color so courtrooms stand out immediately.
+### Approach
 
-**File: `blueprintMaterials.ts`**
-- Change `courtroom` in `TYPE_COLORS` from `#818cf8` to `#f97316` (orange-500) — warm, unmistakable, high contrast against the dark background and other blue-toned rooms.
+**Create a database function** `delete_room_cascade(p_room_id UUID)` that deletes from all referencing tables in the correct order, then deletes the room itself — all within a single transaction. This is safer and faster than making 30+ individual API calls from the client.
 
-### 2. Smart Room Ordering Along Hallways
+**Update `deleteSpace.ts`** to call `supabase.rpc('delete_room_cascade', { p_room_id: id })` instead of a direct `.delete()` on the rooms table.
 
-The database already has exactly the structure needed: `hallway_adjacent_rooms` stores `position` (start/middle/end), `side` (left/right), and `sequence_order` per room. The 2D layout in `useFloorPlanData.ts` already sorts by position segment priority + sequence_order and tiles rooms sequentially. But the **3D view** doesn't use this — it gets pre-positioned objects and just renders them.
+### Database function will delete from these tables (in order):
+1. `room_lighting_status`, `lighting_fixtures`, `room_health_metrics`, `room_maintenance_schedule`
+2. `room_history`, `room_notes`, `room_finishes_log`, `room_occupancy`
+3. `room_inventory`, `room_key_access`, `lockbox_slots`
+4. `court_assignments`, `court_rooms`, `term_assignments`
+5. `occupant_room_assignments` (all FK columns), `occupants`
+6. `room_relationships` (both columns), `hallway_adjacent_rooms`
+7. `inventory_audits`, `room_relocations` (both columns)
+8. `relocations` (both columns), `renovations`
+9. `key_requests`, `staff_tasks` (both columns), `floorplan_objects` (via constraint)
+10. `rooms` (children with `parent_room_id` first, then the room itself)
 
-The fix is to ensure the 3D scene respects the hallway-centric layout computed in `useFloorPlanData.ts`, which already does the right thing:
-- Groups rooms by hallway
-- Sorts each side by position (start → middle → end) then by `sequence_order`
-- Tiles them flush along the hallway spine
-
-**The data pipeline already works.** The rooms arrive at the 3D scene with hallway-centric positions from `computeHallwayCentricLayout`. The issue is that if `sequence_order` values aren't set correctly in the database, rooms appear in arbitrary order.
-
-**Practical improvement — File: `useFloorPlanData.ts`**
-- Add a secondary sort fallback: when `sequence_order` values are equal (all 0), sort alphabetically by room_number. This way rooms like "1601, 1602, 1603" automatically line up in numeric order along the hallway without manual ordering.
-- Within each position segment (start/middle/end), rooms with numeric room numbers sort numerically; others sort alphabetically.
-
-**File: `floorPlanQueries.ts`**
-- Also fetch `room_number` in the `hallway_adjacent_rooms` join so the sort has access to it. Currently only `id, hallway_id, room_id, position, side, sequence_order` are fetched — we need the room's number for smart sorting.
-
-### Summary of File Changes
-
-| File | Change |
-|------|--------|
-| `blueprintMaterials.ts` | Change courtroom color to orange `#f97316` |
-| `useFloorPlanData.ts` | Add room_number-based fallback sort when sequence_order ties |
-| `floorPlanQueries.ts` | Join room_number from rooms table in hallway connection query |
+### Files to change:
+- **New migration**: Create `delete_room_cascade` PL/pgSQL function
+- **`src/components/spaces/services/deleteSpace.ts`**: Replace direct delete with RPC call for rooms
 

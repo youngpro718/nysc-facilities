@@ -19,6 +19,7 @@ export interface HallwayRoomConnection {
   position: 'start' | 'middle' | 'end';
   side: 'left' | 'right';
   sequence_order: number;
+  room_number?: string;
 }
 
 export async function fetchHallwayRoomConnections(floorId: string): Promise<HallwayRoomConnection[]> {
@@ -40,7 +41,7 @@ export async function fetchHallwayRoomConnections(floorId: string): Promise<Hall
 
   const { data, error } = await supabase
     .from('hallway_adjacent_rooms')
-    .select('id, hallway_id, room_id, position, side, sequence_order')
+    .select('id, hallway_id, room_id, position, side, sequence_order, rooms!hallway_adjacent_rooms_room_id_fkey(room_number)')
     .in('hallway_id', hallwayIds)
     .order('sequence_order', { ascending: true });
 
@@ -49,7 +50,16 @@ export async function fetchHallwayRoomConnections(floorId: string): Promise<Hall
     return [];
   }
 
-  return (data || []) as HallwayRoomConnection[];
+  // Flatten room_number from joined rooms data
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    hallway_id: row.hallway_id,
+    room_id: row.room_id,
+    position: row.position,
+    side: row.side,
+    sequence_order: row.sequence_order,
+    room_number: row.rooms?.room_number || '',
+  })) as HallwayRoomConnection[];
 }
 
 export async function fetchFloorPlanObjects(floorId: string) {
