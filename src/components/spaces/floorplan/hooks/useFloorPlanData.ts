@@ -10,8 +10,8 @@ import { logger } from "@/lib/logger";
 
 /** Layout config */
 const ROOM_GAP = 10; // gap between adjacent rooms (wall thickness)
-const SIDE_OFFSET = 180; // distance from hallway center to room center
-const HALLWAY_PADDING = 40; // extra padding on each end of hallway
+const DOOR_GAP = 4; // tiny gap between room edge and hallway (door threshold)
+const HALLWAY_PADDING = 30; // extra padding on each end of hallway
 const POSITION_SEGMENT_PRIORITY: Record<string, number> = {
   start: 0,
   middle: 1,
@@ -25,8 +25,8 @@ interface LayoutOverrides {
 
 /**
  * Sequential tiling with auto-extending hallway.
- * Rooms tile side-by-side along the hallway spine.
- * The hallway auto-extends to fit all connected rooms.
+ * Rooms are placed flush against the hallway (above for "left", below for "right").
+ * All positions are top-left corner (ReactFlow convention).
  */
 function computeHallwayCentricLayout(
   connections: HallwayRoomConnection[],
@@ -57,7 +57,7 @@ function computeHallwayCentricLayout(
       hPos.y = 400;
     }
 
-    // Split connections by side, sort by segment priority then sequence_order then insertion order
+    // Split connections by side
     const leftRooms: { conn: HallwayRoomConnection; size: Size }[] = [];
     const rightRooms: { conn: HallwayRoomConnection; size: Size }[] = [];
 
@@ -83,72 +83,93 @@ function computeHallwayCentricLayout(
     sortRooms(leftRooms);
     sortRooms(rightRooms);
 
-    // Tile rooms sequentially along the spine axis
+    /**
+     * Tile rooms along the hallway spine, flush against it.
+     * For a horizontal hallway:
+     *   - "left" rooms go ABOVE: room.y = hallway.y - DOOR_GAP - roomHeight
+     *   - "right" rooms go BELOW: room.y = hallway.y + hallwayHeight + DOOR_GAP
+     *   - room.x tiles sequentially along the hallway
+     * For a vertical hallway, swap x/y logic.
+     */
     const tileRooms = (
       rooms: typeof leftRooms,
-      sideSign: number // -1 for left/above, +1 for right/below
-    ) => {
-      let cursor = 0; // running offset along the spine
+      side: 'left' | 'right'
+    ): number => {
+      let cursor = 0; // running offset along the spine axis
 
       for (const { conn, size } of rooms) {
-        const roomSpan = isHorizontal ? size.width : size.height;
-        const roomOffset = cursor + roomSpan / 2;
-
         let roomX: number, roomY: number;
+
         if (isHorizontal) {
-          // Spine runs along X; rooms branch along Y
-          roomX = cursor;
-          roomY = hPos.y + sideSign * (SIDE_OFFSET + (isHorizontal ? size.height / 2 : size.width / 2));
+          roomX = cursor; // will be shifted to center on hallway later
+          if (side === 'left') {
+            roomY = hPos.y - DOOR_GAP - size.height; // above hallway
+          } else {
+            roomY = hPos.y + hSize.height + DOOR_GAP; // below hallway
+          }
         } else {
-          // Spine runs along Y; rooms branch along X
-          roomX = hPos.x + sideSign * (SIDE_OFFSET + size.width / 2);
-          roomY = cursor;
+          roomY = cursor; // will be shifted later
+          if (side === 'left') {
+            roomX = hPos.x - DOOR_GAP - size.width; // left of hallway
+          } else {
+            roomX = hPos.x + hSize.width + DOOR_GAP; // right of hallway
+          }
         }
 
         positions.set(conn.room_id, { x: roomX, y: roomY });
+        const roomSpan = isHorizontal ? size.width : size.height;
         cursor += roomSpan + ROOM_GAP;
       }
 
-      return cursor - ROOM_GAP; // total span used (minus trailing gap)
+      return Math.max(cursor - ROOM_GAP, 0); // total span (minus trailing gap)
     };
 
-    const leftSpan = tileRooms(leftRooms, -1);
-    const rightSpan = tileRooms(rightRooms, 1);
+    const leftSpan = tileRooms(leftRooms, 'left');
+    const rightSpan = tileRooms(rightRooms, 'right');
     const maxSpan = Math.max(leftSpan, rightSpan, 0);
 
     // Auto-extend hallway to cover all rooms
     const totalLength = maxSpan + HALLWAY_PADDING * 2;
-    const hallwayStart = -HALLWAY_PADDING;
 
-    // Shift all room positions to be centered on the hallway
-    const shiftRoomsRelative = (rooms: typeof leftRooms, sideSign: number) => {
+    // Shift all room X (or Y) positions so tiles are centered on the hallway
+    const shiftRoomsAlongSpine = (rooms: typeof leftRooms) => {
       let cursor = 0;
       for (const { conn, size } of rooms) {
-        const roomSpan = isHorizontal ? size.width : size.height;
         const existing = positions.get(conn.room_id);
         if (existing) {
+          const roomSpan = isHorizontal ? size.width : size.height;
           if (isHorizontal) {
-            existing.x = hPos.x - totalLength / 2 + HALLWAY_PADDING + cursor + roomSpan / 2;
+            // Center tile run on hallway's X center
+            existing.x = hPos.x + (hSize.width / 2) - (totalLength / 2) + HALLWAY_PADDING + cursor;
           } else {
-            existing.y = hPos.y - totalLength / 2 + HALLWAY_PADDING + cursor + roomSpan / 2;
+            existing.y = hPos.y + (hSize.height / 2) - (totalLength / 2) + HALLWAY_PADDING + cursor;
           }
           positions.set(conn.room_id, existing);
+          cursor += roomSpan + ROOM_GAP;
         }
-        cursor += roomSpan + ROOM_GAP;
       }
     };
 
-    shiftRoomsRelative(leftRooms, -1);
-    shiftRoomsRelative(rightRooms, 1);
+    shiftRoomsAlongSpine(leftRooms);
+    shiftRoomsAlongSpine(rightRooms);
 
-    // Override hallway size
+    // Override hallway size to stretch
     if (isHorizontal) {
-      sizes.set(hallwayId, { width: Math.max(hSize.width, totalLength), height: hSize.height });
+      const newWidth = Math.max(hSize.width, totalLength);
+      sizes.set(hallwayId, { width: newWidth, height: hSize.height });
+      // Re-center hallway position so it stays centered on its original midpoint
+      positions.set(hallwayId, {
+        x: hPos.x + (hSize.width / 2) - (newWidth / 2),
+        y: hPos.y
+      });
     } else {
-      sizes.set(hallwayId, { width: hSize.width, height: Math.max(hSize.height, totalLength) });
+      const newHeight = Math.max(hSize.height, totalLength);
+      sizes.set(hallwayId, { width: hSize.width, height: newHeight });
+      positions.set(hallwayId, {
+        x: hPos.x,
+        y: hPos.y + (hSize.height / 2) - (newHeight / 2)
+      });
     }
-
-    positions.set(hallwayId, hPos);
   }
 
   return { positions, sizes };
