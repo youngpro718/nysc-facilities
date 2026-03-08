@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { MoreHorizontal, Pencil } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
 import { useMemo } from "react";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface InventoryTableProps {
   items: InventoryItem[];
