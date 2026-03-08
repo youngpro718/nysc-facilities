@@ -111,7 +111,7 @@ export function ModernFloorPlanView() {
       const raw = localStorage.getItem(SETTINGS_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw) as Partial<{
-        viewMode: '2d' | '3d';
+        viewMode: '2d' | '3d' | 'edit';
         showLabels: boolean;
         showGrid: boolean;
         filterType: 'all' | 'room' | 'hallway' | 'door';
