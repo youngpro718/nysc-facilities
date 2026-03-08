@@ -46,6 +46,7 @@ interface BlueprintSceneProps {
   showConnections?: boolean;
   labelScale?: number;
   gridSize?: number;
+  walkMode?: boolean;
 }
 
 const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
