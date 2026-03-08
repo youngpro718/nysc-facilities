@@ -166,6 +166,7 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
         labelScale={labelScale}
         showLegend={false}
         showIcons={true}
+        walkMode={walkMode}
       />
     </div>
   );
