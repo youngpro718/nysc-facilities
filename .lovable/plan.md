@@ -1,28 +1,47 @@
 
 
-## Fix: Cascade-delete child records before deleting a room
+# Room Arrangement & Alignment Tools for 2D Editor
 
-The delete fails because `deleteSpace.ts` tries to delete the room directly, but 34 other tables have foreign keys pointing to `rooms`. For room 687 specifically, 3 tables have data blocking the delete: `room_lighting_status`, `room_history`, and `lockbox_slots`.
+## Current State
+- Rooms are draggable with snap-to-grid (10px) and auto-save to DB on drag stop
+- BulkPositionTool handles mass layout of unpositioned rooms
+- No way to align selected rooms relative to each other or distribute them evenly
 
-### Approach
+## Plan
 
-**Create a database function** `delete_room_cascade(p_room_id UUID)` that deletes from all referencing tables in the correct order, then deletes the room itself — all within a single transaction. This is safer and faster than making 30+ individual API calls from the client.
+### 1. Multi-Select Alignment Toolbar
+**New file**: `src/components/spaces/floorplan/components/AlignmentToolbar.tsx`
 
-**Update `deleteSpace.ts`** to call `supabase.rpc('delete_room_cascade', { p_room_id: id })` instead of a direct `.delete()` on the rooms table.
+A floating toolbar that appears when 2+ nodes are selected in ReactFlow. Provides:
+- **Align**: Left, Right, Top, Bottom, Center-H, Center-V (aligns selected rooms to a shared edge/center)
+- **Distribute**: Even horizontal spacing, Even vertical spacing (distributes rooms evenly between outermost positions)
+- **Stack**: Tile selected rooms in a row or column with configurable gap
 
-### Database function will delete from these tables (in order):
-1. `room_lighting_status`, `lighting_fixtures`, `room_health_metrics`, `room_maintenance_schedule`
-2. `room_history`, `room_notes`, `room_finishes_log`, `room_occupancy`
-3. `room_inventory`, `room_key_access`, `lockbox_slots`
-4. `court_assignments`, `court_rooms`, `term_assignments`
-5. `occupant_room_assignments` (all FK columns), `occupants`
-6. `room_relationships` (both columns), `hallway_adjacent_rooms`
-7. `inventory_audits`, `room_relocations` (both columns)
-8. `relocations` (both columns), `renovations`
-9. `key_requests`, `staff_tasks` (both columns), `floorplan_objects` (via constraint)
-10. `rooms` (children with `parent_room_id` first, then the room itself)
+Each action computes new positions from the selected nodes' current positions/sizes, updates ReactFlow nodes, and triggers the existing debounced DB save via `useFloorPlanNodes`.
 
-### Files to change:
-- **New migration**: Create `delete_room_cascade` PL/pgSQL function
-- **`src/components/spaces/services/deleteSpace.ts`**: Replace direct delete with RPC call for rooms
+### 2. Track Selection State
+**Edit**: `src/components/spaces/floorplan/FloorPlanCanvas.tsx`
+
+- Add `onSelectionChange` callback to ReactFlow to track which nodes are currently selected
+- Pass selected node IDs up so the AlignmentToolbar knows what to operate on
+- Expose `setNodes` to the toolbar so it can apply position changes
+
+### 3. Wire Toolbar into FloorPlanFlow
+**Edit**: `src/components/spaces/floorplan/components/FloorPlanFlow.tsx`
+
+- Add `onSelectionChange` prop to ReactFlow
+- Render `AlignmentToolbar` as a ReactFlow `<Panel>` at bottom-center when 2+ nodes selected
+- The toolbar calls `setNodes` to update positions, which triggers `onNodesChange` → DB save
+
+### 4. Snap-to-Neighbor Enhancement
+**Edit**: `src/components/spaces/floorplan/components/FloorPlanFlow.tsx`
+
+- Add `onNodeDrag` handler that checks proximity to other nodes' edges
+- When within 15px of another node's edge, snap the dragged node's edge to align
+- Visual guide lines (temporary edges) shown during drag for alignment feedback
+
+## Files Summary
+- **Create**: `src/components/spaces/floorplan/components/AlignmentToolbar.tsx` — alignment/distribute/stack UI + logic
+- **Edit**: `src/components/spaces/floorplan/components/FloorPlanFlow.tsx` — selection tracking, render toolbar, snap-to-neighbor
+- **Edit**: `src/components/spaces/floorplan/FloorPlanCanvas.tsx` — pass selection state through
 
