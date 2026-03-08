@@ -19,6 +19,7 @@ import { useFloorPlanData } from './hooks/useFloorPlanData';
 import { SearchPanel } from './components/SearchPanel';
 import { AdvancedSearchPanel } from './components/AdvancedSearchPanel';
 import { ViewControls } from './components/ViewControls';
+import { BulkPositionTool } from './components/BulkPositionTool';
 import { cn } from '@/lib/utils';
 import { FloorPlanNode } from './types/floorPlanTypes';
 
@@ -488,6 +489,27 @@ export function ModernFloorPlanView() {
             onSearch={() => setIsSearchOpen(true)}
             onAdvancedSearch={() => setIsAdvancedSearchOpen(true)}
           />
+
+          {/* Bulk Position Tool */}
+          {viewMode === '2d' && (
+            <BulkPositionTool
+              objects={filteredObjects as any}
+              floorId={selectedFloor}
+              onApply={(updates) => {
+                // Apply preview positions to the canvas via previewData
+                // Each update triggers a preview; for bulk we just refresh
+                updates.forEach(u => {
+                  setPreviewData({
+                    id: u.id,
+                    position: u.position,
+                    rotation: 0,
+                    data: { size: { width: 150, height: 100 }, properties: {} }
+                  });
+                });
+              }}
+              onRefresh={handleRefresh}
+            />
+          )}
 
           {/* Attach Mode Toggle */}
           {isAdmin && (
