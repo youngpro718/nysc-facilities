@@ -565,18 +565,10 @@ export function ModernFloorPlanView() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex gap-6 min-h-0 px-6 pb-6">
+      <div className="flex-1 flex gap-1.5 min-h-0 px-2 pb-2">
         {/* Floor Plan Canvas */}
-        <div className="flex-1 relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+        <div className="flex-1 relative bg-muted/30 rounded-lg overflow-hidden border border-border">
           <div className="absolute inset-0">
-            {/* Grid Pattern Overlay */}
-            <div className="absolute inset-0 opacity-30 dark:opacity-20" style={{
-              backgroundImage: `
-                linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px'
-            }}></div>
             {viewMode === '2d' ? (
               <FloorPlanCanvas
                 key={`2d-${refreshKey}`}
@@ -605,25 +597,31 @@ export function ModernFloorPlanView() {
             )}
           </div>
 
-          {/* Floating Info Card */}
-          {currentFloor && (
-            <div className="absolute top-6 left-6 bg-white/95 dark:bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl p-4 shadow-lg border border-white/20 dark:border-slate-700/50">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <div>
-                  <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">{currentFloor.buildings.name}</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{currentFloor.name}</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Floating Zoom Controls — bottom center */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
+            <ViewControls
+              floating
+              zoom={zoom}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onZoomReset={handleZoomReset}
+              onRefresh={handleRefresh}
+              showLabels={showLabels}
+              onToggleLabels={() => setShowLabels(!showLabels)}
+              showGrid={showGrid}
+              onToggleGrid={() => setShowGrid(!showGrid)}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
+              onSearch={() => setIsSearchOpen(true)}
+            />
+          </div>
         </div>
 
-        {/* Enhanced Properties Panel (hide on small screens unless toggled) */}
+        {/* Properties Panel — narrower, collapsible */}
         {showProperties && (
           <div 
             id="properties-panel"
-            className="w-96 hidden sm:block"
+            className="w-72 hidden sm:block"
           >
             <EnhancedPropertiesPanel
               selectedObject={selectedObject}
