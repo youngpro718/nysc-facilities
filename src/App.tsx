@@ -26,7 +26,7 @@ import MySupplyRequests from "@/pages/MySupplyRequests";
 import MyActivity from "@/pages/MyActivity";
 import Tasks from "@/pages/Tasks";
 import AdminCenter from "@/pages/AdminCenter";
-import SystemSettings from "@/pages/SystemSettings";
+// SystemSettings merged into AdminCenter
 import VerificationPending from "@/pages/VerificationPending";
 import FeaturesPreview from "@/pages/FeaturesPreview";
 // AccessManagement page removed — functionality merged into /access-assignments
@@ -185,11 +185,8 @@ function AppContent() {
             <AdminCenter />
           </ProtectedRoute>
         } />
-        <Route path="system-settings" element={
-          <ProtectedRoute requireAdmin>
-            <SystemSettings />
-          </ProtectedRoute>
-        } />
+        {/* System Settings merged into Admin Center */}
+        <Route path="system-settings" element={<Navigate to="/admin?tab=system" replace />} />
         {/* /users route removed — use /admin instead */}
         <Route path="users" element={<Navigate to="/admin" replace />} />
         <Route path="admin/key-requests" element={

@@ -118,7 +118,7 @@ export default function Profile() {
                     </Link>
                   </Button>
                   <Button size="sm" variant="outline" asChild>
-                    <Link to="/system-settings">
+                    <Link to="/admin?tab=system">
                       <Settings className="h-4 w-4 mr-2" />
                       System Settings
                       <ArrowRight className="h-3 w-3 ml-1" />

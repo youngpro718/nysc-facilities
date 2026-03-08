@@ -173,7 +173,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Court Operations', icon: Gavel },
       { type: "separator" },
       { title: 'Admin Center', icon: UserCog },
-      { title: 'System Settings', icon: Settings },
     ];
   }
   
@@ -257,7 +256,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     return [
       '/', // Admin Dashboard
       '/spaces',
-      '/operations', // Contains Issues, Maintenance, Supply Requests
+      '/operations',
       '/access-assignments',
       '/keys',
       '/inventory',
@@ -266,7 +265,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/court-operations',
       '',          // separator placeholder
       '/admin',
-      '/system-settings',
     ];
   }
   
