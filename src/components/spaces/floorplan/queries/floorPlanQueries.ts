@@ -62,6 +62,104 @@ export async function fetchHallwayRoomConnections(floorId: string): Promise<Hall
   })) as HallwayRoomConnection[];
 }
 
+export async function fetchAttachedRoomsForHallway(hallwayId: string) {
+  const { data, error } = await supabase
+    .from('hallway_adjacent_rooms')
+    .select('id, hallway_id, room_id, position, side, sequence_order, rooms!hallway_adjacent_rooms_room_id_fkey(id, name, room_number)')
+    .eq('hallway_id', hallwayId)
+    .order('sequence_order', { ascending: true });
+
+  if (error) {
+    logger.error("Error fetching attached rooms:", error);
+    return [];
+  }
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    hallway_id: row.hallway_id,
+    room_id: row.room_id,
+    position: row.position,
+    side: row.side,
+    sequence_order: row.sequence_order,
+    room_name: row.rooms?.name || '',
+    room_number: row.rooms?.room_number || '',
+  }));
+}
+
+export async function fetchHallwayForRoom(roomId: string) {
+  const { data, error } = await supabase
+    .from('hallway_adjacent_rooms')
+    .select('id, hallway_id, room_id, position, side, sequence_order, hallways!hallway_adjacent_rooms_hallway_id_fkey(id, name)')
+    .eq('room_id', roomId);
+
+  if (error) {
+    logger.error("Error fetching hallway for room:", error);
+    return null;
+  }
+  if (!data || data.length === 0) return null;
+  const row = data[0] as any;
+  return {
+    id: row.id,
+    hallway_id: row.hallway_id,
+    room_id: row.room_id,
+    position: row.position,
+    side: row.side,
+    sequence_order: row.sequence_order,
+    hallway_name: row.hallways?.name || '',
+  };
+}
+
+export async function attachRoomToHallway(params: {
+  hallway_id: string;
+  room_id: string;
+  position: string;
+  side: string;
+  sequence_order: number;
+}) {
+  const { error } = await supabase
+    .from('hallway_adjacent_rooms')
+    .insert({
+      hallway_id: params.hallway_id,
+      room_id: params.room_id,
+      position: params.position,
+      side: params.side,
+      sequence_order: params.sequence_order,
+    });
+  if (error) throw error;
+}
+
+export async function updateHallwayRoomAttachment(id: string, updates: {
+  position?: string;
+  side?: string;
+  sequence_order?: number;
+}) {
+  const { error } = await supabase
+    .from('hallway_adjacent_rooms')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function detachRoomFromHallway(id: string) {
+  const { error } = await supabase
+    .from('hallway_adjacent_rooms')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function fetchHallwaysForFloor(floorId: string) {
+  const { data, error } = await supabase
+    .from('hallways')
+    .select('id, name')
+    .eq('floor_id', floorId)
+    .eq('status', 'active');
+  if (error) {
+    logger.error("Error fetching hallways for floor:", error);
+    return [];
+  }
+  return data || [];
+}
+
 export async function fetchFloorPlanObjects(floorId: string) {
   logger.debug("Fetching floor plan objects for floor:", floorId);
   
