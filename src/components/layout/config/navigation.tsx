@@ -173,7 +173,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Court Operations', icon: Gavel },
       { type: "separator" },
       { title: 'Admin Center', icon: UserCog },
-      { title: 'System Settings', icon: Settings },
     ];
   }
   
