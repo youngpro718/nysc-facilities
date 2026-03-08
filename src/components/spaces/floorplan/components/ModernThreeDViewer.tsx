@@ -248,6 +248,7 @@ export function ModernThreeDViewer({
           labelScale={labelScale}
           moveEnabled={moveEnabled}
           walkMode={walkMode}
+          onWalkModeExit={handleWalkModeExit}
           className="w-full h-full"
         />
       </div>
