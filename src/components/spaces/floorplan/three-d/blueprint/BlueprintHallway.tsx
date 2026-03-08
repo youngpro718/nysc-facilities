@@ -33,24 +33,26 @@ const BlueprintHallway: React.FC<BlueprintHallwayProps> = ({
   const halfL = length / 2;
   const halfW = corridorWidth / 2;
 
+  // Lighter floor — slate-700 instead of slate-800
   const floorMat = useMemo(() => new THREE.MeshPhongMaterial({
-    color: new THREE.Color('#1e293b'),
+    color: new THREE.Color('#334155'),
     transparent: true,
-    opacity: 0.9,
+    opacity: 0.85,
     side: THREE.DoubleSide,
   }), []);
 
+  // Lighter walls
   const wallMat = useMemo(() => new THREE.MeshPhongMaterial({
-    color: new THREE.Color(isSelected ? '#6366f1' : isHovered ? '#f59e0b' : '#475569'),
+    color: new THREE.Color(isSelected ? '#818cf8' : isHovered ? '#fbbf24' : '#64748b'),
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.55,
     side: THREE.DoubleSide,
   }), [isSelected, isHovered]);
 
   const stripeMat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: new THREE.Color('#0ea5e9'),
+    color: new THREE.Color('#38bdf8'),
     transparent: true,
-    opacity: 0.15,
+    opacity: 0.2,
   }), []);
 
   return (
@@ -90,11 +92,11 @@ const BlueprintHallway: React.FC<BlueprintHallwayProps> = ({
         <Billboard position={[0, WALL_HEIGHT + 10, 0]}>
           <Text
             fontSize={8}
-            color={isSelected ? '#a5b4fc' : '#94a3b8'}
+            color={isSelected ? '#c7d2fe' : '#cbd5e1'}
             anchorX="center"
             anchorY="middle"
             outlineWidth={0.5}
-            outlineColor="#0f172a"
+            outlineColor="#1e293b"
           >
             {name}
           </Text>
@@ -104,11 +106,11 @@ const BlueprintHallway: React.FC<BlueprintHallwayProps> = ({
       {/* Direction arrows on floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[halfL - 20, 0.7, 0]}>
         <planeGeometry args={[10, 6]} />
-        <meshBasicMaterial color="#0ea5e9" transparent opacity={0.2} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={0.25} side={THREE.DoubleSide} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-halfL + 20, 0.7, 0]}>
         <planeGeometry args={[10, 6]} />
-        <meshBasicMaterial color="#0ea5e9" transparent opacity={0.2} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={0.25} side={THREE.DoubleSide} />
       </mesh>
     </group>
   );

@@ -194,20 +194,20 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
 
   return (
     <>
-      {/* Enhanced lighting for dramatic effect */}
-      <ambientLight intensity={0.4} color="#e0f2fe" />
+      {/* Enhanced lighting — brighter for better visibility */}
+      <ambientLight intensity={0.55} color="#f0f9ff" />
       <directionalLight 
         position={[100, 200, 100]} 
-        intensity={0.6} 
-        color="#f0f9ff"
+        intensity={0.7} 
+        color="#f8fafc"
         castShadow
       />
       <directionalLight 
         position={[-100, 150, -100]} 
-        intensity={0.3} 
-        color="#22d3ee"
+        intensity={0.35} 
+        color="#67e8f9"
       />
-      <pointLight position={[0, 100, 0]} intensity={0.3} color="#0ea5e9" />
+      <pointLight position={[0, 100, 0]} intensity={0.35} color="#38bdf8" />
 
       {/* Blueprint Grid */}
       <BlueprintGrid size={gridSize} divisions={40} majorDivisions={8} />

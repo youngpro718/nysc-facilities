@@ -45,17 +45,17 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
   const statusColor = useMemo(() => getStatusColor(status), [status]);
   const typeColor = useMemo(() => getTypeColor(type), [type]);
 
-  // Create materials
+  // Create materials — lighter palette
   const materials = useMemo(() => {
-    const baseColor = isSelected ? '#6366f1' : isHovered ? '#f59e0b' : statusColor;
+    const baseColor = isSelected ? '#818cf8' : isHovered ? '#fbbf24' : statusColor;
     
-    // Main room material with gradient effect
+    // Main room material — slightly more visible
     const main = new THREE.MeshPhongMaterial({
       color: new THREE.Color(typeColor),
-      opacity: isSelected ? 0.4 : isHovered ? 0.3 : 0.15,
+      opacity: isSelected ? 0.45 : isHovered ? 0.35 : 0.2,
       transparent: true,
       side: THREE.DoubleSide,
-      shininess: 50,
+      shininess: 40,
     });
 
     // Edge material
@@ -68,7 +68,7 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
     const glow = new THREE.MeshBasicMaterial({
       color: new THREE.Color(baseColor),
       transparent: true,
-      opacity: isSelected ? 0.15 : isHovered ? 0.1 : 0,
+      opacity: isSelected ? 0.18 : isHovered ? 0.12 : 0,
       side: THREE.DoubleSide,
     });
 
@@ -145,24 +145,24 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
         </mesh>
       )}
 
-      {/* Floor plane inside room */}
+      {/* Floor plane inside room — brighter fill */}
       <mesh position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[size[0] - 4, size[2] - 4]} />
         <meshPhongMaterial
           color={typeColor}
-          opacity={0.12}
+          opacity={0.18}
           transparent
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Walls */}
+      {/* Walls — lighter default color */}
       <WallSegment
         position={[0, 0, 0]}
         size={size}
         wallHeight={size[1]}
-        color={isSelected ? '#6366f1' : isHovered ? '#f59e0b' : '#334155'}
-        opacity={isSelected ? 0.6 : isHovered ? 0.5 : 0.45}
+        color={isSelected ? '#818cf8' : isHovered ? '#fbbf24' : '#64748b'}
+        opacity={isSelected ? 0.55 : isHovered ? 0.5 : 0.4}
       />
 
       {/* Floor accent line */}
@@ -194,13 +194,13 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
         <Billboard position={[0, size[1] / 2 + 8, 0]}>
           <Text
             fontSize={Math.min(10, size[0] / 12) * labelScale}
-            color={isSelected ? '#a5b4fc' : isHovered ? '#fcd34d' : '#e2e8f0'}
+            color={isSelected ? '#c7d2fe' : isHovered ? '#fde68a' : '#f1f5f9'}
             anchorX="center"
             anchorY="middle"
             maxWidth={size[0] * 0.9}
             textAlign="center"
             outlineWidth={0.8}
-            outlineColor="#0f172a"
+            outlineColor="#1e293b"
           >
             {displayName}
           </Text>
@@ -212,11 +212,11 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
         <Billboard position={[size[0] / 2 - 10, size[1] / 2 + 3, size[2] / 2 - 10]}>
           <mesh>
             <planeGeometry args={[20, 10]} />
-            <meshBasicMaterial color="#0f172a" opacity={0.9} transparent />
+            <meshBasicMaterial color="#1e293b" opacity={0.85} transparent />
           </mesh>
           <Text
             fontSize={6 * labelScale}
-            color="#94a3b8"
+            color="#cbd5e1"
             anchorX="center"
             anchorY="middle"
             position={[0, 0, 0.1]}
