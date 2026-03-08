@@ -449,16 +449,10 @@ export default function MyActivity() {
   if (isMobile) {
     return (
       <PullToRefresh onRefresh={handleRefresh}>
-        <div className="container max-w-2xl mx-auto px-4 py-4">
-          {content}
-        </div>
+        {content}
       </PullToRefresh>
     );
   }
 
-  return (
-    <div className="container max-w-4xl mx-auto px-4 py-6">
-      {content}
-    </div>
-  );
+  return content;
 }

@@ -56,7 +56,7 @@ export function ResponsiveDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("max-w-4xl max-h-[88vh] flex flex-col", className)}>
+      <DialogContent className={cn("max-w-4xl max-h-[88dvh] flex flex-col", className)}>
         {(title || description) && (
           <DialogHeader className="flex-shrink-0">
             {title && <DialogTitle>{title}</DialogTitle>}
