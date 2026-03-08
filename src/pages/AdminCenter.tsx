@@ -57,6 +57,7 @@ export default function AdminCenter() {
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, UserRole>>({});
   const { resetLoginAttempts } = useRateLimitManager();
+  const [confirmDelete, confirmDeleteDialog] = useConfirmDialog();
 
   // Current admin info
   const currentAdmin = users.find(u => u.id === currentUserId);
