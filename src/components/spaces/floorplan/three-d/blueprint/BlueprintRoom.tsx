@@ -157,7 +157,7 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
 
       {/* Room number — large, centered on floor */}
       {displayNumber && (
-        <Billboard position={[0, 1.5 + labelYOffset, 0]}>
+        <Billboard position={[0, size[1] + 8 + labelYOffset, 0]}>
           <Text
             fontSize={numberFontSize}
             color={isSelected ? '#e0e7ff' : isHovered ? '#fef3c7' : '#f8fafc'}
