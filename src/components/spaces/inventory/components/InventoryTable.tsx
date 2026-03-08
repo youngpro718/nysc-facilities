@@ -142,5 +142,7 @@ export function InventoryTable({
         )}
       </TableBody>
     </Table>
+    {confirmDeleteDialog}
+    </>
   );
 }

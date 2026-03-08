@@ -181,6 +181,7 @@ export function MobileInventoryGrid({
           </CardContent>
         </Card>
       ))}
+      {confirmDeleteDialog}
     </div>
   );
 }
