@@ -116,21 +116,10 @@ export default function MyActivity() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-9 w-9"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">My Activity</h1>
-            <p className="text-sm text-muted-foreground">
-              Track all your requests and issues
-            </p>
-          </div>
+        <div>
+          <p className="text-sm text-muted-foreground">
+            Track all your requests and issues
+          </p>
         </div>
         
         {/* Quick Actions */}
