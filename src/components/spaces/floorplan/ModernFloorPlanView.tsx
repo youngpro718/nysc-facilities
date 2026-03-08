@@ -629,7 +629,7 @@ export function ModernFloorPlanView() {
                 previewData={previewData as any}
                 zoom={zoom}
               />
-            ) : (
+            ) : viewMode === '3d' ? (
               <>
                 <ModernThreeDViewer
                   key={`3d-${refreshKey}`}
@@ -662,6 +662,20 @@ export function ModernFloorPlanView() {
                   />
                 )}
               </>
+            ) : (
+              <LayoutEditorCanvas
+                key={`edit-${refreshKey}`}
+                floorId={selectedFloor}
+                objects={(sceneObjects as any[]).map((o: any) => ({
+                  id: o.id,
+                  type: o.type || 'room',
+                  name: o.data?.label || o.name || '',
+                  position: o.position || { x: 0, y: 0 },
+                  size: o.data?.size || o.size || { width: 150, height: 100 },
+                  rotation: o.rotation || 0,
+                }))}
+                onRefresh={handleRefresh}
+              />
             )}
           </div>
 
