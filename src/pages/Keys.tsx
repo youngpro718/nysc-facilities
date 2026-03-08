@@ -102,7 +102,10 @@ export default function Keys() {
               <Settings className="h-4 w-4 flex-shrink-0" />
               <span className="text-xs sm:text-sm">Manage</span>
             </TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
+          {/* Scroll fade indicators for mobile */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden" />
         </div>
 
         <TabsContent value="lockbox" className="space-y-6 mt-4">

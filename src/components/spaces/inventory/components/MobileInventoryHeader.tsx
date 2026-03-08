@@ -50,7 +50,7 @@ export function MobileInventoryHeader({
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[300px]">
+            <SheetContent side="bottom" className="h-auto max-h-[50dvh]">
               <SheetHeader>
                 <SheetTitle>Inventory Actions</SheetTitle>
                 <SheetDescription>

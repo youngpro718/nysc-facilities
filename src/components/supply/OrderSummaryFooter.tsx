@@ -243,7 +243,7 @@ export function OrderSummaryFooter({
           </div>
         </div>
 
-        <SheetContent side="bottom" className="h-[85vh] flex flex-col">
+        <SheetContent side="bottom" className="h-[85dvh] flex flex-col">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />

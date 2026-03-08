@@ -104,7 +104,7 @@ export function MobileFilterBar({
                   <Filter className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="h-[50vh]">
+              <SheetContent side="bottom" className="h-[50dvh]">
                 <SheetHeader>
                   <SheetTitle>Advanced Filters</SheetTitle>
                   <SheetDescription>Refine your search results</SheetDescription>
