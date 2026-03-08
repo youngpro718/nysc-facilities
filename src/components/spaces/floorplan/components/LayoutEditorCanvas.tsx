@@ -1,12 +1,13 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Pen, MousePointer, Trash2, Undo2 } from 'lucide-react';
+import { Pen, MousePointer, Undo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { useQueryClient } from '@tanstack/react-query';
 import { HallwayNameDialog, DrawnLine } from './HallwayNameDialog';
+import { ConnectionTypeDialog, ConnectionTypeValue } from './ConnectionTypeDialog';
 
 interface LayoutObject {
   id: string;
@@ -28,38 +29,78 @@ type Tool = 'select' | 'draw-hallway';
 interface DrawnSegment {
   id: string;
   line: DrawnLine;
-  saved: boolean; // true once persisted
+  name: string;
+  saved: boolean;
+  connectionType?: ConnectionTypeValue;
+  parentId?: string;
+}
+
+interface PendingConnection {
+  parentSegment: DrawnSegment;
+  snapPoint: { x: number; y: number };
 }
 
 const DEFAULT_HALLWAY_WIDTH = 50;
 const GRID_SNAP = 10;
+const SNAP_RADIUS = 30;
 
 function snapToGrid(val: number): number {
   return Math.round(val / GRID_SNAP) * GRID_SNAP;
+}
+
+/** Distance from point to line segment */
+function pointToSegmentDist(
+  px: number, py: number,
+  x1: number, y1: number,
+  x2: number, y2: number
+): { dist: number; nearest: { x: number; y: number } } {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) {
+    const d = Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+    return { dist: d, nearest: { x: x1, y: y1 } };
+  }
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const nx = x1 + t * dx;
+  const ny = y1 + t * dy;
+  return { dist: Math.sqrt((px - nx) ** 2 + (py - ny) ** 2), nearest: { x: nx, y: ny } };
 }
 
 export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditorCanvasProps) {
   const queryClient = useQueryClient();
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Tool state
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Drawn (unsaved) segments
   const [segments, setSegments] = useState<DrawnSegment[]>([]);
 
   // Naming dialog
   const [namingLine, setNamingLine] = useState<DrawnLine | null>(null);
   const [hallwayCounter, setHallwayCounter] = useState(1);
 
+  // Connection dialog
+  const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
+  const [connectionDialogOpen, setConnectionDialogOpen] = useState(false);
+  // Stores the confirmed connection type before naming
+  const [confirmedConnection, setConfirmedConnection] = useState<{
+    parentId: string;
+    parentName: string;
+    type: ConnectionTypeValue;
+    snapPoint: { x: number; y: number };
+  } | null>(null);
+
   // Pan & zoom
   const [viewBox, setViewBox] = useState({ x: -100, y: -100, w: 1200, h: 800 });
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0, vx: 0, vy: 0 });
 
-  // Compute SVG coordinates from mouse event
+  // Snap indicator for live feedback
+  const [snapIndicator, setSnapIndicator] = useState<{ x: number; y: number; parentName: string } | null>(null);
+
   const toSvgCoords = useCallback(
     (e: React.MouseEvent): { x: number; y: number } => {
       const svg = svgRef.current;
@@ -72,34 +113,88 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
     [viewBox]
   );
 
-  // Handle canvas click
+  /** Find closest saved segment endpoint/body within SNAP_RADIUS */
+  const findNearbySegment = useCallback(
+    (px: number, py: number): PendingConnection | null => {
+      const saved = segments.filter((s) => s.saved);
+      let best: PendingConnection | null = null;
+      let bestDist = SNAP_RADIUS;
+
+      for (const seg of saved) {
+        // Check endpoints first (higher priority)
+        for (const pt of [
+          { x: seg.line.startX, y: seg.line.startY },
+          { x: seg.line.endX, y: seg.line.endY },
+        ]) {
+          const d = Math.sqrt((px - pt.x) ** 2 + (py - pt.y) ** 2);
+          if (d < bestDist) {
+            bestDist = d;
+            best = { parentSegment: seg, snapPoint: pt };
+          }
+        }
+
+        // Check body
+        const { dist, nearest } = pointToSegmentDist(
+          px, py,
+          seg.line.startX, seg.line.startY,
+          seg.line.endX, seg.line.endY
+        );
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = { parentSegment: seg, snapPoint: { x: snapToGrid(nearest.x), y: snapToGrid(nearest.y) } };
+        }
+      }
+
+      return best;
+    },
+    [segments]
+  );
+
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       if (activeTool !== 'draw-hallway') return;
       const pos = toSvgCoords(e);
 
       if (!drawStart) {
-        // First click: start
         setDrawStart(pos);
       } else {
-        // Second click: end → open naming dialog
         const line: DrawnLine = {
           startX: drawStart.x,
           startY: drawStart.y,
           endX: pos.x,
           endY: pos.y,
         };
-        // Only create if length > 20px
         const len = Math.sqrt(
-          Math.pow(line.endX - line.startX, 2) + Math.pow(line.endY - line.startY, 2)
+          (line.endX - line.startX) ** 2 + (line.endY - line.startY) ** 2
         );
         if (len > 20) {
-          setNamingLine(line);
+          // Check if either endpoint is near an existing segment
+          const nearStart = findNearbySegment(line.startX, line.startY);
+          const nearEnd = findNearbySegment(line.endX, line.endY);
+          const nearby = nearStart || nearEnd;
+
+          if (nearby) {
+            // Snap the touching endpoint
+            if (nearStart) {
+              line.startX = nearby.snapPoint.x;
+              line.startY = nearby.snapPoint.y;
+            } else {
+              line.endX = nearby.snapPoint.x;
+              line.endY = nearby.snapPoint.y;
+            }
+            setPendingConnection(nearby);
+            setNamingLine(line);
+            setConnectionDialogOpen(true);
+          } else {
+            // No connection — go straight to naming
+            setNamingLine(line);
+          }
         }
         setDrawStart(null);
+        setSnapIndicator(null);
       }
     },
-    [activeTool, drawStart, toSvgCoords]
+    [activeTool, drawStart, toSvgCoords, findNearbySegment]
   );
 
   const handleMouseMove = useCallback(
@@ -107,7 +202,20 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
       const pos = toSvgCoords(e);
       setMousePos(pos);
 
-      // Panning with middle button or when select tool + dragging
+      // Show snap indicator while drawing
+      if (activeTool === 'draw-hallway' && drawStart) {
+        const nearby = findNearbySegment(pos.x, pos.y);
+        if (nearby) {
+          setSnapIndicator({
+            x: nearby.snapPoint.x,
+            y: nearby.snapPoint.y,
+            parentName: nearby.parentSegment.name || 'Hallway',
+          });
+        } else {
+          setSnapIndicator(null);
+        }
+      }
+
       if (isPanning.current) {
         const dx = ((e.clientX - panStart.current.x) / (svgRef.current?.getBoundingClientRect().width || 1)) * viewBox.w;
         const dy = ((e.clientY - panStart.current.y) / (svgRef.current?.getBoundingClientRect().height || 1)) * viewBox.h;
@@ -118,12 +226,11 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
         }));
       }
     },
-    [toSvgCoords, viewBox.w, viewBox.h]
+    [toSvgCoords, viewBox.w, viewBox.h, activeTool, drawStart, findNearbySegment]
   );
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Middle mouse or right mouse for panning
       if (e.button === 1 || (e.button === 0 && activeTool === 'select' && e.shiftKey)) {
         isPanning.current = true;
         panStart.current = { x: e.clientX, y: e.clientY, vx: viewBox.x, vy: viewBox.y };
@@ -137,7 +244,6 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
     isPanning.current = false;
   }, []);
 
-  // Zoom with scroll
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault();
@@ -154,11 +260,11 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
     [toSvgCoords]
   );
 
-  // ESC to cancel drawing
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setDrawStart(null);
+        setSnapIndicator(null);
         if (activeTool === 'draw-hallway') setActiveTool('select');
       }
     };
@@ -166,7 +272,38 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
     return () => window.removeEventListener('keydown', handleKey);
   }, [activeTool]);
 
-  // Save hallway to Supabase
+  // Connection type confirmed → proceed to naming (or skip for bends)
+  const handleConnectionTypeConfirm = useCallback(
+    (type: ConnectionTypeValue) => {
+      if (!pendingConnection) return;
+      setConnectionDialogOpen(false);
+
+      const parentName = pendingConnection.parentSegment.name || 'Hallway';
+      setConfirmedConnection({
+        parentId: pendingConnection.parentSegment.id,
+        parentName,
+        type,
+        snapPoint: pendingConnection.snapPoint,
+      });
+
+      if (type === 'bend') {
+        // For bends, auto-name with parent name and go straight to save
+        // Still show naming dialog but pre-filled
+      }
+      // namingLine is already set, so the HallwayNameDialog will show
+      setPendingConnection(null);
+    },
+    [pendingConnection]
+  );
+
+  const handleConnectionTypeCancel = useCallback(() => {
+    setConnectionDialogOpen(false);
+    setPendingConnection(null);
+    setNamingLine(null);
+    setConfirmedConnection(null);
+  }, []);
+
+  // Save hallway + optional connection
   const handleConfirmHallway = useCallback(
     async (name: string, section: string, type: string) => {
       if (!namingLine || !floorId) return;
@@ -177,8 +314,6 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
       const length = Math.sqrt(dx * dx + dy * dy);
       const rotation = Math.atan2(dy, dx) * (180 / Math.PI);
 
-      // Position is top-left corner of the bounding rectangle
-      // The hallway goes from start to end with a width of DEFAULT_HALLWAY_WIDTH
       const centerX = (startX + endX) / 2;
       const centerY = (startY + endY) / 2;
       const position = {
@@ -191,6 +326,11 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
       };
 
       try {
+        // If bend, set main_hallway_id to parent
+        const mainHallwayId = confirmedConnection?.type === 'bend'
+          ? confirmedConnection.parentId
+          : undefined;
+
         const { data, error } = await supabase.from('hallways').insert({
           name,
           floor_id: floorId,
@@ -200,24 +340,46 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
           size,
           rotation: Math.round(rotation),
           status: 'active',
+          ...(mainHallwayId ? { main_hallway_id: mainHallwayId } : {}),
         }).select('id').single();
 
         if (error) throw error;
 
-        // Add to local segments as "saved"
+        // Save connection if we have one
+        if (confirmedConnection) {
+          const { error: connError } = await supabase.from('hallway_connections').insert({
+            main_hallway_id: confirmedConnection.parentId,
+            connected_hallway_id: data.id,
+            connection_type: confirmedConnection.type,
+            connection_point: {
+              x: confirmedConnection.snapPoint.x,
+              y: confirmedConnection.snapPoint.y,
+              position: 'endpoint',
+              access_type: confirmedConnection.type === 'transition_door' ? 'door' : 'standard',
+            },
+          });
+
+          if (connError) {
+            logger.error('Failed to save hallway connection:', connError);
+            toast.error('Hallway created but connection failed to save');
+          }
+        }
+
         setSegments((prev) => [
           ...prev,
           {
             id: data.id,
             line: namingLine,
+            name,
             saved: true,
+            connectionType: confirmedConnection?.type,
+            parentId: confirmedConnection?.parentId,
           },
         ]);
 
         setHallwayCounter((c) => c + 1);
         toast.success(`Hallway "${name}" created`);
 
-        // Refresh floor plan data
         queryClient.invalidateQueries({ queryKey: ['floorplan-objects', floorId] });
         queryClient.invalidateQueries({ queryKey: ['hallways'] });
         onRefresh();
@@ -226,48 +388,71 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
         toast.error('Failed to create hallway');
       } finally {
         setNamingLine(null);
+        setConfirmedConnection(null);
       }
     },
-    [namingLine, floorId, queryClient, onRefresh]
+    [namingLine, floorId, queryClient, onRefresh, confirmedConnection]
   );
 
-  // Undo last unsaved segment
   const handleUndo = useCallback(() => {
     setSegments((prev) => {
       const last = prev[prev.length - 1];
-      if (last && !last.saved) {
-        return prev.slice(0, -1);
-      }
+      if (last && !last.saved) return prev.slice(0, -1);
       return prev;
     });
   }, []);
 
-  // Color helpers
+  // --- Connection point colors ---
+  const connectionColor = (type?: ConnectionTypeValue) => {
+    switch (type) {
+      case 'bend': return 'hsl(var(--primary))'; // blue
+      case 'connected': return 'hsl(142 76% 36%)'; // green
+      case 'transition_door': return 'hsl(25 95% 53%)'; // orange
+      default: return 'hsl(var(--muted-foreground))';
+    }
+  };
+
   const getObjectColor = (type: string) => {
     switch (type) {
-      case 'room':
-        return 'hsl(var(--primary) / 0.15)';
-      case 'hallway':
-        return 'hsl(var(--accent) / 0.3)';
-      case 'door':
-        return 'hsl(var(--destructive) / 0.3)';
-      default:
-        return 'hsl(var(--muted) / 0.3)';
+      case 'room': return 'hsl(var(--primary) / 0.15)';
+      case 'hallway': return 'hsl(var(--accent) / 0.3)';
+      case 'door': return 'hsl(var(--destructive) / 0.3)';
+      default: return 'hsl(var(--muted) / 0.3)';
     }
   };
 
   const getObjectStroke = (type: string) => {
     switch (type) {
-      case 'room':
-        return 'hsl(var(--primary))';
-      case 'hallway':
-        return 'hsl(var(--accent-foreground))';
-      case 'door':
-        return 'hsl(var(--destructive))';
-      default:
-        return 'hsl(var(--border))';
+      case 'room': return 'hsl(var(--primary))';
+      case 'hallway': return 'hsl(var(--accent-foreground))';
+      case 'door': return 'hsl(var(--destructive))';
+      default: return 'hsl(var(--border))';
     }
   };
+
+  // Find connection points to draw indicators
+  const connectionPoints = segments
+    .filter((s) => s.saved && s.connectionType && s.parentId)
+    .map((seg) => {
+      const parent = segments.find((p) => p.id === seg.parentId);
+      if (!parent) return null;
+      // Find the shared endpoint
+      for (const pt of [
+        { x: seg.line.startX, y: seg.line.startY },
+        { x: seg.line.endX, y: seg.line.endY },
+      ]) {
+        const { dist } = pointToSegmentDist(
+          pt.x, pt.y,
+          parent.line.startX, parent.line.startY,
+          parent.line.endX, parent.line.endY
+        );
+        if (dist < SNAP_RADIUS) {
+          return { x: pt.x, y: pt.y, type: seg.connectionType! };
+        }
+      }
+      return null;
+    })
+    .filter(Boolean) as { x: number; y: number; type: ConnectionTypeValue }[];
 
   return (
     <div className="h-full flex flex-col">
@@ -276,7 +461,7 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
         <Button
           size="sm"
           variant={activeTool === 'select' ? 'default' : 'ghost'}
-          onClick={() => { setActiveTool('select'); setDrawStart(null); }}
+          onClick={() => { setActiveTool('select'); setDrawStart(null); setSnapIndicator(null); }}
           className="h-7 px-2 gap-1 text-[11px]"
         >
           <MousePointer className="h-3.5 w-3.5" />
@@ -313,7 +498,7 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
         <svg
           ref={svgRef}
           className={cn(
-            "w-full h-full",
+            'w-full h-full',
             activeTool === 'draw-hallway' ? 'cursor-crosshair' : 'cursor-default'
           )}
           viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
@@ -339,10 +524,8 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
           {objects.map((obj) => (
             <g key={obj.id} transform={`translate(${obj.position.x}, ${obj.position.y})${obj.rotation ? ` rotate(${obj.rotation}, ${obj.size.width / 2}, ${obj.size.height / 2})` : ''}`}>
               <rect
-                x={0}
-                y={0}
-                width={obj.size.width}
-                height={obj.size.height}
+                x={0} y={0}
+                width={obj.size.width} height={obj.size.height}
                 fill={getObjectColor(obj.type)}
                 stroke={getObjectStroke(obj.type)}
                 strokeWidth={1.5}
@@ -350,105 +533,132 @@ export function LayoutEditorCanvas({ floorId, objects, onRefresh }: LayoutEditor
               />
               {obj.name && (
                 <text
-                  x={obj.size.width / 2}
-                  y={obj.size.height / 2}
-                  textAnchor="middle"
-                  dominantBaseline="central"
+                  x={obj.size.width / 2} y={obj.size.height / 2}
+                  textAnchor="middle" dominantBaseline="central"
                   className="fill-foreground"
                   fontSize={Math.min(12, obj.size.width / 8)}
                   fontWeight={500}
-                >
-                  {obj.name}
-                </text>
+                >{obj.name}</text>
               )}
             </g>
           ))}
 
           {/* Saved drawn segments */}
-          {segments.filter(s => s.saved).map((seg) => (
-            <line
-              key={seg.id}
-              x1={seg.line.startX}
-              y1={seg.line.startY}
-              x2={seg.line.endX}
-              y2={seg.line.endY}
-              stroke="hsl(var(--primary))"
-              strokeWidth={DEFAULT_HALLWAY_WIDTH}
-              strokeLinecap="round"
-              opacity={0.25}
-            />
+          {segments.filter((s) => s.saved).map((seg) => (
+            <g key={seg.id}>
+              <line
+                x1={seg.line.startX} y1={seg.line.startY}
+                x2={seg.line.endX} y2={seg.line.endY}
+                stroke="hsl(var(--primary))"
+                strokeWidth={DEFAULT_HALLWAY_WIDTH}
+                strokeLinecap="round"
+                opacity={0.25}
+              />
+              {/* Label */}
+              <text
+                x={(seg.line.startX + seg.line.endX) / 2}
+                y={(seg.line.startY + seg.line.endY) / 2}
+                textAnchor="middle" dominantBaseline="central"
+                className="fill-foreground"
+                fontSize={11} fontWeight={600}
+              >{seg.name}</text>
+            </g>
+          ))}
+
+          {/* Connection point indicators */}
+          {connectionPoints.map((cp, i) => (
+            <g key={`cp-${i}`}>
+              {/* Outer ring */}
+              <circle cx={cp.x} cy={cp.y} r={10} fill="none" stroke={connectionColor(cp.type)} strokeWidth={2} />
+              {/* Inner fill */}
+              <circle cx={cp.x} cy={cp.y} r={5} fill={connectionColor(cp.type)} />
+              {/* Door icon for transition doors */}
+              {cp.type === 'transition_door' && (
+                <rect
+                  x={cp.x - 3} y={cp.y - 8}
+                  width={6} height={16}
+                  fill="none"
+                  stroke={connectionColor(cp.type)}
+                  strokeWidth={1.5}
+                  rx={1}
+                />
+              )}
+            </g>
           ))}
 
           {/* Active drawing preview */}
           {drawStart && activeTool === 'draw-hallway' && (
             <>
-              {/* Width preview */}
               <line
-                x1={drawStart.x}
-                y1={drawStart.y}
-                x2={mousePos.x}
-                y2={mousePos.y}
+                x1={drawStart.x} y1={drawStart.y}
+                x2={mousePos.x} y2={mousePos.y}
                 stroke="hsl(var(--primary))"
                 strokeWidth={DEFAULT_HALLWAY_WIDTH}
                 strokeLinecap="round"
                 opacity={0.15}
               />
-              {/* Center line */}
               <line
-                x1={drawStart.x}
-                y1={drawStart.y}
-                x2={mousePos.x}
-                y2={mousePos.y}
+                x1={drawStart.x} y1={drawStart.y}
+                x2={mousePos.x} y2={mousePos.y}
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 strokeDasharray="8 4"
                 opacity={0.8}
               />
-              {/* Start dot */}
-              <circle
-                cx={drawStart.x}
-                cy={drawStart.y}
-                r={5}
-                fill="hsl(var(--primary))"
-              />
-              {/* End dot (follows mouse) */}
-              <circle
-                cx={mousePos.x}
-                cy={mousePos.y}
-                r={5}
-                fill="hsl(var(--primary))"
-                opacity={0.6}
-              />
-              {/* Length label */}
+              <circle cx={drawStart.x} cy={drawStart.y} r={5} fill="hsl(var(--primary))" />
+              <circle cx={mousePos.x} cy={mousePos.y} r={5} fill="hsl(var(--primary))" opacity={0.6} />
               <text
                 x={(drawStart.x + mousePos.x) / 2}
                 y={(drawStart.y + mousePos.y) / 2 - 30}
-                textAnchor="middle"
-                className="fill-foreground"
-                fontSize={11}
-                fontWeight={600}
+                textAnchor="middle" className="fill-foreground"
+                fontSize={11} fontWeight={600}
               >
-                {Math.round(
-                  Math.sqrt(
-                    Math.pow(mousePos.x - drawStart.x, 2) +
-                      Math.pow(mousePos.y - drawStart.y, 2)
-                  )
-                )}
-                px
+                {Math.round(Math.sqrt((mousePos.x - drawStart.x) ** 2 + (mousePos.y - drawStart.y) ** 2))}px
+              </text>
+            </>
+          )}
+
+          {/* Snap indicator */}
+          {snapIndicator && drawStart && activeTool === 'draw-hallway' && (
+            <>
+              <circle
+                cx={snapIndicator.x} cy={snapIndicator.y} r={14}
+                fill="none" stroke="hsl(var(--primary))" strokeWidth={2}
+                strokeDasharray="4 2" opacity={0.8}
+              />
+              <text
+                x={snapIndicator.x} y={snapIndicator.y - 20}
+                textAnchor="middle" className="fill-primary"
+                fontSize={10} fontWeight={600}
+              >
+                Snap: {snapIndicator.parentName}
               </text>
             </>
           )}
         </svg>
       </div>
 
-      {/* Naming Dialog */}
+      {/* Connection Type Dialog — shown first when snapped */}
+      <ConnectionTypeDialog
+        open={connectionDialogOpen}
+        parentHallwayName={pendingConnection?.parentSegment.name || 'Hallway'}
+        onConfirm={handleConnectionTypeConfirm}
+        onCancel={handleConnectionTypeCancel}
+      />
+
+      {/* Naming Dialog — shown after connection type is chosen (or directly if no connection) */}
       <HallwayNameDialog
-        open={!!namingLine}
+        open={!!namingLine && !connectionDialogOpen}
         line={namingLine}
-        defaultName={`Hallway ${String.fromCharCode(64 + hallwayCounter)}`}
+        defaultName={
+          confirmedConnection?.type === 'bend'
+            ? `${confirmedConnection.parentName} (cont.)`
+            : `Hallway ${String.fromCharCode(64 + hallwayCounter)}`
+        }
         onConfirm={handleConfirmHallway}
         onCancel={() => {
           setNamingLine(null);
+          setConfirmedConnection(null);
         }}
       />
     </div>
