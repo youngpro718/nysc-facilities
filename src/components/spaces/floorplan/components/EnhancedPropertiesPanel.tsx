@@ -143,6 +143,30 @@ export function EnhancedPropertiesPanel({
             )}
           </TabsContent>
 
+          <TabsContent value="attach" className="h-full m-0 p-0">
+            <div className="h-full overflow-y-auto p-4">
+              {selectedObject && floorId ? (
+                <HallwayAttachPanel
+                  selectedObject={{
+                    id: String(selectedObject.id),
+                    type: selectedObject.type,
+                    object_type: (selectedObject as any).object_type,
+                    name: (selectedObject as any).name,
+                    room_number: (selectedObject as any).room_number || selectedObject.data?.properties?.label,
+                    floor_id: floorId,
+                  }}
+                  floorId={floorId}
+                  onRefresh={onUpdate}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                  <Link2 className="h-8 w-8 text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">Select a room or hallway to manage attachments.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
           <TabsContent value="analytics" className="h-full m-0 p-0">
             <div className="h-full overflow-y-auto p-4">
               <AnalyticsDashboard 
