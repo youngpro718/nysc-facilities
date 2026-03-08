@@ -19,6 +19,7 @@ export interface HallwayRoomConnection {
   position: 'start' | 'middle' | 'end';
   side: 'left' | 'right';
   sequence_order: number;
+  room_number?: string;
 }
 
 export async function fetchHallwayRoomConnections(floorId: string): Promise<HallwayRoomConnection[]> {
