@@ -1,31 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Loader2 } from "lucide-react";
+import { Loader2, Settings, Link2 } from "lucide-react";
 import { logger } from '@/lib/logger';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  Maximize, 
-  RefreshCw, 
-  Map, 
-  Layers, 
-  Eye, 
-  EyeOff,
-  Settings,
-  Filter,
-  Search,
-  Download,
-  Share2
-} from 'lucide-react';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { FloorPlanCanvas } from './FloorPlanCanvas';
-import { PropertiesPanel } from './components/PropertiesPanel';
 import { EnhancedPropertiesPanel } from './components/EnhancedPropertiesPanel';
 import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ModernThreeDViewer } from './components/ModernThreeDViewer';
@@ -404,27 +389,90 @@ export function ModernFloorPlanView() {
 
   return (
     <div className={cn("h-full flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800", isFullscreen && "fixed inset-0 z-50")}>
-      {/* Modern Header with Floating Controls */}
-      <div className="relative z-20 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <FloorSelector
-              floors={floors}
-              selectedFloorId={selectedFloor}
-              onFloorSelect={setSelectedFloor}
-              currentFloor={currentFloor}
-            />
-            
-            <div className="flex items-center space-x-2 bg-white/80 dark:bg-slate-900/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg p-1 shadow-sm">
-              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as '2d' | '3d')}>
-                <TabsList className="h-8 bg-transparent">
-                  <TabsTrigger value="2d" className="text-xs px-3 py-1">2D</TabsTrigger>
-                  <TabsTrigger value="3d" className="text-xs px-3 py-1">3D</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+      {/* Compact Single-Row Header */}
+      <div className="relative z-20 px-2 py-1.5 flex items-center justify-between gap-2 flex-wrap">
+        {/* Left: Floor selector + View mode + Filters */}
+        <div className="flex items-center gap-2">
+          <FloorSelector
+            floors={floors}
+            selectedFloorId={selectedFloor}
+            onFloorSelect={setSelectedFloor}
+            currentFloor={currentFloor}
+          />
+
+          <div className="h-5 w-px bg-border" />
+
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as '2d' | '3d')}>
+            <TabsList className="h-7 bg-muted/50 p-0.5">
+              <TabsTrigger value="2d" className="text-[11px] px-2 py-0.5 h-6">2D</TabsTrigger>
+              <TabsTrigger value="3d" className="text-[11px] px-2 py-0.5 h-6">3D</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="h-5 w-px bg-border hidden sm:block" />
+
+          {/* Compact Filter Chips */}
+          <div className="hidden sm:flex items-center gap-0.5 bg-muted/50 rounded-md p-0.5">
+            {(['all', 'room', 'hallway', 'door'] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type)}
+                className={cn(
+                  "px-2 py-0.5 rounded text-[11px] font-medium transition-colors capitalize",
+                  filterType === type 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {type === 'all' ? 'All' : type + 's'}
+              </button>
+            ))}
           </div>
 
+          {/* 3D-specific controls */}
+          {viewMode === '3d' && (
+            <div className="hidden sm:flex items-center gap-1.5">
+              <button
+                onClick={() => setShowConnectionsPref((v) => !v)}
+                className={cn(
+                  "px-2 py-0.5 rounded text-[11px] font-medium transition-colors",
+                  showConnectionsPref 
+                    ? "bg-primary/10 text-primary" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Connections
+              </button>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-muted-foreground">Labels</span>
+                <input
+                  type="range"
+                  min={0.7}
+                  max={2}
+                  step={0.1}
+                  value={labelScale}
+                  onChange={(e) => setLabelScale(parseFloat(e.target.value))}
+                  className="w-14 h-1 accent-primary"
+                />
+              </div>
+              <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => setCameraCommand({ type: 'fit' })}>
+                Fit
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-1.5 text-[11px]"
+                disabled={!selectedObject}
+                onClick={() => selectedObject && setCameraCommand({ type: 'focus', id: selectedObject.id })}
+              >
+                Focus
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Search/Refresh + Attach + Properties toggle */}
+        <div className="flex items-center gap-1.5">
           <ViewControls
             zoom={zoom}
             onZoomIn={handleZoomIn}
@@ -440,131 +488,87 @@ export function ModernFloorPlanView() {
             onSearch={() => setIsSearchOpen(true)}
             onAdvancedSearch={() => setIsAdvancedSearchOpen(true)}
           />
-          {/* Camera Actions */}
-          {viewMode === '3d' && (
-            <div className="ml-2 flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={() => setCameraCommand({ type: 'fit' })}>
-                Fit
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!selectedObject}
-                onClick={() => selectedObject && setCameraCommand({ type: 'focus', id: selectedObject.id })}
-              >
-                Focus
-              </Button>
-            </div>
-          )}
-          {/* Properties Panel Toggle (visible on small screens) */}
-          <div className="ml-3 sm:hidden">
-            <Button size="sm" variant="outline" onClick={() => setShowProperties((v) => !v)}>
-              {showProperties ? 'Hide' : 'Properties'}
-            </Button>
-          </div>
-        </div>
 
-        {/* Quick Filters for Floorplan */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <div className="text-xs text-muted-foreground mr-2">Filter:</div>
-          <Button size="sm" variant={filterType === 'all' ? 'default' : 'outline'} onClick={() => setFilterType('all')}>
-            All
-          </Button>
-          <Button size="sm" variant={filterType === 'room' ? 'default' : 'outline'} onClick={() => setFilterType('room')}>
-            Rooms
-          </Button>
-          <Button size="sm" variant={filterType === 'hallway' ? 'default' : 'outline'} onClick={() => setFilterType('hallway')}>
-            Hallways
-          </Button>
-          <Button size="sm" variant={filterType === 'door' ? 'default' : 'outline'} onClick={() => setFilterType('door')}>
-            Doors
-          </Button>
-          {viewMode === '3d' && (
-            <>
-              <div className="w-px h-6 bg-border mx-2" />
-              <Button size="sm" variant={showConnectionsPref ? 'default' : 'outline'} onClick={() => setShowConnectionsPref((v) => !v)}>
-                {showConnectionsPref ? 'Connections: On' : 'Connections: Off'}
-              </Button>
-              <div className="flex items-center gap-2 ml-2">
-                <span className="text-xs text-muted-foreground">Label Size</span>
-                <input
-                  type="range"
-                  min={0.7}
-                  max={2}
-                  step={0.1}
-                  value={labelScale}
-                  onChange={(e) => setLabelScale(parseFloat(e.target.value))}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Attach Mode Global Controls */}
+          {/* Attach Mode Toggle */}
           {isAdmin && (
-            <>
-              <div className="w-px h-6 bg-border mx-2" />
-              <Button 
-                size="sm" 
-                variant={attachMode ? 'default' : 'outline'} 
-                onClick={() => setAttachMode(v => !v)} 
-                className="gap-2"
-              >
-                {attachMode ? 'Attach Mode: ON' : 'Attach Mode: OFF'}
-              </Button>
-
-              {attachMode && (
-                <div className="flex items-center gap-2 bg-white/50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <span className="text-xs text-muted-foreground ml-1">Side:</span>
-                  <div className="flex items-center gap-1">
-                    {['north', 'south', 'east', 'west'].map((side) => (
-                      <Button
-                        key={side}
-                        size="sm"
-                        variant={attachSide === side ? 'default' : 'ghost'}
-                        onClick={() => setAttachSide(side as any)}
-                        className="h-7 w-7 p-0 text-xs uppercase"
-                      >
-                        {side.charAt(0)}
-                      </Button>
-                    ))}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  size="sm" 
+                  variant={attachMode ? 'default' : 'ghost'}
+                  className={cn("h-7 px-2 text-[11px] gap-1", attachMode && "bg-primary text-primary-foreground")}
+                >
+                  <Link2 className="h-3 w-3" />
+                  <span className="hidden sm:inline">Attach</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-3" align="end">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">Attach Mode</span>
+                    <Button
+                      size="sm"
+                      variant={attachMode ? 'default' : 'outline'}
+                      className="h-6 px-2 text-[11px]"
+                      onClick={() => setAttachMode(v => !v)}
+                    >
+                      {attachMode ? 'ON' : 'OFF'}
+                    </Button>
                   </div>
-
-                  {selectedHallwayId && (
+                  {attachMode && (
                     <>
-                      <div className="w-px h-4 bg-border mx-1" />
-                      <span className="text-xs text-muted-foreground">Offset:</span>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={offsetPercent}
-                        onChange={(e) => setOffsetPercent(parseInt(e.target.value))}
-                        className="w-20"
-                      />
-                      <span className="text-xs text-muted-foreground w-8">{offsetPercent}%</span>
+                      <div className="space-y-1.5">
+                        <span className="text-[11px] text-muted-foreground">Side</span>
+                        <div className="flex gap-1">
+                          {(['north', 'south', 'east', 'west'] as const).map((side) => (
+                            <Button
+                              key={side}
+                              size="sm"
+                              variant={attachSide === side ? 'default' : 'outline'}
+                              onClick={() => setAttachSide(side)}
+                              className="h-6 w-6 p-0 text-[10px] uppercase"
+                            >
+                              {side.charAt(0)}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      {selectedHallwayId && (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-muted-foreground">Offset</span>
+                            <span className="text-[10px] text-muted-foreground">{offsetPercent}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={offsetPercent}
+                            onChange={(e) => setOffsetPercent(parseInt(e.target.value))}
+                            className="w-full h-1 accent-primary"
+                          />
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
-              )}
-            </>
+              </PopoverContent>
+            </Popover>
           )}
+
+          {/* Properties toggle for mobile */}
+          <Button size="sm" variant="ghost" className="h-7 px-1.5 sm:hidden" onClick={() => setShowProperties((v) => !v)}>
+            <Settings className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex gap-6 min-h-0 px-6 pb-6">
+      <div className="flex-1 flex gap-1.5 min-h-0 px-2 pb-2">
         {/* Floor Plan Canvas */}
-        <div className="flex-1 relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+        <div className="flex-1 relative bg-muted/30 rounded-lg overflow-hidden border border-border">
           <div className="absolute inset-0">
-            {/* Grid Pattern Overlay */}
-            <div className="absolute inset-0 opacity-30 dark:opacity-20" style={{
-              backgroundImage: `
-                linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px'
-            }}></div>
             {viewMode === '2d' ? (
               <FloorPlanCanvas
                 key={`2d-${refreshKey}`}
@@ -593,25 +597,31 @@ export function ModernFloorPlanView() {
             )}
           </div>
 
-          {/* Floating Info Card */}
-          {currentFloor && (
-            <div className="absolute top-6 left-6 bg-white/95 dark:bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl p-4 shadow-lg border border-white/20 dark:border-slate-700/50">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <div>
-                  <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">{currentFloor.buildings.name}</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{currentFloor.name}</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Floating Zoom Controls — bottom center */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
+            <ViewControls
+              floating
+              zoom={zoom}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onZoomReset={handleZoomReset}
+              onRefresh={handleRefresh}
+              showLabels={showLabels}
+              onToggleLabels={() => setShowLabels(!showLabels)}
+              showGrid={showGrid}
+              onToggleGrid={() => setShowGrid(!showGrid)}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
+              onSearch={() => setIsSearchOpen(true)}
+            />
+          </div>
         </div>
 
-        {/* Enhanced Properties Panel (hide on small screens unless toggled) */}
+        {/* Properties Panel — narrower, collapsible */}
         {showProperties && (
           <div 
             id="properties-panel"
-            className="w-96 hidden sm:block"
+            className="w-72 hidden sm:block"
           >
             <EnhancedPropertiesPanel
               selectedObject={selectedObject}

@@ -8,11 +8,11 @@ import {
   ZoomOut, 
   Maximize, 
   RefreshCw, 
-  Settings, 
   Search,
   Filter,
   Eye,
   EyeOff,
+  Grid3X3,
   Expand,
   Minimize
 } from 'lucide-react';
@@ -37,6 +37,39 @@ interface ViewControlsProps {
   onToggleFullscreen: () => void;
   onSearch: () => void;
   onAdvancedSearch?: () => void;
+  /** When true, render as a floating overlay for the canvas */
+  floating?: boolean;
+}
+
+function ControlButton({ 
+  onClick, 
+  disabled, 
+  active, 
+  tooltip, 
+  children 
+}: { 
+  onClick: () => void; 
+  disabled?: boolean; 
+  active?: boolean; 
+  tooltip: string; 
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClick}
+          disabled={disabled}
+          className={cn("h-7 w-7 px-0", active && "bg-accent")}
+        >
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs">{tooltip}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function ViewControls({
@@ -52,162 +85,75 @@ export function ViewControls({
   isFullscreen,
   onToggleFullscreen,
   onSearch,
-  onAdvancedSearch
+  onAdvancedSearch,
+  floating = false,
 }: ViewControlsProps) {
   const isMobile = useIsMobile();
 
-  if (isMobile) {
-    return null;
+  // Floating version: minimal zoom bar rendered over the canvas
+  if (floating) {
+    return (
+      <TooltipProvider delayDuration={300}>
+        <div className="flex items-center gap-0.5 bg-background/80 backdrop-blur-sm rounded-lg p-0.5 shadow-md border border-border">
+          <ControlButton onClick={onZoomOut} disabled={zoom <= 0.25} tooltip="Zoom Out">
+            <ZoomOut className="h-3.5 w-3.5" />
+          </ControlButton>
+
+          <span className="text-[10px] px-1 min-w-[2rem] text-center font-medium text-muted-foreground select-none">
+            {(zoom * 100).toFixed(0)}%
+          </span>
+
+          <ControlButton onClick={onZoomIn} disabled={zoom >= 3} tooltip="Zoom In">
+            <ZoomIn className="h-3.5 w-3.5" />
+          </ControlButton>
+
+          <ControlButton onClick={onZoomReset} tooltip="Fit to View">
+            <Maximize className="h-3.5 w-3.5" />
+          </ControlButton>
+
+          {!isMobile && (
+            <>
+              <div className="h-4 w-px bg-border" />
+              <ControlButton onClick={onToggleLabels} active={showLabels} tooltip={`${showLabels ? 'Hide' : 'Show'} Labels`}>
+                {showLabels ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+              </ControlButton>
+              <ControlButton onClick={onToggleGrid} active={showGrid} tooltip={`${showGrid ? 'Hide' : 'Show'} Grid`}>
+                <Grid3X3 className="h-3.5 w-3.5" />
+              </ControlButton>
+            </>
+          )}
+
+          <div className="h-4 w-px bg-border" />
+
+          <ControlButton onClick={onToggleFullscreen} tooltip={`${isFullscreen ? 'Exit' : 'Enter'} Fullscreen`}>
+            {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Expand className="h-3.5 w-3.5" />}
+          </ControlButton>
+        </div>
+      </TooltipProvider>
+    );
   }
 
+  // Inline header version (desktop only)
+  if (isMobile) return null;
+
   return (
-    <TooltipProvider>
-      <div className="flex items-center space-x-1 bg-white/80 dark:bg-slate-900/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg p-1 shadow-sm">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSearch}
-              className="h-7 w-7 px-0"
-            >
-              <Search className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Quick Search</TooltipContent>
-        </Tooltip>
+    <TooltipProvider delayDuration={300}>
+      <div className="flex items-center gap-0.5 bg-background/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-border">
+        <ControlButton onClick={onSearch} tooltip="Quick Search">
+          <Search className="h-3.5 w-3.5" />
+        </ControlButton>
 
         {onAdvancedSearch && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onAdvancedSearch}
-                className="h-7 w-7 px-0"
-              >
-                <Filter className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Advanced Search</TooltipContent>
-          </Tooltip>
+          <ControlButton onClick={onAdvancedSearch} tooltip="Advanced Search">
+            <Filter className="h-3.5 w-3.5" />
+          </ControlButton>
         )}
 
         <div className="h-4 w-px bg-border" />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onZoomOut}
-              disabled={zoom <= 0.25}
-              className="h-7 w-7 px-0"
-            >
-              <ZoomOut className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Zoom Out</TooltipContent>
-        </Tooltip>
-
-        <span className="text-xs px-1 min-w-[2.5rem] text-center font-medium">
-          {(zoom * 100).toFixed(0)}%
-        </span>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onZoomIn}
-              disabled={zoom >= 3}
-              className="h-7 w-7 px-0"
-            >
-              <ZoomIn className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Zoom In</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onZoomReset}
-              className="h-7 w-7 px-0"
-            >
-              <Maximize className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Reset Zoom</TooltipContent>
-        </Tooltip>
-
-        <div className="h-4 w-px bg-border" />
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleLabels}
-              className={cn(
-                "h-7 w-7 px-0",
-                showLabels && "bg-primary/10"
-              )}
-            >
-              {showLabels ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{showLabels ? 'Hide' : 'Show'} Labels</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleGrid}
-              className={cn(
-                "h-7 w-7 px-0",
-                showGrid && "bg-primary/10"
-              )}
-            >
-              <Settings className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{showGrid ? 'Hide' : 'Show'} Grid</TooltipContent>
-        </Tooltip>
-
-        <div className="h-4 w-px bg-border" />
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRefresh}
-              className="h-7 w-7 px-0"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Refresh</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleFullscreen}
-              className="h-7 w-7 px-0"
-            >
-              {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Expand className="h-3.5 w-3.5" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{isFullscreen ? 'Exit' : 'Enter'} Fullscreen</TooltipContent>
-        </Tooltip>
+        <ControlButton onClick={onRefresh} tooltip="Refresh">
+          <RefreshCw className="h-3.5 w-3.5" />
+        </ControlButton>
       </div>
     </TooltipProvider>
   );

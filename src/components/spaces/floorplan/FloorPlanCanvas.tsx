@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { logger } from '@/lib/logger';
 import { 
   useNodesState, 
@@ -8,12 +8,9 @@ import {
   Node,
   addEdge,
   ReactFlowProvider,
-  applyNodeChanges,
-  NodeChange
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { FloorPlanFlow } from './components/FloorPlanFlow';
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
 import { useFloorPlanNodes } from "./hooks/useFloorPlanNodes";
@@ -21,9 +18,7 @@ import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
 import { HallwayNode } from './nodes/HallwayNode';
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 import { FloorPlanNode } from './types/floorPlanTypes';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
@@ -44,7 +39,6 @@ function FloorPlanCanvasInner({
   onObjectSelect,
   previewData
 }: FloorPlanCanvasProps) {
-  const isMobile = useIsMobile();
   const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -58,7 +52,6 @@ function FloorPlanCanvasInner({
     if (!objects?.length) return [];
 
     const reactFlowNodes = objects.map((obj: any) => {
-      // Ensure we have valid position and size
       const position = obj.position && 
         typeof obj.position.x === 'number' && 
         typeof obj.position.y === 'number' &&
@@ -107,7 +100,6 @@ function FloorPlanCanvasInner({
       };
     });
 
-    // Apply automatic layout for nodes without valid positions
     const nodesWithoutPosition = reactFlowNodes.filter(
       node => !node.position || (node.position.x === 0 && node.position.y === 0)
     );
@@ -154,9 +146,7 @@ function FloorPlanCanvasInner({
   }, [previewData, setNodes]);
 
   useEffect(() => {
-    if (!objects || !floorId || isLoading) {
-      return;
-    }
+    if (!objects || !floorId || isLoading) return;
 
     if (floorId !== lastFloorId.current) {
       initialized.current = false;
@@ -180,7 +170,6 @@ function FloorPlanCanvasInner({
   );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    // Normal selection behavior
     if (onObjectSelect) {
       onObjectSelect({
         ...node.data,
@@ -191,11 +180,11 @@ function FloorPlanCanvasInner({
         rotation: node.data?.rotation || 0
       });
     }
-  }, [onObjectSelect, nodes, setNodes]);
+  }, [onObjectSelect]);
 
   if (!floorId) {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-gray-50">
+      <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
         Select a floor to view the floor plan
       </div>
     );
@@ -203,7 +192,7 @@ function FloorPlanCanvasInner({
 
   if (isLoading) {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-gray-50">
+      <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
         Loading floor plan...
       </div>
     );
@@ -211,82 +200,6 @@ function FloorPlanCanvasInner({
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* Topology tools bar - Desktop only */}
-      {!isMobile && (
-        <div className="absolute top-2 left-2 z-10 bg-white/90 dark:bg-slate-900/90 dark:bg-slate-800/90 rounded-md px-2 py-1.5 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="flex flex-col gap-1.5">
-            {/* Main toolbar row */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 px-2 text-xs whitespace-nowrap"
-              aria-label="Add default hallways to floor"
-              onClick={async () => {
-            if (!floorId) {
-              toast.error('Select a floor first');
-              return;
-            }
-            try {
-              const center = { x: 400, y: 400 };
-              const central = {
-                name: 'Central Hallway',
-                floor_id: floorId,
-                position: { x: center.x - 400, y: center.y - 25 },
-                size: { width: 800, height: 50 },
-                rotation: 0,
-                description: null,
-                status: 'active',
-                width_meters: 3,
-                accessibility: 'fully_accessible',
-                type: 'public_main',
-                section: 'connector'
-              } as unknown;
-              const north = {
-                name: 'North Hallway',
-                floor_id: floorId,
-                position: { x: center.x - 25, y: center.y - 300 - 50 },
-                size: { width: 50, height: 300 },
-                rotation: 0,
-                description: null,
-                status: 'active',
-                width_meters: 3,
-                accessibility: 'fully_accessible',
-                type: 'public_main',
-                section: 'connector'
-              } as unknown;
-              const south = {
-                name: 'South Hallway',
-                floor_id: floorId,
-                position: { x: center.x - 25, y: center.y + 50 },
-                size: { width: 50, height: 300 },
-                rotation: 0,
-                description: null,
-                status: 'active',
-                width_meters: 3,
-                accessibility: 'fully_accessible',
-                type: 'public_main',
-                section: 'connector'
-              } as unknown;
-              const { error: e1 } = await supabase.from('hallways').insert(central);
-              if (e1) throw e1;
-              const { error: e2 } = await supabase.from('hallways').insert(north);
-              if (e2) throw e2;
-              const { error: e3 } = await supabase.from('hallways').insert(south);
-              if (e3) throw e3;
-              toast.success('Created central + north + south hallways');
-            } catch (e:any) {
-              logger.error('Failed to create default hallways', e);
-              toast.error(`Failed: ${e?.message || 'Unknown error'}`);
-            }
-          }}
-          >
-            Add Hallways
-          </Button>
-          </div>
-          </div>
-        </div>
-      )}
       <FloorPlanFlow
         nodes={nodes}
         edges={edges}
