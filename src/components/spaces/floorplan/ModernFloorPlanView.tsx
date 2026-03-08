@@ -23,6 +23,7 @@ import { ViewControls } from './components/ViewControls';
 import { BulkPositionTool } from './components/BulkPositionTool';
 import { cn } from '@/lib/utils';
 import { FloorPlanNode } from './types/floorPlanTypes';
+import { LayoutEditorCanvas } from './components/LayoutEditorCanvas';
 
 interface Floor {
   id: string;
@@ -59,7 +60,7 @@ export function ModernFloorPlanView() {
   const [isLoading, setIsLoading] = useState(true);
   const [zoom, setZoom] = useState<number>(1);
   const [refreshKey, setRefreshKey] = useState<number>(0);
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  const [viewMode, setViewMode] = useState<'2d' | '3d' | 'edit'>('2d');
   const [showLabels, setShowLabels] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,7 +111,7 @@ export function ModernFloorPlanView() {
       const raw = localStorage.getItem(SETTINGS_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw) as Partial<{
-        viewMode: '2d' | '3d';
+        viewMode: '2d' | '3d' | 'edit';
         showLabels: boolean;
         showGrid: boolean;
         filterType: 'all' | 'room' | 'hallway' | 'door';
@@ -431,10 +432,11 @@ export function ModernFloorPlanView() {
 
           <div className="h-5 w-px bg-border" />
 
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as '2d' | '3d')}>
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as '2d' | '3d' | 'edit')}>
             <TabsList className="h-7 bg-muted/50 p-0.5">
               <TabsTrigger value="2d" className="text-[11px] px-2 py-0.5 h-6">2D</TabsTrigger>
               <TabsTrigger value="3d" className="text-[11px] px-2 py-0.5 h-6">3D</TabsTrigger>
+              <TabsTrigger value="edit" className="text-[11px] px-2 py-0.5 h-6">✏️ Edit</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -627,7 +629,7 @@ export function ModernFloorPlanView() {
                 previewData={previewData as any}
                 zoom={zoom}
               />
-            ) : (
+            ) : viewMode === '3d' ? (
               <>
                 <ModernThreeDViewer
                   key={`3d-${refreshKey}`}
@@ -660,6 +662,20 @@ export function ModernFloorPlanView() {
                   />
                 )}
               </>
+            ) : (
+              <LayoutEditorCanvas
+                key={`edit-${refreshKey}`}
+                floorId={selectedFloor}
+                objects={(sceneObjects as any[]).map((o: any) => ({
+                  id: o.id,
+                  type: o.type || 'room',
+                  name: o.data?.label || o.name || '',
+                  position: o.position || { x: 0, y: 0 },
+                  size: o.data?.size || o.size || { width: 150, height: 100 },
+                  rotation: o.rotation || 0,
+                }))}
+                onRefresh={handleRefresh}
+              />
             )}
           </div>
 
