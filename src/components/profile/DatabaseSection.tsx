@@ -1,9 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { logger } from '@/lib/logger';
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Database, History, Shield } from "lucide-react";
+import { History } from "lucide-react";
 import { useState } from "react";
 import { BackupVersion, ExportableTable, fetchBackupVersions, restoreBackup, createBackupPolicy, fetchBackupPolicies } from "./backupUtils";
 import { exportDatabase } from "./utils/databaseExport";
