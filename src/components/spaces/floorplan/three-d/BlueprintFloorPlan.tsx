@@ -173,6 +173,7 @@ const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
             showConnections={showConnections}
             labelScale={labelScale}
             gridSize={gridSize}
+            walkMode={walkMode}
           />
         </Canvas>
       </Suspense>

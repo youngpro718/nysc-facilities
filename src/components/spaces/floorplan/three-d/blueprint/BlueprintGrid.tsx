@@ -78,13 +78,24 @@ const BlueprintGrid: React.FC<BlueprintGridProps> = ({
 
   return (
     <group position={[0, -0.5, 0]}>
+      {/* Solid floor plane — polished concrete look */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.5, 0]}>
+        <planeGeometry args={[size * 1.5, size * 1.5]} />
+        <meshPhongMaterial
+          color="#141c2e"
+          shininess={30}
+          specular={new THREE.Color('#1e3a5f')}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
       {/* Background plane with gradient effect */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
         <planeGeometry args={[size * 1.5, size * 1.5]} />
         <meshBasicMaterial
           color={GRID_COLORS.background}
           transparent
-          opacity={1}
+          opacity={0.6}
           side={THREE.DoubleSide}
         />
       </mesh>
