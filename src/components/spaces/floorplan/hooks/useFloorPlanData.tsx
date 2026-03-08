@@ -43,7 +43,7 @@ export function useFloorPlanData(floorId: string | null) {
       logger.debug('Retrieved floor objects:', floorObjects);
 
       // Transform the objects to match our FloorPlanNode type
-      const nodes: FloorPlanNode[] = (floorObjects || []).map(obj => ({
+      const rawNodes: FloorPlanNode[] = (floorObjects || []).map(obj => ({
         id: obj.id,
         type: obj.type,
         position: obj.position || { x: 0, y: 0 },
@@ -61,6 +61,45 @@ export function useFloorPlanData(floorId: string | null) {
         rotation: obj.rotation || 0,
         zIndex: obj.z_index || 0
       }));
+
+      // Auto-layout: arrange rooms at {0,0} in a grid so they don't stack
+      const unpositioned = rawNodes.filter(n => {
+        const p = n.position as any;
+        return (!p || (p.x === 0 && p.y === 0)) && n.type !== 'door';
+      });
+      const positioned = rawNodes.filter(n => {
+        const p = n.position as any;
+        return (p && (p.x !== 0 || p.y !== 0)) || n.type === 'door';
+      });
+
+      // Find max extent of positioned rooms to place grid after them
+      let offsetX = 0;
+      let offsetY = 0;
+      positioned.forEach(n => {
+        const p = n.position as any;
+        const s = (n.data as any)?.size;
+        const w = s?.width || 150;
+        offsetX = Math.max(offsetX, (p?.x || 0) + w);
+        offsetY = Math.max(offsetY, (p?.y || 0) + (s?.height || 100));
+      });
+
+      // Place unpositioned rooms in a grid with 180px spacing
+      const cols = Math.max(1, Math.ceil(Math.sqrt(unpositioned.length)));
+      const spacingX = 200;
+      const spacingY = 160;
+      const gridStartX = positioned.length > 0 ? offsetX + 250 : 100;
+      const gridStartY = 100;
+
+      unpositioned.forEach((node, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        (node as any).position = {
+          x: gridStartX + col * spacingX,
+          y: gridStartY + row * spacingY
+        };
+      });
+
+      const nodes = [...positioned, ...unpositioned];
 
       logger.debug('Transformed nodes:', nodes);
 
