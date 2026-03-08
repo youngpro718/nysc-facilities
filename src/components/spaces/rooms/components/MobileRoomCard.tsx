@@ -18,6 +18,7 @@ import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { useEnhancedRoomData } from "@/hooks/useEnhancedRoomData";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RoomQuickEditSheet } from "../../RoomQuickEditSheet";
 
 interface MobileRoomCardProps {
