@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, BarChart3, Info, Users, Building2 } from 'lucide-react';
+import { Settings, BarChart3, Info, Users, Building2, Link2 } from 'lucide-react';
 import { PropertiesPanel } from './PropertiesPanel';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { HallwayAttachPanel } from './HallwayAttachPanel';
 import { FloorPlanNode } from '../types/floorPlanTypes';
 import { useEnhancedRoomData } from '@/hooks/useEnhancedRoomData';
 
