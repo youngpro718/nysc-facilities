@@ -6,6 +6,7 @@ import { Canvas } from '@react-three/fiber';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { useFloorPlanData } from '../hooks/useFloorPlanData';
 import { toast } from 'sonner';
+import { HallwayAttachPanel } from './HallwayAttachPanel';
 import { 
   InfoIcon, 
   Maximize2Icon, 
