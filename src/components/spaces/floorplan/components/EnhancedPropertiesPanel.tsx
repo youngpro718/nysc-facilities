@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, BarChart3, Info, Users, Building2 } from 'lucide-react';
+import { Settings, BarChart3, Info, Users, Building2, Link2 } from 'lucide-react';
 import { PropertiesPanel } from './PropertiesPanel';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { HallwayAttachPanel } from './HallwayAttachPanel';
 import { FloorPlanNode } from '../types/floorPlanTypes';
 import { useEnhancedRoomData } from '@/hooks/useEnhancedRoomData';
 
@@ -14,6 +15,7 @@ interface EnhancedPropertiesPanelProps {
   onUpdate: () => void;
   onPreviewChange?: (values: Record<string, unknown>) => void;
   selectedFloorName?: string;
+  floorId?: string;
 }
 
 export function EnhancedPropertiesPanel({ 
@@ -21,7 +23,8 @@ export function EnhancedPropertiesPanel({
   allObjects,
   onUpdate,
   onPreviewChange,
-  selectedFloorName
+  selectedFloorName,
+  floorId
 }: EnhancedPropertiesPanelProps) {
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -36,14 +39,18 @@ export function EnhancedPropertiesPanel({
     <Card className="h-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
         <div className="border-b border-slate-200 dark:border-slate-700 px-4 pt-4">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-800/30 dark:bg-slate-700">
+          <TabsList className="grid w-full grid-cols-5 bg-slate-100 dark:bg-slate-800/30 dark:bg-slate-700">
             <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs">
               <Users className="h-3.5 w-3.5" />
               Overview
             </TabsTrigger>
             <TabsTrigger value="properties" className="flex items-center gap-1.5 text-xs">
               <Settings className="h-3.5 w-3.5" />
-              Properties
+              Props
+            </TabsTrigger>
+            <TabsTrigger value="attach" className="flex items-center gap-1.5 text-xs">
+              <Link2 className="h-3.5 w-3.5" />
+              Attach
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-1.5 text-xs">
               <BarChart3 className="h-3.5 w-3.5" />
@@ -134,6 +141,30 @@ export function EnhancedPropertiesPanel({
                 </p>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="attach" className="h-full m-0 p-0">
+            <div className="h-full overflow-y-auto p-4">
+              {selectedObject && floorId ? (
+                <HallwayAttachPanel
+                  selectedObject={{
+                    id: String(selectedObject.id),
+                    type: selectedObject.type,
+                    object_type: (selectedObject as any).object_type,
+                    name: (selectedObject as any).name,
+                    room_number: (selectedObject as any).room_number || selectedObject.data?.properties?.label,
+                    floor_id: floorId,
+                  }}
+                  floorId={floorId}
+                  onRefresh={onUpdate}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                  <Link2 className="h-8 w-8 text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">Select a room or hallway to manage attachments.</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics" className="h-full m-0 p-0">

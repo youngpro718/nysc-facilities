@@ -6,6 +6,7 @@ import { Canvas } from '@react-three/fiber';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { useFloorPlanData } from '../hooks/useFloorPlanData';
 import { toast } from 'sonner';
+import { HallwayAttachPanel } from './HallwayAttachPanel';
 import { 
   InfoIcon, 
   Maximize2Icon, 
@@ -708,19 +709,22 @@ export function ThreeDViewer({
                 )}
               </div>
 
-              <div className="pt-2 flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1 text-xs">
-                  <InfoIcon className="h-3 w-3 mr-1" />
-                  View Details
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1 text-xs">
-                  <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeWidth="2"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeWidth="2"/>
-                  </svg>
-                  Edit
-                </Button>
-              </div>
+              <Separator />
+
+              {floorId && (selectedObjectData.type === 'hallway' || selectedObjectData.type === 'room' || selectedObjectData.object_type === 'hallway' || selectedObjectData.object_type === 'room') && (
+                <HallwayAttachPanel
+                  selectedObject={{
+                    id: selectedObjectData.id,
+                    type: selectedObjectData.type,
+                    object_type: selectedObjectData.object_type,
+                    name: selectedObjectData.label || selectedObjectData.name,
+                    room_number: selectedObjectData.properties?.room_number,
+                    floor_id: floorId,
+                  }}
+                  floorId={floorId}
+                  onRefresh={() => {}}
+                />
+              )}
             </div>
           </Card>
         </div>
