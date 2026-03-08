@@ -273,7 +273,7 @@ export function useFloorPlanData(floorId: string | null) {
   });
 
   // Compute hallway-centric positions
-  const hallwayPositionOverrides = computeHallwayCentricLayout(hallwayConnections, objectMap);
+  const hallwayOverrides = computeHallwayCentricLayout(hallwayConnections, objectMap);
 
   // Set of room IDs that have hallway connections
   const connectedRoomIds = new Set(hallwayConnections.map(c => c.room_id));
