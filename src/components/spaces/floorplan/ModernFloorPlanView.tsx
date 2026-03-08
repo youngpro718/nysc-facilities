@@ -82,6 +82,13 @@ export function ModernFloorPlanView() {
   const [attachSide, setAttachSide] = useState<'north'|'south'|'east'|'west'>('north');
   const [offsetPercent, setOffsetPercent] = useState<number>(50);
 
+  // Overlay-specific state: tracks the hallway being configured and the room to place
+  const [overlayHallwayId, setOverlayHallwayId] = useState<string | null>(null);
+  const [overlayHallwayName, setOverlayHallwayName] = useState<string>('');
+  const [overlayRoomId, setOverlayRoomId] = useState<string | null>(null);
+  const [overlayRoomName, setOverlayRoomName] = useState<string>('');
+  const [overlayRoomType, setOverlayRoomType] = useState<string>('');
+
   const { dialogState, openDialog, closeDialog } = useDialogManager();
 
   // Set initial properties panel visibility based on screen size
