@@ -106,7 +106,8 @@ const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
   showLegend = false,
   labelScale = 1,
   className = '',
-  walkMode = false
+  walkMode = false,
+  onWalkModeExit
 }, ref) => {
   const sceneRef = useRef<SceneHandle>(null);
 
