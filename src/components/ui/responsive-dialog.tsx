@@ -39,7 +39,7 @@ export function ResponsiveDialog({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className={cn("max-h-[92vh] flex flex-col", className)}>
+        <DrawerContent className={cn("max-h-[92dvh] flex flex-col", className)}>
           {(title || description) && (
             <DrawerHeader className="pb-3 flex-shrink-0 sticky top-0 bg-background z-10 border-b safe-area-top">
               {title && <DrawerTitle className="text-center text-base">{title}</DrawerTitle>}
