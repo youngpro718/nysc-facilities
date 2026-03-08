@@ -111,29 +111,6 @@ export function DatabaseSection() {
     }
   };
 
-  const handleCreatePolicy = async () => {
-    try {
-      await createBackupPolicy({
-        retention_days: 30,
-        max_backups: 5,
-        compress_backups: true,
-        encrypt_backups: true,
-        description: "Default retention policy",
-        is_active: true
-      });
-      toast({
-        title: "Policy Created",
-        description: "Backup retention policy has been created successfully.",
-      });
-    } catch (error) {
-      logger.error('Policy creation error:', error);
-      toast({
-        title: "Policy Creation Failed",
-        description: "There was an error creating the backup policy.",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className="space-y-6">
