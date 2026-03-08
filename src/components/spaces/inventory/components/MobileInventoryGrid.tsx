@@ -28,6 +28,7 @@ export function MobileInventoryGrid({
   onEditItem,
   onDeleteItem
 }: MobileInventoryGridProps) {
+  const [confirmDeleteItem, confirmDeleteDialog] = useConfirmDialog();
   const handleQuantityChange = (itemId: string, currentQuantity: number, change: number) => {
     const newQuantity = currentQuantity + change;
     if (newQuantity >= 0) {
