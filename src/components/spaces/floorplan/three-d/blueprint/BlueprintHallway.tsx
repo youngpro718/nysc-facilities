@@ -34,9 +34,9 @@ const BlueprintHallway: React.FC<BlueprintHallwayProps> = ({
   const halfW = corridorWidth / 2;
 
   const floorMat = useMemo(() => new THREE.MeshPhongMaterial({
-    color: new THREE.Color('#334155'),
+    color: new THREE.Color('#e2e8f0'),
     transparent: true,
-    opacity: 0.85,
+    opacity: 0.9,
     side: THREE.DoubleSide,
   }), []);
 
