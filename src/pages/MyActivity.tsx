@@ -113,7 +113,7 @@ export default function MyActivity() {
   const isLoading = supplyLoading || keyLoading || issuesLoading || tasksLoading;
 
   const content = (
-    <div className="space-y-4 pb-20 md:pb-8">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
