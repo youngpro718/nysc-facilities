@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Settings, QrCode } from "lucide-react";
+import { QrCode } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DatabaseSection } from "@/components/profile/DatabaseSection";
 import { ModuleManagement } from "@/components/profile/ModuleManagement";
@@ -10,11 +10,7 @@ export default function SystemSettings() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <Settings className="h-5 w-5 text-primary" />
-        <h1 className="text-xl sm:text-2xl font-semibold">System Settings</h1>
-      </div>
+      {/* Header removed — Layout provides page title */}
 
       {/* App Install Card */}
       <Card className="bg-primary/5 border-primary/20">

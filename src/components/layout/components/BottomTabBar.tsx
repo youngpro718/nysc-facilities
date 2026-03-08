@@ -104,7 +104,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                   "text-[10px] xs:text-[11px] leading-none font-medium truncate max-w-full",
                   isActive && "font-semibold"
                 )}>
-                  {({ 'Access & Assignments': 'Access', 'Court Operations': 'Courts', 'Issues Management': 'Issues' } as Record<string, string>)[item.title] || item.title}
+                  {({ 'Access & Assignments': 'Access', 'Court Operations': 'Courts', 'System Settings': 'Settings' } as Record<string, string>)[item.title] || item.title}
                 </span>
               </button>
             );

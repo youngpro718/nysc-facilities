@@ -220,7 +220,7 @@ function LayoutContent() {
         )}
 
         <main className="flex-1 pb-28 md:pb-0 safe-area-bottom mobile-main-padding">
-          <div className="mx-auto max-w-none xl:max-w-[95%] 2xl:max-w-[90%] px-2 sm:px-4 lg:px-8 xl:px-12 py-2 sm:py-6 xl:py-12">
+          <div className="px-2 sm:px-4 lg:px-8 py-2 sm:py-6">
             <Outlet />
           </div>
         </main>
