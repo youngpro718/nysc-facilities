@@ -200,7 +200,7 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
             maxWidth={size[0] * 0.9}
             textAlign="center"
             outlineWidth={0.8}
-            outlineColor="#0f172a"
+            outlineColor="#1e293b"
           >
             {displayName}
           </Text>
