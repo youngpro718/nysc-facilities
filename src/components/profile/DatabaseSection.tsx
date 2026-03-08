@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 import { useToast } from "@/hooks/use-toast";
 import { History } from "lucide-react";
 import { useState } from "react";
-import { BackupVersion, ExportableTable, fetchBackupVersions, restoreBackup, createBackupPolicy, fetchBackupPolicies } from "./backupUtils";
+import { BackupVersion, ExportableTable, fetchBackupVersions, restoreBackup, fetchBackupPolicies } from "./backupUtils";
 import { exportDatabase } from "./utils/databaseExport";
 import { importDatabase } from "./utils/databaseImport";
 import { BackupHistoryDialog } from "./components/BackupHistoryDialog";
