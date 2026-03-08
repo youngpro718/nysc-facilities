@@ -185,11 +185,8 @@ function AppContent() {
             <AdminCenter />
           </ProtectedRoute>
         } />
-        <Route path="system-settings" element={
-          <ProtectedRoute requireAdmin>
-            <SystemSettings />
-          </ProtectedRoute>
-        } />
+        {/* System Settings merged into Admin Center */}
+        <Route path="system-settings" element={<Navigate to="/admin?tab=system" replace />} />
         {/* /users route removed — use /admin instead */}
         <Route path="users" element={<Navigate to="/admin" replace />} />
         <Route path="admin/key-requests" element={

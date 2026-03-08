@@ -1,9 +1,9 @@
-import { ChevronLeft, Users, AlertCircle, Search, RefreshCw, MoreVertical, Mail, UserX, UserCheck, Clock, Unlock, CheckCircle, Ban, Trash2 } from 'lucide-react';
+import { ChevronLeft, Users, AlertCircle, Search, RefreshCw, MoreVertical, Mail, UserX, UserCheck, Clock, Unlock, CheckCircle, Ban, Trash2, Settings } from 'lucide-react';
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SYSTEM_ROLES, getRoleLabel, type UserRole } from "@/config/roles";
 import { supabase } from "@/lib/supabase";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRateLimitManager } from "@/hooks/security/useRateLimitManager";
+import { DatabaseSection } from "@/components/profile/DatabaseSection";
+import { ModuleManagement } from "@/components/profile/ModuleManagement";
+import { QrCode } from "lucide-react";
+import { CardDescription } from "@/components/ui/card";
 
 interface UserProfile {
   id: string;
@@ -45,8 +50,64 @@ interface UserProfile {
   requested_role?: string | null;
 }
 
+function SystemSettingsContent() {
+  const navigate = useNavigate();
+  return (
+    <div className="space-y-6">
+      {/* App Install Card */}
+      <Card className="bg-primary/5 border-primary/20">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <QrCode className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Install App on Phones</h3>
+                <p className="text-sm text-muted-foreground">
+                  Share QR code or link to install the app on staff phones
+                </p>
+              </div>
+            </div>
+            <Button onClick={() => navigate('/install')} size="sm">
+              View QR Code
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Module Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Module Management</CardTitle>
+          <CardDescription>
+            Enable or disable features across the application
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ModuleManagement />
+        </CardContent>
+      </Card>
+
+      {/* Database Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Database Management</CardTitle>
+          <CardDescription>
+            Export data, create backups, and manage database operations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DatabaseSection />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminCenter() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAdmin, userRole } = useRolePermissions();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +119,11 @@ export default function AdminCenter() {
   const [pendingRoleSelections, setPendingRoleSelections] = useState<Record<string, UserRole>>({});
   const { resetLoginAttempts } = useRateLimitManager();
   const [confirmDelete, confirmDeleteDialog] = useConfirmDialog();
+
+  const activeTab = searchParams.get('tab') || 'users';
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   // Current admin info
   const currentAdmin = users.find(u => u.id === currentUserId);
@@ -294,7 +360,7 @@ export default function AdminCenter() {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-semibold">User Management</h1>
+          <h1 className="text-xl font-semibold">Admin Center</h1>
         </div>
         <Card>
           <CardHeader>
@@ -307,281 +373,297 @@ export default function AdminCenter() {
 
   return (
     <div className="space-y-4">
-      {/* Header with Admin Info */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-primary" />
-          <h1 className="text-xl sm:text-2xl font-semibold">User Management</h1>
-        </div>
-        <Button variant="outline" size="sm" onClick={handleManualRefresh} disabled={refreshing}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
+      {/* Tabs: Users | System */}
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="users" className="gap-1.5">
+            <Users className="h-4 w-4" />
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="system" className="gap-1.5">
+            <Settings className="h-4 w-4" />
+            System
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Logged in as */}
-      <div className="text-sm text-muted-foreground">
-        Logged in as: <span className="font-medium text-foreground">{currentAdminName}</span>
-        <Badge variant="outline" className="ml-2">{getRoleLabel(userRole)}</Badge>
-      </div>
+        {/* Users Tab */}
+        <TabsContent value="users" className="mt-4 space-y-4">
+          {/* Header with Admin Info */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-sm text-muted-foreground">
+              Logged in as: <span className="font-medium text-foreground">{currentAdminName}</span>
+              <Badge variant="outline" className="ml-2">{getRoleLabel(userRole)}</Badge>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleManualRefresh} disabled={refreshing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
 
-      {/* Pending Users Alert */}
-      {pendingUsers.length > 0 && (
-        <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
-          <Clock className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800 dark:text-amber-200">
-            <span className="font-medium">{pendingUsers.length} user{pendingUsers.length > 1 ? 's' : ''}</span> awaiting approval
-            {filterStatus !== 'pending' && (
-              <Button variant="link" size="sm" className="ml-2 h-auto p-0 text-amber-700" onClick={() => setFilterStatus('pending')}>
-                View pending →
+          {/* Pending Users Alert */}
+          {pendingUsers.length > 0 && (
+            <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+              <Clock className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                <span className="font-medium">{pendingUsers.length} user{pendingUsers.length > 1 ? 's' : ''}</span> awaiting approval
+                {filterStatus !== 'pending' && (
+                  <Button variant="link" size="sm" className="ml-2 h-auto p-0 text-amber-700" onClick={() => setFilterStatus('pending')}>
+                    View pending →
+                  </Button>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Search and Filter */}
+          <div className="flex gap-2 flex-col sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
+              <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectValue placeholder="Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users ({users.length})</SelectItem>
+                <SelectItem value="pending">Pending ({pendingUsers.length})</SelectItem>
+                <SelectItem value="active">Active ({activeUsers.length})</SelectItem>
+                <SelectItem value="suspended">Suspended ({suspendedUsers.length})</SelectItem>
+                <SelectItem value="admins">Admins ({users.filter(u => u.role === 'admin').length})</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filter badge */}
+          {filterStatus !== 'all' && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">
+                {filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)} ({filteredUsers.length})
+              </Badge>
+              <Button variant="ghost" size="sm" onClick={() => setFilterStatus('all')}>
+                Clear filter
               </Button>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
+            </div>
+          )}
 
-      {/* Search and Filter */}
-      <div className="flex gap-2 flex-col sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="Filter" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Users ({users.length})</SelectItem>
-            <SelectItem value="pending">Pending ({pendingUsers.length})</SelectItem>
-            <SelectItem value="active">Active ({activeUsers.length})</SelectItem>
-            <SelectItem value="suspended">Suspended ({suspendedUsers.length})</SelectItem>
-            <SelectItem value="admins">Admins ({users.filter(u => u.role === 'admin').length})</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          {/* Users List */}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground">No users found</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredUsers.map((user) => {
+                const isPending = user.verification_status === 'pending' || !user.is_approved;
+                const isCurrentUser = user.id === currentUserId;
+                const isUpdating = updatingUserId === user.id;
+                const selectedRole = getSelectedRoleForPending(user.id, user.requested_role);
 
-      {/* Filter badge */}
-      {filterStatus !== 'all' && (
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">
-            {filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)} ({filteredUsers.length})
-          </Badge>
-          <Button variant="ghost" size="sm" onClick={() => setFilterStatus('all')}>
-            Clear filter
-          </Button>
-        </div>
-      )}
+                return (
+                  <Card key={user.id} className={`p-4 ${isUpdating ? 'opacity-50' : ''}`}>
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarFallback className="text-sm bg-primary/10 text-primary">
+                          {(user.first_name?.[0] || '') + (user.last_name?.[0] || user.email?.[0] || '?')}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">{getUserDisplayName(user)}</span>
+                          {isCurrentUser && <Badge variant="outline" className="text-xs">You</Badge>}
+                          {isPending && (
+                            <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200">
+                              <Clock className="h-3 w-3 mr-1" />Pending
+                            </Badge>
+                          )}
+                          {user.is_suspended && (
+                            <Badge variant="destructive">
+                              <Ban className="h-3 w-3 mr-1" />Suspended
+                            </Badge>
+                          )}
+                          {!isPending && !user.is_suspended && (
+                            <Badge variant="default" className="bg-green-600">
+                              <CheckCircle className="h-3 w-3 mr-1" />Verified
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                        {user.title && <p className="text-xs text-muted-foreground">{user.title}</p>}
 
-      {/* Users List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-        </div>
-      ) : filteredUsers.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <AlertCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">No users found</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {filteredUsers.map((user) => {
-            const isPending = user.verification_status === 'pending' || !user.is_approved;
-            const isCurrentUser = user.id === currentUserId;
-            const isUpdating = updatingUserId === user.id;
-            const selectedRole = getSelectedRoleForPending(user.id, user.requested_role);
+                        {/* Pending User: Role selector + Approve/Reject buttons */}
+                        {isPending && (
+                          <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                            {user.requested_role && (
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Requested: <span className="font-medium">{getRoleLabel(user.requested_role)}</span>
+                              </p>
+                            )}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-medium">Assign role:</span>
+                              <Select
+                                value={selectedRole}
+                                onValueChange={(v) => setPendingRoleSelections(prev => ({ ...prev, [user.id]: v as UserRole }))}
+                                disabled={isUpdating}
+                              >
+                                <SelectTrigger className="h-8 w-[140px] text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {SYSTEM_ROLES.map((role) => (
+                                    <SelectItem key={role.value} value={role.value}>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`h-2 w-2 rounded-full ${
+                                          role.color === 'red' ? 'bg-red-500' :
+                                          role.color === 'green' ? 'bg-green-500' :
+                                          role.color === 'purple' ? 'bg-purple-500' :
+                                          'bg-gray-500'
+                                        }`} />
+                                        {role.label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                size="sm"
+                                onClick={() => handleApproveUser(user.id, selectedRole)}
+                                disabled={isUpdating}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <UserCheck className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleRejectUser(user.id)}
+                                disabled={isUpdating}
+                              >
+                                <UserX className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={async () => {
+                                  const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+                                  const ok = await confirmDelete({ title: 'Delete User', description: `Permanently delete ${userName}? This cannot be undone.`, confirmLabel: 'Delete', variant: 'destructive' });
+                                  if (ok) handleDeleteUser(user.id);
+                                }}
+                                disabled={isUpdating}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
-            return (
-              <Card key={user.id} className={`p-4 ${isUpdating ? 'opacity-50' : ''}`}>
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarFallback className="text-sm bg-primary/10 text-primary">
-                      {(user.first_name?.[0] || '') + (user.last_name?.[0] || user.email?.[0] || '?')}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium">{getUserDisplayName(user)}</span>
-                      {isCurrentUser && <Badge variant="outline" className="text-xs">You</Badge>}
-                      {isPending && (
-                        <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200">
-                          <Clock className="h-3 w-3 mr-1" />Pending
-                        </Badge>
-                      )}
-                      {user.is_suspended && (
-                        <Badge variant="destructive">
-                          <Ban className="h-3 w-3 mr-1" />Suspended
-                        </Badge>
-                      )}
-                      {!isPending && !user.is_suspended && (
-                        <Badge variant="default" className="bg-green-600">
-                          <CheckCircle className="h-3 w-3 mr-1" />Verified
-                        </Badge>
+                        {/* Verified User: Role dropdown */}
+                        {!isPending && !isCurrentUser && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Role:</span>
+                            <Select
+                              value={user.role || 'standard'}
+                              onValueChange={(v) => handleChangeRole(user.id, v as UserRole)}
+                              disabled={isUpdating}
+                            >
+                              <SelectTrigger className="h-7 w-[130px] text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {SYSTEM_ROLES.map((role) => (
+                                  <SelectItem key={role.value} value={role.value}>
+                                    <div className="flex items-center gap-2">
+                                      <span className={`h-2 w-2 rounded-full ${
+                                        role.color === 'red' ? 'bg-red-500' :
+                                        role.color === 'green' ? 'bg-green-500' :
+                                        role.color === 'purple' ? 'bg-purple-500' :
+                                        'bg-gray-500'
+                                      }`} />
+                                      {role.label}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {/* Current user's role (read-only) */}
+                        {!isPending && isCurrentUser && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Role:</span>
+                            <Badge variant="outline">{getRoleLabel(user.role)}</Badge>
+                            <span className="text-xs text-muted-foreground italic">(Cannot change your own role)</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions Menu (only for non-pending users) */}
+                      {!isPending && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleUnlockAccount(user.email)}>
+                              <Unlock className="h-4 w-4 mr-2" />
+                              Unlock Account
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.email).then(() => toast.success('Email copied'))}>
+                              <Mail className="h-4 w-4 mr-2" />
+                              Copy Email
+                            </DropdownMenuItem>
+                            {!isCurrentUser && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={async () => {
+                                    const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+                                    const ok = await confirmDelete({ title: 'Delete User', description: `Permanently delete ${userName}? This cannot be undone.`, confirmLabel: 'Delete', variant: 'destructive' });
+                                    if (ok) handleDeleteUser(user.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete User
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                    {user.title && <p className="text-xs text-muted-foreground">{user.title}</p>}
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
 
-                    {/* Pending User: Role selector + Approve/Reject buttons */}
-                    {isPending && (
-                      <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                        {user.requested_role && (
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Requested: <span className="font-medium">{getRoleLabel(user.requested_role)}</span>
-                          </p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-medium">Assign role:</span>
-                          <Select
-                            value={selectedRole}
-                            onValueChange={(v) => setPendingRoleSelections(prev => ({ ...prev, [user.id]: v as UserRole }))}
-                            disabled={isUpdating}
-                          >
-                            <SelectTrigger className="h-8 w-[140px] text-sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SYSTEM_ROLES.map((role) => (
-                                <SelectItem key={role.value} value={role.value}>
-                                  <div className="flex items-center gap-2">
-                                    <span className={`h-2 w-2 rounded-full ${
-                                      role.color === 'red' ? 'bg-red-500' :
-                                      role.color === 'green' ? 'bg-green-500' :
-                                      role.color === 'purple' ? 'bg-purple-500' :
-                                      'bg-gray-500'
-                                    }`} />
-                                    {role.label}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            size="sm"
-                            onClick={() => handleApproveUser(user.id, selectedRole)}
-                            disabled={isUpdating}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <UserCheck className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleRejectUser(user.id)}
-                            disabled={isUpdating}
-                          >
-                            <UserX className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={async () => {
-                              const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
-                              const ok = await confirmDelete({ title: 'Delete User', description: `Permanently delete ${userName}? This cannot be undone.`, confirmLabel: 'Delete', variant: 'destructive' });
-                              if (ok) handleDeleteUser(user.id);
-                            }}
-                            disabled={isUpdating}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Verified User: Role dropdown */}
-                    {!isPending && !isCurrentUser && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Role:</span>
-                        <Select
-                          value={user.role || 'standard'}
-                          onValueChange={(v) => handleChangeRole(user.id, v as UserRole)}
-                          disabled={isUpdating}
-                        >
-                          <SelectTrigger className="h-7 w-[130px] text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {SYSTEM_ROLES.map((role) => (
-                              <SelectItem key={role.value} value={role.value}>
-                                <div className="flex items-center gap-2">
-                                  <span className={`h-2 w-2 rounded-full ${
-                                    role.color === 'red' ? 'bg-red-500' :
-                                    role.color === 'green' ? 'bg-green-500' :
-                                    role.color === 'purple' ? 'bg-purple-500' :
-                                    'bg-gray-500'
-                                  }`} />
-                                  {role.label}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {/* Current user's role (read-only) */}
-                    {!isPending && isCurrentUser && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Role:</span>
-                        <Badge variant="outline">{getRoleLabel(user.role)}</Badge>
-                        <span className="text-xs text-muted-foreground italic">(Cannot change your own role)</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions Menu (only for non-pending users) */}
-                  {!isPending && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleUnlockAccount(user.email)}>
-                          <Unlock className="h-4 w-4 mr-2" />
-                          Unlock Account
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.email).then(() => toast.success('Email copied'))}>
-                          <Mail className="h-4 w-4 mr-2" />
-                          Copy Email
-                        </DropdownMenuItem>
-                        {!isCurrentUser && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={async () => {
-                                const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
-                                const ok = await confirmDelete({ title: 'Delete User', description: `Permanently delete ${userName}? This cannot be undone.`, confirmLabel: 'Delete', variant: 'destructive' });
-                                if (ok) handleDeleteUser(user.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete User
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+        {/* System Settings Tab */}
+        <TabsContent value="system" className="mt-4">
+          <SystemSettingsContent />
+        </TabsContent>
+      </Tabs>
       {confirmDeleteDialog}
     </div>
   );

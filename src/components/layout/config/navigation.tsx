@@ -256,7 +256,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     return [
       '/', // Admin Dashboard
       '/spaces',
-      '/operations', // Contains Issues, Maintenance, Supply Requests
+      '/operations',
       '/access-assignments',
       '/keys',
       '/inventory',
@@ -265,7 +265,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/court-operations',
       '',          // separator placeholder
       '/admin',
-      '/system-settings',
     ];
   }
   
