@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Plus, Minus, Package2 } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface MobileInventoryGridProps {
   items: InventoryItem[];
@@ -27,6 +28,7 @@ export function MobileInventoryGrid({
   onEditItem,
   onDeleteItem
 }: MobileInventoryGridProps) {
+  const [confirmDeleteItem, confirmDeleteDialog] = useConfirmDialog();
   const handleQuantityChange = (itemId: string, currentQuantity: number, change: number) => {
     const newQuantity = currentQuantity + change;
     if (newQuantity >= 0) {
@@ -95,10 +97,9 @@ export function MobileInventoryGrid({
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         className="text-destructive"
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this item?')) {
-                            onDeleteItem(item.id);
-                          }
+                        onClick={async () => {
+                          const ok = await confirmDeleteItem({ title: 'Delete Item', description: 'Are you sure you want to delete this item? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
+                          if (ok) onDeleteItem(item.id);
                         }}
                       >
                         Delete Item
@@ -180,6 +181,7 @@ export function MobileInventoryGrid({
           </CardContent>
         </Card>
       ))}
+      {confirmDeleteDialog}
     </div>
   );
 }

@@ -46,13 +46,14 @@ import { ModuleProtectedRoute } from "@/components/ModuleProtectedRoute";
 import OnboardingGuard from "@/routes/OnboardingGuard";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import AuthErrorBoundary from "@/components/error/AuthErrorBoundary";
-import Users from "@/pages/Users";
+// Users page removed — consolidated into AdminCenter (/admin)
 import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
 import Notifications from "@/pages/Notifications";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import InstallApp from "@/pages/InstallApp";
-import FormIntake from "@/pages/FormIntake";
-import FormTemplates from "@/pages/FormTemplates";
+// FormIntake and FormTemplates removed — dead routes with no navigation entry
+// import FormIntake from "@/pages/FormIntake";
+// import FormTemplates from "@/pages/FormTemplates";
 import RoutingRules from "@/pages/admin/RoutingRules";
 import FormTemplatesAdmin from "@/pages/admin/FormTemplatesAdmin";
 import KeyRequestFormPage from "@/pages/forms/KeyRequestFormPage";
@@ -189,11 +190,8 @@ function AppContent() {
             <SystemSettings />
           </ProtectedRoute>
         } />
-        <Route path="users" element={
-          <ProtectedRoute requireAdmin>
-            <Users />
-          </ProtectedRoute>
-        } />
+        {/* /users route removed — use /admin instead */}
+        <Route path="users" element={<Navigate to="/admin" replace />} />
         <Route path="admin/key-requests" element={
           <ProtectedRoute requireAdmin>
             <AdminKeyRequests />
@@ -211,16 +209,9 @@ function AppContent() {
             <Notifications />
           </ProtectedRoute>
         } />
-        <Route path="form-templates" element={
-          <ProtectedRoute>
-            <FormTemplates />
-          </ProtectedRoute>
-        } />
-        <Route path="form-intake" element={
-          <ProtectedRoute>
-            <FormIntake />
-          </ProtectedRoute>
-        } />
+        {/* /form-templates and /form-intake removed — redirect to dashboard */}
+        <Route path="form-templates" element={<Navigate to="/dashboard" replace />} />
+        <Route path="form-intake" element={<Navigate to="/dashboard" replace />} />
         <Route path="admin/routing-rules" element={
           <ProtectedRoute requireAdmin>
             <RoutingRules />
@@ -277,11 +268,8 @@ function AppContent() {
         <Route path="maintenance" element={<Navigate to="/operations?tab=maintenance" replace />} />
 
         {/* User Routes */}
-        <Route path="request" element={
-          <ProtectedRoute>
-            <RequestHub />
-          </ProtectedRoute>
-        } />
+        {/* /request redirects to dashboard — quick actions are inline via FAB */}
+        <Route path="request" element={<Navigate to="/dashboard" replace />} />
         <Route path="request/help" element={
           <ProtectedRoute>
             <HelpRequestPage />

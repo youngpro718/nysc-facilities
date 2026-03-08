@@ -8,6 +8,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface MobileRoomDrawerProps {
   room: Room | null;
@@ -22,10 +23,11 @@ export function MobileRoomDrawer({
   onClose,
   onDelete
 }: MobileRoomDrawerProps) {
+  const [confirmDeleteRoom, confirmDeleteDialog] = useConfirmDialog();
   if (!room) return null;
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <><Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="max-h-[85dvh]">
         <DrawerHeader className="flex items-center justify-between px-4 py-3">
           <DrawerTitle className="text-base font-semibold truncate">{room.name}</DrawerTitle>
@@ -41,8 +43,9 @@ export function MobileRoomDrawer({
         <div className="p-2 h-[75dvh] overflow-hidden">
           <RoomCard
             room={room}
-            onDelete={(id) => {
-              if (window.confirm('Are you sure you want to delete this room?')) {
+            onDelete={async (id) => {
+              const ok = await confirmDeleteRoom({ title: 'Delete Room', description: 'Are you sure you want to delete this room? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
+              if (ok) {
                 onDelete(id);
                 onClose();
               }
@@ -52,5 +55,7 @@ export function MobileRoomDrawer({
         </div>
       </DrawerContent>
     </Drawer>
+    {confirmDeleteDialog}
+    </>
   );
 }

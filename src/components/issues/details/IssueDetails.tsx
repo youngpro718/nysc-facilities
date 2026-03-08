@@ -1,4 +1,5 @@
 
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ import { IssueDetailsHeader } from "./components/IssueDetailsHeader";
 import { IssueTimelineContent } from "./components/IssueTimelineContent";
 import { useIssueData } from "./hooks/useIssueData";
 import { IssueDetailsContent } from "./components/IssueDetailsContent";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface IssueDetailsProps {
   issueId: string | null;
@@ -22,6 +24,7 @@ interface IssueDetailsProps {
 export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [confirmDiscard, confirmDiscardDialog] = useConfirmDialog();
   const { issue, issueLoading, timeline, timelineLoading } = useIssueData(issueId);
   
   const markAsSeenMutation = useMutation({
@@ -65,8 +68,8 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
     );
   }
 
-  const handleEditClose = () => {
-    const confirmed = window.confirm("Are you sure you want to discard your changes?");
+  const handleEditClose = async () => {
+    const confirmed = await confirmDiscard({ title: 'Discard Changes', description: 'Are you sure you want to discard your changes?', confirmLabel: 'Discard', variant: 'destructive' });
     if (confirmed) {
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['issues'] });
@@ -74,7 +77,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <><div className="flex flex-col h-full overflow-hidden">
       {isEditing ? (
         <>
           <IssueDetailsHeader
@@ -158,6 +161,8 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
         </>
       )}
     </div>
+    {confirmDiscardDialog}
+    </>
   );
 };
 

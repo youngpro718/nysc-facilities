@@ -18,7 +18,7 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
     { label: 'Spaces', path: '/spaces' },
     { label: 'Keys', path: '/keys' },
     { label: 'Access', path: '/access-assignments' },
-    { label: 'Users', path: '/users' },
+    { label: 'Admin', path: '/admin' },
   ],
   cmc: [
     { label: 'Dashboard', path: '/cmc-dashboard' },

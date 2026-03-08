@@ -18,6 +18,7 @@ import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { useEnhancedRoomData } from "@/hooks/useEnhancedRoomData";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RoomQuickEditSheet } from "../../RoomQuickEditSheet";
 
 interface MobileRoomCardProps {
@@ -29,6 +30,7 @@ interface MobileRoomCardProps {
 export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardProps) {
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [isSwipedOpen, setIsSwipedOpen] = useState(false);
+  const [confirmDeleteRoom, confirmDeleteDialog] = useConfirmDialog();
   
   // Fetch enhanced room data
   const { data: enhancedRoom } = useEnhancedRoomData(room.id);
@@ -136,11 +138,10 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
             </button>
           </EditSpaceDialog>
           <button 
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              if (window.confirm('Delete this room?')) {
-                onDelete(room.id);
-              }
+              const ok = await confirmDeleteRoom({ title: 'Delete Room', description: 'Delete this room? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
+              if (ok) onDelete(room.id);
             }}
             className="w-[70px] flex items-center justify-center bg-destructive text-destructive-foreground touch-manipulation"
           >
@@ -266,6 +267,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
         roomType={room.room_type || 'office'}
         defaultSection="basic"
       />
+      {confirmDeleteDialog}
     </>
   );
 }

@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { MoreHorizontal, Pencil } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
 import { useMemo } from "react";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface InventoryTableProps {
   items: InventoryItem[];
@@ -24,6 +25,7 @@ export function InventoryTable({
   onEditItem,
   onDeleteItem
 }: InventoryTableProps) {
+  const [confirmDeleteItem, confirmDeleteDialog] = useConfirmDialog();
   // Sort items by name to maintain stable order
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => a.name.localeCompare(b.name));
@@ -48,7 +50,7 @@ export function InventoryTable({
   };
 
   return (
-    <Table>
+    <><Table>
       <TableHeader>
         <TableRow>
           <TableHead>Item</TableHead>
@@ -119,10 +121,9 @@ export function InventoryTable({
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                      if (window.confirm('Are you sure you want to delete this item?')) {
-                        onDeleteItem(item.id);
-                      }
+                    <DropdownMenuItem onClick={async () => {
+                      const ok = await confirmDeleteItem({ title: 'Delete Item', description: 'Are you sure you want to delete this item? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
+                      if (ok) onDeleteItem(item.id);
                     }}>
                       Delete
                     </DropdownMenuItem>
@@ -141,5 +142,7 @@ export function InventoryTable({
         )}
       </TableBody>
     </Table>
+    {confirmDeleteDialog}
+    </>
   );
 }
