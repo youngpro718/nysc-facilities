@@ -65,7 +65,8 @@ export function ModernThreeDViewer({
   showConnectionsExternal,
   commandToken = null,
   labelScale = 1,
-  moveEnabled = false
+  moveEnabled = false,
+  onSelectedObjectType
 }: ModernThreeDViewerProps) {
   const { objects, edges, isLoading } = useFloorPlanData(floorId);
   const [showConnections, setShowConnections] = useState<boolean>(true);
