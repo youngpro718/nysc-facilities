@@ -24,6 +24,7 @@ interface IssueDetailsProps {
 export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [confirmDiscard, confirmDiscardDialog] = useConfirmDialog();
   const { issue, issueLoading, timeline, timelineLoading } = useIssueData(issueId);
   
   const markAsSeenMutation = useMutation({
