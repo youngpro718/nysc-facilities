@@ -8,6 +8,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface MobileRoomDrawerProps {
   room: Room | null;

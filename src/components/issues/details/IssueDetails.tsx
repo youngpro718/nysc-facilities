@@ -68,8 +68,8 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
     );
   }
 
-  const handleEditClose = () => {
-    const confirmed = window.confirm("Are you sure you want to discard your changes?");
+  const handleEditClose = async () => {
+    const confirmed = await confirmDiscard({ title: 'Discard Changes', description: 'Are you sure you want to discard your changes?', confirmLabel: 'Discard', variant: 'destructive' });
     if (confirmed) {
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['issues'] });
