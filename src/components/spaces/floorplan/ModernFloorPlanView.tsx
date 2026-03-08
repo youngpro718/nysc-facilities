@@ -296,6 +296,26 @@ export function ModernFloorPlanView() {
       }
     }
 
+    // If overlay is open and user clicks a room, set it as the overlay's selected room
+    if (overlayHallwayId && object.type === 'room') {
+      setOverlayRoomId(object.id as string);
+      setOverlayRoomName((object as any).name || (object as any).data?.label || '');
+      setOverlayRoomType((object as any).room_type || (object as any).data?.type || 'room');
+      // Also update the main selection for the properties panel
+      setSelectedObject(object as FloorPlanObject);
+      setPreviewData(null);
+      return;
+    }
+
+    // If user clicks a hallway, open the overlay
+    if (viewMode === '3d' && object.type === 'hallway') {
+      setOverlayHallwayId(object.id as string);
+      setOverlayHallwayName((object as any).name || (object as any).data?.label || 'Hallway');
+      setOverlayRoomId(null);
+      setOverlayRoomName('');
+      setOverlayRoomType('');
+    }
+
     // Normal selection behavior
     setSelectedObject(object as FloorPlanObject);
     setPreviewData(null);
@@ -305,7 +325,7 @@ export function ModernFloorPlanView() {
     if (panel) {
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [attachMode, selectedHallwayId, attachSide, offsetPercent, sceneObjects, selectedFloor, queryClient]);
+  }, [attachMode, selectedHallwayId, attachSide, offsetPercent, sceneObjects, selectedFloor, queryClient, overlayHallwayId, viewMode]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
