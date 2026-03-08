@@ -582,6 +582,7 @@ export default function AdminCenter() {
           })}
         </div>
       )}
+      {confirmDeleteDialog}
     </div>
   );
 }
