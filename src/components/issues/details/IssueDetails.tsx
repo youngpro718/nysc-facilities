@@ -161,6 +161,8 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
         </>
       )}
     </div>
+    {confirmDiscardDialog}
+    </>
   );
 };
 

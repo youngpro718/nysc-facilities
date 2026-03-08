@@ -55,5 +55,7 @@ export function MobileRoomDrawer({
         </div>
       </DrawerContent>
     </Drawer>
+    {confirmDeleteDialog}
+    </>
   );
 }

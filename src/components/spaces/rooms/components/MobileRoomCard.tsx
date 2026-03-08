@@ -267,6 +267,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
         roomType={room.room_type || 'office'}
         defaultSection="basic"
       />
+      {confirmDeleteDialog}
     </>
   );
 }
