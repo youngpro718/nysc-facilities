@@ -1,3 +1,10 @@
 #root {
   min-height: 100dvh;
 }
+
+/* Mobile-only bottom padding for main content — clears tab bar + FAB + safe area */
+@media (max-width: 767px) {
+  .mobile-main-padding {
+    padding-bottom: max(7rem, calc(env(safe-area-inset-bottom) + 5rem)) !important;
+  }
+}

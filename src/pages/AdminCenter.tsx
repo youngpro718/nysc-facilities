@@ -304,17 +304,12 @@ export default function AdminCenter() {
   }
 
   return (
-    <div className="space-y-4 pb-20 px-3 sm:px-0">
+    <div className="space-y-4">
       {/* Header with Admin Info */}
-      <div className="flex items-center justify-between gap-2 pt-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9 flex-shrink-0">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <h1 className="text-xl sm:text-2xl font-semibold">User Management</h1>
-          </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Users className="h-5 w-5 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-semibold">User Management</h1>
         </div>
         <Button variant="outline" size="sm" onClick={handleManualRefresh} disabled={refreshing}>
           <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />

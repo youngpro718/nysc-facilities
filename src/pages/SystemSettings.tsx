@@ -9,21 +9,11 @@ export default function SystemSettings() {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-6 pb-nav-safe px-3 sm:px-0">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3 pt-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(-1)}
-          className="h-9 w-9"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-2">
-          <Settings className="h-5 w-5 text-primary" />
-          <h1 className="text-xl sm:text-2xl font-semibold">System Settings</h1>
-        </div>
+      <div className="flex items-center gap-2">
+        <Settings className="h-5 w-5 text-primary" />
+        <h1 className="text-xl sm:text-2xl font-semibold">System Settings</h1>
       </div>
 
       {/* App Install Card */}

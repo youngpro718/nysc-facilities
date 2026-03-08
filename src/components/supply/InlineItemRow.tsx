@@ -243,8 +243,8 @@ export function InlineItemRow({
 
       {/* Item Detail Sheet */}
       <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-safe max-h-[80vh]">
-          <div className="flex flex-col overflow-y-auto max-h-[calc(80vh-1rem)]">
+        <SheetContent side="bottom" className="rounded-t-2xl px-0 pb-safe max-h-[80dvh]">
+          <div className="flex flex-col overflow-y-auto max-h-[calc(80dvh-1rem)]">
             {/* Close handle */}
             <div className="flex justify-center pt-2 pb-3 shrink-0">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
