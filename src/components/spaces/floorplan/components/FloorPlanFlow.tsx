@@ -1,10 +1,13 @@
 
 import { ReactFlow, Background, Controls, MiniMap, Panel, Node, Connection, Edge } from 'reactflow';
 import { panelStyle } from '../styles/flowStyles';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AlignmentToolbar } from './AlignmentToolbar';
+
+const SNAP_THRESHOLD = 15;
 
 interface FloorPlanFlowProps {
   nodes: Node[];
@@ -29,6 +32,8 @@ export function FloorPlanFlow({
 }: FloorPlanFlowProps) {
   const isMobile = useIsMobile();
   const [isPanning, setIsPanning] = useState(false);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
+  const [snapLines, setSnapLines] = useState<{ x?: number; y?: number }[]>([]);
   const defaultViewport = { x: 0, y: 0, zoom };
 
   const isValidConnection = useCallback((connection: Connection) => {
@@ -36,14 +41,9 @@ export function FloorPlanFlow({
     const targetNode = nodes.find(n => n.id === connection.target);
 
     if (!sourceNode || !targetNode) return false;
-
-    // Don't allow connections between the same node
     if (connection.source === connection.target) return false;
-
-    // Don't allow doors to connect to doors
     if (sourceNode.type === 'door' && targetNode.type === 'door') return false;
 
-    // Don't allow more than one connection between the same nodes
     const existingConnection = edges.find(
       edge => 
         (edge.source === connection.source && edge.target === connection.target) ||
@@ -62,6 +62,67 @@ export function FloorPlanFlow({
     },
     [onConnect, isValidConnection]
   );
+
+  const onSelectionChange = useCallback(({ nodes: selectedNodes }: { nodes: Node[] }) => {
+    setSelectedNodeIds(selectedNodes.map(n => n.id));
+  }, []);
+
+  // Snap-to-neighbor during drag
+  const onNodeDrag = useCallback((_event: React.MouseEvent, draggedNode: Node) => {
+    const dw = draggedNode.data?.size?.width ?? 150;
+    const dh = draggedNode.data?.size?.height ?? 100;
+    const dRight = draggedNode.position.x + dw;
+    const dBottom = draggedNode.position.y + dh;
+
+    const lines: { x?: number; y?: number }[] = [];
+
+    for (const other of nodes) {
+      if (other.id === draggedNode.id) continue;
+      const ow = other.data?.size?.width ?? 150;
+      const oh = other.data?.size?.height ?? 100;
+      const oRight = other.position.x + ow;
+      const oBottom = other.position.y + oh;
+
+      // Vertical alignment checks (x-axis)
+      if (Math.abs(draggedNode.position.x - other.position.x) < SNAP_THRESHOLD) {
+        lines.push({ x: other.position.x });
+      }
+      if (Math.abs(dRight - oRight) < SNAP_THRESHOLD) {
+        lines.push({ x: oRight });
+      }
+      if (Math.abs(draggedNode.position.x - oRight) < SNAP_THRESHOLD) {
+        lines.push({ x: oRight });
+      }
+      if (Math.abs(dRight - other.position.x) < SNAP_THRESHOLD) {
+        lines.push({ x: other.position.x });
+      }
+
+      // Horizontal alignment checks (y-axis)
+      if (Math.abs(draggedNode.position.y - other.position.y) < SNAP_THRESHOLD) {
+        lines.push({ y: other.position.y });
+      }
+      if (Math.abs(dBottom - oBottom) < SNAP_THRESHOLD) {
+        lines.push({ y: oBottom });
+      }
+      if (Math.abs(draggedNode.position.y - oBottom) < SNAP_THRESHOLD) {
+        lines.push({ y: oBottom });
+      }
+      if (Math.abs(dBottom - other.position.y) < SNAP_THRESHOLD) {
+        lines.push({ y: other.position.y });
+      }
+    }
+
+    setSnapLines(lines.slice(0, 4)); // limit to avoid clutter
+  }, [nodes]);
+
+  const onNodeDragStop = useCallback((_event: React.MouseEvent, node: Node) => {
+    setSnapLines([]);
+    onNodesChange([{
+      id: node.id,
+      type: 'position',
+      position: node.position
+    }]);
+  }, [onNodesChange]);
 
   return (
     <ReactFlow
@@ -94,16 +155,54 @@ export function FloorPlanFlow({
       nodesDraggable={!isPanning}
       nodesConnectable={!isPanning}
       elementsSelectable={true}
+      multiSelectionKeyCode="Shift"
+      selectionOnDrag={!isPanning}
       style={{ width: '100%', height: '100%' }}
-      onNodeDragStop={(event, node) => {
-        // This ensures the final position is saved after dragging stops
-        onNodesChange([{
-          id: node.id,
-          type: 'position',
-          position: node.position
-        }]);
-      }}
+      onSelectionChange={onSelectionChange}
+      onNodeDrag={onNodeDrag}
+      onNodeDragStop={onNodeDragStop}
     >
+      {/* Snap guide lines */}
+      <svg
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 1000,
+        }}
+      >
+        {snapLines.map((line, i) =>
+          line.x !== undefined ? (
+            <line
+              key={`snap-x-${i}`}
+              x1={line.x}
+              y1={-10000}
+              x2={line.x}
+              y2={10000}
+              stroke="hsl(var(--primary))"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              opacity={0.6}
+            />
+          ) : line.y !== undefined ? (
+            <line
+              key={`snap-y-${i}`}
+              x1={-10000}
+              y1={line.y}
+              x2={10000}
+              y2={line.y}
+              stroke="hsl(var(--primary))"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              opacity={0.6}
+            />
+          ) : null
+        )}
+      </svg>
+
       {/* Hide panel on mobile - not needed */}
       {!isMobile && (
         <Panel position="top-left" className="space-y-2">
@@ -122,6 +221,17 @@ export function FloorPlanFlow({
           </Button>
         </Panel>
       )}
+
+      {/* Alignment toolbar when 2+ nodes selected */}
+      {selectedNodeIds.length >= 2 && (
+        <Panel position="bottom-center">
+          <AlignmentToolbar
+            selectedNodeIds={selectedNodeIds}
+            onNodesChange={onNodesChange}
+          />
+        </Panel>
+      )}
+
       <Controls showInteractive={true} />
       {/* Hide MiniMap on mobile to save screen space */}
       {!isMobile && (
