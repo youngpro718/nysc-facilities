@@ -190,11 +190,8 @@ function AppContent() {
             <SystemSettings />
           </ProtectedRoute>
         } />
-        <Route path="users" element={
-          <ProtectedRoute requireAdmin>
-            <Users />
-          </ProtectedRoute>
-        } />
+        {/* /users route removed — use /admin instead */}
+        <Route path="users" element={<Navigate to="/admin" replace />} />
         <Route path="admin/key-requests" element={
           <ProtectedRoute requireAdmin>
             <AdminKeyRequests />
