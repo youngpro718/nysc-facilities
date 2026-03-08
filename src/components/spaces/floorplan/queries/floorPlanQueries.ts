@@ -78,7 +78,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
     id: room.id,
     name: room.name,
     room_number: room.room_number,
-    type: 'room', 
+    type: room.room_type || 'room', 
     room_type: room.room_type,
     status: room.status,
     position: room.position || { x: 0, y: 0 },
