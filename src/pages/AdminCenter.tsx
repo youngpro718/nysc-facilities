@@ -485,11 +485,10 @@ export default function AdminCenter() {
                             size="sm"
                             variant="ghost"
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => {
+                            onClick={async () => {
                               const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
-                              if (window.confirm(`Permanently delete ${userName}? This cannot be undone.`)) {
-                                handleDeleteUser(user.id);
-                              }
+                              const ok = await confirmDelete({ title: 'Delete User', description: `Permanently delete ${userName}? This cannot be undone.`, confirmLabel: 'Delete', variant: 'destructive' });
+                              if (ok) handleDeleteUser(user.id);
                             }}
                             disabled={isUpdating}
                           >
