@@ -23,7 +23,8 @@ export function EnhancedPropertiesPanel({
   allObjects,
   onUpdate,
   onPreviewChange,
-  selectedFloorName
+  selectedFloorName,
+  floorId
 }: EnhancedPropertiesPanelProps) {
   const [activeTab, setActiveTab] = useState('overview');
 
