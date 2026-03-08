@@ -4,8 +4,11 @@ import { OrbitControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import BlueprintRoom from './BlueprintRoom';
+import BlueprintHallway from './BlueprintHallway';
+import BlueprintDoor from './BlueprintDoor';
 import BlueprintGrid from './BlueprintGrid';
 import AnimatedConnection from './AnimatedConnection';
+import FirstPersonControls from './FirstPersonControls';
 
 interface RoomData {
   id: string;
