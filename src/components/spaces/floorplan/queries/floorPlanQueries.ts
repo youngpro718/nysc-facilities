@@ -12,6 +12,46 @@ export async function fetchFloorPlanLayers(floorId: string) {
   return data || [];
 }
 
+export interface HallwayRoomConnection {
+  id: string;
+  hallway_id: string;
+  room_id: string;
+  position: 'start' | 'middle' | 'end';
+  side: 'left' | 'right';
+  sequence_order: number;
+}
+
+export async function fetchHallwayRoomConnections(floorId: string): Promise<HallwayRoomConnection[]> {
+  // Get hallway IDs for this floor first
+  const { data: hallways, error: hallwayError } = await supabase
+    .from('hallways')
+    .select('id')
+    .eq('floor_id', floorId)
+    .eq('status', 'active');
+
+  if (hallwayError) {
+    logger.error("Error fetching hallways for connections:", hallwayError);
+    return [];
+  }
+
+  if (!hallways || hallways.length === 0) return [];
+
+  const hallwayIds = hallways.map(h => h.id);
+
+  const { data, error } = await supabase
+    .from('hallway_adjacent_rooms')
+    .select('id, hallway_id, room_id, position, side, sequence_order')
+    .in('hallway_id', hallwayIds)
+    .order('sequence_order', { ascending: true });
+
+  if (error) {
+    logger.error("Error fetching hallway room connections:", error);
+    return [];
+  }
+
+  return (data || []) as HallwayRoomConnection[];
+}
+
 export async function fetchFloorPlanObjects(floorId: string) {
   logger.debug("Fetching floor plan objects for floor:", floorId);
   
@@ -88,11 +128,14 @@ export async function fetchFloorPlanObjects(floorId: string) {
     }
   }));
 
+  // Fetch hallway-room connections
+  const connections = await fetchHallwayRoomConnections(floorId);
+
   // Combine all objects
   const allObjects = [...roomObjects, ...hallwayObjects, ...doorObjects];
   
   return {
     objects: allObjects,
-    connections: [] // No connections for now since space_connections table doesn't exist
+    connections
   };
 }
