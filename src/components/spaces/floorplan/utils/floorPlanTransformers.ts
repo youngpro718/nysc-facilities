@@ -29,15 +29,13 @@ export function processFloorPlanObjects(
       }
     }
 
-    // Process connected spaces
+    // Process connected spaces (visual metadata only — no position/size changes)
     if (node.type === 'hallway' || node.type === 'room') {
       enrichWithConnectedSpaces(node, nodes, edges);
     }
 
-    // Dynamic hallway sizing
-    if (node.type === 'hallway' && edges.length > 0) {
-      applyHallwayDynamicSizing(node, nodes, edges);
-    }
+    // NOTE: applyHallwayDynamicSizing removed — hallway sizing is now handled
+    // by computeHallwayCentricLayout in useFloorPlanData.ts to avoid conflicts
 
     return node;
   });
