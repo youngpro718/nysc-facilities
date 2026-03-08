@@ -194,7 +194,7 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
         <Billboard position={[0, size[1] / 2 + 8, 0]}>
           <Text
             fontSize={Math.min(10, size[0] / 12) * labelScale}
-            color={isSelected ? '#a5b4fc' : isHovered ? '#fcd34d' : '#e2e8f0'}
+            color={isSelected ? '#c7d2fe' : isHovered ? '#fde68a' : '#f1f5f9'}
             anchorX="center"
             anchorY="middle"
             maxWidth={size[0] * 0.9}
