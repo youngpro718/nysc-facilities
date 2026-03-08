@@ -562,11 +562,10 @@ export default function AdminCenter() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() => {
+                              onClick={async () => {
                                 const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
-                                if (window.confirm(`Are you sure you want to permanently delete ${userName}? This cannot be undone.`)) {
-                                  handleDeleteUser(user.id);
-                                }
+                                const ok = await confirmDelete({ title: 'Delete User', description: `Permanently delete ${userName}? This cannot be undone.`, confirmLabel: 'Delete', variant: 'destructive' });
+                                if (ok) handleDeleteUser(user.id);
                               }}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
