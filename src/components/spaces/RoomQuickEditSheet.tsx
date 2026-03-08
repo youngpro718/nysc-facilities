@@ -73,7 +73,7 @@ export function RoomQuickEditSheet({ open, onClose, roomId, roomType, defaultSec
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[85vh] flex flex-col">
+      <SheetContent side="bottom" className="h-[85dvh] flex flex-col">
         <SheetHeader>
           <SheetTitle>Quick Edit Room Details</SheetTitle>
         </SheetHeader>

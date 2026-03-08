@@ -57,8 +57,9 @@ export default function Keys() {
       </DataState>
 
       <Tabs defaultValue="lockbox" className="space-y-4 sm:space-y-6">
-        <div className="relative overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="inline-flex sm:grid w-full sm:grid-cols-6 bg-muted min-w-max sm:min-w-0 h-10 sm:h-10" data-tour="keys-tabs">
+        <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="overflow-x-auto scrollbar-thin">
+            <TabsList className="inline-flex sm:grid w-full sm:grid-cols-6 bg-muted min-w-max sm:min-w-0 h-10 sm:h-10" data-tour="keys-tabs">
             <TabsTrigger 
               value="lockbox" 
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
@@ -101,7 +102,10 @@ export default function Keys() {
               <Settings className="h-4 w-4 flex-shrink-0" />
               <span className="text-xs sm:text-sm">Manage</span>
             </TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
+          {/* Scroll fade indicators for mobile */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden" />
         </div>
 
         <TabsContent value="lockbox" className="space-y-6 mt-4">

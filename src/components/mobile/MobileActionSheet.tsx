@@ -41,7 +41,7 @@ export function MobileActionSheet({
       <SheetTrigger asChild>
         {trigger}
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-auto max-h-[80vh]">
+      <SheetContent side="bottom" className="h-auto max-h-[80dvh]">
         <SheetHeader className="text-left pb-4">
           <SheetTitle>{title}</SheetTitle>
           {description && (
