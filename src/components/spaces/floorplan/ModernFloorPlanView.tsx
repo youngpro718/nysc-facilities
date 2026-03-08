@@ -617,6 +617,18 @@ export function ModernFloorPlanView() {
                 labelScale={labelScale}
                 moveEnabled={moveEnabled}
               />
+              {/* Hallway Attachment Overlay — shown when a hallway is selected in 3D */}
+              {viewMode === '3d' && selectedObject && (selectedObject.type === 'hallway' || (selectedObject as any).object_type === 'hallway') && (
+                <HallwayAttachOverlay
+                  hallwayId={selectedObject.id}
+                  hallwayName={(selectedObject as any).name || (selectedObject as any).data?.label || 'Hallway'}
+                  selectedRoomId={undefined}
+                  selectedRoomName={undefined}
+                  selectedRoomType={undefined}
+                  onClose={() => setSelectedObject(null)}
+                  onRefresh={handleRefresh}
+                />
+              )}
             )}
           </div>
 
