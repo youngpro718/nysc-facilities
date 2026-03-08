@@ -216,7 +216,7 @@ const BlueprintRoom: React.FC<BlueprintRoomProps> = ({
           </mesh>
           <Text
             fontSize={6 * labelScale}
-            color="#94a3b8"
+            color="#cbd5e1"
             anchorX="center"
             anchorY="middle"
             position={[0, 0, 0.1]}

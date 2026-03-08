@@ -17,8 +17,8 @@ const WallSegment: React.FC<WallSegmentProps> = ({
   size,
   wallHeight = 30,
   wallThickness = 2,
-  color = '#334155',
-  opacity = 0.7,
+  color = '#64748b',
+  opacity = 0.5,
   doorOpenings = []
 }) => {
   const [w, , d] = size;
@@ -35,9 +35,9 @@ const WallSegment: React.FC<WallSegmentProps> = ({
   }), [color, opacity]);
 
   const topEdgeMat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: new THREE.Color('#0ea5e9'),
+    color: new THREE.Color('#38bdf8'),
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.65,
   }), []);
 
   // Check if a wall has a door opening

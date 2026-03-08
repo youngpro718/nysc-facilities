@@ -9,13 +9,13 @@ interface BlueprintGridProps {
   majorDivisions?: number;
 }
 
-// Dark theme grid colors
+// Lighter blueprint grid colors
 const GRID_COLORS = {
-  background: '#0f172a',    // slate-900
-  minorLine: '#1e3a5f',     // blue-tinted dark
-  majorLine: '#0ea5e9',     // cyan-500
-  axis: '#22d3ee',          // cyan-400
-  glow: '#0891b2',          // cyan-600
+  background: '#1e293b',    // slate-800
+  minorLine: '#475569',     // slate-600 (brighter)
+  majorLine: '#38bdf8',     // sky-400
+  axis: '#67e8f9',          // cyan-300
+  glow: '#22d3ee',          // cyan-400
 };
 
 const BlueprintGrid: React.FC<BlueprintGridProps> = ({
@@ -57,17 +57,17 @@ const BlueprintGrid: React.FC<BlueprintGridProps> = ({
     };
   }, [size, divisions, majorDivisions]);
 
-  // Materials with proper opacity
+  // Materials — bumped up opacity for visibility
   const materials = useMemo(() => ({
     minor: new THREE.LineBasicMaterial({
       color: new THREE.Color(GRID_COLORS.minorLine),
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.35,
     }),
     major: new THREE.LineBasicMaterial({
       color: new THREE.Color(GRID_COLORS.majorLine),
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.55,
     }),
     axis: new THREE.LineBasicMaterial({
       color: new THREE.Color(GRID_COLORS.axis),
@@ -78,35 +78,35 @@ const BlueprintGrid: React.FC<BlueprintGridProps> = ({
 
   return (
     <group position={[0, -0.5, 0]}>
-      {/* Solid floor plane — polished concrete look */}
+      {/* Solid floor plane — lighter polished concrete */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.5, 0]}>
         <planeGeometry args={[size * 1.5, size * 1.5]} />
         <meshPhongMaterial
-          color="#141c2e"
-          shininess={30}
-          specular={new THREE.Color('#1e3a5f')}
+          color="#1e293b"
+          shininess={20}
+          specular={new THREE.Color('#334155')}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Background plane with gradient effect */}
+      {/* Background plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
         <planeGeometry args={[size * 1.5, size * 1.5]} />
         <meshBasicMaterial
           color={GRID_COLORS.background}
           transparent
-          opacity={0.6}
+          opacity={0.5}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Radial fade overlay */}
+      {/* Radial fade overlay — lighter */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
         <circleGeometry args={[size * 0.7, 64]} />
         <meshBasicMaterial
-          color="#1e293b"
+          color="#334155"
           transparent
-          opacity={0.5}
+          opacity={0.35}
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -128,7 +128,7 @@ const BlueprintGrid: React.FC<BlueprintGridProps> = ({
           anchorX="center"
           anchorY="middle"
           outlineWidth={0.5}
-          outlineColor="#0f172a"
+          outlineColor="#1e293b"
         >
           N
         </Text>
@@ -140,7 +140,7 @@ const BlueprintGrid: React.FC<BlueprintGridProps> = ({
           anchorX="center"
           anchorY="middle"
           outlineWidth={0.5}
-          outlineColor="#0f172a"
+          outlineColor="#1e293b"
         >
           S
         </Text>
@@ -152,7 +152,7 @@ const BlueprintGrid: React.FC<BlueprintGridProps> = ({
           anchorX="center"
           anchorY="middle"
           outlineWidth={0.5}
-          outlineColor="#0f172a"
+          outlineColor="#1e293b"
         >
           E
         </Text>
@@ -164,7 +164,7 @@ const BlueprintGrid: React.FC<BlueprintGridProps> = ({
           anchorX="center"
           anchorY="middle"
           outlineWidth={0.5}
-          outlineColor="#0f172a"
+          outlineColor="#1e293b"
         >
           W
         </Text>
