@@ -9,6 +9,7 @@ interface FirstPersonControlsProps {
   eyeHeight?: number;
   moveSpeed?: number;
   startPosition?: [number, number, number];
+  onExit?: () => void;
 }
 
 const FirstPersonControls: React.FC<FirstPersonControlsProps> = ({
