@@ -176,6 +176,7 @@ const BlueprintFloorPlan = forwardRef<SceneHandle, BlueprintFloorPlanProps>(({
             labelScale={labelScale}
             gridSize={gridSize}
             walkMode={walkMode}
+            onWalkModeExit={onWalkModeExit}
           />
         </Canvas>
       </Suspense>

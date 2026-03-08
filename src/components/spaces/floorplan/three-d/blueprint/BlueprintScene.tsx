@@ -307,7 +307,7 @@ const BlueprintSceneInner = forwardRef<SceneHandle, BlueprintSceneProps>(({
 
       {/* Camera Controls — toggle between orbit and first-person */}
       {walkMode ? (
-        <FirstPersonControls enabled={walkMode} />
+        <FirstPersonControls enabled={walkMode} onExit={onWalkModeExit} />
       ) : (
         <OrbitControls
           ref={controlsRef}

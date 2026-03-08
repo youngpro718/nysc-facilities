@@ -172,6 +172,7 @@ const NewThreeDScene = forwardRef<SceneHandle, NewThreeDSceneProps>(({
         showLegend={false}
         showIcons={true}
         walkMode={walkMode}
+        onWalkModeExit={onWalkModeExit}
       />
     </div>
   );
