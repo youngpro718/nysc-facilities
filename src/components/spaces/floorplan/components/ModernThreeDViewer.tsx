@@ -6,7 +6,9 @@ import {
   ZoomOut,
   Home,
   Layers,
-  Maximize2
+  Maximize2,
+  Footprints,
+  Eye
 } from 'lucide-react';
 import NewThreeDScene, { SceneHandle } from '../three-d/NewThreeDScene';
 import { Button } from '@/components/ui/button';
