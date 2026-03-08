@@ -310,8 +310,9 @@ export function useFloorPlanData(floorId: string | null) {
       unpositionedIndex++;
     }
 
-    // Parse size
-    let parsedSize = parseSize(rawObj.size) || defaultSize;
+    // Parse size — apply hallway size override if available
+    const sizeOverride = hallwayOverrides.sizes.get(rawObj.id);
+    let parsedSize = sizeOverride || parseSize(rawObj.size) || defaultSize;
     
     // Determine the object type
     const objectType = rawObj.object_type || rawObj.type || 'room';
