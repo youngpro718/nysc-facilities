@@ -85,6 +85,19 @@ const FirstPersonControls: React.FC<FirstPersonControlsProps> = ({
     camera.position.y = eyeHeight;
   });
 
+  // Listen for pointer lock unlock to notify parent
+  useEffect(() => {
+    if (!enabled || !controlsRef.current) return;
+    const controls = controlsRef.current;
+    const handleUnlock = () => {
+      onExit?.();
+    };
+    controls.addEventListener('unlock', handleUnlock);
+    return () => {
+      controls.removeEventListener('unlock', handleUnlock);
+    };
+  }, [enabled, onExit]);
+
   if (!enabled) return null;
 
   return (
