@@ -658,7 +658,7 @@ export function ModernFloorPlanView() {
                     }}
                     onRefresh={handleRefresh}
                   />
-                )
+                )}
               </>
             )}
           </div>
