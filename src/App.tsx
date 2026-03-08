@@ -51,8 +51,9 @@ import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
 import Notifications from "@/pages/Notifications";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import InstallApp from "@/pages/InstallApp";
-import FormIntake from "@/pages/FormIntake";
-import FormTemplates from "@/pages/FormTemplates";
+// FormIntake and FormTemplates removed — dead routes with no navigation entry
+// import FormIntake from "@/pages/FormIntake";
+// import FormTemplates from "@/pages/FormTemplates";
 import RoutingRules from "@/pages/admin/RoutingRules";
 import FormTemplatesAdmin from "@/pages/admin/FormTemplatesAdmin";
 import KeyRequestFormPage from "@/pages/forms/KeyRequestFormPage";
