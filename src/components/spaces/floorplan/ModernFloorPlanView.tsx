@@ -60,7 +60,7 @@ export function ModernFloorPlanView() {
   const [isLoading, setIsLoading] = useState(true);
   const [zoom, setZoom] = useState<number>(1);
   const [refreshKey, setRefreshKey] = useState<number>(0);
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  const [viewMode, setViewMode] = useState<'2d' | '3d' | 'edit'>('2d');
   const [showLabels, setShowLabels] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
