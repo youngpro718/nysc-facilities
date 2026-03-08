@@ -190,7 +190,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Spaces', icon: Building2 },
-      { title: 'Issues', icon: AlertTriangle },
+      { title: 'Operations', icon: AlertTriangle },
       { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
