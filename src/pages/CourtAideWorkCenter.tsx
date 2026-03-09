@@ -5,46 +5,61 @@
  * Shows tasks, supply fulfillment, schedule, and alerts.
  */
 
-import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 import { TaskWorkQueue } from '@/components/court-aide/TaskWorkQueue';
 import { SupplyFulfillmentPanel } from '@/components/court-aide/SupplyFulfillmentPanel';
 import { TodaySchedule } from '@/components/court-aide/TodaySchedule';
 import { AlertsBar } from '@/components/court-aide/AlertsBar';
 import { WorkCenterStats } from '@/components/court-aide/WorkCenterStats';
+import { CompactHeader } from '@/components/user/CompactHeader';
+import { NotificationDropdown } from '@/components/user/NotificationDropdown';
 import { Button } from '@/components/ui/button';
+import { useUserPersonnelInfo } from '@/hooks/user/useUserPersonnelInfo';
 
 import { Link } from 'react-router-dom';
 import { Package, ClipboardList, AlertTriangle, Settings, Scale } from 'lucide-react';
 
 export default function CourtAideWorkCenter() {
-  const { profile } = useAuth();
-  const today = new Date();
+  const { user, profile } = useAuth();
+  const { data: personnelInfo } = useUserPersonnelInfo(user?.id);
+  const {
+    notifications = [],
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
+    clearAllNotifications,
+  } = useNotifications(user?.id);
 
   const firstName = profile?.first_name || 'there';
-  const greeting = getGreeting();
-
-  function getGreeting() {
-    const hour = today.getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
+  const lastName = profile?.last_name || '';
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6 pb-24 md:pb-6">
-      {/* Header - Mobile optimized */}
+      {/* Header */}
       <div className="space-y-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold">
-            {greeting}, {firstName}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {format(today, 'EEEE, MMMM d, yyyy')}
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <CompactHeader
+            firstName={firstName}
+            lastName={lastName}
+            title={(profile as any)?.title || personnelInfo?.title || 'Court Aide'}
+            department={(profile as any)?.department || (personnelInfo as any)?.department}
+            roomNumber={(profile as any)?.room_number || personnelInfo?.roomNumber}
+            avatarUrl={profile?.avatar_url}
+            role="Court Aide"
+          />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <NotificationDropdown
+              notifications={notifications as any}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+              onClearNotification={clearNotification}
+              onClearAllNotifications={clearAllNotifications}
+            />
+          </div>
         </div>
         
-        {/* Action buttons - horizontal scroll on mobile */}
+        {/* Action buttons */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
           <Button variant="outline" size="sm" asChild className="shrink-0">
             <Link to="/inventory">

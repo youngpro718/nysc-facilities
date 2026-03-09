@@ -121,13 +121,13 @@ function AppContent() {
         <Route path="/cmc-dashboard" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Management">
-              <RoleDashboard />
+              <CMCDashboard />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="/court-officer-dashboard" element={
           <ProtectedRoute>
-            <RoleDashboard />
+            <CourtOfficerDashboard />
           </ProtectedRoute>
         } />
         <Route path="/court-aide-dashboard" element={

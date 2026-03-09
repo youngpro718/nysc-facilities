@@ -141,6 +141,8 @@ export default function UserDashboard() {
 
   // Calculate stats
   const readyForPickup = supplyRequests.filter(r => r.status === 'ready').length;
+  const activeSupplyCount = supplyRequests.filter(r => ['submitted', 'received', 'picking', 'in_progress'].includes(r.status)).length;
+  const openIssueCount = userIssues.filter(i => i.status === 'open' || i.status === 'in_progress').length;
   const pendingKeyRequests = keyRequests.filter(r => r.status === 'pending').length;
   const keysHeld = keyAssignments.length;
 
