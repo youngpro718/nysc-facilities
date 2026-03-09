@@ -195,8 +195,8 @@ export default function CourtOfficerDashboard() {
                 <p className="text-sm text-muted-foreground py-6 text-center">No keys currently checked out</p>
               ) : (
                 <div className="space-y-1.5">
-                  {/* Table header */}
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-3 px-2.5 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  {/* Table header — hidden on mobile */}
+                  <div className="hidden sm:grid grid-cols-[1fr_auto_auto] gap-3 px-2.5 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     <span>Person</span>
                     <span className="w-20 text-center">Room</span>
                     <span className="w-24 text-right">Duration</span>
@@ -213,17 +213,35 @@ export default function CourtOfficerDashboard() {
                     return (
                       <div
                         key={assignment.id}
-                        className="grid grid-cols-[1fr_auto_auto] gap-3 items-center p-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                        className="p-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm truncate">{name}</span>
+                        {/* Desktop: grid row */}
+                        <div className="hidden sm:grid grid-cols-[1fr_auto_auto] gap-3 items-center">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-sm truncate">{name}</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs w-20 justify-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {room}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground w-24 text-right">{elapsed}</span>
                         </div>
-                        <Badge variant="outline" className="text-xs w-20 justify-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {room}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground w-24 text-right">{elapsed}</span>
+                        {/* Mobile: stacked layout */}
+                        <div className="sm:hidden">
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-sm truncate">{name}</span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 ml-5.5 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {room}
+                            </span>
+                            <span>·</span>
+                            <span>{elapsed}</span>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}

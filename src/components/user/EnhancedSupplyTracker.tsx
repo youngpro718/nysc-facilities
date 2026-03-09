@@ -248,8 +248,8 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                       setSelectedReceiptRequestId(request.id);
                     }}
                   >
-                    <Receipt className="h-3.5 w-3.5 mr-1" />
-                    Receipt
+                    <Receipt className="h-3.5 w-3.5 sm:mr-1" />
+                    <span className="hidden sm:inline">Receipt</span>
                   </Button>
                 )}
 

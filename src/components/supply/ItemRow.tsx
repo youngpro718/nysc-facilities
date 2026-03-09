@@ -75,7 +75,7 @@ export function ItemRow({
         <Button
           size="sm"
           variant="default"
-          className="flex-shrink-0"
+          className="flex-shrink-0 min-h-[44px] touch-manipulation active:scale-95"
           onClick={(e) => {
             e.stopPropagation();
             onAddToCart();
