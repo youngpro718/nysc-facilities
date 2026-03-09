@@ -264,7 +264,7 @@ export default function Operations() {
         refreshIssues(),
         // Add other refresh functions as needed
       ]);
-      toast.success('Operations data refreshed successfully');
+      toast.success('Building issues data refreshed successfully');
     } catch (error) {
       logger.error('Error refreshing data:', error);
       toast.error('Failed to refresh some data');
@@ -280,14 +280,14 @@ export default function Operations() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Operations</h2>
+              <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Building Issues</h2>
               <Badge variant="secondary" className="text-xs">
                 <Activity className="h-3 w-3 mr-1" />
                 Live
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              Monitor and manage facility operations
+              Track and resolve facility issues &amp; maintenance
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -525,25 +525,25 @@ export default function Operations() {
                     Maintenance Overview
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 rounded-lg border border-orange-200 dark:border-orange-800">
-                    <div>
-                      <p className="font-semibold text-orange-900 dark:text-orange-100">In Progress</p>
-                      <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.maintenanceInProgress}</p>
-                    </div>
-                    <Clock className="h-10 w-10 text-orange-500" />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div>
-                      <p className="font-semibold text-blue-900 dark:text-blue-100">Scheduled</p>
-                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.maintenanceScheduled}</p>
-                    </div>
-                    <Calendar className="h-10 w-10 text-blue-500" />
-                  </div>
+               <CardContent className="space-y-4">
+                  <StatusCard
+                    statusVariant={enhancedMetrics.maintenanceInProgress > 0 ? "warning" : "operational"}
+                    title="In Progress"
+                    value={enhancedMetrics.maintenanceInProgress}
+                    subLabel="Active maintenance tasks"
+                    icon={Clock}
+                  />
+                  <StatusCard
+                    statusVariant="info"
+                    title="Scheduled"
+                    value={enhancedMetrics.maintenanceScheduled}
+                    subLabel="Upcoming tasks"
+                    icon={Calendar}
+                  />
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full hover:bg-orange-50 dark:hover:bg-orange-950/30 dark:bg-orange-950/30 hover:border-orange-200 dark:hover:border-orange-800 dark:border-orange-800 transition-colors"
+                    className="w-full"
                     onClick={() => handleTabChange('maintenance')}
                   >
                     View All Maintenance
@@ -581,51 +581,35 @@ export default function Operations() {
           </div>
 
           {/* Quick Stats for Issues */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 dark:bg-red-950 dark:border-red-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-red-800 dark:text-red-200">Critical Issues</p>
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{enhancedMetrics.criticalCount}</p>
-                  </div>
-                  <AlertTriangle className="h-8 w-8 text-red-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 dark:bg-orange-950 dark:border-orange-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-orange-800 dark:text-orange-200">In Progress</p>
-                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.inProgress}</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950 dark:border-blue-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Active Issues</p>
-                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.activeIssues}</p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 dark:bg-green-950 dark:border-green-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-green-800 dark:text-green-200">Resolved Today</p>
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{enhancedMetrics.resolvedToday}</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatusCard
+              statusVariant={enhancedMetrics.criticalCount > 0 ? "critical" : "operational"}
+              title="Critical Issues"
+              value={enhancedMetrics.criticalCount}
+              subLabel="Require immediate action"
+              icon={AlertTriangle}
+            />
+            <StatusCard
+              statusVariant={enhancedMetrics.inProgress > 0 ? "warning" : "neutral"}
+              title="In Progress"
+              value={enhancedMetrics.inProgress}
+              subLabel="Being worked on"
+              icon={Clock}
+            />
+            <StatusCard
+              statusVariant="info"
+              title="Active Issues"
+              value={enhancedMetrics.activeIssues}
+              subLabel="Open + in progress"
+              icon={AlertCircle}
+            />
+            <StatusCard
+              statusVariant="operational"
+              title="Resolved Today"
+              value={enhancedMetrics.resolvedToday}
+              subLabel="Completed today"
+              icon={CheckCircle}
+            />
           </div>
 
           {/* Issues Controls */}
@@ -718,40 +702,28 @@ export default function Operations() {
           </div>
 
           {/* Maintenance Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 dark:bg-orange-950 dark:border-orange-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-orange-800 dark:text-orange-200">In Progress</p>
-                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.maintenanceInProgress}</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950 dark:border-blue-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Scheduled</p>
-                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.maintenanceScheduled}</p>
-                  </div>
-                  <Calendar className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 dark:bg-green-950 dark:border-green-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-green-800 dark:text-green-200">Completed</p>
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{maintenanceData?.filter(item => item.status === 'resolved').length || 0}</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatusCard
+              statusVariant={enhancedMetrics.maintenanceInProgress > 0 ? "warning" : "operational"}
+              title="In Progress"
+              value={enhancedMetrics.maintenanceInProgress}
+              subLabel="Active maintenance"
+              icon={Clock}
+            />
+            <StatusCard
+              statusVariant="info"
+              title="Scheduled"
+              value={enhancedMetrics.maintenanceScheduled}
+              subLabel="Upcoming tasks"
+              icon={Calendar}
+            />
+            <StatusCard
+              statusVariant="operational"
+              title="Completed"
+              value={maintenanceData?.filter(item => item.status === 'resolved').length || 0}
+              subLabel="Finished tasks"
+              icon={CheckCircle}
+            />
           </div>
 
           <div className="space-y-6">

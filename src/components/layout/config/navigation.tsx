@@ -50,7 +50,7 @@ export const navigationItems: NavigationItem[] = [
     moduleKey: 'spaces',
   },
   {
-    title: 'Operations',
+    title: 'Building Issues',
     href: '/operations',
     icon: AlertTriangle,
     adminOnly: false, // Allow CMC and facility staff
@@ -164,7 +164,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Spaces', icon: Building2 },
-      { title: 'Operations', icon: AlertTriangle },
+      { title: 'Building Issues', icon: AlertTriangle },
       { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
@@ -229,7 +229,7 @@ export function getAdminNavigation(): NavigationTab[] {
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'Spaces', icon: Building2 },
-    { title: 'Operations', icon: AlertTriangle },
+    { title: 'Building Issues', icon: AlertTriangle },
     { type: "separator" },
     { title: 'Admin Center', icon: UserCog },
   ];
