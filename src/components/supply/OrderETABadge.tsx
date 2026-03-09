@@ -50,7 +50,7 @@ export function OrderETABadge({
 
   if (eta.label === 'Ready now') {
     return (
-      <Badge variant="outline" className={cn('bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-300', className)}>
+      <Badge variant="outline" className={cn('bg-accent text-accent-foreground', className)}>
         {showIcon && <Zap className="h-3 w-3 mr-1" />}
         Ready now
       </Badge>
