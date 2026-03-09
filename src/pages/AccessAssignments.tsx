@@ -321,8 +321,13 @@ function AccessAssignmentsContent() {
             placeholder="Search by name, email, title, or department..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 pr-16"
           />
+          {!isLoading && (
+            <Badge variant="secondary" className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px]">
+              {filteredPersonnel.length}
+            </Badge>
+          )}
         </div>
 
         {/* Quick filter chips */}
