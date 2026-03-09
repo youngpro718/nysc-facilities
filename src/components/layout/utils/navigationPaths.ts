@@ -7,6 +7,7 @@ const BASE_PATH_MAP: Record<string, string> = {
   'Spaces': '/spaces',
   'New Request': '/request',
   'Operations': '/operations',
+  'Building Issues': '/operations',
   'Issues': '/operations?tab=issues',
   'Access & Assignments': '/access-assignments',
   'Occupants': '/occupants',
