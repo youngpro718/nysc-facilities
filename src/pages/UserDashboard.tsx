@@ -141,6 +141,8 @@ export default function UserDashboard() {
 
   // Calculate stats
   const readyForPickup = supplyRequests.filter(r => r.status === 'ready').length;
+  const activeSupplyCount = supplyRequests.filter(r => ['submitted', 'received', 'picking', 'in_progress'].includes(r.status)).length;
+  const openIssueCount = userIssues.filter(i => i.status === 'open' || i.status === 'in_progress').length;
   const pendingKeyRequests = keyRequests.filter(r => r.status === 'pending').length;
   const keysHeld = keyAssignments.length;
 
@@ -169,6 +171,30 @@ export default function UserDashboard() {
             />
           </div>
         </div>
+
+        {/* Status Summary Strip */}
+        {(activeSupplyCount > 0 || openIssueCount > 0 || keysHeld > 0) && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-sm text-muted-foreground">
+            {activeSupplyCount > 0 && (
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[hsl(var(--status-info))]" />
+                {activeSupplyCount} supply request{activeSupplyCount !== 1 ? 's' : ''} in progress
+              </span>
+            )}
+            {openIssueCount > 0 && (
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[hsl(var(--status-warning))]" />
+                {openIssueCount} issue{openIssueCount !== 1 ? 's' : ''} open
+              </span>
+            )}
+            {keysHeld > 0 && (
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[hsl(var(--status-operational))]" />
+                {keysHeld} key{keysHeld !== 1 ? 's' : ''} held
+              </span>
+            )}
+          </div>
+        )}
 
         {/* My Room Card - Shows primary assigned room */}
         <MyRoomCard userId={user.id} />

@@ -2,12 +2,13 @@
  * WorkCenterStats Component
  * 
  * Quick statistics summary for Court Aide dashboard
+ * Uses StatusCard pattern with left-border indicators
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent } from '@/components/ui/card';
+import { StatusCard } from '@/components/ui/StatusCard';
 import { ClipboardCheck, Package, Clock, TrendingUp } from 'lucide-react';
 
 interface WorkStats {
@@ -26,21 +27,18 @@ export function WorkCenterStats() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // My active tasks (claimed or in_progress)
       const { count: myActiveCount } = await supabase
         .from('staff_tasks')
         .select('*', { count: 'exact', head: true })
         .or(`claimed_by.eq.${user?.id},assigned_to.eq.${user?.id}`)
         .in('status', ['claimed', 'in_progress']);
 
-      // Available tasks (approved, unclaimed)
       const { count: availableCount } = await supabase
         .from('staff_tasks')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'approved')
         .is('claimed_by', null);
 
-      // Completed today by me
       const { count: completedCount } = await supabase
         .from('staff_tasks')
         .select('*', { count: 'exact', head: true })
@@ -48,7 +46,6 @@ export function WorkCenterStats() {
         .eq('status', 'completed')
         .gte('completed_at', today.toISOString());
 
-      // Supplies fulfilled today
       const { count: suppliesCount } = await supabase
         .from('supply_requests')
         .select('*', { count: 'exact', head: true })
@@ -66,54 +63,32 @@ export function WorkCenterStats() {
     refetchInterval: 30000,
   });
 
-  const statItems = [
-    {
-      label: 'My Tasks',
-      value: stats?.myActiveTasks ?? '-',
-      icon: ClipboardCheck,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
-    },
-    {
-      label: 'Available',
-      value: stats?.availableTasks ?? '-',
-      icon: Clock,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
-    },
-    {
-      label: 'Completed Today',
-      value: stats?.completedToday ?? '-',
-      icon: TrendingUp,
-      color: 'text-green-500',
-      bgColor: 'bg-green-500/10',
-    },
-    {
-      label: 'Supplies Fulfilled',
-      value: stats?.suppliesFulfilled ?? '-',
-      icon: Package,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
-    },
-  ];
-
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {statItems.map((stat) => (
-        <Card key={stat.label} className="overflow-hidden">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      <StatusCard
+        title="My Tasks"
+        value={stats?.myActiveTasks ?? 0}
+        icon={ClipboardCheck}
+        statusVariant={stats?.myActiveTasks ? 'info' : 'none'}
+      />
+      <StatusCard
+        title="Available"
+        value={stats?.availableTasks ?? 0}
+        icon={Clock}
+        statusVariant={stats?.availableTasks ? 'warning' : 'none'}
+      />
+      <StatusCard
+        title="Completed Today"
+        value={stats?.completedToday ?? 0}
+        icon={TrendingUp}
+        statusVariant="operational"
+      />
+      <StatusCard
+        title="Supplies Fulfilled"
+        value={stats?.suppliesFulfilled ?? 0}
+        icon={Package}
+        statusVariant="info"
+      />
     </div>
   );
 }

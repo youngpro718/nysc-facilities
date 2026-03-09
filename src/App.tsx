@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import AdminDashboard from "@/pages/AdminDashboard";
 import RoleDashboard from "@/pages/RoleDashboard";
+import CMCDashboard from "@/pages/CMCDashboard";
+import CourtOfficerDashboard from "@/pages/CourtOfficerDashboard";
 import CourtAideWorkCenter from "@/pages/CourtAideWorkCenter";
 import LoginPage from "@/pages/LoginPage";
 import MFASetup from "@/pages/auth/MFASetup";
@@ -119,13 +121,13 @@ function AppContent() {
         <Route path="/cmc-dashboard" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Management">
-              <RoleDashboard />
+              <CMCDashboard />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="/court-officer-dashboard" element={
           <ProtectedRoute>
-            <RoleDashboard />
+            <CourtOfficerDashboard />
           </ProtectedRoute>
         } />
         <Route path="/court-aide-dashboard" element={
