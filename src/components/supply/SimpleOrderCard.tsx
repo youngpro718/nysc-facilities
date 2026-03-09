@@ -115,6 +115,7 @@ export function SimpleOrderCard({
           <div className="flex items-center gap-1 flex-wrap justify-end">
             {getPriorityBadge()}
             {getStatusBadge()}
+            <OrderETABadge order={order} />
           </div>
         </div>
       </CardHeader>
