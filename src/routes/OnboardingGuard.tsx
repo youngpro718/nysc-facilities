@@ -106,7 +106,16 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           ]);
         } catch (profileError) {
           logger.error('[OnboardingGuard] Profile fetch failed:', profileError);
-          navigate('/login', { replace: true });
+          if (retryCountRef.current < 1) {
+            retryCountRef.current++;
+            logger.debug('[OnboardingGuard] Auto-retrying profile fetch...');
+            isCheckingRef.current = false;
+            await new Promise(r => setTimeout(r, 1500));
+            return check();
+          }
+          // Don't redirect to /login — that causes a loop. Show error UI instead.
+          logger.warn('[OnboardingGuard] Profile fetch failed after retry, showing error state');
+          if (mounted) setProfileError(true);
           isCheckingRef.current = false;
           return;
         }
