@@ -78,7 +78,7 @@ export function OrderCart({
           <span className="text-xs">{totalItems}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md flex flex-col pb-20 sm:pb-6">
+      <SheetContent className="w-full sm:max-w-md flex flex-col pb-nav-safe sm:pb-6">
         <SheetHeader>
           <SheetTitle>Your Order</SheetTitle>
           <SheetDescription>
@@ -133,13 +133,13 @@ export function OrderCart({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 rounded-full touch-manipulation active:scale-95"
+                    className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
                     onClick={() => {
                       if (item.quantity <= 1) onRemove(item.item_id);
                       else onUpdateQuantity(item.item_id, item.quantity - 1);
                     }}
                   >
-                    <Minus className="h-3 w-3" />
+                    <Minus className="h-3.5 w-3.5" />
                   </Button>
                   <div className="flex items-center gap-1.5">
                     <span className="font-semibold text-sm tabular-nums min-w-[1.5ch] text-center">
@@ -152,10 +152,10 @@ export function OrderCart({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 rounded-full touch-manipulation active:scale-95"
+                    className="h-9 w-9 rounded-full touch-manipulation active:scale-95"
                     onClick={() => onUpdateQuantity(item.item_id, item.quantity + 1)}
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>

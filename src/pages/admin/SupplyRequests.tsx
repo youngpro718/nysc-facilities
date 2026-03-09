@@ -333,7 +333,7 @@ export default function AdminSupplyRequests() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                       <div>
                         <p className="text-xs text-muted-foreground">Contact</p>
                         <p>{request.profiles?.email || '—'}</p>

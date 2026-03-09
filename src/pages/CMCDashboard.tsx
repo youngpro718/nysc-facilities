@@ -160,7 +160,7 @@ export default function CMCDashboard() {
               />
             )}
           </div>
-          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 sm:gap-4 mt-2 text-[11px] sm:text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--status-operational))]" />
               {health.operational} Active
