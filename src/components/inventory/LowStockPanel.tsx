@@ -327,6 +327,14 @@ export const LowStockPanel = () => {
           item={selectedItem}
         />
       )}
+
+      {reorderItem && (
+        <QuickReorderDialog
+          open={reorderDialogOpen}
+          onOpenChange={setReorderDialogOpen}
+          item={reorderItem}
+        />
+      )}
     </div>
   );
 };
