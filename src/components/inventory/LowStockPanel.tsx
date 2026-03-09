@@ -1,13 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { AlertTriangle, Package, TrendingDown, Plus } from "lucide-react";
 import { StockAdjustmentDialog } from "@/components/inventory/StockAdjustmentDialog";
+import { cn } from "@/lib/utils";
 
 type LowStockItem = {
   id: string;
@@ -24,8 +26,63 @@ type LowStockItem = {
   storage_room_id: string;
 };
 
+// Shared enrichment logic to avoid duplication
+async function enrichItems(
+  data: Record<string, unknown>[],
+  baseItems: LowStockItem[]
+): Promise<LowStockItem[]> {
+  try {
+    const categoryIds = Array.from(new Set(data.map(i => i.category_id as string).filter(Boolean)));
+    const roomIds = Array.from(new Set(data.map(i => i.storage_room_id as string).filter(Boolean)));
+
+    const [catsRes, roomsRes] = await Promise.all([
+      categoryIds.length
+        ? supabase.from('inventory_categories').select('id, name, color').in('id', categoryIds)
+        : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
+      roomIds.length
+        ? supabase.from('rooms').select('id, name, room_number').in('id', roomIds)
+        : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
+    ]);
+
+    const catsById = new Map(((catsRes.data as Record<string, unknown>[]) || []).map(c => [c.id as string, c]));
+    const roomsById = new Map(((roomsRes.data as Record<string, unknown>[]) || []).map(r => [r.id as string, r]));
+
+    return baseItems.map(it => {
+      const raw = data.find(d => d.id === it.id);
+      const cat = catsById.get(raw?.category_id as string);
+      const room = roomsById.get(it.storage_room_id);
+      return {
+        ...it,
+        category_name: (cat?.name as string) ?? it.category_name,
+        category_color: (cat?.color as string) ?? it.category_color,
+        room_name: (room?.name as string) ?? it.room_name,
+        room_number: (room?.room_number as string) ?? it.room_number,
+      };
+    });
+  } catch (e) {
+    if (import.meta.env.DEV) logger.warn('[LowStockPanel] enrichment failed:', e);
+    return baseItems;
+  }
+}
+
+function toBaseItems(data: Record<string, unknown>[]): LowStockItem[] {
+  return data.map(item => ({
+    id: item.id as string,
+    name: item.name as string,
+    quantity: item.quantity as number,
+    minimum_quantity: (item.minimum_quantity as number) || 0,
+    unit: (item.unit as string) || '',
+    location_details: (item.location_details as string) || '',
+    preferred_vendor: (item.preferred_vendor as string) || '',
+    category_name: "Uncategorized",
+    category_color: "#6b7280",
+    room_name: "",
+    room_number: "",
+    storage_room_id: item.storage_room_id as string,
+  }));
+}
+
 export const LowStockPanel = () => {
-  // Realtime handled by global RealtimeProvider; queries will be invalidated centrally
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{
@@ -35,80 +92,28 @@ export const LowStockPanel = () => {
     unit: string;
   } | null>(null);
 
-  // Using shared constant from @/constants/inventory
-
   const handleDialogOpenChange = (open: boolean) => {
     setDialogOpen(open);
     if (!open) {
-      // Refresh lists after a successful adjustment/close
       queryClient.invalidateQueries({ queryKey: ["low-stock-items"] });
       queryClient.invalidateQueries({ queryKey: ["out-of-stock-items"] });
-      queryClient.invalidateQueries({ queryKey: ["low-stock-overview"] }); // overview card
+      queryClient.invalidateQueries({ queryKey: ["low-stock-overview"] });
     }
   };
 
   const { data: lowStockItems, isLoading, isError: lowErr, error: lowError } = useQuery({
     queryKey: ["low-stock-items"],
     queryFn: async (): Promise<LowStockItem[]> => {
-      // Fetch items and compute low stock client-side using a forced minimum
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
         .order("quantity", { ascending: true });
 
       if (error) throw error;
-      // Base mapping
-      type InventoryRow = Record<string, unknown>;
-      const base = (data || []).map((item: InventoryRow) => ({
-        id: item.id as string,
-        name: item.name as string,
-        quantity: item.quantity as number,
-        minimum_quantity: (item.minimum_quantity as number) || 0,
-        unit: (item.unit as string) || '',
-        location_details: (item.location_details as string) || '',
-        preferred_vendor: (item.preferred_vendor as string) || '',
-        category_name: "Uncategorized",
-        category_color: "#6b7280", // default gray-500
-        room_name: "",
-        room_number: "",
-        storage_room_id: item.storage_room_id as string,
-      }));
-
-      // Optional enrichment: categories and rooms
-      try {
-        const categoryIds = Array.from(new Set((data || []).map((i: InventoryRow) => i.category_id as string).filter(Boolean)));
-        const roomIds = Array.from(new Set((data || []).map((i: InventoryRow) => i.storage_room_id as string).filter(Boolean)));
-
-        const [catsRes, roomsRes] = await Promise.all([
-          categoryIds.length
-            ? supabase.from('inventory_categories').select('id, name, color').in('id', categoryIds)
-            : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
-          roomIds.length
-            ? supabase.from('rooms').select('id, name, room_number').in('id', roomIds)
-            : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
-        ]);
-
-        type LookupRow = Record<string, unknown>;
-        const catsById = new Map(((catsRes.data as LookupRow[]) || []).map((c) => [c.id as string, c]));
-        const roomsById = new Map(((roomsRes.data as LookupRow[]) || []).map((r) => [r.id as string, r]));
-
-        const enriched = base.map((it) => {
-          const cat = catsById.get((data as InventoryRow[]).find(d => d.id === it.id)?.category_id as string);
-          const room = roomsById.get(it.storage_room_id);
-          return {
-            ...it,
-            category_name: (cat?.name as string) ?? it.category_name,
-            category_color: (cat?.color as string) ?? it.category_color,
-            room_name: (room?.name as string) ?? it.room_name,
-            room_number: (room?.room_number as string) ?? it.room_number,
-          } as LowStockItem;
-        });
-
-        return enriched.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
-      } catch (e) {
-        if (import.meta.env.DEV) logger.warn('[LowStockPanel] enrichment failed, using base data:', e);
-        return base.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
-      }
+      const raw = (data || []) as Record<string, unknown>[];
+      const base = toBaseItems(raw);
+      const enriched = await enrichItems(raw, base);
+      return enriched.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
     },
   });
 
@@ -122,113 +127,83 @@ export const LowStockPanel = () => {
         .order("name");
 
       if (error) throw error;
-      type OosRow = Record<string, unknown>;
-      const base = (data || []).map((item: OosRow) => ({
-        id: item.id as string,
-        name: item.name as string,
-        quantity: item.quantity as number,
-        minimum_quantity: (item.minimum_quantity as number) || 0,
-        unit: (item.unit as string) || '',
-        location_details: (item.location_details as string) || '',
-        preferred_vendor: (item.preferred_vendor as string) || '',
-        category_name: "Uncategorized",
-        category_color: "#6b7280",
-        room_name: "",
-        room_number: "",
-        storage_room_id: item.storage_room_id as string,
-      }));
-      try {
-        const categoryIds = Array.from(new Set((data || []).map((i: OosRow) => i.category_id as string).filter(Boolean)));
-        const roomIds = Array.from(new Set((data || []).map((i: OosRow) => i.storage_room_id as string).filter(Boolean)));
-        const [catsRes, roomsRes] = await Promise.all([
-          categoryIds.length
-            ? supabase.from('inventory_categories').select('id, name, color').in('id', categoryIds)
-            : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
-          roomIds.length
-            ? supabase.from('rooms').select('id, name, room_number').in('id', roomIds)
-            : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
-        ]);
-        type LookupRow2 = Record<string, unknown>;
-        const catsById = new Map(((catsRes.data as LookupRow2[]) || []).map((c) => [c.id as string, c]));
-        const roomsById = new Map(((roomsRes.data as LookupRow2[]) || []).map((r) => [r.id as string, r]));
-        return base.map((it) => {
-          const cat = catsById.get((data as OosRow[]).find(d => d.id === it.id)?.category_id as string);
-          const room = roomsById.get(it.storage_room_id);
-          return {
-            ...it,
-            category_name: (cat?.name as string) ?? it.category_name,
-            category_color: (cat?.color as string) ?? it.category_color,
-            room_name: (room?.name as string) ?? it.room_name,
-            room_number: (room?.room_number as string) ?? it.room_number,
-          } as LowStockItem;
-        });
-      } catch (e) {
-        if (import.meta.env.DEV) logger.warn('[LowStockPanel] enrichment (OOS) failed, using base data:', e);
-        return base;
-      }
+      const raw = (data || []) as Record<string, unknown>[];
+      const base = toBaseItems(raw);
+      return enrichItems(raw, base);
     },
   });
 
-  const getStockLevel = (quantity: number, minimum: number) => {
-    if (quantity === 0) {
-      return {
-        level: "critical",
-        label: "Out of Stock",
-        badgeVariant: "destructive" as const,
-        badgeClass: "",
-      };
-    }
-    if (quantity > 0 && quantity < minimum) {
-      return {
-        level: "warning",
-        label: "Low Stock",
-        // Amber scheme with good contrast
-        badgeVariant: undefined,
-        badgeClass: "bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:bg-amber-200/20 dark:text-amber-300",
-      } as const;
-    }
-    return {
-      level: "ok",
-      label: "OK",
-      badgeVariant: undefined,
-      badgeClass: "bg-muted text-foreground",
-    } as const;
-  };
-
-  const CategoryChip = ({ name, color }: { name: string; color: string }) => {
-    // Render neutral badge with small color dot to avoid unreadable text-on-color
-    return (
-      <Badge variant="outline">
-        <span className="inline-block h-2 w-2 rounded-full mr-2" style={{ backgroundColor: color }} />
-        {name}
-      </Badge>
-    );
-  };
-
-  const getCategoryColor = (color: string) => {
-    const colorMap: Record<string, string> = {
-      red: "bg-red-100 dark:bg-red-900/30 text-red-800",
-      blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-800",
-      green: "bg-green-100 dark:bg-green-900/30 text-green-800",
-      orange: "bg-orange-100 dark:bg-orange-900/30 text-orange-800",
-      purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-800",
-      yellow: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800",
-      pink: "bg-pink-100 text-pink-800",
-      gray: "bg-gray-100 dark:bg-gray-800/30 text-gray-800",
-    };
-    return colorMap[color] || "bg-gray-100 dark:bg-gray-800/30 text-gray-800";
+  const openRestock = (item: LowStockItem) => {
+    setSelectedItem({ id: item.id, name: item.name, quantity: item.quantity, unit: item.unit });
+    setDialogOpen(true);
   };
 
   if (isLoading) {
     return <div className="flex justify-center p-8">Loading low stock items...</div>;
   }
 
-  const criticalItems = lowStockItems?.filter(item => getStockLevel(item.quantity, item.minimum_quantity).level === "critical") || [];
-  const lowItems = lowStockItems?.filter(item => getStockLevel(item.quantity, item.minimum_quantity).level === "warning") || [];
+  const CategoryChip = ({ name, color }: { name: string; color: string }) => (
+    <Badge variant="outline" className="text-xs">
+      <span className="inline-block h-2 w-2 rounded-full mr-1.5" style={{ backgroundColor: color }} />
+      {name}
+    </Badge>
+  );
+
+  // Shared item card renderer
+  const StockItemCard = ({ item, isOutOfStock = false }: { item: LowStockItem; isOutOfStock?: boolean }) => {
+    const stockPercent = item.minimum_quantity > 0
+      ? Math.min(100, Math.round((item.quantity / item.minimum_quantity) * 100))
+      : 0;
+
+    return (
+      <div className={cn(
+        "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+        isOutOfStock ? "bg-destructive/5 border-destructive/20" : "bg-card border-amber-400/20 hover:bg-accent/50"
+      )}>
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="font-medium truncate">{item.name}</h4>
+            {isOutOfStock ? (
+              <Badge variant="destructive" className="text-xs">Out of Stock</Badge>
+            ) : (
+              <Badge className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-300">
+                Low Stock
+              </Badge>
+            )}
+            <CategoryChip name={item.category_name} color={item.category_color} />
+          </div>
+          
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+            <span>Current: <strong className={isOutOfStock ? "text-destructive" : "text-amber-600 dark:text-amber-400"}>{item.quantity}</strong> {item.unit}</span>
+            <span>Min: {item.minimum_quantity} {item.unit}</span>
+            {!isOutOfStock && <span>Need: {Math.max(0, item.minimum_quantity - item.quantity)} {item.unit}</span>}
+            {item.room_name && <span>{item.room_name} ({item.room_number})</span>}
+          </div>
+
+          {/* Stock level bar */}
+          {!isOutOfStock && item.minimum_quantity > 0 && (
+            <Progress 
+              value={stockPercent} 
+              className="h-1.5 w-full max-w-[200px] [&>div]:bg-amber-500" 
+            />
+          )}
+        </div>
+
+        <Button
+          size="sm"
+          variant={isOutOfStock ? "destructive" : "outline"}
+          className="shrink-0"
+          onClick={() => openRestock(item)}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          {isOutOfStock ? 'Restock' : 'Add'}
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Low Stock Management</h2>
@@ -236,167 +211,85 @@ export const LowStockPanel = () => {
         </div>
       </div>
 
-      {/* Summary Cards - Horizontal Scroll on Mobile */}
-      <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:overflow-visible">
-        <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
+      {/* Summary Cards */}
+      <div className="flex overflow-x-auto gap-4 pb-2 snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:overflow-visible">
+        <Card className="shrink-0 w-[220px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{outOfStockItems?.length || 0}</div>
+            <div className={cn("text-2xl font-bold", (outOfStockItems?.length || 0) > 0 && "text-destructive")}>
+              {outOfStockItems?.length || 0}
+            </div>
             <p className="text-xs text-muted-foreground">Immediate action needed</p>
           </CardContent>
         </Card>
 
-        <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
+        <Card className="shrink-0 w-[220px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Critical Stock</CardTitle>
+            <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{criticalItems.length}</div>
-            <p className="text-xs text-muted-foreground">Very low levels</p>
+            <div className={cn("text-2xl font-bold", (lowStockItems?.length || 0) > 0 && "text-amber-600 dark:text-amber-400")}>
+              {lowStockItems?.length || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Below minimum levels</p>
           </CardContent>
         </Card>
 
-        <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
+        <Card className="shrink-0 w-[220px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Alerts</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{lowItems.length}</div>
-            <p className="text-xs text-muted-foreground">Need restocking soon</p>
+            <div className="text-2xl font-bold">
+              {(outOfStockItems?.length || 0) + (lowStockItems?.length || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">Items needing attention</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Out of Stock Items */}
-      {outOfStockItems && outOfStockItems.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            Out of Stock Items
-          </h3>
-          <div className="grid gap-4">
-            {outOfStockItems.map((item) => (
-              <Card key={item.id} className="border-destructive/20 bg-card">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-medium">{item.name}</h4>
-                        <Badge variant="destructive">Out of Stock</Badge>
-                        <CategoryChip name={item.category_name} color={item.category_color} />
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>Current: {item.quantity} {item.unit}</span>
-                        <span>Required: {item.minimum_quantity} {item.unit}</span>
-                        {item.room_name && (
-                          <span>Location: {item.room_name} ({item.room_number})</span>
-                        )}
-                      </div>
-                      {item.preferred_vendor && (
-                        <p className="text-sm text-muted-foreground">
-                          Vendor: {item.preferred_vendor}
-                        </p>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        setSelectedItem({
-                          id: item.id,
-                          name: item.name,
-                          quantity: item.quantity,
-                          unit: item.unit,
-                        });
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Restock
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      {(lowErr || outErr) && (
+        <div className="rounded border border-destructive/30 bg-destructive/10 text-destructive p-3 text-sm">
+          Failed to load stock data: {lowError ? getErrorMessage(lowError) : outError ? getErrorMessage(outError) : 'Unknown error'}
         </div>
       )}
 
-      {(lowErr || outErr) && (
-        <div className="mb-4 rounded border border-destructive/30 bg-destructive/10 text-destructive p-3 text-sm">
-          Failed to load some stock data: {lowError ? getErrorMessage(lowError) : outError ? getErrorMessage(outError) : 'Unknown error'}
+      {/* Out of Stock Items */}
+      {outOfStockItems && outOfStockItems.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Out of Stock ({outOfStockItems.length})
+          </h3>
+          <div className="space-y-2">
+            {outOfStockItems.map(item => (
+              <StockItemCard key={item.id} item={item} isOutOfStock />
+            ))}
+          </div>
         </div>
       )}
 
       {/* Low Stock Items */}
       {lowStockItems && lowStockItems.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-destructive" />
-            Low Stock Items
+          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <TrendingDown className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            Low Stock ({lowStockItems.length})
           </h3>
-          <div className="grid gap-4">
-            {lowStockItems.map((item) => {
-              const stockLevel = getStockLevel(item.quantity, item.minimum_quantity);
-              return (
-                <Card key={item.id} className="border-destructive/20 bg-card hover:bg-accent/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-medium">{item.name}</h4>
-                          {stockLevel.badgeVariant ? (
-                            <Badge variant={stockLevel.badgeVariant}>{stockLevel.label}</Badge>
-                          ) : (
-                            <Badge className={stockLevel.badgeClass}>{stockLevel.label}</Badge>
-                          )}
-                          <CategoryChip name={item.category_name} color={item.category_color} />
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Current: {item.quantity} {item.unit}</span>
-                          <span>Minimum: {item.minimum_quantity} {item.unit}</span>
-                          <span>Need: {Math.max(0, item.minimum_quantity - item.quantity)} {item.unit}</span>
-                          {item.room_name && (
-                            <span>Location: {item.room_name} ({item.room_number})</span>
-                          )}
-                        </div>
-                        {item.preferred_vendor && (
-                          <p className="text-sm text-muted-foreground">
-                            Vendor: {item.preferred_vendor}
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedItem({
-                            id: item.id,
-                            name: item.name,
-                            quantity: item.quantity,
-                            unit: item.unit,
-                          });
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Stock
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="space-y-2">
+            {lowStockItems.map(item => (
+              <StockItemCard key={item.id} item={item} />
+            ))}
           </div>
         </div>
       )}
 
-      {/* No Low Stock Items */}
+      {/* All Good State */}
       {(!lowStockItems || lowStockItems.length === 0) && (!outOfStockItems || outOfStockItems.length === 0) && (
         <Card className="p-8 text-center bg-card">
           <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -406,6 +299,7 @@ export const LowStockPanel = () => {
           </p>
         </Card>
       )}
+
       {selectedItem && (
         <StockAdjustmentDialog
           open={dialogOpen}
