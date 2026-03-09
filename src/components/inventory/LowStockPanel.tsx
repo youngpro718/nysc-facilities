@@ -181,13 +181,17 @@ export const LowStockPanel = () => {
             {item.room_name && <span>{item.room_name} ({item.room_number})</span>}
           </div>
 
-          {/* Stock level bar */}
-          {!isOutOfStock && item.minimum_quantity > 0 && (
-            <Progress 
-              value={stockPercent} 
-              className="h-1.5 w-full max-w-[200px] [&>div]:bg-amber-500" 
-            />
-          )}
+          {/* Trend sparkline */}
+          <div className="flex items-center gap-2">
+            <InventorySparkline itemId={item.id} height={24} />
+            {/* Stock level bar */}
+            {!isOutOfStock && item.minimum_quantity > 0 && (
+              <Progress 
+                value={stockPercent} 
+                className="h-1.5 w-full max-w-[120px] [&>div]:bg-amber-500" 
+              />
+            )}
+          </div>
         </div>
 
         <Button
