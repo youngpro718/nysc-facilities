@@ -50,7 +50,7 @@ export const navigationItems: NavigationItem[] = [
     moduleKey: 'spaces',
   },
   {
-    title: 'Operations',
+    title: 'Building Issues',
     href: '/operations',
     icon: AlertTriangle,
     adminOnly: false, // Allow CMC and facility staff
