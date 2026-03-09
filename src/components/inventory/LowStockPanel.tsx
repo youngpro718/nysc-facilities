@@ -196,15 +196,28 @@ export const LowStockPanel = () => {
           </div>
         </div>
 
-        <Button
-          size="sm"
-          variant={isOutOfStock ? "destructive" : "outline"}
-          className="shrink-0"
-          onClick={() => openRestock(item)}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          {isOutOfStock ? 'Restock' : 'Add'}
-        </Button>
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <Button
+            size="sm"
+            variant={isOutOfStock ? "destructive" : "outline"}
+            onClick={() => openRestock(item)}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            {isOutOfStock ? 'Restock' : 'Add'}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-xs"
+            onClick={() => {
+              setReorderItem(item);
+              setReorderDialogOpen(true);
+            }}
+          >
+            <ShoppingCart className="h-3 w-3 mr-1" />
+            Reorder
+          </Button>
+        </div>
       </div>
     );
   };
