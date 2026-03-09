@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Loader2 } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { getMyProfile } from '@/services/profile';
 import { logger } from '@/lib/logger';
+import { Button } from '@/components/ui/button';
 
 /**
  * OnboardingGuard - Route-level enforcement for authentication and onboarding
@@ -19,10 +20,12 @@ import { logger } from '@/lib/logger';
  */
 export default function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(true);
+  const [profileError, setProfileError] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const hasCheckedRef = useRef(false);
   const isCheckingRef = useRef(false);
+  const retryCountRef = useRef(0);
 
   useEffect(() => {
     let mounted = true;
@@ -103,7 +106,16 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           ]);
         } catch (profileError) {
           logger.error('[OnboardingGuard] Profile fetch failed:', profileError);
-          navigate('/login', { replace: true });
+          if (retryCountRef.current < 1) {
+            retryCountRef.current++;
+            logger.debug('[OnboardingGuard] Auto-retrying profile fetch...');
+            isCheckingRef.current = false;
+            await new Promise(r => setTimeout(r, 1500));
+            return check();
+          }
+          // Don't redirect to /login — that causes a loop. Show error UI instead.
+          logger.warn('[OnboardingGuard] Profile fetch failed after retry, showing error state');
+          if (mounted) setProfileError(true);
           isCheckingRef.current = false;
           return;
         }
@@ -200,12 +212,31 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
     };
   }, [navigate, location.pathname]);
 
+  const handleRetry = useCallback(() => {
+    setProfileError(false);
+    setChecking(true);
+    hasCheckedRef.current = false;
+    retryCountRef.current = 0;
+  }, []);
+
   if (checking) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-destructive font-medium">Unable to load your profile</p>
+          <p className="text-muted-foreground text-sm">This may be a temporary issue. Please try again.</p>
+          <Button onClick={handleRetry} variant="outline">Retry</Button>
         </div>
       </div>
     );

@@ -1,26 +1,28 @@
 
 
-# Fix: Login Screen Refresh Loop
+## Fix: Cascade-delete child records before deleting a room
 
-## Root Cause
+The delete fails because `deleteSpace.ts` tries to delete the room directly, but 34 other tables have foreign keys pointing to `rooms`. For room 687 specifically, 3 tables have data blocking the delete: `room_lighting_status`, `room_history`, and `lockbox_slots`.
 
-There is a **redirect loop** between two components:
+### Approach
 
-1. **`useAuth`** (line 306-311): When an authenticated user is on `/login`, it redirects them to their role dashboard.
-2. **`OnboardingGuard`** (line 97-100): When the profile fetch fails (network timeout, Supabase hiccup, etc.), it redirects the user **back to `/login`** — even though the user IS authenticated.
+**Create a database function** `delete_room_cascade(p_room_id UUID)` that deletes from all referencing tables in the correct order, then deletes the room itself — all within a single transaction. This is safer and faster than making 30+ individual API calls from the client.
 
-This creates: `/login` → (useAuth: "you're logged in!") → `/dashboard` → (OnboardingGuard: "profile failed, go login!") → `/login` → repeat forever.
+**Update `deleteSpace.ts`** to call `supabase.rpc('delete_room_cascade', { p_room_id: id })` instead of a direct `.delete()` on the rooms table.
 
-## Fix
+### Database function will delete from these tables (in order):
+1. `room_lighting_status`, `lighting_fixtures`, `room_health_metrics`, `room_maintenance_schedule`
+2. `room_history`, `room_notes`, `room_finishes_log`, `room_occupancy`
+3. `room_inventory`, `room_key_access`, `lockbox_slots`
+4. `court_assignments`, `court_rooms`, `term_assignments`
+5. `occupant_room_assignments` (all FK columns), `occupants`
+6. `room_relationships` (both columns), `hallway_adjacent_rooms`
+7. `inventory_audits`, `room_relocations` (both columns)
+8. `relocations` (both columns), `renovations`
+9. `key_requests`, `staff_tasks` (both columns), `floorplan_objects` (via constraint)
+10. `rooms` (children with `parent_room_id` first, then the room itself)
 
-**File: `src/routes/OnboardingGuard.tsx`**
-
-- When the profile fetch fails but the user HAS a valid session, **do not redirect to `/login`**. Instead, show an error state with a "Retry" button, or fall through and let the user proceed.
-- This breaks the loop because the guard no longer bounces authenticated users back to the login page on transient errors.
-
-Specifically:
-- Change the `catch (profileError)` block (around line 95-100) to show an inline error with a retry button instead of `navigate('/login')`.
-- Add a `retryCount` ref to auto-retry once before showing the error UI.
-
-**One file, one fix.**
+### Files to change:
+- **New migration**: Create `delete_room_cascade` PL/pgSQL function
+- **`src/components/spaces/services/deleteSpace.ts`**: Replace direct delete with RPC call for rooms
 
