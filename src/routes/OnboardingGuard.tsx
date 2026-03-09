@@ -20,10 +20,12 @@ import { Button } from '@/components/ui/button';
  */
 export default function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(true);
+  const [profileError, setProfileError] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const hasCheckedRef = useRef(false);
   const isCheckingRef = useRef(false);
+  const retryCountRef = useRef(0);
 
   useEffect(() => {
     let mounted = true;
