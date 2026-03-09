@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Package, User, MapPin, Clock, AlertTriangle, Truck, CheckCircle, ChevronDown, ChevronUp, Flame } from 'lucide-react';
 import { formatDistanceToNow, formatDistanceToNowStrict } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { OrderETABadge } from './OrderETABadge';
 
 interface SimpleOrderCardProps {
   order: any;
@@ -114,6 +115,7 @@ export function SimpleOrderCard({
           <div className="flex items-center gap-1 flex-wrap justify-end">
             {getPriorityBadge()}
             {getStatusBadge()}
+            <OrderETABadge order={order} />
           </div>
         </div>
       </CardHeader>

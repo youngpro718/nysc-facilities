@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, Package, TrendingDown, Plus } from "lucide-react";
+import { AlertTriangle, Package, TrendingDown, Plus, ShoppingCart } from "lucide-react";
 import { StockAdjustmentDialog } from "@/components/inventory/StockAdjustmentDialog";
+import { InventorySparkline } from "@/components/inventory/InventorySparkline";
+import { QuickReorderDialog } from "@/components/inventory/QuickReorderDialog";
 import { cn } from "@/lib/utils";
 
 type LowStockItem = {
@@ -85,12 +87,14 @@ function toBaseItems(data: Record<string, unknown>[]): LowStockItem[] {
 export const LowStockPanel = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{
     id: string;
     name: string;
     quantity: number;
     unit: string;
   } | null>(null);
+  const [reorderItem, setReorderItem] = useState<LowStockItem | null>(null);
 
   const handleDialogOpenChange = (open: boolean) => {
     setDialogOpen(open);
@@ -180,24 +184,41 @@ export const LowStockPanel = () => {
             {item.room_name && <span>{item.room_name} ({item.room_number})</span>}
           </div>
 
-          {/* Stock level bar */}
-          {!isOutOfStock && item.minimum_quantity > 0 && (
-            <Progress 
-              value={stockPercent} 
-              className="h-1.5 w-full max-w-[200px] [&>div]:bg-amber-500" 
-            />
-          )}
+          {/* Trend sparkline */}
+          <div className="flex items-center gap-2">
+            <InventorySparkline itemId={item.id} height={24} />
+            {/* Stock level bar */}
+            {!isOutOfStock && item.minimum_quantity > 0 && (
+              <Progress 
+                value={stockPercent} 
+                className="h-1.5 w-full max-w-[120px] [&>div]:bg-amber-500" 
+              />
+            )}
+          </div>
         </div>
 
-        <Button
-          size="sm"
-          variant={isOutOfStock ? "destructive" : "outline"}
-          className="shrink-0"
-          onClick={() => openRestock(item)}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          {isOutOfStock ? 'Restock' : 'Add'}
-        </Button>
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <Button
+            size="sm"
+            variant={isOutOfStock ? "destructive" : "outline"}
+            onClick={() => openRestock(item)}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            {isOutOfStock ? 'Restock' : 'Add'}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-xs"
+            onClick={() => {
+              setReorderItem(item);
+              setReorderDialogOpen(true);
+            }}
+          >
+            <ShoppingCart className="h-3 w-3 mr-1" />
+            Reorder
+          </Button>
+        </div>
       </div>
     );
   };
@@ -305,6 +326,14 @@ export const LowStockPanel = () => {
           open={dialogOpen}
           onOpenChange={handleDialogOpenChange}
           item={selectedItem}
+        />
+      )}
+
+      {reorderItem && (
+        <QuickReorderDialog
+          open={reorderDialogOpen}
+          onOpenChange={setReorderDialogOpen}
+          item={reorderItem}
         />
       )}
     </div>
