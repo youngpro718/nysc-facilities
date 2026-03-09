@@ -129,8 +129,8 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
         }
       }
 
-      // Update order status
-      const newStatus = hasOutOfStock || hasPartialFulfillment ? 'ready' : 'ready';
+      // Update order status - always 'ready' once fulfilled (partial or full)
+      const newStatus = 'ready';
       
       await supabase
         .from('supply_requests')
