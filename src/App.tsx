@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import AdminDashboard from "@/pages/AdminDashboard";
 import RoleDashboard from "@/pages/RoleDashboard";
+import CMCDashboard from "@/pages/CMCDashboard";
+import CourtOfficerDashboard from "@/pages/CourtOfficerDashboard";
 import CourtAideWorkCenter from "@/pages/CourtAideWorkCenter";
 import LoginPage from "@/pages/LoginPage";
 import MFASetup from "@/pages/auth/MFASetup";
