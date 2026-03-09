@@ -456,11 +456,13 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                     <div>
                       <h4 className="font-medium mb-2 text-sm">Items Requested</h4>
                       <div className="space-y-1">
-                        {request.supply_request_items?.slice(0, 5).map((item: Record<string, unknown>, idx: number) => (
+                        {request.supply_request_items?.slice(0, 5).map((item: Record<string, unknown>, idx: number) => {
+                          const invItem = item.inventory_items as Record<string, unknown> | null;
+                          return (
                           <div key={idx} className="text-sm text-muted-foreground flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                             <span>
-                              {item.inventory_items?.name || 'Item'} × {item.quantity_requested || 1}
+                              {(invItem?.name as string) || 'Item'} × {(item.quantity_requested as number) || 1}
                             </span>
                           </div>
                         ))}
