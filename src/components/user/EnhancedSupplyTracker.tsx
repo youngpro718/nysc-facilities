@@ -583,7 +583,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
         <ReceiptDialog
           open={!!selectedReceiptRequestId}
           onOpenChange={(open) => !open && setSelectedReceiptRequestId(null)}
-          receiptData={receipts[0].pdf_data as unknown}
+          receiptData={receipts[0].pdf_data as ReceiptData}
         />
       )}
     </Card>
