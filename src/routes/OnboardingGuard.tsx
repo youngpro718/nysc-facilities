@@ -212,12 +212,31 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
     };
   }, [navigate, location.pathname]);
 
+  const handleRetry = useCallback(() => {
+    setProfileError(false);
+    setChecking(true);
+    hasCheckedRef.current = false;
+    retryCountRef.current = 0;
+  }, []);
+
   if (checking) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-destructive font-medium">Unable to load your profile</p>
+          <p className="text-muted-foreground text-sm">This may be a temporary issue. Please try again.</p>
+          <Button onClick={handleRetry} variant="outline">Retry</Button>
         </div>
       </div>
     );
