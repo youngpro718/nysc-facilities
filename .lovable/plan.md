@@ -1,22 +1,28 @@
 
 
-# Fix: Redundant Buttons & Missing Supply Request Button
+## Fix: Cascade-delete child records before deleting a room
 
-## Problems Found
+The delete fails because `deleteSpace.ts` tries to delete the room directly, but 34 other tables have foreign keys pointing to `rooms`. For room 687 specifically, 3 tables have data blocking the delete: `room_lighting_status`, `room_history`, and `lockbox_slots`.
 
-1. **Duplicate "Add Item" on Inventory page**: The page header (line 158) has an "Add Item" button that just switches to the Stock tab. Then the Stock tab's `InventoryItemsPanel` has its *own* "Add Item" button (line 300) that actually opens the create dialog. So when you're on the Stock tab, you see two "Add Item" buttons.
+### Approach
 
-2. **"Order Supplies" button location**: The button was added to the **Admin Supply Requests** page (`/admin/supply-requests`) header — but not to the **Inventory Dashboard** (`/inventory`) header where you're currently looking. So from the inventory page, there's no visible way to order supplies.
+**Create a database function** `delete_room_cascade(p_room_id UUID)` that deletes from all referencing tables in the correct order, then deletes the room itself — all within a single transaction. This is safer and faster than making 30+ individual API calls from the client.
 
-## Fix Plan
+**Update `deleteSpace.ts`** to call `supabase.rpc('delete_room_cascade', { p_room_id: id })` instead of a direct `.delete()` on the rooms table.
 
-### 1. Remove duplicate "Add Item" from Inventory Dashboard header
-**File:** `src/pages/InventoryDashboard.tsx`
-- Remove the "Add Item" button from the page header (lines 158-161). The Stock tab already has its own "Add Item" button with the actual dialog trigger — that's the only one needed.
+### Database function will delete from these tables (in order):
+1. `room_lighting_status`, `lighting_fixtures`, `room_health_metrics`, `room_maintenance_schedule`
+2. `room_history`, `room_notes`, `room_finishes_log`, `room_occupancy`
+3. `room_inventory`, `room_key_access`, `lockbox_slots`
+4. `court_assignments`, `court_rooms`, `term_assignments`
+5. `occupant_room_assignments` (all FK columns), `occupants`
+6. `room_relationships` (both columns), `hallway_adjacent_rooms`
+7. `inventory_audits`, `room_relocations` (both columns)
+8. `relocations` (both columns), `renovations`
+9. `key_requests`, `staff_tasks` (both columns), `floorplan_objects` (via constraint)
+10. `rooms` (children with `parent_room_id` first, then the room itself)
 
-### 2. Add "Order Supplies" button to Inventory Dashboard header
-**File:** `src/pages/InventoryDashboard.tsx`
-- Replace the removed "Add Item" with an "Order Supplies" button that navigates to `/request/supplies`, placed next to the existing "Requests" button. This makes it discoverable from the inventory page.
-
-Two small edits, one file.
+### Files to change:
+- **New migration**: Create `delete_room_cascade` PL/pgSQL function
+- **`src/components/spaces/services/deleteSpace.ts`**: Replace direct delete with RPC call for rooms
 

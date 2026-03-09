@@ -155,9 +155,9 @@ export const InventoryDashboard = () => {
                   </Badge>
                 )}
               </Button>
-              <Button onClick={() => handleTabChange("stock")} className="w-full sm:w-auto" data-tour="inventory-add">
+              <Button onClick={() => navigate('/request/supplies')} className="w-full sm:w-auto" data-tour="inventory-order">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Item
+                Order Supplies
               </Button>
             </div>
           </div>
