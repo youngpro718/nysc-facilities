@@ -56,19 +56,19 @@ export function ItemRow({
           <Button
             size="sm"
             variant="ghost"
-            className="h-7 w-7 p-0"
+            className="h-9 w-9 p-0 touch-manipulation active:scale-95"
             onClick={onDecrement}
           >
-            <Minus className="h-3 w-3" />
+            <Minus className="h-3.5 w-3.5" />
           </Button>
           <span className="w-8 text-center text-sm font-medium">{cartQuantity}</span>
           <Button
             size="sm"
             variant="ghost"
-            className="h-7 w-7 p-0"
+            className="h-9 w-9 p-0 touch-manipulation active:scale-95"
             onClick={onIncrement}
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>
       ) : (
