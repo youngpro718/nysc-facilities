@@ -27,6 +27,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { QuickOrderGrid } from '@/components/supply/QuickOrderGrid';
 import { ReceiptDialog } from '@/components/supply/ReceiptDialog';
+import type { ReceiptData } from '@/types/receipt';
 import { useSupplyReceipts } from '@/hooks/useSupplyReceipts';
 import { createReceiptData } from '@/lib/receiptUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
