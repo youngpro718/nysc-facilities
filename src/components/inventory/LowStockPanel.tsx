@@ -86,12 +86,14 @@ function toBaseItems(data: Record<string, unknown>[]): LowStockItem[] {
 export const LowStockPanel = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{
     id: string;
     name: string;
     quantity: number;
     unit: string;
   } | null>(null);
+  const [reorderItem, setReorderItem] = useState<LowStockItem | null>(null);
 
   const handleDialogOpenChange = (open: boolean) => {
     setDialogOpen(open);
