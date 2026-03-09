@@ -280,14 +280,14 @@ export default function Operations() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Operations</h2>
+              <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Building Issues</h2>
               <Badge variant="secondary" className="text-xs">
                 <Activity className="h-3 w-3 mr-1" />
                 Live
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              Monitor and manage facility operations
+              Track and resolve facility issues &amp; maintenance
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
