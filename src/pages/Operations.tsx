@@ -264,7 +264,7 @@ export default function Operations() {
         refreshIssues(),
         // Add other refresh functions as needed
       ]);
-      toast.success('Operations data refreshed successfully');
+      toast.success('Building issues data refreshed successfully');
     } catch (error) {
       logger.error('Error refreshing data:', error);
       toast.error('Failed to refresh some data');
