@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertTriangle, Package, TrendingDown, Plus, ShoppingCart } from "lucide-react";
 import { StockAdjustmentDialog } from "@/components/inventory/StockAdjustmentDialog";
 import { InventorySparkline } from "@/components/inventory/InventorySparkline";
+import { QuickReorderDialog } from "@/components/inventory/QuickReorderDialog";
 import { cn } from "@/lib/utils";
 
 type LowStockItem = {
