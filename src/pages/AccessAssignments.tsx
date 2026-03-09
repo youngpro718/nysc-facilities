@@ -34,9 +34,34 @@ function PersonnelCard({
       .toUpperCase()
       .slice(0, 2) || "??";
 
+  const isUnassigned = person.room_count === 0 && person.key_count === 0;
+
+  // Role badge color mapping based on title/department
+  const getRoleBadge = () => {
+    const title = (person.title || "").toLowerCase();
+    const dept = (person.department || "").toLowerCase();
+
+    if (title.includes("justice") || title.includes("judge"))
+      return { label: "Justice", className: "bg-status-info/15 text-status-info border-status-info/30" };
+    if (title.includes("clerk"))
+      return { label: "Clerk", className: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30" };
+    if (title.includes("admin") || dept.includes("admin"))
+      return { label: "Admin", className: "bg-status-critical/15 text-status-critical border-status-critical/30" };
+    if (title.includes("aide") || title.includes("supply"))
+      return { label: "Aide", className: "bg-status-operational/15 text-status-operational border-status-operational/30" };
+    if (title.includes("manager") || title.includes("chief") || title.includes("director"))
+      return { label: "Management", className: "bg-status-warning/15 text-status-warning border-status-warning/30" };
+    return null;
+  };
+
+  const roleBadge = getRoleBadge();
+
   return (
     <Card
-      className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50 group"
+      className={cn(
+        "hover:shadow-md transition-all cursor-pointer hover:border-primary/50 group",
+        isUnassigned && "border-dashed border-muted-foreground/30"
+      )}
       onClick={onClick}
     >
       <CardContent className="p-2.5 sm:p-4">
@@ -51,8 +76,16 @@ function PersonnelCard({
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
               <h3 className="font-medium text-sm truncate">{person.name}</h3>
+              {roleBadge && (
+                <span className={cn(
+                  "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border",
+                  roleBadge.className
+                )}>
+                  {roleBadge.label}
+                </span>
+              )}
               <Badge
                 variant={person.is_registered_user ? "default" : "secondary"}
                 className="text-xs shrink-0"
@@ -81,12 +114,17 @@ function PersonnelCard({
               <span
                 className={cn(
                   "flex items-center gap-1 text-xs",
-                  person.key_count > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
+                  person.key_count > 0 ? "text-status-warning" : "text-muted-foreground"
                 )}
               >
                 <Key className="h-3 w-3" />
                 {person.key_count} key{person.key_count !== 1 ? "s" : ""}
               </span>
+              {isUnassigned && (
+                <span className="text-[10px] text-muted-foreground/70 italic">
+                  No assignments
+                </span>
+              )}
             </div>
           </div>
         </div>
