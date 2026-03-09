@@ -1,18 +1,20 @@
 // Admin Supply Requests — audit view of all supply requests
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Package, Clock, CheckCircle, XCircle, User, AlertTriangle } from "lucide-react";
-import { format } from "date-fns";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Package, Clock, CheckCircle, XCircle, User, AlertTriangle, ChevronDown, ChevronUp, ShoppingCart, Search } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useToast } from "@/hooks/use-toast";
 import { getSupplyRequests } from "@/services/supplyService";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { SupplyRequestActions } from "@/components/supply/SupplyRequestActions";
+
 interface SupplyRequestWithUser {
   id: string;
   title: string;
@@ -56,32 +58,35 @@ interface SupplyRequestWithUser {
   }>;
 }
 
-const statusConfig = {
-  submitted: { icon: Clock, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30", label: "Submitted" },
-  pending_approval: { icon: AlertTriangle, color: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30", label: "Pending Approval" },
-  approved: { icon: CheckCircle, color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30", label: "Approved" },
-  rejected: { icon: XCircle, color: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30", label: "Rejected" },
-  received: { icon: Package, color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30", label: "Received" },
-  processing: { icon: Clock, color: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30", label: "Processing" },
-  ready: { icon: CheckCircle, color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30", label: "Ready for Pickup" },
-  delivered: { icon: CheckCircle, color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30", label: "Delivered" },
-  completed: { icon: CheckCircle, color: "text-gray-600 bg-gray-50", label: "Completed" },
-  cancelled: { icon: XCircle, color: "text-gray-600 bg-gray-50", label: "Cancelled" },
+const statusConfig: Record<string, { icon: typeof Clock; label: string; border: string }> = {
+  submitted: { icon: Clock, label: "Submitted", border: "border-l-blue-500" },
+  pending_approval: { icon: AlertTriangle, label: "Pending Approval", border: "border-l-amber-500" },
+  approved: { icon: CheckCircle, label: "Approved", border: "border-l-green-500" },
+  rejected: { icon: XCircle, label: "Rejected", border: "border-l-destructive" },
+  received: { icon: Package, label: "Received", border: "border-l-blue-500" },
+  processing: { icon: Clock, label: "Processing", border: "border-l-amber-500" },
+  picking: { icon: Package, label: "Picking", border: "border-l-purple-500" },
+  ready: { icon: CheckCircle, label: "Ready for Pickup", border: "border-l-green-500" },
+  delivered: { icon: CheckCircle, label: "Delivered", border: "border-l-green-500" },
+  completed: { icon: CheckCircle, label: "Completed", border: "border-l-muted-foreground" },
+  cancelled: { icon: XCircle, label: "Cancelled", border: "border-l-muted-foreground" },
 };
 
-const priorityConfig = {
-  low: { color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30", label: "Low" },
-  medium: { color: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30", label: "Medium" },
-  high: { color: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30", label: "High" },
-  urgent: { color: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30", label: "Urgent" },
+const priorityDot: Record<string, string> = {
+  urgent: "bg-destructive",
+  high: "bg-destructive",
+  medium: "bg-amber-500",
+  low: "bg-muted-foreground/50",
 };
 
 export default function AdminSupplyRequests() {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<SupplyRequestWithUser[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('id');
@@ -90,6 +95,13 @@ export default function AdminSupplyRequests() {
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  // Auto-expand highlighted request
+  useEffect(() => {
+    if (highlightedId) {
+      setExpandedIds(prev => new Set(prev).add(highlightedId));
+    }
+  }, [highlightedId]);
 
   const fetchRequests = async () => {
     try {
@@ -106,6 +118,15 @@ export default function AdminSupplyRequests() {
     }
   };
 
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const filteredRequests = requests.filter(request => {
     const matchesStatus = filterStatus === "all" || request.status === filterStatus;
     const matchesPriority = filterPriority === "all" || request.priority === filterPriority;
@@ -117,7 +138,6 @@ export default function AdminSupplyRequests() {
       request.supply_request_items.some(item =>
         item.inventory_items.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
-
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
@@ -125,47 +145,66 @@ export default function AdminSupplyRequests() {
     <PageContainer>
       <Breadcrumb />
       <PageHeader
-        title="Supply Request History"
-        description="View and audit all supply requests. Approvals are handled from the Admin Dashboard."
+        title="Supply Requests"
+        description="View and manage all supply requests"
       >
-        <div className="flex flex-wrap gap-2">
+        <Button
+          onClick={() => navigate('/request/supplies')}
+          className="touch-target min-h-[44px] active:scale-95 transition-transform"
+        >
+          <ShoppingCart className="h-4 w-4 mr-2" />
+          Order Supplies
+        </Button>
+      </PageHeader>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search requests..."
+            placeholder="Search by name, item, or requester..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-64"
+            className="pl-9"
           />
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="submitted">Submitted</SelectItem>
-              <SelectItem value="pending_approval">Pending Approval</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="received">Received</SelectItem>
-              <SelectItem value="processing">Processing</SelectItem>
-              <SelectItem value="ready">Ready</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filterPriority} onValueChange={setFilterPriority}>
-            <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-40">
-              <SelectValue placeholder="Filter by priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Priority</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="urgent">Urgent</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
-      </PageHeader>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-36">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="submitted">Submitted</SelectItem>
+            <SelectItem value="pending_approval">Pending Approval</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="received">Received</SelectItem>
+            <SelectItem value="picking">Picking</SelectItem>
+            <SelectItem value="ready">Ready</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterPriority} onValueChange={setFilterPriority}>
+          <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-36">
+            <SelectValue placeholder="Priority" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Priority</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="urgent">Urgent</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Results count */}
+      {!isLoading && (
+        <p className="text-xs text-muted-foreground mb-3">
+          {filteredRequests.length} request{filteredRequests.length !== 1 ? 's' : ''}
+        </p>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
@@ -173,158 +212,178 @@ export default function AdminSupplyRequests() {
         </div>
       ) : filteredRequests.length === 0 ? (
         <Card>
-          <CardContent className="text-center py-8">
-            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <CardContent className="flex flex-col items-center text-center py-12 px-4">
+            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No supply requests</h3>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-6">
               {searchQuery || filterStatus !== "all" || filterPriority !== "all"
                 ? "No requests match your current filters."
                 : "No supply requests have been submitted yet."}
             </p>
+            <Button onClick={() => navigate('/request/supplies')}>
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Order Supplies
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {filteredRequests.map((request) => {
-            const StatusIcon = statusConfig[request.status as keyof typeof statusConfig]?.icon || Clock;
-            const statusStyle = statusConfig[request.status as keyof typeof statusConfig]?.color || "text-gray-600 bg-gray-50";
-            const priorityStyle = priorityConfig[request.priority as keyof typeof priorityConfig]?.color || "text-gray-600 bg-gray-50";
+            const config = statusConfig[request.status] || statusConfig.submitted;
+            const StatusIcon = config.icon;
+            const isExpanded = expandedIds.has(request.id);
             const isHighlighted = request.id === highlightedId;
+            const itemCount = request.supply_request_items?.length || 0;
+            const dotColor = priorityDot[request.priority] || priorityDot.low;
 
             return (
               <Card
                 key={request.id}
-                className={`transition-all ${isHighlighted ? 'ring-2 ring-primary border-primary' : ''}`}
+                className={`border-l-[3px] ${config.border} transition-all ${
+                  isHighlighted ? 'ring-2 ring-primary' : ''
+                }`}
               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${statusStyle}`}>
-                        <StatusIcon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{request.title}</CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          Requested by {(request.profiles?.first_name || 'Unknown')} {(request.profiles?.last_name || '')}
-                          {request.profiles?.department ? ` (${request.profiles.department})` : ''}
-                        </p>
-                      </div>
-                    </div>
+                {/* Compact Summary Row */}
+                <div
+                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/50 transition-colors active:bg-accent/70 touch-manipulation"
+                  onClick={() => toggleExpand(request.id)}
+                >
+                  <StatusIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={priorityStyle}>
-                        {priorityConfig[request.priority as keyof typeof priorityConfig]?.label || request.priority}
-                      </Badge>
-                      <Badge variant="secondary">
-                        {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
-                      </Badge>
-                      <SupplyRequestActions
-                        requestId={request.id}
-                        requestTitle={request.title}
-                        onDeleted={fetchRequests}
-                      />
+                      <span className="font-medium text-sm truncate">{request.title}</span>
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
                     </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {request.description && (
-                    <div>
-                      <p className="font-medium text-sm text-muted-foreground mb-1">Description</p>
-                      <p className="text-sm">{request.description}</p>
-                    </div>
-                  )}
-
-                  <div>
-                    <p className="font-medium text-sm text-muted-foreground mb-1">Justification</p>
-                    <p className="text-sm">{request.justification}</p>
-                  </div>
-
-                  <div>
-                    <p className="font-medium text-sm text-muted-foreground mb-2">Requested Items</p>
-                    <div className="space-y-2">
-                      {(request.supply_request_items || []).map((item) => (
-                        <div key={item.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{item.inventory_items.name}</span>
-                            {item.inventory_items.inventory_categories && (
-                              <Badge
-                                variant="outline"
-                                className="text-xs"
-                                style={{
-                                  color: item.inventory_items.inventory_categories.color,
-                                  borderColor: item.inventory_items.inventory_categories.color + '40'
-                                }}
-                              >
-                                {item.inventory_items.inventory_categories.name}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Requested: {item.quantity_requested} {item.inventory_items.unit || 'units'}
-                            {item.quantity_approved !== undefined && item.quantity_approved !== null && (
-                              <span className="ml-2 text-green-600 dark:text-green-400">
-                                | Approved: {item.quantity_approved}
-                              </span>
-                            )}
-                            {item.quantity_fulfilled !== undefined && item.quantity_fulfilled !== null && (
-                              <span className="ml-2 text-blue-600 dark:text-blue-400">
-                                | Fulfilled: {item.quantity_fulfilled}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                      <span>{request.profiles?.first_name} {request.profiles?.last_name}</span>
+                      <span>·</span>
+                      <span>{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
+                      <span>·</span>
+                      <span>{formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="font-medium text-sm text-muted-foreground mb-1">Contact</p>
-                      <p className="text-sm">{request.profiles?.email || '—'}</p>
-                    </div>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 flex-shrink-0">
+                    {config.label}
+                  </Badge>
 
-                    {request.requested_delivery_date && (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <SupplyRequestActions
+                      requestId={request.id}
+                      requestTitle={request.title}
+                      onDeleted={fetchRequests}
+                    />
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="border-t px-4 py-4 space-y-4 bg-muted/20">
+                    {request.description && (
                       <div>
-                        <p className="font-medium text-sm text-muted-foreground mb-1">Delivery Date</p>
-                        <p className="text-sm">{format(new Date(request.requested_delivery_date), "MMM d, yyyy")}</p>
+                        <p className="font-medium text-xs text-muted-foreground mb-1">Description</p>
+                        <p className="text-sm">{request.description}</p>
                       </div>
                     )}
 
-                    {request.delivery_location && (
+                    {request.justification && (
                       <div>
-                        <p className="font-medium text-sm text-muted-foreground mb-1">Delivery Location</p>
-                        <p className="text-sm">{request.delivery_location}</p>
+                        <p className="font-medium text-xs text-muted-foreground mb-1">Justification</p>
+                        <p className="text-sm">{request.justification}</p>
                       </div>
                     )}
-                  </div>
 
-                  {(request.approval_notes || request.fulfillment_notes) && (
-                    <div className="space-y-2">
-                      {request.approval_notes && (
+                    <div>
+                      <p className="font-medium text-xs text-muted-foreground mb-2">Items</p>
+                      <div className="space-y-1.5">
+                        {(request.supply_request_items || []).map((item) => (
+                          <div key={item.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
+                            <div className="flex items-center gap-2">
+                              <span>{item.inventory_items.name}</span>
+                              {item.inventory_items.inventory_categories && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] px-1"
+                                  style={{
+                                    color: item.inventory_items.inventory_categories.color,
+                                    borderColor: item.inventory_items.inventory_categories.color + '40'
+                                  }}
+                                >
+                                  {item.inventory_items.inventory_categories.name}
+                                </Badge>
+                              )}
+                            </div>
+                            <span className="text-muted-foreground text-xs">
+                              ×{item.quantity_requested}
+                              {item.quantity_approved != null && (
+                                <span className="text-green-600 dark:text-green-400 ml-1">✓{item.quantity_approved}</span>
+                              )}
+                              {item.quantity_fulfilled != null && (
+                                <span className="text-blue-600 dark:text-blue-400 ml-1">⬇{item.quantity_fulfilled}</span>
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Contact</p>
+                        <p>{request.profiles?.email || '—'}</p>
+                      </div>
+                      {request.profiles?.department && (
                         <div>
-                          <p className="font-medium text-sm text-muted-foreground mb-1">Approval Notes</p>
-                          <p className="text-sm bg-green-50 dark:bg-green-950/30 dark:bg-green-900/30 text-green-900 dark:text-green-100 p-2 rounded">{request.approval_notes}</p>
+                          <p className="text-xs text-muted-foreground">Department</p>
+                          <p>{request.profiles.department}</p>
                         </div>
                       )}
-                      {request.fulfillment_notes && (
+                      {request.requested_delivery_date && (
                         <div>
-                          <p className="font-medium text-sm text-muted-foreground mb-1">Fulfillment Notes</p>
-                          <p className="text-sm bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-2 rounded">{request.fulfillment_notes}</p>
+                          <p className="text-xs text-muted-foreground">Delivery Date</p>
+                          <p>{format(new Date(request.requested_delivery_date), "MMM d, yyyy")}</p>
+                        </div>
+                      )}
+                      {request.delivery_location && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Location</p>
+                          <p>{request.delivery_location}</p>
                         </div>
                       )}
                     </div>
-                  )}
 
-                  <div className="pt-3 border-t text-sm text-muted-foreground space-y-1">
-                    <p>Submitted: {format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a")}</p>
-                    {request.approved_at && (
-                      <p>Approved: {format(new Date(request.approved_at), "MMM d, yyyy 'at' h:mm a")}</p>
+                    {(request.approval_notes || request.fulfillment_notes) && (
+                      <div className="space-y-2">
+                        {request.approval_notes && (
+                          <div className="text-sm bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-100 p-2 rounded">
+                            <span className="font-medium text-xs">Approval: </span>{request.approval_notes}
+                          </div>
+                        )}
+                        {request.fulfillment_notes && (
+                          <div className="text-sm bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 p-2 rounded">
+                            <span className="font-medium text-xs">Fulfillment: </span>{request.fulfillment_notes}
+                          </div>
+                        )}
+                      </div>
                     )}
-                    {request.fulfilled_at && (
-                      <p>Fulfilled: {format(new Date(request.fulfilled_at), "MMM d, yyyy 'at' h:mm a")}</p>
-                    )}
+
+                    <div className="text-xs text-muted-foreground pt-2 border-t space-y-0.5">
+                      <p>Submitted {format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a")}</p>
+                      {request.approved_at && (
+                        <p>Approved {format(new Date(request.approved_at), "MMM d, yyyy 'at' h:mm a")}</p>
+                      )}
+                      {request.fulfilled_at && (
+                        <p>Fulfilled {format(new Date(request.fulfilled_at), "MMM d, yyyy 'at' h:mm a")}</p>
+                      )}
+                    </div>
                   </div>
-                </CardContent>
+                )}
               </Card>
             );
           })}
