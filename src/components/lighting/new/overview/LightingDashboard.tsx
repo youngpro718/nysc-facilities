@@ -2,17 +2,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusCard } from "@/components/ui/StatusCard";
+import { Progress } from "@/components/ui/progress";
 import { 
   Lightbulb, 
   AlertTriangle, 
   CheckCircle, 
   Wrench,
-  TrendingUp,
   MapPin,
-  Plus,
   RefreshCw,
   Building,
   Route
@@ -23,6 +21,7 @@ import { LightStatus } from "@/types/lighting";
 import { CreateLightingDialog } from "../../CreateLightingDialog";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export function LightingDashboard() {
   const navigate = useNavigate();
@@ -74,7 +73,6 @@ export function LightingDashboard() {
   const fixtureStats = (fixtures || []).reduce((acc, fixture) => {
     acc.total++;
     
-    // Track by space type
     if (fixture.space_type === 'room') {
       acc.rooms.total++;
       if (fixture.status === 'functional') acc.rooms.functional++;
@@ -107,11 +105,7 @@ export function LightingDashboard() {
     replacement: 0,
     rooms: { total: 0, functional: 0 },
     hallways: { total: 0, functional: 0 }
-  }) || { 
-    total: 0, functional: 0, maintenance: 0, nonFunctional: 0, replacement: 0,
-    rooms: { total: 0, functional: 0 },
-    hallways: { total: 0, functional: 0 }
-  };
+  });
 
   const functionalPercentage = fixtureStats.total > 0 
     ? Math.round((fixtureStats.functional / fixtureStats.total) * 100) 
@@ -120,9 +114,19 @@ export function LightingDashboard() {
   const criticalIssues = fixtureStats.nonFunctional + fixtureStats.replacement;
   const needsAttention = fixtureStats.maintenance;
 
+  const roomHealthPct = fixtureStats.rooms.total > 0
+    ? Math.round((fixtureStats.rooms.functional / fixtureStats.rooms.total) * 100)
+    : 0;
+  const hallwayHealthPct = fixtureStats.hallways.total > 0
+    ? Math.round((fixtureStats.hallways.functional / fixtureStats.hallways.total) * 100)
+    : 0;
+
+  const getHealthVariant = (pct: number) =>
+    pct >= 90 ? "operational" : pct >= 70 ? "warning" : "critical";
+
   return (
     <div className="space-y-6">
-      {/* Quick Stats Grid — reordered: Critical first */}
+      {/* KPI Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatusCard
           statusVariant={criticalIssues > 0 ? "critical" : "operational"}
@@ -132,7 +136,7 @@ export function LightingDashboard() {
           icon={AlertTriangle}
         />
         <StatusCard
-          statusVariant={functionalPercentage >= 90 ? "operational" : functionalPercentage >= 75 ? "warning" : "critical"}
+          statusVariant={getHealthVariant(functionalPercentage)}
           title="System Health"
           value={`${functionalPercentage}%`}
           subLabel={`${fixtureStats.functional} of ${fixtureStats.total} functional`}
@@ -154,74 +158,101 @@ export function LightingDashboard() {
         />
       </div>
 
-      {/* Room vs Hallway Breakdown */}
+      {/* System Health Progress Bar */}
+      <Card>
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-muted-foreground">Overall System Health</p>
+            <span className={cn(
+              "text-sm font-bold",
+              functionalPercentage >= 90 ? "text-status-operational" :
+              functionalPercentage >= 70 ? "text-status-warning" :
+              "text-status-critical"
+            )}>
+              {functionalPercentage}%
+            </span>
+          </div>
+          <Progress value={functionalPercentage} className="h-2.5" />
+          {(criticalIssues > 0 || needsAttention > 0) && (
+            <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+              {fixtureStats.nonFunctional > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-status-critical" />
+                  {fixtureStats.nonFunctional} non-functional
+                </span>
+              )}
+              {fixtureStats.replacement > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-status-critical" />
+                  {fixtureStats.replacement} need replacement
+                </span>
+              )}
+              {needsAttention > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-status-warning" />
+                  {needsAttention} need maintenance
+                </span>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Room vs Hallway Breakdown — StatusCard style */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
+        <Card className={cn(
+          "border-l-[3px]",
+          roomHealthPct >= 90 ? "border-l-status-operational" :
+          roomHealthPct >= 70 ? "border-l-status-warning" : "border-l-status-critical"
+        )}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Building className="h-4 w-4 text-muted-foreground" />
               Room Lighting
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total Fixtures</span>
-                <span className="font-semibold">{fixtureStats.rooms.total}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Functional</span>
-                <span className="font-semibold text-green-600 dark:text-green-400">{fixtureStats.rooms.functional}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Health Rate</span>
-                <span className="font-semibold">
-                  {fixtureStats.rooms.total > 0 
-                    ? Math.round((fixtureStats.rooms.functional / fixtureStats.rooms.total) * 100) 
-                    : 0}%
+              <div className="flex items-baseline justify-between">
+                <span className="text-3xl font-bold">{roomHealthPct}%</span>
+                <span className="text-xs text-muted-foreground">
+                  {fixtureStats.rooms.functional}/{fixtureStats.rooms.total} functional
                 </span>
               </div>
+              <Progress value={roomHealthPct} className="h-1.5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Route className="h-5 w-5" />
+        <Card className={cn(
+          "border-l-[3px]",
+          hallwayHealthPct >= 90 ? "border-l-status-operational" :
+          hallwayHealthPct >= 70 ? "border-l-status-warning" : "border-l-status-critical"
+        )}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Route className="h-4 w-4 text-muted-foreground" />
               Hallway Lighting
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total Fixtures</span>
-                <span className="font-semibold">{fixtureStats.hallways.total}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Functional</span>
-                <span className="font-semibold text-green-600 dark:text-green-400">{fixtureStats.hallways.functional}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Health Rate</span>
-                <span className="font-semibold">
-                  {fixtureStats.hallways.total > 0 
-                    ? Math.round((fixtureStats.hallways.functional / fixtureStats.hallways.total) * 100) 
-                    : 0}%
+              <div className="flex items-baseline justify-between">
+                <span className="text-3xl font-bold">{hallwayHealthPct}%</span>
+                <span className="text-xs text-muted-foreground">
+                  {fixtureStats.hallways.functional}/{fixtureStats.hallways.total} functional
                 </span>
               </div>
+              <Progress value={hallwayHealthPct} className="h-1.5" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Quick Actions
-          </CardTitle>
+      {/* Quick Actions — icon card style */}
+      <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -232,25 +263,25 @@ export function LightingDashboard() {
             
             <Button
               variant="outline"
-              className="justify-start gap-2"
+              className="h-16 flex flex-col items-center gap-1 hover:border-primary/50 transition-colors group"
               onClick={() => navigate('/operations?tab=maintenance')}
             >
-              <Wrench className="h-4 w-4" />
-              Schedule Maintenance
+              <Wrench className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="text-xs font-medium">Schedule Maintenance</span>
             </Button>
             
             <Button
               variant="outline"
-              className="justify-start gap-2"
+              className="h-16 flex flex-col items-center gap-1 hover:border-primary/50 transition-colors group"
               onClick={() => navigate('/spaces')}
             >
-              <MapPin className="h-4 w-4" />
-              Manage Rooms
+              <MapPin className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="text-xs font-medium">Manage Rooms</span>
             </Button>
             
             <Button
               variant="outline"
-              className="justify-start gap-2"
+              className="h-16 flex flex-col items-center gap-1 hover:border-primary/50 transition-colors group"
               disabled={checking || isFetching}
               onClick={async () => {
                 try {
@@ -268,17 +299,17 @@ export function LightingDashboard() {
                 }
               }}
             >
-              <RefreshCw className="h-4 w-4" />
-              {checking || isFetching ? 'Checking…' : 'System Check'}
+              <RefreshCw className={cn("h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors", (checking || isFetching) && "animate-spin")} />
+              <span className="text-xs font-medium">{checking || isFetching ? 'Checking…' : 'System Check'}</span>
             </Button>
             
             <Button
               variant="outline"
-              className="justify-start gap-2"
+              className="h-16 flex flex-col items-center gap-1 hover:border-primary/50 transition-colors group"
               onClick={() => navigate('/operations?tab=issues')}
             >
-              <AlertTriangle className="h-4 w-4" />
-              View Issues
+              <AlertTriangle className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="text-xs font-medium">View Issues</span>
             </Button>
           </div>
         </CardContent>
