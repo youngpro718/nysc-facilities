@@ -457,16 +457,18 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                     <div>
                       <h4 className="font-medium mb-2 text-sm">Items Requested</h4>
                       <div className="space-y-1">
-                        {request.supply_request_items?.slice(0, 5).map((item: Record<string, unknown>, idx: number) => {
-                          const invItem = item.inventory_items as Record<string, unknown> | null;
+                        {request.supply_request_items?.slice(0, 5).map((item: unknown, idx: number) => {
+                          const typedItem = item as Record<string, unknown>;
+                          const invItem = typedItem.inventory_items as Record<string, unknown> | null;
                           return (
-                          <div key={idx} className="text-sm text-muted-foreground flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            <span>
-                              {(invItem?.name as string) || 'Item'} × {(item.quantity_requested as number) || 1}
-                            </span>
-                          </div>
-                        ))}
+                            <div key={idx} className="text-sm text-muted-foreground flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                              <span>
+                                {(invItem?.name as string) || 'Item'} × {(typedItem.quantity_requested as number) || 1}
+                              </span>
+                            </div>
+                          );
+                        })}
                         {itemCount > 5 && (
                           <div className="text-sm text-muted-foreground italic">
                             +{itemCount - 5} more items
