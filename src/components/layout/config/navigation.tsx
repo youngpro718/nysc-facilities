@@ -96,6 +96,13 @@ export const secondaryNavigationItems: NavigationItem[] = [
         moduleKey: 'inventory',
       },
       {
+        title: 'Order Supplies',
+        href: '/request/supplies',
+        icon: Package2,
+        adminOnly: false,
+        moduleKey: 'supply_requests',
+      },
+      {
         title: 'Supply Requests',
         href: '/admin/supply-requests',
         icon: Package,
