@@ -42,6 +42,7 @@ export function getNavigationDescription(title: string): string {
     'New Request': 'Supplies, help, issues, keys',
     'Spaces': 'Manage buildings',
     'Operations': 'Issues, Maintenance, Supplies',
+    'Building Issues': 'Track & resolve building issues',
     'Issues': 'Track problems',
     'Access & Assignments': 'Access levels & assignments',
     'Occupants': 'Manage people',

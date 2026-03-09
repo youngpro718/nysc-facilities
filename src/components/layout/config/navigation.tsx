@@ -229,7 +229,7 @@ export function getAdminNavigation(): NavigationTab[] {
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'Spaces', icon: Building2 },
-    { title: 'Operations', icon: AlertTriangle },
+    { title: 'Building Issues', icon: AlertTriangle },
     { type: "separator" },
     { title: 'Admin Center', icon: UserCog },
   ];
