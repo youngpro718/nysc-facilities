@@ -81,8 +81,8 @@ export function OrderETABadge({
               variant="outline" 
               className={cn(
                 'cursor-default',
-                eta.confidence === 'high' && 'border-green-300 dark:border-green-700',
-                eta.confidence === 'medium' && 'border-amber-300 dark:border-amber-700',
+                eta.confidence === 'high' && 'border-chart-2',
+                eta.confidence === 'medium' && 'border-chart-4',
                 eta.confidence === 'low' && 'border-border',
                 className
               )}

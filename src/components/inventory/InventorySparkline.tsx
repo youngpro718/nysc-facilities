@@ -91,7 +91,7 @@ export function InventorySparkline({
       {showTrendIcon && (
         <div className={cn(
           'shrink-0',
-          isUp && 'text-green-600 dark:text-green-400',
+          isUp && 'text-chart-2',
           isDown && 'text-destructive',
           !isUp && !isDown && 'text-muted-foreground'
         )}>
