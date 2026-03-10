@@ -228,9 +228,9 @@ export default function RoleDashboard() {
             {recentActivity.map((a) => (
               <div key={a.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
                 <div className={`h-2 w-2 rounded-full shrink-0 ${
-                  a.status === 'resolved' || a.status === 'completed' ? 'bg-emerald-500' :
-                  a.status === 'in_progress' || a.status === 'picking' ? 'bg-blue-500' :
-                  'bg-amber-500'
+                  a.status === 'resolved' || a.status === 'completed' ? 'bg-[hsl(var(--status-operational))]' :
+                  a.status === 'in_progress' || a.status === 'picking' ? 'bg-[hsl(var(--status-info))]' :
+                  'bg-[hsl(var(--status-warning))]'
                 }`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{a.message}</p>

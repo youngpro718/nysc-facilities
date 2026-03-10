@@ -203,19 +203,14 @@ function ActionRowIssue({ openIssueCount }: { openIssueCount: number }) {
     <QuickIssueReportButton
       variant="outline"
       size="lg"
-      label=""
-      showIcon={false}
       className="flex items-center gap-4 w-full rounded-xl px-5 py-4 text-left bg-card border border-border hover:bg-accent text-foreground h-auto justify-start font-normal touch-manipulation"
-      customContent={
-        <>
-          <AlertTriangle className="h-6 w-6 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <span className="text-base font-medium">Report Issue</span>
-            {openIssueCount > 0 && <p className="text-xs mt-0.5 text-muted-foreground">{openIssueCount} open</p>}
-          </div>
-          <ChevronRight className="h-5 w-5 shrink-0 opacity-50" />
-        </>
-      }
-    />
+    >
+      <AlertTriangle className="h-6 w-6 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <span className="text-base font-medium">Report Issue</span>
+        {openIssueCount > 0 && <p className="text-xs mt-0.5 text-muted-foreground">{openIssueCount} open</p>}
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 opacity-50" />
+    </QuickIssueReportButton>
   );
 }
