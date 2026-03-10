@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { RoomFormData } from "./RoomFormSchema";
+import { RoomFormData } from "../RoomFormSchema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Image as ImageIcon } from "lucide-react";
