@@ -126,15 +126,6 @@ export default function UserDashboard() {
             onClick={() => navigate("/request/supplies")}
             accent
           />
-          <QuickIssueReportButton
-            variant="outline"
-            size="lg"
-            label=""
-            showIcon={false}
-            className="w-full h-auto p-0 border-0 [&>*]:hidden"
-            // We render our own row instead
-          />
-          {/* Custom issue row since QuickIssueReportButton has its own dialog */}
           <ActionRowIssue openIssueCount={openIssueCount} />
           <ActionRow
             icon={Key}
