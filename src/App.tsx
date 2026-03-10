@@ -357,7 +357,7 @@ function App() {
                     <AuthProvider>
                       <NotificationsWrapper>
                         <AppContent />
-                        {import.meta.env.DEV && <DevModeWrapper />}
+                        <DevModeWrapper />
                       </NotificationsWrapper>
                     </AuthProvider>
                   </AuthErrorBoundary>
