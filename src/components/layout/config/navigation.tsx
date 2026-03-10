@@ -183,51 +183,37 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
   
-  // CMC (Court Management Coordinator) navigation
+  // CMC (Court Management Coordinator) navigation — slim: Home, Court Ops, Activity
   if (userRole === 'cmc') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Court Operations', icon: Gavel },
       { title: 'My Activity', icon: FileText },
-      { title: 'Notifications', icon: MessageSquare },
-      { type: "separator" },
-      { title: 'Profile', icon: User },
     ];
   }
 
-  // Court Officer (Major / Security) navigation
+  // Court Officer (Major / Security) navigation — slim: Home, Keys, Activity
   if (userRole === 'court_officer') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Keys', icon: KeyRound },
-      { title: 'Spaces', icon: Building2 },
-      { title: 'Term Sheet', icon: FileText },
-      { title: 'Notifications', icon: MessageSquare },
-      { type: "separator" },
-      { title: 'Profile', icon: User },
+      { title: 'My Activity', icon: FileText },
     ];
   }
 
-  // Court Aide (Supply Staff) navigation - task-focused with supply/inventory access
+  // Court Aide (Supply Staff) navigation — slim: Home, Tasks, Supply Room
   if (userRole === 'court_aide') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Tasks', icon: Package },
       { title: 'Supply Room', icon: Package2 },
-      { title: 'Inventory', icon: Boxes },
-      { title: 'Notifications', icon: MessageSquare },
-      { type: "separator" },
-      { title: 'Profile', icon: User },
     ];
   }
 
-  // Standard user navigation - actions are on dashboard, no separate request page needed
+  // Standard user navigation — slim: Home, Activity
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'My Activity', icon: FileText },
-    { title: 'Notifications', icon: MessageSquare },
-    { type: "separator" },
-    { title: 'Profile', icon: User },
   ];
 }
 
@@ -275,51 +261,37 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
   
-  // CMC (Court Management Coordinator) routes
+  // CMC routes
   if (userRole === 'cmc') {
     return [
       '/cmc-dashboard',
       '/court-operations',
       '/my-activity',
-      '/notifications',
-      '', // Separator
-      '/profile',
     ];
   }
 
-  // Court Officer (Major / Security) routes
+  // Court Officer routes
   if (userRole === 'court_officer') {
     return [
       '/court-officer-dashboard',
       '/keys',
-      '/spaces',
-      '/term-sheet',
-      '/notifications',
-      '', // Separator
-      '/profile',
+      '/my-activity',
     ];
   }
 
-  // Court Aide (Supply Staff) routes - task-focused with supply/inventory access
+  // Court Aide routes
   if (userRole === 'court_aide') {
     return [
       '/court-aide-dashboard',
       '/tasks',
       '/supply-room',
-      '/inventory',
-      '/notifications',
-      '', // Separator
-      '/profile',
     ];
   }
 
-  // Standard user routes - actions are on dashboard
+  // Standard user routes
   return [
-    '/dashboard', // User Dashboard
+    '/dashboard',
     '/my-activity',
-    '/notifications',
-    '', // Separator
-    '/profile',
   ];
 };
 
