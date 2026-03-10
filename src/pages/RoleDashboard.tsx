@@ -1,12 +1,7 @@
 /**
- * RoleDashboard - Unified dashboard for CMC, Court Aide, and Purchasing roles
- * 
- * This replaces:
- * - CMCDashboard.tsx
- * - CourtAideDashboard.tsx
- * - PurchasingDashboard.tsx
- * 
- * AdminDashboard and UserDashboard remain separate.
+ * RoleDashboard - Streamlined dashboard for CMC, Court Officer, Court Aide
+ *
+ * Replaces card-heavy grids with compact inline stats and focused content.
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -18,8 +13,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { TermSheetBoard } from '@/components/court-operations/personnel/TermSheetBoard';
 import { supabase } from '@/lib/supabase';
-import { getRoleDashboardConfig, DashboardRole } from '@/config/roleDashboardConfig';
-import { Loader2 } from 'lucide-react';
+import { getRoleDashboardConfig } from '@/config/roleDashboardConfig';
+import { Loader2, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function RoleDashboard() {
@@ -27,20 +22,15 @@ export default function RoleDashboard() {
   const { user, profile } = useAuth();
   const { userRole, loading: roleLoading } = useRolePermissions();
 
-  // Get role config
   const config = getRoleDashboardConfig(userRole || '');
 
-  // Fetch real data for all stats
+  // ── Data queries (same as before, kept lean) ──
+
   const { data: supplyRequests = [] } = useQuery({
     queryKey: ['role-dashboard-supply-requests', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('supply_requests')
-        .select('id, status')
-        .eq('requester_id', user.id)
-        .not('status', 'in', '(completed,cancelled)');
-      if (error) throw error;
+      const { data } = await supabase.from('supply_requests').select('id, status').eq('requester_id', user.id).not('status', 'in', '(completed,cancelled)');
       return data || [];
     },
     enabled: !!user?.id,
@@ -50,12 +40,7 @@ export default function RoleDashboard() {
     queryKey: ['role-dashboard-issues', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('issues')
-        .select('id, status')
-        .eq('reported_by', user.id)
-        .not('status', 'in', '(resolved,closed)');
-      if (error) throw error;
+      const { data } = await supabase.from('issues').select('id, status').eq('reported_by', user.id).not('status', 'in', '(resolved,closed)');
       return data || [];
     },
     enabled: !!user?.id,
@@ -64,82 +49,26 @@ export default function RoleDashboard() {
   const { data: pendingRequestsCount = 0 } = useQuery({
     queryKey: ['role-dashboard-pending-requests'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('supply_requests')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['pending', 'approved']);
-      if (error) throw error;
+      const { count } = await supabase.from('supply_requests').select('*', { count: 'exact', head: true }).in('status', ['pending', 'approved']);
       return count || 0;
     },
     enabled: userRole === 'court_aide',
   });
 
-  const { data: lowStockCount = 0 } = useQuery({
-    queryKey: ['role-dashboard-low-stock'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('id, quantity, reorder_level');
-      if (error) throw error;
-      return data?.filter(item => item.quantity < item.reorder_level).length || 0;
-    },
-    enabled: userRole === 'court_aide',
-  });
-
-  const { data: activeOrdersCount = 0 } = useQuery({
-    queryKey: ['role-dashboard-active-orders'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('supply_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'ready');
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: userRole === 'court_aide',
-  });
-
-  const { data: itemsFulfilledCount = 0 } = useQuery({
-    queryKey: ['role-dashboard-fulfilled'],
-    queryFn: async () => {
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-      const { count, error } = await supabase
-        .from('supply_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed')
-        .gte('fulfilled_at', startOfMonth.toISOString());
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: userRole === 'court_aide',
-  });
-
-  // Court Aide specific: Available tasks (approved but unclaimed)
   const { data: availableTasksCount = 0 } = useQuery({
     queryKey: ['role-dashboard-available-tasks'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('staff_tasks')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'approved')
-        .is('claimed_by', null);
-      if (error) throw error;
+      const { count } = await supabase.from('staff_tasks').select('*', { count: 'exact', head: true }).eq('status', 'approved').is('claimed_by', null);
       return count || 0;
     },
     enabled: userRole === 'court_aide',
   });
 
-  // Court Aide specific: My active tasks (claimed by or assigned to me)
   const { data: myActiveTasksCount = 0 } = useQuery({
     queryKey: ['role-dashboard-my-active-tasks', user?.id],
     queryFn: async () => {
       if (!user?.id) return 0;
-      const { count, error } = await supabase
-        .from('staff_tasks')
-        .select('*', { count: 'exact', head: true })
-        .or(`claimed_by.eq.${user.id},assigned_to.eq.${user.id}`)
-        .in('status', ['claimed', 'in_progress']);
-      if (error) throw error;
+      const { count } = await supabase.from('staff_tasks').select('*', { count: 'exact', head: true }).or(`claimed_by.eq.${user.id},assigned_to.eq.${user.id}`).in('status', ['claimed', 'in_progress']);
       return count || 0;
     },
     enabled: userRole === 'court_aide' && !!user?.id,
@@ -148,10 +77,7 @@ export default function RoleDashboard() {
   const { data: courtroomStats } = useQuery({
     queryKey: ['role-dashboard-courtrooms'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('court_rooms')
-        .select('id, is_active');
-      if (error) throw error;
+      const { data } = await supabase.from('court_rooms').select('id, is_active');
       const total = data?.length || 0;
       const active = data?.filter(r => r.is_active).length || 0;
       return { total, active };
@@ -159,14 +85,10 @@ export default function RoleDashboard() {
     enabled: userRole === 'cmc' || userRole === 'court_officer',
   });
 
-  // Court Officer specific: key assignments
   const { data: keyStats } = useQuery({
     queryKey: ['role-dashboard-key-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('key_assignments')
-        .select('id, status');
-      if (error) throw error;
+      const { data } = await supabase.from('key_assignments').select('id, status');
       const total = data?.length || 0;
       const checkedOut = data?.filter(k => k.status === 'checked_out').length || 0;
       return { total, checkedOut };
@@ -174,121 +96,25 @@ export default function RoleDashboard() {
     enabled: userRole === 'court_officer',
   });
 
-  // Court Officer specific: lockbox status
-  const { data: lockboxCount = 0 } = useQuery({
-    queryKey: ['role-dashboard-lockbox-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('lockboxes')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true);
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: userRole === 'court_officer',
-  });
-
-  const { data: upcomingTermsCount = 0 } = useQuery({
-    queryKey: ['role-dashboard-upcoming-terms'],
-    queryFn: async () => {
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      const { count, error } = await supabase
-        .from('court_terms')
-        .select('*', { count: 'exact', head: true })
-        .gte('start_date', new Date().toISOString())
-        .lte('start_date', thirtyDaysFromNow.toISOString());
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: userRole === 'cmc',
-  });
-
-  // Recent activity from real data
   const { data: recentActivity = [] } = useQuery({
     queryKey: ['role-dashboard-activity', user?.id, userRole],
     queryFn: async () => {
-      // Fetch recent issues and supply requests
       const [issuesResult, supplyResult] = await Promise.all([
-        supabase
-          .from('issues')
-          .select('id, title, status, created_at')
-          .order('created_at', { ascending: false })
-          .limit(3),
-        supabase
-          .from('supply_requests')
-          .select('id, status, created_at')
-          .order('created_at', { ascending: false })
-          .limit(3),
+        supabase.from('issues').select('id, title, status, created_at').order('created_at', { ascending: false }).limit(3),
+        supabase.from('supply_requests').select('id, status, created_at').order('created_at', { ascending: false }).limit(3),
       ]);
-
-      const activities: { id: string; type: string; message: string; time: string; color: string; sortKey: string }[] = [];
-
-      if (issuesResult.data) {
-        issuesResult.data.forEach(issue => {
-          activities.push({
-            id: issue.id,
-            type: 'issue',
-            message: `Issue: ${issue.title}`,
-            time: formatDistanceToNow(new Date(issue.created_at), { addSuffix: true }),
-            color: issue.status === 'resolved' ? 'bg-green-600' : 'bg-orange-600',
-            sortKey: issue.created_at,
-          });
-        });
-      }
-
-      if (supplyResult.data) {
-        supplyResult.data.forEach(req => {
-          activities.push({
-            id: req.id,
-            type: 'supply',
-            message: `Supply request ${req.status}`,
-            time: formatDistanceToNow(new Date(req.created_at), { addSuffix: true }),
-            color: req.status === 'completed' ? 'bg-green-600' : 'bg-blue-600',
-            sortKey: req.created_at,
-          });
-        });
-      }
-
+      const activities: { id: string; type: string; message: string; time: string; status: string; sortKey: string }[] = [];
+      issuesResult.data?.forEach(issue => {
+        activities.push({ id: issue.id, type: 'issue', message: `Issue: ${issue.title}`, time: formatDistanceToNow(new Date(issue.created_at), { addSuffix: true }), status: issue.status, sortKey: issue.created_at });
+      });
+      supplyResult.data?.forEach(req => {
+        activities.push({ id: req.id, type: 'supply', message: `Supply request ${req.status}`, time: formatDistanceToNow(new Date(req.created_at), { addSuffix: true }), status: req.status, sortKey: req.created_at });
+      });
       return activities.sort((a, b) => b.sortKey.localeCompare(a.sortKey)).slice(0, 5);
     },
   });
 
-  // Build stats values
-  const statsValues: Record<string, { value: number | string; badge?: string }> = {
-    activeCourtrooms: {
-      value: `${courtroomStats?.active || 0}/${courtroomStats?.total || 0}`,
-    },
-    myIssues: {
-      value: myIssues.length,
-      badge: myIssues.length > 0 ? 'Active' : undefined,
-    },
-    mySupplyRequests: {
-      value: supplyRequests.length,
-      badge: supplyRequests.length > 0 ? 'In Progress' : undefined,
-    },
-    upcomingTerms: { value: upcomingTermsCount },
-    totalKeysIssued: { value: keyStats?.total || 0 },
-    keysCheckedOut: { 
-      value: keyStats?.checkedOut || 0, 
-      badge: (keyStats?.checkedOut || 0) > 0 ? 'Active' : undefined 
-    },
-    lockboxStatus: { value: lockboxCount },
-    pendingRequests: { value: pendingRequestsCount },
-    lowStockItems: { value: lowStockCount },
-    activeOrders: { value: activeOrdersCount },
-    itemsFulfilled: { value: itemsFulfilledCount },
-    reorderRecommendations: { value: lowStockCount },
-    // Court Aide specific stats
-    availableTasks: { 
-      value: availableTasksCount, 
-      badge: availableTasksCount > 0 ? 'Available' : undefined 
-    },
-    myActiveTasks: { 
-      value: myActiveTasksCount, 
-      badge: myActiveTasksCount > 0 ? 'In Progress' : undefined 
-    },
-  };
+  // ── Loading / fallback ──
 
   if (roleLoading) {
     return (
@@ -299,249 +125,169 @@ export default function RoleDashboard() {
   }
 
   if (!config) {
-    // Fallback - redirect to user dashboard
     navigate('/dashboard');
     return null;
   }
 
   const firstName = profile?.first_name || config.greeting;
 
+  // ── Inline stat helpers per role ──
+
+  const inlineStats: { label: string; value: string | number; onClick?: () => void }[] = [];
+
+  if (userRole === 'cmc') {
+    inlineStats.push(
+      { label: 'Active Courtrooms', value: `${courtroomStats?.active || 0}/${courtroomStats?.total || 0}`, onClick: () => navigate('/court-operations') },
+      { label: 'My Issues', value: myIssues.length, onClick: () => navigate('/my-activity') },
+    );
+  } else if (userRole === 'court_officer') {
+    inlineStats.push(
+      { label: 'Keys Issued', value: keyStats?.total || 0, onClick: () => navigate('/keys') },
+      { label: 'Checked Out', value: keyStats?.checkedOut || 0, onClick: () => navigate('/keys') },
+    );
+  } else if (userRole === 'court_aide') {
+    inlineStats.push(
+      { label: 'Available Tasks', value: availableTasksCount, onClick: () => navigate('/tasks') },
+      { label: 'Supply Requests', value: pendingRequestsCount, onClick: () => navigate('/supply-room') },
+    );
+  }
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-3xl font-bold">{config.title}</h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back, {firstName}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {config.secondaryAction && (
-            <Button variant="outline" size="sm" className="sm:size-default" onClick={() => navigate(config.secondaryAction!.path)}>
-              <config.secondaryAction.icon className="mr-2 h-4 w-4" />
-              <span className="hidden xs:inline">{config.secondaryAction.label}</span>
-              <span className="xs:hidden">{config.secondaryAction.label.split(' ')[0]}</span>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* ── Compact header with inline stats ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Welcome back, {firstName}</h1>
+            <p className="text-sm text-muted-foreground">{config.title}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {config.secondaryAction && (
+              <Button variant="outline" size="sm" onClick={() => navigate(config.secondaryAction!.path)}>
+                <config.secondaryAction.icon className="mr-1.5 h-4 w-4" />
+                {config.secondaryAction.label}
+              </Button>
+            )}
+            <Button size="sm" onClick={() => navigate(config.primaryAction.path)}>
+              <config.primaryAction.icon className="mr-1.5 h-4 w-4" />
+              {config.primaryAction.label}
             </Button>
-          )}
-          <Button size="sm" className="sm:size-default" onClick={() => navigate(config.primaryAction.path)}>
-            <config.primaryAction.icon className="mr-2 h-4 w-4" />
-            <span className="hidden xs:inline">{config.primaryAction.label}</span>
-            <span className="xs:hidden">{config.primaryAction.label.split(' ')[0]}</span>
-          </Button>
+          </div>
         </div>
+
+        {/* Inline stats strip */}
+        {inlineStats.length > 0 && (
+          <div className="flex gap-3">
+            {inlineStats.map((stat) => (
+              <button
+                key={stat.label}
+                onClick={stat.onClick}
+                className="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-left hover:bg-accent transition-colors"
+              >
+                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Info Banner (for purchasing) */}
+      {/* ── Info banner (purchasing staff) ── */}
       {config.infoBanner && (
-        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                <config.infoBanner.icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-blue-900">{config.infoBanner.title}</h3>
-                <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">{config.infoBanner.description}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-start gap-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 p-4">
+          <config.infoBanner.icon className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-blue-900 dark:text-blue-100 text-sm">{config.infoBanner.title}</p>
+            <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">{config.infoBanner.description}</p>
+          </div>
+        </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {config.statsConfig.map((stat) => {
-          const statData = statsValues[stat.id];
-          return (
-            <Card
-              key={stat.id}
-              className={stat.clickable ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}
-              onClick={stat.clickable && stat.clickPath ? () => navigate(stat.clickPath!) : undefined}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold">{statData?.value ?? 0}</span>
-                  {statData?.badge && (
-                    <Badge variant="secondary">{statData.badge}</Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* ── Role-specific focused content ── */}
+      {userRole === 'court_aide' && (
+        <FocusedTaskList
+          myActive={myActiveTasksCount}
+          available={availableTasksCount}
+          pending={pendingRequestsCount}
+          navigate={navigate}
+        />
+      )}
 
-      {/* Quick Actions */}
+      {/* ── Recent Activity ── */}
       <div>
-        <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {config.quickActions.map((action) => (
-            <Card
-              key={action.id}
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate(action.path)}
-            >
-              <CardHeader>
-                <div className={`w-12 h-12 rounded-lg ${action.bgColor} flex items-center justify-center mb-2`}>
-                  <action.icon className={`h-6 w-6 ${action.color}`} />
-                </div>
-                <CardTitle>{action.title}</CardTitle>
-                <CardDescription>{action.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Recent Activity</h2>
+          <Button variant="link" size="sm" className="text-xs h-auto p-0" onClick={() => navigate('/my-activity')}>
+            View all <ChevronRight className="h-3 w-3 ml-0.5" />
+          </Button>
         </div>
-      </div>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest updates and changes</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentActivity.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
-          ) : (
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center gap-4">
-                  <div className={`w-2 h-2 rounded-full ${activity.color}`} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.message}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Role-specific sections */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {config.showInventoryAlerts && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Inventory Alerts</CardTitle>
-              <CardDescription>Items needing attention</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Low Stock</span>
-                  <span className="text-sm font-medium text-orange-600 dark:text-orange-400">{lowStockCount}</span>
+        {recentActivity.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
+        ) : (
+          <div className="space-y-2">
+            {recentActivity.map((a) => (
+              <div key={a.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+                <div className={`h-2 w-2 rounded-full shrink-0 ${
+                  a.status === 'resolved' || a.status === 'completed' ? 'bg-emerald-500' :
+                  a.status === 'in_progress' || a.status === 'picking' ? 'bg-blue-500' :
+                  'bg-amber-500'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{a.message}</p>
+                  <p className="text-xs text-muted-foreground">{a.time}</p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                className="w-full mt-4"
-                onClick={() => navigate('/inventory')}
-              >
-                Manage Inventory
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {config.showPendingRequests && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Requests</CardTitle>
-              <CardDescription>Requests awaiting fulfillment</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Pending/Approved</span>
-                  <span className="text-sm font-medium">{pendingRequestsCount}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Ready for Pickup</span>
-                  <span className="text-sm font-medium">{activeOrdersCount}</span>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full mt-4"
-                onClick={() => navigate('/supply-room')}
-              >
-                View All Requests
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {config.showPerformanceMetrics && userRole === 'cmc' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Courtroom Status</CardTitle>
-              <CardDescription>Current operational status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Operational</span>
-                  <span className="text-sm font-medium">{courtroomStats?.active || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Under Maintenance</span>
-                  <span className="text-sm font-medium">{(courtroomStats?.total || 0) - (courtroomStats?.active || 0)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Total</span>
-                  <span className="text-sm font-medium">{courtroomStats?.total || 0}</span>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full mt-4"
-                onClick={() => navigate('/court-operations')}
-              >
-                View All Courtrooms
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {config.showPerformanceMetrics && userRole === 'court_aide' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Metrics</CardTitle>
-              <CardDescription>This month's overview</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Fulfilled This Month</p>
-                  <p className="text-2xl font-bold">{itemsFulfilledCount}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold">{pendingRequestsCount}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Ready</p>
-                  <p className="text-2xl font-bold">{activeOrdersCount}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Term Sheet */}
+      {/* ── Term Sheet (CMC + Court Officer) ── */}
       {config.showTermSheet && (
-        <div className="mt-6">
+        <div className="pt-2">
           <TermSheetBoard />
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Court Aide focused task overview ── */
+function FocusedTaskList({
+  myActive,
+  available,
+  pending,
+  navigate,
+}: {
+  myActive: number;
+  available: number;
+  pending: number;
+  navigate: (path: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Work Queue</h2>
+      <button
+        onClick={() => navigate('/tasks')}
+        className="flex items-center gap-4 w-full rounded-xl border border-border bg-card px-5 py-4 text-left hover:bg-accent transition-colors"
+      >
+        <div className="flex-1">
+          <span className="text-base font-medium text-foreground">My Active Tasks</span>
+          <p className="text-xs text-muted-foreground mt-0.5">{myActive} in progress · {available} available to claim</p>
+        </div>
+        <Badge variant={available > 0 ? 'default' : 'secondary'}>{available}</Badge>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </button>
+      <button
+        onClick={() => navigate('/supply-room')}
+        className="flex items-center gap-4 w-full rounded-xl border border-border bg-card px-5 py-4 text-left hover:bg-accent transition-colors"
+      >
+        <div className="flex-1">
+          <span className="text-base font-medium text-foreground">Supply Room</span>
+          <p className="text-xs text-muted-foreground mt-0.5">{pending} requests awaiting fulfillment</p>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </button>
     </div>
   );
 }
