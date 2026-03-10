@@ -1,28 +1,70 @@
 
 
-## Fix: Cascade-delete child records before deleting a room
+# Personalized, Minimal Experience Per Role
 
-The delete fails because `deleteSpace.ts` tries to delete the room directly, but 34 other tables have foreign keys pointing to `rooms`. For room 687 specifically, 3 tables have data blocking the delete: `room_lighting_status`, `room_history`, and `lockbox_slots`.
+## The Problem
 
-### Approach
+The app already routes each role to a different dashboard and sidebar, but users still feel overwhelmed because:
 
-**Create a database function** `delete_room_cascade(p_room_id UUID)` that deletes from all referencing tables in the correct order, then deletes the room itself — all within a single transaction. This is safer and faster than making 30+ individual API calls from the client.
+1. **Navigation has too many items** - even standard users see 4-5 sidebar tabs plus sub-pages. On mobile, this creates cognitive overload.
+2. **Dashboards show cards/grids that feel "boxy"** - stats cards, quick actions cards, activity cards, term sheet — it's a lot of rectangles on screen.
+3. **Admin sees everything, which is correct** - but non-admin roles (standard, CMC, court officer, court aide) should see a radically simpler, task-focused UI.
 
-**Update `deleteSpace.ts`** to call `supabase.rpc('delete_room_cascade', { p_room_id: id })` instead of a direct `.delete()` on the rooms table.
+## Approach
 
-### Database function will delete from these tables (in order):
-1. `room_lighting_status`, `lighting_fixtures`, `room_health_metrics`, `room_maintenance_schedule`
-2. `room_history`, `room_notes`, `room_finishes_log`, `room_occupancy`
-3. `room_inventory`, `room_key_access`, `lockbox_slots`
-4. `court_assignments`, `court_rooms`, `term_assignments`
-5. `occupant_room_assignments` (all FK columns), `occupants`
-6. `room_relationships` (both columns), `hallway_adjacent_rooms`
-7. `inventory_audits`, `room_relocations` (both columns)
-8. `relocations` (both columns), `renovations`
-9. `key_requests`, `staff_tasks` (both columns), `floorplan_objects` (via constraint)
-10. `rooms` (children with `parent_room_id` first, then the room itself)
+Instead of trimming cards from the existing layout, redesign non-admin dashboards as **single-purpose action screens** — think of a phone's home screen with just the 2-3 things that person does daily. Admin keeps the full management view.
 
-### Files to change:
-- **New migration**: Create `delete_room_cascade` PL/pgSQL function
-- **`src/components/spaces/services/deleteSpace.ts`**: Replace direct delete with RPC call for rooms
+### Changes by Role
+
+**Standard User** (the biggest simplification):
+- Replace the current card-heavy dashboard with a **clean action list** layout:
+  - Greeting + avatar at top
+  - Pickup alert banner (when relevant)
+  - **3 large action buttons** stacked vertically: "Order Supplies", "Report Issue", "Request Help" — each opens its respective form directly
+  - Below: a single "My Activity" list showing all their open items (supplies, issues, keys) in one chronological feed — no tabs
+  - Remove: stats strip, MyRoomCard, TermSheetPreview (standard users rarely need term sheet), separate quick-action grid
+  - Navigation: just 2 items — "Home" and "My Activity"
+
+**CMC (Court Manager)**:
+- Keep current structure but reduce stats from 4 cards to **2 key numbers inline** (Active Courtrooms, Open Issues) shown as a compact header strip, not cards
+- Merge quick actions into the header as icon buttons instead of a separate card grid
+- Keep Term Sheet and Recent Activity as the main content
+
+**Court Officer**:
+- Same compact header treatment: key count + courtroom count inline
+- Main content: Key assignment list (their primary job) front and center
+- Term Sheet below
+
+**Court Aide**:
+- Compact header: Available Tasks count + Supply Requests count
+- Main content: Task list they can claim, with a "Supply Room" button
+- Remove the 4-card stats grid and 4-card quick actions grid
+
+### Navigation Reduction
+
+Reduce sidebar items for non-admin roles:
+
+| Role | Current Nav Items | Proposed |
+|------|------------------|----------|
+| Standard | Dashboard, My Activity, Notifications, Profile | **Home, Activity** (notifications become a bell icon in header, profile via avatar tap) |
+| CMC | 6 items | **Home, Court Ops, Activity** |
+| Court Officer | 6 items | **Home, Keys, Activity** |
+| Court Aide | 6 items | **Home, Tasks, Supply Room** |
+| Admin | 11 items | **Keep all** (management needs full access) |
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/pages/UserDashboard.tsx` | Rewrite to minimal action-list layout |
+| `src/pages/RoleDashboard.tsx` | Replace card grids with compact inline stats + focused content |
+| `src/config/roleDashboardConfig.ts` | Simplify configs, remove excess stats/actions |
+| `src/components/layout/config/navigation.tsx` | Reduce nav items per role |
+| `src/components/user/CompactHeader.tsx` | May need minor adjustments |
+
+### What Stays the Same
+- Admin Dashboard — full management view, untouched
+- All underlying pages (inventory, keys, spaces, etc.) — unchanged
+- Routing and permissions — unchanged
+- Data hooks and queries — reused, just displayed differently
 
