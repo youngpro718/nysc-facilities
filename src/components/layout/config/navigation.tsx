@@ -261,51 +261,37 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
   
-  // CMC (Court Management Coordinator) routes
+  // CMC routes
   if (userRole === 'cmc') {
     return [
       '/cmc-dashboard',
       '/court-operations',
       '/my-activity',
-      '/notifications',
-      '', // Separator
-      '/profile',
     ];
   }
 
-  // Court Officer (Major / Security) routes
+  // Court Officer routes
   if (userRole === 'court_officer') {
     return [
       '/court-officer-dashboard',
       '/keys',
-      '/spaces',
-      '/term-sheet',
-      '/notifications',
-      '', // Separator
-      '/profile',
+      '/my-activity',
     ];
   }
 
-  // Court Aide (Supply Staff) routes - task-focused with supply/inventory access
+  // Court Aide routes
   if (userRole === 'court_aide') {
     return [
       '/court-aide-dashboard',
       '/tasks',
       '/supply-room',
-      '/inventory',
-      '/notifications',
-      '', // Separator
-      '/profile',
     ];
   }
 
-  // Standard user routes - actions are on dashboard
+  // Standard user routes
   return [
-    '/dashboard', // User Dashboard
+    '/dashboard',
     '/my-activity',
-    '/notifications',
-    '', // Separator
-    '/profile',
   ];
 };
 
