@@ -1,28 +1,18 @@
 
 
-## Fix: Cascade-delete child records before deleting a room
+## Personalized, Minimal Experience Per Role — IMPLEMENTED
 
-The delete fails because `deleteSpace.ts` tries to delete the room directly, but 34 other tables have foreign keys pointing to `rooms`. For room 687 specifically, 3 tables have data blocking the delete: `room_lighting_status`, `room_history`, and `lockbox_slots`.
+### What Changed
 
-### Approach
+1. **Navigation reduced** (`navigation.tsx`):
+   - Standard: 2 items (Home, Activity)
+   - CMC: 3 items (Home, Court Ops, Activity)
+   - Court Officer: 3 items (Home, Keys, Activity)
+   - Court Aide: 3 items (Home, Tasks, Supply Room)
+   - Admin: unchanged (full access)
 
-**Create a database function** `delete_room_cascade(p_room_id UUID)` that deletes from all referencing tables in the correct order, then deletes the room itself — all within a single transaction. This is safer and faster than making 30+ individual API calls from the client.
+2. **Standard User Dashboard** (`UserDashboard.tsx`): Rewritten as a clean, single-column action portal with 3 large action rows (Order Supplies, Report Issue, Request Key), pickup alert, and a unified activity feed. Removed stats strip, MyRoomCard, TermSheetPreview, and 2x2 grid.
 
-**Update `deleteSpace.ts`** to call `supabase.rpc('delete_room_cascade', { p_room_id: id })` instead of a direct `.delete()` on the rooms table.
+3. **Role Dashboards** (`RoleDashboard.tsx`): Replaced 4-card stats grids and 4-card quick action grids with compact inline stat strips and focused content. Court Aide gets a "Work Queue" section with task list and supply room rows.
 
-### Database function will delete from these tables (in order):
-1. `room_lighting_status`, `lighting_fixtures`, `room_health_metrics`, `room_maintenance_schedule`
-2. `room_history`, `room_notes`, `room_finishes_log`, `room_occupancy`
-3. `room_inventory`, `room_key_access`, `lockbox_slots`
-4. `court_assignments`, `court_rooms`, `term_assignments`
-5. `occupant_room_assignments` (all FK columns), `occupants`
-6. `room_relationships` (both columns), `hallway_adjacent_rooms`
-7. `inventory_audits`, `room_relocations` (both columns)
-8. `relocations` (both columns), `renovations`
-9. `key_requests`, `staff_tasks` (both columns), `floorplan_objects` (via constraint)
-10. `rooms` (children with `parent_room_id` first, then the room itself)
-
-### Files to change:
-- **New migration**: Create `delete_room_cascade` PL/pgSQL function
-- **`src/components/spaces/services/deleteSpace.ts`**: Replace direct delete with RPC call for rooms
-
+4. **QuickIssueReportButton** now supports `children` prop for custom rendering.
