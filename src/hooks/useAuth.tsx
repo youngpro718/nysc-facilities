@@ -299,33 +299,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Role-based redirects after login OR if on wrong dashboard
+      // Role-based redirects — ONLY from auth-related pages
+      // ProtectedRoute handles role enforcement for in-app navigation
       const userRole = userData.profile?.role;
       const correctDashboard = getDashboardForRole(userRole);
+      const authPages = new Set(['/login', '/onboarding', '/auth/mfa']);
+      const isOnAuthPage = authPages.has(currentPath) || currentPath.startsWith('/auth/') || currentPath.startsWith('/onboarding');
       
-      if (currentPath === '/login') {
-        logger.debug('[useAuth.handleRedirect] REDIRECT: login -> dashboard', {
+      if (isOnAuthPage) {
+        logger.debug('[useAuth.handleRedirect] REDIRECT: auth page -> dashboard', {
           role: userRole,
+          from: currentPath,
           dashboard: correctDashboard
         });
         navigate(correctDashboard, { replace: true });
-      } else if (currentPath === '/dashboard' && correctDashboard !== '/dashboard') {
-        // User is on generic dashboard but should be on role-specific dashboard
-        logger.debug('[useAuth.handleRedirect] REDIRECT: generic -> role-specific dashboard', {
-          role: userRole,
-          from: currentPath,
-          to: correctDashboard
-        });
-        navigate(correctDashboard, { replace: true });
-      } else if (currentPath === '/' && userRole !== 'admin' && userRole !== 'facilities_manager') {
-        // Non-admin on admin dashboard, redirect to their dashboard
-        logger.debug('[useAuth.handleRedirect] REDIRECT: admin page -> user dashboard', {
-          role: userRole,
-          to: correctDashboard
-        });
-        navigate(correctDashboard, { replace: true });
       } else {
-        logger.debug('[useAuth.handleRedirect] NO REDIRECT needed', { currentPath });
+        logger.debug('[useAuth.handleRedirect] NO REDIRECT — user already in app', { currentPath });
       }
     };
 
