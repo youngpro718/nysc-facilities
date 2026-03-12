@@ -412,19 +412,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           logger.debug('Auth state changed', { event });
 
-          if (event === 'SIGNED_IN' && newSession) {
-            logger.debug('[useAuth.onAuthStateChange] SIGNED_IN event', { userId: newSession.user.id });
+          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && newSession) {
+            logger.debug(`[useAuth.onAuthStateChange] ${event} event`, { userId: newSession.user.id });
             setSession(newSession);
             setUser(newSession.user);
+
+            // TOKEN_REFRESHED: silently update session, no profile refetch or redirect
+            if (event === 'TOKEN_REFRESHED') {
+              logger.debug('[useAuth] Token refreshed silently — no redirect');
+              return;
+            }
             
-            // OPTIMIZATION: Defer user data fetching to avoid blocking auth state change
-            // Fetch immediately without setTimeout for faster response
+            // SIGNED_IN: only fetch profile + redirect if on an auth page (real login)
+            // If user is already navigating the app, skip to avoid redirect loops
+            const currentPath = window.location.pathname;
+            const isOnAuthPage = currentPath === '/login' || currentPath.startsWith('/auth/') || currentPath.startsWith('/onboarding');
+            
             (async () => {
               if (!mounted) return;
               
-              // Skip if we already have profile data for this user (avoids duplicate fetch on initial load)
-              if (profile?.id === newSession.user.id && !hasCompletedInitialAuth.current) {
-                logger.debug('Profile already loaded during initialization, skipping duplicate fetch');
+              // Skip redundant profile fetch if we already have data for this user
+              if (profile?.id === newSession.user.id && hasCompletedInitialAuth.current) {
+                logger.debug('[useAuth] Profile already loaded for this user, skipping refetch');
+                // Still redirect if on auth page (e.g. user just logged in)
+                if (isOnAuthPage) {
+                  handleRedirect({ isAdmin: isAdmin, profile }, true);
+                }
                 return;
               }
               
@@ -443,9 +456,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setIsAdmin(userData.isAdmin);
                 setProfile(userData.profile);
                 
-                // Only redirect after explicit sign in (hasCompletedInitialAuth.current = true means this is NOT initial load)
-                // Pass true to indicate this is an explicit sign in event
-                if (hasCompletedInitialAuth.current) {
+                // Only redirect if user is on an auth page (actual login flow)
+                if (hasCompletedInitialAuth.current && isOnAuthPage) {
                   handleRedirect(userData, true);
                 }
               } catch (error) {
