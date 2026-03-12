@@ -1,18 +1,51 @@
 
 
-## Personalized, Minimal Experience Per Role — IMPLEMENTED
+# Audit: "Flash Back to Dashboard" Bug
 
-### What Changed
+## Root Cause Found
 
-1. **Navigation reduced** (`navigation.tsx`):
-   - Standard: 2 items (Home, Activity)
-   - CMC: 3 items (Home, Court Ops, Activity)
-   - Court Officer: 3 items (Home, Keys, Activity)
-   - Court Aide: 3 items (Home, Tasks, Supply Room)
-   - Admin: unchanged (full access)
+The problem is in `src/hooks/useAuth.tsx`, lines 426-461. The Supabase auth listener handles `SIGNED_IN` events — but in Supabase JS v2, **token refreshes also fire `SIGNED_IN`**. Every time the token silently refreshes (roughly every hour, or on tab focus):
 
-2. **Standard User Dashboard** (`UserDashboard.tsx`): Rewritten as a clean, single-column action portal with 3 large action rows (Order Supplies, Report Issue, Request Key), pickup alert, and a unified activity feed. Removed stats strip, MyRoomCard, TermSheetPreview, and 2x2 grid.
+1. `SIGNED_IN` fires
+2. Since `hasCompletedInitialAuth.current` is already `true`, the code calls `handleRedirect(userData, true)` — treating it as an **explicit sign-in**
+3. `handleRedirect` with `isExplicitSignIn = true` checks the current path and may redirect:
+   - If on `/` and role resolves as anything other than `admin` (even briefly) → redirect to `/dashboard`
+   - If on `/dashboard` and role is `admin` → redirect back to `/`
+   - This creates a **redirect loop** that manifests as a "flash"
 
-3. **Role Dashboards** (`RoleDashboard.tsx`): Replaced 4-card stats grids and 4-card quick action grids with compact inline stat strips and focused content. Court Aide gets a "Work Queue" section with task list and supply room rows.
+This is especially triggered when:
+- The user clicks a navigation button (changing path)
+- A concurrent token refresh fires `SIGNED_IN`
+- `handleRedirect` evaluates the new path against role and bounces them back
 
-4. **QuickIssueReportButton** now supports `children` prop for custom rendering.
+Additionally, the `SIGNED_IN` handler re-fetches the profile on every token refresh (line 449), which is wasteful and creates opportunities for race conditions where `isAdmin` or `profile` temporarily resets.
+
+## Fix Plan
+
+### 1. Stop treating token refreshes as explicit sign-ins (`useAuth.tsx`)
+
+The `onAuthStateChange` handler at line 426 must distinguish between real sign-ins and token refreshes:
+
+- Add handling for `TOKEN_REFRESHED` event: update session/user silently, **no redirect**
+- For `SIGNED_IN`: only call `handleRedirect` if the user is on an auth-related page (`/login`, `/onboarding/`, `/auth/`), not if they're already navigating the app
+- Skip redundant profile re-fetch if we already have profile data for the same user ID
+
+### 2. Guard `handleRedirect` against unnecessary redirects (`useAuth.tsx`)
+
+In the `handleRedirect` function (lines 271-330):
+- Only redirect from `/login` and onboarding pages — never from arbitrary app pages
+- Remove the "wrong dashboard" correction logic (lines 312-326) that bounces between `/` and `/dashboard` — the routing layer already handles this via `ProtectedRoute`
+
+### 3. No changes needed elsewhere
+
+- `OnboardingGuard` correctly skips re-checks via `hasCheckedRef`
+- `ProtectedRoute` logic is sound
+- Navigation config and route mappings are aligned
+- Sidebar index-to-route mapping is correct
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/hooks/useAuth.tsx` | Fix `onAuthStateChange` to handle `TOKEN_REFRESHED` silently; restrict `handleRedirect` to auth pages only; prevent redundant profile refetch on token refresh |
+
