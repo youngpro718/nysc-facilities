@@ -164,8 +164,9 @@ export const AssignmentManagementPanel = () => {
 
       {/* Conditional Content Based on View Mode */}
       {viewMode === 'view' ? (
-        // Term Sheet View
         <TermSheetBoard />
+      ) : viewMode === 'history' ? (
+        <CourtAssignmentAuditPanel />
       ) : (
         // Edit Mode Content
         <>
