@@ -24,12 +24,14 @@ export function AlertsBar() {
   const { data: alerts, isLoading } = useQuery({
     queryKey: ['court-aide-alerts'],
     queryFn: async (): Promise<AlertCounts> => {
-      // Get low stock count
-      const { count: lowStockCount } = await supabase
+      // Get low stock count — PostgREST can't compare column-to-column, so fetch and filter client-side
+      const { data: stockItems } = await supabase
         .from('inventory_items')
-        .select('*', { count: 'exact', head: true })
-        .lt('quantity', supabase.rpc ? 'minimum_quantity' : 10) // Fallback comparison
+        .select('quantity, minimum_quantity')
         .gt('minimum_quantity', 0);
+      const lowStockCount = (stockItems || []).filter(
+        item => item.quantity < item.minimum_quantity
+      ).length;
 
       // Get urgent tasks count
       const { count: urgentTasksCount } = await supabase

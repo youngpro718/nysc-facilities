@@ -127,7 +127,7 @@ export const LowStockPanel = () => {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
-        .eq("quantity", 0)
+        .lte("quantity", 0)
         .order("name");
 
       if (error) throw error;

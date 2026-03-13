@@ -100,7 +100,6 @@ export const InventoryOverviewPanel = () => {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("id, name, quantity, minimum_quantity, category_id")
-        .gt("quantity", 0)
         .order("quantity", { ascending: true });
       if (error) throw error;
 

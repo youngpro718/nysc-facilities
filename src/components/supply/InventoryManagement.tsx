@@ -211,7 +211,7 @@ export function InventoryManagement() {
       const { error } = await supabase
         .from('inventory_items')
         .update({ 
-          current_stock: updatedStock,
+          quantity: updatedStock,
           updated_at: new Date().toISOString()
         })
         .eq('id', itemId);
