@@ -126,7 +126,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                     {/* Name */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <Label htmlFor="first-name">First Name *</Label>
+                            <Label htmlFor="first-name">First Name {role === 'sergeant' || role === 'officer' ? '(optional)' : '*'}</Label>
                             <Input
                                 id="first-name"
                                 value={firstName}

@@ -74,8 +74,21 @@ export function RoomPreviewCard({
     enabled: !!buildingId
   });
 
-  // Regenerate room number when floor changes
+  // Regenerate room number when floor/building selection actually changes
   useEffect(() => {
+    const floorChanged = floorId !== prevFloorId.current;
+    const buildingChanged = buildingId !== prevBuildingId.current;
+    prevFloorId.current = floorId;
+    prevBuildingId.current = buildingId;
+
+    // Skip if user manually edited, unless they changed floor/building
+    if (hasManuallyEditedNumber.current && !floorChanged && !buildingChanged) return;
+
+    // Reset manual edit flag when floor/building changes
+    if (floorChanged || buildingChanged) {
+      hasManuallyEditedNumber.current = false;
+    }
+
     const regenerateRoomNumber = async () => {
       if (floorId && buildingId) {
         const floor = floors?.find(f => f.id === floorId);
