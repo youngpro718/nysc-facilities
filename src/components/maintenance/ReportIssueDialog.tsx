@@ -255,13 +255,9 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="electrical">Electrical</SelectItem>
-                      <SelectItem value="plumbing">Plumbing</SelectItem>
-                      <SelectItem value="hvac">HVAC</SelectItem>
-                      <SelectItem value="structural">Structural</SelectItem>
-                      <SelectItem value="safety">Safety</SelectItem>
-                      <SelectItem value="cleaning">Cleaning</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="BUILDING_SYSTEMS">Building Systems</SelectItem>
+                      <SelectItem value="ELECTRICAL_NEEDS">Electrical Needs</SelectItem>
+                      <SelectItem value="GENERAL_REQUESTS">General Requests</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

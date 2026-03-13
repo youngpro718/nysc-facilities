@@ -115,6 +115,31 @@ export function useSecureAuth() {
         logger.warn('Failed to reset rate limit after successful login:', resetError);
       }
 
+      // Store credential for browser/OS password manager (enables biometric autofill on mobile)
+      try {
+        if (window.PasswordCredential) {
+          const cred = new PasswordCredential({
+            id: email,
+            password: password,
+            name: data.user?.user_metadata?.first_name 
+              ? `${data.user.user_metadata.first_name} ${data.user.user_metadata.last_name || ''}`.trim()
+              : email,
+          });
+          await navigator.credentials.store(cred);
+        }
+      } catch (credError) {
+        logger.debug('Credential storage not supported or declined:', credError);
+      }
+
+      // Save email to recent accounts for account picker
+      try {
+        const recentAccounts: string[] = JSON.parse(localStorage.getItem('nysc-recent-accounts') || '[]');
+        const updated = [email, ...recentAccounts.filter(e => e !== email)].slice(0, 5);
+        localStorage.setItem('nysc-recent-accounts', JSON.stringify(updated));
+      } catch (e) {
+        // ignore localStorage errors
+      }
+
       // Log successful login
       await logSecurityEvent('successful_login', 'authentication', data.user?.id, {
         email: sanitizedEmail,
