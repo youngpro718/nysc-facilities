@@ -134,7 +134,7 @@ export const InventoryOverviewPanel = () => {
 
   // Computed stats
   const totalItems = allItems?.length ?? 0;
-  const outOfStock = allItems?.filter(i => i.quantity === 0).length ?? 0;
+  const outOfStock = allItems?.filter(i => i.quantity <= 0).length ?? 0;
   const lowStockCount = allItems?.filter(
     i => i.minimum_quantity > 0 && i.quantity > 0 && i.quantity < i.minimum_quantity
   ).length ?? 0;
