@@ -189,7 +189,10 @@ export function RoomPreviewCard({
               <div className="flex gap-2">
                 <Input
                   value={roomNumber}
-                  onChange={(e) => setRoomNumber(e.target.value)}
+                  onChange={(e) => {
+                    hasManuallyEditedNumber.current = true;
+                    setRoomNumber(e.target.value);
+                  }}
                   className="flex-1 h-12 text-base touch-manipulation"
                   autoFocus
                 />
