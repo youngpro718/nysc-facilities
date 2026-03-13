@@ -1,58 +1,29 @@
 
 
-# Unified Audit Trail for All Personnel & Room Movements
 
-## Current State
+## Personalized, Minimal Experience Per Role — IMPLEMENTED
 
-**What's already audited (via database triggers):**
-- `occupant_room_assignments` → trigger writes to `room_assignment_audit_log` + sends `user_notifications`
-- `key_assignments` → trigger writes to `key_audit_logs`
+### What Changed
 
-**What's NOT audited (the gap):**
-- `court_assignments` — judge moves, clerk assignments, sergeant assignments, part changes, bulk shuffles, Quick Reassign, swaps — **zero audit logging**. This is the biggest blind spot. Every `.update()`, `.upsert()`, `.insert()`, and `.delete()` on `court_assignments` across 5+ components fires with no record of who did what.
-- Room status changes in `operationsService.updateRoomStatus()` write to a nonexistent `audit_logs` table (it was never created).
+1. **Navigation reduced** (`navigation.tsx`):
+   - Standard: 2 items (Home, Activity)
+   - CMC: 3 items (Home, Court Ops, Activity)
+   - Court Officer: 3 items (Home, Keys, Activity)
+   - Court Aide: 3 items (Home, Tasks, Supply Room)
+   - Admin: unchanged (full access)
 
-## Plan
+2. **Standard User Dashboard** (`UserDashboard.tsx`): Rewritten as a clean, single-column action portal with 3 large action rows (Order Supplies, Report Issue, Request Key), pickup alert, and a unified activity feed. Removed stats strip, MyRoomCard, TermSheetPreview, and 2x2 grid.
 
-### 1. Create `court_assignment_audit_log` table
+3. **Role Dashboards** (`RoleDashboard.tsx`): Replaced 4-card stats grids and 4-card quick action grids with compact inline stat strips and focused content. Court Aide gets a "Work Queue" section with task list and supply room rows.
 
-New table to capture every court assignment mutation:
+4. **QuickIssueReportButton** now supports `children` prop for custom rendering.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | PK |
-| assignment_id | uuid | FK to court_assignments (nullable for deletes) |
-| room_id | uuid | The room involved |
-| action_type | text | `assigned`, `reassigned`, `swapped`, `cleared`, `covered`, `updated`, `deleted` |
-| reason | text | Why the move happened (covering, permanent reassign, swap, bulk shuffle) |
-| old_values | jsonb | Previous state (justice, clerks, sergeant, part) |
-| new_values | jsonb | New state |
-| changed_fields | text[] | Which columns changed |
-| performed_by | uuid | `auth.uid()` |
-| performed_at | timestamptz | Default now() |
-| notes | text | Optional notes from the reason-for-move prompt |
+## Unified Audit Trail for Court Assignments — IMPLEMENTED
 
-### 2. Database trigger on `court_assignments`
+### What Changed
 
-Create a `log_court_assignment_changes` trigger function (INSERT/UPDATE/DELETE) that automatically writes to `court_assignment_audit_log`. This captures everything regardless of which UI component initiates the change — LiveCourtGrid, EnhancedCourtAssignmentTable, CourtAssignmentTable, AddStaffDialog, CreateAssignmentDialog, bulk shuffle, etc.
+1. **Database**: Created `court_assignment_audit_log` table with trigger `trg_court_assignment_audit` on `court_assignments`. Every INSERT/UPDATE/DELETE is automatically logged with old/new values, changed fields, action type (assigned/reassigned/cleared/deleted), and the user who made the change.
 
-### 3. Create unified `audit_logs` table
+2. **Database**: Created `audit_logs` general-purpose table for room status changes (fixes the missing table that `operationsService.updateRoomStatus()` was trying to write to).
 
-The `operationsService.updateRoomStatus()` already tries to write to `audit_logs` but that table doesn't exist. Create it as a general-purpose audit table for room status changes and other operational mutations.
-
-### 4. Court Assignment Audit Viewer
-
-Add a lightweight "Assignment History" panel accessible from the Court Operations page — a simple table showing recent movements: who was moved, from where, to where, by whom, when, and why.
-
-### Files to Create/Modify
-
-| File | Change |
-|------|--------|
-| **Migration SQL** | Create `court_assignment_audit_log` table, trigger function, and `audit_logs` table |
-| `src/components/court/CourtAssignmentAuditPanel.tsx` | **New** — UI panel showing court assignment history |
-| `src/components/court/AssignmentManagementPanel.tsx` | Add "History" tab/button to open audit panel |
-
-### What This Covers
-
-Once the trigger is in place, every court assignment change is automatically captured — no need to modify the 7+ components that write to `court_assignments`. The trigger handles it all at the database level, same pattern as the existing `occupant_room_assignments` audit trigger.
-
+3. **UI**: Added `CourtAssignmentAuditPanel.tsx` — a History tab in the Assignments panel showing a chronological log of all court assignment changes with action badges, room numbers, and change diffs.
