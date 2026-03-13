@@ -108,7 +108,9 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
         },
     });
 
-    const canSubmit = firstName.trim() && lastName.trim();
+    const canSubmit = (role === 'sergeant' || role === 'officer')
+        ? !!lastName.trim()
+        : !!(firstName.trim() && lastName.trim());
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
