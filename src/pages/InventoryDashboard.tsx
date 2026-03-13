@@ -204,13 +204,6 @@ export const InventoryDashboard = () => {
           </div>
         </div>
 
-        {/* KPI Strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatusCard statusVariant="info" title="Total Items" value={totalItems} subLabel="In catalog" icon={Boxes} />
-          <StatusCard statusVariant={lowStockCount > 0 ? "critical" : "operational"} title="Low Stock" value={lowStockCount} subLabel="Need reorder" icon={AlertTriangle} onClick={() => handleTabChange('alerts')} />
-          <StatusCard statusVariant={newRequestsCount > 0 ? "warning" : "operational"} title="Pending Requests" value={newRequestsCount} subLabel="Awaiting review" icon={Package} onClick={() => navigate('/admin/supply-requests')} />
-          <StatusCard statusVariant="operational" title="System Status" value="OK" subLabel="All systems normal" icon={BarChart3} />
-        </div>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
