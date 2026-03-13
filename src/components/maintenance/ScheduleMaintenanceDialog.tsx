@@ -189,7 +189,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
 
             <div>
               <Label htmlFor="space_name">Space Name/Number *</Label>
-              {formData.space_type === "room" && rooms ? (
+              {(formData.space_type === "room" || formData.space_type === "courtroom") && rooms ? (
                 <Select 
                   value={formData.space_id} 
                   onValueChange={(value) => {
@@ -202,7 +202,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select room" />
+                    <SelectValue placeholder={`Select ${formData.space_type}`} />
                   </SelectTrigger>
                   <SelectContent>
                     {rooms.map((room) => (
