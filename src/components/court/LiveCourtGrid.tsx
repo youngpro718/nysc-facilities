@@ -4,6 +4,7 @@ import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
 import { usePersonnelAvailability, PersonnelWithAvailability } from "@/hooks/usePersonnelAvailability";
 import { useAuth } from "@/hooks/useAuth";
 import { logger } from "@/lib/logger";
+import { PersonnelSelector } from "@/components/court/PersonnelSelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
