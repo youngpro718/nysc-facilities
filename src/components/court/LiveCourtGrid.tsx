@@ -181,13 +181,26 @@ export function LiveCourtGrid() {
         } else if (change.type === 'assign' && change.toRoomId) {
           const targetRoom = rooms?.find((r: any) => r.room_id === change.toRoomId);
           if (!targetRoom) throw new Error("Room not found");
-          const { error } = await supabase.from("court_assignments").upsert({
-            room_id: change.toRoomId,
-            room_number: (targetRoom as any).room_number,
-            justice: change.judgeName || null,
-            part: change.part || null,
-          });
-          if (error) throw error;
+          // Check if row exists to preserve existing staff data
+          const { data: existing } = await supabase
+            .from("court_assignments")
+            .select("id")
+            .eq("room_id", change.toRoomId)
+            .maybeSingle();
+          if (existing) {
+            const { error } = await supabase.from("court_assignments")
+              .update({ justice: change.judgeName || null, part: change.part || null })
+              .eq("room_id", change.toRoomId);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from("court_assignments").insert({
+              room_id: change.toRoomId,
+              room_number: (targetRoom as any).room_number,
+              justice: change.judgeName || null,
+              part: change.part || null,
+            });
+            if (error) throw error;
+          }
         }
         successCount++;
       } catch (e) {
