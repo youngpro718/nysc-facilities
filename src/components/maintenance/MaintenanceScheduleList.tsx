@@ -26,6 +26,7 @@ type MaintenanceSchedule = {
   notes: string | null;
   estimated_cost: number | null;
   space_id?: string | null;
+  space_name?: string | null;
   assigned_to?: string | null;
   actual_start_date?: string | null;
   actual_end_date?: string | null;
