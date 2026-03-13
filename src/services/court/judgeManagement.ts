@@ -121,21 +121,34 @@ export async function addNewJudge(params: {
       }
     }
 
-    // No existing assignment for this part — insert new
-    const { data: maxSort } = await supabase
+    // No existing assignment for this part — check if room already has a row
+    const { data: existingRoom } = await supabase
       .from('court_assignments')
-      .select('sort_order')
-      .order('sort_order', { ascending: false })
-      .limit(1)
-      .single();
+      .select('id')
+      .eq('room_id', roomId)
+      .maybeSingle();
 
-    await supabase.from('court_assignments').insert({
-      room_id: roomId,
-      room_number: roomNumber,
-      part: params.part || null,
-      justice: displayName,
-      sort_order: ((maxSort?.sort_order as number) || 0) + 1,
-    });
+    if (existingRoom) {
+      // Update existing row to preserve clerks/sergeant
+      await supabase.from('court_assignments')
+        .update({ justice: displayName, part: params.part || null })
+        .eq('room_id', roomId);
+    } else {
+      const { data: maxSort } = await supabase
+        .from('court_assignments')
+        .select('sort_order')
+        .order('sort_order', { ascending: false })
+        .limit(1)
+        .single();
+
+      await supabase.from('court_assignments').insert({
+        room_id: roomId,
+        room_number: roomNumber,
+        part: params.part || null,
+        justice: displayName,
+        sort_order: ((maxSort?.sort_order as number) || 0) + 1,
+      });
+    }
   }
 
   return { personnelId: data.id, displacedJudge };
