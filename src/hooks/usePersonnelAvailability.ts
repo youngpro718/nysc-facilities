@@ -62,7 +62,12 @@ export function usePersonnelAvailability(): PersonnelAvailabilityData {
         .lte("starts_on", today)
         .gte("ends_on", today);
       if (error) throw error;
-      return (data || []) as Array<{
+      return (data || []).map((row: any) => ({
+        staff_id: row.staff_id as string,
+        absence_reason: row.absence_reason as string,
+        ends_on: row.ends_on as string,
+        staff: Array.isArray(row.staff) ? row.staff[0] : row.staff,
+      })) as Array<{
         staff_id: string;
         absence_reason: string;
         ends_on: string;
