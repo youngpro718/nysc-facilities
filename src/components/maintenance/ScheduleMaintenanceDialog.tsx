@@ -56,6 +56,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
           description: data.description || '',
           maintenance_type: data.maintenance_type,
           space_name: data.space_name,
+          space_id: data.space_id || null,
           space_type: data.space_type,
           scheduled_start_date: new Date(data.scheduled_start_date).toISOString(),
           scheduled_end_date: data.scheduled_end_date 
