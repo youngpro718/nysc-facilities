@@ -108,7 +108,9 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
         },
     });
 
-    const canSubmit = firstName.trim() && lastName.trim();
+    const canSubmit = (role === 'sergeant' || role === 'officer')
+        ? !!lastName.trim()
+        : !!(firstName.trim() && lastName.trim());
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -124,7 +126,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                     {/* Name */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <Label htmlFor="first-name">First Name *</Label>
+                            <Label htmlFor="first-name">First Name {role === 'sergeant' || role === 'officer' ? '(optional)' : '*'}</Label>
                             <Input
                                 id="first-name"
                                 value={firstName}

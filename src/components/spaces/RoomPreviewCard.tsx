@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { logger } from '@/lib/logger';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,9 @@ export function RoomPreviewCard({
   const [roomNumber, setRoomNumber] = useState(defaults.roomNumber);
   const [buildingId, setBuildingId] = useState(defaults.buildingId);
   const [floorId, setFloorId] = useState(defaults.floorId);
+  const hasManuallyEditedNumber = useRef(false);
+  const prevFloorId = useRef(defaults.floorId);
+  const prevBuildingId = useRef(defaults.buildingId);
 
   // Fetch buildings
   const { data: buildings } = useQuery({
@@ -71,8 +74,21 @@ export function RoomPreviewCard({
     enabled: !!buildingId
   });
 
-  // Regenerate room number when floor changes
+  // Regenerate room number when floor/building selection actually changes
   useEffect(() => {
+    const floorChanged = floorId !== prevFloorId.current;
+    const buildingChanged = buildingId !== prevBuildingId.current;
+    prevFloorId.current = floorId;
+    prevBuildingId.current = buildingId;
+
+    // Skip if user manually edited, unless they changed floor/building
+    if (hasManuallyEditedNumber.current && !floorChanged && !buildingChanged) return;
+
+    // Reset manual edit flag when floor/building changes
+    if (floorChanged || buildingChanged) {
+      hasManuallyEditedNumber.current = false;
+    }
+
     const regenerateRoomNumber = async () => {
       if (floorId && buildingId) {
         const floor = floors?.find(f => f.id === floorId);
@@ -173,7 +189,10 @@ export function RoomPreviewCard({
               <div className="flex gap-2">
                 <Input
                   value={roomNumber}
-                  onChange={(e) => setRoomNumber(e.target.value)}
+                  onChange={(e) => {
+                    hasManuallyEditedNumber.current = true;
+                    setRoomNumber(e.target.value);
+                  }}
                   className="flex-1 h-12 text-base touch-manipulation"
                   autoFocus
                 />
