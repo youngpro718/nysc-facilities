@@ -90,13 +90,13 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
     try {
       const { error } = await supabase.from("issues").insert({
         title: data.title,
-        description: data.description || null,
-        type: data.issue_type,
+        description: data.description || '',
+        issue_type: data.issue_type,
         priority: data.severity === "critical" ? "urgent" : data.severity,
         status: "open",
         room_id: data.room_id || null,
         building_id: data.building_id || null,
-      } as unknown);
+      });
 
       if (error) throw error;
 
@@ -105,7 +105,9 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
         queryClient.invalidateQueries({ queryKey: ["issues"] }),
         queryClient.invalidateQueries({ queryKey: ["userIssues"] }),
         queryClient.invalidateQueries({ queryKey: ["roomIssues"] }),
+        queryClient.invalidateQueries({ queryKey: ["maintenance-issues"] }),
         queryClient.invalidateQueries({ queryKey: ["maintenanceIssues"] }),
+        queryClient.invalidateQueries({ queryKey: ["maintenance-stats"] }),
         queryClient.invalidateQueries({ queryKey: ["adminIssues"] }),
         queryClient.invalidateQueries({ queryKey: ["court-issues"] }),
         queryClient.invalidateQueries({ queryKey: ["interactive-operations"] }),
@@ -253,13 +255,9 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="electrical">Electrical</SelectItem>
-                      <SelectItem value="plumbing">Plumbing</SelectItem>
-                      <SelectItem value="hvac">HVAC</SelectItem>
-                      <SelectItem value="structural">Structural</SelectItem>
-                      <SelectItem value="safety">Safety</SelectItem>
-                      <SelectItem value="cleaning">Cleaning</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="BUILDING_SYSTEMS">Building Systems</SelectItem>
+                      <SelectItem value="ELECTRICAL_NEEDS">Electrical Needs</SelectItem>
+                      <SelectItem value="GENERAL_REQUESTS">General Requests</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

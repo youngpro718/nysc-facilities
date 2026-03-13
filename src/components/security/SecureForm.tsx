@@ -13,14 +13,16 @@ interface SecureFormProps {
   isLoading?: boolean;
   title: string;
   submitText: string;
+  defaultEmail?: string;
 }
 export function SecureForm({
   onSubmit,
   isLoading = false,
   title,
-  submitText
+  submitText,
+  defaultEmail
 }: SecureFormProps) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(defaultEmail || '');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
