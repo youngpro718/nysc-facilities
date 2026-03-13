@@ -24,6 +24,10 @@ export function SecureForm({
 }: SecureFormProps) {
   const [email, setEmail] = useState(defaultEmail || '');
   const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    if (defaultEmail) setEmail(defaultEmail);
+  }, [defaultEmail]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [isRateLimited, setIsRateLimited] = useState(false);
