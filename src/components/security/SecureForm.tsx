@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useSecurityValidation } from '@/hooks/security/useSecurityValidation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
