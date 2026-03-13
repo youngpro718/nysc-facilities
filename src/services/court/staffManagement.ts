@@ -30,7 +30,6 @@ export async function addNewStaff(params: {
         .insert({
             first_name: params.firstName,
             last_name: params.lastName,
-            full_name: fullName,
             display_name: displayName,
             primary_role: params.role,
             title: titleMap[params.role],
