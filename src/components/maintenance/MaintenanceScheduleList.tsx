@@ -26,6 +26,7 @@ type MaintenanceSchedule = {
   notes: string | null;
   estimated_cost: number | null;
   space_id?: string | null;
+  space_name?: string | null;
   assigned_to?: string | null;
   actual_start_date?: string | null;
   actual_end_date?: string | null;
@@ -250,12 +251,17 @@ export const MaintenanceScheduleList = () => {
                 <div>
                   <CardTitle className="text-lg">{schedule.title}</CardTitle>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-                    {schedule.rooms && (
+                    {schedule.rooms ? (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
                         Room: {schedule.rooms.name}{schedule.rooms.room_number ? ` (${schedule.rooms.room_number})` : ''}
                       </div>
-                    )}
+                    ) : schedule.space_name ? (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        Space: {schedule.space_name}
+                      </div>
+                    ) : null}
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
                       {format(new Date(schedule.scheduled_start_date), "MMM dd, yyyy")}
