@@ -1,33 +1,29 @@
 
 
-# Fix: Judges Appearing in Multiple Rooms
 
-## Problem
-No unique constraint on `room_id` in `court_assignments` — every `upsert` silently inserts a new row instead of updating. Three rooms currently have duplicates (1047, 1602, 572), and the newer duplicate rows have wiped clerks/sergeant data.
+## Personalized, Minimal Experience Per Role — IMPLEMENTED
 
-## Fix (3 parts)
+### What Changed
 
-### 1. Database: Clean duplicates + add unique constraint
-**Migration SQL:**
-- Delete the 3 newer duplicate rows (IDs: `6a07e477`, `81dd65f5`, `0ee8a202`) — keep the originals that have clerk/sergeant data
-- Add `UNIQUE` constraint on `room_id`
-- This makes future `upsert` calls work correctly by matching on `room_id`
+1. **Navigation reduced** (`navigation.tsx`):
+   - Standard: 2 items (Home, Activity)
+   - CMC: 3 items (Home, Court Ops, Activity)
+   - Court Officer: 3 items (Home, Keys, Activity)
+   - Court Aide: 3 items (Home, Tasks, Supply Room)
+   - Admin: unchanged (full access)
 
-### 2. Code: Replace blind upserts with check-then-update
-**`LiveCourtGrid.tsx`** — 3 locations:
-- **Line 504 (assign)**: Check if row exists for `room_id` → if yes, `update` only justice/part; if no, `insert`
-- **Line 523 (reassign)**: Same pattern
-- **Line 184 (batch assign)**: Same pattern
+2. **Standard User Dashboard** (`UserDashboard.tsx`): Rewritten as a clean, single-column action portal with 3 large action rows (Order Supplies, Report Issue, Request Key), pickup alert, and a unified activity feed. Removed stats strip, MyRoomCard, TermSheetPreview, and 2x2 grid.
 
-This preserves existing clerks/sergeant when assigning a judge to a room.
+3. **Role Dashboards** (`RoleDashboard.tsx`): Replaced 4-card stats grids and 4-card quick action grids with compact inline stat strips and focused content. Court Aide gets a "Work Queue" section with task list and supply room rows.
 
-### 3. Code: Fix insert in judgeManagement.ts
-**`judgeManagement.ts` line 132**: Before inserting, check if a row already exists for that `room_id`. If so, update instead of insert.
+4. **QuickIssueReportButton** now supports `children` prop for custom rendering.
 
-## Files Modified
-| File | Change |
-|------|--------|
-| Migration SQL | Delete 3 duplicate rows, add `UNIQUE(room_id)` |
-| `src/components/court/LiveCourtGrid.tsx` | Replace 3 `upsert` calls with select→update/insert |
-| `src/services/court/judgeManagement.ts` | Add existing-row check before insert |
+## Unified Audit Trail for Court Assignments — IMPLEMENTED
 
+### What Changed
+
+1. **Database**: Created `court_assignment_audit_log` table with trigger `trg_court_assignment_audit` on `court_assignments`. Every INSERT/UPDATE/DELETE is automatically logged with old/new values, changed fields, action type (assigned/reassigned/cleared/deleted), and the user who made the change.
+
+2. **Database**: Created `audit_logs` general-purpose table for room status changes (fixes the missing table that `operationsService.updateRoomStatus()` was trying to write to).
+
+3. **UI**: Added `CourtAssignmentAuditPanel.tsx` — a History tab in the Assignments panel showing a chronological log of all court assignment changes with action badges, room numbers, and change diffs.

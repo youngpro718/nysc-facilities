@@ -181,13 +181,26 @@ export function LiveCourtGrid() {
         } else if (change.type === 'assign' && change.toRoomId) {
           const targetRoom = rooms?.find((r: any) => r.room_id === change.toRoomId);
           if (!targetRoom) throw new Error("Room not found");
-          const { error } = await supabase.from("court_assignments").upsert({
-            room_id: change.toRoomId,
-            room_number: (targetRoom as any).room_number,
-            justice: change.judgeName || null,
-            part: change.part || null,
-          });
-          if (error) throw error;
+          // Check if row exists to preserve existing staff data
+          const { data: existing } = await supabase
+            .from("court_assignments")
+            .select("id")
+            .eq("room_id", change.toRoomId)
+            .maybeSingle();
+          if (existing) {
+            const { error } = await supabase.from("court_assignments")
+              .update({ justice: change.judgeName || null, part: change.part || null })
+              .eq("room_id", change.toRoomId);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from("court_assignments").insert({
+              room_id: change.toRoomId,
+              room_number: (targetRoom as any).room_number,
+              justice: change.judgeName || null,
+              part: change.part || null,
+            });
+            if (error) throw error;
+          }
         }
         successCount++;
       } catch (e) {
@@ -501,13 +514,26 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
     setSaving(true);
     try {
       if (opType === 'assign') {
-        const { error } = await supabase.from("court_assignments").upsert({
-          room_id: room.room_id,
-          room_number: room.room_number,
-          justice: trimmedName,
-          part: partName.trim() || null,
-        });
-        if (error) throw error;
+        // Check if row exists to preserve existing clerks/sergeant
+        const { data: existing } = await supabase
+          .from("court_assignments")
+          .select("id")
+          .eq("room_id", room.room_id)
+          .maybeSingle();
+        if (existing) {
+          const { error } = await supabase.from("court_assignments")
+            .update({ justice: trimmedName, part: partName.trim() || null })
+            .eq("room_id", room.room_id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("court_assignments").insert({
+            room_id: room.room_id,
+            room_number: room.room_number,
+            justice: trimmedName,
+            part: partName.trim() || null,
+          });
+          if (error) throw error;
+        }
         toast({ title: "✅ Judge assigned", description: `${trimmedName} → Room ${room.room_number}` });
       } else if (opType === 'reassign' || opType === 'cover') {
         const { data: currentAssignments } = await supabase
@@ -520,13 +546,26 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
             const roomIds = currentAssignments.map(a => a.room_id);
             await supabase.from("court_assignments").update({ justice: null }).in("room_id", roomIds);
           }
-          const { error } = await supabase.from("court_assignments").upsert({
-            room_id: room.room_id,
-            room_number: room.room_number,
-            justice: trimmedName,
-            part: partName.trim() || null,
-          });
-          if (error) throw error;
+          // Check if row exists to preserve existing clerks/sergeant
+          const { data: existingReassign } = await supabase
+            .from("court_assignments")
+            .select("id")
+            .eq("room_id", room.room_id)
+            .maybeSingle();
+          if (existingReassign) {
+            const { error } = await supabase.from("court_assignments")
+              .update({ justice: trimmedName, part: partName.trim() || null })
+              .eq("room_id", room.room_id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from("court_assignments").insert({
+              room_id: room.room_id,
+              room_number: room.room_number,
+              justice: trimmedName,
+              part: partName.trim() || null,
+            });
+            if (error) throw error;
+          }
           toast({ title: "✅ Judge reassigned", description: `${trimmedName} moved to Room ${room.room_number}` });
         } else {
           const fromRoomId = currentAssignments && currentAssignments.length > 0 ? currentAssignments[0].room_id : null;
