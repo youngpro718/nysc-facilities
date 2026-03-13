@@ -10,11 +10,9 @@ import { StorageRoomsPanel } from "@/components/inventory/StorageRoomsPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { Package, Plus, History, BarChart3, MapPin, AlertTriangle, Search, Warehouse, Boxes } from "lucide-react";
+import { Package, Plus, History, BarChart3, MapPin, AlertTriangle, Search, Warehouse } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
-import { FORCED_MINIMUM } from "@/constants/inventory";
-import { StatusCard } from "@/components/ui/StatusCard";
 
 interface TabConfig {
   id: string;
