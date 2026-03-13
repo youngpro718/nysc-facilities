@@ -54,13 +54,15 @@ export const InventoryDashboard = () => {
         .in('status', ['submitted', 'pending']);
       if (typeof reqCount === 'number') setNewRequestsCount(reqCount);
 
-      // Low stock count
-      const { count: lowCount } = await supabase
+      // Low stock count — use each item's actual minimum_quantity
+      const { data: stockItems } = await supabase
         .from('inventory_items')
-        .select('id', { count: 'exact', head: true })
-        .gt('quantity', 0)
-        .lte('quantity', FORCED_MINIMUM);
-      if (typeof lowCount === 'number') setLowStockCount(lowCount);
+        .select('id, quantity, minimum_quantity')
+        .gt('quantity', 0);
+      const lowCount = (stockItems || []).filter(
+        item => item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
+      ).length;
+      setLowStockCount(lowCount);
 
       // Total items count
       const { count: totalCount } = await supabase
