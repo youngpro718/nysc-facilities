@@ -120,7 +120,7 @@ export const AssignmentManagementPanel = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'edit' | 'view')}>
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'edit' | 'view' | 'history')}>
             <TabsList className="touch-manipulation">
               <TabsTrigger value="edit" className="flex items-center gap-1.5 text-xs sm:text-sm">
                 <Edit3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -131,6 +131,11 @@ export const AssignmentManagementPanel = () => {
                 <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Term Sheet</span>
                 <span className="sm:hidden">View</span>
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-1.5 text-xs sm:text-sm">
+                <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">History</span>
+                <span className="sm:hidden">Log</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
