@@ -671,8 +671,7 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
   );
 }
 
-// Inline personnel selector using PersonnelSelector component
-import { PersonnelSelector } from "@/components/court/PersonnelSelector";
+
 
 function PersonnelSelectorInline({ value, onValueChange, availabilityData, onAssignedPersonSelected, placeholder }: {
   value: string;
