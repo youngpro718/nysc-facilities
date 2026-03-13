@@ -90,13 +90,13 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
     try {
       const { error } = await supabase.from("issues").insert({
         title: data.title,
-        description: data.description || null,
-        type: data.issue_type,
+        description: data.description || '',
+        issue_type: data.issue_type,
         priority: data.severity === "critical" ? "urgent" : data.severity,
         status: "open",
         room_id: data.room_id || null,
         building_id: data.building_id || null,
-      } as unknown);
+      });
 
       if (error) throw error;
 
