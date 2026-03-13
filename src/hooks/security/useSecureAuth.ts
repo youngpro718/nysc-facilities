@@ -117,8 +117,8 @@ export function useSecureAuth() {
 
       // Store credential for browser/OS password manager (enables biometric autofill on mobile)
       try {
-        if (window.PasswordCredential) {
-          const cred = new PasswordCredential({
+        if ('PasswordCredential' in window) {
+          const cred = new (window as any).PasswordCredential({
             id: email,
             password: password,
             name: data.user?.user_metadata?.first_name 
