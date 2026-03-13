@@ -15,8 +15,7 @@ export async function addNewStaff(params: {
     extension?: string;
     assignToRoomId?: string; // court_assignments.room_id to add them to
 }): Promise<{ personnelId: string; displacedStaff: string | null }> {
-    const displayName = `${params.firstName} ${params.lastName}`;
-    const fullName = displayName;
+    const displayName = `${params.firstName} ${params.lastName}`.trim();
 
     // Map role to title for personnel_profiles
     const titleMap: Record<'clerk' | 'sergeant' | 'officer', string> = {
