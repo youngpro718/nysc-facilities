@@ -514,13 +514,26 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
     setSaving(true);
     try {
       if (opType === 'assign') {
-        const { error } = await supabase.from("court_assignments").upsert({
-          room_id: room.room_id,
-          room_number: room.room_number,
-          justice: trimmedName,
-          part: partName.trim() || null,
-        });
-        if (error) throw error;
+        // Check if row exists to preserve existing clerks/sergeant
+        const { data: existing } = await supabase
+          .from("court_assignments")
+          .select("id")
+          .eq("room_id", room.room_id)
+          .maybeSingle();
+        if (existing) {
+          const { error } = await supabase.from("court_assignments")
+            .update({ justice: trimmedName, part: partName.trim() || null })
+            .eq("room_id", room.room_id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("court_assignments").insert({
+            room_id: room.room_id,
+            room_number: room.room_number,
+            justice: trimmedName,
+            part: partName.trim() || null,
+          });
+          if (error) throw error;
+        }
         toast({ title: "✅ Judge assigned", description: `${trimmedName} → Room ${room.room_number}` });
       } else if (opType === 'reassign' || opType === 'cover') {
         const { data: currentAssignments } = await supabase
