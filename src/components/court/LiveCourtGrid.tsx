@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useCourtOperationsRealtime, useCourtRooms, useStaffOutToday } from "@/hooks/useCourtOperationsRealtime";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
+import { usePersonnelAvailability, PersonnelWithAvailability } from "@/hooks/usePersonnelAvailability";
 import { useAuth } from "@/hooks/useAuth";
 import { logger } from "@/lib/logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
