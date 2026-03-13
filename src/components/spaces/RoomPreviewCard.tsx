@@ -41,6 +41,9 @@ export function RoomPreviewCard({
   const [roomNumber, setRoomNumber] = useState(defaults.roomNumber);
   const [buildingId, setBuildingId] = useState(defaults.buildingId);
   const [floorId, setFloorId] = useState(defaults.floorId);
+  const hasManuallyEditedNumber = useRef(false);
+  const prevFloorId = useRef(defaults.floorId);
+  const prevBuildingId = useRef(defaults.buildingId);
 
   // Fetch buildings
   const { data: buildings } = useQuery({
