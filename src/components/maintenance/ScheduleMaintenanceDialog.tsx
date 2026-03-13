@@ -89,6 +89,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
         description: "",
         maintenance_type: "",
         space_name: "",
+        space_id: "",
         space_type: "courtroom",
         scheduled_start_date: "",
         scheduled_end_date: "",
