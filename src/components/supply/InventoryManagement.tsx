@@ -135,7 +135,17 @@ export function InventoryManagement() {
         return;
       }
       
-      setInventory(inventoryData || []);
+      // Map DB column names to component interface
+      const mapped = (inventoryData || []).map((item: Record<string, unknown>) => ({
+        ...item,
+        current_stock: (item as any).quantity ?? (item as any).current_stock ?? 0,
+        minimum_threshold: (item as any).minimum_quantity ?? (item as any).minimum_threshold ?? 0,
+        maximum_stock: (item as any).maximum_quantity ?? (item as any).maximum_stock ?? 0,
+        monthly_usage: (item as any).monthly_usage ?? 0,
+        storage_location: (item as any).location_details ?? (item as any).storage_location ?? '',
+        last_restocked: (item as any).last_restocked ?? (item as any).updated_at ?? '',
+      })) as InventoryItem[];
+      setInventory(mapped);
       
       // Generate stock alerts
       const alerts = generateStockAlerts(inventoryData || []);
