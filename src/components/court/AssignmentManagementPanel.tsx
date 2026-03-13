@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const AssignmentManagementPanel = () => {
-  const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
+  const [viewMode, setViewMode] = useState<'edit' | 'view' | 'history'>('edit');
   const [addJudgeOpen, setAddJudgeOpen] = useState(false);
   const [addStaffOpen, setAddStaffOpen] = useState(false);
   const { getCourtImpactSummary, getRecentlyAffectedRooms, isLoading: issuesLoading } = useCourtIssuesIntegration();
