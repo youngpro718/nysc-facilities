@@ -100,7 +100,6 @@ export const InventoryOverviewPanel = () => {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("id, name, quantity, minimum_quantity, category_id")
-        .gt("quantity", 0)
         .order("quantity", { ascending: true });
       if (error) throw error;
 
@@ -134,7 +133,7 @@ export const InventoryOverviewPanel = () => {
 
   // Computed stats
   const totalItems = allItems?.length ?? 0;
-  const outOfStock = allItems?.filter(i => i.quantity === 0).length ?? 0;
+  const outOfStock = allItems?.filter(i => i.quantity <= 0).length ?? 0;
   const lowStockCount = allItems?.filter(
     i => i.minimum_quantity > 0 && i.quantity > 0 && i.quantity < i.minimum_quantity
   ).length ?? 0;

@@ -12,8 +12,8 @@ interface AdminRealtimeNotificationHook {
 
 /**
  * Consolidated Admin Realtime Notifications
- * Uses a SINGLE multiplexed channel for all admin-related realtime updates
- * Replaces 9+ separate channels with 1 channel
+ * Listens ONLY to admin_notifications table — DB triggers handle all event→notification mapping.
+ * Direct table listeners were removed to prevent duplicate toasts.
  */
 export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook => {
   const { user, isAdmin } = useAuth();
@@ -24,12 +24,10 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
   useEffect(() => {
     if (!user?.id || !isAdmin) return;
 
-    logger.debug('[AdminRealtime] Setting up consolidated admin notifications for:', user.id);
+    logger.debug('[AdminRealtime] Setting up admin notifications listener for:', user.id);
 
-    // Single multiplexed channel for all admin updates
     const channel = supabase
       .channel('admin-realtime-hub')
-      // Admin notifications
       .on(
         'postgres_changes',
         {
@@ -41,19 +39,29 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           logger.debug('[AdminRealtime] New admin notification:', payload);
           const notification = payload.new;
           setLastNotification(notification);
+
+          // Invalidate relevant queries based on notification type
           queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
 
-          const toastOptions = {
-            duration: notification.urgency === 'high' ? 10000 : 6000,
-            action: {
-              label: 'View',
-              onClick: () => {
-                const actionUrl = notification.metadata?.action_url;
-                window.location.href = actionUrl || '/admin';
-              },
-            },
+          const typeQueryMap: Record<string, string[]> = {
+            new_supply_request: ['adminNotifications'],
+            new_key_request: ['adminNotifications'],
+            new_issue: ['adminNotifications', 'issues'],
+            new_key_order: ['adminNotifications'],
+            new_user_pending: ['adminNotifications'],
+            user_approved: ['adminNotifications'],
+            user_rejected: ['adminNotifications'],
+            role_assigned: ['adminNotifications'],
+            role_removed: ['adminNotifications'],
+            low_stock: ['inventory-items', 'low-stock-items', 'out-of-stock-items', 'low-stock-overview', 'inventory-overview-items', 'court-aide-alerts'],
           };
 
+          const extraKeys = typeQueryMap[notification.notification_type];
+          if (extraKeys) {
+            extraKeys.forEach(key => queryClient.invalidateQueries({ queryKey: [key] }));
+          }
+
+          // Toast
           const icons: Record<string, string> = {
             new_key_request: '🔑',
             new_supply_request: '📦',
@@ -64,6 +72,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             user_rejected: '🚫',
             role_assigned: '👤',
             role_removed: '➖',
+            low_stock: '📉',
           };
 
           const icon = icons[notification.notification_type] || '📋';
@@ -71,154 +80,21 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
 
           toastFn(`${icon} ${notification.title}`, {
             description: notification.message,
-            ...toastOptions,
+            duration: notification.urgency === 'high' ? 10000 : 6000,
+            action: {
+              label: 'View',
+              onClick: () => {
+                const actionUrl = notification.metadata?.action_url;
+                window.location.href = actionUrl || '/admin';
+              },
+            },
           });
-        }
-      )
-      // Key requests
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'key_requests' },
-        (payload) => {
-          logger.debug('[AdminRealtime] New key request:', payload);
-          const request = payload.new;
-          toast.info('🔑 New Key Request', {
-            description: `Request for ${request.request_type} key submitted`,
-            duration: 8000,
-            action: { label: 'Review Request', onClick: () => (window.location.href = '/admin/key-requests') },
-          });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'key_requests' },
-        (payload) => {
-          logger.debug('[AdminRealtime] Key request updated:', payload);
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-        }
-      )
-      // Supply requests
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'supply_requests' },
-        (payload) => {
-          logger.debug('[AdminRealtime] New supply request:', payload);
-          const request = payload.new;
-          const isUrgent = request.priority === 'high';
-
-          if (isUrgent) {
-            toast.error('🚨 Urgent Supply Request', {
-              description: `High priority request: "${request.title}"`,
-              duration: 10000,
-              action: { label: 'Review Now', onClick: () => (window.location.href = '/admin/supply-requests') },
-            });
-          } else {
-            toast.info('📦 New Supply Request', {
-              description: `Request: "${request.title}"`,
-              duration: 6000,
-              action: { label: 'Review Request', onClick: () => (window.location.href = '/admin/supply-requests') },
-            });
-          }
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-        }
-      )
-      // Issues
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'issues' },
-        (payload) => {
-          logger.debug('[AdminRealtime] New issue:', payload);
-          const issue = payload.new;
-          const isCritical = issue.priority === 'high';
-
-          if (isCritical) {
-            toast.error('🚨 Critical Issue Reported', {
-              description: `High severity: "${issue.title}"`,
-              duration: 12000,
-              action: { label: 'Address Now', onClick: () => (window.location.href = '/admin/issues') },
-            });
-          } else {
-            toast.warning('⚠️ New Issue Reported', {
-              description: `Issue: "${issue.title}"`,
-              duration: 8000,
-              action: { label: 'Review Issue', onClick: () => (window.location.href = '/admin/issues') },
-            });
-          }
-
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-          queryClient.invalidateQueries({ queryKey: ['issues'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'issues' },
-        (payload) => {
-          logger.debug('[AdminRealtime] Issue updated:', payload);
-          const issue = payload.new;
-
-          if (issue.status === 'resolved') {
-            toast.success('✅ Issue Resolved', {
-              description: `"${issue.title}" has been resolved.`,
-              duration: 6000,
-              action: { label: 'View', onClick: () => (window.location.href = '/admin/issues') },
-            });
-          }
-
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-          queryClient.invalidateQueries({ queryKey: ['issues'] });
-        }
-      )
-      // Key orders
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'key_orders' },
-        (payload) => {
-          logger.debug('[AdminRealtime] New key order:', payload);
-          const order = payload.new;
-          toast.info('🛒 New Key Order', {
-            description: `Order #${order.id} created`,
-            duration: 6000,
-            action: { label: 'View', onClick: () => (window.location.href = '/admin/key-orders') },
-          });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'key_orders' },
-        (payload) => {
-          logger.debug('[AdminRealtime] Key order updated:', payload);
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-        }
-      )
-      // Profiles
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'profiles' },
-        (payload) => {
-          logger.debug('[AdminRealtime] New profile:', payload);
-          toast.info('🆕 New User Registration', {
-            description: 'A new user has registered and requires approval',
-            duration: 8000,
-            action: { label: 'Review User', onClick: () => (window.location.href = '/admin') },
-          });
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'profiles' },
-        (payload) => {
-          logger.debug('[AdminRealtime] Profile updated:', payload);
-          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       .subscribe((status) => {
         logger.debug('[AdminRealtime] Channel status:', status);
         setIsConnected(status === 'SUBSCRIBED');
 
-        // Only log errors for actual failures, not cleanup-related closures
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           logger.error('[AdminRealtime] Connection failed:', status);
         }
