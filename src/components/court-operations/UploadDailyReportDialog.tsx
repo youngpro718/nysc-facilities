@@ -108,7 +108,7 @@ export function UploadDailyReportDialog({
         throw new Error(result?.error || 'Failed to process the document. Please check the file format and try again.');
       }
 
-      logger.debug('✅ Extraction successful:', parseResult);
+      logger.debug('✅ Extraction successful:', result);
 
       // Step 2: Upload file to Supabase storage for archival
       setExtractionStatus('uploading');
