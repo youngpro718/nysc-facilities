@@ -93,7 +93,7 @@ export function UploadDailyReportDialog({
 
       if (fnError || !parseResult?.extracted_data) {
         // Fallback to local parser if edge function fails
-        logger.warn('Edge function failed, falling back to local parser:', fnError?.message || 'No extracted data', 'Response:', parseResult);
+        logger.warn('Edge function failed, falling back to local parser:', { error: fnError?.message, response: parseResult });
         toast.info('AI extraction unavailable, using local parser...');
         const localResult = await parseDailyReportPDF(file);
         if (!localResult.success || !localResult.extracted_data) {
