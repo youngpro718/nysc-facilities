@@ -126,7 +126,7 @@ export function UploadDailyReportDialog({
       setExtractionStatus('enriching');
       toast.info('Mapping parts to courtrooms...');
 
-      const extractedData = parseResult.extracted_data;
+      const extractedData = result.extracted_data;
       const entries = extractedData.entries || [];
 
       if (entries.length === 0) {
