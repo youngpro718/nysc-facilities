@@ -405,7 +405,7 @@ export default function Operations() {
             enhancedMetrics={enhancedMetrics}
             criticalIssues={criticalIssues}
             isLoading={isLoading}
-            onCreateIssue={() => setShowCreateIssue(true)}
+            onCreateIssue={() => setShowReportIssue(true)}
             onScheduleMaintenance={() => setShowScheduleMaintenance(true)}
             onTabChange={handleTabChange}
             onRefresh={refreshAllData}
