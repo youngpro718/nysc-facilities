@@ -434,7 +434,7 @@ export default function Operations() {
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              <Button onClick={() => setShowCreateIssue(true)} size="sm">
+              <Button onClick={() => setShowReportIssue(true)} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Report Issue
               </Button>
