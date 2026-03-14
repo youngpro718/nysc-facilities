@@ -85,24 +85,27 @@ export function UploadDailyReportDialog({
 
       const pdfBase64 = await fileToBase64(file);
 
+      let result: { success: boolean; extracted_data?: any; error?: string } | null = null;
+
       const { data: parseResult, error: fnError } = await supabase.functions.invoke('parse-pdf', {
         body: { pdfBase64, fileName: file.name },
       });
 
-      if (fnError) {
+      if (fnError || !parseResult?.extracted_data) {
         // Fallback to local parser if edge function fails
-        logger.warn('Edge function failed, falling back to local parser:', fnError.message);
+        logger.warn('Edge function failed, falling back to local parser:', fnError?.message || 'No extracted data');
         toast.info('AI extraction unavailable, using local parser...');
         const localResult = await parseDailyReportPDF(file);
         if (!localResult.success || !localResult.extracted_data) {
           throw new Error(localResult.error || 'Failed to process the document.');
         }
-        // Use local result — same shape
-        Object.assign(parseResult ?? {}, localResult);
+        result = localResult;
+      } else {
+        result = parseResult;
       }
 
-      if (!parseResult?.success && !parseResult?.extracted_data) {
-        throw new Error(parseResult?.error || 'Failed to process the document. Please check the file format and try again.');
+      if (!result?.extracted_data) {
+        throw new Error(result?.error || 'Failed to process the document. Please check the file format and try again.');
       }
 
       logger.debug('✅ Extraction successful:', parseResult);
