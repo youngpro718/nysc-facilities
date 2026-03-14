@@ -2,6 +2,33 @@
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
+// Aliases for parts that map to the same courtroom
+const PART_ALIASES: Record<string, string> = {
+  'TAP G': 'TAP A',
+  'TAP A / TAP G': 'TAP A',
+};
+
+/**
+ * Resolve a part name through the alias map.
+ * Handles compound parts like "TAP A / TAP G" by checking the full string first,
+ * then each individual segment.
+ */
+function resolveAlias(partNumber: string): string {
+  const upper = partNumber.toUpperCase().trim();
+  // Check full string first
+  if (PART_ALIASES[upper]) return PART_ALIASES[upper];
+  // Check if it's a compound part (e.g. "TAP A / TAP G")
+  if (upper.includes('/')) {
+    const segments = upper.split('/').map(s => s.trim());
+    for (const seg of segments) {
+      if (PART_ALIASES[seg]) return PART_ALIASES[seg];
+    }
+    // Return the first segment if no alias found
+    return segments[0];
+  }
+  return partNumber;
+}
+
 export interface CourtroomMapping {
   part_number: string;
   room_number: string;
@@ -20,10 +47,12 @@ export async function mapPartToCourtroom(
   partNumber: string,
   buildingCode: '100' | '111'
 ): Promise<CourtroomMapping | null> {
-  logger.debug(`🔍 Mapping part "${partNumber}" to courtroom in building ${buildingCode}`);
+  // Resolve aliases (e.g. TAP G → TAP A)
+  const resolvedPart = resolveAlias(partNumber);
+  logger.debug(`🔍 Mapping part "${partNumber}"${resolvedPart !== partNumber ? ` (resolved → "${resolvedPart}")` : ''} to courtroom in building ${buildingCode}`);
 
   // Clean and normalize part number
-  const cleanPart = normalizePartNumber(partNumber);
+  const cleanPart = normalizePartNumber(resolvedPart);
   
   // Query courtrooms with building filter
   const { data: courtRooms, error } = await supabase
@@ -66,7 +95,7 @@ export async function mapPartToCourtroom(
   const matches = [
     ...findExactMatches(cleanPart, buildingFiltered),
     ...findPartialMatches(cleanPart, buildingFiltered),
-    ...findSpecialFormatMatches(partNumber, buildingFiltered),
+    ...findSpecialFormatMatches(resolvedPart, buildingFiltered),
   ];
 
   if (matches.length === 0) {
@@ -109,8 +138,8 @@ function findExactMatches(cleanPart: string, courtRooms: any[]): CourtroomMappin
       continue;
     }
     
-    // Exact match on room name
-    if (roomName.includes(`PART ${cleanPart}`) || roomName === `PART ${cleanPart}`) {
+    // Exact match on room name (e.g. "PART 41" or directly "IDV", "ATI")
+    if (roomName.includes(`PART ${cleanPart}`) || roomName === `PART ${cleanPart}` || roomName === cleanPart) {
       matches.push(createMapping(cr, 0.90));
     }
   }
@@ -120,22 +149,30 @@ function findExactMatches(cleanPart: string, courtRooms: any[]): CourtroomMappin
 
 /**
  * Find partial matches (medium confidence)
+ * Only for purely numeric parts (e.g. "32", "41").
+ * Alphanumeric parts like "1A" are skipped to prevent false matches
+ * (e.g. "1A" extracting "1" and matching "PART 41").
  */
 function findPartialMatches(cleanPart: string, courtRooms: any[]): CourtroomMapping[] {
   const matches: CourtroomMapping[] = [];
 
+  // Skip alphanumeric parts — only pure numbers get partial matching
+  if (/[A-Z]/i.test(cleanPart)) return matches;
+
   // Extract numeric part if exists
-  const numMatch = cleanPart.match(/(\d+)/);
+  const numMatch = cleanPart.match(/^(\d+)$/);
   if (!numMatch) return matches;
   
   const partNum = numMatch[1];
+  // Use word-boundary regex to avoid "1" matching inside "41", "51", etc.
+  const partNumRegex = new RegExp(`\\b${partNum}\\b`);
 
   for (const cr of courtRooms) {
     const courtroomNum = (cr.courtroom_number || '').toUpperCase();
     const roomName = (cr.rooms?.name || '').toUpperCase();
     
-    // Partial numeric match
-    if (courtroomNum.includes(partNum) || roomName.includes(partNum)) {
+    // Word-boundary numeric match
+    if (partNumRegex.test(courtroomNum) || partNumRegex.test(roomName)) {
       matches.push(createMapping(cr, 0.75));
     }
   }
@@ -184,6 +221,15 @@ function findSpecialFormatMatches(originalPart: string, courtRooms: any[]): Cour
           matches.push(createMapping(cr, 0.80));
           break;
         }
+      }
+    }
+
+    // Handle special part identifiers: ATI, IDV, JHO, MDC
+    // DB names may have suffixes like "JHO PART/66", "MDC-92"
+    const SPECIAL_PARTS = ['ATI', 'IDV', 'JHO', 'MDC'];
+    if (SPECIAL_PARTS.includes(upperPart)) {
+      if (roomName === upperPart || roomName.startsWith(`${upperPart} `) || roomName.startsWith(`${upperPart}-`)) {
+        matches.push(createMapping(cr, 0.90));
       }
     }
   }

@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertTriangle, CheckCircle, MapPin } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -105,104 +104,135 @@ export function PDFExtractionPreview({
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table — matches SessionsTable columns */}
       <ScrollArea className="h-[450px] rounded-md border">
         <table className="w-full text-xs">
           <thead className="sticky top-0 bg-muted/90 backdrop-blur z-10">
             <tr className="border-b">
-              <th className="w-8 px-2 py-2"></th>
-              <th className="px-2 py-2 text-left font-semibold">Part</th>
-              <th className="px-2 py-2 text-left font-semibold">Justice</th>
-              <th className="px-2 py-2 text-left font-semibold">Cal Day</th>
-              <th className="px-2 py-2 text-left font-semibold">Room</th>
-              <th className="px-2 py-2 text-left font-semibold">Cases</th>
-              <th className="px-2 py-2 text-left font-semibold">Status</th>
+              <th className="w-8 px-1 py-1.5"></th>
+              <th className="px-1.5 py-1.5 text-left font-bold whitespace-nowrap w-[110px]">Room/Part</th>
+              <th className="px-1.5 py-1.5 text-left font-bold whitespace-nowrap w-[52px]">Snd Pt</th>
+              <th className="px-1.5 py-1.5 text-left font-bold whitespace-nowrap min-w-[100px]">Defendant(s)</th>
+              <th className="px-1.5 py-1.5 text-left font-bold whitespace-nowrap w-[42px]">Purp</th>
+              <th className="px-1.5 py-1.5 text-left font-bold whitespace-nowrap w-[52px]">Date Tr</th>
+              <th className="px-1.5 py-1.5 text-left font-bold whitespace-nowrap min-w-[75px]">Top Charge</th>
+              <th className="px-1.5 py-1.5 text-left font-bold whitespace-nowrap min-w-[80px]">Status</th>
+              <th className="px-1.5 py-1.5 text-left font-bold whitespace-nowrap min-w-[80px]">Attorney</th>
+              <th className="px-1.5 py-1.5 text-left font-bold whitespace-nowrap w-[50px]">Est Fin</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody>
             {editedParts.map((part, index) => {
               const isSelected = selectedParts.has(index);
               const isMapped = part.mapping_status === 'found';
-              const topDefendants = part.cases.slice(0, 2).map(c => c.defendant).filter(Boolean);
+              const hasCases = part.cases.length > 0;
+              const statusTexts = part.cases.map(c => c.status).filter(Boolean);
 
               return (
-                <tr
-                  key={index}
-                  className={`hover:bg-muted/30 transition-colors ${isSelected ? 'bg-primary/5' : ''
-                    } ${!isMapped ? 'bg-amber-500/5' : ''}`}
-                >
-                  <td className="px-2 py-1.5 text-center">
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => handleToggle(index)}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <span className="font-bold text-primary">{part.part}</span>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Input
-                      value={part.judge}
-                      onChange={(e) => handleEditPart(index, 'judge', e.target.value)}
-                      className="h-7 text-xs px-1.5 w-36"
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Input
-                      value={part.calendar_day}
-                      onChange={(e) => handleEditPart(index, 'calendar_day', e.target.value)}
-                      className="h-7 text-xs px-1.5 w-20"
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {isMapped ? (
-                      <span className="text-green-600 dark:text-green-400 font-medium">
-                        {part.room_number || '✓ Mapped'}
-                      </span>
-                    ) : availableRooms.length > 0 ? (
-                      <Select
-                        onValueChange={(value) => {
-                          handleEditPart(index, 'courtroom_id', value);
-                          handleEditPart(index, 'mapping_status', 'found');
-                          const room = availableRooms.find(r => r.id === value);
-                          if (room) handleEditPart(index, 'room_number', room.room_number);
-                        }}
-                      >
-                        <SelectTrigger className="h-7 text-xs w-28">
-                          <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableRooms.map((room) => (
-                            <SelectItem key={room.id} value={room.id} className="text-xs">
-                              {room.room_number}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> ?
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="text-muted-foreground">
-                      <span className="font-medium text-foreground">{part.cases.length}</span>
-                      {topDefendants.length > 0 && (
-                        <span className="ml-1 text-[10px]">
-                          ({topDefendants.join(', ')}{part.cases.length > 2 ? '…' : ''})
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {isMapped ? (
-                      <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-                    ) : (
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                    )}
-                  </td>
-                </tr>
+                <Fragment key={index}>
+                  {/* Part header row */}
+                  <tr className={`border-t-2 border-border/60 ${isSelected ? 'bg-primary/5' : ''} ${!isMapped ? 'bg-amber-500/5' : ''}`}>
+                    <td className="px-1 py-1 text-center" rowSpan={hasCases ? part.cases.length + 1 : 1}>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => handleToggle(index)}
+                      />
+                    </td>
+                    <td className="px-1.5 py-1" colSpan={9}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Room number */}
+                        {isMapped ? (
+                          <span className="font-bold text-xs">{part.room_number}</span>
+                        ) : availableRooms.length > 0 ? (
+                          <Select
+                            onValueChange={(value) => {
+                              handleEditPart(index, 'courtroom_id', value);
+                              handleEditPart(index, 'mapping_status', 'found');
+                              const room = availableRooms.find(r => r.id === value);
+                              if (room) handleEditPart(index, 'room_number', room.room_number);
+                            }}
+                          >
+                            <SelectTrigger className="h-6 text-xs w-24 border-amber-400">
+                              <SelectValue placeholder="Room..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableRooms.map((room) => (
+                                <SelectItem key={room.id} value={room.id} className="text-xs">
+                                  {room.room_number} — {room.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1 text-xs">
+                            <MapPin className="h-3 w-3" /> No room
+                          </span>
+                        )}
+
+                        {/* Part identifier */}
+                        <span className="font-semibold text-blue-600 dark:text-blue-400 text-xs">{part.part}</span>
+
+                        {/* Unknown part asterisk */}
+                        {!isMapped && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-amber-400 text-amber-600">
+                            *
+                          </Badge>
+                        )}
+
+                        {/* Mapped checkmark */}
+                        {isMapped && <CheckCircle className="h-3 w-3 text-green-500" />}
+
+                        {/* Judge */}
+                        <span className="text-[10px] text-muted-foreground">{part.judge}</span>
+
+                        {/* Calendar day */}
+                        {part.calendar_day && (
+                          <span className="text-[9px] text-muted-foreground">Cal {part.calendar_day}</span>
+                        )}
+
+                        {/* Out dates */}
+                        {part.out_dates && part.out_dates.length > 0 && (
+                          <span className="text-[9px] font-medium text-red-600 dark:text-red-400">
+                            OUT {part.out_dates.join(', ')}
+                          </span>
+                        )}
+
+                        {/* Status summary from cases */}
+                        {statusTexts.length > 0 && !hasCases && (
+                          <span className="text-[10px] text-muted-foreground">{statusTexts[0]}</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Case rows — one per case, matching SessionsTable columns */}
+                  {part.cases.map((c, ci) => (
+                    <tr
+                      key={`${index}-${ci}`}
+                      className={`hover:bg-muted/20 ${isSelected ? 'bg-primary/[0.02]' : ''} ${!isMapped ? 'bg-amber-500/[0.02]' : ''}`}
+                    >
+                      {/* Snd Pt */}
+                      <td className="px-1.5 py-0.5 text-muted-foreground">{c.sending_part || '—'}</td>
+                      {/* Defendant(s) */}
+                      <td className="px-1.5 py-0.5">
+                        {c.defendant || '—'}
+                        {c.is_juvenile && <Badge variant="secondary" className="ml-1 text-[8px] px-1 py-0 h-3">J</Badge>}
+                      </td>
+                      {/* Purpose */}
+                      <td className="px-1.5 py-0.5 text-muted-foreground">{c.purpose || '—'}</td>
+                      {/* Date Transferred */}
+                      <td className="px-1.5 py-0.5 text-muted-foreground">{c.transfer_date || '—'}</td>
+                      {/* Top Charge */}
+                      <td className="px-1.5 py-0.5">{c.top_charge || '—'}</td>
+                      {/* Status */}
+                      <td className="px-1.5 py-0.5 text-muted-foreground">{c.status || '—'}</td>
+                      {/* Attorney */}
+                      <td className="px-1.5 py-0.5">{c.attorney || '—'}</td>
+                      {/* Est Finish */}
+                      <td className="px-1.5 py-0.5 text-muted-foreground">{c.estimated_final_date || '—'}</td>
+                    </tr>
+                  ))}
+                </Fragment>
               );
             })}
           </tbody>

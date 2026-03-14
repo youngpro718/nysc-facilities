@@ -22,6 +22,7 @@ import {
   Smartphone,
   Shield,
   Eye,
+  EyeOff,
   Clock,
   Globe,
   Palette,
@@ -42,7 +43,9 @@ import {
   Languages,
   Accessibility,
   Download,
-  RefreshCw
+  RefreshCw,
+  Bot,
+  Trash2
 } from 'lucide-react';
 import { MyRoomSection } from './MyRoomSection';
 
@@ -175,6 +178,7 @@ export function EnhancedUserSettings() {
         ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
         : settings.theme;
     setTheme(resolvedTheme);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isLoading,
     settings.theme,
@@ -182,8 +186,6 @@ export function EnhancedUserSettings() {
     settings.compact_mode,
     settings.motion_reduced,
     settings.high_contrast,
-    setTheme,
-    updateEnhancedTheme,
   ]);
 
   const loadSettings = async () => {
@@ -373,7 +375,7 @@ export function EnhancedUserSettings() {
         }}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
             <span className="hidden sm:inline">Notifications</span>
@@ -389,6 +391,10 @@ export function EnhancedUserSettings() {
           <TabsTrigger value="accessibility" className="flex items-center gap-2">
             <Accessibility className="h-4 w-4" />
             <span className="hidden sm:inline">Accessibility</span>
+          </TabsTrigger>
+          <TabsTrigger value="ai" className="flex items-center gap-2">
+            <Bot className="h-4 w-4" />
+            <span className="hidden sm:inline">AI</span>
           </TabsTrigger>
         </TabsList>
 
@@ -713,8 +719,184 @@ export function EnhancedUserSettings() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
+        {/* AI Tab */}
+        <TabsContent value="ai" className="space-y-6">
+          <AIApiKeyCard />
+        </TabsContent>
+
       </Tabs>
     </div>
+  );
+}
+
+type AIProvider = 'gemini' | 'openai' | 'anthropic';
+
+const PROVIDER_STORAGE_KEYS: Record<AIProvider, string> = {
+  gemini:    'gemini_api_key_override',
+  openai:    'openai_api_key_override',
+  anthropic: 'anthropic_api_key_override',
+};
+const PROVIDER_PREF_KEY = 'ai_provider_preference';
+
+const PROVIDER_INFO: Record<AIProvider, { label: string; placeholder: string; model: string; link: string }> = {
+  gemini:    { label: 'Google Gemini', placeholder: 'AIza...',    model: 'gemini-2.5-flash',       link: 'https://aistudio.google.com/app/apikey' },
+  openai:    { label: 'OpenAI',        placeholder: 'sk-...',     model: 'gpt-4o-mini',            link: 'https://platform.openai.com/api-keys' },
+  anthropic: { label: 'Anthropic',     placeholder: 'sk-ant-...', model: 'claude-3-5-haiku',       link: 'https://console.anthropic.com/settings/keys' },
+};
+
+const ALL_PROVIDERS: AIProvider[] = ['gemini', 'openai', 'anthropic'];
+
+function AIApiKeyCard() {
+  const { toast } = useToast();
+  const [keys, setKeys]       = React.useState<Record<AIProvider, string>>({ gemini: '', openai: '', anthropic: '' });
+  const [inputs, setInputs]   = React.useState<Record<AIProvider, string>>({ gemini: '', openai: '', anthropic: '' });
+  const [visible, setVisible] = React.useState<Record<AIProvider, boolean>>({ gemini: false, openai: false, anthropic: false });
+  const [pref, setPref]       = React.useState<AIProvider | 'auto'>('auto');
+
+  React.useEffect(() => {
+    const loaded = { gemini: '', openai: '', anthropic: '' } as Record<AIProvider, string>;
+    for (const p of ALL_PROVIDERS) loaded[p] = localStorage.getItem(PROVIDER_STORAGE_KEYS[p]) ?? '';
+    setKeys(loaded);
+    setInputs(loaded);
+    setPref((localStorage.getItem(PROVIDER_PREF_KEY) as AIProvider | 'auto') ?? 'auto');
+  }, []);
+
+  const handleSave = (p: AIProvider) => {
+    const trimmed = inputs[p].trim();
+    if (trimmed) {
+      localStorage.setItem(PROVIDER_STORAGE_KEYS[p], trimmed);
+    } else {
+      localStorage.removeItem(PROVIDER_STORAGE_KEYS[p]);
+    }
+    setKeys(k => ({ ...k, [p]: trimmed }));
+    toast({ title: trimmed ? `${PROVIDER_INFO[p].label} key saved` : `${PROVIDER_INFO[p].label} key cleared` });
+  };
+
+  const handleClear = (p: AIProvider) => {
+    localStorage.removeItem(PROVIDER_STORAGE_KEYS[p]);
+    setKeys(k => ({ ...k, [p]: '' }));
+    setInputs(i => ({ ...i, [p]: '' }));
+    toast({ title: `${PROVIDER_INFO[p].label} key cleared` });
+  };
+
+  const handlePrefChange = (value: string) => {
+    const v = value as AIProvider | 'auto';
+    setPref(v);
+    v === 'auto' ? localStorage.removeItem(PROVIDER_PREF_KEY) : localStorage.setItem(PROVIDER_PREF_KEY, v);
+  };
+
+  const mask = (k: string) =>
+    k.length > 10 ? k.slice(0, 6) + '•'.repeat(k.length - 10) + k.slice(-4) : '•'.repeat(k.length);
+
+  const activeProvider: AIProvider | null =
+    pref !== 'auto' && keys[pref]
+      ? pref
+      : ALL_PROVIDERS.find(p => keys[p]) ?? null;
+
+  const anyKeySet = ALL_PROVIDERS.some(p => keys[p]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bot className="h-5 w-5" />
+          AI Settings
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+
+        <div className="space-y-2">
+          <Label>Preferred Provider</Label>
+          <Select value={pref} onValueChange={handlePrefChange}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">Auto — use first available key</SelectItem>
+              {ALL_PROVIDERS.map(p => (
+                <SelectItem key={p} value={p}>{PROVIDER_INFO[p].label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            When set to Auto the first key you've saved below is used. Set explicitly to always prefer one provider.
+          </p>
+        </div>
+
+        <Separator />
+
+        {ALL_PROVIDERS.map(p => {
+          const info = PROVIDER_INFO[p];
+          const saved = keys[p];
+          const isActive = activeProvider === p;
+          return (
+            <div key={p} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="font-medium flex items-center gap-2">
+                  {info.label}
+                  {isActive && <Badge variant="secondary" className="text-xs">Active</Badge>}
+                </Label>
+                <span className="text-xs text-muted-foreground">{info.model}</span>
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    type={visible[p] ? 'text' : 'password'}
+                    placeholder={info.placeholder}
+                    value={inputs[p]}
+                    onChange={e => setInputs(i => ({ ...i, [p]: e.target.value }))}
+                    className="pr-10 font-mono text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVisible(v => ({ ...v, [p]: !v[p] }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {visible[p] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <Button onClick={() => handleSave(p)} variant="default" size="sm">Save</Button>
+                {saved && (
+                  <Button onClick={() => handleClear(p)} variant="ghost" size="sm">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {saved && (
+                <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  <span className="font-mono">{mask(saved)}</span>
+                </p>
+              )}
+            </div>
+          );
+        })}
+
+        <Separator />
+
+        {!anyKeySet && (
+          <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-muted-foreground">
+            <Bot className="h-4 w-4 shrink-0" />
+            <p className="text-sm">No custom key set — using shared server key (gemini-2.5-flash)</p>
+          </div>
+        )}
+
+        <div className="text-xs text-muted-foreground space-y-1">
+          <p>Get a free key:</p>
+          <ul className="pl-2 space-y-0.5">
+            {ALL_PROVIDERS.map(p => (
+              <li key={p}>
+                <a href={PROVIDER_INFO[p].link} target="_blank" rel="noreferrer" className="underline hover:text-foreground">
+                  {PROVIDER_INFO[p].label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1">Keys are stored only in your browser and are never sent to our servers.</p>
+        </div>
+
+      </CardContent>
+    </Card>
   );
 }

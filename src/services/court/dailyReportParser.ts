@@ -1,12 +1,18 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import type { ExtractedPart } from '@/components/court-operations/PDFExtractionPreview';
 import { logger } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 
 // Configure pdf.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.mjs',
   import.meta.url
 ).toString();
+
+
+// ─────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────
 
 interface TextItem {
   x: number;
@@ -19,67 +25,35 @@ interface ParsedRow {
   items: TextItem[];
 }
 
-export interface ColumnBounds {
-  SENDING_PART: { min: number; max: number };
-  DEFENDANT: { min: number; max: number };
-  PURPOSE: { min: number; max: number };
-  TRANSFER_DATE: { min: number; max: number };
-  TOP_CHARGE: { min: number; max: number };
-  STATUS: { min: number; max: number };
-  EST_FIN_DATE: { min: number; max: number };
-  ATTORNEYS: { min: number; max: number };
-}
+// ─────────────────────────────────────────────
+// PDF TEXT EXTRACTION (pdf.js)
+// ─────────────────────────────────────────────
 
-/**
- * Helper to get the full text of a row
- */
-function getRowText(row: ParsedRow): string {
-  return row.items.map(i => i.text).join(' ').trim();
-}
-
-/**
- * Filter items in a row by X bounds and join them
- */
-function extractField(row: ParsedRow, bounds: { min: number; max: number }): string {
-  return row.items
-    .filter(i => i.x >= bounds.min && i.x < bounds.max)
-    .map(i => i.text)
-    .join(' ')
-    .trim();
-}
-
-/**
- * Extract rows with their text items and precise X/Y coordinates using pdf.js
- */
-async function extractRowsFromPDF(file: File): Promise<{ rows: ParsedRow[], errorDetails?: string }> {
+async function extractRawTextFromPDF(file: File): Promise<{ text: string; errorDetails?: string }> {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const allRows: ParsedRow[] = [];
-    let totalItemsFound = 0;
 
     if (!pdf || typeof pdf.numPages !== 'number') {
-      return { rows: [], errorDetails: `PDF loaded but numPages is missing. PDF object: ${!!pdf}` };
+      return { text: '', errorDetails: 'PDF loaded but numPages is missing.' };
     }
+
+    const pageTexts: string[] = [];
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       const items = textContent.items as Array<{ str: string; transform: number[]; width: number }>;
 
-      totalItemsFound += items?.length || 0;
-
-      // Group text items by Y position to reconstruct rows
       const pageRows: ParsedRow[] = [];
 
       for (const item of items) {
         if (!item || typeof item.str !== 'string') continue;
-        if (item.str.trim() === '') continue; // Skip pure whitespace blocks
+        if (item.str.trim() === '') continue;
 
         const y = item.transform ? Math.round(item.transform[5]) : 0;
         const x = item.transform ? item.transform[4] : 0;
 
-        // Find an existing row within +/- 6 points tolerance (increased for scale-variant PDFs)
         let row = pageRows.find(r => Math.abs(r.y - y) <= 6);
         if (!row) {
           row = { y, items: [] };
@@ -88,361 +62,38 @@ async function extractRowsFromPDF(file: File): Promise<{ rows: ParsedRow[], erro
         row.items.push({ x, width: item.width || 0, text: item.str });
       }
 
-      // Sort rows top-to-bottom (Y descending usually in PDF, origin is bottom-left)
+      // Sort top-to-bottom, items left-to-right within each row
       pageRows.sort((a, b) => b.y - a.y);
-
-      // Sort items in each row left-to-right
       for (const row of pageRows) {
         row.items.sort((a, b) => a.x - b.x);
       }
 
-      allRows.push(...pageRows);
+      // Join each row with tab separators to preserve column hints for the AI
+      const pageText = pageRows
+        .map(row => row.items.map(i => i.text).join('\t'))
+        .join('\n');
+
+      pageTexts.push(`--- PAGE ${pageNum} ---\n${pageText}`);
     }
 
-    if (allRows.length === 0) {
-      return { rows: [], errorDetails: `Parsed ${pdf.numPages} pages. Total text items found: ${totalItemsFound}. However, 0 rows were constructed. (Maybe all items were whitespace?)` };
-    }
-
-    return { rows: allRows };
-  } catch (err: any) {
-    return { rows: [], errorDetails: `extractRowsFromPDF threw exception: ${err.message}` };
+    return { text: pageTexts.join('\n\n') };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { text: '', errorDetails: `extractRawTextFromPDF threw: ${msg}` };
   }
 }
 
-/**
- * Parse the report header to extract date and building info
- */
-function parseReportHeader(rows: ParsedRow[]): { reportDate: string; building: string } {
-  let reportDate = '';
-  let building = '';
-
-  for (let i = 0; i < Math.min(20, rows.length); i++) {
-    const text = getRowText(rows[i]);
-    const headerMatch = text.match(/(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})\s*AM\s*PM\s*REPORT\s*(\d{3})\s*CENTRE/i);
-    if (headerMatch) {
-      const [, dateStr, buildingCode] = headerMatch;
-      building = `${buildingCode} Centre Street`;
-
-      // Parse date
-      const parts = dateStr.split(/[-/]/);
-      if (parts.length === 3) {
-        const month = parts[0].padStart(2, '0');
-        const day = parts[1].padStart(2, '0');
-        let year = parts[2];
-        if (year.length === 2) year = `20${year}`;
-        reportDate = `${year}-${month}-${day}`;
-      }
-      break;
-    }
-  }
-
-  return { reportDate, building };
-}
+// ─────────────────────────────────────────────
+// MAIN EXPORT
+// ─────────────────────────────────────────────
 
 /**
- * Dynamically find the column X-coordinate boundaries based on the table header row.
- * Searches each keyword independently across all scanned rows so it works even when
- * pdf.js splits the header across multiple Y-positions (which is common).
- */
-function findColumnBounds(rows: ParsedRow[]): ColumnBounds {
-  // Default bounds based on a typical 111/100 Centre Street AM/PM report layout
-  const bounds: ColumnBounds = {
-    SENDING_PART: { min: 0, max: 80 },
-    DEFENDANT: { min: 80, max: 250 },
-    PURPOSE: { min: 250, max: 300 },
-    TRANSFER_DATE: { min: 300, max: 370 },
-    TOP_CHARGE: { min: 370, max: 480 },
-    STATUS: { min: 480, max: 660 },
-    EST_FIN_DATE: { min: 660, max: 740 },
-    ATTORNEYS: { min: 740, max: 2000 }
-  };
-
-  // Scan the first 150 rows for each column header INDEPENDENTLY.
-  // This handles PDFs where pdf.js splits the header across multiple Y-positions.
-  const scanRows = rows.slice(0, 150);
-
-  let defItem: TextItem | undefined;
-  let purpItem: TextItem | undefined;
-  let dateItem: TextItem | undefined;
-  let chargeItem: TextItem | undefined;
-  let statusItem: TextItem | undefined;
-  let estItem: TextItem | undefined;
-  let attyItem: TextItem | undefined;
-
-  for (const row of scanRows) {
-    const text = getRowText(row);
-    if (/AM\s*PM\s*REPORT/i.test(text)) continue;
-    if (/Date\s*Printed/i.test(text)) continue;
-    if (/Page\s*\d+/i.test(text)) continue;
-
-    for (const item of row.items) {
-      const t = item.text.trim();
-      if (!defItem && /^Defendant$/i.test(t)) defItem = item;
-      if (!purpItem && /^(P\s*U\s*R\s*P|PURP|Purpose)$/i.test(t)) purpItem = item;
-      if (!dateItem && /^(Trans|Transfer)$/i.test(t)) dateItem = item;
-      if (!chargeItem && /^(Charge|Top)$/i.test(t)) chargeItem = item;
-      if (!statusItem && /^STATUS$/i.test(t)) statusItem = item;
-      if (!estItem && /^EST$/i.test(t)) estItem = item;
-      if (!attyItem && /^(Attorneys?|Atts?)$/i.test(t)) attyItem = item;
-    }
-  }
-
-  const foundAny = defItem || purpItem || dateItem || chargeItem || statusItem || estItem || attyItem;
-  if (!foundAny) {
-    logger.warn('⚠️ Column header detection failed — using default X bounds. PDF layout may be non-standard.');
-    return bounds;
-  }
-
-  logger.debug('Found column header items at X:', {
-    defendant: defItem?.x, purpose: purpItem?.x, transferDate: dateItem?.x,
-    charge: chargeItem?.x, status: statusItem?.x, est: estItem?.x, attorneys: attyItem?.x,
-  });
-
-  if (defItem) {
-    const mid = defItem.x - 5;
-    bounds.SENDING_PART.max = mid;
-    bounds.DEFENDANT.min = mid;
-  }
-  if (purpItem && defItem) {
-    const mid = purpItem.x - 5;
-    bounds.DEFENDANT.max = mid;
-    bounds.PURPOSE.min = mid;
-  }
-  if (dateItem && purpItem) {
-    const mid = dateItem.x - 5;
-    bounds.PURPOSE.max = mid;
-    bounds.TRANSFER_DATE.min = mid;
-  }
-  if (chargeItem && dateItem) {
-    const mid = chargeItem.x - 5;
-    bounds.TRANSFER_DATE.max = mid;
-    bounds.TOP_CHARGE.min = mid;
-  }
-  if (statusItem && chargeItem) {
-    const mid = statusItem.x - 5;
-    bounds.TOP_CHARGE.max = mid;
-    bounds.STATUS.min = mid;
-  }
-  if (estItem && statusItem) {
-    const mid = estItem.x - 5;
-    bounds.STATUS.max = mid;
-    bounds.EST_FIN_DATE.min = mid;
-  }
-  if (attyItem && estItem) {
-    const mid = attyItem.x - 5;
-    bounds.EST_FIN_DATE.max = mid;
-    bounds.ATTORNEYS.min = mid;
-  }
-
-  logger.debug('Mapped Bounds:', bounds);
-  return bounds;
-}
-
-/**
- * Split rows into part blocks. Each block corresponds to a room/judge group.
- * Handles both numeric parts (1, 23, 41) and alphanumeric parts (TAP A, 1A, ATI/21).
- */
-function splitIntoPartBlocks(rows: ParsedRow[]): ParsedRow[][] {
-  const blocks: ParsedRow[][] = [];
-  let currentBlock: ParsedRow[] = [];
-
-  // Matches numeric parts: "23 WARD", "1 QUART"
-  const numericPartPattern = /^\d{1,3}[A-Z]?\s+[A-Z]{2,}/;
-  // Matches alphanumeric parts: "TAP A LOZANO", "TAP B PARK", "ATI BIBEN", "ATI/21 BIBEN", "1A MORALES"
-  const alphaPartPattern = /^(?:TAP\s+[A-Z](?:\s*\/\s*TAP\s+[A-Z])?|ATI(?:\/\d+)?|\d+[A-Z])\s+[A-Z]{2,}/i;
-
-  const isPartStart = (text: string) =>
-    numericPartPattern.test(text) || alphaPartPattern.test(text);
-
-  for (const row of rows) {
-    const text = getRowText(row);
-
-    // Skip headers and footers
-    if (/AM\s*PM\s*REPORT/i.test(text)) continue;
-    if (text.includes('Defendant') && text.includes('Charge')) continue;
-    if (/^(?:PART\/JUDGE|PART\s+SENT|Sending\s*Part)/i.test(text)) continue;
-    if (/Date\s*Printed/i.test(text)) continue;
-    if (/Page\s*\d+\s*of/i.test(text)) continue;
-    if (/^(?:DEFENDANT|PURPOSE|TOP\s+CHARGE|STATUS|ATTORNEYS|EST\.)/i.test(text)) continue;
-
-    if (isPartStart(text) && currentBlock.length > 0) {
-      blocks.push(currentBlock);
-      currentBlock = [row];
-    } else {
-      currentBlock.push(row);
-    }
-  }
-
-  if (currentBlock.length > 0) {
-    blocks.push(currentBlock);
-  }
-
-  return blocks;
-}
-
-
-/**
- * Parse a single part block extracting cases using strict coordinate bounds.
- * Judge name is extracted ONLY from the leftmost column (x < DEFENDANT min)
- * to prevent status/defendant text from bleeding into the judge field.
- */
-function parsePartBlock(rows: ParsedRow[], bounds: ColumnBounds): ExtractedPart | null {
-  if (rows.length === 0) return null;
-
-  const firstRow = rows[0];
-  const firstLine = getRowText(firstRow);
-
-  // Only consider items in the leftmost column (the PART/JUDGE column)
-  // to build the part+judge string, ignoring any case data on the same row
-  const partColItems = firstRow.items
-    .filter(i => i.x < bounds.DEFENDANT.min)
-    .sort((a, b) => a.x - b.x)
-    .map(i => i.text)
-    .join(' ');
-
-  const headerText = partColItems || firstLine;
-
-  // Match both numeric ("23 WARD") and alphanumeric ("TAP A LOZANO", "1A MORALES") part IDs
-  const partMatch =
-    headerText.match(/^(TAP\s+[A-Z](?:\s*\/\s*TAP\s+[A-Z])?|ATI(?:\/\d+)?|\d+[A-Z]?|\d{1,3})\s+([A-Z][A-Z\s&.-]+)/i);
-  if (!partMatch) return null;
-
-  const partNumber = partMatch[1].trim();
-  // Trim judge name to remove any trailing status words that may have slipped in
-  const judgeName = partMatch[2]
-    .trim()
-    .replace(/\s+(OUT|CONF|AVAILABLE|CALENDAR|JUDGE).*$/i, '')
-    .trim();
-
-  // Extract calendar day from entire block text
-  const fullText = rows.map(getRowText).join(' ');
-  let calendarDay = '';
-  const calDayMatch = fullText.match(/Cal\s*(Mon|Tues|Wed|Thurs|Fri)/i);
-  if (calDayMatch) {
-    calendarDay = `Cal ${calDayMatch[1]}`;
-  }
-
-  // Extract OUT dates
-  const outDates: string[] = [];
-  const outMatch = fullText.match(/OUT\s+([\d/\-;,\s]+)/i);
-  if (outMatch) {
-    const dateStr = outMatch[1].trim();
-    // Stop at any known unrelated word
-    const cleanDateStr = dateStr.replace(/(Cal|AVAILABLE|CONF|CHAMBERS).*$/i, '').trim();
-    const dates = cleanDateStr.split(/[;,]\s*/).map((d) => d.trim()).filter(Boolean);
-    outDates.push(...dates);
-  }
-
-  // Check for block-level statuses
-  const isAvailable = /AVAILABLE/i.test(fullText);
-  const isConf = /\bCONF\b/i.test(fullText) && !/CONF\s/i.test(firstLine);
-  const isChambers = /CHAMBERS/i.test(fullText);
-  const sittingMatch = fullText.match(/SITTING\s+IN\s+PT\s*(\d+)/i);
-
-  // Extract cases
-  const cases: ExtractedPart['cases'] = [];
-
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const lineText = getRowText(row);
-
-    // Skip the part header line
-    if (i === 0 && /^(\d{1,3})\s+[A-Z]{2,}/.test(lineText)) continue;
-
-    // Skip lines that are just "OUT ..." or "Cal Thurs"
-    if (/^OUT\s/i.test(lineText)) continue;
-    if (/^Cal\s*(Mon|Tues|Wed|Thurs|Fri)/i.test(lineText)) continue;
-
-    // Use absolute column bounds to extract data
-    const sendingPart = extractField(row, bounds.SENDING_PART);
-    const defendant = extractField(row, bounds.DEFENDANT);
-    const purpose = extractField(row, bounds.PURPOSE);
-    const transferDate = extractField(row, bounds.TRANSFER_DATE);
-    const topChargeLine = extractField(row, bounds.TOP_CHARGE);
-    const statusLine = extractField(row, bounds.STATUS);
-    const estFinDate = extractField(row, bounds.EST_FIN_DATE);
-    const attorneys = extractField(row, bounds.ATTORNEYS);
-
-    // We consider it a "case row" if it has at least a defendant, charge, purpose, or explicit status
-    const hasData = defendant || topChargeLine || purpose || sendingPart;
-
-    if (hasData) {
-      // Clean up extracted fields
-
-      // Top charge might be split or contain indictment numbers
-      let topCharge = topChargeLine;
-      const indMatch = defendant.match(/IND[-\s]?(\d{4,6}[-/]\d{2})/i) || topChargeLine.match(/IND[-\s]?(\d{4,6}[-/]\d{2})/i);
-
-      // Clean up defendant name
-      let cleanDefendant = defendant;
-      if (indMatch && cleanDefendant.includes(indMatch[0])) {
-        cleanDefendant = cleanDefendant.replace(indMatch[0], '').trim();
-      }
-
-      const isJuvenile = /\(J\)\*/.test(lineText) || /\(J\)\*/.test(cleanDefendant);
-      cleanDefendant = cleanDefendant.replace(/\(J\)\*/, '').trim();
-
-      cases.push({
-        sending_part: sendingPart,
-        defendant: cleanDefendant,
-        purpose: purpose.toUpperCase(),
-        transfer_date: transferDate,
-        top_charge: topCharge,
-        status: statusLine,
-        calendar_date: '',
-        case_count: 0,
-        attorney: attorneys,
-        estimated_final_date: estFinDate,
-        is_juvenile: isJuvenile,
-      });
-    } else if (statusLine && cases.length > 0) {
-      // If it's just an overflow status line (like a calendar count under the main status), append it to previous case
-      const prevCase = cases[cases.length - 1];
-      prevCase.status = prevCase.status ? `${prevCase.status}; ${statusLine}` : statusLine;
-    }
-  }
-
-  // If no cases were parsed but we have block-level status info, create a placeholder case
-  if (cases.length === 0) {
-    const statusParts: string[] = [];
-    if (isAvailable) statusParts.push('AVAILABLE');
-    if (isConf) statusParts.push('CONF');
-    if (isChambers) statusParts.push('CHAMBERS');
-    if (sittingMatch) statusParts.push(`SITTING IN PT ${sittingMatch[1]}`);
-
-    // Extract any calendar counts from the full text
-    const calendarMatches = fullText.match(/CALENDAR\s*(?:\d{1,2}\/\d{1,2}\s*)?\(\d+\)/gi);
-    if (calendarMatches) statusParts.push(...calendarMatches);
-
-    if (statusParts.length > 0) {
-      cases.push({
-        sending_part: '',
-        defendant: '',
-        purpose: '',
-        transfer_date: '',
-        top_charge: '',
-        status: statusParts.join('; '),
-        calendar_date: '',
-        case_count: 0,
-        attorney: '',
-        estimated_final_date: '',
-        is_juvenile: false,
-      });
-    }
-  }
-
-  return {
-    part: partNumber,
-    judge: judgeName,
-    calendar_day: calendarDay,
-    out_dates: outDates,
-    confidence: cases.some((c) => c.defendant || c.top_charge || c.purpose) ? 0.95 : 0.8,
-    cases,
-  };
-}
-
-/**
- * Parse a daily court report PDF file entirely client-side using coordinate mapping.
+ * Parse a daily court report PDF using Gemini AI via the extract-court-data edge function.
+ *
+ * Flow:
+ * 1. pdf.js extracts raw text preserving layout hints via tab separators
+ * 2. Supabase edge function sends text to Gemini (GEMINI_API_KEY stored in Supabase secrets)
+ * 3. Gemini returns structured JSON shaped as ExtractedPart[]
  */
 export async function parseDailyReportPDF(file: File): Promise<{
   success: boolean;
@@ -455,54 +106,69 @@ export async function parseDailyReportPDF(file: File): Promise<{
   error?: string;
 }> {
   try {
-    logger.debug('📄 Starting coordinated-based PDF extraction...');
+    logger.debug('📄 Extracting raw text from PDF...');
 
-    // Step 1: Extract rows with precise X, Y coordinates
-    const { rows, errorDetails } = await extractRowsFromPDF(file);
+    const { text, errorDetails } = await extractRawTextFromPDF(file);
 
-    if (rows.length === 0) {
+    if (!text || text.trim().length === 0) {
       return {
         success: false,
-        error: `Could not extract text from the PDF. Diagnostic info: ${errorDetails || 'Unknown error'}`,
+        error: `Could not extract text from the PDF. ${errorDetails ?? ''}`,
       };
     }
 
-    logger.debug(`📝 Extracted ${rows.length} rows`);
+    logger.debug(`📝 Extracted ${text.length} characters — sending to Gemini via edge function...`);
 
-    // Step 2: Parse header & Dynamically detect column boundaries
-    const { reportDate, building } = parseReportHeader(rows);
-    logger.debug(`📅 Report date: ${reportDate}, Building: ${building}`);
+    const geminiKey    = localStorage.getItem('gemini_api_key_override')    || undefined;
+    const openaiKey    = localStorage.getItem('openai_api_key_override')    || undefined;
+    const anthropicKey = localStorage.getItem('anthropic_api_key_override') || undefined;
+    const providerPref = localStorage.getItem('ai_provider_preference')     || undefined;
 
-    const bounds = findColumnBounds(rows);
+    const { data, error } = await supabase.functions.invoke('extract-court-data', {
+      body: {
+        pdfText: text,
+        fileName: file.name,
+        ...(geminiKey    ? { geminiApiKey:    geminiKey    } : {}),
+        ...(openaiKey    ? { openaiApiKey:    openaiKey    } : {}),
+        ...(anthropicKey ? { anthropicApiKey: anthropicKey } : {}),
+        ...(providerPref ? { preferredProvider: providerPref } : {}),
+      },
+    });
 
-    // Step 3: Split into part blocks and parse each
-    const blocks = splitIntoPartBlocks(rows);
-    logger.debug(`📊 Found ${blocks.length} potential part blocks`);
-
-    const entries: ExtractedPart[] = [];
-    for (const block of blocks) {
-      const parsed = parsePartBlock(block, bounds);
-      if (parsed && (parsed.cases.length > 0 || parsed.out_dates.length > 0)) {
-        entries.push(parsed);
-      }
-    }
-
-    if (entries.length === 0) {
+    if (error) {
+      logger.error('Edge function error:', error);
       return {
         success: false,
-        error: 'No court parts could be extracted from the document. Please check the file format.',
+        error: `extract-court-data failed: ${error.message}`,
       };
     }
 
-    logger.debug(`✅ Successfully parsed ${entries.length} parts inside precision mapped columns`);
+    if (!data?.success || !data?.extracted_data) {
+      logger.error('Edge function returned failure:', data);
+      return {
+        success: false,
+        error: data?.error ?? 'Edge function returned no data.',
+      };
+    }
+
+    const { report_date, building, report_type, entries } = data.extracted_data;
+
+    logger.debug(`✅ Gemini returned ${entries?.length ?? 0} parts`);
+
+    if (!entries || entries.length === 0) {
+      return {
+        success: false,
+        error: 'No court parts could be extracted from the document.',
+      };
+    }
 
     return {
       success: true,
       extracted_data: {
-        report_date: reportDate,
-        building: building,
-        report_type: 'AM PM REPORT',
-        entries,
+        report_date: report_date ?? '',
+        building: building || '100 Centre Street',
+        report_type: report_type ?? 'AM PM REPORT',
+        entries: entries as ExtractedPart[],
       },
     };
   } catch (error) {

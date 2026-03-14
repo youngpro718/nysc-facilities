@@ -22,7 +22,6 @@ import { SessionConflictBanner } from './SessionConflictBanner';
 import { CreateSessionDialog } from './CreateSessionDialog';
 import { UploadDailyReportDialog } from './UploadDailyReportDialog';
 import { QuickSessionEntry } from './QuickSessionEntry';
-import { ExtractedDataReview } from './ExtractedDataReview';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useCourtSessions, useCopyYesterdaySessions } from '@/hooks/useCourtSessions';
@@ -44,8 +43,6 @@ export function DailySessionsPanel() {
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showReviewDialog, setShowReviewDialog] = useState(false);
-  const [extractedData, setExtractedData] = useState<any[]>([]);
 
   const { data: sessions, isLoading: sessionsLoading } = useCourtSessions(
     selectedDate,
@@ -395,21 +392,9 @@ export function DailySessionsPanel() {
         onOpenChange={setShowUploadDialog}
         buildingCode={selectedBuilding}
         onDataExtracted={(data) => {
-          setExtractedData(data);
-          setShowReviewDialog(true);
-        }}
-      />
-
-      <ExtractedDataReview
-        open={showReviewDialog}
-        onOpenChange={setShowReviewDialog}
-        data={extractedData}
-        date={selectedDate}
-        period={selectedPeriod}
-        buildingCode={selectedBuilding}
-        onApprove={(approvedData) => {
           bulkCreateSessions.mutate({
-            sessions: approvedData,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            sessions: data as any[],
             date: selectedDate,
             period: selectedPeriod,
             buildingCode: selectedBuilding,

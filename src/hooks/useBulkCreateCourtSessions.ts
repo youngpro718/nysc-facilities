@@ -4,21 +4,43 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
+/**
+ * Convert a short PDF date (e.g. "2/23", "3/16", "3/16H") to YYYY-MM-DD
+ * using the session year as context. Returns null if the input is not a valid short date.
+ */
+function toFullDate(shortDate: string | null | undefined, sessionYear: number): string | null {
+  if (!shortDate) return null;
+  // Strip trailing letters like "H" (half-day indicator)
+  const cleaned = shortDate.replace(/[A-Za-z]+$/, '').trim();
+  const match = cleaned.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (!match) return null;
+  const month = match[1].padStart(2, '0');
+  const day = match[2].padStart(2, '0');
+  return `${sessionYear}-${month}-${day}`;
+}
+
 interface ExtractedSession {
   part_number: string;
   judge_name: string;
   calendar_day?: string;
   clerk_name?: string;
-  room_number: string;
+  room_number?: string;
+  court_room_id?: string;
   sergeant_name?: string;
   defendants?: string;
+  parts_entered_by?: string;
   purpose?: string;
+  date_transferred_or_started?: string | null;
   top_charge?: string;
   status?: string;
+  status_detail?: string | null;
   attorney?: string;
-  estimated_finish_date?: string;
+  estimated_finish_date?: string | null;
   extension?: string;
   papers?: string;
+  out_dates?: string[];
+  calendar_count?: number | null;
+  calendar_count_date?: string | null;
 }
 
 interface BulkCreateParams {
@@ -50,6 +72,7 @@ export function useBulkCreateCourtSessions() {
 
       const roomMap = new Map(courtRooms?.map(r => [r.room_number, r.id]) || []);
       const dateStr = format(date, 'yyyy-MM-dd');
+      const sessionYear = date.getFullYear();
 
       // Check for existing sessions to avoid duplicates
       const { data: existingSessions } = await supabase
@@ -67,10 +90,10 @@ export function useBulkCreateCourtSessions() {
       const skipped = [];
 
       for (const session of sessions) {
-        const courtRoomId = roomMap.get(session.room_number);
+        const courtRoomId = session.court_room_id || roomMap.get(session.room_number ?? '');
         
         if (!courtRoomId) {
-          skipped.push({ session, reason: `Room ${session.room_number} not found` });
+          skipped.push({ session, reason: `Room ${session.room_number || '(unknown)'} not found` });
           continue;
         }
 
@@ -97,13 +120,19 @@ export function useBulkCreateCourtSessions() {
           clerk_names: session.clerk_name ? [session.clerk_name] : null,
           sergeant_name: session.sergeant_name || null,
           defendants: session.defendants || null,
+          parts_entered_by: session.parts_entered_by || null,
           purpose: session.purpose || null,
+          date_transferred_or_started: toFullDate(session.date_transferred_or_started, sessionYear),
           top_charge: session.top_charge || null,
+          status: 'CALENDAR',
+          status_detail: session.status_detail || null,
           attorney: session.attorney || null,
-          estimated_finish_date: session.estimated_finish_date || null,
+          estimated_finish_date: toFullDate(session.estimated_finish_date, sessionYear),
           extension: session.extension || null,
           papers: session.papers || null,
-          status: 'scheduled',
+          out_dates: session.out_dates?.length ? session.out_dates : null,
+          calendar_count: session.calendar_count ?? null,
+          calendar_count_date: toFullDate(session.calendar_count_date, sessionYear),
           created_by: user.id,
         });
       }

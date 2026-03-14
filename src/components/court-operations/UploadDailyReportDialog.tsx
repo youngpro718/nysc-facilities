@@ -12,65 +12,6 @@ import { batchMapPartsToCourtrooms } from '@/services/court/courtroomMappingServ
 import { PDFExtractionPreview, type ExtractedPart } from './PDFExtractionPreview';
 import { validateBatch, getValidationSummary } from '@/services/court/sessionValidation';
 import { parseDailyReportPDF } from '@/services/court/dailyReportParser';
-import * as pdfjsLib from 'pdfjs-dist';
-
-/**
- * Extract text from a PDF with column-position awareness.
- * Groups items by Y position into rows, then within each row sorts items by X
- * and inserts TAB characters when there is a significant horizontal gap between
- * items (indicating a new column). This preserves the table structure so the AI
- * can correctly identify PART/JUDGE vs DEFENDANT vs STATUS etc.
- */
-async function extractPdfText(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const pages: string[] = [];
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const items = content.items as Array<{ str: string; transform: number[]; width: number }>;
-
-    // Group items into rows by Y position (6-point tolerance)
-    const rowMap = new Map<number, Array<{ x: number; str: string; width: number }>>();
-    for (const item of items) {
-      if (!item.str.trim()) continue;
-      const y = Math.round(item.transform[5]);
-      const bucket = Math.round(y / 6) * 6;
-      if (!rowMap.has(bucket)) rowMap.set(bucket, []);
-      rowMap.get(bucket)!.push({ x: item.transform[4], str: item.str, width: item.width || 0 });
-    }
-
-    // Sort rows top-to-bottom (descending Y = top of page first)
-    const sortedRows = [...rowMap.entries()].sort((a, b) => b[0] - a[0]);
-
-    const pageLines: string[] = [];
-    for (const [, rowItems] of sortedRows) {
-      // Sort items left-to-right within the row
-      rowItems.sort((a, b) => a.x - b.x);
-
-      // Merge items into a tab-delimited string:
-      // Insert a TAB when the gap between end of last item and start of next item
-      // is more than 15 points (a meaningful column gap in these reports)
-      let line = '';
-      let prevEnd = -Infinity;
-      for (const item of rowItems) {
-        const gap = item.x - prevEnd;
-        if (line === '') {
-          line = item.str;
-        } else if (gap > 15) {
-          line += '\t' + item.str;
-        } else {
-          line += ' ' + item.str;
-        }
-        prevEnd = item.x + item.width;
-      }
-      pageLines.push(line);
-    }
-    pages.push(pageLines.join('\n'));
-  }
-  return pages.join('\n\n--- PAGE BREAK ---\n\n');
-}
 
 interface UploadDailyReportDialogProps {
   open: boolean;
@@ -127,34 +68,14 @@ export function UploadDailyReportDialog({
     setExtractionStatus('uploading');
 
     try {
-      // Step 1: Send PDF to AI-powered edge function
+      // Step 1: Parse PDF locally using coordinate-based extraction
       setExtractionStatus('extracting');
-      toast.info('Analyzing document with AI...');
+      toast.info('Analyzing document...');
 
-      const pdfText = await extractPdfText(file);
+      const result = await parseDailyReportPDF(file);
 
-      let result: { success: boolean; extracted_data?: any; error?: string } | null = null;
-
-      const { data: parseResult, error: fnError } = await supabase.functions.invoke('extract-court-data', {
-        body: { pdfText, fileName: file.name },
-      });
-
-      if (fnError || !parseResult?.extracted_data) {
-        // Fallback to local parser if edge function fails
-        const edgeFnError = fnError?.message || parseResult?.error || 'unknown edge function error';
-        logger.warn('Edge function failed, falling back to local parser:', { error: edgeFnError, responseKeys: parseResult ? Object.keys(parseResult) : null });
-        toast.info('AI extraction unavailable, using local parser...');
-        const localResult = await parseDailyReportPDF(file);
-        if (!localResult.success || !localResult.extracted_data) {
-          throw new Error(localResult.error || 'Failed to process the document.');
-        }
-        result = localResult;
-      } else {
-        result = parseResult;
-      }
-
-      if (!result?.extracted_data) {
-        throw new Error(result?.error || 'Failed to process the document. Please check the file format and try again.');
+      if (!result.success || !result.extracted_data) {
+        throw new Error(result.error || 'Failed to process the document. Please check the file format and try again.');
       }
 
       logger.debug('✅ Extraction successful:', result);
@@ -269,24 +190,38 @@ export function UploadDailyReportDialog({
   const handleAcceptParts = async (selectedParts: ExtractedPart[]) => {
     logger.debug(`📥 Importing ${selectedParts.length} selected parts...`);
     
-    // Transform to session format for onDataExtracted callback
-    const sessions = selectedParts.map(part => ({
-      part_number: part.part,
-      judge_name: part.judge,
-      calendar_day: part.calendar_day,
-      court_room_id: part.courtroom_id,
-      room_number: part.room_number,
-      cases: part.cases,
-      case_count: part.cases.length,
-      // Aggregate case data
-      defendants: part.cases.map(c => c.defendant).filter(Boolean).join('; '),
-      sending_part: [...new Set(part.cases.map(c => c.sending_part).filter(Boolean))].join('; '),
-      purpose: [...new Set(part.cases.map(c => c.purpose).filter(Boolean))].join('; '),
-      top_charge: part.cases.map(c => c.top_charge).filter(Boolean).join('; '),
-      attorney: [...new Set(part.cases.map(c => c.attorney).filter(Boolean))].join('; '),
-      status: [...new Set(part.cases.map(c => c.status).filter(Boolean))].join('; '),
-      confidence: part.confidence,
-    }));
+    // Transform to session format matching court_sessions DB columns
+    const sessions = selectedParts.map(part => {
+      // Parse calendar count from status text like "CALENDAR (22)" or "CALENDAR 3/2 (31)"
+      const allStatuses = part.cases.map(c => c.status).filter(Boolean).join('; ');
+      let calendarCount: number | null = null;
+      let calendarCountDate: string | null = null;
+      const calMatch = allStatuses.match(/CALENDAR\s+(\d{1,2}\/\d{1,2})?\s*\((\d+)\)/i);
+      if (calMatch) {
+        if (calMatch[1]) calendarCountDate = calMatch[1];
+        calendarCount = parseInt(calMatch[2], 10);
+      }
+
+      return {
+        part_number: part.part,
+        judge_name: part.judge,
+        calendar_day: part.calendar_day,
+        court_room_id: part.courtroom_id,
+        room_number: part.room_number,
+        out_dates: part.out_dates || [],
+        // Aggregate case data → court_sessions columns
+        defendants: part.cases.map(c => c.defendant).filter(Boolean).join('; '),
+        parts_entered_by: [...new Set(part.cases.map(c => c.sending_part).filter(Boolean))].join('; '),
+        purpose: [...new Set(part.cases.map(c => c.purpose).filter(Boolean))].join('; '),
+        date_transferred_or_started: part.cases.map(c => c.transfer_date).filter(Boolean)[0] || null,
+        top_charge: part.cases.map(c => c.top_charge).filter(Boolean).join('; '),
+        attorney: [...new Set(part.cases.map(c => c.attorney).filter(Boolean))].join('; '),
+        estimated_finish_date: part.cases.map(c => c.estimated_final_date).filter(Boolean)[0] || null,
+        status_detail: allStatuses || null,
+        calendar_count: calendarCount,
+        calendar_count_date: calendarCountDate,
+      };
+    });
 
     setExtractionStatus('success');
     toast.success(`Importing ${sessions.length} court sessions`);
