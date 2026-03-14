@@ -98,12 +98,12 @@ export function UploadDailyReportDialog({
       setExtractionStatus('extracting');
       toast.info('Analyzing document with AI...');
 
-      const pdfBase64 = await fileToBase64(file);
+      const pdfText = await extractPdfText(file);
 
       let result: { success: boolean; extracted_data?: any; error?: string } | null = null;
 
       const { data: parseResult, error: fnError } = await supabase.functions.invoke('parse-pdf', {
-        body: { pdfBase64, fileName: file.name },
+        body: { pdfText, fileName: file.name },
       });
 
       if (fnError || !parseResult?.extracted_data) {
