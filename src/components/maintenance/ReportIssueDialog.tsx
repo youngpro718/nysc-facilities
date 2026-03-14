@@ -260,7 +260,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
         room_id: data.room_id || null,
         floor_id: data.floor_id || null,
         building_id: data.building_id || null,
-        assigned_to: data.assigned_to || null,
+        assigned_to: (data.assigned_to && data.assigned_to !== "unassigned") ? data.assigned_to : null,
         reported_by: user?.id || null,
         photos: selectedPhotos.length > 0 ? selectedPhotos : null,
       });
@@ -656,7 +656,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Unassigned</SelectItem>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
                           {staffList.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               {[s.first_name, s.last_name].filter(Boolean).join(" ") || s.email || s.id}
