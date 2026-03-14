@@ -102,7 +102,7 @@ export function UploadDailyReportDialog({
 
       let result: { success: boolean; extracted_data?: any; error?: string } | null = null;
 
-      const { data: parseResult, error: fnError } = await supabase.functions.invoke('parse-pdf', {
+      const { data: parseResult, error: fnError } = await supabase.functions.invoke('extract-court-data', {
         body: { pdfText, fileName: file.name },
       });
 
