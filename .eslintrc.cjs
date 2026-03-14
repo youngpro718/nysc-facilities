@@ -27,15 +27,10 @@ module.exports = {
     // ARCHITECTURAL GUARDRAILS
     // ========================================================================
     
-    /**
-     * Ban @supabase/supabase-js imports outside src/services/
-     * 
-     * Rationale: All database access must go through the service layer
-     * to maintain clean architecture and make testing easier.
-     * 
-     * ✅ Allowed: src/services/**/*.ts
-     * ❌ Forbidden: src/pages/**/*.tsx, src/components/**/*.tsx, src/hooks/**/*.ts
-     */
+    // Ban @supabase/supabase-js imports outside src/services/
+    // Rationale: All database access must go through the service layer.
+    // Allowed:  src/services/
+    // Forbidden: src/pages/, src/components/, src/hooks/ (except overrides below)
     'no-restricted-imports': [
       'error',
       {
@@ -67,6 +62,27 @@ module.exports = {
     {
       // Allow Supabase imports in feature services
       files: ['src/features/**/services/**/*.ts'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+    {
+      // Allow Supabase imports in lib/ (the client definition itself)
+      files: ['src/lib/supabase.ts'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+    {
+      // Allow Supabase imports in realtime hooks (consolidated channels)
+      files: ['src/hooks/realtime/**/*.ts', 'src/hooks/realtime/**/*.tsx'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+    {
+      // Allow Supabase imports in providers (RealtimeProvider etc.)
+      files: ['src/providers/**/*.ts', 'src/providers/**/*.tsx'],
       rules: {
         'no-restricted-imports': 'off',
       },

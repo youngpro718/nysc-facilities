@@ -104,7 +104,9 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
           <IssueDetailsHeader
             title={issue.title}
             status={issue.status}
+            issueId={issue.id}
             onEdit={() => setIsEditing(true)}
+            onDelete={onClose}
             isEditing={false}
           />
           <ScrollArea className="flex-1">

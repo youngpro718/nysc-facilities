@@ -19,7 +19,7 @@ export function ExportSection({ isExporting, onExport, exportableTables }: Expor
         <div className="mt-1">
           <Download className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div className="space-y-2 w-full">
+        <div className="space-y-2 min-w-0 flex-1">
           <h3 className="text-lg font-semibold">Export Database</h3>
           <p className="text-sm text-muted-foreground">
             Download a complete backup of the database as an Excel file. Select specific tables or export all.
@@ -51,11 +51,10 @@ export function ExportSection({ isExporting, onExport, exportableTables }: Expor
               Hold Ctrl/Cmd to select multiple tables. If none selected, all tables will be exported.
             </p>
           </div>
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
             <Button
               onClick={() => onExport(selectedTables)}
               disabled={isExporting}
-              className="w-full sm:w-auto"
             >
               {isExporting ? (
                 <>
@@ -73,7 +72,6 @@ export function ExportSection({ isExporting, onExport, exportableTables }: Expor
               variant="outline"
               onClick={() => setSelectedTables([])}
               disabled={selectedTables.length === 0}
-              className="w-full sm:w-auto"
             >
               Clear Selection
             </Button>

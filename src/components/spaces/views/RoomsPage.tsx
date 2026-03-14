@@ -166,8 +166,8 @@ const RoomsPage = () => {
   return (
     <div className="space-y-6">
       {/* Filter Bar with Export/Import */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex-1">
+      <div className="flex flex-wrap justify-between gap-4">
+        <div className="flex-1 min-w-0">
           {isMobile ? (
             <MobileFilterBar
               searchQuery={searchQuery}
@@ -194,7 +194,7 @@ const RoomsPage = () => {
             />
           )}
         </div>
-        <div className="flex-shrink-0">
+        <div className="shrink-0 hidden sm:block">
           <RoomExcelImportExport projectRef="fmymhtuiqzhupjyopfvi" />
         </div>
       </div>

@@ -1,22 +1,33 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/lib/logger';
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, MapPin, Mic, MicOff, Check, AlertCircle, Settings, X } from "lucide-react";
-import { Link } from 'react-router-dom';
+import { Loader2, MapPin, Mic, MicOff, Check, AlertCircle, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { SIMPLE_CATEGORIES, SimpleCategory, getBackendIssueType } from "./constants/simpleCategories";
 import { PhotoCapture } from "@/components/common/PhotoCapture";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface RoomSearchResult {
+  id: string;
+  room_number: string;
+  name: string | null;
+  floor_id: string | null;
+  floors: {
+    id: string;
+    building_id: string;
+    buildings: { id: string; name: string } | null;
+  } | null;
+}
 
 interface RoomAssignment {
   id?: string;
@@ -46,6 +57,9 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
   const [description, setDescription] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [showRoomPicker, setShowRoomPicker] = useState(false);
+  const [roomSearchQuery, setRoomSearchQuery] = useState('');
+  const [selectedRoomBuildingId, setSelectedRoomBuildingId] = useState<string | null>(null);
+  const [selectedRoomFloorId, setSelectedRoomFloorId] = useState<string | null>(null);
 
   // Voice dictation
   const [isRecording, setIsRecording] = useState(false);
@@ -72,6 +86,71 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
   const selectedRoom = assignedRooms?.find(r => getRoomId(r) === selectedRoomId);
   const selectedCategoryData = SIMPLE_CATEGORIES.find(c => c.id === selectedCategory);
 
+  // Live room search — enabled when not using assigned rooms
+  const showSearchUI = !hasAssignedRooms || continueWithoutRoom;
+
+  const { data: allRoomsForSearch = [], isLoading: roomsSearchLoading } = useQuery({
+    queryKey: ['admin-quick-report-unified-spaces'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('unified_spaces')
+        .select(`
+          id,
+          room_number,
+          name,
+          floor_id,
+          floors!inner (
+            id,
+            building_id,
+            buildings!inner (
+              id,
+              name
+            )
+          )
+        `)
+        .eq('space_type', 'room')
+        .order('room_number');
+      if (error) throw error;
+      return (data as unknown as RoomSearchResult[]) || [];
+    },
+    enabled: showSearchUI,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const filteredRooms = useMemo(() => {
+    if (!roomSearchQuery.trim()) return [];
+    const q = roomSearchQuery.toLowerCase();
+    return allRoomsForSearch
+      .filter(r => {
+        const num = (r.room_number || '').toLowerCase();
+        const name = (r.name || '').toLowerCase();
+        return num.includes(q) || name.includes(q);
+      })
+      .slice(0, 8);
+  }, [allRoomsForSearch, roomSearchQuery]);
+
+  const handleSearchedRoomSelect = (room: RoomSearchResult) => {
+    setSelectedRoomId(room.id);
+    setSelectedRoomBuildingId(room.floors?.building_id || null);
+    setSelectedRoomFloorId(room.floor_id);
+    setRoomSearchQuery('');
+    setContinueWithoutRoom(false);
+    setLocationDescription('');
+  };
+
+  const clearSearchedRoom = () => {
+    setSelectedRoomId(null);
+    setSelectedRoomBuildingId(null);
+    setSelectedRoomFloorId(null);
+    setRoomSearchQuery('');
+  };
+
+  // Display name for a room selected via live search
+  const selectedSearchedRoom = selectedRoomId && showSearchUI
+    ? allRoomsForSearch.find(r => r.id === selectedRoomId)
+    : null;
+
   const createIssueMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
@@ -88,10 +167,10 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
           issue_type: issueType,
           priority: 'medium',
           status: 'open',
-          building_id: selectedRoom?.building_id || null,
-          floor_id: selectedRoom?.floor_id || null,
+          building_id: selectedRoomBuildingId || selectedRoom?.building_id || null,
+          floor_id: selectedRoomFloorId || selectedRoom?.floor_id || null,
           room_id: selectedRoomId || null,
-          location_description: continueWithoutRoom ? locationDescription.trim() : null,
+          location_description: !selectedRoomId && continueWithoutRoom ? locationDescription.trim() : null,
           photos: selectedPhotos,
           seen: false,
           created_by: user.id,
@@ -104,6 +183,9 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
       toast.success("Issue reported successfully");
       queryClient.invalidateQueries({ queryKey: ['userIssues'] });
       queryClient.invalidateQueries({ queryKey: ['issues'] });
+      queryClient.invalidateQueries({ queryKey: ['court-issues'] });
+      queryClient.invalidateQueries({ queryKey: ['building-level-issues'] });
+      queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
       onSuccess?.();
     },
     onError: (error: unknown) => {
@@ -215,7 +297,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
                     <span className="text-muted-foreground">· {selectedRoom.building_name}</span>
                   )}
                 </Badge>
-                {assignedRooms.length > 1 && (
+                {assignedRooms!.length > 1 && (
                   <button
                     type="button"
                     onClick={() => setShowRoomPicker(!showRoomPicker)}
@@ -237,7 +319,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
             {/* Expandable room list */}
             {showRoomPicker && (
               <div className="flex gap-2 flex-wrap">
-                {assignedRooms.map((room) => {
+                {assignedRooms!.map((room) => {
                   const rid = getRoomId(room);
                   return (
                     <Badge
@@ -257,36 +339,128 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
               </div>
             )}
           </div>
-        ) : !hasAssignedRooms && !continueWithoutRoom ? (
-          <Card className="p-4 border-dashed border-2 border-muted">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <AlertCircle className="h-6 w-6 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">No assigned room yet</p>
-              <div className="flex gap-2 w-full">
-                <Button asChild size="sm" className="flex-1 min-h-[44px]">
-                  <Link to="/profile?tab=settings"><Settings className="h-4 w-4 mr-1" />Settings</Link>
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1 min-h-[44px]" onClick={() => setContinueWithoutRoom(true)}>
-                  Enter manually
-                </Button>
-              </div>
-            </div>
-          </Card>
+        ) : selectedSearchedRoom && !continueWithoutRoom ? (
+          /* Room selected via live search — show badge */
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge
+              variant="secondary"
+              className="gap-1.5 py-1.5 px-3 text-sm"
+            >
+              <MapPin className="h-3.5 w-3.5" />
+              Room {selectedSearchedRoom.room_number}
+              {selectedSearchedRoom.name && (
+                <span className="text-muted-foreground">· {selectedSearchedRoom.name}</span>
+              )}
+              {selectedSearchedRoom.floors?.buildings?.name && (
+                <span className="text-muted-foreground">· {selectedSearchedRoom.floors.buildings.name}</span>
+              )}
+            </Badge>
+            <button
+              type="button"
+              onClick={clearSearchedRoom}
+              className="text-xs text-primary underline touch-manipulation"
+            >
+              Change
+            </button>
+            <button
+              type="button"
+              onClick={() => { clearSearchedRoom(); setContinueWithoutRoom(true); }}
+              className="text-xs text-muted-foreground underline touch-manipulation"
+            >
+              Different location
+            </button>
+          </div>
         ) : (
-          /* Manual location input */
+          /* Live room search UI (no assigned rooms, or 'Different location' clicked) */
           <div className="space-y-2">
-            <Input
-              placeholder="e.g., 5th floor hallway near elevator"
-              value={locationDescription}
-              onChange={(e) => setLocationDescription(e.target.value)}
-              className="min-h-[44px]"
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search room number or name…"
+                value={roomSearchQuery}
+                onChange={(e) => setRoomSearchQuery(e.target.value)}
+                className="pl-10 min-h-[44px]"
+                autoFocus
+              />
+            </div>
+
+            {/* Search results */}
+            {roomSearchQuery.trim() && (
+              <ScrollArea className="h-[180px] border rounded-lg">
+                {roomsSearchLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : filteredRooms.length === 0 ? (
+                  <div className="py-6 px-4 text-center space-y-3">
+                    <AlertCircle className="h-5 w-5 mx-auto text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      No room found for &ldquo;{roomSearchQuery}&rdquo;
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="min-h-[40px]"
+                      onClick={() => { setRoomSearchQuery(''); setContinueWithoutRoom(true); }}
+                    >
+                      Describe location instead
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="p-2 space-y-1">
+                    {filteredRooms.map((room) => (
+                      <button
+                        key={room.id}
+                        type="button"
+                        onClick={() => handleSearchedRoomSelect(room)}
+                        className="w-full text-left px-3 py-2 rounded-md hover:bg-accent transition-colors touch-manipulation"
+                      >
+                        <div className="font-medium">{room.room_number}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          {room.name && <span>{room.name}</span>}
+                          {room.floors?.buildings?.name && (
+                            <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                              {room.floors.buildings.name}
+                            </Badge>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            )}
+
+            {/* Free-text fallback — shown when user can't find the room */}
+            {continueWithoutRoom && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Describe the location:</p>
+                <Input
+                  placeholder="e.g., 5th floor hallway near elevator"
+                  value={locationDescription}
+                  onChange={(e) => setLocationDescription(e.target.value)}
+                  className="min-h-[44px]"
+                />
+                <button
+                  type="button"
+                  className="text-xs text-primary underline touch-manipulation"
+                  onClick={() => setContinueWithoutRoom(false)}
+                >
+                  Search room instead
+                </button>
+              </div>
+            )}
+
+            {/* Back to assigned rooms (for users who clicked 'Different location') */}
             {hasAssignedRooms && (
               <button
                 type="button"
                 className="text-xs text-primary underline touch-manipulation"
                 onClick={() => {
                   setContinueWithoutRoom(false);
+                  setRoomSearchQuery('');
+                  setLocationDescription('');
                   const primary = assignedRooms?.find(r => r.is_primary)
                     || assignedRooms?.find(r => r.assignment_type === 'primary_office')
                     || assignedRooms?.[0];

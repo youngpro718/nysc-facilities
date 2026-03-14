@@ -1,20 +1,52 @@
-import { formatDistanceToNow } from "date-fns";
-import { Clock, MapPin, User, MessageCircle } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
+import { MapPin, User, MessageCircle, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
 
 interface IssueTimelineViewProps {
   issues: EnhancedIssue[];
   onIssueUpdate: () => void;
+  onIssueSelect?: (issueId: string) => void;
 }
 
-export function IssueTimelineView({ issues, onIssueUpdate }: IssueTimelineViewProps) {
+function formatDateLabel(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isToday(d)) return "Today";
+  if (isYesterday(d)) return "Yesterday";
+  return format(d, "EEEE, MMMM d, yyyy");
+}
+
+function getStatusDot(status: string) {
+  switch (status) {
+    case 'open':
+      return <span className="w-3 h-3 rounded-full bg-red-500 ring-2 ring-red-200 dark:ring-red-900 flex-shrink-0" />;
+    case 'in_progress':
+      return <span className="w-3 h-3 rounded-full bg-amber-500 ring-2 ring-amber-200 dark:ring-amber-900 flex-shrink-0" />;
+    case 'resolved':
+      return <span className="w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-emerald-200 dark:ring-emerald-900 flex-shrink-0" />;
+    default:
+      return <span className="w-3 h-3 rounded-full bg-muted-foreground/40 flex-shrink-0" />;
+  }
+}
+
+function getPriorityBadgeVariant(priority: string): "destructive" | "secondary" | "outline" {
+  switch (priority) {
+    case 'high': return 'destructive';
+    case 'medium': return 'secondary';
+    default: return 'outline';
+  }
+}
+
+function getPriorityIcon(priority: string) {
+  if (priority === 'high') return <AlertTriangle className="h-3 w-3" />;
+  if (priority === 'medium') return <Clock className="h-3 w-3" />;
+  return <CheckCircle2 className="h-3 w-3" />;
+}
+
+export function IssueTimelineView({ issues, onIssueSelect }: IssueTimelineViewProps) {
   const groupedByDate = issues.reduce((acc, issue) => {
     const date = new Date(issue.created_at).toDateString();
-    if (!acc[date]) {
-      acc[date] = [];
-    }
+    if (!acc[date]) acc[date] = [];
     acc[date].push(issue);
     return acc;
   }, {} as Record<string, EnhancedIssue[]>);
@@ -23,102 +55,117 @@ export function IssueTimelineView({ issues, onIssueUpdate }: IssueTimelineViewPr
     (a, b) => new Date(b).getTime() - new Date(a).getTime()
   );
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'destructive';
-      case 'medium': return 'secondary';
-      case 'low': return 'outline';
-      default: return 'outline';
-    }
-  };
+  if (sortedDates.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        No issues to display.
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {sortedDates.map((date) => (
-        <div key={date}>
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            {new Date(date).toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-            <Badge variant="outline" className="ml-2">
-              {groupedByDate[date].length} issues
-            </Badge>
-          </h3>
-          
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border"></div>
-            
-            <div className="space-y-4">
-              {groupedByDate[date]
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .map((issue, index) => (
-                <div key={issue.id} className="relative flex items-start gap-4">
-                  {/* Timeline dot */}
-                  <div className="relative z-10 w-8 h-8 bg-background border-2 border-primary rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-primary rounded-full"></div>
+    <div className="px-4 py-2 space-y-8">
+      {sortedDates.map((date) => {
+        const dayIssues = groupedByDate[date].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        return (
+          <div key={date}>
+            {/* Sticky date chip */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full text-xs font-semibold text-muted-foreground tracking-wide uppercase">
+                {formatDateLabel(date)}
+                <span className="bg-background text-foreground rounded-full px-1.5 py-0.5 text-[10px] font-bold border">
+                  {dayIssues.length}
+                </span>
+              </div>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            {/* Vertical rail */}
+            <div className="relative pl-6">
+              <div className="absolute left-[5px] top-0 bottom-0 w-px bg-border" />
+
+              <div className="space-y-3">
+                {dayIssues.map((issue) => (
+                  <div key={issue.id} className="relative flex items-start gap-3 group">
+                    {/* Status dot on the rail */}
+                    <div className="absolute -left-[19px] top-3 z-10">
+                      {getStatusDot(issue.status)}
+                    </div>
+
+                    {/* Issue row card */}
+                    <div
+                      className="flex-1 border rounded-lg px-4 py-3 bg-card hover:bg-muted/40 transition-colors cursor-pointer group-hover:border-primary/40"
+                      onClick={() => onIssueSelect?.(issue.id)}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          {/* Badges row */}
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                            <Badge
+                              variant={getPriorityBadgeVariant(issue.priority)}
+                              className="text-[10px] px-1.5 py-0 h-5 flex items-center gap-1"
+                            >
+                              {getPriorityIcon(issue.priority)}
+                              {issue.priority.charAt(0).toUpperCase() + issue.priority.slice(1)}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] px-1.5 py-0 h-5 ${
+                                issue.status === 'open'
+                                  ? 'border-red-300 text-red-700 dark:text-red-400'
+                                  : issue.status === 'in_progress'
+                                  ? 'border-amber-300 text-amber-700 dark:text-amber-400'
+                                  : 'border-emerald-300 text-emerald-700 dark:text-emerald-400'
+                              }`}
+                            >
+                              {issue.status.replace('_', ' ')}
+                            </Badge>
+                          </div>
+
+                          {/* Title */}
+                          <p className="font-semibold text-sm leading-snug truncate">
+                            {issue.title}
+                          </p>
+
+                          {/* Meta row */}
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
+                            {issue.rooms && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {issue.rooms.room_number}{issue.rooms.name ? ` · ${issue.rooms.name}` : ''}
+                              </span>
+                            )}
+                            {issue.reporter && (
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {issue.reporter.first_name} {issue.reporter.last_name}
+                              </span>
+                            )}
+                            {issue.comments_count > 0 && (
+                              <span className="flex items-center gap-1">
+                                <MessageCircle className="h-3 w-3" />
+                                {issue.comments_count}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Relative time */}
+                        <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0 pt-0.5">
+                          {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  {/* Issue card */}
-                  <Card className="flex-1 p-4">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant={getPriorityColor(issue.priority) as any} className="text-xs">
-                            {issue.priority.toUpperCase()}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {issue.status.replace('_', ' ')}
-                          </Badge>
-                        </div>
-                        
-                        <h4 className="font-semibold text-sm mb-1">
-                          {issue.title}
-                        </h4>
-                        
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {issue.description}
-                        </p>
-                      </div>
-                      
-                      <div className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      {issue.rooms && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>{issue.rooms.room_number} - {issue.rooms.name}</span>
-                        </div>
-                      )}
-                      
-                      {issue.reporter && (
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          <span>{issue.reporter.first_name} {issue.reporter.last_name}</span>
-                        </div>
-                      )}
-                      
-                      {issue.comments_count > 0 && (
-                        <div className="flex items-center gap-1">
-                          <MessageCircle className="h-3 w-3" />
-                          <span>{issue.comments_count} comments</span>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

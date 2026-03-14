@@ -1,10 +1,9 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { getMyProfile } from '@/services/profile';
 import { logger } from '@/lib/logger';
-import { Button } from '@/components/ui/button';
 
 /**
  * OnboardingGuard - Route-level enforcement for authentication and onboarding
@@ -20,12 +19,13 @@ import { Button } from '@/components/ui/button';
  */
 export default function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(true);
-  const [profileError, setProfileError] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const hasCheckedRef = useRef(false);
   const isCheckingRef = useRef(false);
-  const retryCountRef = useRef(0);
+  // Ref-based setter so the safety timeout can always reach it even if mounted=false
+  const setCheckingRef = useRef(setChecking);
+  setCheckingRef.current = setChecking;
 
   useEffect(() => {
     let mounted = true;
@@ -65,57 +65,46 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
-        // 1) Check authentication
-        const { data: { session } } = await withTimeout(
-          supabase.auth.getSession(),
-          10000,
-          'getting session'
-        );
-        if (!session) {
-          logger.debug('[OnboardingGuard] No session found, redirecting to sign-in');
-          navigate('/login', { replace: true });
-          return;
-        }
-
-        // 2) Check email verification
-        if (!session.user.email_confirmed_at) {
-          logger.debug('[OnboardingGuard] Email not verified, redirecting to verify');
-          navigate('/auth/verify', { replace: true });
-          return;
-        }
-
-        // 3) Fetch profile and role in parallel
+        // 1+3) Fetch session and profile simultaneously — getMyProfile() calls getUser()
+        //       internally which hits the same Supabase auth cache as getSession().
+        let session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
         let profile: Record<string, unknown> | null = null;
         let userRoleData: { role: string } | null = null;
+
         try {
-          const roleQuery = async () => {
-            const { data, error } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-            if (error) throw error;
-            return data;
-          };
-          [profile, userRoleData] = await Promise.all<any>([
-            withTimeout(getMyProfile(), 10000, 'loading profile'),
-            withTimeout(roleQuery(), 10000, 'loading role').catch((roleError: unknown) => {
-              logger.warn('[OnboardingGuard] Role fetch failed:', roleError);
-              return null;
-            }),
+          const [sessionResult, profileResult] = await Promise.all([
+            withTimeout(supabase.auth.getSession(), 5000, 'getting session'),
+            withTimeout(getMyProfile(), 8000, 'loading profile').catch(() => null),
           ]);
+
+          session = sessionResult.data.session;
+
+          if (!session) {
+            logger.debug('[OnboardingGuard] No session found, redirecting to sign-in');
+            navigate('/login', { replace: true });
+            return;
+          }
+
+          // 2) Check email verification
+          if (!session.user.email_confirmed_at) {
+            logger.debug('[OnboardingGuard] Email not verified, redirecting to verify');
+            navigate('/auth/verify', { replace: true });
+            return;
+          }
+
+          profile = profileResult as Record<string, unknown> | null;
+
+          // Fetch role now that we have session.user.id
+          const { data: roleData, error: roleError } = await withTimeout(
+            supabase.from('user_roles').select('role').eq('user_id', session.user.id).maybeSingle(),
+            5000,
+            'loading role'
+          );
+          if (roleError) logger.warn('[OnboardingGuard] Role fetch failed:', roleError);
+          userRoleData = roleData;
         } catch (profileError) {
           logger.error('[OnboardingGuard] Profile fetch failed:', profileError);
-          if (retryCountRef.current < 1) {
-            retryCountRef.current++;
-            logger.debug('[OnboardingGuard] Auto-retrying profile fetch...');
-            isCheckingRef.current = false;
-            await new Promise(r => setTimeout(r, 1500));
-            return check();
-          }
-          // Don't redirect to /login — that causes a loop. Show error UI instead.
-          logger.warn('[OnboardingGuard] Profile fetch failed after retry, showing error state');
-          if (mounted) setProfileError(true);
+          navigate('/login', { replace: true });
           isCheckingRef.current = false;
           return;
         }
@@ -154,7 +143,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           try {
             const { data: factorData, error: factorError } = await withTimeout(
               supabase.auth.mfa.listFactors(),
-              10000,
+              5000,
               'checking MFA factors'
             );
             if (factorError) throw factorError;
@@ -187,12 +176,23 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
       }
     };
 
+    // Safety timeout: if the check races with a pathname change and mounted
+    // flips to false before setChecking(false) is called, the spinner would
+    // hang forever. Force-resolve after 5 s using the ref-based setter.
+    const safetyTimer = window.setTimeout(() => {
+      if (setCheckingRef.current) {
+        logger.warn('[OnboardingGuard] Safety timeout: forcing checking=false after 5s');
+        setCheckingRef.current(false);
+      }
+    }, 5000);
+
     // Initial check only if not already checked
     if (!hasCheckedRef.current) {
       logger.debug('[OnboardingGuard] Running initial check');
-      check();
+      check().finally(() => window.clearTimeout(safetyTimer));
     } else {
       logger.debug('[OnboardingGuard] Already checked, skipping');
+      window.clearTimeout(safetyTimer);
       setChecking(false);
     }
 
@@ -208,16 +208,10 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
 
     return () => {
       mounted = false;
+      window.clearTimeout(safetyTimer);
       authSubscription?.data.subscription.unsubscribe();
     };
   }, [navigate, location.pathname]);
-
-  const handleRetry = useCallback(() => {
-    setProfileError(false);
-    setChecking(true);
-    hasCheckedRef.current = false;
-    retryCountRef.current = 0;
-  }, []);
 
   if (checking) {
     return (
@@ -225,18 +219,6 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Verifying access...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (profileError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <p className="text-destructive font-medium">Unable to load your profile</p>
-          <p className="text-muted-foreground text-sm">This may be a temporary issue. Please try again.</p>
-          <Button onClick={handleRetry} variant="outline">Retry</Button>
         </div>
       </div>
     );

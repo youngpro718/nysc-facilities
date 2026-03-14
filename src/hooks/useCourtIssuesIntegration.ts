@@ -18,6 +18,9 @@ export interface CourtIssue {
   updated_at: string;
   room_number?: string;
   courtroom_number?: string;
+  building_id?: string;
+  floor_id?: string;
+  location_description?: string;
   assignments?: {
     justice: string;
     clerks: string[];
@@ -345,7 +348,7 @@ export const useCourtIssuesIntegration = () => {
           // Handle new critical issues (urgent/critical/high)
           if (
             payload.eventType === 'INSERT' &&
-            ['high'].includes(String((payload as any).new?.priority || '').toLowerCase())
+            ['critical', 'urgent', 'high'].includes(String((payload as any).new?.priority || '').toLowerCase())
           ) {
             const newIssue = (payload as any).new as any;
             toast({
@@ -370,19 +373,18 @@ export const useCourtIssuesIntegration = () => {
     };
   }, [queryClient, toast]);
 
-  // Get issues for a specific courtroom
+  // Get issues for a specific room
   const getIssuesForRoom = (roomId: string) => {
     return courtIssues?.filter(issue => issue.room_id === roomId) || [];
   };
 
-  // Check if courtroom has critical issues
+  // Check if room has urgent issues
   const hasUrgentIssues = (roomId: string) => {
     return (
       courtIssues?.some(
         (issue) =>
           issue.room_id === roomId &&
-          // Treat "urgent" (and optionally "critical") priority as urgent indicators
-          (issue.priority === 'high')
+          ['critical', 'urgent', 'high'].includes(String(issue.priority || '').toLowerCase())
       ) || false
     );
   };
@@ -393,7 +395,7 @@ export const useCourtIssuesIntegration = () => {
 
     const affectedRooms = new Set(courtIssues.map(issue => issue.room_id));
     const urgentIssues = courtIssues.filter((issue) =>
-      ['high'].includes(String(issue.priority || '').toLowerCase())
+      ['critical', 'urgent', 'high'].includes(String(issue.priority || '').toLowerCase())
     );
     const affectedAssignments = courtIssues.filter(issue => issue.assignments);
 
@@ -409,14 +411,37 @@ export const useCourtIssuesIntegration = () => {
   const isIssueRecentlyAdded = (issueId: string) => recentIssueEvents.some(e => e.id === issueId);
   const getRecentlyAffectedRooms = () => Array.from(new Set(recentIssueEvents.map(e => e.room_id)));
 
+  // Building/floor-level issues (no room_id) — surfaced in Operations KPI strip
+  const { data: buildingIssues = [], isLoading: buildingIssuesLoading } = useQuery({
+    queryKey: ['building-level-issues'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('issues')
+        .select('id, title, description, status, priority, building_id, floor_id, location_description, created_at, updated_at, impact_level, space_id, room_id')
+        .in('status', ['open', 'in_progress'])
+        .is('room_id', null)
+        .order('priority', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as CourtIssue[];
+    },
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
+
+  const getBuildingIssues = () => buildingIssues;
+
   return {
     courtIssues: courtIssues || [],
-    isLoading: issuesLoading,
+    isLoading: issuesLoading || buildingIssuesLoading,
+    buildingIssues,
+    buildingIssueCount: buildingIssues.length,
     createCourtShutdown,
     notifyAffectedPersonnel,
     getIssuesForRoom,
     hasUrgentIssues,
     getCourtImpactSummary,
+    getBuildingIssues,
     recentIssueEvents,
     isIssueRecentlyAdded,
     getRecentlyAffectedRooms,

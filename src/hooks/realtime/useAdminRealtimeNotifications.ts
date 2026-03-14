@@ -85,7 +85,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               label: 'View',
               onClick: () => {
                 const actionUrl = notification.metadata?.action_url;
-                window.location.href = actionUrl || '/admin';
+                const safeUrl = typeof actionUrl === 'string' && actionUrl.startsWith('/') ? actionUrl : '/admin';
+                window.location.href = safeUrl;
               },
             },
           });

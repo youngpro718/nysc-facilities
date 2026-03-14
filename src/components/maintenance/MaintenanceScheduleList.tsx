@@ -201,11 +201,22 @@ export const MaintenanceScheduleList = () => {
       schedule.notes?.toLowerCase().includes(query)
     );
   });
+  const scheduleCount = filteredSchedules?.length || 0;
+  const urgentCount = filteredSchedules?.filter((schedule) =>
+    ["urgent", "high"].includes(String(schedule.priority || "").toLowerCase())
+  ).length || 0;
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline">{scheduleCount} schedules</Badge>
+          <Badge variant={urgentCount > 0 ? "destructive" : "secondary"}>
+            {urgentCount} urgent
+          </Badge>
+        </div>
+        <div className="flex gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search maintenance..."
@@ -213,44 +224,56 @@ export const MaintenanceScheduleList = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
           />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="scheduled">Scheduled</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="postponed">Postponed</SelectItem>
-          </SelectContent>
-        </Select>
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="scheduled">Scheduled</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="postponed">Postponed</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="painting">Painting</SelectItem>
-            <SelectItem value="flooring">Flooring</SelectItem>
-            <SelectItem value="electrical">Electrical</SelectItem>
-            <SelectItem value="hvac">HVAC</SelectItem>
-            <SelectItem value="plumbing">Plumbing</SelectItem>
-            <SelectItem value="general">General</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="painting">Painting</SelectItem>
+              <SelectItem value="flooring">Flooring</SelectItem>
+              <SelectItem value="electrical">Electrical</SelectItem>
+              <SelectItem value="hvac">HVAC</SelectItem>
+              <SelectItem value="plumbing">Plumbing</SelectItem>
+              <SelectItem value="general">General</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid gap-4">
         {filteredSchedules?.map((schedule) => (
-          <Card key={schedule.id}>
-            <CardHeader>
+          <Card key={schedule.id} className="border-slate-200/80 shadow-sm dark:border-slate-800">
+            <CardHeader className="pb-4">
               <div className="flex items-start justify-between">
-                <div>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className={getPriorityColor(schedule.priority)}>
+                      {schedule.priority}
+                    </Badge>
+                    <Badge className={getStatusColor(schedule.status)}>
+                      {schedule.status.replace("_", " ")}
+                    </Badge>
+                    <Badge variant="outline" className="capitalize">
+                      {schedule.maintenance_type}
+                    </Badge>
+                  </div>
                   <CardTitle className="text-lg">{schedule.title}</CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                     {schedule.rooms ? (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
@@ -271,13 +294,7 @@ export const MaintenanceScheduleList = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={getPriorityColor(schedule.priority)}>
-                    {schedule.priority}
-                  </Badge>
-                  <Badge className={getStatusColor(schedule.status)}>
-                    {schedule.status.replace("_", " ")}
-                  </Badge>
+                <div className="flex items-center gap-1">
                   <Button
                     size="sm"
                     variant="ghost"
@@ -300,24 +317,27 @@ export const MaintenanceScheduleList = () => {
             <CardContent>
               <div className="space-y-3">
                 {schedule.description && (
-                  <p className="text-sm text-muted-foreground">{schedule.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{schedule.description}</p>
                 )}
 
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-6 text-sm">
+                  <div className="flex items-center gap-1 text-muted-foreground">
                     <Clock className="h-4 w-4" />
-                    <span className="capitalize">{schedule.maintenance_type}</span>
+                    <span>
+                      {format(new Date(schedule.scheduled_start_date), "MMM dd")}
+                      {schedule.scheduled_end_date && ` – ${format(new Date(schedule.scheduled_end_date), "MMM dd")}`}
+                    </span>
                   </div>
                   {schedule.estimated_cost && (
-                    <span className="text-green-600 dark:text-green-400">
+                    <span className="font-medium text-emerald-600 dark:text-emerald-400">
                       Est. ${schedule.estimated_cost.toLocaleString()}
                     </span>
                   )}
                 </div>
 
                 {schedule.notes && (
-                  <div className="text-sm">
-                    <strong>Notes:</strong> {schedule.notes}
+                  <div className="rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
+                    <strong className="text-foreground">Notes:</strong> {schedule.notes}
                   </div>
                 )}
 
@@ -356,7 +376,7 @@ export const MaintenanceScheduleList = () => {
       </div>
 
       {filteredSchedules?.length === 0 && (
-        <Card>
+        <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">

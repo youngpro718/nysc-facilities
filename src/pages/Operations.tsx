@@ -28,9 +28,8 @@ import {
 // Import existing components
 import { EnhancedIssuesList } from "@/components/admin-issues/EnhancedIssuesList";
 import { IssueGroupingControls } from "@/components/admin-issues/IssueGroupingControls";
-import { MaintenanceScheduleList } from "@/components/maintenance/MaintenanceScheduleList";
-import { MaintenanceIssuesList } from "@/components/maintenance/MaintenanceIssuesList";
-import { MaintenanceCalendar } from "@/components/maintenance/MaintenanceCalendar";
+import { OperationsOverviewTab } from "@/components/operations/OperationsOverviewTab";
+import { MaintenanceTab } from "@/components/operations/MaintenanceTab";
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/types/issues";
 
 
@@ -80,9 +79,9 @@ export default function Operations() {
 
   const [groupingMode, setGroupingMode] = useState<GroupingMode>(persistedGrouping || 'priority');
   const [viewMode, setViewMode] = useState<ViewMode>(
-    viewParam && ['cards', 'table', 'timeline', 'board'].includes(viewParam)
+    viewParam && ['table', 'timeline'].includes(viewParam)
       ? (viewParam as ViewMode)
-      : (persistedView || 'table')
+      : (persistedView && ['table', 'timeline'].includes(persistedView) ? persistedView : 'table')
   );
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState('');
@@ -173,7 +172,7 @@ export default function Operations() {
 
   // React to `view` query param changes
   useEffect(() => {
-    if (viewParam && ['cards', 'table', 'timeline', 'board'].includes(viewParam)) {
+    if (viewParam && ['table', 'timeline'].includes(viewParam)) {
       setViewMode(viewParam as ViewMode);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -264,7 +263,7 @@ export default function Operations() {
         refreshIssues(),
         // Add other refresh functions as needed
       ]);
-      toast.success('Building issues data refreshed successfully');
+      toast.success('Operations data refreshed successfully');
     } catch (error) {
       logger.error('Error refreshing data:', error);
       toast.error('Failed to refresh some data');
@@ -280,14 +279,14 @@ export default function Operations() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Building Issues</h2>
+              <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Facility Operations</h2>
               <Badge variant="secondary" className="text-xs">
                 <Activity className="h-3 w-3 mr-1" />
                 Live
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              Track and resolve facility issues &amp; maintenance
+              Issues, maintenance, and facility scheduling
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -402,158 +401,20 @@ export default function Operations() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Quick Actions Section */}
-          <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-primary" />
-                Quick Actions
-              </CardTitle>
-              <CardDescription>
-                Most commonly used operations for efficient facility management
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button
-                  onClick={() => setShowCreateIssue(true)}
-                  variant="outline"
-                  data-tour="ops-report-btn"
-                  className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800 transition-colors group"
-                >
-                  <AlertTriangle className="h-8 w-8 text-red-500 group-hover:scale-110 transition-transform" />
-                  <div className="text-center">
-                    <div className="font-semibold text-sm">Report Issue</div>
-                    <div className="text-xs text-muted-foreground">Create new issue ticket</div>
-                  </div>
-                </Button>
-                <Button
-                  onClick={() => setShowScheduleMaintenance(true)}
-                  variant="outline"
-                  className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 dark:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-800 dark:border-blue-800 transition-colors group"
-                >
-                  <Calendar className="h-8 w-8 text-blue-500 group-hover:scale-110 transition-transform" />
-                  <div className="text-center">
-                    <div className="font-semibold text-sm">Schedule Maintenance</div>
-                    <div className="text-xs text-muted-foreground">Plan maintenance tasks</div>
-                  </div>
-                </Button>
-
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Critical Issues - Takes 2 columns */}
-            <div className="lg:col-span-2">
-              <Card className="border-l-4 border-l-red-500">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <div className="relative">
-                        <AlertCircle className="h-5 w-5 text-red-500" />
-                        {enhancedMetrics.criticalCount > 0 && (
-                          <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full animate-pulse" />
-                        )}
-                      </div>
-                      Critical Issues
-                      {enhancedMetrics.criticalCount > 0 && (
-                        <Badge variant="destructive" className="ml-2">
-                          {enhancedMetrics.criticalCount}
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription>Issues requiring immediate attention and action</CardDescription>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTabChange('issues')}
-                    className="hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800"
-                  >
-                    View All Issues
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="space-y-3">
-                      {Array(3).fill(0).map((_, i) => (
-                        <div key={i} className="flex items-center space-x-4">
-                          <Skeleton className="h-12 w-12 rounded" />
-                          <div className="space-y-2 flex-1">
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-3 w-2/3" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : criticalIssues && criticalIssues.length > 0 ? (
-                    <EnhancedIssuesList
-                      issues={criticalIssues.slice(0, 5)} // Show only first 5
-                      viewMode="cards"
-                      groupingMode="priority"
-                      searchQuery=""
-                      selectedIssues={[]}
-                      onSelectionChange={() => { }}
-                      onIssueUpdate={refreshAllData}
-                      onIssueSelect={(issueId) => {
-                        const newParams = new URLSearchParams(searchParams);
-                        newParams.set('issue_id', issueId);
-                        setSearchParams(newParams);
-                      }}
-                      isLoading={false}
-                    />
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                      <p className="font-medium">No critical issues</p>
-                      <p className="text-sm">All systems are operating normally</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Sidebar with Maintenance and Key Info */}
-            <div className="space-y-6">
-              {/* Maintenance Summary */}
-              <Card className="border-l-4 border-l-orange-500">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wrench className="h-5 w-5 text-orange-500" />
-                    Maintenance Overview
-                  </CardTitle>
-                </CardHeader>
-               <CardContent className="space-y-4">
-                  <StatusCard
-                    statusVariant={enhancedMetrics.maintenanceInProgress > 0 ? "warning" : "operational"}
-                    title="In Progress"
-                    value={enhancedMetrics.maintenanceInProgress}
-                    subLabel="Active maintenance tasks"
-                    icon={Clock}
-                  />
-                  <StatusCard
-                    statusVariant="info"
-                    title="Scheduled"
-                    value={enhancedMetrics.maintenanceScheduled}
-                    subLabel="Upcoming tasks"
-                    icon={Calendar}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handleTabChange('maintenance')}
-                  >
-                    View All Maintenance
-                  </Button>
-                </CardContent>
-              </Card>
-
-
-            </div>
-          </div>
+          <OperationsOverviewTab
+            enhancedMetrics={enhancedMetrics}
+            criticalIssues={criticalIssues}
+            isLoading={isLoading}
+            onCreateIssue={() => setShowCreateIssue(true)}
+            onScheduleMaintenance={() => setShowScheduleMaintenance(true)}
+            onTabChange={handleTabChange}
+            onRefresh={refreshAllData}
+            onIssueSelect={(issueId) => {
+              const newParams = new URLSearchParams(searchParams);
+              newParams.set('issue_id', issueId);
+              setSearchParams(newParams);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="issues" className="space-y-4">
@@ -581,35 +442,51 @@ export default function Operations() {
           </div>
 
           {/* Quick Stats for Issues */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatusCard
-              statusVariant={enhancedMetrics.criticalCount > 0 ? "critical" : "operational"}
-              title="Critical Issues"
-              value={enhancedMetrics.criticalCount}
-              subLabel="Require immediate action"
-              icon={AlertTriangle}
-            />
-            <StatusCard
-              statusVariant={enhancedMetrics.inProgress > 0 ? "warning" : "neutral"}
-              title="In Progress"
-              value={enhancedMetrics.inProgress}
-              subLabel="Being worked on"
-              icon={Clock}
-            />
-            <StatusCard
-              statusVariant="info"
-              title="Active Issues"
-              value={enhancedMetrics.activeIssues}
-              subLabel="Open + in progress"
-              icon={AlertCircle}
-            />
-            <StatusCard
-              statusVariant="operational"
-              title="Resolved Today"
-              value={enhancedMetrics.resolvedToday}
-              subLabel="Completed today"
-              icon={CheckCircle}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 dark:bg-red-950 dark:border-red-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-red-800 dark:text-red-200">Critical Issues</p>
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{enhancedMetrics.criticalCount}</p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-red-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 dark:bg-orange-950 dark:border-orange-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-orange-800 dark:text-orange-200">In Progress</p>
+                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.inProgress}</p>
+                  </div>
+                  <Clock className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950 dark:border-blue-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Active Issues</p>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.activeIssues}</p>
+                  </div>
+                  <AlertCircle className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 dark:bg-green-950 dark:border-green-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">Resolved Today</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{enhancedMetrics.resolvedToday}</p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Issues Controls */}
@@ -630,15 +507,8 @@ export default function Operations() {
             />
           </div>
 
-          {/* Quick filter presets */}
-          <div className="flex flex-wrap gap-2">
-            <Button variant={statusFilter === 'open' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('open')}>Open</Button>
-            <Button variant={priorityFilter === 'high' ? 'default' : 'outline'} size="sm" onClick={() => setPriorityFilter('high')}>High Priority</Button>
-            <Button variant="outline" size="sm" onClick={() => { setStatusFilter('all'); setPriorityFilter('all'); setGroupingMode('priority'); setSearchInput(''); }}>Clear</Button>
-          </div>
-
           {/* Issues Table */}
-          <Card data-tour="ops-issue-card">
+          <Card className="shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -678,96 +548,13 @@ export default function Operations() {
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-4">
-          {/* Maintenance Management Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Wrench className="h-5 w-5" />
-                Maintenance Management
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Schedule, track, and manage facility maintenance tasks
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={refreshAllData} variant="outline" size="sm" disabled={isLoading}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <Button onClick={() => setShowScheduleMaintenance(true)} size="sm">
-                <Calendar className="h-4 w-4 mr-2" />
-                Schedule Maintenance
-              </Button>
-            </div>
-          </div>
-
-          {/* Maintenance Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatusCard
-              statusVariant={enhancedMetrics.maintenanceInProgress > 0 ? "warning" : "operational"}
-              title="In Progress"
-              value={enhancedMetrics.maintenanceInProgress}
-              subLabel="Active maintenance"
-              icon={Clock}
-            />
-            <StatusCard
-              statusVariant="info"
-              title="Scheduled"
-              value={enhancedMetrics.maintenanceScheduled}
-              subLabel="Upcoming tasks"
-              icon={Calendar}
-            />
-            <StatusCard
-              statusVariant="operational"
-              title="Completed"
-              value={maintenanceData?.filter(item => item.status === 'resolved').length || 0}
-              subLabel="Finished tasks"
-              icon={CheckCircle}
-            />
-          </div>
-
-          <div className="space-y-6">
-            {/* Calendar View */}
-            <MaintenanceCalendar />
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      Scheduled Maintenance
-                    </CardTitle>
-                    <CardDescription>
-                      Upcoming and planned maintenance tasks
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <MaintenanceScheduleList />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Wrench className="h-5 w-5" />
-                      Maintenance Issues ({maintenanceData?.length || 0})
-                    </CardTitle>
-                    <CardDescription>
-                      Issues requiring maintenance attention
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <MaintenanceIssuesList />
-              </CardContent>
-            </Card>
-          </div>
+          <MaintenanceTab
+            maintenanceData={maintenanceData}
+            enhancedMetrics={enhancedMetrics}
+            isLoading={isLoading}
+            onScheduleMaintenance={() => setShowScheduleMaintenance(true)}
+            onRefresh={refreshAllData}
+          />
         </TabsContent>
 
 

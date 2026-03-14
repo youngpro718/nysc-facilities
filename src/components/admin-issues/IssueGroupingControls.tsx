@@ -1,4 +1,4 @@
-import { Search, Filter, Grid, List, Zap, Users, Calendar, AlertTriangle, MapPin, CheckSquare } from "lucide-react";
+import { Search, Filter, List, Zap, Users, Calendar, AlertTriangle, MapPin, CheckSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -51,8 +51,6 @@ export function IssueGroupingControls({
   };
 
   const viewOptions = [
-    { value: 'board', label: 'Board', icon: Grid },
-    { value: 'cards', label: 'Cards', icon: Grid },
     { value: 'table', label: 'Table', icon: List },
     { value: 'timeline', label: 'Timeline', icon: Zap },
   ] as const;

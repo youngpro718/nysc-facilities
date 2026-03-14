@@ -79,6 +79,7 @@ export const MaintenanceIssuesList = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "open":
       case "reported": return "bg-red-100 dark:bg-red-900/30 text-red-800";
       case "in_progress": return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800";
       case "scheduled": return "bg-blue-100 dark:bg-blue-900/30 text-blue-800";
@@ -223,11 +224,22 @@ export const MaintenanceIssuesList = () => {
       issue.notes?.toLowerCase().includes(query)
     );
   });
+  const issueCount = filteredIssues?.length || 0;
+  const urgentCount = filteredIssues?.filter((issue) =>
+    ["critical", "urgent", "high"].includes(String(issue.priority || "").toLowerCase())
+  ).length || 0;
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline">{issueCount} issues</Badge>
+          <Badge variant={urgentCount > 0 ? "destructive" : "secondary"}>
+            {urgentCount} urgent
+          </Badge>
+        </div>
+        <div className="flex gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search issues..."
@@ -235,45 +247,54 @@ export const MaintenanceIssuesList = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
           />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="reported">Reported</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="scheduled">Scheduled</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
-          </SelectContent>
-        </Select>
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="scheduled">Scheduled</SelectItem>
+              <SelectItem value="resolved">Resolved</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select value={severityFilter} onValueChange={setSeverityFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by severity" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Severities</SelectItem>
-            <SelectItem value="critical">Critical</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={severityFilter} onValueChange={setSeverityFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by severity" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Severities</SelectItem>
+              <SelectItem value="critical">Critical</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid gap-4">
         {filteredIssues?.map((issue) => (
-          <Card key={issue.id}>
-            <CardHeader>
+          <Card key={issue.id} className="border-slate-200/80 shadow-sm dark:border-slate-800">
+            <CardHeader className="pb-4">
               <div className="flex items-start justify-between">
-                <div>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className={getPriorityColor(issue.priority)}>
+                      {issue.priority}
+                    </Badge>
+                    <Badge className={getStatusColor(issue.status)}>
+                      {issue.status.replace("_", " ")}
+                    </Badge>
+                  </div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5" />
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
                     {issue.title}
                   </CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                     {issue.rooms && (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
@@ -286,13 +307,7 @@ export const MaintenanceIssuesList = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={getPriorityColor(issue.priority)}>
-                    {issue.priority}
-                  </Badge>
-                  <Badge className={getStatusColor(issue.status)}>
-                    {issue.status.replace("_", " ")}
-                  </Badge>
+                <div className="flex items-center gap-1">
                   <Button
                     size="sm"
                     variant="ghost"
@@ -314,11 +329,11 @@ export const MaintenanceIssuesList = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <p className="text-sm">{issue.description}</p>
+                <p className="text-sm leading-relaxed">{issue.description}</p>
 
-                <div className="flex items-center justify-between text-sm">
-                  <div>
-                    <strong>Issue Type:</strong> <span className="capitalize">{issue.issue_type}</span>
+                <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <div className="text-muted-foreground">
+                    <strong className="text-foreground">Issue Type:</strong> <span className="capitalize">{issue.issue_type}</span>
                   </div>
                   <div className="flex items-center gap-3 text-muted-foreground">
                     {((issue as Record<string, unknown>)).photos && ((issue as Record<string, unknown>)).photos.length > 0 && (
@@ -337,14 +352,14 @@ export const MaintenanceIssuesList = () => {
                 </div>
 
                 {issue.notes && issue.notes.startsWith('Temporary fix:') && (
-                  <div className="bg-yellow-50 dark:bg-yellow-950/30 p-3 rounded-lg">
-                    <div className="flex items-center gap-2 text-yellow-800 font-medium">
+                  <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+                    <div className="flex items-center gap-2 font-medium text-amber-800 dark:text-amber-300">
                       <CheckCircle className="h-4 w-4" />
                       Temporary Fix Applied
                     </div>
-                    <p className="text-sm mt-1 text-yellow-700 dark:text-yellow-400">{issue.notes.replace('Temporary fix: ', '')}</p>
+                    <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">{issue.notes.replace('Temporary fix: ', '')}</p>
                     {issue.updated_at && (
-                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                      <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
                         Applied on {format(new Date(issue.updated_at), "MMM dd, yyyy")}
                       </p>
                     )}
@@ -398,7 +413,7 @@ export const MaintenanceIssuesList = () => {
       </div>
 
       {filteredIssues?.length === 0 && (
-        <Card>
+        <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">

@@ -49,6 +49,10 @@ export const MaintenanceCalendar = () => {
     const dateKey = format(selectedDate, "yyyy-MM-dd");
     return schedulesByDate.get(dateKey) || [];
   }, [selectedDate, schedulesByDate]);
+  const totalSchedules = schedules?.length || 0;
+  const urgentSchedules = schedules?.filter((schedule) =>
+    ["urgent", "high"].includes(String(schedule.priority || "").toLowerCase())
+  ).length || 0;
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -90,26 +94,39 @@ export const MaintenanceCalendar = () => {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            {format(today, "MMMM yyyy")} - Maintenance Schedule
-          </CardTitle>
+      <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5 text-blue-500" />
+                {format(today, "MMMM yyyy")} Maintenance Schedule
+              </CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Monthly view of planned work with priority context.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{totalSchedules} scheduled</Badge>
+              <Badge variant={urgentSchedules > 0 ? "destructive" : "secondary"}>
+                {urgentSchedules} urgent
+              </Badge>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-2 rounded-xl border border-slate-200/80 bg-slate-50/60 p-2 dark:border-slate-800 dark:bg-slate-900/60">
             {/* Day headers */}
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div key={day} className="text-center text-sm font-semibold text-muted-foreground py-2">
+              <div key={day} className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground py-2">
                 {day}
               </div>
             ))}
 
             {/* Padding cells */}
             {Array.from({ length: paddingDays }).map((_, i) => (
-              <div key={`pad-${i}`} className="min-h-[100px]" />
+              <div key={`pad-${i}`} className="min-h-[112px]" />
             ))}
 
             {/* Calendar days */}
@@ -126,16 +143,16 @@ export const MaintenanceCalendar = () => {
                     setSelectedDate(day);
                     setSelectedSchedule(null);
                   }}
-                  className={`min-h-[100px] p-2 border rounded-lg cursor-pointer transition-colors ${
+                  className={`min-h-[112px] rounded-xl border p-2.5 cursor-pointer transition-colors ${
                     isSelected
-                      ? "bg-primary/10 border-primary ring-2 ring-primary/30"
+                      ? "bg-primary/10 border-primary ring-2 ring-primary/20"
                       : isToday
-                        ? "bg-accent/50 border-accent-foreground/20"
-                        : "bg-background hover:bg-muted/50"
+                        ? "bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-900"
+                        : "bg-background hover:bg-muted/40 border-slate-200/80 dark:border-slate-800"
                   } ${!isSameMonth(day, today) ? "opacity-50" : ""}`}
                 >
-                  <div className={`text-sm font-medium mb-1 ${
-                    isSelected ? "text-primary" : isToday ? "text-accent-foreground font-bold" : ""
+                  <div className={`mb-2 text-sm font-medium ${
+                    isSelected ? "text-primary" : isToday ? "text-blue-700 dark:text-blue-300 font-bold" : ""
                   }`}>
                     {format(day, "d")}
                   </div>
@@ -148,7 +165,7 @@ export const MaintenanceCalendar = () => {
                           setSelectedDate(day);
                           setSelectedSchedule(schedule);
                         }}
-                        className="text-xs p-1 rounded bg-muted hover:bg-muted/80 cursor-pointer truncate"
+                        className="rounded-md border border-transparent bg-muted/80 px-1.5 py-1 text-xs hover:border-slate-300 hover:bg-muted cursor-pointer truncate dark:hover:border-slate-700"
                         title={schedule.title}
                       >
                         <div className="flex items-center gap-1">
@@ -169,7 +186,7 @@ export const MaintenanceCalendar = () => {
           </div>
 
           {/* Legend */}
-          <div className="mt-4 flex items-center gap-4 text-sm">
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
             <span className="font-medium">Priority:</span>
             {[
               { color: "bg-red-500", label: "Urgent" },
@@ -188,7 +205,7 @@ export const MaintenanceCalendar = () => {
 
       {/* Selected Date Detail Panel */}
       {selectedDate && (
-        <Card>
+        <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
@@ -214,8 +231,8 @@ export const MaintenanceCalendar = () => {
                     <div
                       key={schedule.id}
                       onClick={() => setSelectedSchedule(isActive ? null : schedule)}
-                      className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                        isActive ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                      className={`rounded-xl border p-3 cursor-pointer transition-colors ${
+                        isActive ? "border-primary bg-primary/5" : "border-slate-200/80 hover:bg-muted/40 dark:border-slate-800"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">

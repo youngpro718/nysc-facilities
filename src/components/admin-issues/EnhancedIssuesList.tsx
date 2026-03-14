@@ -1,7 +1,5 @@
 import { useMemo } from "react";
 import { Loader2 } from "lucide-react";
-import { EnhancedIssueCard } from "./EnhancedIssueCard";
-import { KanbanBoard } from "@/components/admin-issues/kanban/KanbanBoard";
 import { IssueTableView } from "./IssueTableView";
 import { IssueTimelineView } from "./IssueTimelineView";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
@@ -163,15 +161,6 @@ export function EnhancedIssuesList({
   }
 
   // Render based on view mode
-  if (viewMode === 'board') {
-    return (
-      <KanbanBoard
-        issues={filteredIssues}
-        onIssueUpdate={onIssueUpdate}
-      />
-    );
-  }
-
   if (viewMode === 'table') {
     return (
       <IssueTableView
@@ -189,35 +178,19 @@ export function EnhancedIssuesList({
       <IssueTimelineView
         issues={filteredIssues}
         onIssueUpdate={onIssueUpdate}
+        onIssueSelect={onIssueSelect}
       />
     );
   }
 
-  // Default cards view with grouping
+  // Default: table view
   return (
-    <div className="space-y-6">
-      {Object.entries(groupedIssues).map(([groupName, groupIssues]) => (
-        <div key={groupName}>
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            {groupName}
-            <span className="text-sm text-muted-foreground font-normal">
-              ({groupIssues.length})
-            </span>
-          </h3>
-          
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {groupIssues.map(issue => (
-              <EnhancedIssueCard
-                key={issue.id}
-                issue={issue}
-                isSelected={selectedIssues.includes(issue.id)}
-                onSelect={(selected) => handleIssueSelect(issue.id, selected)}
-                onUpdate={onIssueUpdate}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
+    <IssueTableView
+      issues={filteredIssues}
+      selectedIssues={selectedIssues}
+      onSelectionChange={onSelectionChange}
+      onIssueUpdate={onIssueUpdate}
+      onIssueSelect={onIssueSelect}
+    />
   );
 }

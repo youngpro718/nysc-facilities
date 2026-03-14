@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Mail, Building2, Loader2, User, Phone, Camera, ShieldCheck } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useSecureAuth } from '@/hooks/security/useSecureAuth';

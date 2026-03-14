@@ -239,7 +239,8 @@ export function SessionsTable({
 
   // Column visibility state
   const [compactView, setCompactView] = useState(() => {
-    return localStorage.getItem('court_ops_compact_view') === 'true';
+    const stored = localStorage.getItem('court_ops_compact_view');
+    return stored === null ? true : stored === 'true';
   });
 
   const toggleCompactView = (checked: boolean) => {
@@ -498,11 +499,11 @@ export function SessionsTable({
           </div>
         )}
 
-        <div className="overflow-auto max-h-[70vh]" style={{ boxShadow: 'inset -12px 0 8px -8px rgba(0,0,0,0.06)' }}>
-          <Table className="text-xs relative">
+        <div className="overflow-x-auto overflow-y-auto max-h-[70vh]" style={{ boxShadow: 'inset -12px 0 8px -8px rgba(0,0,0,0.06)' }}>
+          <Table className="text-xs relative w-full">
             <TableHeader className="sticky top-0 z-20 bg-muted/40 backdrop-blur-sm shadow-sm">
               <TableRow>
-                <TableHead className="py-1.5 px-2 w-[40px] sticky left-0 z-30 bg-muted/90 backdrop-blur-sm">
+                <TableHead className="py-1 px-1 w-[28px] sticky left-0 z-30 bg-muted/90 backdrop-blur-sm">
                   <Checkbox
                     checked={sessions.length > 0 && selectedIds.size === sessions.length}
                     onCheckedChange={toggleSelectAll}
@@ -510,22 +511,22 @@ export function SessionsTable({
                     className="translate-y-[2px]"
                   />
                 </TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[120px] sticky left-[40px] z-30 bg-muted/90 backdrop-blur-sm border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Room / Part</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[70px]">Send Pt</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[120px]">Defendant(s)</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[55px]">PURP</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[65px]">Date Tr</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[80px]">Top Charge</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[90px]">Status</TableHead>
-                <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap min-w-[90px]">Attorneys</TableHead>
+                <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap w-[100px] sticky left-[28px] z-30 bg-muted/90 backdrop-blur-sm border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Room/Part</TableHead>
+                <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap w-[52px]">Snd Pt</TableHead>
+                <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap min-w-[100px]">Defendant(s)</TableHead>
+                <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap w-[42px]">Purp</TableHead>
+                <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap w-[52px]">Date Tr</TableHead>
+                <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap min-w-[75px]">Top Charge</TableHead>
+                <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap w-[80px]">Status</TableHead>
+                <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap min-w-[80px]">Attorney</TableHead>
                 {!compactView && (
                   <>
-                    <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[60px]">Est Fin</TableHead>
-                    <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[45px]">Cal #</TableHead>
-                    <TableHead className="py-1.5 px-2 font-bold whitespace-nowrap w-[80px]">Out Dates</TableHead>
+                    <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap w-[50px]">Est Fin</TableHead>
+                    <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap w-[38px]">Cal#</TableHead>
+                    <TableHead className="py-1 px-1.5 font-bold whitespace-nowrap w-[70px]">Out Dates</TableHead>
                   </>
                 )}
-                <TableHead className="py-1.5 px-1 w-[56px]"></TableHead>
+                <TableHead className="py-1 px-1 w-[44px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -538,7 +539,7 @@ export function SessionsTable({
                 return (
                   <TableRow key={session.id} className={`hover:bg-muted/20 border-b ${isSelected ? 'bg-primary/5' : ''}`}>
                     {/* Checkbox */}
-                    <TableCell className={`py-1 px-2 align-top sticky left-0 z-10 ${isSelected ? 'bg-primary/5' : 'bg-background/95'} backdrop-blur-sm`}>
+                    <TableCell className={`py-0.5 px-1 align-top sticky left-0 z-10 ${isSelected ? 'bg-primary/5' : 'bg-background/95'} backdrop-blur-sm`}>
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleSelectRow(session.id)}
@@ -548,66 +549,62 @@ export function SessionsTable({
                     </TableCell>
 
                     {/* Room / Part / Judge — read-only identity column, frozen on the left */}
-                    <TableCell className={`py-1 px-2 align-top sticky left-[40px] z-10 ${isSelected ? 'bg-primary/5' : 'bg-background/95'} backdrop-blur-sm border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-muted/50`}>
-                      <div className="space-y-0 min-w-[100px]">
-                        <div className="font-bold text-xs">{roomNumber}</div>
-                        {session.part_number && (
-                          <div className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
-                            {session.part_number}
-                          </div>
-                        )}
-                        <div className="text-[10px] text-muted-foreground truncate max-w-[110px]">
+                    <TableCell className={`py-0.5 px-1.5 align-top sticky left-[28px] z-10 ${isSelected ? 'bg-primary/5' : 'bg-background/95'} backdrop-blur-sm border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]`}>
+                      <div className="space-y-0">
+                        <div className="flex items-baseline gap-1">
+                          <span className="font-bold text-xs leading-tight">{roomNumber}</span>
+                          {session.part_number && (
+                            <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">{session.part_number}</span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground truncate max-w-[90px] leading-tight">
                           {session.judge_name || '—'}
                         </div>
-                        {session.calendar_day && (
-                          <div className="text-[9px] text-muted-foreground">Cal {session.calendar_day}</div>
-                        )}
-                        {absenceText && (
-                          <div className="text-[9px] font-medium text-red-600 dark:text-red-400">{absenceText}</div>
-                        )}
-                        {coverage && (
-                          <div className="text-[9px] text-amber-600 dark:text-amber-400">
-                            Cover: {coverage.covering_staff_name}
+                        {(absenceText || coverage || session.calendar_day) && (
+                          <div className="flex flex-wrap gap-x-1">
+                            {session.calendar_day && <span className="text-[9px] text-muted-foreground">Cal {session.calendar_day}</span>}
+                            {absenceText && <span className="text-[9px] font-medium text-red-600 dark:text-red-400">{absenceText}</span>}
+                            {coverage && <span className="text-[9px] text-amber-600 dark:text-amber-400">↩ {coverage.covering_staff_name}</span>}
                           </div>
                         )}
                       </div>
                     </TableCell>
 
                     {/* Sending Part */}
-                    <TableCell className="py-1 px-2 align-top">
-                      <InlineCell value={session.parts_entered_by || ''} field="parts_entered_by" sessionId={session.id} onSave={handleCellSave} placeholder="PT..." className="w-16" />
+                    <TableCell className="py-0.5 px-1.5 align-top">
+                      <InlineCell value={session.parts_entered_by || ''} field="parts_entered_by" sessionId={session.id} onSave={handleCellSave} placeholder="PT..." className="w-12" />
                     </TableCell>
 
                     {/* Defendants */}
-                    <TableCell className="py-1 px-2 align-top">
-                      <InlineCell value={session.defendants || ''} field="defendants" sessionId={session.id} onSave={handleCellSave} placeholder="Defendant..." />
+                    <TableCell className="py-0.5 px-1.5 align-top">
+                      <InlineCell value={session.defendants || ''} field="defendants" sessionId={session.id} onSave={handleCellSave} placeholder="Name..." />
                     </TableCell>
 
                     {/* Purpose */}
-                    <TableCell className="py-1 px-2 align-top">
-                      <InlineCell value={session.purpose || ''} field="purpose" sessionId={session.id} onSave={handleCellSave} placeholder="JS" className="w-12" />
+                    <TableCell className="py-0.5 px-1.5 align-top">
+                      <InlineCell value={session.purpose || ''} field="purpose" sessionId={session.id} onSave={handleCellSave} placeholder="JS" className="w-10" />
                     </TableCell>
 
                     {/* Date Transferred — free-text date */}
-                    <TableCell className="py-1 px-2 align-top">
-                      <InlineCell value={session.date_transferred_or_started || ''} field="date_transferred_or_started" sessionId={session.id} onSave={handleCellSave} isDateField className="w-14" />
+                    <TableCell className="py-0.5 px-1.5 align-top">
+                      <InlineCell value={session.date_transferred_or_started || ''} field="date_transferred_or_started" sessionId={session.id} onSave={handleCellSave} isDateField className="w-12" />
                     </TableCell>
 
                     {/* Top Charge */}
-                    <TableCell className="py-1 px-2 align-top">
+                    <TableCell className="py-0.5 px-1.5 align-top">
                       <InlineCell value={session.top_charge || ''} field="top_charge" sessionId={session.id} onSave={handleCellSave} placeholder="Charge..." />
                     </TableCell>
 
-                    {/* Status — dropdown + detail text */}
-                    <TableCell className="py-1 px-2 align-top">
-                      <div className="space-y-0.5">
+                    {/* Status — dropdown + detail text stacked tightly */}
+                    <TableCell className="py-0.5 px-1.5 align-top">
+                      <div className="space-y-0">
                         <InlineCell value={session.status || 'scheduled'} field="status" sessionId={session.id} onSave={handleCellSave} isStatus />
-                        <InlineCell value={session.status_detail || ''} field="status_detail" sessionId={session.id} onSave={handleCellSave} placeholder="detail..." className="w-20" />
+                        <InlineCell value={session.status_detail || ''} field="status_detail" sessionId={session.id} onSave={handleCellSave} placeholder="detail..." className="w-18" />
                       </div>
                     </TableCell>
 
                     {/* Attorney */}
-                    <TableCell className="py-1 px-2 align-top">
+                    <TableCell className="py-0.5 px-1.5 align-top">
                       <InlineCell value={session.attorney || ''} field="attorney" sessionId={session.id} onSave={handleCellSave} placeholder="ADA..." />
                     </TableCell>
 
@@ -615,24 +612,24 @@ export function SessionsTable({
                     {!compactView && (
                       <>
                         {/* Est. Finish — free-text date */}
-                        <TableCell className="py-1 px-2 align-top">
-                          <InlineCell value={session.estimated_finish_date || ''} field="estimated_finish_date" sessionId={session.id} onSave={handleCellSave} isDateField className="w-14" />
+                        <TableCell className="py-0.5 px-1.5 align-top">
+                          <InlineCell value={session.estimated_finish_date || ''} field="estimated_finish_date" sessionId={session.id} onSave={handleCellSave} isDateField className="w-12" />
                         </TableCell>
 
                         {/* Calendar Count */}
-                        <TableCell className="py-1 px-2 align-top">
-                          <InlineCell value={session.calendar_count != null ? String(session.calendar_count) : ''} field="calendar_count" sessionId={session.id} onSave={handleCellSave} placeholder="#" className="w-10" />
+                        <TableCell className="py-0.5 px-1.5 align-top">
+                          <InlineCell value={session.calendar_count != null ? String(session.calendar_count) : ''} field="calendar_count" sessionId={session.id} onSave={handleCellSave} placeholder="#" className="w-8" />
                         </TableCell>
 
                         {/* Out Dates */}
-                        <TableCell className="py-1 px-2 align-top">
-                          <InlineCell value={session.out_dates?.join(', ') || ''} field="out_dates" sessionId={session.id} onSave={handleCellSave} placeholder="11/26-28" className="w-20" />
+                        <TableCell className="py-0.5 px-1.5 align-top">
+                          <InlineCell value={session.out_dates?.join(', ') || ''} field="out_dates" sessionId={session.id} onSave={handleCellSave} placeholder="11/26-28" className="w-16" />
                         </TableCell>
                       </>
                     )}
 
                     {/* Actions: Copy Yesterday + Delete */}
-                    <TableCell className="py-1 px-1 align-top">
+                    <TableCell className="py-0.5 px-1 align-top">
                       <div className="flex items-center gap-0.5">
                         <TooltipProvider delayDuration={300}>
                           <Tooltip>

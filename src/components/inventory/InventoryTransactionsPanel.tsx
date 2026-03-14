@@ -36,6 +36,7 @@ export const InventoryTransactionsPanel = () => {
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["inventory-transactions", searchQuery, typeFilter, dateFilter],
+    retry: false,
     queryFn: async () => {
       let query = supabase
         .from("inventory_item_transactions")

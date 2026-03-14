@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Pencil, X } from "lucide-react";
 import { IssueStatusBadge } from "../../card/IssueStatusBadge";
 import { IssueStatus } from "../../types/IssueTypes";
+import { DeleteIssueButton } from "../../components/DeleteIssueButton";
 
 interface IssueDetailsHeaderProps {
   title: string;
   status: IssueStatus;
+  issueId?: string;
   onEdit: () => void;
+  onDelete?: () => void;
   isEditing: boolean;
 }
 
-export const IssueDetailsHeader = ({ title, status, onEdit, isEditing }: IssueDetailsHeaderProps) => {
+export const IssueDetailsHeader = ({ title, status, issueId, onEdit, onDelete, isEditing }: IssueDetailsHeaderProps) => {
   return (
     <DialogHeader className="px-6 pt-6 pr-12">
       <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -33,6 +36,13 @@ export const IssueDetailsHeader = ({ title, status, onEdit, isEditing }: IssueDe
               {isEditing ? "Cancel edit" : "Edit issue"}
             </span>
           </Button>
+          {!isEditing && issueId && (
+            <DeleteIssueButton
+              issueId={issueId}
+              onDelete={onDelete}
+              className="h-8 w-8 p-0"
+            />
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <IssueStatusBadge status={status} />

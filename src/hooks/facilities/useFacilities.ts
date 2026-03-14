@@ -160,6 +160,11 @@ export function useRoomMutations() {
       // Update cache with server data
       queryClient.setQueryData(facilitiesKeys.room(id), data);
       queryClient.invalidateQueries({ queryKey: facilitiesKeys.rooms() });
+      // Propagate room name/number changes to court views immediately
+      queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
+      queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
+      queryClient.invalidateQueries({ queryKey: ['court-assignments-table'] });
+      queryClient.invalidateQueries({ queryKey: ['court-issues'] });
       toast.success('Room updated successfully');
     },
   });

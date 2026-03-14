@@ -50,14 +50,13 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
       ] = await fetchRelatedRoomData(roomsData.map(room => room.id));
 
       if (occupantsError || issuesError || historyError || fixturesError || connectionsError) {
-        logger.error('Error fetching related data:', { 
-          occupantsError, 
-          issuesError, 
-          historyError, 
+        logger.warn('Some related room data failed to load (continuing with partial data):', {
+          occupantsError,
+          issuesError,
+          historyError,
           fixturesError,
           connectionsError
         });
-        // Continue with partial data but log the errors
       }
 
       logger.debug("Connections data:", connectionsData);

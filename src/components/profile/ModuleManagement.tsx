@@ -131,24 +131,25 @@ export function ModuleManagement() {
             const Icon = config?.icon || Settings2;
             
             return (
-              <div key={module.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-start gap-3">
+              <div key={module.id} className="flex items-center justify-between gap-3 p-4 border rounded-lg">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
                   <div className={`p-2 rounded-md ${module.enabled ? 'bg-primary/10' : 'bg-muted'}`}>
                     <Icon className={`h-4 w-4 ${module.enabled ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Label className="text-sm font-medium">{module.name}</Label>
-                      <Badge variant={module.enabled ? "default" : "secondary"} className="text-xs">
+                      <Badge variant={module.enabled ? "default" : "secondary"} className="text-xs shrink-0">
                         {module.enabled ? "Enabled" : "Disabled"}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground break-words">
                       {module.description}
                     </p>
                   </div>
                 </div>
                 <Switch
+                  className="shrink-0"
                   checked={module.enabled}
                   onCheckedChange={(checked) => handleModuleToggle(module.id, checked)}
                   disabled={isTogglingModule}

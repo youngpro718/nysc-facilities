@@ -41,8 +41,9 @@ export function SupplyFulfillmentPanel() {
   const queryClient = useQueryClient();
 
   // Fetch pending/in-progress supply requests
-  const { data: requests, isLoading } = useQuery({
+  const { data: requests, isLoading, isError } = useQuery({
     queryKey: ['supply-fulfillment-queue'],
+    retry: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('supply_requests')
@@ -288,7 +289,7 @@ export function SupplyFulfillmentPanel() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : requests?.length === 0 ? (
+            ) : isError || requests?.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <PackageCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
                 <p className="font-medium">All caught up!</p>

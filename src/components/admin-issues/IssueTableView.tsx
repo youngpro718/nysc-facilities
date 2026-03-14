@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Eye, MapPin, User } from "lucide-react";
 import { IssueTypeBadge } from "@/components/issues/card/IssueTypeBadge";
+import { DeleteIssueButton } from "@/components/issues/components/DeleteIssueButton";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
@@ -60,7 +61,7 @@ export function IssueTableView({
 
   return (
     <div className="border rounded-lg overflow-x-auto">
-      <Table className="min-w-max">
+      <Table className="min-w-[980px]">
         <TableHeader>
           <TableRow>
             <TableHead className="w-12">
@@ -69,15 +70,15 @@ export function IssueTableView({
                 onCheckedChange={handleSelectAll}
               />
             </TableHead>
-            <TableHead>Title</TableHead>
+            <TableHead className="min-w-[260px]">Title</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Type</TableHead>
-            <TableHead>Room</TableHead>
-            <TableHead>Reporter</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Comments</TableHead>
-            <TableHead className="w-24">Actions</TableHead>
+            <TableHead className="min-w-[110px]">Room</TableHead>
+            <TableHead className="min-w-[160px]">Reporter</TableHead>
+            <TableHead className="min-w-[120px]">Created</TableHead>
+            <TableHead className="min-w-[90px]">Comments</TableHead>
+            <TableHead className="w-32">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -90,9 +91,9 @@ export function IssueTableView({
                 />
               </TableCell>
 
-              <TableCell className="max-w-xs">
+              <TableCell className="max-w-sm">
                 <button
-                  className="text-left w-full hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                  className="text-left w-full hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-1 py-0.5 -mx-1 -my-0.5"
                   onClick={() => onIssueSelect?.(issue.id)}
                 >
                   <div className="font-medium text-sm truncate">
@@ -154,15 +155,22 @@ export function IssueTableView({
               </TableCell>
 
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-11"
-                  onClick={() => onIssueSelect?.(issue.id)}
-                  title="View issue details"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => onIssueSelect?.(issue.id)}
+                    title="View issue details"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <DeleteIssueButton
+                    issueId={issue.id}
+                    standalone={false}
+                    onDelete={onIssueUpdate}
+                  />
+                </div>
               </TableCell>
             </TableRow>
           ))}

@@ -22,7 +22,7 @@ export function BackupHistoryDialog({
 }: BackupHistoryDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Backup History</DialogTitle>
         </DialogHeader>
@@ -31,9 +31,9 @@ export function BackupHistoryDialog({
             {backupVersions.map((backup) => (
               <div
                 key={backup.id}
-                className="flex items-center justify-between p-4 rounded-lg border"
+                className="flex flex-wrap items-start justify-between gap-3 p-4 rounded-lg border"
               >
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0 flex-1">
                   <h4 className="font-medium">{backup.name}</h4>
                   <p className="text-sm text-muted-foreground">
                     Created: {format(new Date(backup.created_at), 'PPp')}

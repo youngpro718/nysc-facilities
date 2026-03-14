@@ -94,6 +94,21 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
     },
   });
 
+  // Fetch open/in-progress issues linked to rooms
+  const { data: roomIssues } = useQuery({
+    queryKey: ['room-issues-open'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('issues')
+        .select('id, status, priority, room_id')
+        .in('status', ['open', 'in_progress'])
+        .not('room_id', 'is', null);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
   // Fetch today's sessions count
   const { data: sessionsCount } = useQuery({
     queryKey: ['todays-sessions-count', today],
@@ -112,7 +127,11 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
   const clerksOut = absences?.filter(a => a.staff?.role === 'clerk').length || 0;
   const needsCoverage = absences?.filter(a => !a.coverage_assigned).length || 0;
   const activeShutdowns = shutdowns?.length || 0;
-  const totalIssues = judgesOut + clerksOut + activeShutdowns + (conflicts?.conflicts.length || 0);
+  const openRoomIssues = roomIssues?.length || 0;
+  const urgentRoomIssues = roomIssues?.filter(i =>
+    ['critical', 'urgent', 'high'].includes(String(i.priority || '').toLowerCase())
+  ).length || 0;
+  const totalIssues = judgesOut + clerksOut + openRoomIssues + activeShutdowns + (conflicts?.conflicts.length || 0);
 
   const handleNavigate = (tab: string) => {
     if (onNavigateToTab) {
@@ -146,6 +165,13 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
               )}
               {judgesOut > 0 && needsCoverage === 0 && (
                 <li>{judgesOut} {judgesOut === 1 ? 'judge is' : 'judges are'} out today</li>
+              )}
+              {openRoomIssues > 0 && (
+                <li>
+                  <button className="underline hover:no-underline" onClick={() => navigate('/operations?tab=issues&filter=active')}>
+                    {openRoomIssues} open {openRoomIssues === 1 ? 'room issue' : 'room issues'}{urgentRoomIssues > 0 ? ` (${urgentRoomIssues} high priority)` : ''} →
+                  </button>
+                </li>
               )}
               {activeShutdowns > 0 && (
                 <li>
@@ -216,25 +242,36 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
           </CardContent>
         </Card>
 
-        {/* Room Shutdowns */}
-        <Card className={activeShutdowns > 0 ? 'border-orange-500' : ''}>
+        {/* Room Issues — live open issues count */}
+        <Card className={openRoomIssues > 0 ? (urgentRoomIssues > 0 ? 'border-red-500' : 'border-orange-400') : ''}>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-orange-500" />
+              <Building2 className={`h-4 w-4 ${openRoomIssues > 0 ? (urgentRoomIssues > 0 ? 'text-red-500' : 'text-orange-500') : 'text-muted-foreground'}`} />
               Room Issues
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl sm:text-3xl font-bold">{activeShutdowns}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Rooms unavailable
+            <div className={`text-2xl sm:text-3xl font-bold ${openRoomIssues > 0 ? (urgentRoomIssues > 0 ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400') : ''}`}>
+              {openRoomIssues}
             </div>
-            <Button 
-              variant="link" 
+            <div className="text-xs text-muted-foreground mt-1">
+              {openRoomIssues === 0
+                ? 'No open room issues'
+                : urgentRoomIssues > 0
+                ? `${urgentRoomIssues} high priority`
+                : 'Open / in progress'}
+            </div>
+            {activeShutdowns > 0 && (
+              <div className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">
+                +{activeShutdowns} {activeShutdowns === 1 ? 'room' : 'rooms'} shut down
+              </div>
+            )}
+            <Button
+              variant="link"
               className="p-0 h-auto text-xs mt-1"
-              onClick={() => handleNavigate('assignments')}
+              onClick={() => navigate('/operations?tab=issues&filter=active')}
             >
-              View assignments <ArrowRight className="h-3 w-3 ml-1" />
+              View issues <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
           </CardContent>
         </Card>
@@ -295,6 +332,28 @@ export function TodaysStatusDashboard({ onNavigateToTab }: TodaysStatusProps) {
                     onClick={() => handleNavigate('staff')}
                   >
                     Assign Coverage
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Open Room Issues */}
+            {openRoomIssues > 0 && (
+              <Alert variant={urgentRoomIssues > 0 ? 'destructive' : 'default'}>
+                <Building2 className="h-4 w-4" />
+                <AlertTitle>Open Room Issues</AlertTitle>
+                <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <span>
+                    {openRoomIssues} open {openRoomIssues === 1 ? 'issue' : 'issues'} linked to rooms
+                    {urgentRoomIssues > 0 ? ` · ${urgentRoomIssues} high priority` : ''}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant={urgentRoomIssues > 0 ? 'destructive' : 'default'}
+                    className="w-full sm:w-auto"
+                    onClick={() => navigate('/operations?tab=issues&filter=active')}
+                  >
+                    View Issues
                   </Button>
                 </AlertDescription>
               </Alert>

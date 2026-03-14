@@ -6,7 +6,7 @@ import { AddStaffDialog } from "./AddStaffDialog";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { RefreshCw, AlertTriangle, Users, Calendar, MapPin, Edit3, Eye, UserPlus, Gavel, Crown, History } from "lucide-react";
 import { CourtAssignmentAuditPanel } from "./CourtAssignmentAuditPanel";
 import { Button } from "@/components/ui/button";

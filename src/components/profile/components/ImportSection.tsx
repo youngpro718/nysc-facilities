@@ -14,7 +14,7 @@ export function ImportSection({ isImporting, onImport }: ImportSectionProps) {
         <div className="mt-1">
           <Upload className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 min-w-0 flex-1">
           <h3 className="text-lg font-semibold">Import Database</h3>
           <p className="text-sm text-muted-foreground">
             Update the database by uploading an Excel file. The file structure should match the exported format.
@@ -25,7 +25,7 @@ export function ImportSection({ isImporting, onImport }: ImportSectionProps) {
           <Button
             onClick={() => document.getElementById('file-upload')?.click()}
             disabled={isImporting}
-            className="w-full sm:w-auto"
+            className="w-full"
           >
             {isImporting ? (
               <>

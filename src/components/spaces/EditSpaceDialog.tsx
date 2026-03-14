@@ -125,6 +125,11 @@ export function EditSpaceDialog({
       // Also invalidate any parent chain queries
       queryClient.invalidateQueries({ queryKey: ['parent-chain'] });
       queryClient.invalidateQueries({ queryKey: ['spaces'] });
+      // Propagate room name/number changes to court views immediately
+      queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
+      queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
+      queryClient.invalidateQueries({ queryKey: ['court-assignments-table'] });
+      queryClient.invalidateQueries({ queryKey: ['court-issues'] });
       toast.success("Room updated successfully");
       setOpen(false);
       if (onSpaceUpdated) {

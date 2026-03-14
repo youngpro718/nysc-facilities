@@ -73,7 +73,7 @@ export default function AdminKeyRequests() {
         .from('key_requests')
         .select(`
           *,
-          profiles!key_requests_user_id_fkey (
+          profiles:user_id (
             first_name,
             last_name,
             email,

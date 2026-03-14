@@ -57,7 +57,7 @@ export function useLowStockItems() {
     queryFn: OptimizedInventoryService.getLowStockItems,
     staleTime: 2 * 60 * 1000, // 2 minutes (more frequent updates for critical data)
     gcTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true, // Refetch on focus for critical data
+    refetchOnWindowFocus: false,
     retry: 3,
   });
 }

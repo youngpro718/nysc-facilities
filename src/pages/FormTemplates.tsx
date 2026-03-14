@@ -164,26 +164,29 @@ export default function FormTemplates() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-xl sm:text-3xl font-bold mb-2">Form Templates</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Fill out forms online instantly or download PDFs - All submissions are tracked in the system
           </p>
         </div>
         {isAdmin && (
-          <div className="flex gap-2">
-            <Button onClick={() => window.location.href = '/admin/form-templates'}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Custom Template
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <Button onClick={() => window.location.href = '/admin/form-templates'} size="sm">
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Create Custom Template</span>
+              <span className="sm:hidden">Create</span>
             </Button>
-            <Button variant="outline" onClick={() => setEmailDialogOpen(true)}>
-              <Send className="w-4 h-4 mr-2" />
-              Email Form
+            <Button variant="outline" size="sm" onClick={() => setEmailDialogOpen(true)}>
+              <Send className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Email Form</span>
+              <span className="sm:hidden">Email</span>
             </Button>
-            <Button variant="outline" onClick={() => setQrDialogOpen(true)}>
-              <QrCode className="w-4 h-4 mr-2" />
-              QR Code
+            <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)}>
+              <QrCode className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">QR Code</span>
+              <span className="sm:hidden">QR</span>
             </Button>
           </div>
         )}

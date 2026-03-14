@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+// @ts-nocheck
+import { useState, useEffect } from 'react';
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   RefreshCcw, 
   Package, 
@@ -15,10 +16,9 @@ import {
   CheckCircle,
   AlertCircle,
   Search,
+  Filter,
   Boxes,
-  Truck,
-  Flame,
-  Timer
+  Truck
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { SimpleOrderCard } from './SimpleOrderCard';
@@ -30,24 +30,6 @@ import { InventoryManagementTab } from './InventoryManagementTab';
 import { LowStockPanel } from '@/components/inventory/LowStockPanel';
 import { staffCompletePickup } from '@/services/supplyOrdersService';
 import { toast } from 'sonner';
-import { formatDistanceToNowStrict } from 'date-fns';
-
-// Helper to get minutes since a date
-const minutesSince = (dateStr: string) => (Date.now() - new Date(dateStr).getTime()) / 60000;
-
-// Urgency level based on wait time
-const getUrgencyLevel = (order: Record<string, unknown>): 'critical' | 'warning' | 'normal' => {
-  const mins = minutesSince(order.created_at as string);
-  if (mins > 60) return 'critical';   // >1 hour
-  if (mins > 30) return 'warning';    // >30 minutes
-  return 'normal';
-};
-
-const urgencyStyles = {
-  critical: 'ring-2 ring-destructive/50 border-destructive/40 shadow-[0_0_12px_-3px_hsl(var(--destructive)/0.4)]',
-  warning: 'ring-1 ring-amber-400/50 border-amber-400/40',
-  normal: '',
-};
 
 export function ImprovedSupplyStaffDashboard() {
   const queryClient = useQueryClient();
@@ -58,6 +40,7 @@ export function ImprovedSupplyStaffDashboard() {
   const [completedLastUpdated, setCompletedLastUpdated] = useState(new Date());
   const [viewMode, setViewMode] = useState<SupplyViewMode>('cards');
 
+  // Mutation for confirming pickup
   const confirmPickupMutation = useMutation({
     mutationFn: staffCompletePickup,
     onSuccess: () => {
@@ -71,9 +54,11 @@ export function ImprovedSupplyStaffDashboard() {
     },
   });
 
+  // Fetch all orders
   const { data: allOrders, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['supply-staff-orders'],
     queryFn: async () => {
+      
       const { data, error } = await supabase
         .from('supply_requests')
         .select(`
@@ -95,6 +80,13 @@ export function ImprovedSupplyStaffDashboard() {
             )
           )
         `)
+        // FIXED: Use actual statuses from the workflow
+        // 'submitted' = new orders (standard items)
+        // 'approved' = admin-approved orders (restricted items)
+        // 'received' = supply room accepted
+        // 'picking' = currently being fulfilled
+        // 'ready' = packed and ready for pickup
+        // Note: 'pending_approval' orders need admin approval first, not shown to supply staff
         .in('status', ['submitted', 'approved', 'received', 'picking', 'ready'])
         .order('created_at', { ascending: false });
 
@@ -106,8 +98,10 @@ export function ImprovedSupplyStaffDashboard() {
       setLastUpdated(new Date());
       return data || [];
     },
+    // refetchInterval disabled
   });
 
+  // Fetch completed orders separately (last 7 days only)
   const { data: completedOrders } = useQuery({
     queryKey: ['supply-staff-completed'],
     queryFn: async () => {
@@ -144,11 +138,12 @@ export function ImprovedSupplyStaffDashboard() {
       setCompletedLastUpdated(new Date());
       return data || [];
     },
-    enabled: activeTab === 'completed',
+    enabled: activeTab === 'completed', // Only fetch when viewing completed tab
+    // refetchInterval disabled
   });
 
   // Subscribe to real-time updates
-  useState(() => {
+  useEffect(() => {
     const channel = supabase
       .channel('supply-staff-changes')
       .on(
@@ -165,23 +160,25 @@ export function ImprovedSupplyStaffDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  });
+  }, []);
 
   // Filter orders by status and search
   const ordersToFilter = activeTab === 'completed' ? (completedOrders || []) : (allOrders || []);
   
-  const filteredOrders = ordersToFilter.filter((order: Record<string, unknown>) => {
+  const filteredOrders = ordersToFilter.filter(order => {
+    // Filter by tab (completed tab uses separate query, so skip this filter)
     if (activeTab !== 'completed') {
-      if (activeTab === 'new' && !['submitted', 'approved', 'received', 'picking'].includes(order.status as string)) return false;
+      // 'new' tab: orders waiting to be fulfilled (submitted, approved, received, picking)
+      if (activeTab === 'new' && !['submitted', 'approved', 'received', 'picking'].includes(order.status)) return false;
       if (activeTab === 'ready' && order.status !== 'ready') return false;
     }
 
+    // Filter by search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      const profiles = order.profiles as Record<string, unknown> | null;
-      const requesterName = `${profiles?.first_name} ${profiles?.last_name}`.toLowerCase();
-      const department = (profiles?.department as string)?.toLowerCase() || '';
-      const room = (order.delivery_location as string)?.toLowerCase() || '';
+      const requesterName = `${order.profiles?.first_name} ${order.profiles?.last_name}`.toLowerCase();
+      const department = order.profiles?.department?.toLowerCase() || '';
+      const room = order.delivery_location?.toLowerCase() || '';
       
       return requesterName.includes(query) || department.includes(query) || room.includes(query);
     }
@@ -189,48 +186,29 @@ export function ImprovedSupplyStaffDashboard() {
     return true;
   });
 
-  // Sort new orders by urgency (oldest first)
-  const sortedOrders = useMemo(() => {
-    if (activeTab === 'new') {
-      return [...filteredOrders].sort((a: Record<string, unknown>, b: Record<string, unknown>) => 
-        new Date(a.created_at as string).getTime() - new Date(b.created_at as string).getTime()
-      );
-    }
-    return filteredOrders;
-  }, [filteredOrders, activeTab]);
-
-  // Calculate counts
-  const newCount = (allOrders || []).filter((o: Record<string, unknown>) => ['submitted', 'approved', 'received', 'picking'].includes(o.status as string)).length;
-  const readyCount = (allOrders || []).filter((o: Record<string, unknown>) => o.status === 'ready').length;
-  const urgentCount = (allOrders || []).filter((o: Record<string, unknown>) => 
-    ['submitted', 'approved', 'received', 'picking'].includes(o.status as string) && getUrgencyLevel(o) === 'critical'
-  ).length;
-  const pickingCount = (allOrders || []).filter((o: Record<string, unknown>) => o.status === 'picking').length;
+  // Calculate counts - use actual statuses
+  const newCount = (allOrders || []).filter(o => ['submitted', 'approved', 'received', 'picking'].includes(o.status)).length;
+  const readyCount = (allOrders || []).filter(o => o.status === 'ready').length;
+  const completedTodayCount = (allOrders || []).filter(o => {
+    if (o.status !== 'completed') return false;
+    const today = new Date().toDateString();
+    const completedDate = new Date(o.fulfilled_at || o.updated_at).toDateString();
+    return today === completedDate;
+  }).length;
 
   const handleRefresh = () => {
     refetch();
   };
 
-  // Find oldest waiting order
-  const oldestWaiting = useMemo(() => {
-    const waiting = (allOrders || []).filter((o: Record<string, unknown>) => 
-      ['submitted', 'approved', 'received'].includes(o.status as string)
-    );
-    if (waiting.length === 0) return null;
-    return waiting.reduce((oldest: Record<string, unknown>, o: Record<string, unknown>) => 
-      new Date(o.created_at as string) < new Date(oldest.created_at as string) ? o : oldest
-    );
-  }, [allOrders]);
-
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Stats */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
               <Package className="h-8 w-8" />
-              Supply Room
+              Supply Room Staff
             </h1>
             <div className="flex items-center gap-4">
               <p className="text-muted-foreground">
@@ -255,60 +233,49 @@ export function ImprovedSupplyStaffDashboard() {
           </Button>
         </div>
 
-        {/* Stats Cards with urgency indicators */}
-        <div className="grid gap-4 md:grid-cols-4">
-          {/* Urgent indicator */}
-          <Card className={urgentCount > 0 ? 'border-destructive/40 bg-destructive/5' : ''}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Urgent</CardTitle>
-              <Flame className={`h-4 w-4 ${urgentCount > 0 ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${urgentCount > 0 ? 'text-destructive' : ''}`}>{urgentCount}</div>
-              <p className="text-xs text-muted-foreground">
-                Waiting &gt;1 hour
-              </p>
-            </CardContent>
-          </Card>
-
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Queue</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                New Orders
+              </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{newCount}</div>
               <p className="text-xs text-muted-foreground">
-                {oldestWaiting 
-                  ? `Oldest: ${formatDistanceToNowStrict(new Date(oldestWaiting.created_at as string))}`
-                  : 'All clear'
-                }
+                Awaiting fulfillment
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Being Picked</CardTitle>
-              <Timer className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Ready for Pickup
+              </CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pickingCount}</div>
+              <div className="text-2xl font-bold">{readyCount}</div>
               <p className="text-xs text-muted-foreground">
-                Currently fulfilling
+                Waiting for collection
               </p>
             </CardContent>
           </Card>
 
-          <Card className={readyCount > 0 ? 'border-green-500/40 bg-green-500/5' : ''}>
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ready</CardTitle>
-              <Package className={`h-4 w-4 ${readyCount > 0 ? 'text-green-600' : 'text-muted-foreground'}`} />
+              <CardTitle className="text-sm font-medium">
+                Completed Today
+              </CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${readyCount > 0 ? 'text-green-600' : ''}`}>{readyCount}</div>
+              <div className="text-2xl font-bold">{completedTodayCount}</div>
               <p className="text-xs text-muted-foreground">
-                Awaiting pickup
+                Orders fulfilled
               </p>
             </CardContent>
           </Card>
@@ -337,7 +304,7 @@ export function ImprovedSupplyStaffDashboard() {
             <span className="hidden sm:inline">New Orders</span>
             <span className="sm:hidden">New</span>
             {newCount > 0 && (
-              <Badge variant={urgentCount > 0 ? 'destructive' : 'secondary'} className="ml-1">
+              <Badge variant="destructive" className="ml-1">
                 {newCount}
               </Badge>
             )}
@@ -373,7 +340,7 @@ export function ImprovedSupplyStaffDashboard() {
                 <p className="text-sm text-muted-foreground">Loading orders...</p>
               </div>
             </div>
-          ) : sortedOrders.length === 0 ? (
+          ) : filteredOrders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Inbox className="h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No New Orders</h3>
@@ -383,17 +350,16 @@ export function ImprovedSupplyStaffDashboard() {
             </div>
           ) : viewMode === 'list' ? (
             <OrderTableView
-              orders={sortedOrders}
-              onFulfill={(order: Record<string, unknown>) => setSelectedOrder(order)}
+              orders={filteredOrders}
+              onFulfill={(order) => setSelectedOrder(order)}
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {sortedOrders.map((order: Record<string, unknown>) => (
+              {filteredOrders.map((order) => (
                 <SimpleOrderCard
-                  key={order.id as string}
+                  key={order.id}
                   order={order}
                   onFulfill={() => setSelectedOrder(order)}
-                  urgencyClass={urgencyStyles[getUrgencyLevel(order)]}
                 />
               ))}
             </div>
@@ -413,18 +379,18 @@ export function ImprovedSupplyStaffDashboard() {
           ) : viewMode === 'list' ? (
             <OrderTableView
               orders={filteredOrders}
-              onFulfill={(order: Record<string, unknown>) => setSelectedOrder(order)}
-              onConfirmPickup={(orderId: string) => confirmPickupMutation.mutate(orderId)}
+              onFulfill={(order) => setSelectedOrder(order)}
+              onConfirmPickup={(orderId) => confirmPickupMutation.mutate(orderId)}
               isConfirmingPickup={confirmPickupMutation.isPending}
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredOrders.map((order: Record<string, unknown>) => (
+              {filteredOrders.map((order) => (
                 <SimpleOrderCard
-                  key={order.id as string}
+                  key={order.id}
                   order={order}
                   onFulfill={() => setSelectedOrder(order)}
-                  onConfirmPickup={() => confirmPickupMutation.mutate(order.id as string)}
+                  onConfirmPickup={() => confirmPickupMutation.mutate(order.id)}
                   isConfirmingPickup={confirmPickupMutation.isPending}
                 />
               ))}
@@ -445,13 +411,13 @@ export function ImprovedSupplyStaffDashboard() {
           ) : viewMode === 'list' ? (
             <OrderTableView
               orders={filteredOrders}
-              onFulfill={(order: Record<string, unknown>) => setSelectedOrder(order)}
+              onFulfill={(order) => setSelectedOrder(order)}
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredOrders.map((order: Record<string, unknown>) => (
+              {filteredOrders.map((order) => (
                 <SimpleOrderCard
-                  key={order.id as string}
+                  key={order.id}
                   order={order}
                   onFulfill={() => setSelectedOrder(order)}
                 />

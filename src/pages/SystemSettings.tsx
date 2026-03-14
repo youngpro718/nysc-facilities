@@ -15,12 +15,12 @@ export default function SystemSettings() {
       {/* App Install Card */}
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                 <QrCode className="h-5 w-5 text-primary" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-semibold">Install App on Phones</h3>
                 <p className="text-sm text-muted-foreground">
                   Share QR code or link to install the app on staff phones
@@ -30,6 +30,7 @@ export default function SystemSettings() {
             <Button
               onClick={() => navigate('/install')}
               size="sm"
+              className="shrink-0"
             >
               View QR Code
             </Button>

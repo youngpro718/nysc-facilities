@@ -28,7 +28,7 @@ export default function Keys() {
         logger.error("Error fetching key statistics:", keysError);
         throw keysError;
       }
-      
+
       return keysData as KeyData[];
     },
   });
@@ -57,55 +57,51 @@ export default function Keys() {
       </DataState>
 
       <Tabs defaultValue="lockbox" className="space-y-4 sm:space-y-6">
-        <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-          <div className="overflow-x-auto scrollbar-thin">
-            <TabsList className="inline-flex sm:grid w-full sm:grid-cols-6 bg-muted min-w-max sm:min-w-0 h-10 sm:h-10" data-tour="keys-tabs">
-            <TabsTrigger 
-              value="lockbox" 
+        <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex sm:grid sm:w-full sm:grid-cols-6 bg-muted min-w-max sm:min-w-0 h-10 sm:h-10" data-tour="keys-tabs">
+            <TabsTrigger
+              value="lockbox"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <Box className="h-4 w-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">Lockbox</span>
+              <span className="hidden sm:inline text-sm">Lockbox</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="inventory" 
+            <TabsTrigger
+              value="inventory"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <Package className="h-4 w-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">Keys</span>
+              <span className="hidden sm:inline text-sm">Keys</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="assignments" 
+            <TabsTrigger
+              value="assignments"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <Users className="h-4 w-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">Assign</span>
+              <span className="hidden sm:inline text-sm">Assign</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="history" 
+            <TabsTrigger
+              value="history"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <History className="h-4 w-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">History</span>
+              <span className="hidden sm:inline text-sm">History</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="elevator-passes" 
+            <TabsTrigger
+              value="elevator-passes"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <KeyRound className="h-4 w-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">Passes</span>
+              <span className="hidden sm:inline text-sm">Passes</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="manage" 
+            <TabsTrigger
+              value="manage"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <Settings className="h-4 w-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">Manage</span>
+              <span className="hidden sm:inline text-sm">Manage</span>
             </TabsTrigger>
-            </TabsList>
-          </div>
-          {/* Scroll fade indicators for mobile */}
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden" />
+          </TabsList>
         </div>
 
         <TabsContent value="lockbox" className="space-y-6 mt-4">

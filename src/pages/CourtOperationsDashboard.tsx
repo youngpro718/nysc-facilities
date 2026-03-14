@@ -18,6 +18,8 @@ import {
   Radio,
   UserX,
   Construction,
+  Gavel,
+  AlertTriangle,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
@@ -25,6 +27,7 @@ import { useConditionalNotifications } from "@/hooks/useConditionalNotifications
 import { useCourtOperationsCounts } from "@/hooks/useCourtOperationsCounts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 export const CourtOperationsDashboard = () => {
   const [tempLocationOpen, setTempLocationOpen] = useState(false);
@@ -36,7 +39,7 @@ export const CourtOperationsDashboard = () => {
   const counts = useCourtOperationsCounts();
 
   // Determine when to glow/highlight the Assignments tab
-  const { getRecentlyAffectedRooms } = useCourtIssuesIntegration();
+  const { getRecentlyAffectedRooms, buildingIssueCount, courtIssues } = useCourtIssuesIntegration();
   const recentlyAffectedRooms = getRecentlyAffectedRooms();
   const { lastAdminNotification } = useConditionalNotifications();
 
@@ -120,17 +123,29 @@ export const CourtOperationsDashboard = () => {
 
   return (
     <div className="container mx-auto px-3 sm:px-6 py-2 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-8">
+      <Breadcrumb />
+
+      {/* Page Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-primary/10">
+          <Gavel className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Court Operations</h2>
+          <p className="text-sm text-muted-foreground">Manage court sessions, assignments, and staff</p>
+        </div>
+      </div>
 
       {/* Global Status Alerts (formerly Today Tab) */}
       <TodaysStatusDashboard onNavigateToTab={setTab} />
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4">
         <StatusCard
           statusVariant={counts.todaysSessions > 0 ? "info" : "neutral"}
-          title="Today's Sessions"
+          title="Today's Parts"
           value={counts.todaysSessions}
-          subLabel={counts.todaysSessions > 0 ? "Active" : "None scheduled"}
+          subLabel={counts.todaysSessions > 0 ? "In today's schedule" : "None scheduled"}
           icon={CalendarCheck}
           onClick={() => setTab("sessions")}
         />
@@ -152,18 +167,32 @@ export const CourtOperationsDashboard = () => {
         />
         <StatusCard
           statusVariant={counts.dailySessions > 0 ? "info" : "neutral"}
-          title="Daily Sessions"
+          title="Active Sessions"
           value={counts.dailySessions}
-          subLabel={counts.dailySessions > 0 ? "Scheduled today" : "None today"}
+          subLabel={counts.dailySessions > 0 ? "Scheduled or running" : "None active"}
           icon={Activity}
           onClick={() => setTab("sessions")}
+        />
+        <StatusCard
+          statusVariant={(courtIssues.length + buildingIssueCount) > 0 ? "critical" : "operational"}
+          title="Open Issues"
+          value={courtIssues.length + buildingIssueCount}
+          subLabel={
+            buildingIssueCount > 0
+              ? `${buildingIssueCount} building-wide`
+              : courtIssues.length > 0
+              ? `${courtIssues.length} courtroom`
+              : "None active"
+          }
+          icon={AlertTriangle}
+          onClick={() => setTab("assignments")}
         />
       </div>
 
       {/* Tabs — sticky + horizontal scroll on mobile */}
       <Tabs value={tab} onValueChange={setTab} className="w-full" data-tour="court-term-board">
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-3 sm:mx-0 px-3 sm:px-0 py-1 scrollbar-hide overflow-x-auto">
-          <TabsList className="inline-flex w-auto min-w-full sm:w-full h-auto p-1 gap-1 touch-manipulation">
+          <TabsList className="inline-flex w-auto h-auto p-1 gap-1 touch-manipulation">
             {tabs.map((t) => {
               const Icon = t.icon;
               return (
@@ -171,7 +200,7 @@ export const CourtOperationsDashboard = () => {
                   key={t.value}
                   value={t.value}
                   className={`
-                    relative flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm
+                    relative flex items-center gap-1 px-2 sm:px-3 py-2 text-xs sm:text-sm
                     whitespace-nowrap flex-shrink-0 min-w-0 touch-manipulation
                     ${t.glow ? "ring-2 ring-amber-400 animate-pulse" : ""}
                   `}
@@ -179,9 +208,8 @@ export const CourtOperationsDashboard = () => {
                   {t.glow && (
                     <span className="absolute -top-1 -right-1 inline-flex h-2 w-2 rounded-full bg-amber-500" />
                   )}
-                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <Icon className="h-4 w-4 flex-shrink-0" />
                   <span className="hidden sm:inline">{t.label}</span>
-                  <span className="sm:hidden">{t.mobileLabel}</span>
                   {t.badge !== null && (
                     <Badge
                       variant={t.badgeVariant}

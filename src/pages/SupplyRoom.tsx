@@ -2,6 +2,7 @@
 import React from 'react';
 import { logger } from '@/lib/logger';
 import { ImprovedSupplyStaffDashboard } from '@/components/supply/ImprovedSupplyStaffDashboard';
+import { SupplyRequestErrorBoundary } from '@/components/supply/SupplyRequestErrorBoundary';
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +35,8 @@ export default function SupplyRoom() {
   // Show loading state while checking permissions
   if (isLoading || permissionsLoading) {
     return (
-      <div className="space-y-4">
+      <div className="container mx-auto px-4 py-8">
+        <Breadcrumb />
         <Card>
           <CardContent className="p-8">
             <div className="flex items-center justify-center">
@@ -68,8 +70,11 @@ export default function SupplyRoom() {
   }
 
   return (
-    <div className="space-y-4">
-      <ImprovedSupplyStaffDashboard />
+    <div className="container mx-auto px-4 py-8">
+      <Breadcrumb />
+      <SupplyRequestErrorBoundary>
+        <ImprovedSupplyStaffDashboard />
+      </SupplyRequestErrorBoundary>
     </div>
   );
 }

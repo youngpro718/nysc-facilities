@@ -50,7 +50,7 @@ export const navigationItems: NavigationItem[] = [
     moduleKey: 'spaces',
   },
   {
-    title: 'Building Issues',
+    title: 'Facility Operations',
     href: '/operations',
     icon: AlertTriangle,
     adminOnly: false, // Allow CMC and facility staff
@@ -64,6 +64,20 @@ export const secondaryNavigationItems: NavigationItem[] = [
     title: 'Term Sheet',
     href: '/term-sheet',
     icon: FileText,
+    adminOnly: false,
+    moduleKey: undefined,
+  },
+  {
+    title: 'Form Templates',
+    href: '/form-templates',
+    icon: FileText,
+    adminOnly: false,
+    moduleKey: undefined,
+  },
+  {
+    title: 'Form Intake',
+    href: '/form-intake',
+    icon: Upload,
     adminOnly: false,
     moduleKey: undefined,
   },
@@ -94,13 +108,6 @@ export const secondaryNavigationItems: NavigationItem[] = [
         icon: Boxes,
         adminOnly: true,
         moduleKey: 'inventory',
-      },
-      {
-        title: 'Order Supplies',
-        href: '/request/supplies',
-        icon: Package2,
-        adminOnly: false,
-        moduleKey: 'supply_requests',
       },
       {
         title: 'Supply Requests',
@@ -147,6 +154,18 @@ export const userNavigationItems: NavigationItem[] = [
     adminOnly: true,
   },
   {
+    title: 'Form Templates',
+    href: '/form-templates',
+    icon: FileText,
+    adminOnly: false,
+  },
+  {
+    title: 'Form Intake',
+    href: '/form-intake',
+    icon: Upload,
+    adminOnly: false,
+  },
+  {
     title: 'Routing Rules',
     href: '/admin/routing-rules',
     icon: GitFork,
@@ -171,7 +190,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Spaces', icon: Building2 },
-      { title: 'Building Issues', icon: AlertTriangle },
+      { title: 'Issues', icon: AlertTriangle },
       { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
@@ -183,37 +202,52 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
   
-  // CMC (Court Management Coordinator) navigation — slim: Home, Court Ops, Activity
+  // CMC (Court Management Coordinator) navigation
   if (userRole === 'cmc') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Court Operations', icon: Gavel },
+      { title: 'Supply Room', icon: Package2 },
       { title: 'My Activity', icon: FileText },
+      { title: 'Notifications', icon: MessageSquare },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
     ];
   }
 
-  // Court Officer (Major / Security) navigation — slim: Home, Keys, Activity
+  // Court Officer (Major / Security) navigation
   if (userRole === 'court_officer') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Keys', icon: KeyRound },
-      { title: 'My Activity', icon: FileText },
+      { title: 'Spaces', icon: Building2 },
+      { title: 'Term Sheet', icon: FileText },
+      { title: 'Notifications', icon: MessageSquare },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
     ];
   }
 
-  // Court Aide (Supply Staff) navigation — slim: Home, Tasks, Supply Room
+  // Court Aide (Supply Staff) navigation - task-focused with supply/inventory access
   if (userRole === 'court_aide') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Tasks', icon: Package },
       { title: 'Supply Room', icon: Package2 },
+      { title: 'Inventory', icon: Boxes },
+      { title: 'Notifications', icon: MessageSquare },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
     ];
   }
 
-  // Standard user navigation — slim: Home, Activity
+  // Standard user navigation - actions are on dashboard, no separate request page needed
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'My Activity', icon: FileText },
+    { title: 'Notifications', icon: MessageSquare },
+    { type: "separator" },
+    { title: 'Profile', icon: User },
   ];
 }
 
@@ -222,7 +256,7 @@ export function getAdminNavigation(): NavigationTab[] {
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'Spaces', icon: Building2 },
-    { title: 'Building Issues', icon: AlertTriangle },
+    { title: 'Issues Management', icon: AlertTriangle },
     { type: "separator" },
     { title: 'Admin Center', icon: UserCog },
   ];
@@ -249,7 +283,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     return [
       '/', // Admin Dashboard
       '/spaces',
-      '/operations',
+      '/operations', // Contains Issues, Maintenance, Supply Requests
       '/access-assignments',
       '/keys',
       '/inventory',
@@ -261,37 +295,52 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
   
-  // CMC routes
+  // CMC (Court Management Coordinator) routes
   if (userRole === 'cmc') {
     return [
       '/cmc-dashboard',
       '/court-operations',
+      '/supply-room',
       '/my-activity',
+      '/notifications',
+      '', // Separator
+      '/profile',
     ];
   }
 
-  // Court Officer routes
+  // Court Officer (Major / Security) routes
   if (userRole === 'court_officer') {
     return [
       '/court-officer-dashboard',
       '/keys',
-      '/my-activity',
+      '/spaces',
+      '/term-sheet',
+      '/notifications',
+      '', // Separator
+      '/profile',
     ];
   }
 
-  // Court Aide routes
+  // Court Aide (Supply Staff) routes - task-focused with supply/inventory access
   if (userRole === 'court_aide') {
     return [
       '/court-aide-dashboard',
       '/tasks',
       '/supply-room',
+      '/inventory',
+      '/notifications',
+      '', // Separator
+      '/profile',
     ];
   }
 
-  // Standard user routes
+  // Standard user routes - actions are on dashboard
   return [
-    '/dashboard',
+    '/dashboard', // User Dashboard
     '/my-activity',
+    '/notifications',
+    '', // Separator
+    '/profile',
   ];
 };
 

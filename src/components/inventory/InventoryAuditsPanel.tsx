@@ -59,6 +59,7 @@ export function InventoryAuditsPanel() {
   // Fetch inventory transactions (flat), then hydrate item/user/category via batched lookups
   const { data: transactions = [], isLoading: transactionsLoading, isError: txErrorFlag, error: txError } = useQuery({
     queryKey: ['inventory-transactions'],
+    retry: false,
     queryFn: async (): Promise<InventoryTransaction[]> => {
       // 1) Base transactions (use * to avoid column mismatch across environments)
       const { data: txData, error: baseErr } = await supabase

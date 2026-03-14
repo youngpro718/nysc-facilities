@@ -1,4 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerDescription,
+} from '@/components/ui/drawer';
 import { useQuery } from '@tanstack/react-query';
 import { useOccupantAssignments } from '@/components/occupants/hooks/useOccupantAssignments';
 import { useRoomAssignment, PersonSourceType } from '@/components/occupants/hooks/useRoomAssignment';
@@ -419,6 +427,7 @@ function RoomsTab({
 export function PersonDetailSheet({ open, onOpenChange, person }: PersonDetailSheetProps) {
     const [activeTab, setActiveTab] = useState('rooms');
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const isMobile = useIsMobile();
 
     useEffect(() => {
         if (open) setActiveTab('rooms');
@@ -436,85 +445,117 @@ export function PersonDetailSheet({ open, onOpenChange, person }: PersonDetailSh
         .toUpperCase()
         .slice(0, 2) || '??';
 
-    return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-md flex flex-col" side="right">
-                <SheetHeader className="pt-14 sm:pt-2 pb-2 sm:pb-4 border-b">
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                            <Avatar className="h-9 w-9 sm:h-12 sm:w-12 shrink-0">
-                                {person.avatar_url && <AvatarImage src={person.avatar_url} alt={person.name} />}
-                                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                                    {initials}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0">
-                                <SheetTitle className="text-sm sm:text-base leading-tight truncate">{person.name}</SheetTitle>
-                                <SheetDescription className="text-[11px] sm:text-xs leading-snug mt-0.5 truncate">
-                                    {[person.title, person.department].filter(Boolean).join(' · ') ||
-                                        (person.is_registered_user ? 'Registered User' : 'Court Personnel')}
-                                </SheetDescription>
-                                <div className="flex items-center gap-2 mt-1.5">
-                                    <Badge variant={person.is_registered_user ? 'default' : 'secondary'} className="text-xs h-5">
-                                        {person.is_registered_user ? 'User' : 'Personnel'}
-                                    </Badge>
-                                    {person.room_count > 0 && (
-                                        <span className="text-xs text-muted-foreground">
-                                            {person.room_count} room{person.room_count !== 1 ? 's' : ''}
-                                        </span>
-                                    )}
-                                    {person.key_count > 0 && (
-                                        <span className="text-xs text-muted-foreground">
-                                            {person.key_count} key{person.key_count !== 1 ? 's' : ''}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        {sourceType === 'personnel_profile' && (
-                            <Button variant="outline" size="sm" className="shrink-0 h-7 text-xs sm:h-9 sm:text-sm" onClick={() => setIsEditDialogOpen(true)}>
-                                <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                                Edit Info
-                            </Button>
+    const personHeader = (
+        <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+                <Avatar className="h-9 w-9 shrink-0">
+                    {person.avatar_url && <AvatarImage src={person.avatar_url} alt={person.name} />}
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {initials}
+                    </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-tight truncate">{person.name}</p>
+                    <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 truncate">
+                        {[person.title, person.department].filter(Boolean).join(' · ') ||
+                            (person.is_registered_user ? 'Registered User' : 'Court Personnel')}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <Badge variant={person.is_registered_user ? 'default' : 'secondary'} className="text-xs h-5">
+                            {person.is_registered_user ? 'User' : 'Personnel'}
+                        </Badge>
+                        {person.room_count > 0 && (
+                            <span className="text-xs text-muted-foreground">{person.room_count} room{person.room_count !== 1 ? 's' : ''}</span>
+                        )}
+                        {person.key_count > 0 && (
+                            <span className="text-xs text-muted-foreground">{person.key_count} key{person.key_count !== 1 ? 's' : ''}</span>
                         )}
                     </div>
-                </SheetHeader>
-
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 pt-2">
-                    <TabsList className="w-full h-9 sm:h-10">
-                        <TabsTrigger value="rooms" className="flex-1 gap-1.5 text-xs sm:text-sm">
-                            <DoorOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            Rooms
-                            {person.room_count > 0 && (
-                                <Badge variant="secondary" className="h-4 text-xs">{person.room_count}</Badge>
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger value="keys" className="flex-1 gap-1.5 text-xs sm:text-sm">
-                            <Key className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            Keys
-                            {person.key_count > 0 && (
-                                <Badge variant="secondary" className="h-4 text-xs">{person.key_count}</Badge>
-                            )}
-                        </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="rooms" className="flex-1 overflow-auto mt-0">
-                        <RoomsTab personId={person.id} sourceType={sourceType} />
-                    </TabsContent>
-
-                    <TabsContent value="keys" className="flex-1 overflow-auto mt-0">
-                        <KeysTab personId={person.id} sourceType={sourceType} />
-                    </TabsContent>
-                </Tabs>
-            </SheetContent>
-
+                </div>
+            </div>
             {sourceType === 'personnel_profile' && (
-                <PersonnelFormDialog
-                    open={isEditDialogOpen}
-                    onOpenChange={setIsEditDialogOpen}
-                    personnelId={person.id}
-                />
+                <Button variant="outline" size="sm" className="shrink-0 h-7 text-xs" onClick={() => setIsEditDialogOpen(true)}>
+                    <Edit2 className="h-3 w-3 mr-1" />
+                    Edit
+                </Button>
             )}
-        </Sheet>
+        </div>
+    );
+
+    const personTabs = (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 pt-2">
+            <TabsList className="w-full h-9">
+                <TabsTrigger value="rooms" className="flex-1 gap-1.5 text-xs">
+                    <DoorOpen className="h-3.5 w-3.5" />
+                    Rooms
+                    {person.room_count > 0 && (
+                        <Badge variant="secondary" className="h-4 text-xs">{person.room_count}</Badge>
+                    )}
+                </TabsTrigger>
+                <TabsTrigger value="keys" className="flex-1 gap-1.5 text-xs">
+                    <Key className="h-3.5 w-3.5" />
+                    Keys
+                    {person.key_count > 0 && (
+                        <Badge variant="secondary" className="h-4 text-xs">{person.key_count}</Badge>
+                    )}
+                </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="rooms" className="flex-1 overflow-auto mt-0">
+                <RoomsTab personId={person.id} sourceType={sourceType} />
+            </TabsContent>
+
+            <TabsContent value="keys" className="flex-1 overflow-auto mt-0">
+                <KeysTab personId={person.id} sourceType={sourceType} />
+            </TabsContent>
+        </Tabs>
+    );
+
+    const editDialog = sourceType === 'personnel_profile' && (
+        <PersonnelFormDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            personnelId={person.id}
+        />
+    );
+
+    if (isMobile) {
+        return (
+            <>
+                <Drawer open={open} onOpenChange={onOpenChange}>
+                    <DrawerContent className="max-h-[90vh] flex flex-col px-4 pb-safe">
+                        <DrawerHeader className="pb-2 border-b px-0">
+                            <DrawerTitle className="sr-only">{person.name}</DrawerTitle>
+                            <DrawerDescription className="sr-only">
+                                {[person.title, person.department].filter(Boolean).join(' · ')}
+                            </DrawerDescription>
+                            {personHeader}
+                        </DrawerHeader>
+                        <div className="flex-1 overflow-auto min-h-0 pb-4">
+                            {personTabs}
+                        </div>
+                    </DrawerContent>
+                </Drawer>
+                {editDialog}
+            </>
+        );
+    }
+
+    return (
+        <>
+            <Sheet open={open} onOpenChange={onOpenChange}>
+                <SheetContent className="w-full sm:max-w-md flex flex-col" side="right">
+                    <SheetHeader className="pb-2 sm:pb-4 border-b">
+                        <SheetTitle className="sr-only">{person.name}</SheetTitle>
+                        <SheetDescription className="sr-only">
+                            {[person.title, person.department].filter(Boolean).join(' · ')}
+                        </SheetDescription>
+                        {personHeader}
+                    </SheetHeader>
+                    {personTabs}
+                </SheetContent>
+            </Sheet>
+            {editDialog}
+        </>
     );
 }

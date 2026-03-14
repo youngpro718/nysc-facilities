@@ -166,7 +166,7 @@ export function useRolePermissions() {
       ]);
 
       if (roleQuery.error) {
-        logger.error('[useRolePermissions] Error fetching user role (RLS likely)', roleQuery.error);
+        logger.warn('[useRolePermissions] Direct user_roles read failed (RLS), trying RPC fallback', roleQuery.error);
       }
 
       let role = (roleQuery.data?.role as CourtRole | null) || null;
@@ -178,13 +178,13 @@ export function useRolePermissions() {
           logger.debug('[useRolePermissions] Attempting RPC fallback');
           const { data: secureRole, error: rpcError } = await supabase.rpc('get_current_user_role');
           if (rpcError) {
-            logger.error('[useRolePermissions] Error in get_current_user_role RPC', rpcError);
+            logger.warn('[useRolePermissions] RPC fallback also failed', rpcError);
           } else if (secureRole) {
             role = secureRole as CourtRole;
             logger.debug('[useRolePermissions] Role from secure RPC');
           }
         } catch (e) {
-          logger.error('[useRolePermissions] Exception calling get_current_user_role', e);
+          logger.warn('[useRolePermissions] Exception calling get_current_user_role', e);
         }
       }
 

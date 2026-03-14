@@ -1,10 +1,8 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useCourtOperationsRealtime, useCourtRooms, useStaffOutToday } from "@/hooks/useCourtOperationsRealtime";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
-import { usePersonnelAvailability, PersonnelWithAvailability } from "@/hooks/usePersonnelAvailability";
 import { useAuth } from "@/hooks/useAuth";
 import { logger } from "@/lib/logger";
-import { PersonnelSelector } from "@/components/court/PersonnelSelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -181,26 +179,13 @@ export function LiveCourtGrid() {
         } else if (change.type === 'assign' && change.toRoomId) {
           const targetRoom = rooms?.find((r: any) => r.room_id === change.toRoomId);
           if (!targetRoom) throw new Error("Room not found");
-          // Check if row exists to preserve existing staff data
-          const { data: existing } = await supabase
-            .from("court_assignments")
-            .select("id")
-            .eq("room_id", change.toRoomId)
-            .maybeSingle();
-          if (existing) {
-            const { error } = await supabase.from("court_assignments")
-              .update({ justice: change.judgeName || null, part: change.part || null })
-              .eq("room_id", change.toRoomId);
-            if (error) throw error;
-          } else {
-            const { error } = await supabase.from("court_assignments").insert({
-              room_id: change.toRoomId,
-              room_number: (targetRoom as any).room_number,
-              justice: change.judgeName || null,
-              part: change.part || null,
-            });
-            if (error) throw error;
-          }
+          const { error } = await supabase.from("court_assignments").upsert({
+            room_id: change.toRoomId,
+            room_number: (targetRoom as any).room_number,
+            justice: change.judgeName || null,
+            part: change.part || null,
+          });
+          if (error) throw error;
         }
         successCount++;
       } catch (e) {
@@ -314,7 +299,8 @@ export function LiveCourtGrid() {
           </div>
         )}
 
-        <div className="rounded-md border overflow-x-auto">
+        {/* Desktop table */}
+        <div className="hidden md:block rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -344,6 +330,26 @@ export function LiveCourtGrid() {
               ))}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile card list */}
+        <div className="block md:hidden space-y-2">
+          {filteredRooms.map((room: any) => (
+            <LiveMobileCard
+              key={room.id}
+              room={room}
+              actorId={actorId}
+              onMoveJudge={onMoveJudge}
+              onMarkAbsent={onMarkAbsent}
+              onMarkPresent={onMarkPresent}
+              onMarkClerkPresence={onMarkClerkPresence}
+              showBuilding={buildings.length > 1}
+              allRooms={rooms || []}
+              quickReassignMode={quickReassignMode}
+              quickReassignSourceId={quickReassignSource?.roomId || null}
+              onQuickReassignClick={handleQuickReassignClick}
+            />
+          ))}
         </div>
 
         {/* Quick Reassign floating bar */}
@@ -477,15 +483,12 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { personnel } = useCourtPersonnel();
-  const availability = usePersonnelAvailability();
   const { onMoveJudge } = useCourtOperationsRealtime();
   
   const [judgeName, setJudgeName] = useState("");
   const [partName, setPartName] = useState("");
   const [opType, setOpType] = useState<'assign' | 'cover' | 'reassign'>('assign');
   const [saving, setSaving] = useState(false);
-  // Reason prompt for assigned personnel
-  const [pendingAssigned, setPendingAssigned] = useState<PersonnelWithAvailability | null>(null);
 
   // Reset state on open
   useEffect(() => {
@@ -493,20 +496,15 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
       setJudgeName("");
       setPartName("");
       setOpType('assign');
-      setPendingAssigned(null);
     }
   }, [open]);
 
-  const handleAssignedPersonSelected = (person: PersonnelWithAvailability) => {
-    setPendingAssigned(person);
-  };
-
-  const confirmAssignedSelection = (reason: 'assign' | 'cover' | 'reassign') => {
-    if (!pendingAssigned) return;
-    setJudgeName(pendingAssigned.name);
-    setOpType(reason);
-    setPendingAssigned(null);
-  };
+  // Derive active judges list
+  const activeJudges = useMemo(() => {
+    if (!personnel || !personnel.judges) return [];
+    return [...personnel.judges]
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [personnel]);
 
   const handleAssign = async () => {
     const trimmedName = judgeName.trim();
@@ -514,60 +512,40 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
     setSaving(true);
     try {
       if (opType === 'assign') {
-        // Check if row exists to preserve existing clerks/sergeant
-        const { data: existing } = await supabase
-          .from("court_assignments")
-          .select("id")
-          .eq("room_id", room.room_id)
-          .maybeSingle();
-        if (existing) {
-          const { error } = await supabase.from("court_assignments")
-            .update({ justice: trimmedName, part: partName.trim() || null })
-            .eq("room_id", room.room_id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from("court_assignments").insert({
-            room_id: room.room_id,
-            room_number: room.room_number,
-            justice: trimmedName,
-            part: partName.trim() || null,
-          });
-          if (error) throw error;
-        }
+        // Option 1: Set judge permanently in the new room
+        const { error } = await supabase.from("court_assignments").upsert({
+          room_id: room.room_id,
+          room_number: room.room_number,
+          justice: trimmedName,
+          part: partName.trim() || null,
+        });
+        if (error) throw error;
         toast({ title: "✅ Judge assigned", description: `${trimmedName} → Room ${room.room_number}` });
+
       } else if (opType === 'reassign' || opType === 'cover') {
+        // Both reassign and cover need the judge's current room(s)
         const { data: currentAssignments } = await supabase
           .from("court_assignments")
           .select("room_id")
           .ilike("justice", `%${trimmedName}%`);
 
         if (opType === 'reassign') {
+          // Option 2: Nullify all current assignments, then upsert here
           if (currentAssignments && currentAssignments.length > 0) {
             const roomIds = currentAssignments.map(a => a.room_id);
             await supabase.from("court_assignments").update({ justice: null }).in("room_id", roomIds);
           }
-          // Check if row exists to preserve existing clerks/sergeant
-          const { data: existingReassign } = await supabase
-            .from("court_assignments")
-            .select("id")
-            .eq("room_id", room.room_id)
-            .maybeSingle();
-          if (existingReassign) {
-            const { error } = await supabase.from("court_assignments")
-              .update({ justice: trimmedName, part: partName.trim() || null })
-              .eq("room_id", room.room_id);
-            if (error) throw error;
-          } else {
-            const { error } = await supabase.from("court_assignments").insert({
-              room_id: room.room_id,
-              room_number: room.room_number,
-              justice: trimmedName,
-              part: partName.trim() || null,
-            });
-            if (error) throw error;
-          }
+          const { error } = await supabase.from("court_assignments").upsert({
+            room_id: room.room_id,
+            room_number: room.room_number,
+            justice: trimmedName,
+            part: partName.trim() || null,
+          });
+          if (error) throw error;
           toast({ title: "✅ Judge reassigned", description: `${trimmedName} moved to Room ${room.room_number}` });
+
         } else {
+          // Option 3: Covering — temporary assignment using move logic
           const fromRoomId = currentAssignments && currentAssignments.length > 0 ? currentAssignments[0].room_id : null;
           await onMoveJudge(fromRoomId, room.room_id, trimmedName, actorId, true);
           toast({ title: "✅ Covering assignment", description: `${trimmedName} covering Room ${room.room_number}` });
@@ -576,7 +554,6 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
 
       queryClient.invalidateQueries({ queryKey: ["court"] });
       queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
-      queryClient.invalidateQueries({ queryKey: ["court-assignments-availability"] });
       onOpenChange(false);
     } catch (e: any) {
       toast({ variant: "destructive", title: "Failed to assign judge", description: e.message });
@@ -596,112 +573,59 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          {/* Reason prompt when selecting an already-assigned judge */}
-          {pendingAssigned && (
-            <div className="p-4 rounded-lg border border-blue-500/30 bg-blue-500/5 space-y-3">
-              <div className="text-sm font-medium">
-                {pendingAssigned.name} is currently in{' '}
-                {pendingAssigned.currentAssignments?.map(a =>
-                  `${a.part || 'No Part'}, Room ${a.roomNumber}`
-                ).join(' & ')}
-              </div>
-              <div className="text-xs text-muted-foreground mb-2">Why is this judge moving?</div>
-              <div className="space-y-2">
-                <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-muted/50">
-                  <input type="radio" name="move-reason" className="mt-0.5" onChange={() => confirmAssignedSelection('cover')} />
-                  <div>
-                    <div className="font-medium text-sm">🔄 Covering temporarily</div>
-                    <div className="text-xs text-muted-foreground">Keeps their original room assignment</div>
-                  </div>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-muted/50">
-                  <input type="radio" name="move-reason" className="mt-0.5" onChange={() => confirmAssignedSelection('reassign')} />
-                  <div>
-                    <div className="font-medium text-sm">📌 Reassigning permanently</div>
-                    <div className="text-xs text-muted-foreground">Clears their original room and moves them here</div>
-                  </div>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-muted/50">
-                  <input type="radio" name="move-reason" className="mt-0.5" onChange={() => confirmAssignedSelection('assign')} />
-                  <div>
-                    <div className="font-medium text-sm">👤 Assign to both rooms</div>
-                    <div className="text-xs text-muted-foreground">Judge will be assigned to this room AND their current one</div>
-                  </div>
-                </label>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => setPendingAssigned(null)} className="text-xs">Cancel</Button>
+          <div>
+            <Label className="mb-2 block">Select Judge</Label>
+            <Select value={judgeName} onValueChange={setJudgeName}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a judge..." />
+              </SelectTrigger>
+              <SelectContent>
+                {activeJudges.map(j => (
+                  <SelectItem key={j.id} value={j.name}>{j.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {(opType === 'assign' || opType === 'reassign') && (
+            <div>
+              <Label className="mb-2 block">Part (optional)</Label>
+              <Input value={partName} onChange={e => setPartName(e.target.value)} placeholder="e.g., Part 32" />
             </div>
           )}
 
-          {/* Judge selector — availability-grouped */}
-          {!pendingAssigned && (
-            <>
-              <div>
-                <Label className="mb-2 block">Select Judge</Label>
-                {availability.judges.available.length > 0 || availability.judges.assigned.length > 0 ? (
-                  <PersonnelSelectorInline
-                    value={judgeName}
-                    onValueChange={(v) => setJudgeName(v as string)}
-                    availabilityData={availability.judges}
-                    onAssignedPersonSelected={handleAssignedPersonSelected}
-                    placeholder="Select a judge..."
-                  />
-                ) : (
-                  <Select value={judgeName} onValueChange={setJudgeName}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a judge..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {personnel.judges.map(j => (
-                        <SelectItem key={j.id} value={j.name}>{j.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-              
-              {(opType === 'assign' || opType === 'reassign') && (
+          <div className="space-y-2 p-3 bg-muted/50 rounded-md">
+            <Label className="block text-sm font-medium mb-2">Assignment Type</Label>
+            <div className="space-y-3 mt-2">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="radio" checked={opType === 'assign'} onChange={() => setOpType('assign')} className="mt-1" />
                 <div>
-                  <Label className="mb-2 block">Part (optional)</Label>
-                  <Input value={partName} onChange={e => setPartName(e.target.value)} placeholder="e.g., Part 32" />
+                  <div className="font-medium text-sm">👤 Assign Permanently</div>
+                  <div className="text-xs text-muted-foreground">Sets judge as primary occupant for this room. If they have another room, they'll now be in both.</div>
                 </div>
-              )}
+              </label>
+              
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="radio" checked={opType === 'reassign'} onChange={() => setOpType('reassign')} className="mt-1" />
+                <div>
+                  <div className="font-medium text-sm">📌 Reassign to Room</div>
+                  <div className="text-xs text-muted-foreground">Removes judge from their current room(s) and assigns them here permanently.</div>
+                </div>
+              </label>
 
-              {/* Only show assignment type for available judges (assigned judges get the reason prompt above) */}
-              {judgeName && (
-                <div className="space-y-2 p-3 bg-muted/50 rounded-md">
-                  <Label className="block text-sm font-medium mb-2">Assignment Type</Label>
-                  <div className="space-y-3 mt-2">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="radio" checked={opType === 'assign'} onChange={() => setOpType('assign')} className="mt-1" />
-                      <div>
-                        <div className="font-medium text-sm">👤 Assign Permanently</div>
-                        <div className="text-xs text-muted-foreground">Sets judge as primary occupant for this room.</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="radio" checked={opType === 'reassign'} onChange={() => setOpType('reassign')} className="mt-1" />
-                      <div>
-                        <div className="font-medium text-sm">📌 Reassign to Room</div>
-                        <div className="text-xs text-muted-foreground">Removes judge from current room(s) and assigns here.</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="radio" checked={opType === 'cover'} onChange={() => setOpType('cover')} className="mt-1" />
-                      <div>
-                        <div className="font-medium text-sm">🔄 Covering Another Part</div>
-                        <div className="text-xs text-muted-foreground">Temporary assignment for today.</div>
-                      </div>
-                    </label>
-                  </div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="radio" checked={opType === 'cover'} onChange={() => setOpType('cover')} className="mt-1" />
+                <div>
+                  <div className="font-medium text-sm">🔄 Covering Another Part</div>
+                  <div className="text-xs text-muted-foreground">Temporary assignment for today. Does not clear their primary courtroom.</div>
                 </div>
-              )}
-            </>
-          )}
+              </label>
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleAssign} disabled={!judgeName.trim() || saving || !!pendingAssigned}>
+          <Button onClick={handleAssign} disabled={!judgeName.trim() || saving}>
             {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
             Confirm Assignment
           </Button>
@@ -711,28 +635,141 @@ function AssignJudgeDialog({ open, onOpenChange, room, actorId }: {
   );
 }
 
-
-
-function PersonnelSelectorInline({ value, onValueChange, availabilityData, onAssignedPersonSelected, placeholder }: {
-  value: string;
-  onValueChange: (v: string | string[]) => void;
-  availabilityData: import("@/hooks/usePersonnelAvailability").GroupedPersonnel;
-  onAssignedPersonSelected: (person: PersonnelWithAvailability) => void;
-  placeholder: string;
+// ─── Live Mobile Card ───
+function LiveMobileCard({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent, onMarkClerkPresence, showBuilding, allRooms, quickReassignMode, quickReassignSourceId, onQuickReassignClick }: {
+  room: any;
+  actorId: string;
+  onMoveJudge: (fromRoomId: string | null, toRoomId: string, judgeName: string, actorId: string, isCovering?: boolean) => Promise<void>;
+  onMarkAbsent: (roomId: string, role: "judge" | "clerk", actorId: string) => Promise<void>;
+  onMarkPresent: (roomId: string, role: "judge" | "clerk", actorId: string) => Promise<void>;
+  onMarkClerkPresence: (courtRoomId: string, clerkName: string, present: boolean, actorId: string) => Promise<void>;
+  showBuilding: boolean;
+  allRooms: any[];
+  quickReassignMode: boolean;
+  quickReassignSourceId: string | null;
+  onQuickReassignClick: (room: any) => void;
 }) {
-  const allPersonnel = [...availabilityData.available, ...availabilityData.assigned, ...availabilityData.absent];
+  const { toast } = useToast();
+  const judgePresent = room.judge_present || false;
+  const clerksCount = room.clerks_present_count || 0;
+  const totalClerks = room.assigned_clerks?.length || 0;
+  const hasJudge = room.assigned_judge && room.assigned_judge.trim();
+  const isSelectedSource = quickReassignSourceId === room.room_id;
+  const [pending, setPending] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [absenceDialogOpen, setAbsenceDialogOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+
+  const handleMarkPresent = async () => {
+    setPending(true);
+    try {
+      await onMarkPresent(room.id, 'judge', actorId);
+      toast({ title: "Judge marked present", description: `${room.assigned_judge || 'Judge'} in room ${room.room_number}` });
+    } catch (error: any) {
+      toast({ title: "Failed to mark judge present", description: error?.message || String(error), variant: "destructive" });
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
-    <PersonnelSelector
-      value={value}
-      onValueChange={onValueChange}
-      personnel={allPersonnel}
-      placeholder={placeholder}
-      availabilityData={availabilityData}
-      onAssignedPersonSelected={onAssignedPersonSelected}
-      allowCustom={true}
-      allowClear={true}
-      className="w-full"
-    />
+    <div
+      onClick={quickReassignMode ? () => onQuickReassignClick(room) : undefined}
+      className={[
+        "rounded-lg border p-3 space-y-2 bg-card",
+        quickReassignMode ? "cursor-pointer hover:bg-blue-500/10 active:bg-blue-500/20 transition-colors" : "",
+        isSelectedSource ? "bg-blue-500/15 ring-2 ring-blue-500/40" : "",
+      ].filter(Boolean).join(" ")}
+    >
+      {/* Room header */}
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <span className="font-semibold text-sm">{room.room_number}</span>
+          {room.assigned_part && (
+            <span className="ml-2 text-xs font-medium text-blue-600 dark:text-blue-400">{room.assigned_part}</span>
+          )}
+        </div>
+        {showBuilding && room.building_name && (
+          <Badge variant="outline" className="text-xs">{room.building_name}</Badge>
+        )}
+      </div>
+
+      {/* Judge */}
+      <div className="flex items-center gap-2">
+        <PresenceDot present={judgePresent} />
+        <span className="text-sm flex-1">
+          {hasJudge ? room.assigned_judge : <span className="text-muted-foreground italic">No judge assigned</span>}
+        </span>
+        {hasJudge && (
+          <span className={`text-xs ${judgePresent ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}`}>
+            {judgePresent ? "✓ Present" : "Absent"}
+          </span>
+        )}
+      </div>
+
+      {/* Clerks */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Users className="h-3.5 w-3.5 shrink-0" />
+        <span>{clerksCount}/{totalClerks} clerks present</span>
+      </div>
+
+      {/* Actions */}
+      {!quickReassignMode && (
+        <div className="flex flex-wrap gap-2 pt-1">
+          {hasJudge ? (
+            <>
+              {judgePresent ? (
+                <Button size="sm" variant="secondary" disabled={pending} onClick={() => setAbsenceDialogOpen(true)} className="text-xs h-8">
+                  {pending ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <XCircle className="h-3.5 w-3.5 mr-1" />}
+                  Mark Absent
+                </Button>
+              ) : (
+                <Button size="sm" variant="default" disabled={pending} onClick={handleMarkPresent} className="text-xs h-8">
+                  {pending ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                  Mark Present
+                </Button>
+              )}
+              <Button size="sm" variant="outline" disabled={pending} onClick={() => setMoveOpen(true)} className="text-xs h-8">
+                <ArrowRightLeft className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" variant="default" onClick={() => setAssignOpen(true)} className="text-xs h-8">
+              <UserPlus className="h-3.5 w-3.5 mr-1" />
+              Assign Judge
+            </Button>
+          )}
+        </div>
+      )}
+      {quickReassignMode && (
+        <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+          {isSelectedSource ? "Selected as source" : quickReassignSourceId ? "← Tap to move here" : hasJudge ? "Tap to select" : ""}
+        </div>
+      )}
+
+      <MoveJudgeDialog
+        open={moveOpen}
+        onOpenChange={setMoveOpen}
+        currentRoomId={room.room_id}
+        currentJudge={room.assigned_judge}
+        actorId={actorId}
+        onMoveJudge={onMoveJudge}
+        currentRoomNumber={room.room_number}
+      />
+      <RecordAbsenceDialog
+        open={absenceDialogOpen}
+        onOpenChange={setAbsenceDialogOpen}
+        judgeName={room.assigned_judge}
+        roomNumber={room.room_number}
+        actorId={actorId}
+      />
+      <AssignJudgeDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        room={room}
+        actorId={actorId}
+      />
+    </div>
   );
 }
 

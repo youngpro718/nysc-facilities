@@ -81,7 +81,7 @@ export function InlineItemRow({
               </span>
             )}
             <span className="text-[10px] text-muted-foreground">
-              {item.quantity ?? 0} {item.unit || 'units'} avail
+              {(item.quantity ?? 0) > 0 ? `${item.quantity} ${item.unit || 'units'} avail` : 'Low Stock'}
             </span>
           </div>
         </div>
@@ -100,7 +100,7 @@ export function InlineItemRow({
       {!compact && (
         <div className="hidden sm:flex items-center gap-2 shrink-0">
           <span className="text-xs text-muted-foreground">
-            Stock: {item.quantity ?? 0} {item.unit || 'units'}
+            {(item.quantity ?? 0) > 0 ? `Stock: ${item.quantity} ${item.unit || 'units'}` : 'Low Stock'}
           </span>
           {item.categoryName && (
             <Badge variant="secondary" className="text-xs">
@@ -312,10 +312,10 @@ export function InlineItemRow({
                     "text-xs",
                     (item.quantity ?? 0) > 0
                       ? "text-green-600 border-green-500/30"
-                      : "text-red-600 border-red-500/30"
+                      : "text-amber-600 border-amber-500/30"
                   )}
                 >
-                  {item.quantity ?? 0} {item.unit || 'units'} in stock
+                  {(item.quantity ?? 0) > 0 ? `${item.quantity} ${item.unit || 'units'} in stock` : 'Low Stock'}
                 </Badge>
                 {item.requires_justification && (
                   <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">

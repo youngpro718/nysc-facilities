@@ -19,7 +19,7 @@ export const useAdminIssues = () => {
         if (!data) throw new IssueError('No issues data returned');
         return data;
       } catch (error) {
-        logger.error('Error fetching all issues:', error);
+        logger.warn('Error fetching all issues:', error);
         throw new IssueError(error instanceof Error ? error.message : 'Failed to fetch all issues');
       }
     },
