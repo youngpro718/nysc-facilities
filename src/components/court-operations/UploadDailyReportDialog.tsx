@@ -14,27 +14,60 @@ import { validateBatch, getValidationSummary } from '@/services/court/sessionVal
 import { parseDailyReportPDF } from '@/services/court/dailyReportParser';
 import * as pdfjsLib from 'pdfjs-dist';
 
-/** Extract plain text from a PDF file using pdf.js (much smaller than base64 PDF). */
+/**
+ * Extract text from a PDF with column-position awareness.
+ * Groups items by Y position into rows, then within each row sorts items by X
+ * and inserts TAB characters when there is a significant horizontal gap between
+ * items (indicating a new column). This preserves the table structure so the AI
+ * can correctly identify PART/JUDGE vs DEFENDANT vs STATUS etc.
+ */
 async function extractPdfText(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   const pages: string[] = [];
+
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    const items = content.items as Array<{ str: string; transform: number[] }>;
-    // Reconstruct lines by grouping items with similar Y coordinates
-    const rows = new Map<number, string[]>();
+    const items = content.items as Array<{ str: string; transform: number[]; width: number }>;
+
+    // Group items into rows by Y position (6-point tolerance)
+    const rowMap = new Map<number, Array<{ x: number; str: string; width: number }>>();
     for (const item of items) {
       if (!item.str.trim()) continue;
       const y = Math.round(item.transform[5]);
-      const bucket = Math.round(y / 4) * 4; // 4-point tolerance
-      if (!rows.has(bucket)) rows.set(bucket, []);
-      rows.get(bucket)!.push(item.str);
+      const bucket = Math.round(y / 6) * 6;
+      if (!rowMap.has(bucket)) rowMap.set(bucket, []);
+      rowMap.get(bucket)!.push({ x: item.transform[4], str: item.str, width: item.width || 0 });
     }
-    // Sort by Y descending (top of page first) and join
-    const sortedRows = [...rows.entries()].sort((a, b) => b[0] - a[0]);
-    pages.push(sortedRows.map(([, texts]) => texts.join(' ')).join('\n'));
+
+    // Sort rows top-to-bottom (descending Y = top of page first)
+    const sortedRows = [...rowMap.entries()].sort((a, b) => b[0] - a[0]);
+
+    const pageLines: string[] = [];
+    for (const [, rowItems] of sortedRows) {
+      // Sort items left-to-right within the row
+      rowItems.sort((a, b) => a.x - b.x);
+
+      // Merge items into a tab-delimited string:
+      // Insert a TAB when the gap between end of last item and start of next item
+      // is more than 15 points (a meaningful column gap in these reports)
+      let line = '';
+      let prevEnd = -Infinity;
+      for (const item of rowItems) {
+        const gap = item.x - prevEnd;
+        if (line === '') {
+          line = item.str;
+        } else if (gap > 15) {
+          line += '\t' + item.str;
+        } else {
+          line += ' ' + item.str;
+        }
+        prevEnd = item.x + item.width;
+      }
+      pageLines.push(line);
+    }
+    pages.push(pageLines.join('\n'));
   }
   return pages.join('\n\n--- PAGE BREAK ---\n\n');
 }

@@ -240,25 +240,32 @@ function findColumnBounds(rows: ParsedRow[]): ColumnBounds {
 
 /**
  * Split rows into part blocks. Each block corresponds to a room/judge group.
+ * Handles both numeric parts (1, 23, 41) and alphanumeric parts (TAP A, 1A, ATI/21).
  */
 function splitIntoPartBlocks(rows: ParsedRow[]): ParsedRow[][] {
   const blocks: ParsedRow[][] = [];
   let currentBlock: ParsedRow[] = [];
 
-  // Starts with exactly a 1-3 digit part number, then an all-caps justice name
-  const partStartPattern = /^\d{1,3}\s+[A-Z]{2,}/;
+  // Matches numeric parts: "23 WARD", "1 QUART"
+  const numericPartPattern = /^\d{1,3}[A-Z]?\s+[A-Z]{2,}/;
+  // Matches alphanumeric parts: "TAP A LOZANO", "TAP B PARK", "ATI BIBEN", "ATI/21 BIBEN", "1A MORALES"
+  const alphaPartPattern = /^(?:TAP\s+[A-Z](?:\s*\/\s*TAP\s+[A-Z])?|ATI(?:\/\d+)?|\d+[A-Z])\s+[A-Z]{2,}/i;
+
+  const isPartStart = (text: string) =>
+    numericPartPattern.test(text) || alphaPartPattern.test(text);
 
   for (const row of rows) {
     const text = getRowText(row);
 
     // Skip headers and footers
     if (/AM\s*PM\s*REPORT/i.test(text)) continue;
-    if (text.includes('Defendant') && text.includes('Charge')) continue; // Header row
-    if (/^Sending\s*Part/i.test(text)) continue;
+    if (text.includes('Defendant') && text.includes('Charge')) continue;
+    if (/^(?:PART\/JUDGE|PART\s+SENT|Sending\s*Part)/i.test(text)) continue;
     if (/Date\s*Printed/i.test(text)) continue;
     if (/Page\s*\d+\s*of/i.test(text)) continue;
+    if (/^(?:DEFENDANT|PURPOSE|TOP\s+CHARGE|STATUS|ATTORNEYS|EST\.)/i.test(text)) continue;
 
-    if (partStartPattern.test(text) && currentBlock.length > 0) {
+    if (isPartStart(text) && currentBlock.length > 0) {
       blocks.push(currentBlock);
       currentBlock = [row];
     } else {
@@ -273,20 +280,39 @@ function splitIntoPartBlocks(rows: ParsedRow[]): ParsedRow[][] {
   return blocks;
 }
 
+
 /**
- * Parse a single part block extracting cases using strict coordinate bounds
+ * Parse a single part block extracting cases using strict coordinate bounds.
+ * Judge name is extracted ONLY from the leftmost column (x < DEFENDANT min)
+ * to prevent status/defendant text from bleeding into the judge field.
  */
 function parsePartBlock(rows: ParsedRow[], bounds: ColumnBounds): ExtractedPart | null {
   if (rows.length === 0) return null;
 
-  const firstLine = getRowText(rows[0]);
+  const firstRow = rows[0];
+  const firstLine = getRowText(firstRow);
 
-  // Extract part number and justice
-  const partMatch = firstLine.match(/^(\d{1,3})\s+([A-Z][A-Z\s.-]+)/);
+  // Only consider items in the leftmost column (the PART/JUDGE column)
+  // to build the part+judge string, ignoring any case data on the same row
+  const partColItems = firstRow.items
+    .filter(i => i.x < bounds.DEFENDANT.min)
+    .sort((a, b) => a.x - b.x)
+    .map(i => i.text)
+    .join(' ');
+
+  const headerText = partColItems || firstLine;
+
+  // Match both numeric ("23 WARD") and alphanumeric ("TAP A LOZANO", "1A MORALES") part IDs
+  const partMatch =
+    headerText.match(/^(TAP\s+[A-Z](?:\s*\/\s*TAP\s+[A-Z])?|ATI(?:\/\d+)?|\d+[A-Z]?|\d{1,3})\s+([A-Z][A-Z\s&.-]+)/i);
   if (!partMatch) return null;
 
-  const partNumber = partMatch[1];
-  const judgeName = partMatch[2].trim();
+  const partNumber = partMatch[1].trim();
+  // Trim judge name to remove any trailing status words that may have slipped in
+  const judgeName = partMatch[2]
+    .trim()
+    .replace(/\s+(OUT|CONF|AVAILABLE|CALENDAR|JUDGE).*$/i, '')
+    .trim();
 
   // Extract calendar day from entire block text
   const fullText = rows.map(getRowText).join(' ');
