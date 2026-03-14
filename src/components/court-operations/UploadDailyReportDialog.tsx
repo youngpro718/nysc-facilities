@@ -12,16 +12,31 @@ import { batchMapPartsToCourtrooms } from '@/services/court/courtroomMappingServ
 import { PDFExtractionPreview, type ExtractedPart } from './PDFExtractionPreview';
 import { validateBatch, getValidationSummary } from '@/services/court/sessionValidation';
 import { parseDailyReportPDF } from '@/services/court/dailyReportParser';
+import * as pdfjsLib from 'pdfjs-dist';
 
-/** Convert a File to a base64 string (without the data-uri prefix). */
-async function fileToBase64(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+/** Extract plain text from a PDF file using pdf.js (much smaller than base64 PDF). */
+async function extractPdfText(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pages: string[] = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const items = content.items as Array<{ str: string; transform: number[] }>;
+    // Reconstruct lines by grouping items with similar Y coordinates
+    const rows = new Map<number, string[]>();
+    for (const item of items) {
+      if (!item.str.trim()) continue;
+      const y = Math.round(item.transform[5]);
+      const bucket = Math.round(y / 4) * 4; // 4-point tolerance
+      if (!rows.has(bucket)) rows.set(bucket, []);
+      rows.get(bucket)!.push(item.str);
+    }
+    // Sort by Y descending (top of page first) and join
+    const sortedRows = [...rows.entries()].sort((a, b) => b[0] - a[0]);
+    pages.push(sortedRows.map(([, texts]) => texts.join(' ')).join('\n'));
   }
-  return btoa(binary);
+  return pages.join('\n\n--- PAGE BREAK ---\n\n');
 }
 
 interface UploadDailyReportDialogProps {
@@ -83,12 +98,12 @@ export function UploadDailyReportDialog({
       setExtractionStatus('extracting');
       toast.info('Analyzing document with AI...');
 
-      const pdfBase64 = await fileToBase64(file);
+      const pdfText = await extractPdfText(file);
 
       let result: { success: boolean; extracted_data?: any; error?: string } | null = null;
 
       const { data: parseResult, error: fnError } = await supabase.functions.invoke('parse-pdf', {
-        body: { pdfBase64, fileName: file.name },
+        body: { pdfText, fileName: file.name },
       });
 
       if (fnError || !parseResult?.extracted_data) {
