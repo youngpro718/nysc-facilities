@@ -96,7 +96,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
 
           // Fetch role now that we have session.user.id
           const { data: roleData, error: roleError } = await withTimeout(
-            supabase.from('user_roles').select('role').eq('user_id', session.user.id).maybeSingle(),
+            Promise.resolve(supabase.from('user_roles').select('role').eq('user_id', session.user.id).maybeSingle()),
             5000,
             'loading role'
           );
