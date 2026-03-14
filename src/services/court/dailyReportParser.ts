@@ -79,8 +79,8 @@ async function extractRowsFromPDF(file: File): Promise<{ rows: ParsedRow[], erro
         const y = item.transform ? Math.round(item.transform[5]) : 0;
         const x = item.transform ? item.transform[4] : 0;
 
-        // Find an existing row within +/- 4 points tolerance
-        let row = pageRows.find(r => Math.abs(r.y - y) <= 4);
+        // Find an existing row within +/- 6 points tolerance (increased for scale-variant PDFs)
+        let row = pageRows.find(r => Math.abs(r.y - y) <= 6);
         if (!row) {
           row = { y, items: [] };
           pageRows.push(row);
@@ -140,10 +140,12 @@ function parseReportHeader(rows: ParsedRow[]): { reportDate: string; building: s
 }
 
 /**
- * Dynamically find the column X-coordinate boundaries based on the table header row
+ * Dynamically find the column X-coordinate boundaries based on the table header row.
+ * Searches each keyword independently across all scanned rows so it works even when
+ * pdf.js splits the header across multiple Y-positions (which is common).
  */
 function findColumnBounds(rows: ParsedRow[]): ColumnBounds {
-  // Default bounds based on typical report layout
+  // Default bounds based on a typical 111/100 Centre Street AM/PM report layout
   const bounds: ColumnBounds = {
     SENDING_PART: { min: 0, max: 80 },
     DEFENDANT: { min: 80, max: 250 },
@@ -155,58 +157,81 @@ function findColumnBounds(rows: ParsedRow[]): ColumnBounds {
     ATTORNEYS: { min: 740, max: 2000 }
   };
 
-  // Look for the header row in the first few pages
-  for (const row of rows.slice(0, 100)) {
+  // Scan the first 150 rows for each column header INDEPENDENTLY.
+  // This handles PDFs where pdf.js splits the header across multiple Y-positions.
+  const scanRows = rows.slice(0, 150);
+
+  let defItem: TextItem | undefined;
+  let purpItem: TextItem | undefined;
+  let dateItem: TextItem | undefined;
+  let chargeItem: TextItem | undefined;
+  let statusItem: TextItem | undefined;
+  let estItem: TextItem | undefined;
+  let attyItem: TextItem | undefined;
+
+  for (const row of scanRows) {
     const text = getRowText(row);
-    if (text.includes('Defendant') && text.includes('Charge')) {
-      logger.debug('Found header row for column mapping:', text);
+    if (/AM\s*PM\s*REPORT/i.test(text)) continue;
+    if (/Date\s*Printed/i.test(text)) continue;
+    if (/Page\s*\d+/i.test(text)) continue;
 
-      const defItem = row.items.find(i => i.text.includes('Defendant'));
-      const purpItem = row.items.find(i => i.text.includes('P U R P') || i.text.includes('PURP'));
-      const dateItem = row.items.find(i => i.text.includes('Trans') || i.text.includes('Date'));
-      const chargeItem = row.items.find(i => i.text.includes('Charge'));
-      const statusItem = row.items.find(i => i.text.includes('STATUS'));
-      const estItem = row.items.find(i => i.text.includes('EST'));
-      const attyItem = row.items.find(i => i.text.includes('Attorneys') || i.text.includes('Atts'));
-
-      // Adjust dynamic max/min boundaries exactly midway between column headers
-      if (defItem) {
-        const mid = defItem.x - 5;
-        bounds.SENDING_PART.max = mid;
-        bounds.DEFENDANT.min = mid;
-      }
-      if (purpItem && defItem) {
-        const mid = purpItem.x - 5;
-        bounds.DEFENDANT.max = mid;
-        bounds.PURPOSE.min = mid;
-      }
-      if (dateItem && purpItem) {
-        const mid = dateItem.x - 5;
-        bounds.PURPOSE.max = mid;
-        bounds.TRANSFER_DATE.min = mid;
-      }
-      if (chargeItem && dateItem) {
-        const mid = chargeItem.x - 5;
-        bounds.TRANSFER_DATE.max = mid;
-        bounds.TOP_CHARGE.min = mid;
-      }
-      if (statusItem && chargeItem) {
-        const mid = statusItem.x - 5;
-        bounds.TOP_CHARGE.max = mid;
-        bounds.STATUS.min = mid;
-      }
-      if (estItem && statusItem) {
-        const mid = estItem.x - 5;
-        bounds.STATUS.max = mid;
-        bounds.EST_FIN_DATE.min = mid;
-      }
-      if (attyItem && estItem) {
-        const mid = attyItem.x - 5;
-        bounds.EST_FIN_DATE.max = mid;
-        bounds.ATTORNEYS.min = mid;
-      }
-      break;
+    for (const item of row.items) {
+      const t = item.text.trim();
+      if (!defItem && /^Defendant$/i.test(t)) defItem = item;
+      if (!purpItem && /^(P\s*U\s*R\s*P|PURP|Purpose)$/i.test(t)) purpItem = item;
+      if (!dateItem && /^(Trans|Transfer)$/i.test(t)) dateItem = item;
+      if (!chargeItem && /^(Charge|Top)$/i.test(t)) chargeItem = item;
+      if (!statusItem && /^STATUS$/i.test(t)) statusItem = item;
+      if (!estItem && /^EST$/i.test(t)) estItem = item;
+      if (!attyItem && /^(Attorneys?|Atts?)$/i.test(t)) attyItem = item;
     }
+  }
+
+  const foundAny = defItem || purpItem || dateItem || chargeItem || statusItem || estItem || attyItem;
+  if (!foundAny) {
+    logger.warn('⚠️ Column header detection failed — using default X bounds. PDF layout may be non-standard.');
+    return bounds;
+  }
+
+  logger.debug('Found column header items at X:', {
+    defendant: defItem?.x, purpose: purpItem?.x, transferDate: dateItem?.x,
+    charge: chargeItem?.x, status: statusItem?.x, est: estItem?.x, attorneys: attyItem?.x,
+  });
+
+  if (defItem) {
+    const mid = defItem.x - 5;
+    bounds.SENDING_PART.max = mid;
+    bounds.DEFENDANT.min = mid;
+  }
+  if (purpItem && defItem) {
+    const mid = purpItem.x - 5;
+    bounds.DEFENDANT.max = mid;
+    bounds.PURPOSE.min = mid;
+  }
+  if (dateItem && purpItem) {
+    const mid = dateItem.x - 5;
+    bounds.PURPOSE.max = mid;
+    bounds.TRANSFER_DATE.min = mid;
+  }
+  if (chargeItem && dateItem) {
+    const mid = chargeItem.x - 5;
+    bounds.TRANSFER_DATE.max = mid;
+    bounds.TOP_CHARGE.min = mid;
+  }
+  if (statusItem && chargeItem) {
+    const mid = statusItem.x - 5;
+    bounds.TOP_CHARGE.max = mid;
+    bounds.STATUS.min = mid;
+  }
+  if (estItem && statusItem) {
+    const mid = estItem.x - 5;
+    bounds.STATUS.max = mid;
+    bounds.EST_FIN_DATE.min = mid;
+  }
+  if (attyItem && estItem) {
+    const mid = attyItem.x - 5;
+    bounds.EST_FIN_DATE.max = mid;
+    bounds.ATTORNEYS.min = mid;
   }
 
   logger.debug('Mapped Bounds:', bounds);

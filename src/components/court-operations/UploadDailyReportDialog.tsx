@@ -108,7 +108,8 @@ export function UploadDailyReportDialog({
 
       if (fnError || !parseResult?.extracted_data) {
         // Fallback to local parser if edge function fails
-        logger.warn('Edge function failed, falling back to local parser:', { error: fnError?.message, response: parseResult });
+        const edgeFnError = fnError?.message || parseResult?.error || 'unknown edge function error';
+        logger.warn('Edge function failed, falling back to local parser:', { error: edgeFnError, responseKeys: parseResult ? Object.keys(parseResult) : null });
         toast.info('AI extraction unavailable, using local parser...');
         const localResult = await parseDailyReportPDF(file);
         if (!localResult.success || !localResult.extracted_data) {
