@@ -100,6 +100,8 @@ function AppContent() {
       <Route path="/auth/pending-approval" element={<PendingApproval />} />
       <Route path="/auth/account-rejected" element={<AccountRejected />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/auth/reset" element={<ResetPasswordPage />} />
       <Route path="/auth/mfa" element={<MFASetup />} />
       <Route path="/auth/verify" element={<VerifyEmail />} />
       <Route path="/onboarding/profile" element={<ProfileOnboarding />} />

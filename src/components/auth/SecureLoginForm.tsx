@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
 import { SecureForm } from '@/components/security/SecureForm';
 import { toast } from 'sonner';
 import { useSecureAuth } from '@/hooks/security/useSecureAuth';
+import { requestPasswordReset } from '@/services/auth';
 import { User } from 'lucide-react';
 
 interface SecureLoginFormProps {
@@ -30,9 +31,10 @@ export const SecureLoginForm = ({
   setLoading,
   onToggleForm,
 }: SecureLoginFormProps) => {
-  const { secureSignIn, isLoading: authLoading } = useSecureAuth();
+  const { secureSignIn } = useSecureAuth();
   const [recentAccounts, setRecentAccounts] = useState<string[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<string>('');
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   useEffect(() => {
     setRecentAccounts(getRecentAccounts());
@@ -41,9 +43,7 @@ export const SecureLoginForm = ({
   const handleSecureLogin = async (data: { email: string; password: string }) => {
     try {
       setLoading(true);
-      
-      const result = await secureSignIn(data.email, data.password);
-      
+      await secureSignIn(data.email, data.password);
       toast.success("Welcome back!", {
         description: "You've successfully signed in."
       });
@@ -68,9 +68,30 @@ export const SecureLoginForm = ({
     if (selectedEmail === email) setSelectedEmail('');
   };
 
+  const handleForgotPassword = async () => {
+    const emailToReset = selectedEmail && selectedEmail !== 'other' ? selectedEmail : '';
+
+    if (!emailToReset) {
+      toast.info('Select a recent account first, then request a reset email.');
+      return;
+    }
+
+    try {
+      setResettingPassword(true);
+      await requestPasswordReset(emailToReset);
+      toast.success('Password reset email sent.', {
+        description: `A reset link was sent to ${emailToReset}.`
+      });
+    } catch (error) {
+      logger.error('Password reset request failed:', error);
+      toast.error(getErrorMessage(error) || 'Unable to send reset email.');
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Account Picker — show saved accounts */}
       {recentAccounts.length > 0 && !selectedEmail && (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">Recent accounts</p>
@@ -109,7 +130,6 @@ export const SecureLoginForm = ({
         </div>
       )}
 
-      {/* Login form — shown when no recent accounts, or an account/other is selected */}
       {(recentAccounts.length === 0 || selectedEmail) && (
         <>
           {selectedEmail && selectedEmail !== 'other' && recentAccounts.length > 0 && (
@@ -134,15 +154,16 @@ export const SecureLoginForm = ({
       <div className="text-center space-y-2">
         <button
           type="button"
-          className="text-primary hover:underline underline-offset-2 block mx-auto"
-          onClick={() => toast.info("Please contact your administrator to reset your password")}
+          className="text-primary hover:underline underline-offset-2 block mx-auto disabled:opacity-50"
+          onClick={handleForgotPassword}
+          disabled={resettingPassword}
         >
-          Forgot password?
+          {resettingPassword ? 'Sending reset email...' : 'Forgot password?'}
         </button>
         <button
           type="button"
           className="text-muted-foreground hover:text-foreground underline underline-offset-2 text-sm block mx-auto"
-          onClick={() => toast.info("Try a simpler password (6+ characters) or contact admin for account setup")}
+          onClick={() => toast.info('If you cannot access a saved account, an admin can also send you a reset email from Admin Center.')}
         >
           Password issues?
         </button>
