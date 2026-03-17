@@ -9,6 +9,7 @@ import CourtAideWorkCenter from "@/pages/CourtAideWorkCenter";
 import LoginPage from "@/pages/LoginPage";
 import MFASetup from "@/pages/auth/MFASetup";
 import VerifyEmail from "@/pages/auth/VerifyEmail";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import PendingApproval from "@/pages/auth/PendingApproval";
 import AccountRejected from "@/pages/auth/AccountRejected";
 import ProfileOnboarding from "@/pages/onboarding/ProfileOnboarding";
