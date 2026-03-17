@@ -9,6 +9,7 @@ import CourtAideWorkCenter from "@/pages/CourtAideWorkCenter";
 import LoginPage from "@/pages/LoginPage";
 import MFASetup from "@/pages/auth/MFASetup";
 import VerifyEmail from "@/pages/auth/VerifyEmail";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import PendingApproval from "@/pages/auth/PendingApproval";
 import AccountRejected from "@/pages/auth/AccountRejected";
 import ProfileOnboarding from "@/pages/onboarding/ProfileOnboarding";
@@ -99,6 +100,8 @@ function AppContent() {
       <Route path="/auth/pending-approval" element={<PendingApproval />} />
       <Route path="/auth/account-rejected" element={<AccountRejected />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/auth/reset" element={<ResetPasswordPage />} />
       <Route path="/auth/mfa" element={<MFASetup />} />
       <Route path="/auth/verify" element={<VerifyEmail />} />
       <Route path="/onboarding/profile" element={<ProfileOnboarding />} />
