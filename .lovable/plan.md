@@ -1,29 +1,31 @@
 
 
+## Login Screen Text Color Fix
 
-## Personalized, Minimal Experience Per Role — IMPLEMENTED
+### Problem
+The login screen forces a `.light` theme, but the light theme's `--primary` color is `0 0% 9%` (near-black grayscale). This makes interactive elements like "Forgot password?", "Need an account?", the shield icon, and the "Sign In" button all appear in near-black — visually indistinguishable from regular body text. Nothing looks "clickable" or branded.
 
-### What Changed
+Additionally, the app's root element carries the `dark` class, but the `.light` class on the login wrapper should correctly override CSS variables for all children — so the variable cascade itself is fine, the issue is purely that the light theme primary is bland grayscale.
 
-1. **Navigation reduced** (`navigation.tsx`):
-   - Standard: 2 items (Home, Activity)
-   - CMC: 3 items (Home, Court Ops, Activity)
-   - Court Officer: 3 items (Home, Keys, Activity)
-   - Court Aide: 3 items (Home, Tasks, Supply Room)
-   - Admin: unchanged (full access)
+### Fix
+Give the login screen a proper branded primary color instead of the generic grayscale. Two options:
 
-2. **Standard User Dashboard** (`UserDashboard.tsx`): Rewritten as a clean, single-column action portal with 3 large action rows (Order Supplies, Report Issue, Request Key), pickup alert, and a unified activity feed. Removed stats strip, MyRoomCard, TermSheetPreview, and 2x2 grid.
+**Option A — Scoped override on login wrapper only**
+Add a few CSS variable overrides directly on the login page's wrapper `style` prop (or a scoped class) so that `text-primary`, button backgrounds, and link colors use a court-system-appropriate blue (e.g., `221 83% 53%` — the same blue already defined in the `.blue` theme class in `index.css`). This keeps the rest of the app's light/dark themes untouched.
 
-3. **Role Dashboards** (`RoleDashboard.tsx`): Replaced 4-card stats grids and 4-card quick action grids with compact inline stat strips and focused content. Court Aide gets a "Work Queue" section with task list and supply room rows.
+**Option B — Update the `.light` class primary globally**
+Change `--primary` in `.light` from grayscale to the branded blue. This affects anywhere `.light` is used.
 
-4. **QuickIssueReportButton** now supports `children` prop for custom rendering.
+### Recommendation
+**Option A** — scoped to the login page only. Changes needed:
 
-## Unified Audit Trail for Court Assignments — IMPLEMENTED
+1. **`src/features/auth/pages/LoginPage.tsx`** — add CSS variable overrides on the wrapper div's `style` for `--primary`, `--primary-foreground`, and `--ring` to use a visible blue color.
 
-### What Changed
+2. **`src/features/auth/components/auth/SecureLoginForm.tsx`** — no structural changes needed; the `text-primary` classes will automatically pick up the blue from the parent's CSS variable override.
 
-1. **Database**: Created `court_assignment_audit_log` table with trigger `trg_court_assignment_audit` on `court_assignments`. Every INSERT/UPDATE/DELETE is automatically logged with old/new values, changed fields, action type (assigned/reassigned/cleared/deleted), and the user who made the change.
+3. **`src/features/auth/components/security/SecureForm.tsx`** — same, no changes needed.
 
-2. **Database**: Created `audit_logs` general-purpose table for room status changes (fixes the missing table that `operationsService.updateRoomStatus()` was trying to write to).
+### Scope
+- Single file edit (`LoginPage.tsx`) — add 3 CSS custom property overrides to the existing inline `style` object
+- No theme file changes, no new components
 
-3. **UI**: Added `CourtAssignmentAuditPanel.tsx` — a History tab in the Assignments panel showing a chronological log of all court assignment changes with action badges, room numbers, and change diffs.
