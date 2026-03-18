@@ -85,10 +85,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const geminiKey = Deno.env.get("GEMINI_API_KEY");
+    const groqKey = Deno.env.get("GROQ_API_KEY");
 
     // No AI key configured — fall back gracefully
-    if (!geminiKey) {
+    if (!groqKey) {
       return new Response(
         JSON.stringify({
           reply: "AI support isn't available right now. For help, please email **nyscfacilitieshub@gmail.com** and Jack will get back to you.",
@@ -98,36 +98,30 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Build Gemini request
-    const geminiContents = [
-      // Inject system context as the first user turn + model ack
-      { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-      { role: "model", parts: [{ text: "Understood. I'm ready to help NYSC Facilities Hub users." }] },
-      // Actual conversation
-      ...messages.map((m) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      })),
-    ];
-
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+    // Build Groq request (OpenAI-compatible format)
+    const groqResponse = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${groqKey}`,
+        },
         body: JSON.stringify({
-          contents: geminiContents,
-          generationConfig: {
-            maxOutputTokens: 512,
-            temperature: 0.4,
-          },
+          model: "llama-3.1-8b-instant",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            ...messages.map((m) => ({ role: m.role, content: m.content })),
+          ],
+          max_tokens: 512,
+          temperature: 0.4,
         }),
       }
     );
 
-    if (!geminiResponse.ok) {
-      const errText = await geminiResponse.text();
-      console.error("Gemini error:", errText);
+    if (!groqResponse.ok) {
+      const errText = await groqResponse.text();
+      console.error("Groq error:", errText);
       return new Response(
         JSON.stringify({
           reply: "I'm having trouble connecting right now. Please email **nyscfacilitieshub@gmail.com** for help.",
@@ -137,9 +131,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const geminiData = await geminiResponse.json();
+    const groqData = await groqResponse.json();
     const reply: string =
-      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ??
+      groqData?.choices?.[0]?.message?.content ??
       "I couldn't generate a response. Please email **nyscfacilitieshub@gmail.com** for help.";
 
     return new Response(
