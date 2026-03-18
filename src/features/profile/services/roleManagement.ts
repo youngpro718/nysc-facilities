@@ -86,41 +86,25 @@ export async function getUsersByRole(role: UserRole): Promise<ProfileWithRole[]>
  * @returns Success status
  */
 export async function updateUserRole(
-  userId: string, 
+  userId: string,
   role: UserRole,
   assignedBy?: string
 ): Promise<void> {
-  const { data: existingRole } = await supabase
+  // Upsert avoids the read-then-write race condition where two concurrent
+  // callers both see "no existing role" and both attempt to INSERT.
+  const { error } = await supabase
     .from('user_roles')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
-  
-  if (existingRole) {
-    // Update existing role
-    const { error } = await supabase
-      .from('user_roles')
-      .update({
-        role,
-        assigned_by: assignedBy,
-        assigned_at: new Date().toISOString()
-      })
-      .eq('user_id', userId);
-    
-    if (error) throw error;
-  } else {
-    // Insert new role
-    const { error } = await supabase
-      .from('user_roles')
-      .insert({
+    .upsert(
+      {
         user_id: userId,
         role,
         assigned_by: assignedBy,
-        assigned_at: new Date().toISOString()
-      });
-    
-    if (error) throw error;
-  }
+        assigned_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    );
+
+  if (error) throw error;
 }
 
 /**
@@ -171,27 +155,38 @@ export async function hasRole(userId: string, role: UserRole): Promise<boolean> 
 }
 
 /**
- * Get all users with their roles
- * @returns Array of profiles with role information
+ * Get a paginated list of users with their roles.
+ *
+ * Replaces the previous implementation that fetched ALL profiles and ALL
+ * user_roles rows into memory and joined them in JS — an O(n) memory and
+ * network cost that grows unboundedly with user count.
+ *
+ * @param page     - Zero-based page index (default 0)
+ * @param pageSize - Rows per page (default 100)
  */
-export async function getAllUsersWithRoles(): Promise<ProfileWithRole[]> {
-  const { data: profiles, error: profileError } = await supabase
+export async function getAllUsersWithRoles(
+  page = 0,
+  pageSize = 100
+): Promise<{ data: ProfileWithRole[]; count: number | null }> {
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabase
     .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false });
-  
-  if (profileError) throw profileError;
-  
-  const { data: roles, error: roleError } = await supabase
-    .from('user_roles')
-    .select('user_id, role');
-  
-  if (roleError) throw roleError;
-  
-  const roleMap = new Map(roles.map(r => [r.user_id, r.role]));
-  
-  return profiles.map(profile => ({
-    ...profile,
-    role: roleMap.get(profile.id) || null
+    .select(
+      'id, full_name, first_name, last_name, email, department, verification_status, is_approved, created_at, user_roles(role)',
+      { count: 'estimated' }
+    )
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (error) throw error;
+
+  const profiles = (data || []).map((row: any) => ({
+    ...row,
+    role: (row.user_roles as { role: UserRole }[] | null)?.[0]?.role ?? null,
+    user_roles: undefined,
   })) as ProfileWithRole[];
+
+  return { data: profiles, count };
 }

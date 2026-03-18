@@ -467,6 +467,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             })();
           
         } else if (event === 'SIGNED_OUT') {
+          // Reset the fetching guard so the next sign-in on the same tab fetches
+          // a fresh profile instead of being skipped.
+          isFetchingProfile.current = false;
           setSession(null);
           setUser(null);
           setProfile(null);

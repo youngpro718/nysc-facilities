@@ -200,13 +200,18 @@ export default function AdminCenter() {
       });
 
       if (rpcError) {
-        // RPC failed — fall back to direct update
+        // RPC failed — fall back to direct updates on both tables
         logger.warn('approve_user_verification RPC failed, falling back to direct update:', rpcError);
-        const { error: updateError } = await supabase
+        const { error: profileError } = await supabase
           .from('profiles')
-          .update({ is_approved: true, verification_status: 'verified', role: selectedRole })
+          .update({ is_approved: true, verification_status: 'verified' })
           .eq('id', userId);
-        if (updateError) throw updateError;
+        if (profileError) throw profileError;
+
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .upsert({ user_id: userId, role: selectedRole }, { onConflict: 'user_id' });
+        if (roleError) throw roleError;
       }
 
       toast.success(`✅ ${userName} approved as ${getRoleLabel(selectedRole)}!`, { id: 'approve-user' });
@@ -236,7 +241,7 @@ export default function AdminCenter() {
     try {
       const { error } = await supabase.rpc('reject_user_verification', {
         p_user_id: userId,
-        p_admin_notes: 'Rejected via admin panel'
+        p_reason: 'Rejected via admin panel'
       });
       
       if (error) throw error;

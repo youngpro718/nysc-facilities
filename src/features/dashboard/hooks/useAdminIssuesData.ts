@@ -41,12 +41,17 @@ export interface EnhancedIssue extends UserIssue {
   similar_issues_count?: number;
 }
 
-export const useAdminIssuesData = () => {
+const PAGE_SIZE = 50;
+
+export const useAdminIssuesData = (page = 0) => {
+  // Paginated issues list — fetches one page at a time instead of 500 rows
   const { data: allIssues = [], isLoading, refetch } = useQuery({
-    queryKey: ['adminIssues'],
+    queryKey: ['adminIssues', page],
     queryFn: async (): Promise<EnhancedIssue[]> => {
       try {
-        // OPTIMIZED: Single query with available joins
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
         const { data, error } = await supabase
           .from('issues')
           .select(`
@@ -67,18 +72,17 @@ export const useAdminIssuesData = () => {
             )
           `)
           .order('created_at', { ascending: false })
-          .limit(500);
+          .range(from, to);
 
         if (error) throw error;
 
-        // Collect unique reporter IDs (reported_by has no FK, so fetch separately)
+        // Batch-fetch reporter profiles (at most PAGE_SIZE unique IDs)
         const reporterIds = [...new Set(
           (data || [])
             .map(issue => issue.reported_by || issue.created_by)
             .filter(Boolean)
         )] as string[];
 
-        // Batch-fetch reporter profiles
         let reporterMap = new Map<string, { id: string; first_name: string; last_name: string; email: string; title?: string }>();
         if (reporterIds.length > 0) {
           const { data: profiles } = await supabase
@@ -91,9 +95,8 @@ export const useAdminIssuesData = () => {
             }
           }
         }
-        
-        // Map to enhanced issues format
-        const enhancedIssues = (data || []).map(issue => {
+
+        return (data || []).map(issue => {
           const reporterId = issue.reported_by || issue.created_by;
           return {
             ...issue,
@@ -102,52 +105,50 @@ export const useAdminIssuesData = () => {
             comments_count: 0,
             last_activity: issue.updated_at || issue.created_at,
           };
-        });
-
-        return enhancedIssues as unknown as EnhancedIssue[];
+        }) as EnhancedIssue[];
       } catch (error) {
         logger.warn('Error fetching admin issues:', error);
         throw error;
       }
     },
     staleTime: QUERY_CONFIG.stale.realtime,
-    refetchInterval: false, // Disabled - use manual refresh button instead
+    refetchInterval: false,
   });
 
-  // Calculate statistics
-  const issueStats: IssueStats = {
-    total: allIssues?.length || 0,
-    open: allIssues?.filter(issue => issue.status === 'open').length || 0,
-    in_progress: allIssues?.filter(issue => issue.status === 'in_progress').length || 0,
-    resolved: allIssues?.filter(issue => issue.status === 'resolved').length || 0,
-    critical:
-      allIssues?.filter((issue) => {
-        const p = String(issue.priority || '').toLowerCase();
-        const isCriticalPriority = ['high'].includes(p);
-        const isActive = ['open', 'in_progress'].includes(issue.status);
-        return isCriticalPriority && isActive;
-      }).length || 0,
-    high: allIssues?.filter(issue => issue.priority === 'high').length || 0,
-    medium: allIssues?.filter(issue => issue.priority === 'medium').length || 0,
-    low: allIssues?.filter(issue => issue.priority === 'low').length || 0,
-    averageResolutionTime: 0, // TODO: Calculate from resolved issues
-    todayReported: allIssues?.filter(issue => {
-      const today = new Date().toDateString();
-      return new Date(issue.created_at).toDateString() === today;
-    }).length || 0,
-    weekReported: allIssues?.filter(issue => {
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      return new Date(issue.created_at) > weekAgo;
-    }).length || 0,
-    roomsWithIssues: new Set(
-      allIssues?.filter(issue => issue.room_id).map(issue => issue.room_id as string)
-    ).size || 0,
-  };
+  // Separate stats query — server aggregates counts, avoids sending rows to client
+  const { data: issueStats = defaultStats } = useQuery({
+    queryKey: ['adminIssueStats'],
+    queryFn: async (): Promise<IssueStats> => {
+      try {
+        const { data, error } = await supabase.rpc('get_issue_stats');
+        if (error) throw error;
+        return {
+          total:               data.total        ?? 0,
+          open:                data.open         ?? 0,
+          in_progress:         data.in_progress  ?? 0,
+          resolved:            data.resolved     ?? 0,
+          critical:            data.critical     ?? 0,
+          high:                data.high         ?? 0,
+          medium:              data.medium       ?? 0,
+          low:                 data.low          ?? 0,
+          averageResolutionTime: 0,
+          todayReported:       data.today        ?? 0,
+          weekReported:        data.this_week    ?? 0,
+          roomsWithIssues:     data.rooms_affected ?? 0,
+        };
+      } catch (error) {
+        logger.warn('Error fetching issue stats:', error);
+        return defaultStats;
+      }
+    },
+    staleTime: QUERY_CONFIG.stale.realtime,
+    refetchInterval: false,
+  });
 
-  // Critical issues (high priority and open/in_progress)
-  const criticalIssues = allIssues?.filter(
+  // Critical issues on the current page (high priority + active)
+  const criticalIssues = allIssues.filter(
     issue => issue.priority === 'high' && ['open', 'in_progress'].includes(issue.status)
-  ) || [];
+  );
 
   return {
     allIssues,
@@ -156,4 +157,19 @@ export const useAdminIssuesData = () => {
     isLoading,
     refreshData: refetch,
   };
+};
+
+const defaultStats: IssueStats = {
+  total: 0,
+  open: 0,
+  in_progress: 0,
+  resolved: 0,
+  critical: 0,
+  high: 0,
+  medium: 0,
+  low: 0,
+  averageResolutionTime: 0,
+  todayReported: 0,
+  weekReported: 0,
+  roomsWithIssues: 0,
 };

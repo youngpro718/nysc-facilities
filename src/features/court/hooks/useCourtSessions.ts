@@ -216,55 +216,18 @@ export function useCopyYesterdaySessions() {
       period: SessionPeriod;
       buildingCode: BuildingCode;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Delegate to the atomic DB function which checks for existing sessions
+      // and performs the INSERT in a single transaction — prevents duplicates
+      // when two users click "Copy sessions" at the same time.
+      const { data: count, error } = await supabase.rpc('copy_court_sessions', {
+        p_from_date:     fromDate,
+        p_to_date:       toDate,
+        p_period:        period,
+        p_building_code: buildingCode,
+      });
 
-      // Fetch source sessions
-      const { data: sourceSessions, error: fetchError } = await supabase
-        .from('court_sessions')
-        .select('*')
-        .eq('session_date', fromDate)
-        .eq('period', period)
-        .eq('building_code', buildingCode);
-
-      if (fetchError) throw fetchError;
-      if (!sourceSessions || sourceSessions.length === 0) {
-        throw new Error('No sessions found for the selected date');
-      }
-
-      // Create new sessions
-      const newSessions = sourceSessions.map(session => ({
-        session_date: toDate,
-        period: session.period,
-        building_code: session.building_code,
-        court_room_id: session.court_room_id,
-        assignment_id: session.assignment_id,
-        status: session.status,
-        status_detail: session.status_detail,
-        estimated_finish_date: session.estimated_finish_date,
-        judge_name: session.judge_name,
-        part_number: session.part_number,
-        clerk_names: session.clerk_names,
-        sergeant_name: session.sergeant_name,
-        parts_entered_by: session.parts_entered_by,
-        defendants: session.defendants,
-        purpose: session.purpose,
-        date_transferred_or_started: session.date_transferred_or_started,
-        top_charge: session.top_charge,
-        attorney: session.attorney,
-        calendar_count: session.calendar_count,
-        calendar_count_date: session.calendar_count_date,
-        out_dates: session.out_dates,
-        notes: session.notes,
-        created_by: user?.id,
-      }));
-
-      const { error: insertError } = await supabase
-        .from('court_sessions')
-        .insert(newSessions);
-
-      if (insertError) throw insertError;
-
-      return sourceSessions.length;
+      if (error) throw error;
+      return count as number;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['court-sessions'] });
@@ -272,7 +235,14 @@ export function useCopyYesterdaySessions() {
     },
     onError: (error: Error) => {
       logger.error('Error copying sessions:', error);
-      toast.error(error.message || 'Failed to copy sessions');
+      const msg = error?.message || '';
+      if (msg.includes('already exist')) {
+        toast.error('Sessions already exist for this date', {
+          description: 'Delete the existing sessions first, then copy again.',
+        });
+      } else {
+        toast.error(msg || 'Failed to copy sessions');
+      }
     },
   });
 }

@@ -123,6 +123,32 @@ export const completeSupplyRequestWork = async (id: string, notes?: string) => {
   if (error) throw error;
 };
 
+/**
+ * Atomically fulfill a supply request: marks the header complete AND updates
+ * all line items in a single server-side transaction via RPC.
+ *
+ * Replaces the previous pattern of separate updateSupplyRequestStatus() +
+ * updateSupplyRequestItems() calls which could leave data inconsistent if
+ * the second call failed after the first succeeded.
+ */
+export const fulfillSupplyRequest = async (
+  requestId: string,
+  completionNotes?: string,
+  items: Array<{
+    id: string;
+    quantity_approved?: number | null;
+    quantity_fulfilled?: number | null;
+    notes?: string | null;
+  }> = []
+) => {
+  const { error } = await supabase.rpc('fulfill_supply_request', {
+    p_request_id: requestId,
+    p_completion_notes: completionNotes ?? null,
+    p_items: items,
+  });
+  if (error) throw error;
+};
+
 export const getFulfillmentLog = async (requestId: string) => {
   const { data, error } = await supabase
     .from('fulfillment_logs')

@@ -66,22 +66,32 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
-        // 1+3) Fetch session and profile simultaneously — getMyProfile() calls getUser()
-        //       internally which hits the same Supabase auth cache as getSession().
+        // 1+3) Validate session server-side (getUser() hits the auth server, not just
+        //       localStorage — a revoked or tampered token will fail here).
+        //       Fetch profile in parallel since getMyProfile() calls getUser() internally.
         let session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
         let profile: Record<string, unknown> | null = null;
         let userRoleData: { role: string } | null = null;
 
         try {
-          const [sessionResult, profileResult] = await Promise.all([
-            withTimeout(supabase.auth.getSession(), TIMEOUTS.sessionFetch, 'getting session'),
+          const [userResult, profileResult] = await Promise.all([
+            withTimeout(supabase.auth.getUser(), TIMEOUTS.sessionFetch, 'validating session'),
             withTimeout(getMyProfile(), TIMEOUTS.profileFetch, 'loading profile').catch(() => null),
           ]);
 
-          session = sessionResult.data.session;
+          // getUser() returns the server-validated user; build a minimal session-like object
+          // for the checks below. If the server rejects the token, user is null.
+          if (!userResult.data.user || userResult.error) {
+            logger.debug('[OnboardingGuard] No valid session found, redirecting to sign-in');
+            navigate('/login', { replace: true });
+            return;
+          }
+
+          // Use getSession only for the session object (needed for email_confirmed_at check)
+          const { data: { session: localSession } } = await supabase.auth.getSession();
+          session = localSession;
 
           if (!session) {
-            logger.debug('[OnboardingGuard] No session found, redirecting to sign-in');
             navigate('/login', { replace: true });
             return;
           }

@@ -360,25 +360,10 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        // Apply update if not dry run and has changes
-        if (!dryRun && Object.keys(updateData).length > 0) {
+        // Collect update — applied in a single batch below
+        if (Object.keys(updateData).length > 0) {
           updateData.updated_at = new Date().toISOString();
-          
-          const { error: updateError } = await supabase
-            .from("rooms")
-            .update(updateData)
-            .eq("id", roomId);
-
-          if (updateError) {
-            throw updateError;
-          }
-
-          // Audit log for bulk import
-          await supabase.from("admin_actions_log").insert({
-            admin_id: userId,
-            action_type: "bulk_room_import",
-            details: { room_id: roomId, changes, dry_run: dryRun },
-          }).then(() => {}).catch(() => {});
+          (row as any).__updateData = updateData;
         }
 
         results.push({
@@ -398,6 +383,46 @@ Deno.serve(async (req: Request) => {
           error: "Failed to process room. Contact administrator if issue persists.",
         });
         errors.push(`Room ${roomId}: Import failed`);
+      }
+    }
+
+    // Apply all room updates outside the per-row loop (after validation is complete).
+    // Failures are collected rather than throwing immediately so the caller gets
+    // a full picture of what succeeded and what didn't.
+    if (!dryRun) {
+      for (const row of jsonData) {
+        const roomId = (row as any)["Room ID"] as string;
+        const updateData = (row as any).__updateData as Record<string, unknown> | undefined;
+        if (!roomId || !updateData) continue;
+
+        const { error: updateError } = await supabase
+          .from("rooms")
+          .update(updateData)
+          .eq("id", roomId);
+
+        if (updateError) {
+          // Mark the previously-succeeded result as an error
+          const idx = results.findIndex(r => r.roomId === roomId);
+          if (idx !== -1) {
+            results[idx].status = "error";
+            results[idx].error = updateError.message;
+          }
+          errors.push(`Room ${roomId}: DB update failed — ${updateError.message}`);
+        }
+      }
+
+      // Single audit log entry for the whole import batch (not one per row)
+      const successIds = results.filter(r => r.status === "success").map(r => r.roomId);
+      if (successIds.length > 0) {
+        await supabase.from("admin_actions_log").insert({
+          admin_id: userId,
+          action_type: "bulk_room_import",
+          details: {
+            imported_count: successIds.length,
+            error_count: results.filter(r => r.status === "error").length,
+            dry_run: false,
+          },
+        }).then(() => {}).catch(() => {});
       }
     }
 

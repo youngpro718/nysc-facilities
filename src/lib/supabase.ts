@@ -9,9 +9,16 @@ export const supabase = createClient(API_CONFIG.supabase.url, API_CONFIG.supabas
   auth: {
     persistSession: true,
     storageKey: 'app-auth',
-    storage: localStorage,
+    // sessionStorage is safer than localStorage: tokens are not accessible to
+    // other tabs and are cleared when the browser tab closes, limiting the XSS
+    // exfiltration window (localStorage tokens persist until explicitly removed).
+    storage: sessionStorage,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
+    // Must be true so that Supabase can extract the access_token from the URL
+    // hash after email verification / OAuth redirects. With false, email
+    // confirmation links redirect to the app but the session is not picked up,
+    // leaving the user appearing unauthenticated.
+    detectSessionInUrl: true,
   },
 });
 
