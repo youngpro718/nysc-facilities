@@ -154,8 +154,8 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
       setReason("");
       setNotes("");
     } catch (error) {
-      logger.error("Unexpected error:", e);
-      toast.error(`Failed to issue pass: ${getErrorMessage(e) || 'Unexpected error'}`);
+      logger.error("Unexpected error:", error);
+      toast.error(`Failed to issue pass: ${getErrorMessage(error) || 'Unexpected error'}`);
     } finally {
       setLoading(false);
     }

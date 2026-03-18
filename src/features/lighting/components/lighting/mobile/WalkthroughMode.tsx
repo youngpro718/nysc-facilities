@@ -103,7 +103,7 @@ export function WalkthroughMode({ fixtures, onExit, onFixtureUpdate }: Walkthrou
       }
       onFixtureUpdate();
     } catch (error) {
-      logger.error('Failed to update fixture:', e);
+      logger.error('Failed to update fixture:', error);
       toast.error("Failed to update fixture");
     } finally {
       setProcessingId(null);

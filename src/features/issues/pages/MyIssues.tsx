@@ -117,7 +117,7 @@ export default function MyIssues() {
         <SimpleReportWizard
           onSuccess={handleIssueCreated}
           onCancel={() => setShowIssueWizard(false)}
-          assignedRooms={occupantData?.roomAssignments || []}
+          assignedRooms={occupantData?.roomDetails || []}
           isLoadingRooms={isLoadingRooms}
         />
       </ResponsiveDialog>

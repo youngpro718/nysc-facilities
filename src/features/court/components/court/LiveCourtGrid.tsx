@@ -189,7 +189,7 @@ export function LiveCourtGrid() {
         }
         successCount++;
       } catch (error) {
-        logger.error('Batch change failed:', { change, error: e });
+        logger.error('Batch change failed:', { change, error });
         failCount++;
       }
     }

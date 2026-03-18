@@ -272,7 +272,7 @@ export const InventoryItemsPanel = () => {
 
       toast({ title: "Export complete", description: `Exported ${rows.length} items.` });
     } catch (error) {
-      toast({ variant: "destructive", title: "Export failed", description: e?.message ?? String(e) });
+      toast({ variant: "destructive", title: "Export failed", description: (error as any)?.message ?? String(error) });
     } finally {
       setExporting(false);
     }

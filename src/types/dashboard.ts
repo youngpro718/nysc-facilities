@@ -47,17 +47,9 @@ export interface UserIssue {
   issue_type?: string; // Added to match database
   assigned_to?: string; // Added to match database
   photos?: string[];
-  rooms?: {
-    id: string;
-    name: string;
-    room_number: string;
-  } | null;
-  buildings?: {
-    name: string;
-  } | null;
-  floors?: {
-    name: string;
-  } | null;
+  rooms?: any;
+  buildings?: any;
+  floors?: any;
 }
 
 export interface UserProfile {

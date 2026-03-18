@@ -69,7 +69,7 @@ export const courtroomPhotoService = {
             filesToDelete.push({ bucketName, filePath });
           }
         } catch (error) {
-          logger.error('Error parsing judge view URL:', e);
+          logger.error('Error parsing judge view URL:', error);
           errors.push(`Failed to parse judge view URL`);
         }
       }
@@ -89,7 +89,7 @@ export const courtroomPhotoService = {
             filesToDelete.push({ bucketName, filePath });
           }
         } catch (error) {
-          logger.error('Error parsing audience view URL:', e);
+          logger.error('Error parsing audience view URL:', error);
           errors.push(`Failed to parse audience view URL`);
         }
       }
@@ -109,8 +109,8 @@ export const courtroomPhotoService = {
             filesDeleted++;
           }
         } catch (error) {
-          logger.error(`Error in storage deletion:`, e);
-          errors.push(`Unexpected error deleting file: ${getErrorMessage(e)}`);
+          logger.error(`Error in storage deletion:`, error);
+          errors.push(`Unexpected error deleting file: ${getErrorMessage(error)}`);
         }
       }
       

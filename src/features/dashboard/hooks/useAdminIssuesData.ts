@@ -93,7 +93,7 @@ export const useAdminIssuesData = () => {
         }
         
         // Map to enhanced issues format
-        const enhancedIssues: EnhancedIssue[] = (data || []).map(issue => {
+        const enhancedIssues = (data || []).map(issue => {
           const reporterId = issue.reported_by || issue.created_by;
           return {
             ...issue,
@@ -104,7 +104,7 @@ export const useAdminIssuesData = () => {
           };
         });
 
-        return enhancedIssues;
+        return enhancedIssues as unknown as EnhancedIssue[];
       } catch (error) {
         logger.warn('Error fetching admin issues:', error);
         throw error;

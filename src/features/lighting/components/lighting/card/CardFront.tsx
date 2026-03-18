@@ -296,7 +296,7 @@ export function CardFront({
             >
               <RotateCw className="h-4 w-4" />
             </Button>
-            <StatusBadge status={fixture.status} />
+            <StatusBadge status={fixture.status as any} />
           </div>
         </div>
       </CardHeader>

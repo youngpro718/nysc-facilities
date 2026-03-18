@@ -41,7 +41,7 @@ export function useAdminProfile() {
               parsedEmergencyContact = data.emergency_contact as EmergencyContact;
             }
           } catch (error) {
-            logger.warn('Failed to parse emergency contact:', e);
+            logger.warn('Failed to parse emergency contact:', error);
             parsedEmergencyContact = undefined;
           }
         }

@@ -1,24 +1,29 @@
 
 
-## Problem
 
-Signup fails with "Database error saving new user" because the `handle_new_user()` trigger function tries to INSERT into `room_number` and `court_position` columns on `profiles`, but those columns do not exist in the database.
+## Personalized, Minimal Experience Per Role — IMPLEMENTED
 
-The auth logs confirm: `column "room_number" of relation "profiles" does not exist (SQLSTATE 42703)`.
+### What Changed
 
-## Fix
+1. **Navigation reduced** (`navigation.tsx`):
+   - Standard: 2 items (Home, Activity)
+   - CMC: 3 items (Home, Court Ops, Activity)
+   - Court Officer: 3 items (Home, Keys, Activity)
+   - Court Aide: 3 items (Home, Tasks, Supply Room)
+   - Admin: unchanged (full access)
 
-**Single migration** that:
+2. **Standard User Dashboard** (`UserDashboard.tsx`): Rewritten as a clean, single-column action portal with 3 large action rows (Order Supplies, Report Issue, Request Key), pickup alert, and a unified activity feed. Removed stats strip, MyRoomCard, TermSheetPreview, and 2x2 grid.
 
-1. Adds the two missing columns to `profiles`:
-   - `room_number text`
-   - `court_position text`
+3. **Role Dashboards** (`RoleDashboard.tsx`): Replaced 4-card stats grids and 4-card quick action grids with compact inline stat strips and focused content. Court Aide gets a "Work Queue" section with task list and supply room rows.
 
-2. Recreates the `handle_new_user()` function (same logic from migration 022) so it's cleanly re-applied after the columns exist.
+4. **QuickIssueReportButton** now supports `children` prop for custom rendering.
 
-No frontend code changes needed for this fix.
+## Unified Audit Trail for Court Assignments — IMPLEMENTED
 
-## Build Errors
+### What Changed
 
-Separately, there are ~25 pre-existing TypeScript build errors across many feature files (Cannot find name `e`, missing modules, type mismatches). These are unrelated to the signup bug and existed before this change. They should be addressed in a follow-up pass — the signup fix is the priority.
+1. **Database**: Created `court_assignment_audit_log` table with trigger `trg_court_assignment_audit` on `court_assignments`. Every INSERT/UPDATE/DELETE is automatically logged with old/new values, changed fields, action type (assigned/reassigned/cleared/deleted), and the user who made the change.
 
+2. **Database**: Created `audit_logs` general-purpose table for room status changes (fixes the missing table that `operationsService.updateRoomStatus()` was trying to write to).
+
+3. **UI**: Added `CourtAssignmentAuditPanel.tsx` — a History tab in the Assignments panel showing a chronological log of all court assignment changes with action badges, room numbers, and change diffs.

@@ -243,4 +243,7 @@ export interface SupplyRequestWithRelations {
 // Re-exports for backwards compatibility
 // ============================================================================
 
-export type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from './issues';
+export type GroupingMode = 'none' | 'room' | 'floor' | 'category' | 'priority';
+export type ViewMode = 'list' | 'grid' | 'board';
+export type StatusFilter = 'all' | 'open' | 'in_progress' | 'resolved' | 'closed';
+export type PriorityFilter = 'all' | 'critical' | 'high' | 'medium' | 'low';
