@@ -51,6 +51,10 @@ export interface UserIssue {
     id: string;
     name: string;
     room_number: string;
+  }[] | {
+    id: string;
+    name: string;
+    room_number: string;
   } | null;
   buildings?: {
     name: string;
