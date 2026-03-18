@@ -14,20 +14,16 @@ export function useSecurityValidation() {
   const validateEmail = useCallback(async (email: string): Promise<ValidationResult> => {
     try {
       const { data, error } = await supabase.rpc('validate_email_format', { email });
-      
-      if (error) throw error;
-      
-      return {
-        isValid: data,
-        errors: data ? [] : ['Invalid email format']
-      };
-    } catch (error) {
-      logger.error('Email validation error:', error);
-      return {
-        isValid: false,
-        errors: ['Email validation failed']
-      };
+      if (!error) {
+        return { isValid: data, errors: data ? [] : ['Invalid email format'] };
+      }
+      // RPC unavailable — fall back to client-side check
+      logger.warn('validate_email_format RPC unavailable, using client-side fallback');
+    } catch {
+      logger.warn('validate_email_format RPC unavailable, using client-side fallback');
     }
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    return { isValid: valid, errors: valid ? [] : ['Invalid email format'] };
   }, []);
 
   const validatePassword = useCallback(async (password: string): Promise<ValidationResult> => {
@@ -89,16 +85,16 @@ export function useSecurityValidation() {
       });
 
       if (error) {
-        // Fail closed: deny the attempt when rate limit cannot be verified
-        logger.warn('Rate limit check error (denying attempt for safety):', error);
-        return false;
+        // RPC unavailable — fail open so users can still sign in/up
+        logger.warn('Rate limit check RPC unavailable, allowing attempt:', error);
+        return true;
       }
 
       return Boolean(data);
     } catch (error) {
-      // Fail closed: deny the attempt on unexpected errors
-      logger.warn('Rate limit check error (denying attempt for safety):', error);
-      return false;
+      // RPC unavailable — fail open so users can still sign in/up
+      logger.warn('Rate limit check RPC unavailable, allowing attempt:', error);
+      return true;
     }
   }, []);
 

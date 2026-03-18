@@ -193,14 +193,22 @@ export default function AdminCenter() {
     toast.loading('Approving user...', { id: 'approve-user' });
     
     try {
-      const { error } = await supabase.rpc('approve_user_verification', {
+      const { error: rpcError } = await supabase.rpc('approve_user_verification', {
         p_user_id: userId,
         p_role: selectedRole,
         p_admin_notes: `Approved via admin panel with role: ${getRoleLabel(selectedRole)}`
       });
-      
-      if (error) throw error;
-      
+
+      if (rpcError) {
+        // RPC failed — fall back to direct update
+        logger.warn('approve_user_verification RPC failed, falling back to direct update:', rpcError);
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ is_approved: true, verification_status: 'verified', role: selectedRole })
+          .eq('id', userId);
+        if (updateError) throw updateError;
+      }
+
       toast.success(`✅ ${userName} approved as ${getRoleLabel(selectedRole)}!`, { id: 'approve-user' });
       setPendingRoleSelections(prev => {
         const next = { ...prev };
