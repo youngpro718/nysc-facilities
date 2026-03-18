@@ -89,7 +89,7 @@ export const courtroomPhotoService = {
             filesToDelete.push({ bucketName, filePath });
           }
         } catch (error) {
-          logger.error('Error parsing audience view URL:', e);
+          logger.error('Error parsing audience view URL:', error);
           errors.push(`Failed to parse audience view URL`);
         }
       }
