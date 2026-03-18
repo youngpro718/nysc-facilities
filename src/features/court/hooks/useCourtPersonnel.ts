@@ -91,7 +91,7 @@ export const useCourtPersonnel = () => {
       } catch (error) {
         // Swallow and try fallbacks below
         // eslint-disable-next-line no-console
-        logger.warn('[useCourtPersonnel] personnel_profiles query failed, will try fallbacks', e);
+        logger.warn('[useCourtPersonnel] personnel_profiles query failed, will try fallbacks', error);
       }
 
       // Fallback: personnel_profiles_view (legacy)
