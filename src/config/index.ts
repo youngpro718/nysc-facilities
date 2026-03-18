@@ -3,8 +3,8 @@
 // ============================================================================
 export const API_CONFIG = {
   supabase: {
-    url: import.meta.env.VITE_SUPABASE_URL as string,
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+    url: (import.meta.env.VITE_SUPABASE_URL as string) || 'https://fmymhtuiqzhupjyopfvi.supabase.co',
+    anonKey: (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE',
   },
 } as const;
 
