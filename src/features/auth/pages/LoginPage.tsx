@@ -19,10 +19,15 @@ const LoginPage = () => {
   }
 
   return (
-    // .light class forces light-mode CSS variables — login page is always light
+    // colorScheme + .light class force light mode — prevents dark-mode CSS variable inheritance
     <div
-      className="light min-h-[100dvh] bg-slate-100 flex flex-col items-center justify-center px-4"
-      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="light min-h-[100dvh] flex flex-col items-center justify-center px-4"
+      style={{
+        colorScheme: 'light',
+        backgroundColor: '#e2e8f0',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
     >
       <div className="w-full max-w-[400px] space-y-6">
 
