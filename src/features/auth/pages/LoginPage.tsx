@@ -27,7 +27,10 @@ const LoginPage = () => {
         backgroundColor: '#e2e8f0',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
+        '--primary': '221 83% 53%',
+        '--primary-foreground': '210 40% 98%',
+        '--ring': '221 83% 53%',
+      } as React.CSSProperties}
     >
       <div className="w-full max-w-[400px] space-y-6">
 
