@@ -12,32 +12,37 @@ const LoginPage = () => {
   if (isLoading || isAuthenticated) {
     logger.debug('[LoginPage] loading or authenticated, showing spinner');
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="light flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
+    // .light class forces light-mode CSS variables — login page is always light
     <div
-      className="light min-h-[100dvh] flex flex-col items-center justify-center px-4 bg-slate-50"
+      className="light min-h-[100dvh] bg-slate-100 flex flex-col items-center justify-center px-4"
       style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="w-full max-w-[400px] space-y-6">
+
         {/* Logo + name */}
         <div className="flex items-center gap-3">
-          <div className="relative h-11 w-11 shrink-0">
-            <img src="/nysc-logo-light.webp" alt="NYSC Logo" width={44} height={44} className="h-full w-full object-contain dark:hidden" />
-            <img src="/nysc-logo-dark.webp" alt="NYSC Logo" width={44} height={44} className="h-full w-full object-contain hidden dark:block" />
-          </div>
+          <img
+            src="/nysc-logo-light.webp"
+            alt="NYSC Logo"
+            width={44}
+            height={44}
+            className="h-11 w-11 object-contain shrink-0"
+          />
           <div>
-            <p className="font-semibold text-base text-foreground leading-none">{APP_INFO.name}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">New York State Unified Court System</p>
+            <p className="font-semibold text-[15px] text-slate-900 leading-none">{APP_INFO.name}</p>
+            <p className="text-xs text-slate-500 mt-0.5">New York State Unified Court System</p>
           </div>
         </div>
 
         {/* Form card */}
-        <div className="bg-white rounded-2xl border border-border shadow-sm p-6 sm:p-7">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7">
           <AuthForm isLogin={isLogin} setIsLogin={setIsLogin} />
         </div>
 
