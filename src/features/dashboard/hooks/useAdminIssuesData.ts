@@ -104,7 +104,7 @@ export const useAdminIssuesData = () => {
           };
         });
 
-        return enhancedIssues;
+        return enhancedIssues as EnhancedIssue[];
       } catch (error) {
         logger.warn('Error fetching admin issues:', error);
         throw error;
