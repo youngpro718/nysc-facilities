@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { ReceiptData } from '@/types/receipt';
+import type { ReceiptData } from '@features/supply/types/receipt';
 
 export function createReceiptData(
   request: Record<string, unknown>,

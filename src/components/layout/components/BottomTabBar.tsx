@@ -2,10 +2,10 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { NavigationTab, Tab } from "../types";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@features/auth/hooks/useAuth";
 import { MoreHorizontal } from "lucide-react";
-import { useSupplyPendingCounts } from "@/hooks/useSupplyPendingCounts";
-import { useStaffTasksPendingCounts } from "@/hooks/useStaffTasksPendingCounts";
+import { useSupplyPendingCounts } from "@features/supply/hooks/useSupplyPendingCounts";
+import { useStaffTasksPendingCounts } from "@features/tasks/hooks/useStaffTasksPendingCounts";
 import { Badge } from "@/components/ui/badge";
 import { getNavigationPath } from "../utils/navigationPaths";
 

@@ -1,8 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/useAuth";
-import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { useAuth } from "@features/auth/hooks/useAuth";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { getRoleBasedNavigation, getNavigationRoutes } from "@/components/layout/config/navigation";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ChevronLeft, LogOut, HelpCircle, LifeBuoy } from "lucide-react";

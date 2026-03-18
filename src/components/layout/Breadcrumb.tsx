@@ -11,7 +11,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { getBreadcrumbTrail } from '@/config/routes';
-import { usePermissions } from '@/hooks/common/usePermissions';
+import { usePermissions } from '@shared/hooks/usePermissions';
 
 interface BreadcrumbProps {
   className?: string;

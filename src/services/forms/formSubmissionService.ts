@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { submitKeyRequest } from '@/services/keyRequestService';
+import { submitKeyRequest } from '@features/keys/services/keyRequestService';
 import type {
   FormSubmissionResult,
   KeyRequestFormData,
@@ -9,7 +9,7 @@ import type {
   MaintenanceRequestFormData,
   IssueReportFormData,
   UserProfileRef,
-} from '@/types/forms';
+} from '@features/forms/types/forms';
 
 export async function createKeyRequestFromForm(
   formData: KeyRequestFormData,

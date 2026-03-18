@@ -5,7 +5,7 @@
  * This system checks user's title against admin-defined rules.
  */
 
-import { CourtRole } from "@/hooks/useRolePermissions";
+import { CourtRole } from "@features/auth/hooks/useRolePermissions";
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 
@@ -188,6 +188,24 @@ export async function getRoleFromTitleAsync(title: string | null | undefined): P
 }
 
 /**
+ * Returns the role description string for a given title
+ */
+export function getRoleDescriptionFromTitle(title: string | null | undefined): string {
+  const role = getRoleFromTitle(title);
+  const mapping = TITLE_ROLE_MAPPINGS.find(m => m.role === role);
+  return mapping?.description ?? "Standard User";
+}
+
+/**
+ * Returns the access description string for a given title
+ */
+export function getAccessDescriptionFromTitle(title: string | null | undefined): string {
+  const role = getRoleFromTitle(title);
+  const mapping = TITLE_ROLE_MAPPINGS.find(m => m.role === role);
+  return mapping?.accessDescription ?? "Basic access to issues and supply requests";
+}
+
+/**
  * Synchronous version for backward compatibility
  * Uses keyword matching only (no database lookup)
  */
@@ -222,77 +240,3 @@ export function getRoleFromTitle(title: string | null | undefined): CourtRole {
   return "standard";
 }
 
-/**
- * Gets the role description for a given title
- * @param title - The user's job title
- * @returns Description of the assigned role
- */
-export function getRoleDescriptionFromTitle(title: string | null | undefined): string {
-  const role = getRoleFromTitle(title);
-  const mapping = TITLE_ROLE_MAPPINGS.find(m => m.role === role);
-  return mapping?.description || "Standard User";
-}
-
-/**
- * Gets the access description for a given title
- * @param title - The user's job title
- * @returns Description of what the user can access
- */
-export function getAccessDescriptionFromTitle(title: string | null | undefined): string {
-  const role = getRoleFromTitle(title);
-  const mapping = TITLE_ROLE_MAPPINGS.find(m => m.role === role);
-  return mapping?.accessDescription || "Basic access to issues and supply requests";
-}
-
-/**
- * Validates if a title would grant specific permissions
- * @param title - The user's job title
- * @param requiredRole - The minimum role required
- * @returns Whether the title grants sufficient permissions
- */
-export function titleGrantsRole(title: string | null | undefined, requiredRole: CourtRole): boolean {
-  const assignedRole = getRoleFromTitle(title);
-  
-  // Admin has access to everything
-  if (assignedRole === "admin") return true;
-  
-  // Exact match
-  if (assignedRole === requiredRole) return true;
-  
-  return false;
-}
-
-/**
- * Gets suggested titles for a specific role (for UI autocomplete)
- * @param role - The target role
- * @returns Array of suggested titles
- */
-export function getSuggestedTitlesForRole(role: CourtRole): string[] {
-  const mapping = TITLE_ROLE_MAPPINGS.find(m => m.role === role);
-  if (!mapping) return [];
-  
-  // Return the first 3 keywords as suggestions, capitalized
-  return mapping.keywords.slice(0, 3).map(keyword => 
-    keyword.split(' ').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ')
-  );
-}
-
-/**
- * Gets all available roles with their descriptions
- * @returns Array of role information
- */
-export function getAllRoleDescriptions(): Array<{
-  role: CourtRole;
-  description: string;
-  accessDescription: string;
-  exampleTitles: string[];
-}> {
-  return TITLE_ROLE_MAPPINGS.map(mapping => ({
-    role: mapping.role,
-    description: mapping.description,
-    accessDescription: mapping.accessDescription,
-    exampleTitles: mapping.keywords.slice(0, 3)
-  }));
-}

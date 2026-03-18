@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { logger } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 
 export interface DashboardWidget {
   id: string;
@@ -199,6 +200,10 @@ const DashboardCustomizationContext = createContext<DashboardCustomizationContex
 });
 
 export function DashboardCustomizationProvider({ children }: { children: React.ReactNode }) {
+  // Guard: skip Supabase writes until the initial Supabase load completes,
+  // so we don't overwrite server data with stale localStorage values.
+  const supabaseLoadedRef = useRef(false);
+
   const [layouts, setLayouts] = useState<DashboardLayout[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem("dashboard-layouts");
@@ -210,8 +215,8 @@ export function DashboardCustomizationProvider({ children }: { children: React.R
             ...layout,
             widgets: Array.isArray(layout.widgets) ? layout.widgets : []
           }));
-        } catch (e) {
-          logger.warn('Failed to parse saved layouts, clearing localStorage and using defaults:', e);
+        } catch (error) {
+          logger.warn('Failed to parse saved layouts, clearing localStorage and using defaults:', error);
           localStorage.removeItem("dashboard-layouts");
           localStorage.removeItem("active-dashboard-layout");
           return defaultLayouts;
@@ -267,13 +272,53 @@ export function DashboardCustomizationProvider({ children }: { children: React.R
     setActiveLayoutId("admin-default");
   };
 
+  // On mount: load preferences from Supabase and override local state.
+  // Uses localStorage as fast initial render; Supabase is the source of truth.
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { supabaseLoadedRef.current = true; return; }
+      supabase
+        .from('user_preferences')
+        .select('preferences')
+        .eq('user_id', user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.preferences) {
+            const prefs = data.preferences as Record<string, unknown>;
+            if (Array.isArray(prefs['dashboard-layouts'])) {
+              try {
+                const serverLayouts = (prefs['dashboard-layouts'] as DashboardLayout[]).map(
+                  (layout) => ({ ...layout, widgets: Array.isArray(layout.widgets) ? layout.widgets : [] })
+                );
+                setLayouts(serverLayouts);
+              } catch { /* ignore malformed server data */ }
+            }
+            if (typeof prefs['active-dashboard-layout'] === 'string') {
+              setActiveLayoutId(prefs['active-dashboard-layout']);
+            }
+          }
+          supabaseLoadedRef.current = true;
+        });
+    });
+  }, []);
+
+  // Sync layouts and active layout to both localStorage and Supabase on change.
   useEffect(() => {
     localStorage.setItem("dashboard-layouts", JSON.stringify(layouts));
-  }, [layouts]);
-
-  useEffect(() => {
     localStorage.setItem("active-dashboard-layout", activeLayoutId);
-  }, [activeLayoutId]);
+    if (!supabaseLoadedRef.current) return;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from('user_preferences').upsert(
+        {
+          user_id: user.id,
+          preferences: { 'dashboard-layouts': layouts, 'active-dashboard-layout': activeLayoutId },
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      ).then(() => {});
+    });
+  }, [layouts, activeLayoutId]);
 
   return (
     <DashboardCustomizationContext.Provider value={{

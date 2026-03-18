@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
-import { invalidateForTable } from '@/hooks/cache/invalidationMap';
+import { invalidateForTable } from '@shared/hooks/invalidationMap';
 
 const TABLES = [
   'inventory_items',
@@ -53,7 +53,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         });
 
         channelRef.current = channel;
-      } catch (e) {
+      } catch (error) {
         // schedule reconnect
         const attempt = retriesRef.current++;
         const delay = Math.min(30000, 1000 * Math.pow(2, attempt));

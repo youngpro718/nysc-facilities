@@ -9,7 +9,7 @@
 import { AdvancedAnalyticsService } from '@/services/analytics/advancedAnalyticsService';
 import { logger } from '@/lib/logger';
 import { OptimizedSpacesService } from '@/services/optimized/spacesService';
-import { fetchLightingFixtures } from '@/services/lightingService';
+import { fetchLightingFixtures } from '@features/lighting/services/lightingService';
 import type { LightingFixture, LightStatus } from '@/types/lighting';
 
 // Report interfaces

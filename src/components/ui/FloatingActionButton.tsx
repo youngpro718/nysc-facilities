@@ -9,9 +9,9 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, X, Package, HelpCircle, AlertTriangle, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@shared/hooks/use-mobile';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QuickIssueReportButton } from '@/components/user/QuickIssueReportButton';
+import { QuickIssueReportButton } from '@shared/components/user/QuickIssueReportButton';
 
 export function FloatingActionButton() {
   const navigate = useNavigate();

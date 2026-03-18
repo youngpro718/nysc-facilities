@@ -21,7 +21,7 @@ import type {
   KeyRequestWithRelations,
   SupplyRequestFilters,
   SupplyRequestWithRelations,
-} from '@/types/operations';
+} from '@features/operations/types/operations';
 
 /**
  * Operations Service

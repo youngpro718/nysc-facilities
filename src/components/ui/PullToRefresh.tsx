@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { usePullToRefresh } from '@shared/hooks/usePullToRefresh';
 import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

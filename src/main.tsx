@@ -2,7 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { initializeStorage } from './services/storage.ts'
+import { initializeStorage } from './shared/utils/storage.ts'
 import { registerServiceWorker } from './utils/registerServiceWorker'
 import { toast } from 'sonner'
 

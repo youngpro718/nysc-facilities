@@ -2,8 +2,9 @@ import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { getMyProfile } from '@/services/profile';
+import { getMyProfile } from '@features/profile/services/profile';
 import { logger } from '@/lib/logger';
+import { TIMEOUTS } from '@/config';
 
 /**
  * OnboardingGuard - Route-level enforcement for authentication and onboarding
@@ -73,8 +74,8 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
 
         try {
           const [sessionResult, profileResult] = await Promise.all([
-            withTimeout(supabase.auth.getSession(), 5000, 'getting session'),
-            withTimeout(getMyProfile(), 8000, 'loading profile').catch(() => null),
+            withTimeout(supabase.auth.getSession(), TIMEOUTS.sessionFetch, 'getting session'),
+            withTimeout(getMyProfile(), TIMEOUTS.profileFetch, 'loading profile').catch(() => null),
           ]);
 
           session = sessionResult.data.session;
@@ -97,7 +98,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           // Fetch role now that we have session.user.id
           const { data: roleData, error: roleError } = await withTimeout(
             Promise.resolve(supabase.from('user_roles').select('role').eq('user_id', session.user.id).maybeSingle()),
-            5000,
+            TIMEOUTS.roleFetch,
             'loading role'
           );
           if (roleError) logger.warn('[OnboardingGuard] Role fetch failed:', roleError);
@@ -143,7 +144,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           try {
             const { data: factorData, error: factorError } = await withTimeout(
               supabase.auth.mfa.listFactors(),
-              5000,
+              TIMEOUTS.mfaCheck,
               'checking MFA factors'
             );
             if (factorError) throw factorError;
@@ -184,7 +185,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
         logger.warn('[OnboardingGuard] Safety timeout: forcing checking=false after 5s');
         setCheckingRef.current(false);
       }
-    }, 5000);
+    }, TIMEOUTS.safetyGuard);
 
     // Initial check only if not already checked
     if (!hasCheckedRef.current) {

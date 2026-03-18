@@ -2,82 +2,83 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { logger } from '@/lib/logger';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
-import AdminDashboard from "@/pages/AdminDashboard";
-import CMCDashboard from "@/pages/CMCDashboard";
-import CourtOfficerDashboard from "@/pages/CourtOfficerDashboard";
-import CourtAideWorkCenter from "@/pages/CourtAideWorkCenter";
-import LoginPage from "@/pages/LoginPage";
-import MFASetup from "@/pages/auth/MFASetup";
-import VerifyEmail from "@/pages/auth/VerifyEmail";
+import AdminDashboard from "@features/admin/pages/AdminDashboard";
+import CMCDashboard from "@features/court/pages/CMCDashboard";
+import CourtOfficerDashboard from "@features/court/pages/CourtOfficerDashboard";
+import CourtAideWorkCenter from "@features/court/pages/CourtAideWorkCenter";
+import LoginPage from "@features/auth/pages/LoginPage";
+import MFASetup from "@features/auth/pages/auth/MFASetup";
+import VerifyEmail from "@features/auth/pages/auth/VerifyEmail";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
-import PendingApproval from "@/pages/auth/PendingApproval";
-import AccountRejected from "@/pages/auth/AccountRejected";
-import ProfileOnboarding from "@/pages/onboarding/ProfileOnboarding";
-import NotFound from "@/pages/NotFound";
-import Spaces from "@/pages/Spaces";
-import Operations from "@/pages/Operations";
-import AccessAssignments from "@/pages/AccessAssignments";
+import PendingApproval from "@features/auth/pages/auth/PendingApproval";
+import AccountRejected from "@features/auth/pages/auth/AccountRejected";
+import ProfileOnboarding from "@features/auth/pages/onboarding/ProfileOnboarding";
+import NotFound from "@features/auth/pages/NotFound";
+import Spaces from "@features/spaces/pages/Spaces";
+import Operations from "@features/operations/pages/Operations";
+import AccessAssignments from "@features/occupants/pages/AccessAssignments";
 
-import Keys from "@/pages/Keys";
-import Profile from "@/pages/Profile";
-import Lighting from "@/pages/Lighting";
-import UserDashboard from "@/pages/UserDashboard";
-import MyRequests from "@/pages/MyRequests";
-import MyIssues from "@/pages/MyIssues";
-import MySupplyRequests from "@/pages/MySupplyRequests";
-import MyActivity from "@/pages/MyActivity";
-import Tasks from "@/pages/Tasks";
-import AdminCenter from "@/pages/AdminCenter";
+import Keys from "@features/keys/pages/Keys";
+import Profile from "@features/profile/pages/Profile";
+import Lighting from "@features/lighting/pages/Lighting";
+import UserDashboard from "@features/dashboard/pages/UserDashboard";
+import MyRequests from "@features/dashboard/pages/MyRequests";
+import MyIssues from "@features/issues/pages/MyIssues";
+import MySupplyRequests from "@features/supply/pages/MySupplyRequests";
+import MyActivity from "@features/dashboard/pages/MyActivity";
+import Tasks from "@features/tasks/pages/Tasks";
+import AdminCenter from "@features/admin/pages/AdminCenter";
 // SystemSettings merged into AdminCenter
-import VerificationPending from "@/pages/VerificationPending";
-import FeaturesPreview from "@/pages/FeaturesPreview";
+import VerificationPending from "@features/auth/pages/VerificationPending";
+import FeaturesPreview from "@features/admin/pages/FeaturesPreview";
 // AccessManagement page removed — functionality merged into /access-assignments
 // ThemeSettings and SettingsPage removed - consolidated into Profile
-import AdminKeyRequests from "@/pages/admin/KeyRequests";
-import SupplyRoom from "@/pages/SupplyRoom";
-import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
-import { InventoryDashboard } from "@/pages/InventoryDashboard";
-import LiveCourtGrid from "@/components/court/LiveCourtGrid";
+import AdminKeyRequests from "@features/admin/pages/admin/KeyRequests";
+import SupplyRoom from "@features/supply/pages/SupplyRoom";
+import { CourtOperationsDashboard } from "@features/court/pages/CourtOperationsDashboard";
+import { InventoryDashboard } from "@features/inventory/pages/InventoryDashboard";
+import LiveCourtGrid from "@features/court/components/court/LiveCourtGrid";
 import { EnhancedThemeProvider } from "@/providers/EnhancedThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import RealtimeProvider from "@/providers/RealtimeProvider";
-import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { ModuleProtectedRoute } from "@/components/ModuleProtectedRoute";
+import { useConditionalNotifications } from "@shared/hooks/useConditionalNotifications";
+import { AuthProvider, useAuth } from "@features/auth/hooks/useAuth";
+import { ProtectedRoute } from "@features/auth/components/auth/ProtectedRoute";
+import { ModuleProtectedRoute } from "@/routes/ModuleProtectedRoute";
 import OnboardingGuard from "@/routes/OnboardingGuard";
-import ErrorBoundary from "@/components/error/ErrorBoundary";
-import AuthErrorBoundary from "@/components/error/AuthErrorBoundary";
+import ErrorBoundary from "@shared/components/error/ErrorBoundary";
+import AuthErrorBoundary from "@shared/components/error/AuthErrorBoundary";
 // Users page removed — consolidated into AdminCenter (/admin)
-import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
-import Notifications from "@/pages/Notifications";
-import { InstallPrompt } from "@/components/pwa/InstallPrompt";
-import InstallApp from "@/pages/InstallApp";
+import AdminSupplyRequests from "@features/admin/pages/admin/SupplyRequests";
+import Notifications from "@features/dashboard/pages/Notifications";
+import { InstallPrompt } from "@shared/components/pwa/InstallPrompt";
+import InstallApp from "@features/auth/pages/InstallApp";
 // FormIntake and FormTemplates removed — dead routes with no navigation entry
-// import FormIntake from "@/pages/FormIntake";
-// import FormTemplates from "@/pages/FormTemplates";
-import RoutingRules from "@/pages/admin/RoutingRules";
-import FormTemplatesAdmin from "@/pages/admin/FormTemplatesAdmin";
-import KeyRequestFormPage from "@/pages/forms/KeyRequestFormPage";
+// import FormIntake from "@features/forms/pages/FormIntake";
+// import FormTemplates from "@features/forms/pages/FormTemplates";
+import RoutingRules from "@features/admin/pages/admin/RoutingRules";
+import FormTemplatesAdmin from "@features/admin/pages/admin/FormTemplatesAdmin";
+import KeyRequestFormPage from "@features/forms/pages/forms/KeyRequestFormPage";
 // SupplyRequestFormPage removed - now redirects to /request/supplies
-import MaintenanceRequestFormPage from "@/pages/forms/MaintenanceRequestFormPage";
-import IssueReportFormPage from "@/pages/forms/IssueReportFormPage";
-import PublicForms from "@/pages/PublicForms";
-import PublicFormSubmission from "@/pages/PublicFormSubmission";
-import TermSheet from "@/pages/TermSheet";
-import HelpRequestPage from "@/pages/request/HelpRequestPage";
-import SupplyOrderPage from "@/pages/request/SupplyOrderPage";
-import { DevModePanel } from "@/components/dev/DevModePanel";
-import { HelpCenter } from "@/components/help/HelpCenter";
-import { useRolePermissions } from "@/hooks/useRolePermissions";
+import MaintenanceRequestFormPage from "@features/forms/pages/forms/MaintenanceRequestFormPage";
+import IssueReportFormPage from "@features/forms/pages/forms/IssueReportFormPage";
+import PublicForms from "@features/forms/pages/PublicForms";
+import PublicFormSubmission from "@features/forms/pages/PublicFormSubmission";
+import TermSheet from "@features/court/pages/TermSheet";
+import HelpRequestPage from "@features/supply/pages/request/HelpRequestPage";
+import SupplyOrderPage from "@features/supply/pages/request/SupplyOrderPage";
+import { DevModePanel } from "@shared/components/dev/DevModePanel";
+import { HelpCenter } from "@shared/components/help/HelpCenter";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import type { UserRole } from "@/config/roles";
+import { QUERY_CONFIG } from '@/config';
 
 
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: QUERY_CONFIG.globalRetry,
       refetchOnWindowFocus: false,
     },
   },

@@ -24,7 +24,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
-import { RolePermissions, CourtRole } from '@/hooks/useRolePermissions';
+import { RolePermissions, CourtRole } from '@features/auth/hooks/useRolePermissions';
 
 // Define the navigation items for admin and user interfaces
 export const navigationItems: NavigationItem[] = [

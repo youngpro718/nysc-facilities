@@ -33,8 +33,8 @@ import {
 } from 'lucide-react';
 import { useRoom } from '../hooks/useFacilities';
 import { DataState } from '@/ui/DataState';
-import { AuditTrail } from '@/components/operations/AuditTrail';
-import { RoomStatusActions } from '@/components/operations/RoomStatusActions';
+import { AuditTrail } from '@features/operations/components/operations/AuditTrail';
+import { RoomStatusActions } from '@features/operations/components/operations/RoomStatusActions';
 import type { Room } from '../model';
 
 interface RoomDetailPanelProps {

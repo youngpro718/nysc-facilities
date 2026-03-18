@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { getFacilityEmail } from '@/services/emailConfigService';
+import { getFacilityEmail } from '@features/admin/services/emailConfigService';
 
 export class PDFGenerationService {
   private static addHeader(doc: jsPDF, title: string) {

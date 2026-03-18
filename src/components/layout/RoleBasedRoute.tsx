@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { useRolePermissions, PermissionLevel, RolePermissions } from '@/hooks/useRolePermissions';
+import { useRolePermissions, PermissionLevel, RolePermissions } from '@features/auth/hooks/useRolePermissions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock } from 'lucide-react';
 

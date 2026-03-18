@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@shared/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 interface MobileOptimizedDialogProps {

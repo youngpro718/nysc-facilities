@@ -34,33 +34,9 @@ export interface BuildingStats {
   totalFixtures: number;
 }
 
-export interface RoomLightingStatus {
-  room_id: string;
-  room_name: string;
-  room_number: string | null;
-  total_fixtures: number;
-  working_fixtures: number;
-  non_working_fixtures: number;
-}
-
 const isWorkingStatus = (status: string | null | undefined) => {
   const s = (status ?? '').toString().toLowerCase();
   return s === 'working' || s === 'functional';
-};
-
-export const calculateRoomLightingStatus = (room: Room): RoomLightingStatus => {
-  const total_fixtures = room.lighting_fixtures?.length || 0;
-  const working_fixtures = room.lighting_fixtures?.filter(fixture => isWorkingStatus(fixture.status)).length || 0;
-  const non_working_fixtures = total_fixtures - working_fixtures;
-
-  return {
-    room_id: room.id,
-    room_name: room.name,
-    room_number: room.room_number || null,
-    total_fixtures,
-    working_fixtures,
-    non_working_fixtures
-  };
 };
 
 export const calculateBuildingStats = (building: Record<string, unknown>): BuildingStats => {

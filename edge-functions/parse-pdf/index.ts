@@ -126,6 +126,21 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // === Rate limiting: max 5 AI extractions per hour per user ===
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentInvocationCount } = await supabase
+      .from("ai_invocation_log")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("function_name", "extract-court-data")
+      .gte("created_at", oneHourAgo);
+    if ((recentInvocationCount ?? 0) >= 5) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Rate limit exceeded: max 5 PDF extractions per hour." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Step 1: Download the PDF from storage
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("term-pdfs")

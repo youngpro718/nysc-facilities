@@ -2,25 +2,27 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@features/auth/hooks/useAuth";
 import { logger } from "@/lib/logger";
 import { getRoleBasedNavigation, getNavigationRoutes } from "./config/navigation";
-import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { MobileMenu } from "./components/MobileMenu";
 import { BottomTabBar } from "./components/BottomTabBar";
 import { AppSidebar } from "./components/AppSidebar";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { NotificationBox } from "@/components/admin/NotificationBox";
+import { NotificationBox } from "@features/admin/components/admin/NotificationBox";
 import { RefreshCw, Search } from "lucide-react";
 import { GlobalSearchPalette } from "./components/GlobalSearchPalette";
-import { useOnboarding } from "@/hooks/useOnboarding";
-import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { useOnboarding } from "@features/auth/hooks/useOnboarding";
+import { OnboardingWizard } from "@features/auth/components/onboarding/OnboardingWizard";
 import { Button } from "@/components/ui/button";
 import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
-import { DevModeBanner } from "@/components/dev/DevModeBanner";
-import { TourProvider } from "@/components/help/TourProvider";
+import { DevModeBanner } from "@shared/components/dev/DevModeBanner";
+import { SupportChatWidget } from "@shared/components/support/SupportChatWidget";
+import { APP_INFO, APP_COPYRIGHT } from "@/lib/appInfo";
+import { TourProvider } from "@shared/components/help/TourProvider";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import type { UserRole } from "@/config/roles";
 
@@ -235,7 +237,22 @@ function LayoutContent() {
 
         {/* Floating Action Button for quick actions */}
         {isAuthenticated && !isLoginPage && <FloatingActionButton />}
+
+        {/* App footer — credit + version */}
+        {isAuthenticated && !isLoginPage && (
+          <footer className="hidden md:block border-t border-border/50 py-3 px-8">
+            <p className="text-[11px] text-muted-foreground text-center">
+              {APP_INFO.name} v{APP_INFO.version} &nbsp;·&nbsp; {APP_COPYRIGHT} &nbsp;·&nbsp;
+              <a href={APP_INFO.support.emailHref} className="hover:text-foreground transition-colors underline-offset-2 hover:underline">
+                {APP_INFO.support.email}
+              </a>
+            </p>
+          </footer>
+        )}
       </div>
+
+      {/* AI Support Chat — visible when authenticated and not on login */}
+      {isAuthenticated && !isLoginPage && <SupportChatWidget />}
     </div>
   );
 }

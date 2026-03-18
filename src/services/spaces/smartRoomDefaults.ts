@@ -1,6 +1,6 @@
-import { generateSmartRoomNumber, suggestRoomName } from '@/components/spaces/utils/roomNumberGenerator';
+import { generateSmartRoomNumber, suggestRoomName } from '@features/spaces/components/spaces/utils/roomNumberGenerator';
 import { logger } from '@/lib/logger';
-import { RoomTypeEnum } from '@/components/spaces/rooms/types/roomEnums';
+import { RoomTypeEnum } from '@features/spaces/components/spaces/rooms/types/roomEnums';
 import { supabase } from '@/lib/supabase';
 
 export interface SmartDefaults {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { NavigationTab, Tab } from "../types";
 import { MobileNavigationGrid } from "./MobileNavigationGrid";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@features/auth/hooks/useAuth";
 import { getNavigationPath, getNavigationDescription } from "../utils/navigationPaths";
 
 interface MobileMenuProps {
