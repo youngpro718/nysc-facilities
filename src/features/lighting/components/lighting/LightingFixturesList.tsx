@@ -60,8 +60,8 @@ export const LightingFixturesList = ({
   const handleDelete = hook.handleDelete;
   const handleBulkDelete = hook.handleBulkDelete;
   const handleBulkStatusUpdate = hook.handleBulkStatusUpdate;
-  const isRefreshing = hook.isFetching;
-  const lastUpdated = hook.lastUpdated;
+  const isRefreshing = (hook as any).isFetching ?? false;
+  const lastUpdated = (hook as any).lastUpdated ?? null;
 
   // Apply combined filters: external props + toolbar
   const filteredFixtures = useMemo(() => {

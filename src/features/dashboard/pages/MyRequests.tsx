@@ -98,7 +98,7 @@ export default function MyRequests() {
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const { data: requests = [], isLoading, refetch } = useKeyRequests(user?.id);
-  const { data: orders = [] } = useKeyOrders(user?.id);
+  const { orders = [] } = useKeyOrders();
   const { cancelRequest, isCancelling } = useRequestActions();
 
   // Check if device is mobile

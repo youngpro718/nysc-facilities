@@ -39,7 +39,7 @@ export function useEnhancedRoomData(roomId: string) {
           courtAssignment = (rpcData as any).court_assignment ?? null;
         }
       } catch (error) {
-        logger.warn('RPC get_enhanced_room failed, falling back to separate queries', { roomId, error: e });
+        logger.warn('RPC get_enhanced_room failed, falling back to separate queries', { roomId, error });
         // Fallback: Get base room data
         const { data: roomData, error: roomError } = await supabase
           .from('rooms')

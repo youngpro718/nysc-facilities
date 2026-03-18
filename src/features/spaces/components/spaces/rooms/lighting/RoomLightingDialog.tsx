@@ -14,8 +14,8 @@ import { roomLightingSchema, type RoomLightingFormData } from "./schemas/roomLig
 import { BasicConfigSection } from "./form-sections/BasicConfigSection";
 import { AdditionalSettingsSection } from "./form-sections/AdditionalSettingsSection";
 import { ElectricalIssuesSection } from "./form-sections/ElectricalIssuesSection";
-import { BaseLightingDialog } from "../../../lighting/shared/BaseLightingDialog";
-import { StandardFormSection } from "../../../lighting/shared/StandardFormSection";
+import { BaseLightingDialog } from "@features/lighting/components/lighting/shared/BaseLightingDialog";
+import { StandardFormSection } from "@features/lighting/components/lighting/shared/StandardFormSection";
 
 interface RoomLightingDialogProps {
   roomId: string;

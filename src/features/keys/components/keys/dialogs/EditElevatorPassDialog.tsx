@@ -109,7 +109,7 @@ export function EditElevatorPassDialog({ open, onOpenChange, assignment, onUpdat
       onUpdated?.();
       onOpenChange(false);
     } catch (error) {
-      logger.error('Failed to update assignment:', e);
+      logger.error('Failed to update assignment:', error);
       toast.error("Failed to update assignment");
     } finally {
       setLoading(false);

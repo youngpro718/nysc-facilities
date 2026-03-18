@@ -93,7 +93,7 @@ export const useAdminIssuesData = () => {
         }
         
         // Map to enhanced issues format
-        const enhancedIssues: EnhancedIssue[] = (data || []).map(issue => {
+        const enhancedIssues = (data || []).map(issue => {
           const reporterId = issue.reported_by || issue.created_by;
           return {
             ...issue,

@@ -99,7 +99,7 @@ export default function AllocateElevatorCardsToOfficeDialog({ open, onOpenChange
       ]);
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(e) || "Failed to allocate cards");
+      toast.error(getErrorMessage(error) || "Failed to allocate cards");
     } finally {
       setSubmitting(false);
     }

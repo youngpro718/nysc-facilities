@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Edit2, X, CheckSquare, Square, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { RoomType } from '@features/spaces/components/spaces/types/RoomTypes';
+import type { Room as RoomType } from '@features/spaces/components/spaces/types/RoomTypes';
 
 interface PropertiesPanelProps {
   selectedObject: any;

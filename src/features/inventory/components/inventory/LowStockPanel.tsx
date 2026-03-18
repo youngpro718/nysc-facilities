@@ -62,7 +62,7 @@ async function enrichItems(
       };
     });
   } catch (error) {
-    if (import.meta.env.DEV) logger.warn('[LowStockPanel] enrichment failed:', e);
+    if (import.meta.env.DEV) logger.warn('[LowStockPanel] enrichment failed:', error);
     return baseItems;
   }
 }

@@ -102,7 +102,7 @@ export const NotificationBox = () => {
       // Refresh queries so UI updates immediately
       queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
     } catch (error) {
-      logger.error('NotificationBox: purgeOldNotifications failed', e);
+      logger.error('NotificationBox: purgeOldNotifications failed', error);
     }
   };
 

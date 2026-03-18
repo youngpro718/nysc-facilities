@@ -439,7 +439,7 @@ export default function MyActivity() {
         <SimpleReportWizard
           onSuccess={handleIssueCreated}
           onCancel={() => setShowIssueWizard(false)}
-          assignedRooms={occupantData?.roomAssignments || []}
+          assignedRooms={occupantData?.roomDetails || []}
           isLoadingRooms={isLoadingRooms}
         />
       </ResponsiveDialog>
