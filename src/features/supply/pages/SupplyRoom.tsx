@@ -15,8 +15,8 @@ export default function SupplyRoom() {
   const { hasPermission, loading: permissionsLoading } = useRolePermissions();
 
   // Check if user has supply room permissions
-  const canManageSupplyRequests = hasPermission('supply_requests', 'admin') || hasPermission('supply_requests', 'write');
-  const canManageInventory = hasPermission('inventory', 'admin') || hasPermission('inventory', 'write');
+  const canManageSupplyRequests = hasPermission('supply_requests', 'admin') || hasPermission('supply_requests', 'write') || hasPermission('supply_requests', 'read');
+  const canManageInventory = hasPermission('inventory', 'admin') || hasPermission('inventory', 'write') || hasPermission('inventory', 'read');
   
   // Also allow access for users assigned to Supply Department
   const isSupplyDepartmentUser = (profile as any)?.department === 'Supply Department';
