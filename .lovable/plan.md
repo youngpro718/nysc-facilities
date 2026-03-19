@@ -1,29 +1,52 @@
 
+Problem found:
+- The signup failure is not caused by the `profiles` columns anymore.
+- The current auth logs show a different root cause: Supabase is trying to call `public.log_security_event(..., uuid, jsonb)` during signup, and that exact function signature does not exist.
 
+What I verified:
+- `profiles.room_number` and `profiles.court_position` do exist now.
+- `handle_new_user()` is present and already inserts those fields correctly.
+- The database currently has two overloaded `log_security_event` functions:
+  - `log_security_event(action_type text, resource_type text, resource_id text, details jsonb)`
+  - `log_security_event(p_event_type text, p_target_table text, p_target_id text, p_details text)`
+- The failing call is trying to pass a `uuid` as the third argument, not `text`, so Postgres cannot resolve the function and signup aborts.
 
-## Personalized, Minimal Experience Per Role — IMPLEMENTED
+Most likely source:
+- A trigger or function in the database is calling `log_security_event(..., some_uuid_column, some_jsonb)` without casting the UUID to text.
+- This appears to be coming from database-side auth/signup logic, not from the React client.
 
-### What Changed
+Recommended fix:
+1. Add a compatibility overload:
+   - Create `public.log_security_event(action_type text, resource_type text, resource_id uuid, details jsonb)`
+   - Inside it, delegate to the existing text/jsonb version using `resource_id::text`
+2. Keep the existing text-based function unchanged
+   - This is the safest fix because it supports both old and new callers without breaking anything else.
+3. Then audit database functions/triggers that call `log_security_event`
+   - Standardize them to pass `::text` over time
+   - But that cleanup can be a second pass after signup is restored
 
-1. **Navigation reduced** (`navigation.tsx`):
-   - Standard: 2 items (Home, Activity)
-   - CMC: 3 items (Home, Court Ops, Activity)
-   - Court Officer: 3 items (Home, Keys, Activity)
-   - Court Aide: 3 items (Home, Tasks, Supply Room)
-   - Admin: unchanged (full access)
+Why this is the best fix:
+- Lowest-risk database change
+- Backward compatible with all existing callers
+- Restores signup immediately even if the offending call site is hidden in an older trigger/function
+- Avoids touching frontend auth code unnecessarily
 
-2. **Standard User Dashboard** (`UserDashboard.tsx`): Rewritten as a clean, single-column action portal with 3 large action rows (Order Supplies, Report Issue, Request Key), pickup alert, and a unified activity feed. Removed stats strip, MyRoomCard, TermSheetPreview, and 2x2 grid.
+Implementation scope:
+- One new SQL migration only
+- No UI changes required
+- Optional follow-up audit of all security/audit functions after the app is stable again
 
-3. **Role Dashboards** (`RoleDashboard.tsx`): Replaced 4-card stats grids and 4-card quick action grids with compact inline stat strips and focused content. Court Aide gets a "Work Queue" section with task list and supply room rows.
+Technical details:
+```text
+Current failure:
+  function public.log_security_event(unknown, unknown, uuid, jsonb) does not exist
 
-4. **QuickIssueReportButton** now supports `children` prop for custom rendering.
+Safe compatibility patch:
+  create function public.log_security_event(text, text, uuid, jsonb)
+  -> internally call public.log_security_event(text, text, uuid::text, jsonb)
+```
 
-## Unified Audit Trail for Court Assignments — IMPLEMENTED
-
-### What Changed
-
-1. **Database**: Created `court_assignment_audit_log` table with trigger `trg_court_assignment_audit` on `court_assignments`. Every INSERT/UPDATE/DELETE is automatically logged with old/new values, changed fields, action type (assigned/reassigned/cleared/deleted), and the user who made the change.
-
-2. **Database**: Created `audit_logs` general-purpose table for room status changes (fixes the missing table that `operationsService.updateRoomStatus()` was trying to write to).
-
-3. **UI**: Added `CourtAssignmentAuditPanel.tsx` — a History tab in the Assignments panel showing a chronological log of all court assignment changes with action badges, room numbers, and change diffs.
+What I would implement next:
+- Add the compatibility overload migration
+- Re-test signup
+- If signup still fails, inspect the exact DB function/trigger calling it and normalize that caller too
