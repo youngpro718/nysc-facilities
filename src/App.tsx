@@ -6,6 +6,7 @@ import AdminDashboard from "@features/admin/pages/AdminDashboard";
 import CMCDashboard from "@features/court/pages/CMCDashboard";
 import CourtOfficerDashboard from "@features/court/pages/CourtOfficerDashboard";
 import CourtAideWorkCenter from "@features/court/pages/CourtAideWorkCenter";
+import RoleDashboard from "@features/dashboard/pages/RoleDashboard";
 import LoginPage from "@features/auth/pages/LoginPage";
 import MFASetup from "@features/auth/pages/auth/MFASetup";
 import VerifyEmail from "@features/auth/pages/auth/VerifyEmail";
@@ -135,6 +136,13 @@ function AppContent() {
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="inventory" moduleName="Supply Management">
               <CourtAideWorkCenter />
+            </ModuleProtectedRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="/purchasing-dashboard" element={
+          <ProtectedRoute>
+            <ModuleProtectedRoute moduleKey="inventory" moduleName="Purchasing">
+              <RoleDashboard />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />

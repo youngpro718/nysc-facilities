@@ -11,7 +11,7 @@ import {
   CheckCircle, User, KeyRound, DoorClosed
 } from 'lucide-react';
 
-export type DashboardRole = 'cmc' | 'court_officer' | 'court_aide';
+export type DashboardRole = 'cmc' | 'court_officer' | 'purchasing' | 'court_aide';
 
 export interface RoleDashboardConfig {
   title: string;
@@ -58,36 +58,6 @@ export interface QuickAction {
   bgColor: string;
 }
 
-// Purchasing staff config kept as a separate lookup (not a system role)
-export const purchasingStaffConfig: RoleDashboardConfig = {
-  title: 'Purchasing Dashboard',
-  greeting: 'Purchasing Staff',
-  primaryAction: {
-    label: 'View Inventory',
-    path: '/inventory',
-    icon: Warehouse,
-  },
-  statsConfig: [
-    { id: 'lowStockItems', label: 'Low Stock Items', icon: AlertCircle, description: 'Need attention' },
-    { id: 'pendingRequests', label: 'Pending Requests', icon: FileText, description: 'Awaiting fulfillment' },
-    { id: 'reorderRecommendations', label: 'Reorder Recommendations', icon: TrendingUp, description: 'Items to consider' },
-  ],
-  quickActions: [
-    { id: 'inventory', title: 'Inventory Overview', description: 'View stock levels and reorder recommendations', icon: Warehouse, path: '/inventory', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950/30' },
-    { id: 'supply-room', title: 'Supply Room', description: 'View supply requests and assist with planning', icon: Package, path: '/supply-room', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
-    { id: 'supply-requests', title: 'Supply Requests', description: 'View all supply requests', icon: FileText, path: '/admin/supply-requests', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950/30' },
-  ],
-  showTermSheet: true,
-  showPerformanceMetrics: false,
-  showInventoryAlerts: true,
-  showPendingRequests: false,
-  infoBanner: {
-    title: 'Purchasing Support Role',
-    description: 'You have view-only access to inventory and supply room data to assist with planning and recommendations. Court Aides handle actual purchase orders and fulfillment.',
-    icon: Package,
-  },
-};
-
 export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = {
   cmc: {
     title: 'Court Management Dashboard',
@@ -118,6 +88,35 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
     showPerformanceMetrics: true,
     showInventoryAlerts: false,
     showPendingRequests: false,
+  },
+  purchasing: {
+    title: 'Purchasing Dashboard',
+    greeting: 'Purchasing',
+    primaryAction: {
+      label: 'View Inventory',
+      path: '/inventory',
+      icon: Warehouse,
+    },
+    secondaryAction: {
+      label: 'Supply Room',
+      path: '/supply-room',
+      icon: Package,
+    },
+    statsConfig: [
+      { id: 'lowStockItems', label: 'Low Stock Items', icon: AlertCircle, description: 'Need attention', clickable: true, clickPath: '/inventory' },
+      { id: 'pendingRequests', label: 'Pending Requests', icon: FileText, description: 'Awaiting fulfillment', clickable: true, clickPath: '/supply-room' },
+      { id: 'reorderRecommendations', label: 'Reorder Recommendations', icon: TrendingUp, description: 'Items to consider' },
+    ],
+    quickActions: [
+      { id: 'inventory', title: 'Inventory Overview', description: 'View stock levels and reorder recommendations', icon: Warehouse, path: '/inventory', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950/30' },
+      { id: 'supply-room', title: 'Supply Room', description: 'View supply requests and assist with planning', icon: Package, path: '/supply-room', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
+      { id: 'supply-requests', title: 'Supply Requests', description: 'View all supply requests', icon: FileText, path: '/admin/supply-requests', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950/30' },
+      { id: 'report-issue', title: 'Report Issue', description: 'Report a facility or maintenance issue', icon: Wrench, path: '/my-issues', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-50 dark:bg-orange-950/30' },
+    ],
+    showTermSheet: false,
+    showPerformanceMetrics: false,
+    showInventoryAlerts: true,
+    showPendingRequests: true,
   },
   court_officer: {
     title: 'Court Officer Dashboard',
@@ -181,7 +180,6 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
 };
 
 export function getRoleDashboardConfig(role: string): RoleDashboardConfig | null {
-  if (role === 'purchasing_staff') return purchasingStaffConfig;
   if (role in roleDashboardConfigs) {
     return roleDashboardConfigs[role as DashboardRole];
   }

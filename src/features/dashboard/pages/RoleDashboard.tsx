@@ -52,7 +52,16 @@ export default function RoleDashboard() {
       const { count } = await supabase.from('supply_requests').select('*', { count: 'exact', head: true }).in('status', ['pending', 'approved']);
       return count || 0;
     },
-    enabled: userRole === 'court_aide',
+    enabled: userRole === 'court_aide' || userRole === 'purchasing',
+  });
+
+  const { data: lowStockCount = 0 } = useQuery({
+    queryKey: ['role-dashboard-low-stock'],
+    queryFn: async () => {
+      const { count } = await supabase.from('inventory_items').select('*', { count: 'exact', head: true }).lt('quantity', 10);
+      return count || 0;
+    },
+    enabled: userRole === 'purchasing' || userRole === 'court_aide',
   });
 
   const { data: availableTasksCount = 0 } = useQuery({
@@ -144,6 +153,11 @@ export default function RoleDashboard() {
     inlineStats.push(
       { label: 'Keys Issued', value: keyStats?.total || 0, onClick: () => navigate('/keys') },
       { label: 'Checked Out', value: keyStats?.checkedOut || 0, onClick: () => navigate('/keys') },
+    );
+  } else if (userRole === 'purchasing') {
+    inlineStats.push(
+      { label: 'Low Stock Items', value: lowStockCount, onClick: () => navigate('/inventory') },
+      { label: 'Pending Requests', value: pendingRequestsCount, onClick: () => navigate('/supply-room') },
     );
   } else if (userRole === 'court_aide') {
     inlineStats.push(

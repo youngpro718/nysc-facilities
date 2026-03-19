@@ -228,6 +228,18 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
 
+  // Purchasing navigation - inventory and supply focused
+  if (userRole === 'purchasing') {
+    return [
+      { title: 'Dashboard', icon: LayoutDashboard },
+      { title: 'Inventory', icon: Boxes },
+      { title: 'Supply Room', icon: Package2 },
+      { title: 'Notifications', icon: MessageSquare },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
+    ];
+  }
+
   // Court Aide (Supply Staff) navigation - task-focused with supply/inventory access
   if (userRole === 'court_aide') {
     return [
@@ -317,6 +329,18 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/keys',
       '/spaces',
       '/term-sheet',
+      '/notifications',
+      '', // Separator
+      '/profile',
+    ];
+  }
+
+  // Purchasing routes - inventory and supply focused
+  if (userRole === 'purchasing') {
+    return [
+      '/purchasing-dashboard',
+      '/inventory',
+      '/supply-room',
       '/notifications',
       '', // Separator
       '/profile',

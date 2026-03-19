@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { POLLING } from '@/config';
 import { Button } from '@/components/ui/button';
-import { Clock, LogOut, RefreshCw } from 'lucide-react';
+import { Clock, RefreshCw, CheckCircle, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { APP_INFO } from '@/lib/appInfo';
@@ -115,6 +115,49 @@ export default function PendingApproval() {
               <li>This usually takes 1-2 business days</li>
             </ul>
           </div>
+
+          {(profile as any)?.requested_role && (
+            <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 space-y-1.5">
+              <p className="text-xs font-medium text-blue-900">What you'll be able to do</p>
+              <ul className="text-xs text-blue-700 space-y-1">
+                {(profile as any).requested_role === 'purchasing' && (
+                  <>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />View inventory levels and stock status</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Monitor supply requests and fulfillment</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Track procurement and reorder recommendations</li>
+                  </>
+                )}
+                {(profile as any).requested_role === 'cmc' && (
+                  <>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Manage courtroom assignments and scheduling</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Oversee court terms and operations</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Coordinate facility operations for your court</li>
+                  </>
+                )}
+                {(profile as any).requested_role === 'court_officer' && (
+                  <>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Manage key assignments and tracking</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />View building layouts and facility maps</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Access court term sheets and schedules</li>
+                  </>
+                )}
+                {(profile as any).requested_role === 'court_aide' && (
+                  <>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Claim and complete facility tasks</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Fulfill supply requests and manage inventory</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Process purchase orders and stock items</li>
+                  </>
+                )}
+                {(profile as any).requested_role === 'standard' && (
+                  <>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Report facility issues and maintenance needs</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Request supplies for your workspace</li>
+                    <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Request keys and track your requests</li>
+                  </>
+                )}
+              </ul>
+            </div>
+          )}
 
           {(profile?.first_name || user?.email) && (
             <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1">

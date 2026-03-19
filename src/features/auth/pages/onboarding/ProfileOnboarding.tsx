@@ -25,6 +25,7 @@ export default function ProfileOnboarding() {
   const [lastName, setLastName] = useState('');
   const [title, setTitle] = useState('');
   const [department, setDepartment] = useState('');
+  const [requestedRole, setRequestedRole] = useState<string>('');
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function ProfileOnboarding() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, last_name, title, department')
+        .select('first_name, last_name, title, department, requested_role')
         .eq('id', user.id)
         .single();
 
@@ -48,6 +49,7 @@ export default function ProfileOnboarding() {
         setLastName(profile.last_name || '');
         setTitle(profile.title || '');
         setDepartment(profile.department || '');
+        setRequestedRole((profile as any).requested_role || '');
       }
     } catch (err) {
       logger.error('[ProfileOnboarding] Load profile failed:', err);
@@ -136,7 +138,12 @@ export default function ProfileOnboarding() {
           <div className="text-center">
             <h1 className="text-lg font-semibold text-slate-900">Complete Your Profile</h1>
             <p className="text-sm text-slate-500 mt-1">
-              Just a few details to get you started
+              {requestedRole === 'purchasing' && 'Welcome to NYSC Facilities — as a Purchasing user, you\'ll have access to inventory tracking and supply management.'}
+              {requestedRole === 'cmc' && 'Welcome to NYSC Facilities — as a Management user, you\'ll oversee court operations and scheduling.'}
+              {requestedRole === 'court_officer' && 'Welcome to NYSC Facilities — as a Court Officer, you\'ll manage keys and building access.'}
+              {requestedRole === 'court_aide' && 'Welcome to NYSC Facilities — as a Court Aide, you\'ll fulfill supply requests and manage inventory.'}
+              {requestedRole === 'standard' && 'Welcome to NYSC Facilities — you\'ll be able to report issues and request supplies.'}
+              {!requestedRole && 'Just a few details to get you started'}
             </p>
           </div>
 

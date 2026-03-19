@@ -32,6 +32,12 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
     { label: 'Spaces', path: '/spaces' },
     { label: 'Term Sheet', path: '/term-sheet' },
   ],
+  purchasing: [
+    { label: 'Dashboard', path: '/purchasing-dashboard' },
+    { label: 'Inventory', path: '/inventory' },
+    { label: 'Supply Room', path: '/supply-room' },
+    { label: 'My Activity', path: '/my-activity' },
+  ],
   court_aide: [
     { label: 'Work Center', path: '/court-aide-dashboard' },
     { label: 'Term Sheet', path: '/term-sheet' },

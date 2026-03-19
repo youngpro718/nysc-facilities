@@ -7,11 +7,12 @@
  * DO NOT create role arrays anywhere else in the codebase.
  */
 
-// The 4 simplified role values (matches database enum)
+// The system role values (matches database enum)
 export type UserRole =
   | 'standard'        // "User" in UI
   | 'court_aide'      // "Court Aide" in UI
   | 'court_officer'   // "Court Officer" in UI
+  | 'purchasing'      // "Purchasing" in UI
   | 'cmc'             // "Management" in UI
   | 'admin';          // "Admin" in UI
 
@@ -28,31 +29,37 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
   {
     value: 'standard',
     label: 'User',
-    description: 'Basic access - can submit requests and report issues',
+    description: 'Report issues, request supplies, and request keys for your workspace',
     color: 'gray',
   },
   {
     value: 'court_aide',
     label: 'Court Aide',
-    description: 'Manages inventory, fulfills supply requests, completes tasks',
+    description: 'Fulfill supply orders, manage inventory stock, and complete facility tasks',
     color: 'green',
   },
   {
     value: 'court_officer',
     label: 'Court Officer',
-    description: 'Building security, key management, and facility layout access',
+    description: 'Manage building keys, access facility layouts, and oversee security',
     color: 'blue',
+  },
+  {
+    value: 'purchasing',
+    label: 'Purchasing',
+    description: 'Track inventory levels, monitor supply requests, and manage procurement',
+    color: 'orange',
   },
   {
     value: 'cmc',
     label: 'Management',
-    description: 'Court management, scheduling, and operations oversight',
+    description: 'Oversee court operations, manage courtroom scheduling, and coordinate terms',
     color: 'purple',
   },
   {
     value: 'admin',
     label: 'Administrator',
-    description: 'Full system access and user management',
+    description: 'Full system access — manage users, buildings, and all operations',
     color: 'red',
   },
 ] as const;

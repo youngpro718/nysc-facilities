@@ -20,6 +20,7 @@ const ROLE_ICONS: Record<string, string> = {
   standard: "👤",
   court_aide: "📦",
   court_officer: "🔑",
+  purchasing: "🛒",
   cmc: "📋",
 };
 

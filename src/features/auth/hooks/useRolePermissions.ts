@@ -96,6 +96,20 @@ export function useRolePermissions() {
       operations: 'read',
       dashboard: 'read',
     },
+    purchasing: {
+      spaces: null,
+      issues: 'write',
+      occupants: null,
+      inventory: 'read',
+      supply_requests: 'read',
+      supply_orders: 'read',
+      keys: null,
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: null,
+      dashboard: 'read',
+    },
     court_officer: {
       spaces: 'read',
       issues: null,
@@ -182,7 +196,7 @@ export function useRolePermissions() {
         let effectiveRole: CourtRole = cached.role;
         try {
           const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-          const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'court_aide', 'standard'];
+          const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
           if (cached.role === 'admin' && preview && validRoles.includes(preview)) {
             effectiveRole = preview;
           }
@@ -253,7 +267,7 @@ export function useRolePermissions() {
       // Admin-only preview role override - now works site-wide for Dev Mode
       try {
         const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-        const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'court_aide', 'standard'];
+        const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
         if (role === 'admin' && preview && validRoles.includes(preview)) {
           logger.info('[useRolePermissions] Applying preview role override (Dev Mode)');
           effectiveRole = preview;
@@ -332,7 +346,8 @@ export function useRolePermissions() {
   const isCourtAide = userRole === 'court_aide';
   // Legacy compatibility - map deprecated roles to current ones
   const isFacilitiesManager = userRole === 'admin'; // Facilities manager now maps to admin
-  const isPurchasingStaff = userRole === 'court_aide'; // Purchasing staff now maps to court_aide
+  const isPurchasing = userRole === 'purchasing';
+  const isPurchasingStaff = userRole === 'purchasing'; // Updated: purchasing is now its own role
 
   // Fast-path: if useAuth already resolved the profile/role, apply permissions immediately
   // without making additional DB calls.
@@ -346,7 +361,7 @@ export function useRolePermissions() {
     let effectiveRole: CourtRole = rolePermissionsMap[role] ? role : 'standard';
     try {
       const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-      const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'court_aide', 'standard'];
+      const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
       if (role === 'admin' && preview && validRoles.includes(preview)) {
         effectiveRole = preview;
       }
@@ -465,6 +480,7 @@ export function useRolePermissions() {
     isFacilitiesManager,
     isCMC,
     isCourtAide,
+    isPurchasing,
     isPurchasingStaff,
     refetch: fetchUserRoleAndPermissions,
   };

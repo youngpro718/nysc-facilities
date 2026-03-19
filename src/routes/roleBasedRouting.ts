@@ -25,6 +25,10 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
     path: '/court-officer-dashboard',
     name: 'Court Officer Dashboard',
   },
+  purchasing: {
+    path: '/purchasing-dashboard',
+    name: 'Purchasing Dashboard',
+  },
   court_aide: {
     path: '/court-aide-dashboard',
     name: 'Work Center',
@@ -76,8 +80,8 @@ export function hasModuleAccess(role: UserRole | string | null | undefined, modu
     spaces: ['admin', 'court_officer'],
     operations: ['admin', 'cmc'],
     occupants: ['admin', 'cmc'],
-    inventory: ['admin', 'court_aide'],
-    supply_requests: ['admin', 'court_aide', 'cmc', 'standard'],
+    inventory: ['admin', 'purchasing', 'court_aide'],
+    supply_requests: ['admin', 'purchasing', 'court_aide', 'cmc', 'standard'],
     keys: ['admin', 'cmc', 'court_officer'],
     lighting: ['admin'],
     maintenance: ['admin'],
