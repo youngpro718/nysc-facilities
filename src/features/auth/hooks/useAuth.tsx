@@ -175,15 +175,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // no-op
       }
 
-      toast.success('Account created successfully!', {
-        description: "Please check your email for verification instructions."
+      toast.success('Account created!', {
+        description: 'Your account is being set up. You may need admin approval before full access.'
       });
       
-      logger.debug('Sign up successful, navigating to verification pending page');
-      // Navigate to verification pending page
-      setTimeout(() => {
-        navigate('/verification-pending');
-      }, 0);
+      logger.debug('Sign up successful');
+      // NOTE: Email verification is skeleton-only. When ready to enforce,
+      // navigate to '/verification-pending' here instead.
+      // For now, let the normal onAuthStateChange → handleRedirect flow
+      // route the user to the correct place.
     } catch (error) {
       logger.error('Sign up error', error);
       
@@ -282,40 +282,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verificationStatus: userData.profile?.verification_status
       });
 
-      // Always enforce verification flow ON INITIAL LOAD or EXPLICIT SIGN IN ONLY
-      // Do NOT redirect during background token refreshes
-      if (userData.profile?.verification_status === 'pending') {
-        // Allowlist public routes where unverified users can browse
-        const allowlist = new Set(['/verification-pending']);
-        
-        // Only enforce redirect if:
-        // 1. This is an explicit sign in event, OR
-        // 2. This is initial page load AND we're not already on an allowed page
-        if (isExplicitSignIn || (!hasCompletedInitialAuth.current && !allowlist.has(currentPath))) {
-          logger.debug('[useAuth.handleRedirect] REDIRECT: verification pending');
-          navigate('/verification-pending', { replace: true });
-        } else {
-          logger.debug('[useAuth.handleRedirect] SKIP: already on allowed page or not initial auth');
-        }
-        return;
-      }
+      // NOTE: Email verification enforcement is skeleton-only for now.
+      // When ready to enforce, uncomment the verification_status check below.
+      // if (userData.profile?.verification_status === 'pending') {
+      //   const allowlist = new Set(['/verification-pending']);
+      //   if (isExplicitSignIn || (!hasCompletedInitialAuth.current && !allowlist.has(currentPath))) {
+      //     navigate('/verification-pending', { replace: true });
+      //   }
+      //   return;
+      // }
 
-      // Role-based redirects — ONLY from auth-related pages
-      // ProtectedRoute handles role enforcement for in-app navigation
+      // Role-based redirects — ONLY from the login page.
+      // Onboarding flow pages (/auth/mfa, /onboarding/profile, /auth/verify,
+      // /verification-pending, /auth/pending-approval) are pages the user
+      // SHOULD be on — never redirect away from them.
       const userRole = userData.profile?.role;
       const correctDashboard = getDashboardForRole(userRole);
-      const authPages = new Set(['/login', '/onboarding', '/auth/mfa']);
-      const isOnAuthPage = authPages.has(currentPath) || currentPath.startsWith('/auth/') || currentPath.startsWith('/onboarding');
-      
-      if (isOnAuthPage) {
-        logger.debug('[useAuth.handleRedirect] REDIRECT: auth page -> dashboard', {
+
+      // Only redirect when the user is sitting on /login
+      if (currentPath === '/login') {
+        logger.debug('[useAuth.handleRedirect] REDIRECT: login -> dashboard', {
           role: userRole,
-          from: currentPath,
           dashboard: correctDashboard
         });
         navigate(correctDashboard, { replace: true });
       } else {
-        logger.debug('[useAuth.handleRedirect] NO REDIRECT — user already in app', { currentPath });
+        logger.debug('[useAuth.handleRedirect] NO REDIRECT — user on', { currentPath });
       }
     };
 
@@ -423,10 +415,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               return;
             }
             
-            // SIGNED_IN: only fetch profile + redirect if on an auth page (real login)
-            // If user is already navigating the app, skip to avoid redirect loops
+            // SIGNED_IN: only fetch profile + redirect if on /login (real login).
+            // Never redirect from onboarding flow pages (/auth/mfa, /onboarding/*, etc.)
             const currentPath = window.location.pathname;
-            const isOnAuthPage = currentPath === '/login' || currentPath.startsWith('/auth/') || currentPath.startsWith('/onboarding');
+            const isOnLoginPage = currentPath === '/login';
             
             (async () => {
               if (!mounted) return;
@@ -434,8 +426,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Skip redundant profile fetch if we already have data for this user
               if (profile?.id === newSession.user.id && hasCompletedInitialAuth.current) {
                 logger.debug('[useAuth] Profile already loaded for this user, skipping refetch');
-                // Still redirect if on auth page (e.g. user just logged in)
-                if (isOnAuthPage) {
+                if (isOnLoginPage) {
                   handleRedirect({ isAdmin: isAdmin, profile }, true);
                 }
                 return;
@@ -456,8 +447,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setIsAdmin(userData.isAdmin);
                 setProfile(userData.profile);
                 
-                // Only redirect if user is on an auth page (actual login flow)
-                if (hasCompletedInitialAuth.current && isOnAuthPage) {
+                // Only redirect from /login (actual login flow)
+                if (hasCompletedInitialAuth.current && isOnLoginPage) {
                   handleRedirect(userData, true);
                 }
               } catch (error) {

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from "lucide-react";
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { getMyProfile } from '@features/profile/services/profile';
 import { logger } from '@/lib/logger';
@@ -21,7 +21,6 @@ import { TIMEOUTS } from '@/config';
 export default function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
-  const location = useLocation();
   const hasCheckedRef = useRef(false);
   const isCheckingRef = useRef(false);
   // Ref-based setter so the safety timeout can always reach it even if mounted=false
@@ -30,8 +29,6 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
 
   useEffect(() => {
     let mounted = true;
-    let authSubscription: { data: { subscription: { unsubscribe: () => void } } } | null = null;
-
     const check = async () => {
       const withTimeout = async <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
         let timeoutId: number | undefined;
@@ -59,8 +56,9 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
       
       try {
         // Don't check if we're already on an auth/onboarding page
+        const currentPath = window.location.pathname;
         const publicPaths = ['/auth/', '/onboarding/', '/login', '/public-forms', '/forms/', '/verification-pending'];
-        if (publicPaths.some(path => location.pathname.startsWith(path))) {
+        if (publicPaths.some(path => currentPath.startsWith(path))) {
           if (mounted) setChecking(false);
           isCheckingRef.current = false;
           return;
@@ -96,12 +94,13 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
             return;
           }
 
-          // 2) Check email verification
-          if (!session.user.email_confirmed_at) {
-            logger.debug('[OnboardingGuard] Email not verified, redirecting to verify');
-            navigate('/auth/verify', { replace: true });
-            return;
-          }
+          // 2) Email verification — skeleton only, not enforced yet.
+          // When ready to enforce, uncomment the block below.
+          // if (!session.user.email_confirmed_at) {
+          //   logger.debug('[OnboardingGuard] Email not verified, redirecting to verify');
+          //   navigate('/auth/verify', { replace: true });
+          //   return;
+          // }
 
           profile = profileResult as Record<string, unknown> | null;
 
@@ -207,22 +206,15 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
       setChecking(false);
     }
 
-    // Subscribe to auth state changes - but only act on SIGNED_OUT
-    authSubscription = supabase.auth.onAuthStateChange((_event, session) => {
-      logger.debug('[OnboardingGuard] Auth state changed:', _event);
-      if (_event === 'SIGNED_OUT' && !session) {
-        hasCheckedRef.current = false;
-        navigate('/login', { replace: true });
-      }
-      // Don't re-check on SIGNED_IN - useAuth handles that flow
-    });
+    // NOTE: Removed duplicate onAuthStateChange subscription.
+    // useAuth already handles SIGNED_OUT redirects. Having two subscriptions
+    // caused race conditions and double-processing.
 
     return () => {
       mounted = false;
       window.clearTimeout(safetyTimer);
-      authSubscription?.data.subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate]); // Removed location.pathname — check once per mount, not per route change
 
   if (checking) {
     return (

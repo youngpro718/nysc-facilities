@@ -60,6 +60,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
   const [roomSearchQuery, setRoomSearchQuery] = useState('');
   const [selectedRoomBuildingId, setSelectedRoomBuildingId] = useState<string | null>(null);
   const [selectedRoomFloorId, setSelectedRoomFloorId] = useState<string | null>(null);
+  const [roomSelectedViaSearch, setRoomSelectedViaSearch] = useState(false);
 
   // Voice dictation
   const [isRecording, setIsRecording] = useState(false);
@@ -86,8 +87,8 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
   const selectedRoom = assignedRooms?.find(r => getRoomId(r) === selectedRoomId);
   const selectedCategoryData = SIMPLE_CATEGORIES.find(c => c.id === selectedCategory);
 
-  // Live room search — enabled when not using assigned rooms
-  const showSearchUI = !hasAssignedRooms || continueWithoutRoom;
+  // Live room search — enabled when browsing outside assigned rooms
+  const showSearchUI = !hasAssignedRooms || continueWithoutRoom || roomSelectedViaSearch;
 
   const { data: allRoomsForSearch = [], isLoading: roomsSearchLoading } = useQuery({
     queryKey: ['admin-quick-report-unified-spaces'],
@@ -113,7 +114,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
       if (error) throw error;
       return (data as unknown as RoomSearchResult[]) || [];
     },
-    enabled: showSearchUI,
+    enabled: showSearchUI || roomSelectedViaSearch,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
@@ -135,6 +136,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
     setSelectedRoomBuildingId(room.floors?.building_id || null);
     setSelectedRoomFloorId(room.floor_id);
     setRoomSearchQuery('');
+    setRoomSelectedViaSearch(true);
     setContinueWithoutRoom(false);
     setLocationDescription('');
   };
@@ -143,7 +145,9 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
     setSelectedRoomId(null);
     setSelectedRoomBuildingId(null);
     setSelectedRoomFloorId(null);
+    setRoomSelectedViaSearch(false);
     setRoomSearchQuery('');
+    setContinueWithoutRoom(true);
   };
 
   // Display name for a room selected via live search
@@ -238,17 +242,274 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
     && (selectedRoomId || (continueWithoutRoom && locationDescription.trim()))
     && description.trim();
 
+  // Progress tracking
+  const hasCategory = !!selectedCategory;
+  const hasLocation = !!(selectedRoomId || (continueWithoutRoom && locationDescription.trim()));
+  const hasDescription = !!description.trim();
+  const completedSteps = [hasCategory, hasLocation, hasDescription].filter(Boolean).length;
+
   return (
-    <div className="w-full max-w-lg mx-auto space-y-5 pb-24">
-      {/* Header */}
-      <div className="text-center space-y-1">
-        <h2 className="text-xl font-bold">Report an Issue</h2>
-        <p className="text-sm text-muted-foreground">Fill in any order, then submit</p>
+    <div className="w-full max-w-lg mx-auto pb-28">
+      {/* Header with progress */}
+      <div className="text-center space-y-3 mb-6">
+        <h2 className="text-xl font-bold tracking-tight">Report an Issue</h2>
+        <div className="flex items-center justify-center gap-1.5">
+          {[0, 1, 2].map(i => (
+            <div key={i} className={cn(
+              "h-1.5 rounded-full transition-all duration-300",
+              i < completedSteps ? "w-8 bg-primary" : "w-4 bg-muted-foreground/20"
+            )} />
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">{completedSteps}/3 required fields</p>
       </div>
 
-      {/* 1. Photo Capture — camera-first */}
-      <section className="space-y-2">
-        <Label className="text-sm font-medium">Photos <span className="text-muted-foreground font-normal">(optional)</span></Label>
+      {/* 1. Category — visual grid cards */}
+      <section className="mb-6">
+        <SectionHeader step={1} label="What's the issue?" done={hasCategory} />
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {SIMPLE_CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const active = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                  "touch-manipulation active:scale-[0.97] min-h-[90px]",
+                  active
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                    : "border-border bg-card hover:border-primary/40 hover:bg-accent/30"
+                )}
+              >
+                <div className={cn(
+                  "p-2.5 rounded-lg transition-colors",
+                  active ? "bg-primary/10" : "bg-muted/50"
+                )}>
+                  <Icon className={cn("h-5 w-5", cat.color)} />
+                </div>
+                <div className="text-center">
+                  <p className={cn("text-sm font-medium leading-tight", active && "text-primary")}>{cat.label}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{cat.description}</p>
+                </div>
+                {active && <Check className="h-3.5 w-3.5 text-primary absolute top-2 right-2" />}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 2. Location — card-based */}
+      <section className="mb-6">
+        <SectionHeader step={2} label="Where is it?" done={hasLocation} />
+
+        {isLoadingRooms ? (
+          <Skeleton className="h-14 w-full rounded-xl" />
+        ) : roomSelectedViaSearch && selectedSearchedRoom ? (
+          /* Room selected via live search — show confirmation card */
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-primary bg-primary/5">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <MapPin className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-primary">Room {selectedSearchedRoom.room_number}</p>
+                <p className="text-xs text-muted-foreground">
+                  {[selectedSearchedRoom.name, selectedSearchedRoom.floors?.buildings?.name].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+              <Button type="button" variant="ghost" size="sm" className="text-xs shrink-0 h-7" onClick={clearSearchedRoom}>
+                Change
+              </Button>
+            </div>
+            {hasAssignedRooms && (
+              <button type="button"
+                className="text-xs text-primary hover:underline touch-manipulation px-1"
+                onClick={() => {
+                  setRoomSelectedViaSearch(false);
+                  setContinueWithoutRoom(false);
+                  setRoomSearchQuery('');
+                  setLocationDescription('');
+                  const primary = assignedRooms?.find(r => r.is_primary)
+                    || assignedRooms?.find(r => r.assignment_type === 'primary_office')
+                    || assignedRooms?.[0];
+                  if (primary) setSelectedRoomId(getRoomId(primary));
+                }}>
+                ← Use my assigned room
+              </button>
+            )}
+          </div>
+        ) : hasAssignedRooms && !continueWithoutRoom && !roomSelectedViaSearch ? (
+          <div className="space-y-2.5">
+            {/* Assigned rooms as tappable cards */}
+            <div className="grid grid-cols-1 gap-2">
+              {assignedRooms!.map((room) => {
+                const rid = getRoomId(room);
+                const active = selectedRoomId === rid;
+                return (
+                  <button
+                    key={rid}
+                    type="button"
+                    onClick={() => { setSelectedRoomId(rid); setRoomSelectedViaSearch(false); setShowRoomPicker(false); }}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left",
+                      "touch-manipulation active:scale-[0.99]",
+                      active
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/40"
+                    )}
+                  >
+                    <div className={cn("p-2 rounded-lg", active ? "bg-primary/10" : "bg-muted/50")}>
+                      <MapPin className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-sm font-medium", active && "text-primary")}>Room {getRoomNumber(room)}</p>
+                      {room.building_name && <p className="text-xs text-muted-foreground">{room.building_name}</p>}
+                    </div>
+                    {active && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => { setContinueWithoutRoom(true); setSelectedRoomId(null); setRoomSelectedViaSearch(false); }}
+              className="text-xs text-muted-foreground hover:text-primary transition-colors touch-manipulation px-1"
+            >
+              Not listed? Search or describe a different location →
+            </button>
+          </div>
+        ) : (
+          /* Live room search */
+          <div className="space-y-2.5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Type a room number…"
+                value={roomSearchQuery}
+                onChange={(e) => setRoomSearchQuery(e.target.value)}
+                className="pl-10 min-h-[48px] rounded-xl"
+                autoFocus
+              />
+            </div>
+
+            {roomSearchQuery.trim() && (
+              <div className="border rounded-xl overflow-hidden">
+                <ScrollArea className="max-h-[200px]">
+                  {roomsSearchLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : filteredRooms.length === 0 ? (
+                    <div className="py-6 px-4 text-center space-y-3">
+                      <p className="text-sm text-muted-foreground">No rooms match "{roomSearchQuery}"</p>
+                      <Button type="button" size="sm" variant="outline" className="rounded-lg"
+                        onClick={() => { setRoomSearchQuery(''); setContinueWithoutRoom(true); }}>
+                        Describe location instead
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="p-1.5">
+                      {filteredRooms.map((room) => (
+                        <button
+                          key={room.id}
+                          type="button"
+                          onClick={() => handleSearchedRoomSelect(room)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-colors touch-manipulation text-left"
+                        >
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <div>
+                            <span className="font-medium text-sm">{room.room_number}</span>
+                            {room.name && <span className="text-xs text-muted-foreground ml-2">{room.name}</span>}
+                            {room.floors?.buildings?.name && (
+                              <span className="text-xs text-muted-foreground ml-1">· {room.floors.buildings.name}</span>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+            )}
+
+            {continueWithoutRoom && !roomSearchQuery.trim() && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Or describe the location:</p>
+                <Input
+                  placeholder="e.g., 5th floor hallway near elevator"
+                  value={locationDescription}
+                  onChange={(e) => setLocationDescription(e.target.value)}
+                  className="min-h-[48px] rounded-xl"
+                />
+              </div>
+            )}
+
+            {!continueWithoutRoom && !roomSearchQuery.trim() && (
+              <button type="button"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors touch-manipulation px-1"
+                onClick={() => setContinueWithoutRoom(true)}>
+                Can't find it? Describe the location instead →
+              </button>
+            )}
+
+            {hasAssignedRooms && (
+              <button type="button"
+                className="text-xs text-primary hover:underline touch-manipulation px-1"
+                onClick={() => {
+                  setRoomSelectedViaSearch(false);
+                  setContinueWithoutRoom(false);
+                  setRoomSearchQuery('');
+                  setLocationDescription('');
+                  const primary = assignedRooms?.find(r => r.is_primary)
+                    || assignedRooms?.find(r => r.assignment_type === 'primary_office')
+                    || assignedRooms?.[0];
+                  if (primary) setSelectedRoomId(getRoomId(primary));
+                }}>
+                ← Use my assigned room
+              </button>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* 3. Description with mic */}
+      <section className="mb-6">
+        <SectionHeader step={3} label="Describe the problem" done={hasDescription} />
+        <div className="relative">
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What happened? When did you notice it?"
+            className="min-h-[120px] pr-14 rounded-xl resize-none"
+          />
+          <Button
+            type="button"
+            variant={isRecording ? "destructive" : "secondary"}
+            size="icon"
+            className="absolute right-2 top-2 h-10 w-10 rounded-lg"
+            onClick={isRecording ? stopDictation : startDictation}
+          >
+            {isRecording ? (
+              <MicOff className="h-4 w-4 animate-pulse" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
+          </Button>
+          {isRecording && (
+            <p className="text-xs text-destructive mt-1 animate-pulse">Listening… tap to stop</p>
+          )}
+        </div>
+      </section>
+
+      {/* 4. Photos — optional, after description */}
+      <section className="mb-6">
+        <div className="flex items-center gap-2 mb-2.5">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Photos</span>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Optional</Badge>
+        </div>
         <PhotoCapture
           bucket="issue-photos"
           photos={selectedPhotos}
@@ -257,288 +518,50 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
         />
       </section>
 
-      {/* 2. Category chips — horizontal scroll */}
-      <section className="space-y-2">
-        <Label className="text-sm font-medium">What's the issue?</Label>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {SIMPLE_CATEGORIES.map((cat) => (
-            <CategoryChip
-              key={cat.id}
-              category={cat}
-              selected={selectedCategory === cat.id}
-              onSelect={() => setSelectedCategory(cat.id)}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* 3. Room — compact badge or picker */}
-      <section className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          Location
-        </Label>
-
-        {isLoadingRooms ? (
-          <Skeleton className="h-10 w-full rounded-lg" />
-        ) : hasAssignedRooms && !continueWithoutRoom ? (
-          <div className="space-y-2">
-            {/* Show selected room as badge, tap to change */}
-            {selectedRoom ? (
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge
-                  variant="secondary"
-                  className="gap-1.5 py-1.5 px-3 text-sm cursor-pointer hover:bg-secondary/80 touch-manipulation"
-                  onClick={() => setShowRoomPicker(!showRoomPicker)}
-                >
-                  <MapPin className="h-3.5 w-3.5" />
-                  Room {getRoomNumber(selectedRoom)}
-                  {selectedRoom.building_name && (
-                    <span className="text-muted-foreground">· {selectedRoom.building_name}</span>
-                  )}
-                </Badge>
-                {assignedRooms!.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowRoomPicker(!showRoomPicker)}
-                    className="text-xs text-primary underline touch-manipulation"
-                  >
-                    Change
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => { setContinueWithoutRoom(true); setSelectedRoomId(null); }}
-                  className="text-xs text-muted-foreground underline touch-manipulation"
-                >
-                  Different location
-                </button>
-              </div>
-            ) : null}
-
-            {/* Expandable room list */}
-            {showRoomPicker && (
-              <div className="flex gap-2 flex-wrap">
-                {assignedRooms!.map((room) => {
-                  const rid = getRoomId(room);
-                  return (
-                    <Badge
-                      key={rid}
-                      variant={selectedRoomId === rid ? "default" : "outline"}
-                      className={cn(
-                        "cursor-pointer py-1.5 px-3 touch-manipulation active:scale-[0.97] min-h-[44px] flex items-center",
-                        selectedRoomId === rid && "ring-2 ring-primary ring-offset-1"
-                      )}
-                      onClick={() => { setSelectedRoomId(rid); setShowRoomPicker(false); }}
-                    >
-                      {getRoomNumber(room)}
-                      {selectedRoomId === rid && <Check className="h-3.5 w-3.5 ml-1" />}
-                    </Badge>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : selectedSearchedRoom && !continueWithoutRoom ? (
-          /* Room selected via live search — show badge */
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge
-              variant="secondary"
-              className="gap-1.5 py-1.5 px-3 text-sm"
-            >
-              <MapPin className="h-3.5 w-3.5" />
-              Room {selectedSearchedRoom.room_number}
-              {selectedSearchedRoom.name && (
-                <span className="text-muted-foreground">· {selectedSearchedRoom.name}</span>
-              )}
-              {selectedSearchedRoom.floors?.buildings?.name && (
-                <span className="text-muted-foreground">· {selectedSearchedRoom.floors.buildings.name}</span>
-              )}
-            </Badge>
-            <button
-              type="button"
-              onClick={clearSearchedRoom}
-              className="text-xs text-primary underline touch-manipulation"
-            >
-              Change
-            </button>
-            <button
-              type="button"
-              onClick={() => { clearSearchedRoom(); setContinueWithoutRoom(true); }}
-              className="text-xs text-muted-foreground underline touch-manipulation"
-            >
-              Different location
-            </button>
-          </div>
-        ) : (
-          /* Live room search UI (no assigned rooms, or 'Different location' clicked) */
-          <div className="space-y-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search room number or name…"
-                value={roomSearchQuery}
-                onChange={(e) => setRoomSearchQuery(e.target.value)}
-                className="pl-10 min-h-[44px]"
-                autoFocus
-              />
-            </div>
-
-            {/* Search results */}
-            {roomSearchQuery.trim() && (
-              <ScrollArea className="h-[180px] border rounded-lg">
-                {roomsSearchLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : filteredRooms.length === 0 ? (
-                  <div className="py-6 px-4 text-center space-y-3">
-                    <AlertCircle className="h-5 w-5 mx-auto text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      No room found for &ldquo;{roomSearchQuery}&rdquo;
-                    </p>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="min-h-[40px]"
-                      onClick={() => { setRoomSearchQuery(''); setContinueWithoutRoom(true); }}
-                    >
-                      Describe location instead
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="p-2 space-y-1">
-                    {filteredRooms.map((room) => (
-                      <button
-                        key={room.id}
-                        type="button"
-                        onClick={() => handleSearchedRoomSelect(room)}
-                        className="w-full text-left px-3 py-2 rounded-md hover:bg-accent transition-colors touch-manipulation"
-                      >
-                        <div className="font-medium">{room.room_number}</div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-2">
-                          {room.name && <span>{room.name}</span>}
-                          {room.floors?.buildings?.name && (
-                            <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                              {room.floors.buildings.name}
-                            </Badge>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            )}
-
-            {/* Free-text fallback — shown when user can't find the room */}
-            {continueWithoutRoom && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Describe the location:</p>
-                <Input
-                  placeholder="e.g., 5th floor hallway near elevator"
-                  value={locationDescription}
-                  onChange={(e) => setLocationDescription(e.target.value)}
-                  className="min-h-[44px]"
-                />
-                <button
-                  type="button"
-                  className="text-xs text-primary underline touch-manipulation"
-                  onClick={() => setContinueWithoutRoom(false)}
-                >
-                  Search room instead
-                </button>
-              </div>
-            )}
-
-            {/* Back to assigned rooms (for users who clicked 'Different location') */}
-            {hasAssignedRooms && (
-              <button
-                type="button"
-                className="text-xs text-primary underline touch-manipulation"
-                onClick={() => {
-                  setContinueWithoutRoom(false);
-                  setRoomSearchQuery('');
-                  setLocationDescription('');
-                  const primary = assignedRooms?.find(r => r.is_primary)
-                    || assignedRooms?.find(r => r.assignment_type === 'primary_office')
-                    || assignedRooms?.[0];
-                  if (primary) setSelectedRoomId(getRoomId(primary));
-                }}
-              >
-                Use my assigned room
-              </button>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* 4. Description with mic */}
-      <section className="space-y-2">
-        <Label className="text-sm font-medium">Describe the issue</Label>
-        <div className="relative">
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="What's the problem? Tap the mic to dictate…"
-            className="min-h-[100px] pr-12"
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-2 min-h-[44px] min-w-[44px]"
-            onClick={isRecording ? stopDictation : startDictation}
-          >
-            {isRecording ? (
-              <MicOff className="h-5 w-5 text-destructive animate-pulse" />
-            ) : (
-              <Mic className="h-5 w-5 text-muted-foreground" />
-            )}
-          </Button>
-        </div>
-      </section>
-
       {/* Sticky submit bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-border z-50">
-        <div className="max-w-lg mx-auto flex gap-3">
-          <Button variant="outline" onClick={onCancel} className="flex-1 min-h-[48px]">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit || createIssueMutation.isPending}
-            className="flex-1 min-h-[48px] text-base"
-          >
-            {createIssueMutation.isPending ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting…</>
-            ) : (
-              'Submit'
-            )}
-          </Button>
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border z-50">
+        <div className="max-w-lg mx-auto space-y-2">
+          {/* Mini status */}
+          {!canSubmit && (
+            <div className="flex items-center gap-2 justify-center">
+              <AlertCircle className="h-3 w-3 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">
+                {!hasCategory ? 'Select an issue type' : !hasLocation ? 'Choose a location' : 'Add a description'}
+              </p>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={onCancel} className="min-h-[48px] px-6">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={!canSubmit || createIssueMutation.isPending}
+              className="flex-1 min-h-[48px] text-[15px] font-semibold rounded-xl"
+            >
+              {createIssueMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting…</>
+              ) : (
+                'Submit Report'
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function CategoryChip({ category, selected, onSelect }: { category: SimpleCategory; selected: boolean; onSelect: () => void }) {
-  const Icon = category.icon;
+function SectionHeader({ step, label, done }: { step: number; label: string; done: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        "shrink-0 flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium border transition-all",
-        "min-h-[44px] touch-manipulation active:scale-[0.97]",
-        selected
-          ? "border-primary bg-primary/10 text-primary ring-2 ring-primary ring-offset-1"
-          : "border-border bg-background hover:border-primary/50 hover:bg-primary/5"
-      )}
-    >
-      <Icon className={cn("h-4 w-4", category.color)} />
-      {category.label}
-    </button>
+    <div className="flex items-center gap-2.5 mb-2.5">
+      <div className={cn(
+        "h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors shrink-0",
+        done ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+      )}>
+        {done ? <Check className="h-3.5 w-3.5" /> : step}
+      </div>
+      <span className="text-sm font-medium">{label}</span>
+    </div>
   );
 }
