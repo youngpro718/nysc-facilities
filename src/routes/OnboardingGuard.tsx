@@ -144,12 +144,13 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
-        // 5) MFA enforcement for privileged roles
+        // 5) MFA enforcement for privileged roles ONLY
+        // Note: mfa_enforced flag is only meaningful for privileged roles.
+        // Non-privileged users should never be forced to set up MFA.
         const privilegedRoles = ['admin', 'cmc'];
         const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
-        const enforceMfa = profile?.mfa_enforced === true || isPrivileged;
 
-        if (enforceMfa) {
+        if (isPrivileged) {
           try {
             const { data: factorData, error: factorError } = await withTimeout(
               supabase.auth.mfa.listFactors(),
