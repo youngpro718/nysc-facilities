@@ -3,13 +3,12 @@ import { useEffect, useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
 import { useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Loader2, ArrowRight, Building2, Mail } from "lucide-react";
+import { CheckCircle, Loader2, Mail, RefreshCw, LogOut } from "lucide-react";
 import { toast } from "sonner";
-import { SparklesCore } from "@/components/ui/sparkles";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { resendVerificationEmail } from '@features/auth/services/auth';
+import { APP_INFO } from "@/lib/appInfo";
 
 export default function VerificationPending() {
   const navigate = useNavigate();
@@ -20,23 +19,17 @@ export default function VerificationPending() {
   });
 
   useEffect(() => {
-    // Don't redirect if loading or if user doesn't exist
     if (isLoading || !user) return;
-    
-    // If user is verified, let AuthProvider handle the redirect
     if (profile?.verification_status === 'verified') {
       toast.success("Your account has been verified!");
-      // AuthProvider will handle the redirect in its effect
     }
   }, [user, profile?.verification_status, isLoading]);
 
   const handleCheckStatus = async () => {
     try {
       await refreshSession();
-      
       if (profile?.verification_status === 'verified') {
         toast.success("Your account has been verified!");
-        // AuthProvider will handle the redirect automatically
       } else {
         toast.info("Your account is still pending verification");
       }
@@ -48,10 +41,6 @@ export default function VerificationPending() {
 
   const handleSignOut = async () => {
     await signOut();
-  };
-
-  const handleExploreFeatures = () => {
-    navigate('/features-preview');
   };
 
   const handleResendEmail = async () => {
@@ -79,102 +68,105 @@ export default function VerificationPending() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[100dvh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="light flex items-center justify-center min-h-[100dvh]" style={{ colorScheme: 'light', backgroundColor: '#e2e8f0' }}>
+        <Loader2 className="h-8 w-8 animate-spin text-slate-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] relative w-full flex flex-col items-center justify-center overflow-hidden">
-      <SparklesCore
-        id="tsparticlesfullpage"
-        background="transparent"
-        minSize={0.6}
-        maxSize={1.4}
-        particleDensity={100}
-        className="w-full h-full absolute"
-        particleColor="#FFFFFF"
-      />
-      
-      <Card className="relative z-20 w-full max-w-lg p-8">
-        <div className="flex flex-col items-center gap-6 text-center text-foreground">
-          <div className="relative">
-            <CheckCircle className="h-16 w-16" />
-            <div className="absolute -top-2 -right-2">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
+    <div
+      className="light min-h-[100dvh] flex flex-col items-center justify-center px-4"
+      style={{
+        colorScheme: 'light',
+        backgroundColor: '#e2e8f0',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
+      <div className="w-full max-w-[400px] space-y-6">
+        {/* Logo + name */}
+        <div className="flex items-center gap-3">
+          <img
+            src="/nysc-logo-light.webp"
+            alt="NYSC Logo"
+            width={44}
+            height={44}
+            className="h-11 w-11 object-contain shrink-0"
+          />
+          <div>
+            <p className="font-semibold text-[15px] text-slate-900 leading-none">{APP_INFO.name}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{APP_INFO.organization}</p>
           </div>
-          
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold">Welcome to NYSC Facilities Hub!</h1>
-            <p className="text-muted-foreground">
-              Your account has been created successfully. While we verify your information, 
-              you can explore the platform and see what features are available.
-            </p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 text-emerald-600" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-slate-900">Account Created</h1>
+              <p className="text-sm text-slate-500 mt-1">
+                Please verify your email to continue. An administrator will then review your account.
+              </p>
+            </div>
           </div>
 
           {userEmail && (
-            <div className="w-full p-4 rounded-lg bg-muted">
+            <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
               <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-                <div className="text-left flex-1">
-                  <p className="font-medium text-sm">Verification Email Sent</p>
-                  <p className="text-xs text-muted-foreground break-all">
-                    Check your inbox at {userEmail}
-                  </p>
+                <Mail className="h-4 w-4 text-slate-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-700">Verification email sent</p>
+                  <p className="text-xs text-slate-500 truncate">{userEmail}</p>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="w-full p-4 rounded-lg bg-muted">
-            <div className="flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-muted-foreground" />
-              <div className="text-left">
-                <p className="font-medium text-sm">Limited Access Active</p>
-                <p className="text-xs text-muted-foreground">
-                  You can browse and learn about features while verification is in progress
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex flex-col gap-3 w-full">
-            <Button onClick={handleExploreFeatures} className="flex items-center gap-2">
-              Explore Features
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            
-            <Button 
-              variant="outline" 
+          <div className="space-y-2.5">
+            <Button
               onClick={handleResendEmail}
               disabled={isResending}
-              className="flex items-center gap-2"
+              className="w-full h-10 rounded-xl text-sm font-medium"
+              variant="outline"
             >
               {isResending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Sending...
-                </>
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Sending...</>
               ) : (
-                <>
-                  <Mail className="h-4 w-4" />
-                  Resend Verification Email
-                </>
+                <><Mail className="h-4 w-4 mr-2" />Resend Verification Email</>
               )}
             </Button>
-            
-            <Button variant="ghost" onClick={handleCheckStatus}>
-              Check Verification Status
+
+            <Button
+              onClick={handleCheckStatus}
+              variant="outline"
+              className="w-full h-10 rounded-xl text-sm font-medium"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Check Status
             </Button>
-            
-            <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={handleSignOut}>
+
+            <Button
+              onClick={handleSignOut}
+              variant="ghost"
+              className="w-full h-10 rounded-xl text-sm text-slate-500 hover:text-slate-700"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
               Return to Login
             </Button>
           </div>
         </div>
-      </Card>
+
+        <p className="text-center text-[11px] text-slate-400">
+          Need help?{' '}
+          <a href={APP_INFO.support.emailHref} className="underline hover:text-slate-600 transition-colors">
+            {APP_INFO.support.email}
+          </a>
+        </p>
+      </div>
     </div>
   );
 }

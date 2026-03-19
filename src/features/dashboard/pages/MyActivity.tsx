@@ -24,7 +24,7 @@ import {
   Loader2,
   FileText,
   Wrench,
-  ClipboardList,
+  Send,
   type LucideIcon
 } from "lucide-react";
 import { format } from "date-fns";
@@ -115,24 +115,10 @@ export default function MyActivity() {
   const content = (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            Track all your requests and issues
-          </p>
-        </div>
-        
-        {/* Quick Actions */}
-        <div className="flex gap-2">
-          <Button 
-            size="sm" 
-            onClick={() => navigate('/request')}
-            className="hidden sm:flex"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            New Request
-          </Button>
-        </div>
+      <div>
+        <p className="text-sm text-muted-foreground">
+          Track all your requests and activity
+        </p>
       </div>
 
       {/* Stats Overview */}
@@ -168,8 +154,8 @@ export default function MyActivity() {
         </Card>
 
         <Card 
-          className={`cursor-pointer transition-all ${activeTab === 'issues' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
-          onClick={() => handleTabChange('issues')}
+          className={`cursor-pointer transition-all ${activeTab === 'reported' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+          onClick={() => handleTabChange('reported')}
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -178,22 +164,22 @@ export default function MyActivity() {
                 {activeIssueCount}
               </Badge>
             </div>
-            <p className="text-sm font-medium mt-2">Issues</p>
+            <p className="text-sm font-medium mt-2">Reported</p>
           </CardContent>
         </Card>
 
         <Card 
-          className={`cursor-pointer transition-all ${activeTab === 'tasks' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
-          onClick={() => handleTabChange('tasks')}
+          className={`cursor-pointer transition-all ${activeTab === 'requests' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+          onClick={() => handleTabChange('requests')}
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <ClipboardList className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <Send className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               <Badge variant={activeTaskCount > 0 ? "default" : "secondary"}>
                 {activeTaskCount}
               </Badge>
             </div>
-            <p className="text-sm font-medium mt-2">Tasks</p>
+            <p className="text-sm font-medium mt-2">Requests</p>
           </CardContent>
         </Card>
       </div>
@@ -209,13 +195,13 @@ export default function MyActivity() {
             <Key className="h-4 w-4 mr-1" />
             Keys
           </TabsTrigger>
-          <TabsTrigger value="issues" className="relative">
+          <TabsTrigger value="reported" className="relative">
             <AlertTriangle className="h-4 w-4 mr-1" />
-            Issues
+            Reported
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="relative">
-            <ClipboardList className="h-4 w-4 mr-1" />
-            Tasks
+          <TabsTrigger value="requests" className="relative">
+            <Send className="h-4 w-4 mr-1" />
+            Requests
           </TabsTrigger>
         </TabsList>
 
@@ -356,8 +342,8 @@ export default function MyActivity() {
           )}
         </TabsContent>
 
-        {/* Issues Tab */}
-        <TabsContent value="issues" className="mt-4">
+        {/* Reported Issues Tab */}
+        <TabsContent value="reported" className="mt-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Reported Issues</h2>
             <Button size="sm" onClick={() => setShowIssueWizard(true)}>
@@ -428,8 +414,8 @@ export default function MyActivity() {
           )}
         </TabsContent>
 
-        {/* Tasks Tab */}
-        <TabsContent value="tasks" className="mt-4">
+        {/* Requests Tab (tasks submitted by user to court aides) */}
+        <TabsContent value="requests" className="mt-4">
           <UserTasksTab />
         </TabsContent>
       </Tabs>

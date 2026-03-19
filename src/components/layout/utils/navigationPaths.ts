@@ -21,11 +21,13 @@ const BASE_PATH_MAP: Record<string, string> = {
   'Court Operations': '/court-operations',
   'My Activity': '/my-activity',
   'My Requests': '/my-activity?tab=keys',
-  'My Issues': '/my-activity?tab=issues',
+  'My Issues': '/my-activity?tab=reported',
   'Admin Center': '/admin',
   'Admin Profile': '/admin',
   'Profile': '/profile',
   'System Settings': '/system-settings',
+  'Term Sheet': '/term-sheet',
+  'Notifications': '/notifications',
 };
 
 export function getNavigationPath(title: string, isAdmin?: boolean): string {
@@ -62,6 +64,8 @@ export function getNavigationDescription(title: string): string {
     'Admin Profile': 'Team & user management',
     'Profile': 'Your account',
     'System Settings': 'System configuration',
+    'Term Sheet': 'Court term assignments',
+    'Notifications': 'Your notifications',
   };
   return descriptionMap[title] || '';
 }

@@ -3,12 +3,11 @@ import { useEffect, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { useNavigate } from 'react-router-dom';
 import { POLLING } from '@/config';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, Mail, LogOut, RefreshCw } from 'lucide-react';
+import { Clock, LogOut, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@features/auth/hooks/useAuth';
+import { APP_INFO } from '@/lib/appInfo';
 
 /**
  * PendingApproval - Shown to users waiting for admin approval
@@ -34,10 +33,8 @@ export default function PendingApproval() {
       if (error) throw error;
 
       if (data?.verification_status === 'verified' && data?.is_approved) {
-        // User has been approved, redirect to dashboard
         navigate('/', { replace: true });
       } else if (data?.verification_status === 'rejected') {
-        // User was rejected
         navigate('/auth/account-rejected', { replace: true });
       }
     } catch (error) {
@@ -58,7 +55,6 @@ export default function PendingApproval() {
 
     check();
     
-    // Check every 30 seconds
     const interval = setInterval(check, POLLING.approvalCheck);
     return () => {
       mounted = false;
@@ -72,83 +68,96 @@ export default function PendingApproval() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-4">
-            <Clock className="h-8 w-8 text-amber-600" />
+    <div
+      className="light min-h-[100dvh] flex flex-col items-center justify-center px-4"
+      style={{
+        colorScheme: 'light',
+        backgroundColor: '#e2e8f0',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
+      <div className="w-full max-w-[400px] space-y-6">
+        {/* Logo + name */}
+        <div className="flex items-center gap-3">
+          <img
+            src="/nysc-logo-light.webp"
+            alt="NYSC Logo"
+            width={44}
+            height={44}
+            className="h-11 w-11 object-contain shrink-0"
+          />
+          <div>
+            <p className="font-semibold text-[15px] text-slate-900 leading-none">{APP_INFO.name}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{APP_INFO.organization}</p>
           </div>
-          <CardTitle className="text-2xl">Account Pending Approval</CardTitle>
-          <CardDescription>
-            Your account is waiting for administrator approval
-          </CardDescription>
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-6">
-          <Alert>
-            <Mail className="h-4 w-4" />
-            <AlertDescription>
-              <strong>What happens next?</strong>
-              <ul className="mt-2 space-y-1 text-sm">
-                <li>• An administrator will review your account</li>
-                <li>• You'll receive an email when approved</li>
-                <li>• This usually takes 1-2 business days</li>
-              </ul>
-            </AlertDescription>
-          </Alert>
-
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium">Your Information</p>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p><strong>Name:</strong> {profile?.first_name} {profile?.last_name}</p>
-              <p><strong>Email:</strong> {user?.email}</p>
-              {(profile as any)?.department && (
-                <p><strong>Department:</strong> {(profile as any).department}</p>
-              )}
-              {(profile as any)?.title && (
-                <p><strong>Title:</strong> {(profile as any).title}</p>
-              )}
+        {/* Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
+              <Clock className="h-6 w-6 text-amber-600" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-slate-900">Pending Approval</h1>
+              <p className="text-sm text-slate-500 mt-1">
+                Your account is waiting for an administrator to review and approve access.
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1.5">
+            <p className="text-xs font-medium text-slate-600">What happens next</p>
+            <ul className="text-xs text-slate-500 space-y-1">
+              <li>An administrator will review your account</li>
+              <li>You'll receive an email once approved</li>
+              <li>This usually takes 1-2 business days</li>
+            </ul>
+          </div>
+
+          {(profile?.first_name || user?.email) && (
+            <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1">
+              <p className="text-xs font-medium text-slate-600">Your information</p>
+              <div className="text-xs text-slate-500 space-y-0.5">
+                {profile?.first_name && <p>{profile.first_name} {profile.last_name}</p>}
+                {user?.email && <p>{user.email}</p>}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2.5">
             <Button
-              variant="outline"
               onClick={checkApprovalStatus}
               disabled={checking}
-              className="w-full"
+              variant="outline"
+              className="w-full h-10 rounded-xl text-sm font-medium"
             >
               {checking ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Checking...
-                </>
+                <><RefreshCw className="h-4 w-4 animate-spin mr-2" />Checking...</>
               ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Check Approval Status
-                </>
+                <><RefreshCw className="h-4 w-4 mr-2" />Check Approval Status</>
               )}
             </Button>
 
             <Button
-              variant="ghost"
               onClick={handleSignOut}
-              className="w-full text-muted-foreground"
+              variant="ghost"
+              className="w-full h-10 rounded-xl text-sm text-slate-500 hover:text-slate-700"
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
           </div>
+        </div>
 
-          <p className="text-xs text-center text-muted-foreground">
-            Need help? Contact your administrator or email{' '}
-            <a href="mailto:support@nysc.gov" className="text-primary underline">
-              support@nysc.gov
-            </a>
-          </p>
-        </CardContent>
-      </Card>
+        <p className="text-center text-[11px] text-slate-400">
+          Need help?{' '}
+          <a href={APP_INFO.support.emailHref} className="underline hover:text-slate-600 transition-colors">
+            {APP_INFO.support.email}
+          </a>
+        </p>
+      </div>
     </div>
   );
 }

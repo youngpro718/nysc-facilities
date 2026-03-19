@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useToast } from '@shared/hooks/use-toast';
 import { logger } from '@/lib/logger';
+import { APP_INFO } from '@/lib/appInfo';
 
 /**
  * ProfileOnboarding - Profile Completion Page
@@ -105,107 +106,125 @@ export default function ProfileOnboarding() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background">
-      {/* Safe area top spacer */}
-      <div className="pt-safe" />
-
-      <div className="flex-1 flex flex-col justify-center px-6 py-8 max-w-md mx-auto w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-            <User className="h-8 w-8 text-primary" />
+    <div
+      className="light min-h-[100dvh] flex flex-col items-center justify-center px-4"
+      style={{
+        colorScheme: 'light',
+        backgroundColor: '#e2e8f0',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
+      <div className="w-full max-w-[400px] space-y-6">
+        {/* Logo + name */}
+        <div className="flex items-center gap-3">
+          <img
+            src="/nysc-logo-light.webp"
+            alt="NYSC Logo"
+            width={44}
+            height={44}
+            className="h-11 w-11 object-contain shrink-0"
+          />
+          <div>
+            <p className="font-semibold text-[15px] text-slate-900 leading-none">{APP_INFO.name}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{APP_INFO.organization}</p>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Complete your profile</h1>
-          <p className="text-muted-foreground mt-2">
-            Just a few details to get you started
-          </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
-            {/* First Name */}
-            <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-sm font-medium">
-                First Name <span className="text-destructive">*</span>
-              </Label>
+        {/* Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
+          <div className="text-center">
+            <h1 className="text-lg font-semibold text-slate-900">Complete Your Profile</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Just a few details to get you started
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="firstName" className="text-xs font-medium text-slate-600">
+                  First Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="John"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="h-10 rounded-xl text-sm"
+                  autoComplete="given-name"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="lastName" className="text-xs font-medium text-slate-600">
+                  Last Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Doe"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="h-10 rounded-xl text-sm"
+                  autoComplete="family-name"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="title" className="text-xs font-medium text-slate-600">Title (Optional)</Label>
               <Input
-                id="firstName"
+                id="title"
                 type="text"
-                placeholder="John"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                className="h-12 rounded-xl text-base"
-                autoComplete="given-name"
+                placeholder="Facilities Manager"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="h-10 rounded-xl text-sm"
+                autoComplete="organization-title"
               />
             </div>
 
-            {/* Last Name */}
-            <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-sm font-medium">
-                Last Name <span className="text-destructive">*</span>
-              </Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="department" className="text-xs font-medium text-slate-600">Department (Optional)</Label>
               <Input
-                id="lastName"
+                id="department"
                 type="text"
-                placeholder="Doe"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                className="h-12 rounded-xl text-base"
-                autoComplete="family-name"
+                placeholder="Facilities"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="h-10 rounded-xl text-sm"
+                autoComplete="organization"
               />
             </div>
-          </div>
 
-          {/* Title (Optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="title" className="text-sm font-medium">Title (Optional)</Label>
-            <Input
-              id="title"
-              type="text"
-              placeholder="Facilities Manager"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="h-12 rounded-xl text-base"
-              autoComplete="organization-title"
-            />
-          </div>
+            {error && (
+              <Alert variant="destructive" className="rounded-xl">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">{error}</AlertDescription>
+              </Alert>
+            )}
 
-          {/* Department (Optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="department" className="text-sm font-medium">Department (Optional)</Label>
-            <Input
-              id="department"
-              type="text"
-              placeholder="Facilities"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="h-12 rounded-xl text-base"
-              autoComplete="organization"
-            />
-          </div>
+            <Button
+              type="submit"
+              className="w-full h-10 rounded-xl text-sm font-medium"
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : 'Save & Continue'}
+            </Button>
+          </form>
+        </div>
 
-          {error && (
-            <Alert variant="destructive" className="rounded-xl">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <Button
-            type="submit"
-            className="w-full h-12 rounded-xl text-base font-semibold touch-manipulation active:scale-[0.98] transition-transform"
-            disabled={loading}
-          >
-            {loading ? 'Saving...' : 'Save & Continue'}
-          </Button>
-        </form>
+        <p className="text-center text-[11px] text-slate-400">
+          Need help?{' '}
+          <a href={APP_INFO.support.emailHref} className="underline hover:text-slate-600 transition-colors">
+            {APP_INFO.support.email}
+          </a>
+        </p>
       </div>
-
-      {/* Safe area bottom spacer */}
-      <div className="pb-safe" />
     </div>
   );
 }

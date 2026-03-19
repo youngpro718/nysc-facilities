@@ -31,22 +31,11 @@ export function ItemRow({
         isSelected ? 'bg-muted/70' : ''
       }`}
     >
-      {/* Stock indicator dot */}
-      <div
-        className={`w-2 h-2 rounded-full flex-shrink-0 ${
-          isOutOfStock
-            ? 'bg-destructive'
-            : isLowStock
-            ? 'bg-warning'
-            : 'bg-success'
-        }`}
-      />
-
       {/* Item info */}
       <div className="flex-1 min-w-0">
         <div className="font-medium text-sm truncate">{item.name}</div>
         <div className="text-xs text-muted-foreground">
-          {item.sku} • {stockLevel} {item.unit || 'units'}
+          {item.inventory_categories?.name || item.unit || 'Supply'}
         </div>
       </div>
 

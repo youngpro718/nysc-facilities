@@ -17,8 +17,8 @@ export default function TermSheet() {
         </p>
       </div>
       
-      {/* Use the same TermSheetBoard component from Court Operations */}
-      <TermSheetBoard />
+      {/* Use the same TermSheetBoard component, but with admin features hidden */}
+      <TermSheetBoard isAdmin={false} />
     </div>
   );
 }

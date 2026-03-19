@@ -115,11 +115,6 @@ export function OrderCart({
                     )}>
                       {item.item_name}
                     </div>
-                    {item.item_sku && (
-                      <span className="text-[11px] font-mono text-muted-foreground mt-0.5 block">
-                        {item.item_sku}
-                      </span>
-                    )}
                   </div>
                   <button
                     className="p-1.5 -m-1 rounded-full text-muted-foreground hover:text-destructive active:scale-90 transition-all touch-manipulation"

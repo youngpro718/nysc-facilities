@@ -244,8 +244,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logger.debug('Calling authSignOut');
       await authService.signOut();
       
-      // Clear state
+      // Clear state and reset guards
       logger.debug('Clearing auth state');
+      isFetchingProfile.current = false;
       setSession(null);
       setUser(null);
       setProfile(null);
@@ -285,7 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Do NOT redirect during background token refreshes
       if (userData.profile?.verification_status === 'pending') {
         // Allowlist public routes where unverified users can browse
-        const allowlist = new Set(['/verification-pending', '/features-preview']);
+        const allowlist = new Set(['/verification-pending']);
         
         // Only enforce redirect if:
         // 1. This is an explicit sign in event, OR
@@ -370,7 +371,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               '/install',
               '/public-forms',
               '/submit-form',
-              '/features-preview',
               '/auth/pending-approval',
               '/auth/account-rejected',
               '/forms/key-request',

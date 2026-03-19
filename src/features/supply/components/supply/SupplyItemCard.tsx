@@ -118,20 +118,17 @@ export function SupplyItemCard({
             </button>
           )}
 
-          {/* Stock indicator */}
-          <div className="absolute bottom-2 left-2">
-            <Badge
-              variant="secondary"
-              className={cn(
-                "text-[10px] font-medium backdrop-blur-sm",
-                stockStatus === 'in-stock' && "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
-                stockStatus === 'low-stock' && "bg-amber-500/20 text-amber-700 dark:text-amber-400",
-                stockStatus === 'out-of-stock' && "bg-red-500/20 text-red-700 dark:text-red-400"
-              )}
-            >
-              {item.quantity ?? 0} {item.unit || 'in stock'}
-            </Badge>
-          </div>
+          {/* Unavailable indicator */}
+          {stockStatus === 'out-of-stock' && (
+            <div className="absolute bottom-2 left-2">
+              <Badge
+                variant="secondary"
+                className="text-[10px] font-medium backdrop-blur-sm bg-red-500/20 text-red-700 dark:text-red-400"
+              >
+                Unavailable
+              </Badge>
+            </div>
+          )}
 
           {/* Cart quantity badge */}
           <AnimatePresence>
@@ -152,7 +149,7 @@ export function SupplyItemCard({
 
         {/* Content */}
         <div className="p-3 space-y-2">
-          {/* Name and SKU */}
+          {/* Name */}
           <div className="min-w-0">
             <h3 
               className="font-medium text-sm leading-tight line-clamp-2 cursor-pointer hover:text-primary"
@@ -160,9 +157,9 @@ export function SupplyItemCard({
             >
               {item.name}
             </h3>
-            {item.sku && (
-              <span className="text-[10px] font-mono text-muted-foreground">
-                {item.sku}
+            {item.categoryName && (
+              <span className="text-[10px] text-muted-foreground">
+                {item.categoryName}
               </span>
             )}
           </div>
@@ -313,27 +310,16 @@ export function SupplyItemCard({
 
               {/* Badges row */}
               <div className="flex flex-wrap items-center gap-2">
-                {item.sku && (
-                  <Badge variant="outline" className="font-mono text-xs">
-                    {item.sku}
-                  </Badge>
-                )}
                 {item.categoryName && (
                   <Badge variant="secondary" className="text-xs">
                     {item.categoryName}
                   </Badge>
                 )}
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-xs",
-                    stockStatus === 'in-stock' && "text-emerald-600 border-emerald-500/30",
-                    stockStatus === 'low-stock' && "text-amber-600 border-amber-500/30",
-                    stockStatus === 'out-of-stock' && "text-red-600 border-red-500/30"
-                  )}
-                >
-                  {item.quantity ?? 0} {item.unit || 'units'} available
-                </Badge>
+                {stockStatus === 'out-of-stock' && (
+                  <Badge variant="destructive" className="text-xs">
+                    Unavailable
+                  </Badge>
+                )}
                 {item.requires_justification && (
                   <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30 gap-1">
                     <AlertTriangle className="h-3 w-3" />

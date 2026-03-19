@@ -7,6 +7,7 @@ import { CompactItemList } from './CompactItemList';
 import { ItemDetailPanel } from './ItemDetailPanel';
 import { FavoritesTab } from './FavoritesTab';
 import { OrderCart } from './OrderCart';
+import { OrderSummaryFooter } from './OrderSummaryFooter';
 import { useOrderCart } from '@features/supply/hooks/useOrderCart';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useIsMobile } from '@shared/hooks/use-mobile';
@@ -34,6 +35,7 @@ export function QuickOrderGrid() {
     submitOrder,
     totalItems,
     isSubmitting,
+    hasRestrictedItems,
   } = useOrderCart();
 
   const filteredItems = useMemo(() => {
@@ -73,6 +75,7 @@ export function QuickOrderGrid() {
       name: item.name as string,
       unit: item.unit as string,
       sku: item.sku as string,
+      requires_justification: item.requires_justification,
     }, quantity);
   };
 
@@ -104,7 +107,7 @@ export function QuickOrderGrid() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search items by name or SKU..."
+          placeholder="Search items..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-9"
@@ -237,16 +240,29 @@ export function QuickOrderGrid() {
         </ResponsiveDialog>
       )}
 
-      {/* Order Cart */}
-      <OrderCart
-        items={cartItems}
-        totalItems={totalItems}
-        onRemove={removeItem}
-        onUpdateQuantity={updateQuantity}
-        onSubmit={submitOrder}
-        onClear={clearCart}
-        isSubmitting={isSubmitting}
-      />
+      {/* Order Summary / Cart */}
+      {isMobile ? (
+        <OrderCart
+          items={cartItems}
+          totalItems={totalItems}
+          onRemove={removeItem}
+          onUpdateQuantity={updateQuantity}
+          onSubmit={submitOrder}
+          onClear={clearCart}
+          isSubmitting={isSubmitting}
+        />
+      ) : (
+        <OrderSummaryFooter
+          items={cartItems}
+          totalItems={totalItems}
+          onRemove={removeItem}
+          onUpdateQuantity={updateQuantity}
+          onSubmit={submitOrder}
+          onClear={clearCart}
+          isSubmitting={isSubmitting}
+          hasRestrictedItems={hasRestrictedItems}
+        />
+      )}
     </div>
   );
 }

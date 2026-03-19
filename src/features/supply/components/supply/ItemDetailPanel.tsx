@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Star, Plus, Package, MapPin, Clock } from 'lucide-react';
+import { Star, Plus, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 
@@ -37,53 +37,32 @@ export function ItemDetailPanel({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Item Image Placeholder */}
-      <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center">
-        <Package className="h-16 w-16 text-muted-foreground opacity-20" />
+      {/* Item Image */}
+      <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+        {item.photo_url ? (
+          <img
+            src={item.photo_url}
+            alt={item.name}
+            className="w-full h-full object-cover rounded-lg"
+          />
+        ) : (
+          <Package className="h-16 w-16 text-muted-foreground opacity-20" />
+        )}
       </div>
 
       {/* Item Name & Category */}
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-1">{item.name}</h3>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>SKU: {item.sku}</span>
           {item.inventory_categories && (
-            <>
-              <span>•</span>
-              <Badge variant="outline" className="text-xs">
-                {item.inventory_categories.name}
-              </Badge>
-            </>
+            <Badge variant="outline" className="text-xs">
+              {item.inventory_categories.name}
+            </Badge>
+          )}
+          {isOutOfStock && (
+            <Badge variant="destructive" className="text-xs">Unavailable</Badge>
           )}
         </div>
-      </div>
-
-      {/* Stock Status */}
-      <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">Stock Level</span>
-          <span className="text-sm font-semibold">
-            {stockLevel} {item.unit || 'units'}
-          </span>
-        </div>
-        <div className="w-full bg-background rounded-full h-2">
-          <div
-            className={`h-2 rounded-full transition-all ${
-              isOutOfStock
-                ? 'bg-destructive'
-                : isLowStock
-                ? 'bg-warning'
-                : 'bg-success'
-            }`}
-            style={{ width: `${Math.min((stockLevel / 50) * 100, 100)}%` }}
-          />
-        </div>
-        {isLowStock && !isOutOfStock && (
-          <p className="text-xs text-warning mt-1">Low stock - order soon</p>
-        )}
-        {isOutOfStock && (
-          <p className="text-xs text-destructive mt-1">Out of stock</p>
-        )}
       </div>
 
       {/* Description */}
@@ -94,19 +73,15 @@ export function ItemDetailPanel({
         </div>
       )}
 
-      {/* Additional Info */}
-      <div className="space-y-2 mb-4 text-sm">
-        {item.location && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            <span>Location: {item.location}</span>
-          </div>
-        )}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Clock className="h-4 w-4" />
-          <span>Typical lead time: 3-5 days</span>
+      {/* Restricted item notice */}
+      {item.requires_justification && (
+        <div className="mb-4 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 text-sm">
+          <p className="font-medium text-amber-700 dark:text-amber-400">Requires supervisor review</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            This item must be reviewed by a supervisor before your order can be approved.
+          </p>
         </div>
-      </div>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />

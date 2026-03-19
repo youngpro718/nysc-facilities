@@ -112,15 +112,15 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
         {trigger || (
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Request Task
+            Make a Request
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Request a Task</DialogTitle>
+          <DialogTitle>Make a Request</DialogTitle>
           <DialogDescription>
-            Submit a request and our facilities team will help you.
+            Submit a request and the court aides will assist you.
           </DialogDescription>
         </DialogHeader>
 

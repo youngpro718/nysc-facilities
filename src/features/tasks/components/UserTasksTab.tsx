@@ -2,7 +2,7 @@
 /**
  * UserTasksTab Component
  * 
- * Tab content for My Activity page showing user's task requests
+ * Tab content for My Activity page showing user's submitted requests
  */
 
 import { Plus, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
@@ -55,7 +55,7 @@ export function UserTasksTab() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Task Requests</h2>
+        <h2 className="text-lg font-semibold">My Requests</h2>
         <RequestTaskDialog />
       </div>
 
@@ -77,15 +77,15 @@ export function UserTasksTab() {
       {tasks.length === 0 && (
         <Card className="p-8 text-center">
           <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="font-semibold mb-2">No Task Requests</h3>
+          <h3 className="font-semibold mb-2">No Requests Yet</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Need help with something? Request a task and our team will assist you.
+            Need help with something? Submit a request and the court aides will assist you.
           </p>
           <RequestTaskDialog 
             trigger={
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Request a Task
+                Make a Request
               </Button>
             }
           />

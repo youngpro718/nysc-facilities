@@ -8,10 +8,8 @@ import { useNotifications } from "@shared/hooks/useNotifications";
 import { useSupplyRequests } from "@features/supply/hooks/useSupplyRequests";
 import { useKeyRequests } from "@features/keys/hooks/useKeyRequests";
 import { useUserIssues } from "@features/dashboard/hooks/useUserIssues";
-import { QuickIssueReportButton } from "@shared/components/user/QuickIssueReportButton";
 import { NotificationDropdown } from "@shared/components/user/NotificationDropdown";
 import { useUserPersonnelInfo } from "@features/court/hooks/useUserPersonnelInfo";
-import { AvatarPromptModal } from "@features/auth/components/auth/AvatarPromptModal";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -19,7 +17,7 @@ import { CompactHeader } from "@shared/components/user/CompactHeader";
 import { PickupAlertBanner } from "@shared/components/user/PickupAlertBanner";
 import { CompactActivitySection } from "@shared/components/user/CompactActivitySection";
 import { KeyRequestDialog } from "@features/supply/components/requests/KeyRequestDialog";
-import { Package, HelpCircle, Key, Loader2, AlertTriangle, ChevronRight } from "lucide-react";
+import { Package, Send, Key, Loader2, ChevronRight } from "lucide-react";
 
 export default function UserDashboard() {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
@@ -39,20 +37,11 @@ export default function UserDashboard() {
   const { userIssues = [], refetchIssues } = useUserIssues(user?.id);
   const { data: personnelInfo } = useUserPersonnelInfo(user?.id);
 
-  const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
-  const [avatarPromptDismissed, setAvatarPromptDismissed] = useState(false);
   const [showKeyRequestDialog, setShowKeyRequestDialog] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) navigate("/login");
   }, [isLoading, isAuthenticated, navigate]);
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && profile && !profile.avatar_url && !avatarPromptDismissed && !showAvatarPrompt) {
-      const timer = setTimeout(() => setShowAvatarPrompt(true), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, isAuthenticated, profile, avatarPromptDismissed, showAvatarPrompt]);
 
   const handleRefresh = async () => {
     await Promise.all([refetchNotifications(), refetchSupplyRequests(), refetchKeyRequests(), refetchIssues()]);
@@ -87,7 +76,7 @@ export default function UserDashboard() {
 
   const readyForPickup = supplyRequests.filter((r) => r.status === "ready").length;
   const activeSupplyCount = supplyRequests.filter((r) => ["submitted", "received", "picking", "in_progress"].includes(r.status)).length;
-  const openIssueCount = userIssues.filter((i) => i.status === "open" || i.status === "in_progress").length;
+  const openRequestCount = userIssues.filter((i) => i.status === "open" || i.status === "in_progress").length;
   const pendingKeyRequests = keyRequests.filter((r) => r.status === "pending").length;
   const keysHeld = keyAssignments.length;
 
@@ -126,7 +115,12 @@ export default function UserDashboard() {
             onClick={() => navigate("/request/supplies")}
             accent
           />
-          <ActionRowIssue openIssueCount={openIssueCount} />
+          <ActionRow
+            icon={Send}
+            label="Make a Request"
+            sub={openRequestCount > 0 ? `${openRequestCount} active` : "Move, deliver, set up & more"}
+            onClick={() => navigate("/request/help")}
+          />
           <ActionRow
             icon={Key}
             label="Request Key"
@@ -155,11 +149,6 @@ export default function UserDashboard() {
         </div>
       </div>
 
-      <AvatarPromptModal
-        open={showAvatarPrompt}
-        onOpenChange={setShowAvatarPrompt}
-        onComplete={() => { setAvatarPromptDismissed(true); setShowAvatarPrompt(false); }}
-      />
     </PullToRefresh>
   );
 }
@@ -197,20 +186,3 @@ function ActionRow({
   );
 }
 
-/* Issue row with QuickIssueReportButton dialog integration */
-function ActionRowIssue({ openIssueCount }: { openIssueCount: number }) {
-  return (
-    <QuickIssueReportButton
-      variant="outline"
-      size="lg"
-      className="flex items-center gap-4 w-full rounded-xl px-5 py-4 text-left bg-card border border-border hover:bg-accent text-foreground h-auto justify-start font-normal touch-manipulation"
-    >
-      <AlertTriangle className="h-6 w-6 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <span className="text-base font-medium">Report Issue</span>
-        {openIssueCount > 0 && <p className="text-xs mt-0.5 text-muted-foreground">{openIssueCount} open</p>}
-      </div>
-      <ChevronRight className="h-5 w-5 shrink-0 opacity-50" />
-    </QuickIssueReportButton>
-  );
-}

@@ -196,15 +196,15 @@ export default function AdminCenter() {
       const { error: rpcError } = await supabase.rpc('approve_user_verification', {
         p_user_id: userId,
         p_role: selectedRole,
-        p_admin_notes: `Approved via admin panel with role: ${getRoleLabel(selectedRole)}`
+        p_reason: `Approved via admin panel with role: ${getRoleLabel(selectedRole)}`
       });
 
       if (rpcError) {
-        // RPC failed — fall back to direct updates on both tables
+        // RPC failed — fall back to direct updates on both tables with upsert
         logger.warn('approve_user_verification RPC failed, falling back to direct update:', rpcError);
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ is_approved: true, verification_status: 'verified' })
+          .update({ is_approved: true, verification_status: 'verified', onboarded: true })
           .eq('id', userId);
         if (profileError) throw profileError;
 

@@ -22,7 +22,10 @@ export function useOrderCart() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { mutateAsync: generateReceipt } = useGenerateReceipt();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+
+  // Supervisors (court_officer, cmc, admin) bypass restricted item approval
+  const isSupervisor = ['court_officer', 'cmc', 'admin'].includes(profile?.role || '');
 
   const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string; requires_justification?: boolean }, quantity: number = 1) => {
     setCartItems(prev => {
@@ -126,8 +129,8 @@ export function useOrderCart() {
       
       toast({
         title: 'Order submitted',
-        description: result?.approval_required
-          ? 'Your order requires manager approval. A confirmation receipt has been generated.'
+        description: result?.approval_required && !isSupervisor
+          ? 'Your order requires supervisor approval. A confirmation receipt has been generated.'
           : 'Your order was submitted successfully. Check your receipt for details.',
       });
 
@@ -150,7 +153,7 @@ export function useOrderCart() {
   }, [cartItems, toast, queryClient, clearCart, user]);
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const hasRestrictedItems = cartItems.some(item => item.requires_justification === true);
+  const hasRestrictedItems = !isSupervisor && cartItems.some(item => item.requires_justification === true);
 
   return {
     cartItems,

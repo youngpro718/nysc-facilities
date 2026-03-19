@@ -1,16 +1,15 @@
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { XCircle, Mail, LogOut } from 'lucide-react';
 import { useAuth } from '@features/auth/hooks/useAuth';
+import { APP_INFO } from '@/lib/appInfo';
 
 /**
  * AccountRejected - Shown to users whose account was rejected
  */
 export default function AccountRejected() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -18,63 +17,82 @@ export default function AccountRejected() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
-            <XCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+    <div
+      className="light min-h-[100dvh] flex flex-col items-center justify-center px-4"
+      style={{
+        colorScheme: 'light',
+        backgroundColor: '#e2e8f0',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
+      <div className="w-full max-w-[400px] space-y-6">
+        {/* Logo + name */}
+        <div className="flex items-center gap-3">
+          <img
+            src="/nysc-logo-light.webp"
+            alt="NYSC Logo"
+            width={44}
+            height={44}
+            className="h-11 w-11 object-contain shrink-0"
+          />
+          <div>
+            <p className="font-semibold text-[15px] text-slate-900 leading-none">{APP_INFO.name}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{APP_INFO.organization}</p>
           </div>
-          <CardTitle className="text-2xl">Account Not Approved</CardTitle>
-          <CardDescription>
-            Your account request was not approved
-          </CardDescription>
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-6">
-          <Alert variant="destructive">
-            <XCircle className="h-4 w-4" />
-            <AlertDescription>
-              Your account request has been reviewed and was not approved for access to the NYSC Facilities system.
-            </AlertDescription>
-          </Alert>
+        {/* Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+              <XCircle className="h-6 w-6 text-red-600" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-slate-900">Account Not Approved</h1>
+              <p className="text-sm text-slate-500 mt-1">
+                Your account request has been reviewed and was not approved for access.
+              </p>
+            </div>
+          </div>
 
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium">What you can do:</p>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Contact your supervisor to verify your eligibility</li>
-              <li>• Reach out to the facilities administrator</li>
-              <li>• Submit a new request with correct information</li>
+          <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1.5">
+            <p className="text-xs font-medium text-slate-600">What you can do</p>
+            <ul className="text-xs text-slate-500 space-y-1">
+              <li>Contact your supervisor to verify your eligibility</li>
+              <li>Reach out to the facilities administrator</li>
+              <li>Submit a new request with correct information</li>
             </ul>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="space-y-2.5">
             <Button
+              onClick={() => window.location.href = APP_INFO.support.emailHref}
               variant="outline"
-              onClick={() => window.location.href = 'mailto:support@nysc.gov?subject=Account%20Rejection%20Appeal'}
-              className="w-full"
+              className="w-full h-10 rounded-xl text-sm font-medium"
             >
-              <Mail className="mr-2 h-4 w-4" />
+              <Mail className="h-4 w-4 mr-2" />
               Contact Administrator
             </Button>
 
             <Button
-              variant="ghost"
               onClick={handleSignOut}
-              className="w-full text-muted-foreground"
+              variant="ghost"
+              className="w-full h-10 rounded-xl text-sm text-slate-500 hover:text-slate-700"
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
           </div>
+        </div>
 
-          <p className="text-xs text-center text-muted-foreground">
-            If you believe this was a mistake, please contact{' '}
-            <a href="mailto:support@nysc.gov" className="text-primary underline">
-              support@nysc.gov
-            </a>
-          </p>
-        </CardContent>
-      </Card>
+        <p className="text-center text-[11px] text-slate-400">
+          If you believe this was a mistake, contact{' '}
+          <a href={APP_INFO.support.emailHref} className="underline hover:text-slate-600 transition-colors">
+            {APP_INFO.support.email}
+          </a>
+        </p>
+      </div>
     </div>
   );
 }

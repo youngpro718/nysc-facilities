@@ -30,7 +30,7 @@ import Tasks from "@features/tasks/pages/Tasks";
 import AdminCenter from "@features/admin/pages/AdminCenter";
 // SystemSettings merged into AdminCenter
 import VerificationPending from "@features/auth/pages/VerificationPending";
-import FeaturesPreview from "@features/admin/pages/FeaturesPreview";
+// FeaturesPreview removed — was disconnected placeholder content
 // AccessManagement page removed — functionality merged into /access-assignments
 // ThemeSettings and SettingsPage removed - consolidated into Profile
 import AdminKeyRequests from "@features/admin/pages/admin/KeyRequests";
@@ -107,7 +107,6 @@ function AppContent() {
       <Route path="/auth/verify" element={<VerifyEmail />} />
       <Route path="/onboarding/profile" element={<ProfileOnboarding />} />
       <Route path="/verification-pending" element={<VerificationPending />} />
-      <Route path="/features-preview" element={<FeaturesPreview />} />
       <Route path="/install" element={<InstallApp />} />
 
       {/* Protected Routes - Wrapped with OnboardingGuard */}

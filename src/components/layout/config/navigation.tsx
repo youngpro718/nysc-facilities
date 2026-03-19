@@ -245,6 +245,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'My Activity', icon: FileText },
+    { title: 'Term Sheet', icon: FileText },
     { title: 'Notifications', icon: MessageSquare },
     { type: "separator" },
     { title: 'Profile', icon: User },
@@ -268,6 +269,7 @@ export const adminNavigation: NavigationTab[] = getAdminNavigation();
 export const userNavigation: NavigationTab[] = [
   { title: 'Dashboard', icon: LayoutDashboard },
   { title: 'My Activity', icon: FileText },
+  { title: 'Term Sheet', icon: FileText },
   { type: "separator" },
   { title: 'Profile', icon: User },
 ];
@@ -338,6 +340,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   return [
     '/dashboard', // User Dashboard
     '/my-activity',
+    '/term-sheet',
     '/notifications',
     '', // Separator
     '/profile',

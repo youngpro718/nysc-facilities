@@ -1,7 +1,7 @@
 /**
  * CompactActivitySection - Tab-based activity viewer for the user dashboard
  * 
- * Shows supplies, issues, and keys in a clean tabbed interface:
+ * Shows supplies, requests, and keys in a clean tabbed interface:
  * - Horizontal tab buttons with counts
  * - Single content area that switches based on active tab
  * - Progress indicators for supplies
@@ -18,7 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { 
   Package, 
-  Wrench, 
+  Send, 
   Key,
   ChevronRight,
   AlertCircle,
@@ -26,6 +26,7 @@ import {
   CheckCircle,
   ExternalLink
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 // Status to progress mapping for supplies
@@ -78,12 +79,12 @@ export function CompactActivitySection({
     r => !['fulfilled', 'rejected', 'cancelled', 'completed'].includes(r.status)
   );
   const readyForPickup = supplyRequests.filter(r => r.status === 'ready');
-  const openIssues = issues.filter(i => i.status === 'open' || i.status === 'in_progress');
+  const openRequests = issues.filter(i => i.status === 'open' || i.status === 'in_progress');
 
   // Determine default tab based on what needs attention
   const getDefaultTab = () => {
     if (readyForPickup.length > 0) return 'supplies';
-    if (openIssues.length > 0) return 'issues';
+    if (openRequests.length > 0) return 'requests';
     if (activeSupplies.length > 0) return 'supplies';
     return 'supplies';
   };
@@ -147,14 +148,14 @@ export function CompactActivitySection({
             </TabsTrigger>
             
             <TabsTrigger 
-              value="issues"
+              value="requests"
               className="flex items-center gap-1.5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
-              <Wrench className="h-4 w-4" />
-              <span className="hidden sm:inline">Issues</span>
-              {openIssues.length > 0 && (
+              <Send className="h-4 w-4" />
+              <span className="hidden sm:inline">Requests</span>
+              {openRequests.length > 0 && (
                 <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
-                  {openIssues.length}
+                  {openRequests.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -241,13 +242,13 @@ export function CompactActivitySection({
             )}
           </TabsContent>
 
-          {/* Issues Tab */}
-          <TabsContent value="issues" className="mt-3">
+          {/* Requests Tab */}
+          <TabsContent value="requests" className="mt-3">
             {issues.length === 0 ? (
               <div className="text-center py-6 text-muted-foreground">
                 <CheckCircle className="h-10 w-10 mx-auto mb-2 opacity-40 text-green-500" />
-                <p className="text-sm">No reported issues</p>
-                <p className="text-xs mt-1">All clear!</p>
+                <p className="text-sm">No active requests</p>
+                <p className="text-xs mt-1">Need something? Make a request from your dashboard.</p>
               </div>
             ) : (
               <ScrollArea className={issues.length > 4 ? "h-[280px]" : undefined}>
@@ -267,23 +268,28 @@ export function CompactActivitySection({
                           )}
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {issue.priority === 'urgent' || issue.priority === 'high' ? (
-                            <Badge variant="destructive" className="text-xs">
-                              {issue.priority}
-                            </Badge>
-                          ) : null}
                           <Badge 
                             variant={issue.status === 'open' ? 'outline' : 'secondary'}
                             className="text-xs"
                           >
                             {issue.status === 'in_progress' ? (
                               <><Clock className="h-3 w-3 mr-1" />In Progress</>
+                            ) : issue.status === 'open' ? (
+                              'Submitted'
+                            ) : issue.status === 'completed' ? (
+                              <><CheckCircle className="h-3 w-3 mr-1" />Completed</>
                             ) : (
                               issue.status
                             )}
                           </Badge>
                         </div>
                       </div>
+                      {(issue as any).created_at && (
+                        <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDistanceToNow(new Date((issue as any).created_at), { addSuffix: true })}
+                        </p>
+                      )}
                     </div>
                   ))}
                   {issues.length > 8 && (
@@ -291,9 +297,9 @@ export function CompactActivitySection({
                       variant="ghost" 
                       size="sm" 
                       className="w-full text-xs"
-                      onClick={() => navigate('/my-issues')}
+                      onClick={() => navigate('/my-activity')}
                     >
-                      View {issues.length - 8} more issues
+                      View {issues.length - 8} more requests
                       <ChevronRight className="h-3 w-3 ml-1" />
                     </Button>
                   )}

@@ -171,7 +171,7 @@ interface TabProps {
   isAdmin?: boolean;
 }
 
-function NotificationsTab({ settings, onChange }: TabProps) {
+function NotificationsTab({ settings, onChange, isAdmin }: TabProps) {
   return (
     <div className="space-y-6">
       <MyRoomSection />
@@ -214,17 +214,20 @@ function NotificationsTab({ settings, onChange }: TabProps) {
             </Select>
           </div>
 
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="font-medium">Data</h3>
-            <SettingsRow
-              label="Analytics Data"
-              description="Help improve the app with usage analytics"
-              checked={settings.data_sharing_analytics}
-              onCheckedChange={v => onChange('data_sharing_analytics', v)}
-            />
-          </div>
+          {isAdmin && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h3 className="font-medium">Data</h3>
+                <SettingsRow
+                  label="Analytics Data"
+                  description="Help improve the app with usage analytics"
+                  checked={settings.data_sharing_analytics}
+                  onCheckedChange={v => onChange('data_sharing_analytics', v)}
+                />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -639,14 +642,18 @@ export function EnhancedUserSettings() {
           <p className="text-muted-foreground">Customize your experience and preferences</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button variant="outline" onClick={resetSettings}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Reset
-          </Button>
+          {isAdmin && (
+            <>
+              <Button variant="outline" onClick={handleExport}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button variant="outline" onClick={resetSettings}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Reset
+              </Button>
+            </>
+          )}
           <Button
             onClick={() => saveSettings(settings)}
             disabled={!hasChanges || isSaving}
@@ -679,7 +686,7 @@ export function EnhancedUserSettings() {
       )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-3 lg:grid-cols-5' : 'grid-cols-3'}`}>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" /><span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
@@ -689,16 +696,20 @@ export function EnhancedUserSettings() {
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Lock className="h-4 w-4" /><span className="hidden sm:inline">Security</span>
           </TabsTrigger>
-          <TabsTrigger value="accessibility" className="flex items-center gap-2">
-            <Accessibility className="h-4 w-4" /><span className="hidden sm:inline">Accessibility</span>
-          </TabsTrigger>
-          <TabsTrigger value="ai" className="flex items-center gap-2">
-            <Bot className="h-4 w-4" /><span className="hidden sm:inline">AI</span>
-          </TabsTrigger>
+          {isAdmin && (
+            <>
+              <TabsTrigger value="accessibility" className="flex items-center gap-2">
+                <Accessibility className="h-4 w-4" /><span className="hidden sm:inline">Accessibility</span>
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="flex items-center gap-2">
+                <Bot className="h-4 w-4" /><span className="hidden sm:inline">AI</span>
+              </TabsTrigger>
+            </>
+          )}
         </TabsList>
 
         <TabsContent value="notifications">
-          <NotificationsTab settings={settings} onChange={updateSetting} />
+          <NotificationsTab settings={settings} onChange={updateSetting} isAdmin={isAdmin} />
         </TabsContent>
         <TabsContent value="display">
           <DisplayTab settings={settings} onChange={updateSetting} />
@@ -706,12 +717,16 @@ export function EnhancedUserSettings() {
         <TabsContent value="security">
           <SecurityTab settings={settings} onChange={updateSetting} isAdmin={isAdmin} />
         </TabsContent>
-        <TabsContent value="accessibility">
-          <AccessibilityTab settings={settings} onChange={updateSetting} />
-        </TabsContent>
-        <TabsContent value="ai">
-          <AIApiKeyCard />
-        </TabsContent>
+        {isAdmin && (
+          <>
+            <TabsContent value="accessibility">
+              <AccessibilityTab settings={settings} onChange={updateSetting} />
+            </TabsContent>
+            <TabsContent value="ai">
+              <AIApiKeyCard />
+            </TabsContent>
+          </>
+        )}
       </Tabs>
     </div>
   );

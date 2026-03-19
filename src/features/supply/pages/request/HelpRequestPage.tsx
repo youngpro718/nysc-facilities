@@ -86,7 +86,7 @@ export default function HelpRequestPage() {
   useEffect(() => {
     if (step === 'success') {
       const timer = setTimeout(() => {
-        navigate('/my-activity?tab=tasks');
+        navigate('/my-activity?tab=requests');
       }, 3000);
       return () => clearTimeout(timer);
     }
@@ -169,7 +169,7 @@ export default function HelpRequestPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Request Help</h1>
+            <h1 className="text-2xl font-bold">Make a Request</h1>
             <p className="text-muted-foreground text-sm">What do you need?</p>
           </div>
         </div>
@@ -289,16 +289,17 @@ export default function HelpRequestPage() {
           </div>
         ) : (
           <p className="text-muted-foreground max-w-sm mx-auto">
-            Your request has been sent to the facilities team.
+            Your request has been sent to the court aides.
           </p>
         )}
         
         <p className="text-sm text-muted-foreground">
-          Redirecting to My Activity in 3 seconds...
+          You can track your request status in My Activity.
+          Redirecting in 3 seconds...
         </p>
         
         <div className="pt-4 flex flex-col gap-2">
-          <Button onClick={() => navigate('/my-activity?tab=tasks')}>
+          <Button onClick={() => navigate('/my-activity?tab=requests')}>
             View My Requests
           </Button>
           <Button variant="ghost" onClick={() => {
