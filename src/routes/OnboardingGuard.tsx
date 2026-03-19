@@ -144,35 +144,33 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
-        // 5) MFA enforcement for privileged roles ONLY
-        // Note: mfa_enforced flag is only meaningful for privileged roles.
-        // Non-privileged users should never be forced to set up MFA.
-        const privilegedRoles = ['admin', 'cmc'];
-        const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
-
-        if (isPrivileged) {
-          try {
-            const { data: factorData, error: factorError } = await withTimeout(
-              supabase.auth.mfa.listFactors(),
-              TIMEOUTS.mfaCheck,
-              'checking MFA factors'
-            );
-            if (factorError) throw factorError;
-
-            const hasVerifiedTotp =
-              Array.isArray(factorData?.totp) &&
-              factorData.totp.some((f: any) => f.status === 'verified');
-
-            if (!hasVerifiedTotp) {
-              logger.debug('[OnboardingGuard] MFA required but not enabled, redirecting to MFA setup');
-              navigate('/auth/mfa', { replace: true });
-              return;
-            }
-          } catch (mfaError) {
-            logger.warn('[OnboardingGuard] MFA check failed:', mfaError);
-            // Continue without MFA requirement if check fails
-          }
-        }
+        // 5) MFA enforcement - TEMPORARILY DISABLED
+        // TODO: Re-enable MFA enforcement when ready by uncommenting the block below
+        // const privilegedRoles = ['admin', 'cmc'];
+        // const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
+        //
+        // if (isPrivileged) {
+        //   try {
+        //     const { data: factorData, error: factorError } = await withTimeout(
+        //       supabase.auth.mfa.listFactors(),
+        //       TIMEOUTS.mfaCheck,
+        //       'checking MFA factors'
+        //     );
+        //     if (factorError) throw factorError;
+        //
+        //     const hasVerifiedTotp =
+        //       Array.isArray(factorData?.totp) &&
+        //       factorData.totp.some((f: any) => f.status === 'verified');
+        //
+        //     if (!hasVerifiedTotp) {
+        //       logger.debug('[OnboardingGuard] MFA required but not enabled, redirecting to MFA setup');
+        //       navigate('/auth/mfa', { replace: true });
+        //       return;
+        //     }
+        //   } catch (mfaError) {
+        //     logger.warn('[OnboardingGuard] MFA check failed:', mfaError);
+        //   }
+        // }
 
         logger.debug('[OnboardingGuard] All checks passed, user is fully onboarded');
       } catch (error) {
