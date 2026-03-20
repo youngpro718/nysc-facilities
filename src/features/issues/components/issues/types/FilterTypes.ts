@@ -11,6 +11,9 @@ export type IssueFilters = {
   sortBy?: string;
   order?: 'asc' | 'desc';
   assignedToMe?: boolean;
+  lightingType?: string;
+  fixtureStatus?: string;
+  electricalIssue?: string;
 };
 
 export type IssueFiltersType = IssueFilters;
