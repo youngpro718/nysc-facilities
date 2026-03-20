@@ -103,7 +103,7 @@ export async function resendVerificationEmail(email: string) {
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: `${location.origin}/auth/verify`
+      emailRedirectTo: `${location.origin}/`
     }
   });
   if (error) throw error;
