@@ -152,7 +152,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
         {step === 0 && (
           <div className="space-y-4">
             <div className="space-y-1">
-              <h3 className="text-base font-semibold">Create your account</h3>
+              <h3 className="text-base font-semibold text-foreground">Create your account</h3>
               <p className="text-xs text-muted-foreground">You'll use these to sign in.</p>
             </div>
             <div className="space-y-3">
