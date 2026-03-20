@@ -22,7 +22,8 @@ import {
   Users,
   RefreshCw,
   Zap,
-  Boxes
+  Boxes,
+  Lightbulb
 } from "lucide-react";
 
 // Import existing components
@@ -30,6 +31,7 @@ import { EnhancedIssuesList } from "@features/issues/components/admin-issues/Enh
 import { IssueGroupingControls } from "@features/issues/components/admin-issues/IssueGroupingControls";
 import { OperationsOverviewTab } from "@features/operations/components/operations/OperationsOverviewTab";
 import { MaintenanceTab } from "@features/operations/components/operations/MaintenanceTab";
+import { LightingTab } from "@features/operations/components/operations/LightingTab";
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@features/issues/types/issues";
 
 
@@ -385,7 +387,7 @@ export default function Operations() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3" data-tour="ops-tabs">
+        <TabsList className="grid w-full grid-cols-4" data-tour="ops-tabs">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             Overview
@@ -397,6 +399,10 @@ export default function Operations() {
           <TabsTrigger value="maintenance" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" />
             Maintenance
+          </TabsTrigger>
+          <TabsTrigger value="lighting" className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4" />
+            Lighting
           </TabsTrigger>
         </TabsList>
 
@@ -557,6 +563,12 @@ export default function Operations() {
           />
         </TabsContent>
 
+        <TabsContent value="lighting" className="space-y-4">
+          <LightingTab
+            buildingId={buildingId || undefined}
+            onRefresh={refreshAllData}
+          />
+        </TabsContent>
 
       </Tabs>
 

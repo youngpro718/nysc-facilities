@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Download, Upload } from "lucide-react";
 
 interface KeyInventoryHeaderProps {
-  onAddKey: () => void;
+  onAddKey?: () => void;
   onExport?: () => void;
   onImport?: () => void;
 }
@@ -26,10 +26,12 @@ export function KeyInventoryHeader({ onAddKey, onExport, onImport }: KeyInventor
             <Upload className="h-4 w-4 mr-2" /> Import CSV
           </Button>
         )}
-        <Button onClick={onAddKey} data-tour="keys-create">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Key
-        </Button>
+        {onAddKey && (
+          <Button onClick={onAddKey} data-tour="keys-create">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Key
+          </Button>
+        )}
       </div>
     </div>
   );

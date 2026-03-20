@@ -16,7 +16,7 @@ export function useOnboarding() {
     }
 
     // Admins bypass onboarding wizard - they get immediate access
-    if (profile?.access_level === 'admin' || profile?.role === 'admin') {
+    if (profile?.access_level === 'admin' || profile?.role === 'admin' || profile?.role === 'system_admin' || profile?.role === 'facilities_manager') {
       logger.debug('[useOnboarding] Admin user detected, bypassing onboarding wizard');
       setShowOnboarding(false);
       setOnboardingComplete(true);

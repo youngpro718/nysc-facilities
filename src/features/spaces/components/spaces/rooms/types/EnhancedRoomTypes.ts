@@ -31,18 +31,6 @@ export interface CourtRoomData {
   layout_details?: CourtroomLayoutDetails;
 }
 
-export interface LightingFixtureStatus {
-  id: string;
-  room_id: string;
-  fixture_name: string;
-  location: string;
-  status: 'functional' | 'out' | 'flickering' | 'maintenance';
-  reported_out_date?: string;
-  ballast_issue: boolean;
-  last_serviced?: string;
-  outage_duration_days?: number;
-}
-
 export interface RoomPersistentIssue {
   room_id: string;
   issue_count: number;
@@ -61,11 +49,6 @@ export interface EnhancedRoom extends Room {
   // Courtroom data
   court_room?: CourtRoomData;
   
-  // Lighting data
-  lighting_fixtures?: LightingFixtureStatus[];
-  total_fixtures_count?: number;
-  functional_fixtures_count?: number;
-  
   // Room intelligence
   room_size_category?: 'small' | 'medium' | 'large';
   persistent_issues?: RoomPersistentIssue;
@@ -73,17 +56,5 @@ export interface EnhancedRoom extends Room {
   history_stats?: RoomHistoryStats;
   
   // Quick calculated stats
-  lighting_percentage?: number;
-  has_lighting_issues?: boolean;
   has_persistent_issues?: boolean;
-}
-
-export interface LightingIssueReport {
-  room_id: string;
-  fixture_id?: string;
-  fixture_location: string;
-  issue_type: 'light_out' | 'flickering' | 'ballast_issue' | 'maintenance_needed';
-  description?: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  reported_by?: string;
 }

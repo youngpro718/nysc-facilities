@@ -20,6 +20,20 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
     { label: 'Access', path: '/access-assignments' },
     { label: 'Admin', path: '/admin' },
   ],
+  system_admin: [
+    { label: 'Dashboard', path: '/' },
+    { label: 'Spaces', path: '/spaces' },
+    { label: 'Keys', path: '/keys' },
+    { label: 'Access', path: '/access-assignments' },
+    { label: 'Admin', path: '/admin' },
+  ],
+  facilities_manager: [
+    { label: 'Dashboard', path: '/' },
+    { label: 'Spaces', path: '/spaces' },
+    { label: 'Keys', path: '/keys' },
+    { label: 'Access', path: '/access-assignments' },
+    { label: 'Admin', path: '/admin' },
+  ],
   cmc: [
     { label: 'Dashboard', path: '/cmc-dashboard' },
     { label: 'Court Ops', path: '/court-operations' },
@@ -33,7 +47,7 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
     { label: 'Term Sheet', path: '/term-sheet' },
   ],
   purchasing: [
-    { label: 'Dashboard', path: '/purchasing-dashboard' },
+    { label: 'Overview', path: '/inventory' },
     { label: 'Inventory', path: '/inventory' },
     { label: 'Supply Room', path: '/supply-room' },
     { label: 'My Activity', path: '/my-activity' },

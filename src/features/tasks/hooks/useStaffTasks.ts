@@ -42,7 +42,8 @@ export function useStaffTasks(options?: {
           approver:profiles!staff_tasks_approved_by_profiles_fkey(full_name),
           inventory_item:inventory_items(name, sku),
           from_room:rooms!staff_tasks_from_room_id_fkey(room_number, name),
-          to_room:rooms!staff_tasks_to_room_id_fkey(room_number, name)
+          to_room:rooms!staff_tasks_to_room_id_fkey(room_number, name),
+          issue:issues!staff_tasks_issue_id_fkey(id, title, status, priority, issue_type, room_id)
         `)
         .order('created_at', { ascending: false });
 
@@ -86,6 +87,7 @@ export function useStaffTasks(options?: {
         .insert({
           ...input,
           created_by: user!.id,
+          issue_id: input.issue_id || null,
           is_request: false,
           status: 'approved', // Direct tasks are pre-approved
         })

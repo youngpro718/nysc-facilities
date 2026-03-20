@@ -11,8 +11,11 @@ import { KeyInventoryHeader } from "./inventory/KeyInventoryHeader";
 import { KeyInventoryTable } from "./inventory/KeyInventoryTable";
 import { DeleteKeyDialog } from "./inventory/DeleteKeyDialog";
 import { ImportKeysDialog } from "@features/keys/components/keys/dialogs/ImportKeysDialog";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 export function KeyInventorySection() {
+  const { canAdmin } = useRolePermissions();
+  const canManage = canAdmin('keys');
   const [keyToDelete, setKeyToDelete] = useState<KeyData | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -115,8 +118,8 @@ export function KeyInventorySection() {
   return (
     <div className="space-y-4">
       <KeyInventoryHeader 
-        onAddKey={() => setCreateDialogOpen(true)} 
-        onImport={() => setImportOpen(true)}
+        onAddKey={canManage ? () => setCreateDialogOpen(true) : undefined} 
+        onImport={canManage ? () => setImportOpen(true) : undefined}
         onExport={() => {
           const rows = (keys || []).map(k => ({
             id: k.id,
@@ -157,8 +160,8 @@ export function KeyInventorySection() {
 
       <KeyInventoryTable 
         keys={keys || []} 
-        onDeleteKey={setKeyToDelete}
-        onToggleCaptainOfficeCopy={handleToggleCaptainOfficeCopy}
+        onDeleteKey={canManage ? setKeyToDelete : undefined}
+        onToggleCaptainOfficeCopy={canManage ? handleToggleCaptainOfficeCopy : undefined}
       />
 
       <CreateKeyDialog 

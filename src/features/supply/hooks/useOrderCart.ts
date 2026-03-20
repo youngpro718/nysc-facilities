@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { logger } from '@/lib/logger';
 import { useQueryClient } from '@tanstack/react-query';
-import { submitSupplyOrder } from '@features/supply/services/supplyOrdersService';
+import { submitSupplyOrder } from '@features/supply/services/unifiedSupplyService';
 import { useToast } from '@shared/hooks/use-toast';
 import { useGenerateReceipt } from '@features/supply/hooks/useSupplyReceipts';
 import { createReceiptData } from '@/lib/receiptUtils';

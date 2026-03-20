@@ -17,9 +17,8 @@ export default function SupplyRoom() {
   // Check if user has supply room permissions
   const canManageSupplyRequests = hasPermission('supply_requests', 'admin') || hasPermission('supply_requests', 'write') || hasPermission('supply_requests', 'read');
   const canManageInventory = hasPermission('inventory', 'admin') || hasPermission('inventory', 'write') || hasPermission('inventory', 'read');
-  
-  // Also allow access for users assigned to Supply Department
-  const isSupplyDepartmentUser = (profile as any)?.department === 'Supply Department';
+
+  const department = (profile as any)?.department;
   
   // Debug logging
   logger.debug('SupplyRoom Debug:', {
@@ -27,8 +26,7 @@ export default function SupplyRoom() {
     permissionsLoading,
     canManageSupplyRequests,
     canManageInventory,
-    isSupplyDepartmentUser,
-    department: (profile as any)?.department,
+    department,
     profile
   });
 
@@ -48,7 +46,7 @@ export default function SupplyRoom() {
     );
   }
 
-  if (!canManageSupplyRequests && !canManageInventory && !isSupplyDepartmentUser) {
+  if (!canManageSupplyRequests && !canManageInventory) {
     return (
       <EnhancedAccessDenied
         title="Supply Room Access Restricted"
@@ -56,12 +54,11 @@ export default function SupplyRoom() {
         requiredPermissions={[
           'Supply Room Staff role',
           'Supply Requests permission (write or admin)',
-          'Assignment to Supply Department'
+          'Inventory permission'
         ]}
         currentPermissions={{
           'Supply Requests': canManageSupplyRequests ? 'admin' : null,
           'Inventory': canManageInventory ? 'admin' : null,
-          'Department': (profile as any)?.department || 'Not assigned',
         }}
         contactEmail="support@nysc.gov"
         showRequestAccess={true}

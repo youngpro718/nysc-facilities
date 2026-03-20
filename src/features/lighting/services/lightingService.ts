@@ -1,335 +1,481 @@
-import { supabase } from '@/lib/supabase';
+import { db } from '@/services/core/supabaseClient';
 import { logger } from '@/lib/logger';
-import type { LightStatus, LightingFixture } from '@/types/lighting';
 
-export const markLightsOut = async (fixtureIds: string[], requiresElectrician: boolean = false) => {
-  const updateData: any = {
-    status: 'non_functional' as LightStatus,
-    reported_out_date: new Date().toISOString()
-  };
+// ============================================================================
+// Types
+// ============================================================================
 
-  if (requiresElectrician) {
-    updateData.requires_electrician = true;
-    updateData.electrical_issues = true;
-  }
+export type LightStatus = 'functional' | 'non_functional' | 'maintenance_needed' | 'scheduled_replacement' | 'pending_maintenance';
+export type LightingType = 'standard' | 'emergency' | 'exit_sign' | 'decorative' | 'motion_sensor';
+export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb';
+export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk';
+export type FixtureScanAction = 'functional' | 'bulb_out' | 'ballast_issue' | 'flickering' | 'power_issue' | 'skip';
+export type WalkthroughStatus = 'in_progress' | 'completed' | 'cancelled';
 
-  const { error } = await supabase
-    .from('lighting_fixtures')
-    .update(updateData)
-    .in('id', fixtureIds);
+export interface LightingFixture {
+  id: string;
+  name: string;
+  type: LightingType;
+  status: LightStatus;
+  technology?: LightingTechnology;
+  position: LightingPosition;
+  bulb_count: number;
+  space_id?: string;
+  space_type?: string;
+  room_number?: string;
+  building_id?: string;
+  floor_id?: string;
+  zone_id?: string;
+  electrical_issues?: Record<string, unknown>;
+  ballast_issue: boolean;
+  requires_electrician: boolean;
+  reported_out_date?: string;
+  replaced_date?: string;
+  notes?: string;
+  ballast_check_notes?: string;
+  last_maintenance_date?: string;
+  next_maintenance_date?: string;
+  installation_date?: string;
+  emergency_circuit: boolean;
+  scan_count: number;
+  created_at: string;
+  updated_at: string;
+}
 
-  if (error) throw error;
-  return true;
-};
+export interface LightingIssue {
+  id: string;
+  fixture_id: string;
+  issue_type: string;
+  priority: string;
+  status: string;
+  reported_at: string;
+  resolved_at?: string;
+  description?: string;
+  assigned_to?: string;
+  resolution_notes?: string;
+  created_at: string;
+  updated_at: string;
+}
 
-export const markLightsFixed = async (fixtureIds: string[]) => {
-  const { error } = await supabase
-    .from('lighting_fixtures')
-    .update({
-      status: 'functional' as LightStatus,
-      replaced_date: new Date().toISOString(),
-      requires_electrician: false,
-      electrical_issues: false
-    })
-    .in('id', fixtureIds);
+export interface WalkthroughSession {
+  id: string;
+  hallway_id?: string;
+  floor_id?: string;
+  started_by?: string;
+  started_at: string;
+  completed_at?: string;
+  total_fixtures: number;
+  fixtures_checked: number;
+  issues_found: number;
+  ballast_issues_found: number;
+  notes?: string;
+  status: WalkthroughStatus;
+}
 
-  if (error) throw error;
-  return true;
-};
+export interface FixtureScan {
+  id: string;
+  fixture_id: string;
+  scanned_by?: string;
+  scanned_at: string;
+  action_taken?: FixtureScanAction;
+  scan_location?: string;
+  device_info?: Record<string, unknown>;
+}
 
-export const toggleElectricianRequired = async (fixtureIds: string[], required: boolean) => {
-  const { error } = await supabase
-    .from('lighting_fixtures')
-    .update({
-      requires_electrician: required,
-      electrical_issues: required
-    })
-    .in('id', fixtureIds);
+export interface CreateFixturePayload {
+  name: string;
+  type: LightingType;
+  status?: LightStatus;
+  technology?: LightingTechnology;
+  position?: LightingPosition;
+  bulb_count?: number;
+  space_id?: string;
+  space_type?: string;
+  room_number?: string;
+  building_id?: string;
+  floor_id?: string;
+  zone_id?: string;
+  ballast_issue?: boolean;
+  requires_electrician?: boolean;
+  notes?: string;
+  emergency_circuit?: boolean;
+}
 
-  if (error) throw error;
-  return true;
-};
+export interface UpdateFixtureStatusPayload {
+  status: LightStatus;
+  notes?: string;
+  ballast_issue?: boolean;
+  requires_electrician?: boolean;
+  resolved_at?: string;
+}
 
-export const fetchLightingFixtures = async () => {
-  const { data, error } = await supabase
-    .from('lighting_fixtures')
-    .select(`
-      *,
-      lighting_zones (
-        id,
-        name,
-        type
-      ),
-      spatial_assignments (
-        id,
-        space_id,
-        space_type,
-        position,
-        sequence_number
-      )
-    `)
-    .order('created_at', { ascending: false })
-    .limit(500);
+export interface StartWalkthroughPayload {
+  floor_id: string;
+  hallway_id?: string;
+  started_by: string;
+}
 
-  if (error) throw error;
+export interface RecordFixtureScanPayload {
+  walkthrough_id: string;
+  fixture_id: string;
+  action_taken: FixtureScanAction;
+  scanned_by: string;
+  scan_location?: string;
+}
 
-  const fixtures = data || [];
+// ============================================================================
+// Service Functions
+// ============================================================================
 
+/**
+ * Get all fixtures for a specific space (room or hallway)
+ */
+export async function getFixturesForSpace(spaceId: string, spaceType: 'room' | 'hallway') {
   try {
-    if (!fixtures.length) return fixtures;
-    const fixtureIds = fixtures.map((f: any) => f.id);
+    const { data, error } = await db
+      .from('lighting_fixtures')
+      .select('*')
+      .eq('space_id', spaceId)
+      .eq('space_type', spaceType)
+      .order('name');
 
-    const { data: assignments, error: assignError } = await supabase
-      .from('spatial_assignments')
-      .select('fixture_id, space_id, space_type, position, sequence_number')
-      .in('fixture_id', fixtureIds);
-    if (assignError) throw assignError;
+    if (error) throw error;
+    return data as LightingFixture[];
+  } catch (error) {
+    logger.error('Error fetching fixtures for space:', error);
+    throw error;
+  }
+}
 
-    const assignmentsByFixture = new Map<string, any[]>();
-    for (const a of (assignments || [])) {
-      const arr = assignmentsByFixture.get(a.fixture_id) || [];
-      arr.push(a);
-      assignmentsByFixture.set(a.fixture_id, arr);
+/**
+ * Get all fixtures for a floor (used for walkthrough setup)
+ */
+export async function getFixturesForFloor(floorId: string) {
+  try {
+    const { data, error } = await db
+      .from('lighting_fixtures')
+      .select('*')
+      .eq('floor_id', floorId)
+      .order('room_number', { ascending: true });
+
+    if (error) throw error;
+    return data as LightingFixture[];
+  } catch (error) {
+    logger.error('Error fetching fixtures for floor:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get fixtures filtered by status, optionally scoped to a building
+ */
+export async function getFixturesByStatus(buildingId?: string, status?: LightStatus) {
+  try {
+    let query = db.from('lighting_fixtures').select('*');
+
+    if (buildingId) {
+      query = query.eq('building_id', buildingId);
     }
 
-    const roomIds = new Set<string>();
-    const genericSpaceIds = new Set<string>();
-    for (const arr of assignmentsByFixture.values()) {
-      for (const a of arr) {
-        if (!a?.space_id) continue;
-        if (a.space_type === 'room') roomIds.add(a.space_id);
-        else genericSpaceIds.add(a.space_id);
-      }
+    if (status) {
+      query = query.eq('status', status);
     }
 
-    const [roomsRes, spacesRes] = await Promise.all([
-      roomIds.size
-        ? supabase.from('rooms').select('id, name, room_number').in('id', Array.from(roomIds))
-        : Promise.resolve({ data: [], error: null } as any),
-      genericSpaceIds.size
-        ? supabase.from('unified_spaces').select('id, name, room_number, building_name, floor_name').in('id', Array.from(genericSpaceIds))
-        : Promise.resolve({ data: [], error: null } as any)
-    ]);
+    query = query.order('updated_at', { ascending: false });
 
-    if (roomsRes.error) throw roomsRes.error;
-    if (spacesRes.error) throw spacesRes.error;
+    const { data, error } = await query;
+    if (error) throw error;
+    return data as LightingFixture[];
+  } catch (error) {
+    logger.error('Error fetching fixtures by status:', error);
+    throw error;
+  }
+}
 
-    const roomsMap = new Map((roomsRes.data as any[]).map((r: any) => [r.id, r]));
-    const spaceMap = new Map((spacesRes.data as any[]).map((s: any) => [s.id, s]));
+/**
+ * Get all non-functional fixtures with issue details (for Operations lighting queue)
+ */
+export async function getOpenLightingIssues(buildingId?: string) {
+  try {
+    let query = db
+      .from('lighting_fixtures')
+      .select('*')
+      .neq('status', 'functional');
 
-    const enriched = fixtures.map((f: any) => {
-      const arr = assignmentsByFixture.get(f.id) || [];
-      const sa = arr.find((x: any) => x && x.space_id) || null;
-      let sName: string | null = null;
-      let rNumber: string | null = null;
-      let bName: string | null = null;
-      let flName: string | null = null;
+    if (buildingId) {
+      query = query.eq('building_id', buildingId);
+    }
 
-      if (sa?.space_type === 'room') {
-        const r = sa.space_id ? roomsMap.get(sa.space_id) : null;
-        if (r) {
-          sName = r.name ?? null;
-          rNumber = r.room_number ?? null;
-        }
-      } else if (sa?.space_id) {
-        const s = spaceMap.get(sa.space_id);
-        if (s) {
-          sName = s.name ?? null;
-          rNumber = s.room_number ?? null;
-          bName = s.building_name ?? null;
-          flName = s.floor_name ?? null;
-        }
-      }
+    query = query.order('emergency_circuit', { ascending: false })
+      .order('requires_electrician', { ascending: false })
+      .order('reported_out_date', { ascending: true });
 
-      return {
-        ...f,
-        spatial_assignments: arr,
-        space_id: f.space_id ?? sa?.space_id ?? null,
-        space_type: f.space_type ?? sa?.space_type ?? null,
-        space_name: f.space_name ?? sName ?? null,
-        room_number: f.room_number ?? rNumber ?? null,
-        building_name: f.building_name ?? bName ?? null,
-        floor_name: f.floor_name ?? flName ?? null,
-        zone_name: f.zone_name ?? (f.lighting_zones ? (f.lighting_zones as any).name : null),
-      };
+    const { data, error } = await query;
+    if (error) throw error;
+    return data as LightingFixture[];
+  } catch (error) {
+    logger.error('Error fetching open lighting issues:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get walkthrough history for a hallway
+ */
+export async function getWalkthroughHistory(hallwayId: string, limit = 10) {
+  try {
+    const { data, error } = await db
+      .from('walkthrough_sessions')
+      .select('*')
+      .eq('hallway_id', hallwayId)
+      .order('started_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data as WalkthroughSession[];
+  } catch (error) {
+    logger.error('Error fetching walkthrough history:', error);
+    throw error;
+  }
+}
+
+/**
+ * Start a new walkthrough session
+ */
+export async function startWalkthrough(payload: StartWalkthroughPayload) {
+  try {
+    // Count fixtures in the hallway/floor
+    let fixtureQuery = db.from('lighting_fixtures').select('id', { count: 'exact', head: true });
+
+    if (payload.hallway_id) {
+      fixtureQuery = fixtureQuery.eq('space_id', payload.hallway_id).eq('space_type', 'hallway');
+    } else {
+      fixtureQuery = fixtureQuery.eq('floor_id', payload.floor_id);
+    }
+
+    const { count } = await fixtureQuery;
+
+    const { data, error } = await db
+      .from('walkthrough_sessions')
+      .insert({
+        floor_id: payload.floor_id,
+        hallway_id: payload.hallway_id,
+        started_by: payload.started_by,
+        total_fixtures: count || 0,
+        status: 'in_progress',
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as WalkthroughSession;
+  } catch (error) {
+    logger.error('Error starting walkthrough:', error);
+    throw error;
+  }
+}
+
+/**
+ * Record a fixture scan during walkthrough
+ */
+export async function recordFixtureScan(payload: RecordFixtureScanPayload) {
+  try {
+    // Insert scan record
+    const { error: scanError } = await db.from('fixture_scans').insert({
+      fixture_id: payload.fixture_id,
+      scanned_by: payload.scanned_by,
+      action_taken: payload.action_taken,
+      scan_location: payload.scan_location,
     });
 
-    return enriched;
-  } catch (error) {
-    logger.warn('Lighting fixtures enrichment failed:', error);
-  }
+    if (scanError) throw scanError;
 
-  return fixtures;
-};
+    // Update fixture status based on action
+    let newStatus: LightStatus = 'functional';
+    let requiresElectrician = false;
+    let ballastIssue = false;
 
-export const fetchRoomLightingStats = async () => {
-  const { data, error } = await supabase
-    .from('unified_spaces')
-    .select(`
-      id,
-      name,
-      room_number,
-      lighting_fixtures (
-        id,
-        status,
-        electrical_issues,
-        ballast_issue
-      )
-    `)
-    .limit(500);
+    switch (payload.action_taken) {
+      case 'bulb_out':
+        newStatus = 'non_functional';
+        break;
+      case 'ballast_issue':
+        newStatus = 'non_functional';
+        ballastIssue = true;
+        requiresElectrician = true;
+        break;
+      case 'flickering':
+        newStatus = 'maintenance_needed';
+        break;
+      case 'power_issue':
+        newStatus = 'non_functional';
+        requiresElectrician = true;
+        break;
+      case 'functional':
+        newStatus = 'functional';
+        break;
+      case 'skip':
+        // Don't update status for skipped fixtures
+        return;
+    }
 
-  if (error) throw error;
-  return data || [];
-};
-
-export const fetchRoomWithLightingFixtures = async (
-  roomId: string
-): Promise<{ id: string; name: string; room_number: string | null; lighting_fixtures: Array<{ id: string; status: any; bulb_count: number }> } | null> => {
-  const { data: room, error: roomErr } = await supabase
-    .from('rooms')
-    .select('id, name, room_number')
-    .eq('id', roomId)
-    .maybeSingle();
-  if (roomErr) throw roomErr;
-  if (!room) return null;
-
-  const { data: assignments, error: assignErr } = await supabase
-    .from('spatial_assignments')
-    .select('fixture_id')
-    .eq('space_id', roomId)
-    .eq('space_type', 'room');
-  if (assignErr) throw assignErr;
-
-  const fixtureIds = Array.from(new Set((assignments || []).map((a: any) => a.fixture_id))).filter(Boolean) as string[];
-
-  let fixtures: Array<{ id: string; status: any; bulb_count: number }> = [];
-  if (fixtureIds.length) {
-    const { data: fx, error: fxErr } = await supabase
+    // First get current scan_count
+    const { data: currentFixture } = await db
       .from('lighting_fixtures')
-      .select('id, status, bulb_count')
-      .in('id', fixtureIds);
-    if (fxErr) throw fxErr;
-    fixtures = (fx || []) as Array<{ id: string; status: any; bulb_count: number }>;
+      .select('scan_count')
+      .eq('id', payload.fixture_id)
+      .single();
+
+    const { error: updateError } = await db
+      .from('lighting_fixtures')
+      .update({
+        status: newStatus,
+        ballast_issue: ballastIssue,
+        requires_electrician: requiresElectrician,
+        reported_out_date: newStatus !== 'functional' ? new Date().toISOString() : null,
+        scan_count: (currentFixture?.scan_count || 0) + 1,
+      })
+      .eq('id', payload.fixture_id);
+
+    if (updateError) throw updateError;
+
+    // Update walkthrough session counters
+    const { data: session } = await db
+      .from('walkthrough_sessions')
+      .select('fixtures_checked, issues_found, ballast_issues_found')
+      .eq('id', payload.walkthrough_id)
+      .single();
+
+    const incrementFields: Record<string, number> = {
+      fixtures_checked: (session?.fixtures_checked || 0) + 1,
+    };
+
+    if (newStatus !== 'functional') {
+      incrementFields.issues_found = (session?.issues_found || 0) + 1;
+    }
+
+    if (ballastIssue) {
+      incrementFields.ballast_issues_found = (session?.ballast_issues_found || 0) + 1;
+    }
+
+    const { error: sessionError } = await db
+      .from('walkthrough_sessions')
+      .update(incrementFields)
+      .eq('id', payload.walkthrough_id);
+
+    if (sessionError) throw sessionError;
+  } catch (error) {
+    logger.error('Error recording fixture scan:', error);
+    throw error;
   }
+}
 
-  return {
-    id: room.id,
-    name: room.name,
-    room_number: room.room_number ?? null,
-    lighting_fixtures: fixtures,
-  };
-};
+/**
+ * Complete a walkthrough session
+ */
+export async function completeWalkthrough(walkthroughId: string) {
+  try {
+    const { data, error } = await db
+      .from('walkthrough_sessions')
+      .update({
+        completed_at: new Date().toISOString(),
+        status: 'completed',
+      })
+      .eq('id', walkthroughId)
+      .select()
+      .single();
 
-export const fetchSiblingFixturesForFixture = async (
-  fixtureId: string
-): Promise<Array<Pick<LightingFixture, 'id' | 'technology' | 'status' | 'requires_electrician'>>> => {
-  const { data: ownAssn, error: ownAssnErr } = await supabase
-    .from('spatial_assignments')
-    .select('space_id')
-    .eq('fixture_id', fixtureId)
-    .limit(1);
-  if (ownAssnErr) throw ownAssnErr;
-  const spaceId = ownAssn?.[0]?.space_id as string | null | undefined;
-  if (!spaceId) return [];
+    if (error) throw error;
+    return data as WalkthroughSession;
+  } catch (error) {
+    logger.error('Error completing walkthrough:', error);
+    throw error;
+  }
+}
 
-  const { data: assignments, error: assignError } = await supabase
-    .from('spatial_assignments')
-    .select('fixture_id, sequence_number')
-    .eq('space_id', spaceId);
-  if (assignError) throw assignError;
+/**
+ * Update fixture status (admin/facilities_manager direct update)
+ */
+export async function updateFixtureStatus(fixtureId: string, payload: UpdateFixtureStatusPayload) {
+  try {
+    const updateData: Partial<LightingFixture> = {
+      status: payload.status,
+      notes: payload.notes,
+      ballast_issue: payload.ballast_issue ?? false,
+      requires_electrician: payload.requires_electrician ?? false,
+    };
 
-  const fixtureIds = Array.from(new Set((assignments || []).map((a: any) => a.fixture_id)));
-  const seqMap = new Map<string, number | null>(
-    (assignments || []).map((a: any) => [a.fixture_id, a.sequence_number ?? null])
-  );
-  if (!fixtureIds.length) return [];
+    if (payload.status === 'functional' && payload.resolved_at) {
+      updateData.replaced_date = payload.resolved_at;
+      updateData.reported_out_date = undefined;
+    }
 
-  const { data, error } = await supabase
-    .from('lighting_fixtures')
-    .select('id, technology, status, requires_electrician')
-    .in('id', fixtureIds);
-  if (error) throw error;
+    const { data, error } = await db
+      .from('lighting_fixtures')
+      .update(updateData)
+      .eq('id', fixtureId)
+      .select()
+      .single();
 
-  const sorted = (data || []).slice().sort((a: any, b: any) => {
-    const sa = seqMap.get(a.id);
-    const sb = seqMap.get(b.id);
-    const va = sa == null ? Number.NEGATIVE_INFINITY : Number(sa);
-    const vb = sb == null ? Number.NEGATIVE_INFINITY : Number(sb);
-    return va - vb;
-  });
+    if (error) throw error;
+    return data as LightingFixture;
+  } catch (error) {
+    logger.error('Error updating fixture status:', error);
+    throw error;
+  }
+}
 
-  return sorted as Array<Pick<LightingFixture, 'id' | 'technology' | 'status' | 'requires_electrician'>>;
-};
+/**
+ * Create a new fixture
+ */
+export async function createFixture(payload: CreateFixturePayload) {
+  try {
+    const { data, error } = await db
+      .from('lighting_fixtures')
+      .insert({
+        name: payload.name,
+        type: payload.type,
+        status: payload.status || 'functional',
+        technology: payload.technology,
+        position: payload.position || 'ceiling',
+        bulb_count: payload.bulb_count || 1,
+        space_id: payload.space_id,
+        space_type: payload.space_type,
+        room_number: payload.room_number,
+        building_id: payload.building_id,
+        floor_id: payload.floor_id,
+        zone_id: payload.zone_id,
+        ballast_issue: payload.ballast_issue || false,
+        requires_electrician: payload.requires_electrician || false,
+        notes: payload.notes,
+        emergency_circuit: payload.emergency_circuit || false,
+      })
+      .select()
+      .single();
 
-export const deleteLightingFixture = async (id: string) => {
-  const { error } = await supabase
-    .from('lighting_fixtures')
-    .delete()
-    .eq('id', id);
+    if (error) throw error;
+    return data as LightingFixture;
+  } catch (error) {
+    logger.error('Error creating fixture:', error);
+    throw error;
+  }
+}
 
-  if (error) throw error;
-  return true;
-};
+/**
+ * Get a single walkthrough session by ID
+ */
+export async function getWalkthroughSession(sessionId: string) {
+  try {
+    const { data, error } = await db
+      .from('walkthrough_sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .single();
 
-export const deleteLightingFixtures = async (fixtureIds: string[]) => {
-  const { error } = await supabase
-    .from('lighting_fixtures')
-    .delete()
-    .in('id', fixtureIds);
-
-  if (error) throw error;
-  return true;
-};
-
-export const updateLightingFixturesStatus = async (fixtureIds: string[], status: LightStatus) => {
-  const { error } = await supabase
-    .from('lighting_fixtures')
-    .update({ status })
-    .in('id', fixtureIds);
-
-  if (error) throw error;
-  return true;
-};
-
-export const createLightingFixture = async (fixtureData: any) => {
-  const { data, error } = await supabase
-    .from('lighting_fixtures')
-    .insert(fixtureData)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-};
-
-export const createLightingZone = async (zoneData: any) => {
-  const { data, error } = await supabase
-    .from('lighting_zones')
-    .insert(zoneData)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-};
-
-export const fetchLightingZones = async () => {
-  const { data, error } = await supabase
-    .from('lighting_zones')
-    .select('*')
-    .order('name')
-    .limit(500);
-
-  if (error) throw error;
-  return data || [];
-};
-
-export const fetchFloorsForZones = async () => {
-  const { data, error } = await supabase
-    .from('floors')
-    .select('id, name, floor_number')
-    .order('floor_number');
-
-  if (error) throw error;
-  return data || [];
-};
+    if (error) throw error;
+    return data as WalkthroughSession;
+  } catch (error) {
+    logger.error('Error fetching walkthrough session:', error);
+    throw error;
+  }
+}

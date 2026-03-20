@@ -61,12 +61,6 @@ const MODULE_CONFIG = [
     icon: KeyRound,
   },
   {
-    key: 'lighting' as const,
-    title: 'Lighting Management',
-    description: 'Monitor and maintain lighting fixtures and systems',
-    icon: Zap,
-  },
-  {
     key: 'maintenance' as const,
     title: 'Maintenance Management',
     description: 'Schedule and track facility maintenance operations',

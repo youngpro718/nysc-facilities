@@ -4,6 +4,17 @@ import { supabase } from "@/lib/supabase";
 import { Issue } from "../../types/IssueTypes";
 import { TimelineEvent } from "../types/TimelineTypes";
 
+export interface LinkedTaskSummary {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  task_type: string;
+  created_at: string;
+  due_date: string | null;
+  issue_id: string | null;
+}
+
 export const useIssueData = (issueId: string | null) => {
   const { data: issue, isLoading: issueLoading } = useQuery({
     queryKey: ['issues', issueId],
@@ -100,10 +111,37 @@ export const useIssueData = (issueId: string | null) => {
     enabled: !!issueId
   });
 
+  const { data: linkedTasks, isLoading: linkedTasksLoading } = useQuery({
+    queryKey: ['issue-linked-tasks', issueId],
+    queryFn: async () => {
+      if (!issueId) return [];
+      const { data, error } = await supabase
+        .from('staff_tasks')
+        .select(`
+          id,
+          title,
+          status,
+          priority,
+          task_type,
+          created_at,
+          due_date,
+          issue_id
+        `)
+        .eq('issue_id', issueId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as LinkedTaskSummary[];
+    },
+    enabled: !!issueId
+  });
+
   return {
     issue,
     issueLoading,
     timeline,
-    timelineLoading
+    timelineLoading,
+    linkedTasks,
+    linkedTasksLoading
   };
 };

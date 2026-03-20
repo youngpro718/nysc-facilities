@@ -127,26 +127,50 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
-        // 4) Check if user is approved — use user_roles table, not the deprecated access_level field
-        const isAdmin = userRoleData?.role === 'admin';
-        const isPending = profile?.verification_status === 'pending' || profile?.is_approved === false;
+        // 4) Check if user is approved — use verification_status as single source of truth
+        const isAdmin = userRoleData?.role === 'admin' || userRoleData?.role === 'system_admin';
+        const isPending = profile?.verification_status === 'pending';
 
         if (!isAdmin && isPending) {
           logger.debug('[OnboardingGuard] User pending approval, redirecting to pending page');
-          navigate('/auth/pending-approval', { replace: true });
+          navigate('/auth/pending-approval', { replace: true});
           return;
         }
 
         // Check if user was rejected
         if (profile?.verification_status === 'rejected') {
           logger.debug('[OnboardingGuard] User rejected, redirecting to rejected page');
-          navigate('/auth/account-rejected', { replace: true });
+          navigate('/auth/account-rejected', { replace: true});
           return;
         }
 
         // 5) MFA enforcement - TEMPORARILY DISABLED
         // TODO: Re-enable MFA enforcement when ready by uncommenting the block below
-        // const privilegedRoles = ['admin', 'cmc'];
+        const privilegedRoles = ['admin', 'cmc'];
+        const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
+
+        if (isPrivileged) {
+          try {
+            const { data: factorData, error: factorError } = await withTimeout(
+              supabase.auth.mfa.listFactors(),
+              TIMEOUTS.mfaCheck,
+              'checking MFA factors'
+            );
+            if (factorError) throw factorError;
+
+            const hasVerifiedTotp =
+              Array.isArray(factorData?.totp) &&
+              factorData.totp.some((f: any) => f.status === 'verified');
+
+            if (!hasVerifiedTotp) {
+              logger.debug('[OnboardingGuard] MFA required but not enabled, redirecting to MFA setup');
+              navigate('/auth/mfa', { replace: true });
+              return;
+            }
+          } catch (mfaError) {
+            logger.warn('[OnboardingGuard] MFA check failed:', mfaError);
+          }
+        }
         // const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
         //
         // if (isPrivileged) {
@@ -220,7 +244,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Verifying access...</p>
+          <p className="text-muted-foreground">Checking account status...</p>
         </div>
       </div>
     );

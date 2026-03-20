@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
+import { useUserIssues } from '@features/dashboard/hooks/useUserIssues';
 import { TermSheetBoard } from '@features/court/components/court-operations/personnel/TermSheetBoard';
 import { supabase } from '@/lib/supabase';
 import { getRoleDashboardConfig } from '@/config/roleDashboardConfig';
@@ -21,6 +22,7 @@ export default function RoleDashboard() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { userRole, loading: roleLoading } = useRolePermissions();
+  const { userIssues: myIssues = [] } = useUserIssues(user?.id);
 
   const config = getRoleDashboardConfig(userRole || '');
 
@@ -31,16 +33,6 @@ export default function RoleDashboard() {
     queryFn: async () => {
       if (!user?.id) return [];
       const { data } = await supabase.from('supply_requests').select('id, status').eq('requester_id', user.id).not('status', 'in', '(completed,cancelled)');
-      return data || [];
-    },
-    enabled: !!user?.id,
-  });
-
-  const { data: myIssues = [] } = useQuery({
-    queryKey: ['role-dashboard-issues', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data } = await supabase.from('issues').select('id, status').eq('reported_by', user.id).not('status', 'in', '(resolved,closed)');
       return data || [];
     },
     enabled: !!user?.id,

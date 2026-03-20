@@ -19,6 +19,7 @@ import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 interface KeyRequestWithUser {
   id: string;
+  key_id: string | null;
   reason: string;
   status: string;
   created_at: string;
@@ -53,10 +54,13 @@ const statusConfig = {
 export default function AdminKeyRequests() {
   const [requests, setRequests] = useState<KeyRequestWithUser[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<KeyRequestWithUser | null>(null);
-  const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
+  const [actionType, setActionType] = useState<'approve' | 'reject' | 'fulfill' | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
+  const [selectedKeyId, setSelectedKeyId] = useState<string>("");
+  const [availableKeys, setAvailableKeys] = useState<Array<{ id: string; name: string; type: string; available_quantity: number }>>([]);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('id');
@@ -65,7 +69,14 @@ export default function AdminKeyRequests() {
 
   useEffect(() => {
     fetchRequests();
+    fetchAvailableKeys();
   }, []);
+
+  useEffect(() => {
+    if (actionType === 'fulfill') {
+      setSelectedKeyId(selectedRequest?.key_id || availableKeys[0]?.id || '');
+    }
+  }, [actionType, selectedRequest, availableKeys]);
 
   const fetchRequests = async () => {
     try {
@@ -99,15 +110,49 @@ export default function AdminKeyRequests() {
     }
   };
 
+  const fetchAvailableKeys = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('keys')
+        .select('id, name, type, available_quantity')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setAvailableKeys((data || []).filter((key) => (key.available_quantity ?? 0) > 0));
+    } catch (error) {
+      logger.warn('Failed to fetch key inventory for fulfillment selector:', error);
+      setAvailableKeys([]);
+    }
+  };
+
   const handleAction = async () => {
-    if (!selectedRequest || !actionType) return;
+    if (!selectedRequest || !actionType || isSubmitting) return;
+
+    setIsSubmitting(true);
 
     try {
+      const now = new Date().toISOString();
       const updates: Record<string, unknown> = {
-        status: actionType === 'approve' ? 'approved' : 'rejected',
+        status: actionType === 'approve' ? 'approved' : actionType === 'reject' ? 'rejected' : 'fulfilled',
         admin_notes: adminNotes.trim() || null,
-        updated_at: new Date().toISOString(),
+        last_status_change: now,
+        updated_at: now,
       };
+
+      if (actionType === 'approve') {
+        updates.approved_at = now;
+        updates.approved_by = user?.id || null;
+      }
+
+      if (actionType === 'reject') {
+        updates.rejected_at = now;
+        updates.rejected_by = user?.id || null;
+        updates.rejection_reason = adminNotes.trim() || null;
+      }
+
+      if (actionType === 'fulfill') {
+        updates.fulfillment_notes = adminNotes.trim() || null;
+      }
 
       const { error } = await supabase
         .from('key_requests')
@@ -116,7 +161,70 @@ export default function AdminKeyRequests() {
 
       if (error) throw error;
 
-      // Always create user notification and send email if opted in
+      if (actionType === 'fulfill' && selectedKeyId) {
+        const { error: assignmentError } = await supabase
+          .from('key_assignments')
+          .insert({
+            key_id: selectedKeyId,
+            occupant_id: selectedRequest.user_id,
+            assigned_at: now,
+            is_spare: false,
+            spare_key_reason: null,
+          });
+
+        if (assignmentError) {
+          await supabase
+            .from('key_requests')
+            .update({
+              status: selectedRequest.status,
+              admin_notes: selectedRequest.admin_notes,
+              updated_at: now,
+            })
+            .eq('id', selectedRequest.id);
+
+          throw assignmentError;
+        }
+      }
+
+      try {
+        await supabase.from('admin_actions_log').insert({
+          performed_by: user?.id,
+          action_type: `key_request_${actionType}`,
+          target_id: selectedRequest.id,
+          target_type: 'key_request',
+          details: {
+            request_type: selectedRequest.request_type,
+            user_id: selectedRequest.user_id,
+            room: selectedRequest.rooms?.room_number ?? selectedRequest.room_other,
+            key_id: selectedKeyId || selectedRequest.key_id || null,
+            notes: adminNotes.trim() || null,
+          },
+        });
+      } catch (auditError) {
+        logger.error('Failed to write admin action audit log:', auditError);
+      }
+
+      const roomInfo = selectedRequest.rooms 
+        ? `${selectedRequest.rooms.room_number} - ${selectedRequest.rooms.name}`
+        : selectedRequest.room_other || 'unspecified room';
+      const selectedKey = availableKeys.find((key) => key.id === selectedKeyId);
+      const selectedKeyLabel = selectedKey ? `${selectedKey.name} (${selectedKey.type})` : null;
+      const notificationType = actionType === 'approve'
+        ? 'key_request_approved'
+        : actionType === 'reject'
+          ? 'key_request_denied'
+          : 'key_request_fulfilled';
+      const notificationTitle = actionType === 'approve'
+        ? 'Key Request Approved'
+        : actionType === 'reject'
+          ? 'Key Request Denied'
+          : 'Key Request Fulfilled';
+      const notificationMessage = actionType === 'approve'
+        ? `Your ${selectedRequest.request_type} key request for ${roomInfo} has been approved. The key ordering process will begin shortly.`
+        : actionType === 'reject'
+          ? `Your ${selectedRequest.request_type} key request for ${roomInfo} has been denied. ${adminNotes ? `Reason: ${adminNotes}` : ''}`
+          : `Your ${selectedRequest.request_type} key request for ${roomInfo} has been fulfilled.${selectedKeyLabel ? ` Key issued: ${selectedKeyLabel}.` : ''}`;
+
       try {
         logger.debug('Starting notification process for user:', selectedRequest.user_id);
         logger.debug('Request data:', selectedRequest);
@@ -133,6 +241,7 @@ export default function AdminKeyRequests() {
             },
             status: updates.status,
             admin_notes: adminNotes,
+            key_label: selectedKeyLabel,
           }
         });
         
@@ -149,19 +258,6 @@ export default function AdminKeyRequests() {
         
         // Fallback: Create notification directly in database
         try {
-          const notificationType = updates.status === 'approved' ? 'key_request_approved' : 'key_request_denied';
-          const notificationTitle = updates.status === 'approved' 
-            ? 'Key Request Approved' 
-            : 'Key Request Denied';
-          
-          const roomInfo = selectedRequest.rooms 
-            ? `${selectedRequest.rooms.room_number} - ${selectedRequest.rooms.name}`
-            : selectedRequest.room_other || 'unspecified room';
-
-          const notificationMessage = updates.status === 'approved'
-            ? `Your ${selectedRequest.request_type} key request for ${roomInfo} has been approved. The key ordering process will begin shortly.`
-            : `Your ${selectedRequest.request_type} key request for ${roomInfo} has been denied. ${adminNotes ? `Reason: ${adminNotes}` : ''}`;
-
           const { error: directNotificationError } = await supabase
             .from('user_notifications')
             .insert({
@@ -174,8 +270,11 @@ export default function AdminKeyRequests() {
               metadata: {
                 request_id: selectedRequest.id,
                 request_type: selectedRequest.request_type,
-                room_info: roomInfo,
-                admin_notes: adminNotes
+                room_info: selectedRequest.rooms 
+                  ? `${selectedRequest.rooms.room_number} - ${selectedRequest.rooms.name}`
+                  : selectedRequest.room_other || 'unspecified room',
+                admin_notes: adminNotes,
+                key_label: availableKeys.find((key) => key.id === selectedKeyId)?.name || null,
               },
               related_id: selectedRequest.id
             });
@@ -192,7 +291,7 @@ export default function AdminKeyRequests() {
 
       toast({
         title: "Success",
-        description: `Request ${actionType === 'approve' ? 'approved' : 'rejected'} successfully`,
+        description: `Request ${actionType === 'approve' ? 'approved' : actionType === 'reject' ? 'rejected' : 'fulfilled'} successfully`,
       });
 
       // Refresh requests
@@ -200,6 +299,7 @@ export default function AdminKeyRequests() {
       setSelectedRequest(null);
       setActionType(null);
       setAdminNotes("");
+      setSelectedKeyId("");
 
     } catch (error) {
       toast({
@@ -207,6 +307,8 @@ export default function AdminKeyRequests() {
         description: `Failed to ${actionType} request`,
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -364,6 +466,23 @@ export default function AdminKeyRequests() {
                         </Button>
                       </div>
                     )}
+
+                    {request.status === 'approved' && (
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setActionType('fulfill');
+                            setSelectedKeyId(request.key_id || availableKeys[0]?.id || '');
+                          }}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Mark Fulfilled
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -381,18 +500,42 @@ export default function AdminKeyRequests() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {actionType === 'approve' ? 'Approve' : 'Reject'} Key Request
+              {actionType === 'approve' ? 'Approve' : actionType === 'reject' ? 'Reject' : 'Fulfill'} Key Request
             </DialogTitle>
             <DialogDescription>
-              Confirm your action and optionally provide notes for the requester.
+              {actionType === 'fulfill'
+                ? 'Confirm this key has been physically issued and optionally link the key record.'
+                : 'Confirm your action and optionally provide notes for the requester.'}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <p>
-              Are you sure you want to {actionType} this {selectedRequest?.request_type} key request 
-              from {(selectedRequest?.profiles?.first_name || 'Unknown')} {(selectedRequest?.profiles?.last_name || '')}?
+              {actionType === 'fulfill'
+                ? `Confirm this ${selectedRequest?.request_type} key request has been physically issued to ${(selectedRequest?.profiles?.first_name || 'Unknown')} ${(selectedRequest?.profiles?.last_name || '')}?`
+                : `Are you sure you want to ${actionType} this ${selectedRequest?.request_type} key request from ${(selectedRequest?.profiles?.first_name || 'Unknown')} ${(selectedRequest?.profiles?.last_name || '')}?`}
             </p>
+
+            {actionType === 'fulfill' && (
+              <div>
+                <Label htmlFor="key-select">
+                  Link key inventory item (optional)
+                </Label>
+                <Select value={selectedKeyId} onValueChange={setSelectedKeyId}>
+                  <SelectTrigger id="key-select">
+                    <SelectValue placeholder="Select a key to assign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No key assignment</SelectItem>
+                    {availableKeys.map((key) => (
+                      <SelectItem key={key.id} value={key.id}>
+                        {key.name} — {key.type} ({key.available_quantity} available)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             <div>
               <Label htmlFor="notes">
@@ -403,6 +546,8 @@ export default function AdminKeyRequests() {
                 placeholder={
                   actionType === 'reject' 
                     ? "Please provide a reason for rejection..."
+                    : actionType === 'fulfill'
+                      ? "Add any fulfillment notes..."
                     : "Add any additional notes..."
                 }
                 value={adminNotes}
@@ -417,15 +562,22 @@ export default function AdminKeyRequests() {
               setSelectedRequest(null);
               setActionType(null);
               setAdminNotes("");
+              setSelectedKeyId("");
             }}>
               Cancel
             </Button>
             <Button 
               onClick={handleAction}
               variant={actionType === 'reject' ? 'destructive' : 'default'}
-              disabled={actionType === 'reject' && !adminNotes.trim()}
+              disabled={isSubmitting || (actionType === 'reject' && !adminNotes.trim())}
             >
-              {actionType === 'approve' ? 'Approve' : 'Reject'} Request
+              {isSubmitting
+                ? 'Saving...'
+                : actionType === 'approve'
+                  ? 'Approve'
+                  : actionType === 'reject'
+                    ? 'Reject'
+                    : 'Mark Fulfilled'} Request
             </Button>
           </DialogFooter>
         </DialogContent>

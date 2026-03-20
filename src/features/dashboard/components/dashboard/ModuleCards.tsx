@@ -144,55 +144,6 @@ export const IssuesDashboardCard = () => {
   );
 };
 
-export const LightingDashboardCard = () => {
-  const { data: lightingStats, isLoading } = useQuery({
-    queryKey: ['dashboard-lighting'],
-    queryFn: async () => {
-      try {
-        const { data: fixtures } = await supabase
-          .from('lighting_fixtures')
-          .select('status');
-        
-        if (!fixtures) return { total: 0, functional: 0, issues: 0, critical: 0 };
-        
-        const total = fixtures.length;
-        const functional = fixtures.filter(f => f.status === 'functional').length;
-        const nonFunctional = fixtures.filter(f => f.status === 'non_functional').length;
-        const maintenance = fixtures.filter(f => f.status === 'maintenance_needed').length;
-        const issues = nonFunctional + maintenance;
-        
-        return {
-          total,
-          functional,
-          issues,
-          critical: nonFunctional
-        };
-      } catch (error) {
-        logger.error('Error fetching lighting stats:', error);
-        return { total: 0, functional: 0, issues: 0, critical: 0 };
-      }
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const functionalPercentage = lightingStats?.total 
-    ? Math.round((lightingStats.functional / lightingStats.total) * 100)
-    : 0;
-
-  return (
-    <ModuleCard
-      title="Lighting Management"
-      icon={<Lightbulb className="h-5 w-5 text-yellow-500" />}
-      count={lightingStats?.total}
-      status={lightingStats?.critical > 10 ? "critical" : lightingStats?.issues > 20 ? "warning" : "good"}
-      description={`${functionalPercentage}% functional, ${lightingStats?.issues || 0} issues`}
-      route="/lighting"
-      color="yellow"
-      loading={isLoading}
-    />
-  );
-};
-
 export const SpacesDashboardCard = () => {
   const { data: spaces, isLoading } = useQuery({
     queryKey: ['dashboard-spaces'],

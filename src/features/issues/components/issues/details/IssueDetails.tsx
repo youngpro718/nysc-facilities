@@ -10,11 +10,14 @@ import { toast } from "sonner";
 import { EditIssueForm } from "../forms/EditIssueForm";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { IssueDetailsHeader } from "./components/IssueDetailsHeader";
 import { IssueTimelineContent } from "./components/IssueTimelineContent";
 import { useIssueData } from "./hooks/useIssueData";
 import { IssueDetailsContent } from "./components/IssueDetailsContent";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 interface IssueDetailsProps {
   issueId: string | null;
@@ -25,7 +28,9 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [confirmDiscard, confirmDiscardDialog] = useConfirmDialog();
-  const { issue, issueLoading, timeline, timelineLoading } = useIssueData(issueId);
+  const { issue, issueLoading, timeline, timelineLoading, linkedTasks, linkedTasksLoading } = useIssueData(issueId);
+  const { isAdmin, isFacilitiesManager } = useRolePermissions();
+  const canCreateTaskFromIssue = isAdmin || isFacilitiesManager;
   
   const markAsSeenMutation = useMutation({
     mutationFn: async () => {
@@ -109,6 +114,30 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
             onDelete={onClose}
             isEditing={false}
           />
+          {canCreateTaskFromIssue && (
+            <div className="px-6 pt-4 flex justify-end">
+              <CreateTaskDialog
+                trigger={(
+                  <Button variant="outline" size="sm">
+                    Create Task
+                  </Button>
+                )}
+                taskDefaults={{
+                  title: `Follow-up: ${issue.title}`,
+                  description: issue.description || '',
+                  task_type: 'maintenance',
+                  priority: (() => {
+                    const issuePriority = String(issue.priority);
+                    return issuePriority === 'urgent' || issuePriority === 'high' || issuePriority === 'critical'
+                      ? 'high'
+                      : 'medium';
+                  })(),
+                  to_room_id: issue.room_id || undefined,
+                  issue_id: issue.id,
+                }}
+              />
+            </div>
+          )}
           <ScrollArea className="flex-1">
             <div className="space-y-6 p-6">
               <Tabs defaultValue="details" className="w-full">
@@ -130,6 +159,8 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
                       ? `Due in ${Math.ceil((new Date(issue.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days`
                       : 'No due date set'}
                     onMarkAsSeen={handleMarkAsSeen}
+                    linkedTasks={linkedTasks}
+                    linkedTasksLoading={linkedTasksLoading}
                   />
                 </TabsContent>
 

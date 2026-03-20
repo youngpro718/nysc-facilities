@@ -10,25 +10,24 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { RoomInventory } from "../../RoomInventory";
 import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
-import { LightingStatusWheel } from "@features/spaces/components/spaces/LightingStatusWheel";
 import { useNavigate } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesIntegration";
 import { RoomHistoryTimeline } from "./history/RoomHistoryTimeline";
-import { RoomLightingManager } from "./lighting/RoomLightingManager";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
-import { useLightingWithTickets } from "@features/lighting/hooks/useLightingWithTickets";
 import { FinishesStep } from "@features/spaces/components/spaces/forms/room/wizard/steps/FinishesStep";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 interface CardBackProps {
   room: EnhancedRoom;
   onFlip: (e?: React.MouseEvent) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
+  const { canAdmin } = useRolePermissions();
+  const canManageSpaces = canAdmin('spaces');
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'lighting' | 'notes' | 'history' | 'finishes'>('info');
-  const { data: lightingWithTickets = [] } = useLightingWithTickets(room.id);
+  const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'notes' | 'history' | 'finishes'>('info');
 
   // Courtroom photos
   const isCourtroom = room.room_type === 'courtroom';
@@ -41,14 +40,6 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
   const mediumPriorityIssues = unresolvedIssues.filter(i => (i.priority || "").toLowerCase() === "medium");
   const lowPriorityIssues = unresolvedIssues.filter(i => !["urgent", "high", "critical", "medium"].includes((i.priority || "").toLowerCase()));
 
-  const totalLights = room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0;
-  const functionalLights = useMemo(
-    () => room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0,
-    [room.functional_fixtures_count, room.lighting_fixtures],
-  );
-
-  const nonFunctionalFixtures = lightingWithTickets.filter(f => f.status !== 'functional');
-  const fixturesWithoutTickets = nonFunctionalFixtures.filter(f => !f.issue_id);
 
   return (
     <div className="p-5 flex flex-col h-full bg-card border rounded-md shadow-sm">
@@ -59,37 +50,41 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
         </h3>
         <div className="flex items-center gap-2">
           <TooltipProvider>
-            <div onClick={(e) => e.stopPropagation()}>
-              <EditSpaceDialog
-                id={room.id}
-                type="room"
-                variant="custom"
-                initialData={buildRoomInitialData(room)}
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Edit</TooltipContent>
-                </Tooltip>
-              </EditSpaceDialog>
-            </div>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); onDelete(room.id); }}
-                  className="h-8"
+            {canManageSpaces && (
+              <div onClick={(e) => e.stopPropagation()}>
+                <EditSpaceDialog
+                  id={room.id}
+                  type="room"
+                  variant="custom"
+                  initialData={buildRoomInitialData(room)}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Delete</TooltipContent>
-            </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Edit</TooltipContent>
+                  </Tooltip>
+                </EditSpaceDialog>
+              </div>
+            )}
+
+            {canManageSpaces && onDelete && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); onDelete(room.id); }}
+                    className="h-8"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Delete</TooltipContent>
+              </Tooltip>
+            )}
           </TooltipProvider>
 
           <Button
@@ -124,14 +119,6 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
               {unresolvedIssues.length}
             </span>
           )}
-        </button>
-        <button
-          onClick={() => setActiveTab('lighting')}
-          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'lighting' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-            }`}
-        >
-          <Lightbulb className="h-3.5 w-3.5 inline mr-1" />
-          Lights
         </button>
         <button
           onClick={() => setActiveTab('notes')}
@@ -504,143 +491,6 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
                   <Plus className="h-3.5 w-3.5 mr-1.5" />
                   Report New Issue
                 </Button>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Lighting Tab */}
-        {activeTab === 'lighting' && (
-          <div className="space-y-4">
-            {/* Empty state when no fixtures */}
-            {totalLights === 0 ? (
-              <div className="text-center py-8">
-                <Lightbulb className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm font-medium text-muted-foreground mb-1">No fixtures configured</p>
-                <p className="text-xs text-muted-foreground/70 mb-3">Add lighting fixtures to track their status</p>
-                <RoomLightingManager
-                  room={room}
-                  trigger={
-                    <Button variant="outline" size="sm">
-                      <Plus className="h-3.5 w-3.5 mr-1.5" />
-                      Configure Lighting
-                    </Button>
-                  }
-                />
-              </div>
-            ) : (
-              <>
-                {/* Summary Header */}
-                <div className="bg-muted/30 p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <RoomLightingManager
-                      room={room}
-                      trigger={
-                        <LightingStatusWheel
-                          functional={functionalLights}
-                          total={totalLights}
-                          size={48}
-                          title={`${functionalLights}/${totalLights} lights functional - Click to manage`}
-                          onClick={() => { }}
-                        />
-                      }
-                    />
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-foreground">
-                        {functionalLights}/{totalLights}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Functional</div>
-                    </div>
-                  </div>
-                  {(() => {
-                    const pct = Math.round((functionalLights / totalLights) * 100);
-                    const barColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500';
-                    return (
-                      <div className="w-full bg-muted h-2 rounded-full">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-300 ${barColor}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Warning for fixtures without tickets */}
-                {fixturesWithoutTickets.length > 0 && (
-                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 p-2.5 rounded-md">
-                    <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
-                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                      <span className="font-medium">{fixturesWithoutTickets.length} fixture(s) need a ticket</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* All Clear state */}
-                {nonFunctionalFixtures.length === 0 && (
-                  <div className="text-center py-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <CheckCircle className="h-6 w-6 mx-auto mb-1.5 text-green-500" />
-                    <p className="text-sm font-medium text-green-700 dark:text-green-400">All lights functional</p>
-                    <p className="text-xs text-green-600/70 dark:text-green-500/70 mt-0.5">{totalLights} fixture{totalLights !== 1 ? 's' : ''} operating normally</p>
-                  </div>
-                )}
-
-                {/* Non-functional fixture list */}
-                {nonFunctionalFixtures.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {nonFunctionalFixtures.length} fixture{nonFunctionalFixtures.length !== 1 ? 's' : ''} need attention
-                    </p>
-                    {nonFunctionalFixtures.map((fixture) => (
-                      <div
-                        key={fixture.id}
-                        className="bg-card border border-border p-3 rounded-md"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant={fixture.status === 'flickering' ? 'secondary' : 'destructive'} className="text-xs capitalize">
-                              {fixture.status.replace(/_/g, ' ')}
-                            </Badge>
-                            <span className="text-sm font-medium">{fixture.position || fixture.name}</span>
-                          </div>
-                          {fixture.outage_duration_days != null && fixture.outage_duration_days > 0 && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <AlertTriangle className="h-3 w-3" />
-                              {fixture.outage_duration_days}d
-                            </div>
-                          )}
-                        </div>
-                        {fixture.ballast_issue && (
-                          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 mb-2">
-                            <Zap className="h-3 w-3" />
-                            <span>Ballast issue — requires electrician</span>
-                          </div>
-                        )}
-                        {/* Ticket Status */}
-                        {fixture.ticket ? (
-                          <div className="flex items-center gap-2 p-2 bg-muted/50 rounded text-xs">
-                            <Ticket className="h-3.5 w-3.5 text-primary shrink-0" />
-                            <span className="font-medium capitalize">{fixture.ticket.status}</span>
-                            <span className="text-muted-foreground">• {fixture.ticket.days_since_submitted}d ago</span>
-                          </div>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full h-8 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/operations?tab=issues&create=true&room_id=${room.id}&title=Lighting%20Issue%20-%20${encodeURIComponent(fixture.name)}`);
-                            }}
-                          >
-                            <Plus className="h-3.5 w-3.5 mr-1" />
-                            Create Ticket
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </>
             )}
           </div>

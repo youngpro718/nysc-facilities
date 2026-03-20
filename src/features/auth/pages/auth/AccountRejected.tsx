@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { XCircle, Mail, LogOut } from 'lucide-react';
+import { XCircle, Mail, LogOut, FileText } from 'lucide-react';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { APP_INFO } from '@/lib/appInfo';
+import { AppealDialog } from '@features/auth/components/AppealDialog';
 
 /**
  * AccountRejected - Shown to users whose account was rejected
@@ -10,6 +12,7 @@ import { APP_INFO } from '@/lib/appInfo';
 export default function AccountRejected() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const [appealDialogOpen, setAppealDialogOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -49,23 +52,31 @@ export default function AccountRejected() {
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-slate-900">Account Not Approved</h1>
+              <h1 className="text-lg font-semibold text-slate-900">Access Not Approved</h1>
               <p className="text-sm text-slate-500 mt-1">
-                Your account request has been reviewed and was not approved for access.
+                Your access request was reviewed and not approved.
               </p>
             </div>
           </div>
 
           <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1.5">
-            <p className="text-xs font-medium text-slate-600">What you can do</p>
+            <p className="text-xs font-medium text-slate-600">Next steps</p>
             <ul className="text-xs text-slate-500 space-y-1">
-              <li>Contact your supervisor to verify your eligibility</li>
-              <li>Reach out to the facilities administrator</li>
-              <li>Submit a new request with correct information</li>
+              <li>Contact your supervisor to confirm your eligibility</li>
+              <li>Reach out to the facilities administrator if you think this is an error</li>
+              <li>Submit a new request only if your details have changed</li>
             </ul>
           </div>
 
           <div className="space-y-2.5">
+            <Button
+              onClick={() => setAppealDialogOpen(true)}
+              className="w-full h-10 rounded-xl text-sm font-medium"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Request Reconsideration
+            </Button>
+
             <Button
               onClick={() => window.location.href = APP_INFO.support.emailHref}
               variant="outline"
@@ -93,6 +104,8 @@ export default function AccountRejected() {
           </a>
         </p>
       </div>
+
+      <AppealDialog open={appealDialogOpen} onOpenChange={setAppealDialogOpen} />
     </div>
   );
 }

@@ -22,7 +22,7 @@ import { ReceiptDialog } from '@features/supply/components/supply/ReceiptDialog'
 import type { ReceiptData } from '@features/supply/types/receipt';
 import { useSupplyReceipts } from '@features/supply/hooks/useSupplyReceipts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { confirmPickup, cancelSupplyRequest, archiveSupplyRequest } from '@features/supply/services/supplyOrdersService';
+import { confirmPickup, cancelSupplyRequest, archiveSupplyRequest } from '@features/supply/services/unifiedSupplyService';
 import { toast } from 'sonner';
 import {
   AlertDialog,

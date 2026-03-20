@@ -1,8 +1,8 @@
-// Enhanced Room Data — enriched room queries with lighting/occupant data
+// Enhanced Room Data — enriched room queries with occupant data
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
-import { EnhancedRoom, LightingFixtureStatus } from "@features/spaces/components/spaces/rooms/types/EnhancedRoomTypes";
+import { EnhancedRoom } from "@features/spaces/components/spaces/rooms/types/EnhancedRoomTypes";
 
 // Safely parse JSON-like inputs (string or object). Returns null on error.
 function safeJsonParse<T = any>(value: unknown): T | null {
@@ -113,18 +113,6 @@ export function useEnhancedRoomData(roomId: string) {
         return null;
       }
 
-      // Get lighting fixtures data
-      const { data: lightingFixtures } = await supabase
-        .from('lighting_fixtures')
-        .select('*')
-        .eq('space_type', 'room')
-        .eq('space_id', roomId);
-
-      // Calculate lighting status
-      const totalFixtures = lightingFixtures?.length || 0;
-      const functionalFixtures = lightingFixtures?.filter(f => f.status === 'functional').length || 0;
-      const lightingPercentage = totalFixtures > 0 ? Math.round((functionalFixtures / totalFixtures) * 100) : 100;
-
       // Calculate room size category using the database function and actual room size data
       let roomSizeCategory: 'small' | 'medium' | 'large' = 'medium';
       if (room.size) {
@@ -155,21 +143,6 @@ export function useEnhancedRoomData(roomId: string) {
         }
       }
 
-      // Transform lighting fixtures with outage duration
-      const enhancedLightingFixtures: LightingFixtureStatus[] = lightingFixtures?.map(fixture => ({
-        id: fixture.id,
-        room_id: roomId,
-        fixture_name: fixture.name || 'Unknown',
-        location: fixture.position || 'General Area',
-        status: fixture.status as 'functional' | 'out' | 'flickering' | 'maintenance',
-        reported_out_date: fixture.reported_out_date,
-        ballast_issue: fixture.ballast_issue || false,
-        last_serviced: fixture.replaced_date,
-        outage_duration_days: fixture.reported_out_date 
-          ? Math.floor((Date.now() - new Date(fixture.reported_out_date).getTime()) / (1000 * 60 * 60 * 24))
-          : undefined
-      })) || [];
-
       // Build history stats
       // 1) Total issues and last issue date
       const totalIssues = safeIssues.length || 0;
@@ -198,11 +171,6 @@ export function useEnhancedRoomData(roomId: string) {
         size: room.size ? (safeJsonParse<any>(room.size) ?? undefined) : undefined,
         courtroom_photos: room.courtroom_photos ? (safeJsonParse<any>(room.courtroom_photos) ?? undefined) : undefined,
         court_room: courtRoomData as any,
-        lighting_fixtures: enhancedLightingFixtures,
-        total_fixtures_count: totalFixtures,
-        functional_fixtures_count: functionalFixtures,
-        lighting_percentage: lightingPercentage,
-        has_lighting_issues: functionalFixtures < totalFixtures,
         room_size_category: roomSizeCategory,
         has_persistent_issues: hasPersistentIssues,
         vacancy_status: vacancyStatus,

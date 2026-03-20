@@ -54,27 +54,13 @@ export function useHallwayRooms(hallwayId: string | null) {
 
       if (error) throw error;
 
-      // Fetch fixture counts for each room
-      const roomsWithCounts = await Promise.all(
-        (data || []).map(async (hallwayRoom: Record<string, unknown>) => {
-          const { data: fixtures } = await supabase
-            .from('lighting_fixtures')
-            .select('status')
-            .eq('space_id', hallwayRoom.room_id)
-            .eq('space_type', 'room');
-
-          const total = fixtures?.length || 0;
-          const functional = fixtures?.filter(f => f.status === 'functional').length || 0;
-          const nonFunctional = fixtures?.filter(f => f.status === 'non_functional').length || 0;
-
-          return {
-            ...hallwayRoom,
-            actual_fixture_count: total,
-            functional_count: functional,
-            non_functional_count: nonFunctional,
-          } as HallwayRoom;
-        })
-      );
+      // Return rooms with default counts (lighting module removed)
+      const roomsWithCounts = (data || []).map((hallwayRoom: Record<string, unknown>) => ({
+        ...hallwayRoom,
+        actual_fixture_count: 0,
+        functional_count: 0,
+        non_functional_count: 0,
+      } as HallwayRoom));
 
       return roomsWithCounts;
     },

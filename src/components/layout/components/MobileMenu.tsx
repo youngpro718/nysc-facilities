@@ -6,6 +6,7 @@ import { Menu, X } from "lucide-react";
 import { NavigationTab, Tab } from "../types";
 import { MobileNavigationGrid } from "./MobileNavigationGrid";
 import { useAuth } from "@features/auth/hooks/useAuth";
+import { isAdminRole } from "@/routes/roleBasedRouting";
 import { getNavigationPath, getNavigationDescription } from "../utils/navigationPaths";
 
 interface MobileMenuProps {
@@ -23,7 +24,8 @@ export const MobileMenu = ({
   onNavigationChange,
   onSignOut
 }: MobileMenuProps) => {
-  const { isAdmin } = useAuth();
+  const { profile } = useAuth();
+  const isAdminTier = isAdminRole(profile?.role);
   // Convert navigation tabs to grid items, filtering out separators
   const navigationItems = navigation
     .filter(item => item.type !== "separator")
@@ -33,7 +35,7 @@ export const MobileMenu = ({
       return {
         title: navItem.title,
         icon: navItem.icon,
-        path: getNavigationPath(navItem.title, isAdmin),
+        path: getNavigationPath(navItem.title, isAdminTier),
         description: getNavigationDescription(navItem.title),
       };
     });

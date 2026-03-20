@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -8,15 +9,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
-import { CalendarIcon, AlertCircle } from "lucide-react";
+import { CalendarIcon, AlertCircle, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { IssueDialog } from "@features/issues/components/issues/IssueDialog";
 
 interface MaintenanceTabProps {
   form: UseFormReturn<EditSpaceFormData>;
+  roomId?: string;
 }
 
-export function MaintenanceTab({ form }: MaintenanceTabProps) {
+export function MaintenanceTab({ form, roomId }: MaintenanceTabProps) {
+  const [issueDialogOpen, setIssueDialogOpen] = useState(false);
+
+  // Check if any hardware needs attention
+  const hardwareStatus = form.watch('hardwareStatus');
+  const closerStatus = form.watch('closerStatus');
+  const windPressureIssues = form.watch('windPressureIssues');
+  
+  const hasHardwareIssues = 
+    hardwareStatus?.hinges === 'needs_repair' || hardwareStatus?.hinges === 'needs_replacement' ||
+    hardwareStatus?.doorknob === 'needs_repair' || hardwareStatus?.doorknob === 'needs_replacement' ||
+    hardwareStatus?.lock === 'needs_repair' || hardwareStatus?.lock === 'needs_replacement' ||
+    hardwareStatus?.frame === 'needs_repair' || hardwareStatus?.frame === 'needs_replacement' ||
+    closerStatus === 'needs_adjustment' || closerStatus === 'not_working' ||
+    windPressureIssues;
+
   return (
     <div>
       <div>
@@ -27,6 +45,31 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
       </div>
 
       <div className="space-y-4 mt-4">
+        {/* Issue Reporting Prompt */}
+        {hasHardwareIssues && (
+          <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
+                  Hardware issues detected
+                </p>
+                <p className="text-xs text-orange-700 dark:text-orange-300">
+                  Consider reporting this for maintenance tracking and assignment.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIssueDialogOpen(true)}
+                  className="mt-2 border-orange-300 hover:bg-orange-100 dark:border-orange-800 dark:hover:bg-orange-900/30"
+                >
+                  Report Door Hardware Issue
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <FormField
           control={form.control}
           name="closerStatus"
@@ -160,6 +203,15 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
           )}
         />
       </div>
+
+      {/* Issue Dialog */}
+      <IssueDialog
+        open={issueDialogOpen}
+        onOpenChange={setIssueDialogOpen}
+        onSuccess={() => {
+          setIssueDialogOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -4,7 +4,7 @@
  * Dialog for managers/admins to create direct tasks
  */
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -60,22 +60,37 @@ type CreateTaskFormData = z.infer<typeof createTaskSchema>;
 
 interface CreateTaskDialogProps {
   trigger?: React.ReactNode;
+  taskDefaults?: Partial<CreateTaskFormData> & { issue_id?: string };
 }
 
-export function CreateTaskDialog({ trigger }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const { createTask } = useStaffTasks();
+  const linkedIssueId = taskDefaults?.issue_id;
+
+  const defaultValues = useMemo<CreateTaskFormData>(() => ({
+    title: taskDefaults?.title ?? '',
+    description: taskDefaults?.description ?? '',
+    task_type: taskDefaults?.task_type ?? 'general',
+    priority: taskDefaults?.priority ?? 'medium',
+    assigned_to: taskDefaults?.assigned_to,
+    inventory_item_id: taskDefaults?.inventory_item_id,
+    from_room_id: taskDefaults?.from_room_id,
+    to_room_id: taskDefaults?.to_room_id,
+    quantity: taskDefaults?.quantity ?? 1,
+    due_date: taskDefaults?.due_date,
+  }), [taskDefaults]);
 
   const form = useForm<CreateTaskFormData>({
     resolver: zodResolver(createTaskSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      task_type: 'general',
-      priority: 'medium',
-      quantity: 1,
-    },
+    defaultValues,
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(defaultValues);
+    }
+  }, [defaultValues, form, open]);
 
   // Fetch staff members for assignment
   const { data: staffMembers = [] } = useQuery({
@@ -132,6 +147,7 @@ export function CreateTaskDialog({ trigger }: CreateTaskDialogProps) {
       inventory_item_id: data.inventory_item_id || undefined,
       from_room_id: data.from_room_id || undefined,
       to_room_id: data.to_room_id || undefined,
+      issue_id: linkedIssueId || undefined,
       quantity: data.quantity,
       due_date: data.due_date || undefined,
     });
@@ -157,6 +173,12 @@ export function CreateTaskDialog({ trigger }: CreateTaskDialogProps) {
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
         </DialogHeader>
+
+        {linkedIssueId && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary">
+            This task will be linked to the originating issue.
+          </div>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

@@ -7,7 +7,9 @@
  */
 
 export const USER_ROLES = {
+  SYSTEM_ADMIN: 'system_admin',
   ADMIN: 'admin',
+  FACILITIES_MANAGER: 'facilities_manager',
   CMC: 'cmc',
   COURT_OFFICER: 'court_officer',
   PURCHASING: 'purchasing',
@@ -23,24 +25,24 @@ export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
  */
 export const PERMISSIONS = {
   // Facility permissions
-  'facility.view': ['admin', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'],
-  'facility.update_status': ['admin', 'cmc', 'court_aide'],
-  'facility.edit': ['admin', 'cmc'],
-  'facility.delete': ['admin'],
+  'facility.view': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'],
+  'facility.update_status': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_aide'],
+  'facility.edit': ['admin', 'system_admin', 'facilities_manager', 'cmc'],
+  'facility.delete': ['admin', 'system_admin', 'facilities_manager'],
 
   // Issue permissions
-  'issue.view': ['admin', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'],
-  'issue.create': ['admin', 'cmc', 'purchasing', 'court_aide', 'standard'],
-  'issue.assign': ['admin', 'cmc'],
-  'issue.resolve': ['admin', 'cmc', 'court_aide'],
-  'issue.delete': ['admin'],
+  'issue.view': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'],
+  'issue.create': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'purchasing', 'court_aide', 'standard'],
+  'issue.assign': ['admin', 'system_admin', 'facilities_manager', 'cmc'],
+  'issue.resolve': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_aide'],
+  'issue.delete': ['admin', 'system_admin', 'facilities_manager'],
 
   // Audit trail permissions
-  'audit.view': ['admin', 'cmc', 'court_officer', 'purchasing', 'court_aide'],
+  'audit.view': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide'],
 
-  // Admin permissions
-  'admin.users': ['admin'],
-  'admin.settings': ['admin'],
+  // Admin permissions (system_admin only — facilities_manager excluded)
+  'admin.users': ['admin', 'system_admin'],
+  'admin.settings': ['admin', 'system_admin'],
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;

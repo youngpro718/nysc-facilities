@@ -62,7 +62,7 @@ export function MobileProfileHeader() {
         setProfile({
           ...profileData,
           email: user.email || '',
-          is_admin: profileData.role === 'admin'
+          is_admin: profileData.role === 'admin' || profileData.role === 'system_admin'
         });
       }
     } catch (error) {

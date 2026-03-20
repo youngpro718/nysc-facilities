@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { updateSupplyRequestStatus, updateSupplyRequestItems } from '@features/supply/services/supplyService';
+import { approveSupplyRequest, rejectSupplyRequest, updateSupplyRequestItems } from '@features/supply/services/unifiedSupplyService';
+import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
 
 interface PendingRequest {
   id: string;
@@ -37,6 +38,8 @@ interface PendingRequest {
 
 export function PendingSupplyApprovals() {
   const queryClient = useQueryClient();
+  const { canAdmin } = useRolePermissions();
+  const canApprove = canAdmin('supply_requests');
   const [selectedRequest, setSelectedRequest] = useState<PendingRequest | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [notes, setNotes] = useState("");
@@ -84,18 +87,7 @@ export function PendingSupplyApprovals() {
     if (!selectedRequest || !actionType) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Authentication required');
-
-      const newStatus = actionType === 'approve' ? 'approved' : 'rejected';
-      const statusUpdates: Record<string, unknown> = {};
-
       if (actionType === 'approve') {
-        statusUpdates.approved_by = user.id;
-        statusUpdates.approved_at = new Date().toISOString();
-        statusUpdates.approval_notes = notes.trim() || null;
-        statusUpdates.rejection_reason = null;
-
         // Auto-approve all quantities
         const itemUpdates = selectedRequest.supply_request_items.map(item => ({
           id: item.id,
@@ -105,16 +97,13 @@ export function PendingSupplyApprovals() {
         if (itemUpdates.length > 0) {
           await updateSupplyRequestItems(selectedRequest.id, itemUpdates);
         }
+
+        await approveSupplyRequest(selectedRequest.id, notes.trim() || undefined);
       } else {
-        statusUpdates.rejection_reason = notes.trim();
-        statusUpdates.approval_notes = null;
-        statusUpdates.approved_by = null;
-        statusUpdates.approved_at = null;
+        await rejectSupplyRequest(selectedRequest.id, notes.trim() || 'Rejected by admin');
       }
 
-      await updateSupplyRequestStatus(selectedRequest.id, newStatus, statusUpdates);
-
-      toast.success(`Request ${newStatus} successfully`);
+      toast.success(`Request ${actionType === 'approve' ? 'approved' : 'rejected'} successfully`);
       queryClient.invalidateQueries({ queryKey: ['pending-supply-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['supply-pending-counts'] });
       
@@ -127,8 +116,8 @@ export function PendingSupplyApprovals() {
     }
   };
 
-  // Don't render if no pending approvals
-  if (isLoading || pendingRequests.length === 0) {
+  // Don't render if no pending approvals or no permission
+  if (isLoading || pendingRequests.length === 0 || !canApprove) {
     return null;
   }
 

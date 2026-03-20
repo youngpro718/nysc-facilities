@@ -104,7 +104,6 @@ export const Z = {
   base: 0,
   hallway: 2,
   flow: 100,
-  floorPlan: 1000,
   select: 200,
   selectNested1: 100,
   selectNested2: 90,
@@ -149,6 +148,5 @@ export const TOAST_DURATION = {
 // ============================================================================
 export const DEBUG = {
   logLevel: import.meta.env.VITE_LOG_LEVEL ?? 'info',
-  floorPlanDebug: import.meta.env.VITE_FLOORPLAN_DEBUG === 'true',
   disableModuleGates: import.meta.env.VITE_DISABLE_MODULE_GATES === 'true',
 } as const;

@@ -34,8 +34,8 @@ export function usePermissions() {
     canAny,
     canAll,
     role: user?.role,
-    isAdmin: user?.role === 'administrator' || user?.role === 'admin',
-    isManager: user?.role === 'manager',
-    isFacilitiesStaff: user?.role === 'facilities_staff',
+    isAdmin: user?.role === 'admin' || user?.role === 'system_admin',
+    isSystemAdmin: user?.role === 'admin' || user?.role === 'system_admin',
+    isFacilitiesManager: user?.role === 'facilities_manager',
   };
 }

@@ -10,7 +10,7 @@ import { useIsMobile } from "@shared/hooks/use-mobile";
 
 interface RoomCardProps {
   room: Room;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   onRoomClick?: (room: Room) => void;
   variant?: "default" | "panel";
 }
@@ -42,11 +42,6 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
   // Use enhanced room data if available, fallback to basic room data with safe defaults
   const displayRoom = enhancedRoom || {
     ...room,
-    lighting_fixtures: [],
-    total_fixtures_count: 0,
-    functional_fixtures_count: 0,
-    lighting_percentage: 100,
-    has_lighting_issues: false,
     room_size_category: 'medium' as const,
     has_persistent_issues: false,
     vacancy_status: 'vacant' as const,

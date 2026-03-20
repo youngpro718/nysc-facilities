@@ -47,7 +47,7 @@ function LayoutContent() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
   const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
-  const { permissions, userRole, profile, loading: permissionsLoading, refetch } = useRolePermissions();
+  const { permissions, userRole, profile, loading: permissionsLoading, permissionError, refetch } = useRolePermissions();
   const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
   const navReady = !!userRole && !permissionsLoading;
@@ -88,7 +88,7 @@ function LayoutContent() {
   }, [user?.id, lastUserId]);
 
   const previewRole = typeof window !== 'undefined' ? localStorage.getItem('preview_role') as UserRole | null : null;
-  const isPreviewActive = isAdmin && previewRole && previewRole !== 'admin';
+  const isPreviewActive = isAdmin && previewRole && previewRole !== 'admin' && previewRole !== 'system_admin';
 
   // Get sidebar state for margin offset
   let sidebarState: "expanded" | "collapsed" = "expanded";
@@ -116,7 +116,24 @@ function LayoutContent() {
 
       {/* Dev Mode Preview Banner */}
       {!isLoginPage && isAuthenticated && isPreviewActive && (
-        <DevModeBanner realRole="admin" previewRole={previewRole!} />
+        <DevModeBanner realRole="system_admin" previewRole={previewRole!} />
+      )}
+
+      {/* Permission Error Banner */}
+      {!isLoginPage && isAuthenticated && permissionError && (
+        <div className="bg-destructive text-destructive-foreground px-4 py-3 text-center text-sm font-medium">
+          <div className="flex items-center justify-center gap-2">
+            <span>⚠️ {permissionError}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="ml-2 h-7 text-xs"
+            >
+              Reload Page
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Sidebar — desktop only, hidden on login */}

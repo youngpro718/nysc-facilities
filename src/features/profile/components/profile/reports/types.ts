@@ -72,13 +72,6 @@ export interface ScheduledReport {
   status: string;
 }
 
-export interface FloorplanReportData {
-  building_name: string;
-  floor_name: string;
-  floor_id: string;
-  floorplan_data: Record<string, unknown>;
-}
-
 export interface RoomHealthData {
   room_id?: string;
   room_name: string;

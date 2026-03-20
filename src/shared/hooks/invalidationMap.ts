@@ -26,30 +26,6 @@ export const tableInvalidationMap: Record<string, AnyQueryKey[]> = {
     ['categories'],
     ['recent-transactions'],
   ],
-  // Lighting core tables
-  lighting_fixtures: [
-    ['lighting-fixtures'],
-    ['room-lighting-stats'],
-    ['lighting-status-report'],
-  ],
-  lighting_zones: [
-    ['lighting-fixtures'],
-  ],
-  spatial_assignments: [
-    ['lighting-fixtures'],
-    ['room-lighting-stats'],
-  ],
-  rooms: [
-    ['lighting-fixtures'],
-    ['room-lighting-stats'],
-  ],
-  unified_spaces: [
-    ['lighting-fixtures'],
-    ['room-lighting-stats'],
-  ],
-  lighting_issues: [
-    ['lighting-issues-report'],
-  ],
   // Lockbox tables
   lockboxes: [
     ['lockboxes'],

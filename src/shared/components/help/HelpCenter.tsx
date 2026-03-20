@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { APP_INFO, APP_COPYRIGHT } from '@/lib/appInfo';
 import {
-  Play, BookOpen, Building2, AlertTriangle, Zap, Gavel, KeyRound,
+  Play, BookOpen, Building2, AlertTriangle, Gavel, KeyRound,
   Package2, Users, LayoutDashboard, ClipboardList, Warehouse,
   CheckCircle2, Search, ChevronDown, ChevronRight, LucideIcon, Lightbulb,
   MessageCircle,
@@ -11,16 +11,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTour } from './TourProvider';
 import { allTours } from './tours/tourSteps';
 import { guideSections } from './guides/guideData';
+import { OnboardingChecklist } from '@/features/help/components/OnboardingChecklist';
+import { HelpContentViewer } from '@/features/help/components/HelpContentViewer';
+import { useRolePermissions } from '@/features/auth/hooks/useRolePermissions';
+import { getToursForRole } from './tours/roleTourMapping';
 import { cn } from '@/lib/utils';
 
 const tourIcons: Record<string, LucideIcon> = {
   'admin-dashboard': LayoutDashboard,
   'spaces': Building2,
   'operations': AlertTriangle,
-  'lighting': Zap,
   'court-ops': Gavel,
   'keys': KeyRound,
   'inventory': Package2,
@@ -57,18 +61,23 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 export function HelpCenter() {
   const navigate = useNavigate();
   const { startTourForRoute } = useTour();
+  const { userRole } = useRolePermissions();
   const [search, setSearch] = useState('');
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const completedTours = JSON.parse(localStorage.getItem('completedTours') || '[]');
 
+  // Filter tours based on user role
+  const allowedTourIds = getToursForRole(userRole);
+  const roleFilteredTours = allTours.filter((tour) => allowedTourIds.includes(tour.id));
+
   const filteredTours = search
-    ? allTours.filter(
+    ? roleFilteredTours.filter(
         (t) =>
           t.title.toLowerCase().includes(search.toLowerCase()) ||
           t.description.toLowerCase().includes(search.toLowerCase())
       )
-    : allTours;
+    : roleFilteredTours;
 
   const filteredGuides = search
     ? guideSections
@@ -84,7 +93,7 @@ export function HelpCenter() {
     : guideSections;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Help Center</h1>
@@ -93,38 +102,53 @@ export function HelpCenter() {
         </p>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search guides and tours..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      <Tabs defaultValue="guides" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="guides">Help Articles</TabsTrigger>
+          <TabsTrigger value="tours">Interactive Tours</TabsTrigger>
+          <TabsTrigger value="onboarding">Getting Started</TabsTrigger>
+          <TabsTrigger value="faq">FAQ</TabsTrigger>
+        </TabsList>
 
-      {/* Quick Start */}
-      {!search && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="flex items-center gap-4 py-6">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Lightbulb className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold">New here?</h3>
-              <p className="text-sm text-muted-foreground">
-                Start an interactive tour of the page you are on. Click the{' '}
-                <span className="font-medium text-foreground">?</span> button in the
-                bottom-right corner of any page, or launch a tour below.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Help Articles Tab (Database-backed) */}
+        <TabsContent value="guides" className="space-y-4">
+          <HelpContentViewer showSearch />
+        </TabsContent>
 
-      {/* Interactive Tours */}
-      <div>
+        {/* Interactive Tours Tab */}
+        <TabsContent value="tours" className="space-y-6">
+          {/* Search */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tours..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Quick Start */}
+          {!search && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="flex items-center gap-4 py-6">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Lightbulb className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold">New here?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Start an interactive tour of the page you are on. Click the{' '}
+                    <span className="font-medium text-foreground">?</span> button in the
+                    bottom-right corner of any page, or launch a tour below.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Interactive Tours */}
+          <div>
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <Play className="h-5 w-5 text-primary" />
           Interactive Page Tours
@@ -169,13 +193,34 @@ export function HelpCenter() {
             );
           })}
         </div>
-        {filteredTours.length === 0 && (
-          <p className="text-sm text-muted-foreground py-4">No tours match your search.</p>
-        )}
-      </div>
+          {filteredTours.length === 0 && (
+            <p className="text-sm text-muted-foreground py-4">No tours match your search.</p>
+          )}
+          </div>
+        </TabsContent>
 
-      {/* Written Guides / FAQ */}
-      <div>
+        {/* Onboarding Checklist Tab */}
+        <TabsContent value="onboarding" className="space-y-6">
+          <OnboardingChecklist />
+          
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="flex items-center gap-4 py-6">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Lightbulb className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">Complete your onboarding</h3>
+                <p className="text-sm text-muted-foreground">
+                  Follow the checklist above to get familiar with the system. Each step is designed to help you understand your role and responsibilities.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* FAQ Tab (Legacy hardcoded guides) */}
+        <TabsContent value="faq" className="space-y-6">
+          <div>
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-primary" />
           Guides & FAQ
@@ -216,10 +261,12 @@ export function HelpCenter() {
             );
           })}
         </div>
-        {filteredGuides.length === 0 && (
-          <p className="text-sm text-muted-foreground py-4">No guides match your search.</p>
-        )}
-      </div>
+          {filteredGuides.length === 0 && (
+            <p className="text-sm text-muted-foreground py-4">No guides match your search.</p>
+          )}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Contact & Support */}
       {!search && (
@@ -280,7 +327,7 @@ export function HelpCenter() {
               </li>
               <li className="flex gap-2">
                 <span className="text-primary font-bold">•</span>
-                <span><strong>Mobile:</strong> The app works on tablets and phones. Lighting Floor View is optimized for tablet walkthroughs.</span>
+                <span><strong>Mobile:</strong> The app works on tablets and phones. Most views are optimized for touch interaction.</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-primary font-bold">•</span>

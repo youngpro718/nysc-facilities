@@ -20,11 +20,11 @@ export interface RolePermissions {
   supply_requests: PermissionLevel | null;
   supply_orders: PermissionLevel | null;  // NEW: Purchase order management
   keys: PermissionLevel | null;
-  lighting: PermissionLevel | null;
   maintenance: PermissionLevel | null;
   court_operations: PermissionLevel | null;
   operations: PermissionLevel | null;
   dashboard: PermissionLevel | null;
+  lighting: PermissionLevel | null;
 }
 
 export function useRolePermissions() {
@@ -39,21 +39,37 @@ export function useRolePermissions() {
     supply_requests: null,
     supply_orders: null,
     keys: null,
-    lighting: null,
     maintenance: null,
     court_operations: null,
     operations: null,
     dashboard: null,
+    lighting: null,
   });
   const [loading, setLoading] = useState(true);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Guard to prevent concurrent fetches
   const isFetchingRef = useRef(false);
   const hasFetchedRef = useRef(false);
+  const canPreviewRole = import.meta.env.DEV;
   
-  // Define role permissions mapping - 4 SIMPLIFIED ROLES
+  // Define role permissions mapping
   const rolePermissionsMap: Record<CourtRole, RolePermissions> = {
+    system_admin: {
+      spaces: 'admin',
+      issues: 'admin',
+      occupants: 'admin',
+      inventory: 'admin',
+      supply_requests: 'admin',
+      supply_orders: 'admin',
+      keys: 'admin',
+      maintenance: 'admin',
+      court_operations: 'admin',
+      operations: 'admin',
+      dashboard: 'admin',
+      lighting: 'admin',
+    },
     admin: {
       spaces: 'admin',
       issues: 'admin',
@@ -62,11 +78,25 @@ export function useRolePermissions() {
       supply_requests: 'admin',
       supply_orders: 'admin',
       keys: 'admin',
-      lighting: 'admin',
       maintenance: 'admin',
       court_operations: 'admin',
       operations: 'admin',
       dashboard: 'admin',
+      lighting: 'admin',
+    },
+    facilities_manager: {
+      spaces: 'admin',
+      issues: 'admin',
+      occupants: 'admin',
+      inventory: 'admin',
+      supply_requests: 'admin',
+      supply_orders: 'admin',
+      keys: 'admin',
+      maintenance: 'admin',
+      court_operations: 'read',
+      operations: 'admin',
+      dashboard: 'admin',
+      lighting: 'admin',
     },
     cmc: {
       spaces: null,
@@ -76,53 +106,53 @@ export function useRolePermissions() {
       supply_requests: 'write',
       supply_orders: null,
       keys: 'write',
-      lighting: null,
       maintenance: null,
       court_operations: 'write',
       operations: 'write',
       dashboard: 'read',
+      lighting: null,
     },
     court_aide: {
       spaces: null,
       issues: 'write',
       occupants: 'read',
       inventory: 'admin',
-      supply_requests: 'admin',
+      supply_requests: 'write',
       supply_orders: 'admin',
       keys: null,
-      lighting: null,
       maintenance: null,
       court_operations: null,
       operations: 'read',
       dashboard: 'read',
+      lighting: null,
     },
     purchasing: {
       spaces: null,
-      issues: 'write',
+      issues: 'read',
       occupants: null,
       inventory: 'read',
       supply_requests: 'read',
       supply_orders: 'read',
       keys: null,
-      lighting: null,
       maintenance: null,
       court_operations: null,
-      operations: null,
+      operations: 'read',
       dashboard: 'read',
+      lighting: null,
     },
     court_officer: {
       spaces: 'read',
-      issues: null,
+      issues: 'write',
       occupants: null,
       inventory: null,
       supply_requests: null,
       supply_orders: null,
       keys: 'write',
-      lighting: null,
       maintenance: null,
       court_operations: null,
       operations: null,
       dashboard: 'read',
+      lighting: 'write',
     },
     standard: {
       spaces: null,
@@ -132,11 +162,11 @@ export function useRolePermissions() {
       supply_requests: 'write',
       supply_orders: null,
       keys: null,
-      lighting: null,
       maintenance: null,
       court_operations: null,
       operations: null,
       dashboard: 'read',
+      lighting: null,
     },
   };
 
@@ -195,15 +225,16 @@ export function useRolePermissions() {
         logger.debug('[useRolePermissions] Role resolved from sessionStorage cache');
         let effectiveRole: CourtRole = cached.role;
         try {
-          const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-          const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
-          if (cached.role === 'admin' && preview && validRoles.includes(preview)) {
+          const preview = canPreviewRole && typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
+          const validRoles: CourtRole[] = ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
+          if ((cached.role === 'admin' || cached.role === 'system_admin') && preview && validRoles.includes(preview)) {
             effectiveRole = preview;
           }
         } catch { /* ignore */ }
         setUserRole(effectiveRole);
         setPermissions(rolePermissionsMap[effectiveRole] || rolePermissionsMap.standard);
         setProfile(cached.profileData);
+        setPermissionError(null);
         setLoading(false);
         hasFetchedRef.current = true;
         isFetchingRef.current = false;
@@ -266,9 +297,9 @@ export function useRolePermissions() {
       let effectiveRole: CourtRole = role;
       // Admin-only preview role override - now works site-wide for Dev Mode
       try {
-        const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-        const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
-        if (role === 'admin' && preview && validRoles.includes(preview)) {
+        const preview = canPreviewRole && typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
+        const validRoles: CourtRole[] = ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
+        if ((role === 'admin' || role === 'system_admin') && preview && validRoles.includes(preview)) {
           logger.info('[useRolePermissions] Applying preview role override (Dev Mode)');
           effectiveRole = preview;
         }
@@ -276,26 +307,18 @@ export function useRolePermissions() {
         // ignore preview errors
       }
 
-      let finalPermissions = rolePermissionsMap[effectiveRole] || {
-        spaces: null,
-        issues: null,
-        occupants: null,
-        inventory: null,
-        supply_requests: null,
-        supply_orders: null,
-        keys: null,
-        lighting: null,
-        maintenance: null,
-        court_operations: null,
-        operations: null,
-        dashboard: null,
-      };
+      // Get permissions from role map, or fall back to standard user permissions
+      // SECURITY: Department names are user-editable and must NOT grant permissions
+      const finalPermissions = rolePermissionsMap[effectiveRole] || rolePermissionsMap.standard;
       
-      // Supply permissions are granted via the user_roles table (court_aide role).
-      // Department name must not be used to elevate permissions.
+      // Log warning if role not found in permission map
+      if (!rolePermissionsMap[effectiveRole]) {
+        logger.warn(`[useRolePermissions] Role "${effectiveRole}" not found in permission map, falling back to standard permissions`);
+      }
       setUserRole(effectiveRole);
       setPermissions(finalPermissions);
       setProfile(profileData);
+      setPermissionError(null);
 
       // Cache the resolved role so subsequent mounts skip DB calls
       writeRoleCache(user.id, role, profileData as Record<string, unknown> | null);
@@ -307,12 +330,13 @@ export function useRolePermissions() {
       logger.warn('[useRolePermissions] Error in fetchUserRoleAndPermissions', error);
       
       // Set fallback to standard user on error
-      setUserRole('standard');
+      setUserRole(null);
       setPermissions(rolePermissionsMap.standard);
+      setPermissionError('Permissions failed to load. Please retry.');
       
       toast({
         title: "Error",
-        description: "Failed to load user permissions. Using default access.",
+        description: "Failed to load user permissions.",
         variant: "destructive",
       });
     } finally {
@@ -341,13 +365,13 @@ export function useRolePermissions() {
   const canWrite = (feature: keyof RolePermissions): boolean => hasPermission(feature, 'write');
   const canAdmin = (feature: keyof RolePermissions): boolean => hasPermission(feature, 'admin');
 
-  const isAdmin = userRole === 'admin';
+  const isAdmin = userRole === 'admin' || userRole === 'system_admin';
+  const isSystemAdmin = userRole === 'admin' || userRole === 'system_admin';
+  const isFacilitiesManager = userRole === 'facilities_manager';
   const isCMC = userRole === 'cmc';
   const isCourtAide = userRole === 'court_aide';
-  // Legacy compatibility - map deprecated roles to current ones
-  const isFacilitiesManager = userRole === 'admin'; // Facilities manager now maps to admin
   const isPurchasing = userRole === 'purchasing';
-  const isPurchasingStaff = userRole === 'purchasing'; // Updated: purchasing is now its own role
+  const isPurchasingStaff = userRole === 'purchasing';
 
   // Fast-path: if useAuth already resolved the profile/role, apply permissions immediately
   // without making additional DB calls.
@@ -360,9 +384,9 @@ export function useRolePermissions() {
 
     let effectiveRole: CourtRole = rolePermissionsMap[role] ? role : 'standard';
     try {
-      const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-      const validRoles: CourtRole[] = ['admin', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
-      if (role === 'admin' && preview && validRoles.includes(preview)) {
+      const preview = canPreviewRole && typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
+      const validRoles: CourtRole[] = ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
+      if ((role === 'admin' || role === 'system_admin') && preview && validRoles.includes(preview)) {
         effectiveRole = preview;
       }
     } catch (_) { /* ignore */ }
@@ -397,11 +421,11 @@ export function useRolePermissions() {
           supply_requests: null,
           supply_orders: null,
           keys: null,
-          lighting: null,
           maintenance: null,
           court_operations: null,
           operations: null,
           dashboard: null,
+          lighting: null,
         });
         localStorage.removeItem('preview_role');
       } else if (event === 'SIGNED_IN' && session) {
@@ -415,12 +439,12 @@ export function useRolePermissions() {
       if (loading) {
         logger.warn('[useRolePermissions] Timeout: forcing loading=false after 3 seconds');
         setLoading(false);
-        
-        setUserRole('standard');
+        setUserRole(null);
         setPermissions(rolePermissionsMap.standard);
+        setPermissionError('Permissions failed to load. Please retry.');
         toast({
           title: "Loading Timeout",
-          description: "Using default permissions due to slow connection",
+          description: "Permissions failed to load. Please retry.",
           variant: "destructive",
         });
       }
@@ -477,11 +501,13 @@ export function useRolePermissions() {
     canWrite,
     canAdmin,
     isAdmin,
+    isSystemAdmin,
     isFacilitiesManager,
     isCMC,
     isCourtAide,
     isPurchasing,
     isPurchasingStaff,
+    permissionError,
     refetch: fetchUserRoleAndPermissions,
   };
 }

@@ -2,35 +2,33 @@
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowRightFromLine, Users, Lightbulb, ShoppingBag, AlertTriangle, Building, Pencil, Layers } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users, ShoppingBag, AlertTriangle, Building, Pencil, Layers } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
-import { RoomLightingManager } from "./lighting/RoomLightingManager";
 import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesIntegration";
 import { getNormalizedCurrentUse } from "../utils/currentUse";
 import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
 import { useChildRoomCount } from "@features/spaces/hooks/useChildRooms";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 interface CardFrontProps {
   room: EnhancedRoom;
   onFlip: (e?: React.MouseEvent) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   isHovered?: boolean;
   onQuickNoteClick?: () => void;
 }
 
 export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNoteClick }: CardFrontProps) {
+  const { canAdmin } = useRolePermissions();
+  const canManageSpaces = canAdmin('spaces');
   const { getIssuesForRoom } = useCourtIssuesIntegration();
   const unresolvedIssues = getIssuesForRoom(room.id);
   const hasIssues = unresolvedIssues.length > 0;
   const highSeverityCount = unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())).length;
   const currentUse = getNormalizedCurrentUse(room);
   const { data: childRoomCount = 0 } = useChildRoomCount(room.id);
-
-  const totalLights = room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0;
-  const functionalLights = room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0;
-  const lightingPercentage = totalLights > 0 ? Math.round((functionalLights / totalLights) * 100) : 100;
 
   // Courtroom photos
   const isCourtroom = room.room_type === 'courtroom';
@@ -77,37 +75,41 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <TooltipProvider>
-              <div onClick={(e) => e.stopPropagation()}>
-                <EditSpaceDialog
-                  id={room.id}
-                  type="room"
-                  variant="custom"
-                  initialData={buildRoomInitialData(room)}
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-8">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Edit</TooltipContent>
-                  </Tooltip>
-                </EditSpaceDialog>
-              </div>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); onDelete(room.id); }}
-                    className="h-8"
+              {canManageSpaces && (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <EditSpaceDialog
+                    id={room.id}
+                    type="room"
+                    variant="custom"
+                    initialData={buildRoomInitialData(room)}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete</TooltipContent>
-              </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit</TooltipContent>
+                    </Tooltip>
+                  </EditSpaceDialog>
+                </div>
+              )}
+
+              {canManageSpaces && onDelete && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); onDelete(room.id); }}
+                      className="h-8"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Delete</TooltipContent>
+                </Tooltip>
+              )}
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -127,67 +129,12 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
         </div>
       </div>
 
-      {/* Key Metrics - Lighting & Issues as Top Priority */}
+      {/* Key Metrics */}
       <div className="flex-1 p-6 space-y-6 overflow-y-auto">
         {/* Primary Metrics Grid */}
         <div className="grid grid-cols-2 gap-4">
-          {/* Lighting Status - Large Visual */}
-          <div className="col-span-2 sm:col-span-1">
-            <RoomLightingManager
-              room={room}
-              trigger={
-                <div className="relative min-h-[8rem] sm:min-h-[10rem] flex flex-col justify-between bg-card border border-border rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-all group">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Lightbulb className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs font-medium text-muted-foreground">Lighting Status</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-center h-16 sm:h-20">
-                    <div className="relative">
-                      <svg className="transform -rotate-90 w-20 h-20 sm:w-24 sm:h-24">
-                        <circle
-                          cx="40"
-                          cy="40"
-                          r="32"
-                          stroke="currentColor"
-                          strokeWidth="6"
-                          fill="none"
-                          className="text-muted/30"
-                        />
-                        <circle
-                          cx="40"
-                          cy="40"
-                          r="32"
-                          stroke="currentColor"
-                          strokeWidth="6"
-                          fill="none"
-                          strokeDasharray={`${2 * Math.PI * 32}`}
-                          strokeDashoffset={`${2 * Math.PI * 32 * (1 - lightingPercentage / 100)}`}
-                          className={`transition-all duration-500 ${lightingPercentage >= 80 ? 'text-green-500' :
-                            lightingPercentage >= 50 ? 'text-yellow-500' :
-                              'text-red-500'
-                            }`}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xl sm:text-2xl font-bold">{lightingPercentage}%</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-center mt-2">
-                    <span className="text-xs text-muted-foreground">
-                      {functionalLights}/{totalLights} functional
-                    </span>
-                  </div>
-                </div>
-              }
-            />
-          </div>
-
           {/* Issues Status - Large Visual */}
-          <div className="col-span-2 sm:col-span-1">
+          <div className="col-span-2">
             <div className={`relative min-h-[8rem] sm:min-h-[10rem] flex flex-col justify-between bg-card border rounded-lg p-4 transition-all ${hasIssues ? 'border-red-500/50 bg-red-500/5' : 'border-green-500/50 bg-green-500/5'
               }`}>
               <div className="flex items-center justify-between mb-2">
@@ -302,50 +249,34 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
         </div>
       </div>
 
-      {/* Action Bar at Bottom */}
-      <div className="p-4 border-t border-border/40 bg-muted/20">
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <div className="flex items-center gap-1.5 flex-1">
+      {/* Action Bar at Bottom — only for storage rooms */}
+      {room.is_storage && (
+        <div className="p-4 border-t border-border/40 bg-muted/20">
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
               <Tooltip>
-                <RoomLightingManager
-                  room={room}
-                  trigger={
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-8">
-                        <Lightbulb className="h-3.5 w-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                  }
-                />
-                <TooltipContent>Manage lighting</TooltipContent>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const event = new CustomEvent('openInventoryDialog', {
+                        detail: { roomId: room.id, roomName: room.name }
+                      });
+                      window.dispatchEvent(event);
+                    }}
+                  >
+                    <ShoppingBag className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Inventory</TooltipContent>
               </Tooltip>
-
-              {room.is_storage && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const event = new CustomEvent('openInventoryDialog', {
-                          detail: { roomId: room.id, roomName: room.name }
-                        });
-                        window.dispatchEvent(event);
-                      }}
-                    >
-                      <ShoppingBag className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Inventory</TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-          </TooltipProvider>
+            </TooltipProvider>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

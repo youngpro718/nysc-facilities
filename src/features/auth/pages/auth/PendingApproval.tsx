@@ -8,6 +8,7 @@ import { Clock, RefreshCw, CheckCircle, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { APP_INFO } from '@/lib/appInfo';
+import { getRoleLabel } from '@/config/roles';
 
 /**
  * PendingApproval - Shown to users waiting for admin approval
@@ -19,6 +20,11 @@ export default function PendingApproval() {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const [checking, setChecking] = useState(false);
+  const profileWithRequestedRole = profile as { requested_role?: string | null } | null;
+  const requestedRole = typeof profileWithRequestedRole?.requested_role === 'string'
+    ? profileWithRequestedRole.requested_role
+    : undefined;
+  const requestedRoleLabel = requestedRole ? getRoleLabel(requestedRole) : null;
 
   // Check if user has been approved
   const checkApprovalStatus = async () => {
@@ -102,7 +108,7 @@ export default function PendingApproval() {
             <div>
               <h1 className="text-lg font-semibold text-slate-900">Pending Approval</h1>
               <p className="text-sm text-slate-500 mt-1">
-                Your account is waiting for an administrator to review and approve access.
+                Your account is waiting for an administrator to review access.
               </p>
             </div>
           </div>
@@ -110,45 +116,46 @@ export default function PendingApproval() {
           <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1.5">
             <p className="text-xs font-medium text-slate-600">What happens next</p>
             <ul className="text-xs text-slate-500 space-y-1">
-              <li>An administrator will review your account</li>
-              <li>You'll receive an email once approved</li>
+              <li>An administrator will review your account details</li>
+              <li>You can check your status again anytime with the button below</li>
               <li>This usually takes 1-2 business days</li>
             </ul>
           </div>
 
-          {(profile as any)?.requested_role && (
+          {requestedRoleLabel && (
             <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 space-y-1.5">
-              <p className="text-xs font-medium text-blue-900">What you'll be able to do</p>
+              <p className="text-xs font-medium text-blue-900">Requested access</p>
+              <p className="text-xs text-blue-700">{requestedRoleLabel}</p>
               <ul className="text-xs text-blue-700 space-y-1">
-                {(profile as any).requested_role === 'purchasing' && (
+                {requestedRole === 'purchasing' && (
                   <>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />View inventory levels and stock status</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Monitor supply requests and fulfillment</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Track procurement and reorder recommendations</li>
                   </>
                 )}
-                {(profile as any).requested_role === 'cmc' && (
+                {requestedRole === 'cmc' && (
                   <>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Manage courtroom assignments and scheduling</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Oversee court terms and operations</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Coordinate facility operations for your court</li>
                   </>
                 )}
-                {(profile as any).requested_role === 'court_officer' && (
+                {requestedRole === 'court_officer' && (
                   <>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Manage key assignments and tracking</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />View building layouts and facility maps</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Access court term sheets and schedules</li>
                   </>
                 )}
-                {(profile as any).requested_role === 'court_aide' && (
+                {requestedRole === 'court_aide' && (
                   <>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Claim and complete facility tasks</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Fulfill supply requests and manage inventory</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Process purchase orders and stock items</li>
                   </>
                 )}
-                {(profile as any).requested_role === 'standard' && (
+                {requestedRole === 'standard' && (
                   <>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Report facility issues and maintenance needs</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Request supplies for your workspace</li>

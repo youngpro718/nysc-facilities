@@ -5,23 +5,17 @@ import {
   LayoutDashboard,
   Building2,
   AlertTriangle,
-  Users,
   Boxes,
   KeyRound,
-  Zap,
-  Wrench,
   Gavel,
   UserCog,
   GitFork,
-  DoorClosed,
   Package,
   Package2,
-  BarChart3,
   UserCheck,
   User,
   FileText,
   MessageSquare,
-  Upload,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
 import { RolePermissions, CourtRole } from '@features/auth/hooks/useRolePermissions';
@@ -68,20 +62,6 @@ export const secondaryNavigationItems: NavigationItem[] = [
     moduleKey: undefined,
   },
   {
-    title: 'Form Templates',
-    href: '/form-templates',
-    icon: FileText,
-    adminOnly: false,
-    moduleKey: undefined,
-  },
-  {
-    title: 'Form Intake',
-    href: '/form-intake',
-    icon: Upload,
-    adminOnly: false,
-    moduleKey: undefined,
-  },
-  {
     title: 'Routing Rules',
     href: '/admin/routing-rules',
     icon: GitFork,
@@ -116,13 +96,6 @@ export const secondaryNavigationItems: NavigationItem[] = [
         adminOnly: false,
         moduleKey: 'supply_requests',
       },
-      {
-        title: 'Lighting',
-        href: '/lighting',
-        icon: Zap,
-        adminOnly: true,
-        moduleKey: 'lighting',
-      },
     ],
   },
   {
@@ -154,18 +127,6 @@ export const userNavigationItems: NavigationItem[] = [
     adminOnly: true,
   },
   {
-    title: 'Form Templates',
-    href: '/form-templates',
-    icon: FileText,
-    adminOnly: false,
-  },
-  {
-    title: 'Form Intake',
-    href: '/form-intake',
-    icon: Upload,
-    adminOnly: false,
-  },
-  {
     title: 'Routing Rules',
     href: '/admin/routing-rules',
     icon: GitFork,
@@ -185,8 +146,8 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   logger.debug(`Navigation - userRole: ${userRole}, profile department: ${dept}`);
   logger.debug('Navigation - profile title:', profile?.title as string);
   
-  // Admin navigation
-  if (userRole === 'admin') {
+  // System Admin / legacy Admin navigation (full access)
+  if (userRole === 'admin' || userRole === 'system_admin') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Spaces', icon: Building2 },
@@ -195,10 +156,24 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Tasks', icon: Package },
-      { title: 'Lighting', icon: Zap },
       { title: 'Court Operations', icon: Gavel },
       { type: "separator" },
       { title: 'Admin Center', icon: UserCog },
+    ];
+  }
+
+  // Facilities Manager navigation (facilities-focused, no user/system management)
+  if (userRole === 'facilities_manager') {
+    return [
+      { title: 'Dashboard', icon: LayoutDashboard },
+      { title: 'Spaces', icon: Building2 },
+      { title: 'Issues', icon: AlertTriangle },
+      { title: 'Access & Assignments', icon: UserCheck },
+      { title: 'Keys', icon: KeyRound },
+      { title: 'Inventory', icon: Package2 },
+      { title: 'Tasks', icon: Package },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
     ];
   }
   
@@ -292,8 +267,8 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   logger.debug(`Routes - userRole: ${userRole}, profile department: ${dept}`);
   logger.debug('Routes - profile title:', profile?.title as string);
   
-  // Admin routes
-  if (userRole === 'admin') {
+  // System Admin / legacy Admin routes (full access)
+  if (userRole === 'admin' || userRole === 'system_admin') {
     return [
       '/', // Admin Dashboard
       '/spaces',
@@ -302,10 +277,24 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/keys',
       '/inventory',
       '/tasks',
-      '/lighting',
       '/court-operations',
       '',          // separator placeholder
       '/admin',
+    ];
+  }
+
+  // Facilities Manager routes (facilities-focused, no /admin or /system-settings)
+  if (userRole === 'facilities_manager') {
+    return [
+      '/', // Facilities Dashboard
+      '/spaces',
+      '/operations',
+      '/access-assignments',
+      '/keys',
+      '/inventory',
+      '/tasks',
+      '', // Separator
+      '/profile',
     ];
   }
   
@@ -338,7 +327,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   // Purchasing routes - inventory and supply focused
   if (userRole === 'purchasing') {
     return [
-      '/purchasing-dashboard',
       '/inventory',
       '/supply-room',
       '/notifications',
@@ -383,7 +371,7 @@ export function getFilteredNavigationItems(permissions: RolePermissions, userRol
     }
     
     // For non-module items, use existing admin logic
-    if (item.adminOnly && userRole !== 'admin') return false;
+    if (item.adminOnly && userRole !== 'admin' && userRole !== 'system_admin' && userRole !== 'facilities_manager') return false;
     
     return true;
   });

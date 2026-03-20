@@ -13,9 +13,17 @@ export interface DashboardRoute {
 
 // Map roles to their default dashboard
 export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
+  system_admin: {
+    path: '/',
+    name: 'Admin Dashboard',
+  },
   admin: {
     path: '/',
     name: 'Admin Dashboard',
+  },
+  facilities_manager: {
+    path: '/',
+    name: 'Facilities Dashboard',
   },
   cmc: {
     path: '/cmc-dashboard',
@@ -26,8 +34,8 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
     name: 'Court Officer Dashboard',
   },
   purchasing: {
-    path: '/purchasing-dashboard',
-    name: 'Purchasing Dashboard',
+    path: '/inventory',
+    name: 'Inventory',
   },
   court_aide: {
     path: '/court-aide-dashboard',
@@ -63,7 +71,7 @@ export function getDashboardNameForRole(role: UserRole | string | null | undefin
  * Check if a role has admin-level access
  */
 export function isAdminRole(role: UserRole | string | null | undefined): boolean {
-  return role === 'admin';
+  return role === 'admin' || role === 'system_admin' || role === 'facilities_manager';
 }
 
 /**
@@ -77,16 +85,15 @@ export function hasModuleAccess(role: UserRole | string | null | undefined, modu
   
   // Role-specific module access
   const moduleAccess: Record<string, UserRole[]> = {
-    spaces: ['admin', 'court_officer'],
-    operations: ['admin', 'cmc'],
-    occupants: ['admin', 'cmc'],
-    inventory: ['admin', 'purchasing', 'court_aide'],
-    supply_requests: ['admin', 'purchasing', 'court_aide', 'cmc', 'standard'],
-    keys: ['admin', 'cmc', 'court_officer'],
-    lighting: ['admin'],
-    maintenance: ['admin'],
-    court_operations: ['admin', 'cmc'],
-    dashboard: ['admin', 'cmc', 'court_officer', 'court_aide', 'standard'],
+    spaces: ['admin', 'system_admin', 'facilities_manager', 'court_officer'],
+    operations: ['admin', 'system_admin', 'facilities_manager', 'cmc'],
+    occupants: ['admin', 'system_admin', 'facilities_manager', 'cmc'],
+    inventory: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide'],
+    supply_requests: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide', 'cmc', 'standard'],
+    keys: ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer'],
+    maintenance: ['admin', 'system_admin', 'facilities_manager'],
+    court_operations: ['admin', 'system_admin', 'cmc'],
+    dashboard: ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'court_aide', 'standard'],
   };
   
   const allowedRoles = moduleAccess[moduleKey] || [];

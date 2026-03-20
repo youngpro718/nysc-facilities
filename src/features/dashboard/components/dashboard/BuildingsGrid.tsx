@@ -2,7 +2,8 @@ import { BuildingCard } from "./BuildingCard";
 import { BuildingCardSkeleton } from "./BuildingCardSkeleton";
 import { logger } from "@/lib/logger";
 import { calculateBuildingStats } from "@/utils/dashboardUtils";
-import { Building } from "@/types/dashboard";
+import type { Building } from "@/types/dashboard";
+import type { BuildingWithLighting } from "@/utils/dashboardUtils";
 
 export interface Issue {
   id: string;
@@ -27,7 +28,7 @@ export interface Activity {
 }
 
 interface BuildingsGridProps {
-  buildings: Building[];
+  buildings: BuildingWithLighting[];
   isLoading: boolean;
   issues: Issue[];
   activities: Activity[];
@@ -59,24 +60,24 @@ export function BuildingsGrid({
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {buildings?.filter(building => building != null && building.id)?.map((building, index) => {
-        const { floorCount, roomCount, workingFixtures, totalFixtures } = calculateBuildingStats(building as any);
+        const { floorCount, roomCount, workingFixtures, totalFixtures } = calculateBuildingStats(building);
 
         // Prefer precomputed values from the loader if present
-        const effectiveWorking = typeof (building as any).lightingWorkingFixtures === 'number'
-          ? (building as any).lightingWorkingFixtures
+        const effectiveWorking = typeof building.lightingWorkingFixtures === 'number'
+          ? building.lightingWorkingFixtures
           : workingFixtures;
-        const effectiveTotal = typeof (building as any).lightingTotalFixtures === 'number'
-          ? (building as any).lightingTotalFixtures
+        const effectiveTotal = typeof building.lightingTotalFixtures === 'number'
+          ? building.lightingTotalFixtures
           : totalFixtures;
 
         // Debug: log computed lighting counts per building
         try {
           logger.debug('LightingCounts', {
             buildingId: building.id,
-            buildingName: (building as any)?.name,
+            buildingName: building?.name,
             effectiveWorking,
             effectiveTotal,
-            _lightingDebug: (building as any)?._lightingDebug,
+            _lightingDebug: building?._lightingDebug,
           });
         } catch {}
 
@@ -95,11 +96,23 @@ export function BuildingsGrid({
             return false;
           }) || [];
 
+        // Dynamic photo feature: Use the most recent issue photo if available
+        let dynamicImage = buildingImages[index % buildingImages.length];
+        
+        // Find the most recent issue with a photo
+        const issuesWithPhotos = buildingIssues
+          .filter(issue => issue.photos && issue.photos.length > 0)
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        if (issuesWithPhotos.length > 0 && issuesWithPhotos[0].photos && issuesWithPhotos[0].photos.length > 0) {
+          dynamicImage = issuesWithPhotos[0].photos[0];
+        }
+
         return (
           <BuildingCard
             key={building.id}
-            building={building as any}
-            buildingImage={buildingImages[index % buildingImages.length]}
+            building={building}
+            buildingImage={dynamicImage}
             floorCount={floorCount}
             roomCount={roomCount}
             workingFixtures={effectiveWorking}

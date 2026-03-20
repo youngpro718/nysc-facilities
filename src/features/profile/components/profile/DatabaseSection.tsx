@@ -21,8 +21,6 @@ const EXPORTABLE_TABLES = [
   'occupants',
   'keys',
   'key_assignments',
-  'lighting_fixtures',
-  'lighting_zones',
   'issues'
 ] as const;
 

@@ -32,6 +32,7 @@ import {
 import { useRateLimitManager } from "@features/auth/hooks/useRateLimitManager";
 import { DatabaseSection } from "@features/profile/components/profile/DatabaseSection";
 import { ModuleManagement } from "@features/profile/components/profile/ModuleManagement";
+import { VerificationAppeals } from "@features/admin/components/VerificationAppeals";
 import { QrCode } from "lucide-react";
 import { CardDescription } from "@/components/ui/card";
 
@@ -200,14 +201,24 @@ export default function AdminCenter() {
       });
 
       if (rpcError) {
-        // RPC failed — fall back to direct updates on both tables with upsert
+        // RPC failed — fall back to direct updates
         logger.warn('approve_user_verification RPC failed, falling back to direct update:', rpcError);
-        const { error: profileError } = await supabase
+        
+        // Use set_user_approval_status to ensure consistency
+        const { error: statusError } = await supabase.rpc('set_user_approval_status', {
+          p_user_id: userId,
+          p_status: 'verified'
+        });
+        if (statusError) throw statusError;
+        
+        // Mark as onboarded
+        const { error: onboardError } = await supabase
           .from('profiles')
-          .update({ is_approved: true, verification_status: 'verified', onboarded: true })
+          .update({ onboarded: true })
           .eq('id', userId);
-        if (profileError) throw profileError;
+        if (onboardError) throw onboardError;
 
+        // Assign role
         const { error: roleError } = await supabase
           .from('user_roles')
           .upsert({ user_id: userId, role: selectedRole }, { onConflict: 'user_id' });
@@ -353,7 +364,7 @@ export default function AdminCenter() {
       case 'pending': return user.verification_status === 'pending' || !user.is_approved;
       case 'active': return user.verification_status === 'verified' && user.is_approved && !user.is_suspended;
       case 'suspended': return user.is_suspended;
-      case 'admins': return user.role === 'admin';
+      case 'admins': return user.role === 'admin' || user.role === 'system_admin' || user.role === 'facilities_manager';
       default: return true;
     }
   });
@@ -455,7 +466,7 @@ export default function AdminCenter() {
                 <SelectItem value="pending">Pending ({pendingUsers.length})</SelectItem>
                 <SelectItem value="active">Active ({activeUsers.length})</SelectItem>
                 <SelectItem value="suspended">Suspended ({suspendedUsers.length})</SelectItem>
-                <SelectItem value="admins">Admins ({users.filter(u => u.role === 'admin').length})</SelectItem>
+                <SelectItem value="admins">Admins ({users.filter(u => u.role === 'admin' || u.role === 'system_admin' || u.role === 'facilities_manager').length})</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -677,6 +688,9 @@ export default function AdminCenter() {
               })}
             </div>
           )}
+
+          {/* Verification Appeals Section */}
+          <VerificationAppeals />
         </TabsContent>
 
         {/* System Settings Tab */}

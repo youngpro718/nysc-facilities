@@ -2,7 +2,7 @@
 import { supabase } from "@/lib/supabase";
 
 export type ExportableTable = 'buildings' | 'floors' | 'rooms' | 'occupants' | 'keys' | 
-  'key_assignments' | 'lighting_fixtures' | 'lighting_zones' | 'issues';
+  'key_assignments' | 'issues';
 
 export interface BackupRetentionPolicy {
   id: string;
@@ -113,7 +113,7 @@ export async function restoreBackup(backupId: string, tables: ExportableTable[])
 function isExportableTable(table: string): table is ExportableTable {
   const validTables: ExportableTable[] = [
     'buildings', 'floors', 'rooms', 'occupants', 'keys',
-    'key_assignments', 'lighting_fixtures', 'lighting_zones', 'issues'
+    'key_assignments', 'issues'
   ];
   return validTables.includes(table as ExportableTable);
 }

@@ -14,8 +14,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyData } from "@features/keys/components/keys/types/KeyTypes";
 import { DataState, useDataState } from "@/ui/DataState";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 export default function Keys() {
+  const { canAdmin } = useRolePermissions();
+  const canManageKeys = canAdmin('keys');
   const keyStatsQuery = useQuery({
     queryKey: ["keys-stats"],
     queryFn: async () => {
@@ -94,13 +97,15 @@ export default function Keys() {
               <KeyRound className="h-4 w-4 flex-shrink-0" />
               <span className="hidden sm:inline text-sm">Passes</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="manage"
-              className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
-            >
-              <Settings className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline text-sm">Manage</span>
-            </TabsTrigger>
+            {canManageKeys && (
+              <TabsTrigger
+                value="manage"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
+              >
+                <Settings className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden sm:inline text-sm">Manage</span>
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -125,15 +130,17 @@ export default function Keys() {
           <ElevatorPassSection />
         </TabsContent>
 
-        <TabsContent value="manage" className="space-y-4 mt-4">
-          <div className="space-y-2 mb-6">
-            <h2 className="text-xl font-semibold">Lockbox Management</h2>
-            <p className="text-sm text-muted-foreground">
-              Manage lockboxes, view statistics, and organize key storage locations
-            </p>
-          </div>
-          <LockboxManagement />
-        </TabsContent>
+        {canManageKeys && (
+          <TabsContent value="manage" className="space-y-4 mt-4">
+            <div className="space-y-2 mb-6">
+              <h2 className="text-xl font-semibold">Lockbox Management</h2>
+              <p className="text-sm text-muted-foreground">
+                Manage lockboxes, view statistics, and organize key storage locations
+              </p>
+            </div>
+            <LockboxManagement />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

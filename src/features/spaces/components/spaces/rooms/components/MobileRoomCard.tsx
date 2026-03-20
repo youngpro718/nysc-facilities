@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
-  Lightbulb, 
   AlertTriangle, 
   Users, 
   Trash2,
@@ -20,14 +19,17 @@ import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesI
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RoomQuickEditSheet } from "../../RoomQuickEditSheet";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 interface MobileRoomCardProps {
   room: Room;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   onRoomClick?: (room: Room) => void;
 }
 
 export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardProps) {
+  const { canAdmin } = useRolePermissions();
+  const canManageSpaces = canAdmin('spaces');
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [isSwipedOpen, setIsSwipedOpen] = useState(false);
   const [confirmDeleteRoom, confirmDeleteDialog] = useConfirmDialog();
@@ -42,12 +44,6 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
   const highSeverityCount = unresolvedIssues.filter(
     i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())
   ).length;
-  
-  const totalLights = enhancedRoom?.total_fixtures_count ?? enhancedRoom?.lighting_fixtures?.length ?? 0;
-  const functionalLights = enhancedRoom?.functional_fixtures_count ?? 
-    enhancedRoom?.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0;
-  const lightingPercentage = totalLights > 0 ? Math.round((functionalLights / totalLights) * 100) : 100;
-  const hasLightingIssue = lightingPercentage < 80;
   
   // Courtroom photos - handle array and legacy string format
   const isCourtroom = room.room_type === 'courtroom';
@@ -81,12 +77,6 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
     }
   };
 
-  const getLightingColor = () => {
-    if (lightingPercentage >= 80) return "text-green-500 bg-green-500/10";
-    if (lightingPercentage >= 50) return "text-yellow-500 bg-yellow-500/10";
-    return "text-red-500 bg-red-500/10";
-  };
-
   const getStatusColor = () => {
     switch (room.status) {
       case 'active': return "bg-green-500";
@@ -100,6 +90,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
     <>
       <div className="relative overflow-hidden rounded-xl">
         {/* Swipe Action Buttons (revealed on swipe) */}
+        {canManageSpaces && (
         <motion.div 
           className="absolute inset-y-0 right-0 flex items-stretch"
           style={{ opacity: actionsOpacity, scale: actionsScale }}
@@ -141,17 +132,18 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
             onClick={async (e) => {
               e.stopPropagation();
               const ok = await confirmDeleteRoom({ title: 'Delete Room', description: 'Delete this room? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
-              if (ok) onDelete(room.id);
+              if (ok) onDelete?.(room.id);
             }}
             className="w-[70px] flex items-center justify-center bg-destructive text-destructive-foreground touch-manipulation"
           >
             <Trash2 className="h-5 w-5" />
           </button>
         </motion.div>
+        )}
 
         {/* Main Card Content (draggable) */}
         <motion.div
-          drag="x"
+          drag={canManageSpaces ? "x" : false}
           dragConstraints={{ left: -actionWidth, right: 0 }}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
@@ -185,18 +177,6 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
               ) : (
                 <div className="flex flex-col items-center gap-2 shrink-0">
                   <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
-                  <div className={`relative w-11 h-11 rounded-full flex items-center justify-center ${getLightingColor()}`}>
-                    <svg className="absolute inset-0 w-11 h-11 -rotate-90">
-                      <circle cx="22" cy="22" r="18" stroke="currentColor" strokeWidth="3" fill="none" className="opacity-20" />
-                      <circle
-                        cx="22" cy="22" r="18" stroke="currentColor" strokeWidth="3" fill="none"
-                        strokeDasharray={`${2 * Math.PI * 18}`}
-                        strokeDashoffset={`${2 * Math.PI * 18 * (1 - lightingPercentage / 100)}`}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <Lightbulb className="h-4 w-4" />
-                  </div>
                 </div>
               )}
 
@@ -243,13 +223,6 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
                     </div>
                   )}
                   
-                  {/* Lighting Issue Flag */}
-                  {hasLightingIssue && !hasIssues && (
-                    <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
-                      <Lightbulb className="h-3.5 w-3.5" />
-                      <span>{lightingPercentage}%</span>
-                    </div>
-                  )}
                 </div>
               </div>
 

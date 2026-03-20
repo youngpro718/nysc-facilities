@@ -9,31 +9,31 @@ import { Step } from 'react-joyride';
 export const adminDashboardTour: Step[] = [
   {
     target: 'body',
-    content: 'Welcome to the Admin Dashboard! This is your command center for managing the entire facility. Let\'s walk through the key areas.',
+    content: '👋 Welcome to the Admin Dashboard! This is your command center for managing the entire NYSC facility. This tour will show you the key features and how to navigate efficiently.',
     placement: 'center',
     disableBeacon: true,
   },
   {
     target: '[data-tour="nav-bar"]',
-    content: 'This is your navigation bar. Each icon represents a module — hover to see the name, click to navigate. The icons change based on your role.',
+    content: '📍 Navigation Sidebar: Click any icon to access different modules. Your available modules are based on your admin role. The sidebar collapses on smaller screens to save space.',
     placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '[data-tour="notification-box"]',
-    content: 'The notification bell shows real-time alerts. A red badge means you have unread notifications. Click to view and manage them.',
+    content: '🔔 Notifications: Real-time alerts appear here. A red badge shows unread count. Click to see pending approvals, critical issues, and system updates.',
     placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '[data-tour="theme-toggle"]',
-    content: 'Toggle between light and dark mode. Your preference is saved automatically.',
+    content: '🌓 Theme Toggle: Switch between light and dark mode. Your preference is saved automatically and syncs across devices.',
     placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '[data-tour="user-avatar"]',
-    content: 'Click your avatar to go to your Profile page where you can update your info and settings.',
+    content: '👤 Profile Menu: Access your profile settings, view your role, and sign out. You can update your contact info and notification preferences here.',
     placement: 'bottom',
     disableBeacon: true,
   },
@@ -54,7 +54,7 @@ export const spacesMgmtTour: Step[] = [
   },
   {
     target: '[data-tour="floor-selector"]',
-    content: 'Then pick a floor to see its rooms, hallways, and floor plan.',
+    content: 'Then pick a floor to see its rooms and hallways.',
     placement: 'bottom',
     disableBeacon: true,
   },
@@ -68,12 +68,6 @@ export const spacesMgmtTour: Step[] = [
     target: '[data-tour="add-space-btn"]',
     content: 'Click the "+" button to create a new room, hallway, or door. Fill in the details and save.',
     placement: 'left',
-    disableBeacon: true,
-  },
-  {
-    target: '[data-tour="floor-plan-tab"]',
-    content: 'Switch to Floor Plan view for a visual 2D or 3D layout of the floor. You can drag objects to rearrange them.',
-    placement: 'bottom',
     disableBeacon: true,
   },
 ];
@@ -107,51 +101,6 @@ export const operationsTour: Step[] = [
     target: '[data-tour="ops-report-btn"]',
     content: 'Click "Report Issue" to create a new facility issue. Select the type, location, and priority.',
     placement: 'left',
-    disableBeacon: true,
-  },
-];
-
-export const lightingTour: Step[] = [
-  {
-    target: 'body',
-    content: 'Lighting Management helps you track and inspect every light fixture in the building. Designed for walkthrough inspections.',
-    placement: 'center',
-    disableBeacon: true,
-  },
-  {
-    target: '[data-tour="lighting-tabs"]',
-    content: 'Two views: Dashboard shows health metrics and stats. Floor View is the interactive inspection tool.',
-    placement: 'bottom',
-    disableBeacon: true,
-  },
-  {
-    target: '[data-tour="lighting-floor-accordion"]',
-    content: 'Each floor expands to show its hallway sections. Click a floor to expand it.',
-    placement: 'top',
-    disableBeacon: true,
-  },
-  {
-    target: '[data-tour="lighting-fixture-grid"]',
-    content: 'Each dot represents a light fixture. Green = Working, Red = Out, Amber = Ballast issue. TAP any dot to cycle its status.',
-    placement: 'top',
-    disableBeacon: true,
-  },
-  {
-    target: '[data-tour="lighting-add-section"]',
-    content: 'Click "+ Add Section" to create a new hallway section. Set the name, direction, fixture count, and bulb technology.',
-    placement: 'top',
-    disableBeacon: true,
-  },
-  {
-    target: '[data-tour="lighting-walkthrough"]',
-    content: 'Click "Walkthrough" on any hallway to step through fixtures one by one — perfect for physical inspections.',
-    placement: 'top',
-    disableBeacon: true,
-  },
-  {
-    target: '[data-tour="lighting-legend"]',
-    content: 'The legend shows what each color means. Use it as a quick reference during inspections.',
-    placement: 'bottom',
     disableBeacon: true,
   },
 ];
@@ -285,19 +234,19 @@ export const accessAssignmentsTour: Step[] = [
 export const userDashboardTour: Step[] = [
   {
     target: 'body',
-    content: 'Welcome to your Dashboard! This is your personal hub for submitting requests and tracking their status.',
+    content: '👋 Welcome to your Dashboard! This is your personal hub for submitting requests and tracking everything you need. Let\'s explore the key features.',
     placement: 'center',
     disableBeacon: true,
   },
   {
     target: '[data-tour="quick-actions"]',
-    content: 'Quick action buttons let you request supplies, report issues, or request keys with one click.',
+    content: '⚡ Quick Actions: One-click access to common tasks. Request supplies, report facility issues, or request keys without navigating through menus.',
     placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '[data-tour="my-requests"]',
-    content: 'Your pending requests and their current statuses appear here. Click any to see details.',
+    content: '📋 My Requests: Track all your pending requests in one place. Click any request card to view details, add notes, or check status updates.',
     placement: 'top',
     disableBeacon: true,
   },
@@ -327,19 +276,19 @@ export const tasksTour: Step[] = [
 export const supplyRoomTour: Step[] = [
   {
     target: 'body',
-    content: 'The Supply Room is where you fulfill supply requests. Claim orders, pick items, and mark them as delivered.',
+    content: '📦 Welcome to the Supply Room! This is where you fulfill supply requests from court staff. This tour will show you the complete workflow from receiving orders to delivery.',
     placement: 'center',
     disableBeacon: true,
   },
   {
     target: '[data-tour="supply-orders"]',
-    content: 'Approved supply requests appear here. Claim one to start fulfilling it.',
+    content: '📋 Pending Orders: Approved supply requests appear here. Click "Accept Order" to claim one and start fulfilling it. Orders are assigned to you once accepted.',
     placement: 'top',
     disableBeacon: true,
   },
   {
     target: '[data-tour="supply-status"]',
-    content: 'Update the status as you work: Picking → Ready → Completed.',
+    content: '🔄 Status Workflow: Update status as you work through each step:\n1️⃣ Picking - Gathering items\n2️⃣ Ready - Items ready for pickup\n3️⃣ Completed - Delivered to requester',
     placement: 'top',
     disableBeacon: true,
   },
@@ -386,7 +335,6 @@ export function getTourForRoute(pathname: string): { steps: Step[]; title: strin
   if (pathname === '/') return { steps: adminDashboardTour, title: 'Admin Dashboard' };
   if (pathname === '/spaces') return { steps: spacesMgmtTour, title: 'Spaces Management' };
   if (pathname === '/operations') return { steps: operationsTour, title: 'Operations Center' };
-  if (pathname === '/lighting') return { steps: lightingTour, title: 'Lighting Management' };
   if (pathname === '/court-operations') return { steps: courtOpsTour, title: 'Court Operations' };
   if (pathname === '/keys') return { steps: keysMgmtTour, title: 'Keys Management' };
   if (pathname === '/inventory') return { steps: inventoryTour, title: 'Inventory Management' };
@@ -406,9 +354,8 @@ export function getTourForRoute(pathname: string): { steps: Step[]; title: strin
 /** All available tours for the Help Center */
 export const allTours = [
   { id: 'admin-dashboard', title: 'Admin Dashboard', path: '/', description: 'Overview of the main admin hub, navigation, and notifications.', steps: adminDashboardTour },
-  { id: 'spaces', title: 'Spaces Management', path: '/spaces', description: 'Manage buildings, floors, rooms, and floor plans.', steps: spacesMgmtTour },
+  { id: 'spaces', title: 'Spaces Management', path: '/spaces', description: 'Manage buildings, floors, and rooms.', steps: spacesMgmtTour },
   { id: 'operations', title: 'Operations Center', path: '/operations', description: 'Track issues, maintenance, and supply requests.', steps: operationsTour },
-  { id: 'lighting', title: 'Lighting Management', path: '/lighting', description: 'Inspect and manage lighting fixtures floor by floor.', steps: lightingTour },
   { id: 'court-ops', title: 'Court Operations', path: '/court-operations', description: 'Manage courtroom sessions, terms, and personnel.', steps: courtOpsTour },
   { id: 'keys', title: 'Keys Management', path: '/keys', description: 'Track key inventory, requests, and assignments.', steps: keysMgmtTour },
   { id: 'inventory', title: 'Inventory Management', path: '/inventory', description: 'Manage supply stock levels and reorder points.', steps: inventoryTour },

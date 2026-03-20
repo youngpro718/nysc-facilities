@@ -128,7 +128,6 @@ export function useSystemSettings() {
         { id: 'keys', name: 'Key Management', description: 'Manage key assignments and access control' },
         { id: 'occupants', name: 'Occupant Management', description: 'Manage room assignments and occupant information' },
         { id: 'court_operations', name: 'Court Operations', description: 'Specialized court scheduling and operations' },
-        { id: 'lighting', name: 'Lighting Management', description: 'Manage lighting fixtures and maintenance' },
         { id: 'analytics', name: 'Advanced Analytics', description: 'AI-powered insights and predictive analytics' },
         { id: 'reports', name: 'Reporting System', description: 'Generate and schedule facility reports' },
       ];
@@ -166,11 +165,7 @@ export function useSystemSettings() {
         if ((profile as any)?.enabled_modules) {
           profileEnabled = profile!.enabled_modules as Record<string, boolean>;
         }
-        // Optional auto-enable for Supply Department (kept consistent with useEnabledModules)
-        if ((profile as any)?.departments?.name === 'Supply Department') {
-          profileEnabled.supply_requests = true;
-          profileEnabled.inventory = true;
-        }
+        // Module access is now controlled by role permissions, not department names
       }
 
       // 4) Merge catalog with profile flags

@@ -120,7 +120,6 @@ export function EditSpaceDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['room-connections', id] });
-      queryClient.invalidateQueries({ queryKey: ['floorplan-objects'] });
       // Ensure enhanced room data (including occupancy) updates immediately
       queryClient.invalidateQueries({ queryKey: ['enhanced-room', id] });
       // Also invalidate any parent chain queries

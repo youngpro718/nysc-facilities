@@ -1,5 +1,6 @@
 
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useUserData } from "./useUserData";
 import { useRoomAssignments } from "./useRoomAssignments";
@@ -9,6 +10,7 @@ import { useAdminIssues } from "./useAdminIssues";
 import { useAuth } from "@features/auth/hooks/useAuth";
 
 export const useDashboardData = (isAdminDashboard: boolean = false) => {
+  const queryClient = useQueryClient();
   const { userData, profile } = useUserData();
   const { assignedRooms } = useRoomAssignments(userData?.id);
   const { userIssues, handleMarkAsSeen, refetchIssues } = useUserIssues(userData?.id);
@@ -19,26 +21,68 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
   useEffect(() => {
     if (!userData?.id) return;
 
-    const issuesSubscription = supabase
-      .channel('issues_channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'issues',
-          filter: `created_by=eq.${userData.id}`
-        },
-        () => {
-          refetchIssues();
-        }
-      )
-      .subscribe();
+    const handleIssueChange = () => {
+      if (isAdminDashboard) {
+        void Promise.all([
+          refetchIssues(),
+          queryClient.invalidateQueries({ queryKey: ['allIssues'] }),
+          queryClient.invalidateQueries({ queryKey: ['adminIssues'] }),
+          queryClient.invalidateQueries({ queryKey: ['adminIssueStats'] }),
+        ]);
+        return;
+      }
+
+      refetchIssues();
+    };
+
+    const subscriptions = isAdminDashboard
+      ? [
+          supabase
+            .channel('admin_issues_channel')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'issues',
+              },
+              handleIssueChange
+            )
+            .subscribe(),
+        ]
+      : [
+          supabase
+            .channel('user_issues_created_channel')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'issues',
+                filter: `created_by=eq.${userData.id}`,
+              },
+              handleIssueChange
+            )
+            .subscribe(),
+          supabase
+            .channel('user_issues_reported_channel')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'issues',
+                filter: `reported_by=eq.${userData.id}`,
+              },
+              handleIssueChange
+            )
+            .subscribe(),
+        ];
 
     return () => {
-      issuesSubscription.unsubscribe();
+      subscriptions.forEach(subscription => subscription.unsubscribe());
     };
-  }, [userData?.id, refetchIssues]);
+  }, [isAdminDashboard, queryClient, refetchIssues, userData?.id]);
 
   const refreshData = async () => {
     if (refreshBuildingData) {

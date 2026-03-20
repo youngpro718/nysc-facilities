@@ -4,13 +4,14 @@
  * Global test configuration and mocks
  */
 
-import { expect, afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { afterEach, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
 // Cleanup after each test
 afterEach(() => {
-  cleanup();
+  document.body.innerHTML = '';
+  document.head.innerHTML = '';
+  vi.clearAllMocks();
 });
 
 // Mock Supabase client

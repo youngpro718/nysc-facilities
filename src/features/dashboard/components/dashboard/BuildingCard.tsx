@@ -1,18 +1,41 @@
 
 import { useNavigate } from "react-router-dom";
-import { Building2, Layers, DoorClosed, Activity, AlertTriangle, ArrowRight } from "lucide-react";
+import { Building2, Layers, DoorClosed, Activity, AlertTriangle, ArrowRight, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { BuildingWithLighting } from "@/utils/dashboardUtils";
+
+interface IssueLike {
+  id: string;
+  title: string;
+  description: string;
+  building_id: string;
+  photos?: string[];
+  created_at: string;
+  seen: boolean;
+  status: string;
+}
+
+interface ActivityLike {
+  id: string;
+  action: string;
+  performed_by?: string;
+  created_at: string;
+  metadata?: {
+    building_id: string;
+    [key: string]: unknown;
+  };
+}
 
 interface BuildingCardProps {
-  building: any;
+  building: BuildingWithLighting;
   buildingImage: string;
   floorCount: number;
   roomCount: number;
   workingFixtures: number;
   totalFixtures: number;
-  buildingIssues: any[];
-  buildingActivities: any[];
+  buildingIssues: IssueLike[];
+  buildingActivities: ActivityLike[];
   onMarkAsSeen: (issueId: string) => void;
 }
 
@@ -113,7 +136,7 @@ function StatCell({
   label,
   valueClassName,
 }: {
-  icon: any;
+  icon: LucideIcon;
   value: string | number;
   label: string;
   valueClassName?: string;

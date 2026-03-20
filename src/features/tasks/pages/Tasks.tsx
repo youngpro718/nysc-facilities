@@ -26,7 +26,7 @@ import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPane
 export default function Tasks() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { userRole } = useRolePermissions();
+  const { userRole, isAdmin: canManageTasks } = useRolePermissions();
   
   // Court aides default to "my-tasks" tab, others to "active"
   const isCourtAide = userRole === 'court_aide';
@@ -136,9 +136,9 @@ export default function Tasks() {
           <TaskCard 
             key={task.id} 
             task={task}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            onCancel={handleCancel}
+            onApprove={canManageTasks ? handleApprove : undefined}
+            onReject={canManageTasks ? handleReject : undefined}
+            onCancel={canManageTasks ? handleCancel : undefined}
             onClaim={showClaimActions || isCourtAide ? handleClaim : undefined}
             onStart={showClaimActions || isCourtAide ? handleStart : undefined}
             onComplete={showClaimActions || isCourtAide ? handleComplete : undefined}
@@ -169,7 +169,7 @@ export default function Tasks() {
             </p>
           </div>
         </div>
-        <CreateTaskDialog />
+        {canManageTasks && <CreateTaskDialog />}
       </div>
 
       {/* Stats */}

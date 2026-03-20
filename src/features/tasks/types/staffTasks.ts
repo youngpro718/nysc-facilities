@@ -15,6 +15,7 @@ export interface StaffTask {
   task_type: TaskType;
   priority: TaskPriority;
   status: TaskStatus;
+  issue_id: string | null;
   
   // Request info
   is_request: boolean;
@@ -54,6 +55,14 @@ export interface StaffTask {
   inventory_item?: { name: string; sku: string } | null;
   from_room?: { room_number: string; name: string } | null;
   to_room?: { room_number: string; name: string } | null;
+  issue?: {
+    id: string;
+    title: string;
+    status: string;
+    priority: string;
+    issue_type: string;
+    room_id: string | null;
+  } | null;
 }
 
 export interface StaffTaskHistory {
@@ -77,6 +86,7 @@ export interface CreateTaskInput {
   inventory_item_id?: string;
   from_room_id?: string;
   to_room_id?: string;
+  issue_id?: string;
   quantity?: number;
   due_date?: string;
 }

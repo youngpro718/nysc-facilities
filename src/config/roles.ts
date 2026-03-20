@@ -9,12 +9,14 @@
 
 // The system role values (matches database enum)
 export type UserRole =
-  | 'standard'        // "User" in UI
-  | 'court_aide'      // "Court Aide" in UI
-  | 'court_officer'   // "Court Officer" in UI
-  | 'purchasing'      // "Purchasing" in UI
-  | 'cmc'             // "Management" in UI
-  | 'admin';          // "Admin" in UI
+  | 'standard'             // "User" in UI
+  | 'court_aide'           // "Court Aide" in UI
+  | 'court_officer'        // "Court Officer" in UI
+  | 'purchasing'           // "Purchasing" in UI
+  | 'cmc'                  // "Management" in UI
+  | 'facilities_manager'   // "Facilities Manager" in UI
+  | 'system_admin'         // "System Admin" in UI
+  | 'admin';               // Legacy alias → treated as system_admin
 
 // Role configuration with labels and descriptions
 export interface RoleConfig {
@@ -52,14 +54,26 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
   },
   {
     value: 'cmc',
-    label: 'Management',
+    label: 'Court Management Coordinator',
     description: 'Oversee court operations, manage courtroom scheduling, and coordinate terms',
     color: 'purple',
   },
   {
+    value: 'facilities_manager',
+    label: 'Facilities Manager',
+    description: 'Manage spaces, operations, keys, inventory, and maintenance',
+    color: 'amber',
+  },
+  {
+    value: 'system_admin',
+    label: 'System Admin',
+    description: 'Full system access — manage users, settings, and all operations',
+    color: 'red',
+  },
+  {
     value: 'admin',
     label: 'Administrator',
-    description: 'Full system access — manage users, buildings, and all operations',
+    description: 'Full system access (legacy — same as System Admin)',
     color: 'red',
   },
 ] as const;
@@ -67,8 +81,9 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
 // Signup role options (for the signup form)
 // Excludes admin — admin role can only be assigned by existing administrators
 // Court Officer is included so officers of all levels can request the role (admin approval required)
+// Excludes admin-tier roles — those can only be assigned by existing administrators
 export const SIGNUP_ROLE_OPTIONS = SYSTEM_ROLES
-  .filter(r => r.value !== 'admin')
+  .filter(r => !(['admin', 'system_admin', 'facilities_manager'] as string[]).includes(r.value))
   .map(r => ({
     value: r.value,
     label: r.label,
@@ -103,6 +118,7 @@ export function getRoleBadgeClasses(roleValue: UserRole | string | null | undefi
     green: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
     purple: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',
     orange: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20',
+    amber: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
     gray: 'bg-gray-500/10 text-gray-700 border-gray-500/20',
   };
 

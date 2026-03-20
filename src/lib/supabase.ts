@@ -90,7 +90,7 @@ export const authService = {
     }
 
     const role = rolesResult.data?.role || 'standard';
-    const isAdmin = role === 'admin';
+    const isAdmin = role === 'admin' || role === 'system_admin';
     const profile = profileResult.data ? { ...profileResult.data, role } : null;
 
     const elapsed = Date.now() - startTime;

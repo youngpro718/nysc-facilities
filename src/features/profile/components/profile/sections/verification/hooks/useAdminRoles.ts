@@ -9,7 +9,7 @@ export function useAdminRoles() {
       const { data, error } = await supabase
         .from('user_roles')
         .select('user_id')
-        .eq('role', 'admin');
+        .in('role', ['admin', 'system_admin', 'facilities_manager']);
       
       if (error) throw error;
       return data.map(role => role.user_id);

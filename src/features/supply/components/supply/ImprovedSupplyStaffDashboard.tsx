@@ -28,7 +28,7 @@ import { PartialFulfillmentDialog } from './PartialFulfillmentDialog';
 import { LiveIndicator } from '@shared/components/common/common/LiveIndicator';
 import { InventoryManagementTab } from './InventoryManagementTab';
 import { LowStockPanel } from '@features/inventory/components/inventory/LowStockPanel';
-import { staffCompletePickup } from '@features/supply/services/supplyOrdersService';
+import { staffCompletePickup } from '@features/supply/services/unifiedSupplyService';
 import { toast } from 'sonner';
 
 export function ImprovedSupplyStaffDashboard() {

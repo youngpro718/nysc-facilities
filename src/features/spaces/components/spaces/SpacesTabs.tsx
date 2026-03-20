@@ -1,76 +1,19 @@
-import React, { useState, Suspense } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  Home, 
-  Map, 
-  LayoutPanelLeft,
-  Maximize2,
-  X,
-  Loader2
-} from 'lucide-react';
 import RoomsPage from './views/RoomsPage';
-import { ModernFloorPlanView } from './floorplan/ModernFloorPlanView';
 import { useRoomsQuery } from './hooks/queries/useRoomsQuery';
 
 const SpacesTabs = () => {
-  const [activeView, setActiveView] = useState("rooms");
-  const [floorPlanExpanded, setFloorPlanExpanded] = useState(false);
   const { data: rooms } = useRoomsQuery({});
   const totalRooms = rooms?.length ?? 0;
   const activeRooms = rooms?.filter(r => r.status === 'active').length ?? 0;
 
   return (
     <div className="space-y-6">
-      {/* Modern Tab Navigation */}
+      {/* Header with room counts */}
       <div className="border-b sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center justify-between px-1 pt-4 pb-2">
-          <div className="flex items-center gap-6">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setActiveView('rooms')}
-                    className={`group flex items-center gap-2 px-4 py-2.5 rounded-t-lg border-b-2 transition-all ${
-                      activeView === 'rooms'
-                        ? 'border-primary text-foreground bg-accent/50'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/30'
-                    }`}
-                  >
-                    <Home className="h-4 w-4" />
-                    <span className="font-medium text-sm">Rooms</span>
-                    {activeView === 'rooms' && (
-                      <Badge variant="secondary" className="h-5 text-xs">Active</Badge>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Manage all rooms</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setActiveView('floorplan')}
-                    data-tour="floor-plan-tab"
-                    className={`group flex items-center gap-2 px-4 py-2.5 rounded-t-lg border-b-2 transition-all ${
-                      activeView === 'floorplan'
-                        ? 'border-primary text-foreground bg-accent/50'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/30'
-                    }`}
-                  >
-                    <Map className="h-4 w-4" />
-                    <span className="font-medium text-sm">Floor Plan</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>View interactive floor plan</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-
+          <h2 className="text-lg font-semibold">Rooms</h2>
           <div className="hidden sm:flex items-center gap-2">
             {totalRooms > 0 && (
               <>
@@ -82,83 +25,11 @@ const SpacesTabs = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="min-w-0">
-        {activeView === 'rooms' && (
-          <div className="min-h-[500px]">
-            <RoomsPage />
-          </div>
-        )}
-
-        {/* Infrastructure view removed */}
-
-        {activeView === 'floorplan' && (
-          <>
-            {/* Floor Plan - Expandable */}
-            <div className={`bg-card border rounded-lg transition-all duration-300 ${
-              floorPlanExpanded ? 'fixed inset-4 z-50' : 'relative'
-            }`}>
-              <div className="p-4 border-b flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
-                    <LayoutPanelLeft className="h-5 w-5" />
-                    Floor Plan Viewer
-                    {floorPlanExpanded && <Badge variant="secondary">Expanded View</Badge>}
-                  </h2>
-                  <p className="text-muted-foreground mt-1 hidden sm:block">
-                    Interactive visual representation of building layouts and room relationships
-                  </p>
-                </div>
-                <Button
-                  onClick={() => setFloorPlanExpanded(!floorPlanExpanded)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  {floorPlanExpanded ? (
-                    <>
-                      <X className="h-4 w-4" />
-                      Close
-                    </>
-                  ) : (
-                    <>
-                      <Maximize2 className="h-4 w-4" />
-                      Expand
-                    </>
-                  )}
-                </Button>
-              </div>
-              
-              {/* Floor Plan Content - No padding to allow full size */}
-              <div className={`transition-all ${
-                floorPlanExpanded ? 'h-[calc(100vh-140px)]' : 'sm:h-[700px] h-[70vh]'
-              }`}>
-                <Suspense fallback={
-                  <div className="h-full flex items-center justify-center">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      Loading floor plan...
-                    </div>
-                  </div>
-                }>
-                  <div className="w-full h-full">
-                    <ModernFloorPlanView />
-                  </div>
-                </Suspense>
-              </div>
-            </div>
-            
-            {/* Backdrop for expanded view */}
-            {floorPlanExpanded && (
-              <div 
-                className="fixed inset-0 bg-black/50 z-40" 
-                onClick={() => setFloorPlanExpanded(false)}
-              />
-            )}
-          </>
-        )}
-
-        {/* Access Control view removed */}
+        <div className="min-h-[500px]">
+          <RoomsPage />
+        </div>
       </div>
     </div>
   );

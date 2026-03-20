@@ -5,7 +5,6 @@ import { StorageFields } from "./StorageFields";
 import { StatusField } from "./StatusField";
 import { ParentRoomField } from "./ParentRoomField";
 import { CourtroomFields } from "./CourtroomFields";
-import { RoomLightingFields } from "./RoomLightingFields";
 
 export function RoomFormFields({ form }: RoomFormProps) {
   const floorId = form.watch("floorId");
@@ -22,8 +21,6 @@ export function RoomFormFields({ form }: RoomFormProps) {
       <StorageFields form={form} />
       
       <CourtroomFields form={form} />
-      
-      <RoomLightingFields form={form} />
       
       <StatusField form={form} />
     </div>

@@ -81,13 +81,6 @@ export interface Building {
       id: string;
       name: string;
       room_number?: string;
-      lighting_fixtures?: {
-        id: string;
-        name?: string;
-        type?: string;
-        status: string;
-        bulb_count: number;
-      }[];
     }[];
   }[];
 }

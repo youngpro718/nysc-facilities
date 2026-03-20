@@ -112,7 +112,6 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
     occupantsResult,
     issuesResult,
     historyResult,
-    lightingResult
   ] = await Promise.all([
     // Fetch occupants
     supabase
@@ -142,18 +141,12 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
       .from('room_history')
       .select('room_id, change_type, previous_values, new_values, created_at')
       .in('room_id', roomIds),
-
-    // Fetch lighting fixtures
-    supabase
-      .from('lighting_fixtures')
-      .select('*')
-      .in('space_id', roomIds)
   ]);
   
-  // Space connections are disabled since space_connections table doesn't exist
+  // Lighting and space connections removed
+  const lightingResult = { data: [], error: null };
   const connectionsResult = { data: [], error: null };
   
-  // Return all results in the same format as before
   return [
     occupantsResult,
     issuesResult,

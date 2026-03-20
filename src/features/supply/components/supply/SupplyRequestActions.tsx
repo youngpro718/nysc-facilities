@@ -27,9 +27,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Loader2, MoreVertical, Trash2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteSupplyRequest } from '@features/supply/services/supplyRequestService';
+import { deleteSupplyRequest } from '@features/supply/services/unifiedSupplyService';
 import { useToast } from '@shared/hooks/use-toast';
-import { usePermissions } from '@shared/hooks/usePermissions';
+import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
 
 interface SupplyRequestActionsProps {
   requestId: string;
@@ -38,7 +38,8 @@ interface SupplyRequestActionsProps {
 }
 
 export function SupplyRequestActions({ requestId, requestTitle, onDeleted }: SupplyRequestActionsProps) {
-  const { isAdmin } = usePermissions();
+  const { canAdmin } = useRolePermissions();
+  const isAdmin = canAdmin('supply_requests');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

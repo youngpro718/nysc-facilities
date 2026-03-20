@@ -17,9 +17,11 @@ export interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: UserProfile | null;
+  userRole: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isFacilitiesManager: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userData: UserSignupData) => Promise<void>;
   signOut: () => Promise<void>;
@@ -33,8 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isFacilitiesManager, setIsFacilitiesManager] = useState(false);
   const hasCompletedInitialAuth = useRef(false);
   const isFetchingProfile = useRef(false);
   const navigate = useNavigate();
@@ -50,7 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setUser(null);
         setProfile(null);
+        setUserRole(null);
         setIsAdmin(false);
+        setIsFacilitiesManager(false);
         setIsLoading(false);
         return;
       }
@@ -59,7 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentSession.user);
       
       const userData = await authService.fetchUserProfile(currentSession.user.id);
+      setUserRole(userData.profile?.role || null);
       setIsAdmin(userData.isAdmin);
+      setIsFacilitiesManager(userData.profile?.role === 'facilities_manager');
       setProfile(userData.profile);
 
       // Update session tracking in the background
@@ -77,7 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null);
       setUser(null);
       setProfile(null);
+      setUserRole(null);
       setIsAdmin(false);
+      setIsFacilitiesManager(false);
     } finally {
       setIsLoading(false);
     }
@@ -250,7 +260,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null);
       setUser(null);
       setProfile(null);
+      setUserRole(null);
       setIsAdmin(false);
+      setIsFacilitiesManager(false);
       
       logger.debug('Sign out complete, navigating to login');
       // Navigate to login page
@@ -268,8 +280,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Centralized redirect logic - ONLY runs on initial load or explicit sign in
-    const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }, isExplicitSignIn: boolean = false) => {
+    const handleRedirect = (
+      userData: { isAdmin: boolean; profile: UserProfile | null },
+      isExplicitSignIn: boolean = false
+    ) => {
       if (!mounted) return;
 
       const currentPath = window.location.pathname;
@@ -279,7 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isExplicitSignIn,
         hasCompletedInitialAuth: hasCompletedInitialAuth.current,
         userRole: userData.profile?.role,
-        verificationStatus: userData.profile?.verification_status
+        verificationStatus: userData.profile?.verification_status,
       });
 
       // NOTE: Email verification enforcement is skeleton-only for now.
@@ -292,18 +306,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       //   return;
       // }
 
-      // Role-based redirects — ONLY from the login page.
-      // Onboarding flow pages (/auth/mfa, /onboarding/profile, /auth/verify,
-      // /verification-pending, /auth/pending-approval) are pages the user
-      // SHOULD be on — never redirect away from them.
       const userRole = userData.profile?.role;
       const correctDashboard = getDashboardForRole(userRole);
 
-      // Only redirect when the user is sitting on /login
       if (currentPath === '/login') {
         logger.debug('[useAuth.handleRedirect] REDIRECT: login -> dashboard', {
           role: userRole,
-          dashboard: correctDashboard
+          dashboard: correctDashboard,
         });
         navigate(correctDashboard, { replace: true });
       } else {
@@ -311,81 +320,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Initialize auth state
     const initializeAuth = async () => {
-        try {
-          logger.debug('[useAuth.initializeAuth] START');
-          setIsLoading(true);
-          const currentSession = await authService.getSession();
-          
-          if (!mounted) return;
+      try {
+        logger.debug('[useAuth.initializeAuth] START');
+        setIsLoading(true);
 
-          if (currentSession) {
-            logger.debug('Session found, fetching user data');
-            setSession(currentSession);
-            setUser(currentSession.user);
-          
-          // Fetch user profile and role - critical for consistent admin status
-          // Guard against duplicate fetches
+        const currentSession = await authService.getSession();
+        if (!mounted) return;
+
+        if (currentSession) {
+          logger.debug('Session found, fetching user data');
+          setSession(currentSession);
+          setUser(currentSession.user);
+
           if (isFetchingProfile.current) {
             logger.debug('Profile fetch already in progress, skipping duplicate');
             return;
           }
-          
+
           isFetchingProfile.current = true;
           const userData = await authService.fetchUserProfile(currentSession.user.id);
           isFetchingProfile.current = false;
-      
-      if (!mounted) return;
-      
-      setIsAdmin(userData.isAdmin);
-      setProfile(userData.profile);
-      
-      // OPTIMIZATION: Update session tracking in background without blocking
-      // Don't await this - let it complete asynchronously
-      const deviceInfo = {
-        name: navigator.userAgent.split('/')[0],
-        platform: navigator.platform,
-        language: navigator.language,
-      };
-            authService.updateSessionTracking(currentSession.user.id, deviceInfo).catch(error => {
-              logger.error('Background session tracking error', error);
-            });
-            
-            // Handle redirects based on current page and user role (initial load)
-            handleRedirect(userData, false);
-          } else {
-            logger.debug('No session found');
-            const currentPath = window.location.pathname;
-            const publicPaths = new Set([
-              '/login',
-              '/verification-pending',
-              '/install',
-              '/public-forms',
-              '/submit-form',
-              '/auth/pending-approval',
-              '/auth/account-rejected',
-              '/forms/key-request',
-              '/forms/maintenance-request',
-              '/forms/issue-report',
-            ]);
-            if (!publicPaths.has(currentPath)) {
-              navigate('/login', { replace: true });
-            }
+
+          if (!mounted) return;
+
+          setIsAdmin(userData.isAdmin);
+          setUserRole(userData.profile?.role || null);
+          setIsFacilitiesManager(userData.profile?.role === 'facilities_manager');
+          setProfile(userData.profile);
+
+          const deviceInfo = {
+            name: navigator.userAgent.split('/')[0],
+            platform: navigator.platform,
+            language: navigator.language,
+          };
+
+          void authService.updateSessionTracking(currentSession.user.id, deviceInfo).catch(error => {
+            logger.error('Background session tracking error', error);
+          });
+
+          handleRedirect(userData, false);
+        } else {
+          logger.debug('No session found');
+          const currentPath = window.location.pathname;
+          const publicPaths = new Set([
+            '/login',
+            '/verification-pending',
+            '/install',
+            '/public-forms',
+            '/submit-form',
+            '/auth/pending-approval',
+            '/auth/account-rejected',
+            '/forms/key-request',
+            '/forms/maintenance-request',
+            '/forms/issue-report',
+          ]);
+
+          if (!publicPaths.has(currentPath)) {
+            navigate('/login', { replace: true });
           }
-        } catch (error) {
-          logger.error('Auth initialization failed', error);
-        
+        }
+      } catch (error) {
+        logger.error('Auth initialization failed', error);
+
         if (mounted) {
           setSession(null);
           setUser(null);
           setProfile(null);
+          setUserRole(null);
           setIsAdmin(false);
-          
-          // Only show network errors to avoid spam
+          setIsFacilitiesManager(false);
+
           if (getErrorMessage(error)?.includes('network') || getErrorMessage(error)?.includes('fetch')) {
             toast.error('Connection Error', {
-              description: 'Unable to connect to authentication service.'
+              description: 'Unable to connect to authentication service.',
             });
           }
         }
@@ -397,91 +405,82 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-      // Set up auth state change listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!mounted) return;
+
+      logger.debug('Auth state changed', { event });
+
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && newSession) {
+        logger.debug(`[useAuth.onAuthStateChange] ${event} event`, { userId: newSession.user.id });
+        setSession(newSession);
+        setUser(newSession.user);
+
+        if (event === 'TOKEN_REFRESHED') {
+          logger.debug('[useAuth] Token refreshed silently — no redirect');
+          return;
+        }
+
+        const currentPath = window.location.pathname;
+        const isOnLoginPage = currentPath === '/login';
+
+        (async () => {
           if (!mounted) return;
-          
-          logger.debug('Auth state changed', { event });
 
-          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && newSession) {
-            logger.debug(`[useAuth.onAuthStateChange] ${event} event`, { userId: newSession.user.id });
-            setSession(newSession);
-            setUser(newSession.user);
+          if (profile?.id === newSession.user.id && hasCompletedInitialAuth.current) {
+            logger.debug('[useAuth] Profile already loaded for this user, skipping refetch');
+            if (isOnLoginPage) {
+              handleRedirect({ isAdmin, profile }, true);
+            }
+            return;
+          }
 
-            // TOKEN_REFRESHED: silently update session, no profile refetch or redirect
-            if (event === 'TOKEN_REFRESHED') {
-              logger.debug('[useAuth] Token refreshed silently — no redirect');
+          try {
+            if (isFetchingProfile.current) {
+              logger.debug('Profile fetch in progress, skipping');
               return;
             }
-            
-            // SIGNED_IN: only fetch profile + redirect if on /login (real login).
-            // Never redirect from onboarding flow pages (/auth/mfa, /onboarding/*, etc.)
-            const currentPath = window.location.pathname;
-            const isOnLoginPage = currentPath === '/login';
-            
-            (async () => {
-              if (!mounted) return;
-              
-              // Skip redundant profile fetch if we already have data for this user
-              if (profile?.id === newSession.user.id && hasCompletedInitialAuth.current) {
-                logger.debug('[useAuth] Profile already loaded for this user, skipping refetch');
-                if (isOnLoginPage) {
-                  handleRedirect({ isAdmin: isAdmin, profile }, true);
-                }
-                return;
-              }
-              
-              try {
-                if (isFetchingProfile.current) {
-                  logger.debug('Profile fetch in progress, skipping');
-                  return;
-                }
-                
-                isFetchingProfile.current = true;
-                const userData = await authService.fetchUserProfile(newSession.user.id);
-                isFetchingProfile.current = false;
-                
-                if (!mounted) return;
-                
-                setIsAdmin(userData.isAdmin);
-                setProfile(userData.profile);
-                
-                // Only redirect from /login (actual login flow)
-                if (hasCompletedInitialAuth.current && isOnLoginPage) {
-                  handleRedirect(userData, true);
-                }
-              } catch (error) {
-                isFetchingProfile.current = false;
-                logger.error('Error fetching user data after sign in', error);
-              }
-            })();
-          
-        } else if (event === 'SIGNED_OUT') {
-          // Reset the fetching guard so the next sign-in on the same tab fetches
-          // a fresh profile instead of being skipped.
-          isFetchingProfile.current = false;
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          setIsAdmin(false);
-          
-          // Only redirect if not already on login page
-          if (window.location.pathname !== '/login') {
-            navigate('/login', { replace: true });
+
+            isFetchingProfile.current = true;
+            const userData = await authService.fetchUserProfile(newSession.user.id);
+            isFetchingProfile.current = false;
+
+            if (!mounted) return;
+
+            setIsAdmin(userData.isAdmin);
+            setUserRole(userData.profile?.role || null);
+            setIsFacilitiesManager(userData.profile?.role === 'facilities_manager');
+            setProfile(userData.profile);
+
+            if (hasCompletedInitialAuth.current && isOnLoginPage) {
+              handleRedirect(userData, true);
+            }
+          } catch (error) {
+            isFetchingProfile.current = false;
+            logger.error('Error fetching user data after sign in', error);
           }
+        })();
+      } else if (event === 'SIGNED_OUT') {
+        isFetchingProfile.current = false;
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setUserRole(null);
+        setIsAdmin(false);
+        setIsFacilitiesManager(false);
+
+        if (window.location.pathname !== '/login') {
+          navigate('/login', { replace: true });
         }
       }
-    );
+    });
 
-    // Initialize
     initializeAuth();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]); // Remove getUserProfile dependency - not used in the effect
+  }, [navigate]);
 
   // Compute isAuthenticated derived from session
   const isAuthenticated = !!session;
@@ -493,9 +492,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         user,
         profile,
+        userRole,
         isLoading,
         isAuthenticated,
         isAdmin,
+        isFacilitiesManager,
         signIn,
         signUp,
         signOut,

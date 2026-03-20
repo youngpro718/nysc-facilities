@@ -15,8 +15,8 @@ import { KeyStockAdjustment } from "../../inventory/KeyStockAdjustment";
 
 interface KeyInventoryTableProps {
   keys: KeyData[];
-  onDeleteKey: (key: KeyData) => void;
-  onToggleCaptainOfficeCopy: (keyId: string, currentStatus: boolean) => void;
+  onDeleteKey?: (key: KeyData) => void;
+  onToggleCaptainOfficeCopy?: (keyId: string, currentStatus: boolean) => void;
 }
 
 export function KeyInventoryTable({ keys, onDeleteKey, onToggleCaptainOfficeCopy }: KeyInventoryTableProps) {
@@ -63,24 +63,30 @@ export function KeyInventoryTable({ keys, onDeleteKey, onToggleCaptainOfficeCopy
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onToggleCaptainOfficeCopy(key.id, key.captain_office_copy)}
-                    className={key.captain_office_copy ? "text-success" : "text-muted-foreground"}
-                  >
-                    {key.captain_office_copy ? (
-                      <>
-                        <Shield className="h-4 w-4 mr-1" />
-                        Has Copy
-                      </>
-                    ) : (
-                      <>
-                        <ShieldOff className="h-4 w-4 mr-1" />
-                        Missing
-                      </>
-                    )}
-                  </Button>
+                  {onToggleCaptainOfficeCopy ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleCaptainOfficeCopy(key.id, key.captain_office_copy)}
+                      className={key.captain_office_copy ? "text-success" : "text-muted-foreground"}
+                    >
+                      {key.captain_office_copy ? (
+                        <>
+                          <Shield className="h-4 w-4 mr-1" />
+                          Has Copy
+                        </>
+                      ) : (
+                        <>
+                          <ShieldOff className="h-4 w-4 mr-1" />
+                          Missing
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <span className={key.captain_office_copy ? "text-success text-sm" : "text-muted-foreground text-sm"}>
+                      {key.captain_office_copy ? 'Has Copy' : 'Missing'}
+                    </span>
+                  )}
                   {key.captain_office_copy && key.captain_office_assigned_date && (
                     <span className="text-xs text-muted-foreground">
                       {new Date(key.captain_office_assigned_date).toLocaleDateString()}
@@ -104,13 +110,15 @@ export function KeyInventoryTable({ keys, onDeleteKey, onToggleCaptainOfficeCopy
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
                   <KeyStockAdjustment keyId={key.id} keyName={key.name} />
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => onDeleteKey(key)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {onDeleteKey && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => onDeleteKey(key)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>

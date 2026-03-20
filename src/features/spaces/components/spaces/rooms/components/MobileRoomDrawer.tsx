@@ -14,7 +14,7 @@ interface MobileRoomDrawerProps {
   room: Room | null;
   isOpen: boolean;
   onClose: () => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function MobileRoomDrawer({
@@ -43,13 +43,13 @@ export function MobileRoomDrawer({
         <div className="p-2 h-[75dvh] overflow-hidden">
           <RoomCard
             room={room}
-            onDelete={async (id) => {
+            onDelete={onDelete ? async (id) => {
               const ok = await confirmDeleteRoom({ title: 'Delete Room', description: 'Are you sure you want to delete this room? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
               if (ok) {
                 onDelete(id);
                 onClose();
               }
-            }}
+            } : undefined}
             variant="panel"
           />
         </div>

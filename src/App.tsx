@@ -21,7 +21,6 @@ import AccessAssignments from "@features/occupants/pages/AccessAssignments";
 
 import Keys from "@features/keys/pages/Keys";
 import Profile from "@features/profile/pages/Profile";
-import Lighting from "@features/lighting/pages/Lighting";
 import UserDashboard from "@features/dashboard/pages/UserDashboard";
 import MyRequests from "@features/dashboard/pages/MyRequests";
 import MyIssues from "@features/issues/pages/MyIssues";
@@ -139,13 +138,6 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="/purchasing-dashboard" element={
-          <ProtectedRoute>
-            <ModuleProtectedRoute moduleKey="inventory" moduleName="Purchasing">
-              <RoleDashboard />
-            </ModuleProtectedRoute>
-          </ProtectedRoute>
-        } />
 
         <Route path="/spaces" element={
           <ProtectedRoute>
@@ -183,16 +175,9 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="lighting" element={
-          <ProtectedRoute requireAdmin>
-            <ModuleProtectedRoute moduleKey="lighting" moduleName="Lighting Management">
-              <Lighting />
-            </ModuleProtectedRoute>
-          </ProtectedRoute>
-        } />
         {/* Admin Center - Team & User Management */}
         <Route path="admin" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute requireSystemAdmin>
             <AdminCenter />
           </ProtectedRoute>
         } />
@@ -221,12 +206,12 @@ function AppContent() {
         <Route path="form-templates" element={<Navigate to="/dashboard" replace />} />
         <Route path="form-intake" element={<Navigate to="/dashboard" replace />} />
         <Route path="admin/routing-rules" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute requireSystemAdmin>
             <RoutingRules />
           </ProtectedRoute>
         } />
         <Route path="admin/form-templates" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute requireSystemAdmin>
             <FormTemplatesAdmin />
           </ProtectedRoute>
         } />

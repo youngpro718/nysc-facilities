@@ -1,7 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { LightingIssuesWidget } from "./LightingIssuesWidget";
 import { Loader2 } from "lucide-react";
 
 interface IssueStats {
@@ -65,11 +64,6 @@ export const IssueStats = () => {
         </div>
       </div>
 
-      {/* System-Specific Issue Widgets */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <LightingIssuesWidget />
-        {/* TODO: Add HVAC Issues Widget, Security Issues Widget, etc. */}
-      </div>
     </div>
   );
 };

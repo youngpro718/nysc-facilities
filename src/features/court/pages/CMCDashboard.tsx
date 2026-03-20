@@ -8,33 +8,33 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { LIMITS } from '@/config';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useNotifications } from '@shared/hooks/useNotifications';
 import { useUserIssues } from '@features/dashboard/hooks/useUserIssues';
 import { useSupplyRequests } from '@features/supply/hooks/useSupplyRequests';
+import { useCMCMetrics } from '@features/court/hooks/useCMCMetrics';
 import { NotificationDropdown } from '@shared/components/user/NotificationDropdown';
 import { CompactHeader } from '@shared/components/user/CompactHeader';
 import { TermSheetPreview } from '@shared/components/user/TermSheetPreview';
 import { StatusCard } from '@/components/ui/StatusCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QuickIssueReportButton } from '@shared/components/user/QuickIssueReportButton';
 import { useUserPersonnelInfo } from '@features/court/hooks/useUserPersonnelInfo';
-import { format, formatDistanceToNow } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { format } from 'date-fns';
 import {
   Gavel, AlertTriangle, Package, ArrowRight,
-  Activity, Scale, Building2, Users, Clock
+  Activity, Scale, Clock, AlertCircle, Loader2
 } from 'lucide-react';
 
 export default function CMCDashboard() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { data: personnelInfo } = useUserPersonnelInfo(user?.id);
+  const { data: cmcMetrics, isLoading: metricsLoading, error: metricsError } = useCMCMetrics(3);
 
   const firstName = profile?.first_name || user?.user_metadata?.first_name || 'there';
   const lastName = profile?.last_name || user?.user_metadata?.last_name || '';
@@ -47,60 +47,48 @@ export default function CMCDashboard() {
     clearAllNotifications,
   } = useNotifications(user?.id);
 
-  const { userIssues = [] } = useUserIssues(user?.id);
-  const { data: supplyRequests = [] } = useSupplyRequests(user?.id);
-
-  // Courtroom health query
-  const { data: courtroomHealth } = useQuery({
-    queryKey: ['cmc-courtroom-health'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('court_rooms')
-        .select('id, operational_status');
-      if (error) throw error;
-      const rooms = data || [];
-      const operational = rooms.filter(r => r.operational_status === 'active' || r.operational_status === 'operational').length;
-      const maintenance = rooms.filter(r => r.operational_status === 'maintenance').length;
-      const inactive = rooms.filter(r => r.operational_status === 'inactive' || r.operational_status === 'closed').length;
-      const total = rooms.length || 1;
-      return { operational, maintenance, inactive, total };
-    },
-  });
-
-  // Active court terms
-  const { data: termInfo } = useQuery({
-    queryKey: ['cmc-active-terms'],
-    queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('court_terms')
-        .select('id, term_name, start_date, end_date')
-        .gte('end_date', today)
-        .order('start_date', { ascending: true })
-        .limit(LIMITS.cmcDashboard);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Today's sessions count
-  const { data: todaySessions } = useQuery({
-    queryKey: ['cmc-today-sessions'],
-    queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const { count } = await supabase
-        .from('court_sessions')
-        .select('*', { count: 'exact', head: true })
-        .eq('session_date', today);
-      return count || 0;
-    },
-  });
+  const { userIssues = [], isLoading: issuesLoading } = useUserIssues(user?.id);
+  const { data: supplyRequests = [], isLoading: supplyLoading } = useSupplyRequests(user?.id);
 
   const openIssues = userIssues.filter(i => i.status === 'open' || i.status === 'in_progress');
   const activeSupplies = supplyRequests.filter(r => !['completed', 'fulfilled', 'cancelled'].includes(r.status));
 
-  const health = courtroomHealth || { operational: 0, maintenance: 0, inactive: 0, total: 1 };
-  const healthPercent = Math.round((health.operational / health.total) * 100);
+  const health = cmcMetrics?.courtroomHealth || { operational: 0, maintenance: 0, inactive: 0, total: 1, healthPercent: 0 };
+  const healthPercent = health.healthPercent;
+  const todaySessions = cmcMetrics?.todaySessions ?? 0;
+  const termInfo = cmcMetrics?.activeTerms || [];
+
+  // Show loading state
+  if (metricsLoading || issuesLoading || supplyLoading) {
+    return (
+      <div className="space-y-5 pb-20 px-3 sm:px-0">
+        <div className="flex items-start justify-between gap-3 pt-2">
+          <Skeleton className="h-16 w-64" />
+          <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+        <Skeleton className="h-24 w-full" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[110px]" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (metricsError) {
+    return (
+      <div className="space-y-5 pb-20 px-3 sm:px-0">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load CMC dashboard metrics. Please refresh the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 pb-20 px-3 sm:px-0">

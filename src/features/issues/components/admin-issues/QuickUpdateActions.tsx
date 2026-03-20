@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { logger } from '@/lib/logger';
 import { Check, Clock, AlertTriangle, MessageCircle, Ticket, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@shared/hooks/use-toast";
+import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 import type { EnhancedIssue } from "@features/dashboard/hooks/useAdminIssuesData";
 
 interface QuickUpdateActionsProps {
@@ -30,6 +31,24 @@ export function QuickUpdateActions({ issue, onUpdate }: QuickUpdateActionsProps)
   const [ticketNumber, setTicketNumber] = useState(issueData.external_ticket_number || "");
   const [isSavingTicket, setIsSavingTicket] = useState(false);
   const { toast } = useToast();
+
+  const taskDefaults = useMemo(() => {
+    const issuePriority = String(issue.priority);
+    const mappedPriority = issuePriority === 'critical'
+      ? 'urgent'
+      : issuePriority === 'urgent' || issuePriority === 'high'
+        ? 'high'
+        : 'medium';
+
+    return {
+      title: `Follow-up: ${issue.title}`,
+      description: issue.description || '',
+      task_type: 'maintenance' as const,
+      priority: mappedPriority as 'low' | 'medium' | 'high' | 'urgent',
+      to_room_id: issueData.room_id || undefined,
+      issue_id: issue.id,
+    };
+  }, [issue, issueData.room_id]);
 
   const handleSaveTicket = async () => {
     if (!ticketNumber.trim()) {
@@ -198,6 +217,15 @@ export function QuickUpdateActions({ issue, onUpdate }: QuickUpdateActionsProps)
     <div className="space-y-3 border-t pt-3">
       {/* Quick Status Actions */}
       <div className="flex flex-wrap gap-2">
+        <CreateTaskDialog
+          trigger={
+            <Button size="sm" variant="outline" className="text-xs">
+              Create Task
+            </Button>
+          }
+          taskDefaults={taskDefaults}
+        />
+
         {quickStatusActions.map(action => {
           const Icon = action.icon;
           return (

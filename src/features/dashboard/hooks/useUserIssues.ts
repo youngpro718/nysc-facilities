@@ -30,7 +30,7 @@ class IssueError extends Error {
 export function useUserIssues(userId: string | undefined) {
   const queryClient = useQueryClient();
 
-  const { data: userIssues = [], refetch: refetchIssues } = useQuery<UserIssue[]>({
+  const { data: userIssues = [], refetch: refetchIssues, isLoading } = useQuery<UserIssue[]>({
     queryKey: ['userIssues', userId],
     queryFn: async () => {
       try {
@@ -59,7 +59,7 @@ export function useUserIssues(userId: string | undefined) {
               name
             )
           `)
-          .eq('created_by', userId)
+          .or(`created_by.eq.${userId},reported_by.eq.${userId}`)
           .order('created_at', { ascending: false });
 
         if (error) throw new IssueError(`Failed to fetch user issues: ${error.message}`);
@@ -105,6 +105,6 @@ export function useUserIssues(userId: string | undefined) {
     userIssues,
     refetchIssues,
     handleMarkAsSeen,
-    isLoading: false, // You can add proper loading state here if needed
+    isLoading,
   };
 }

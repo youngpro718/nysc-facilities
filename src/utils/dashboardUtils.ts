@@ -1,15 +1,7 @@
-// @ts-nocheck
-export interface LightingFixture {
-  id: string;
-  bulb_count: number;
-  status: 'working' | 'not_working' | 'maintenance' | 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
-}
-
 export interface Room {
   id: string;
   name: string;
   room_number?: string;
-  lighting_fixtures?: LightingFixture[];
 }
 
 export interface Floor {
@@ -27,6 +19,12 @@ export interface Building {
   floors?: Floor[];
 }
 
+export interface BuildingWithLighting extends Building {
+  lightingWorkingFixtures?: number;
+  lightingTotalFixtures?: number;
+  _lightingDebug?: unknown;
+}
+
 export interface BuildingStats {
   floorCount: number;
   roomCount: number;
@@ -34,13 +32,7 @@ export interface BuildingStats {
   totalFixtures: number;
 }
 
-const isWorkingStatus = (status: string | null | undefined) => {
-  const s = (status ?? '').toString().toLowerCase();
-  return s === 'working' || s === 'functional';
-};
-
-export const calculateBuildingStats = (building: Record<string, unknown>): BuildingStats => {
-  // Add defensive checks
+export const calculateBuildingStats = (building: BuildingWithLighting | null | undefined): BuildingStats => {
   if (!building) {
     return {
       floorCount: 0,
@@ -57,26 +49,9 @@ export const calculateBuildingStats = (building: Record<string, unknown>): Build
       0
     ) || 0;
 
-  let workingFixtures = 0;
-  let totalFixtures = 0;
-
-  building.floors?.forEach(floor => {
-    if (floor && floor.rooms) {
-      floor.rooms.forEach(room => {
-        if (room && room.lighting_fixtures) {
-          room.lighting_fixtures.forEach(fixture => {
-            if (fixture) {
-              const fixtureCount = fixture.bulb_count || 0;
-              totalFixtures += fixtureCount;
-              if (isWorkingStatus(fixture.status)) {
-                workingFixtures += fixtureCount;
-              }
-            }
-          });
-        }
-      });
-    }
-  });
+  // Calculate fixture counts from building data if available
+  const workingFixtures = (building as any).lightingWorkingFixtures || 0;
+  const totalFixtures = (building as any).lightingTotalFixtures || 0;
 
   return {
     floorCount,

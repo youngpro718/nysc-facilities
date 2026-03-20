@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,13 +7,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Trash2, Lightbulb, Play, AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
+import { useSpaceFixtures, useWalkthroughHistory } from "@/features/lighting/hooks/useLightingData";
+import { WalkthroughFlow } from "@/features/operations/components/lighting/WalkthroughFlow";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MaintenanceTabProps {
   form: UseFormReturn<EditSpaceFormData>;
+  hallwayId?: string;
 }
 
-export function MaintenanceTab({ form }: MaintenanceTabProps) {
+export function MaintenanceTab({ form, hallwayId }: MaintenanceTabProps) {
+  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
   const maintenanceSchedule = form.watch("maintenanceSchedule") || [];
 
   const handleAddSchedule = () => {
@@ -180,6 +190,125 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
           </Button>
         </div>
       </div>
+
+      {/* Lighting Walkthrough Section */}
+      {hallwayId && <LightingWalkthroughSection hallwayId={hallwayId} />}
+
+      {/* Walkthrough Flow Dialog */}
+      <WalkthroughFlow
+        open={walkthroughOpen}
+        onOpenChange={setWalkthroughOpen}
+        hallwayId={hallwayId}
+      />
     </div>
+  );
+}
+
+// Lighting Walkthrough Section Component
+function LightingWalkthroughSection({ hallwayId }: { hallwayId: string }) {
+  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
+  const { data: fixtures = [], isLoading: fixturesLoading } = useSpaceFixtures(hallwayId, 'hallway');
+  const { data: history = [], isLoading: historyLoading } = useWalkthroughHistory(hallwayId, 1);
+  
+  const lastWalkthrough = history[0];
+  const fixtureStats = {
+    total: fixtures.length,
+    out: fixtures.filter(f => f.status === 'non_functional').length,
+    needsElectrician: fixtures.filter(f => f.requires_electrician).length,
+  };
+
+  return (
+    <>
+      <Separator />
+      
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold flex items-center gap-2">
+                <Lightbulb className="h-4 w-4" />
+                Lighting Walkthrough
+              </h4>
+            </div>
+
+            {fixturesLoading || historyLoading ? (
+              <Skeleton className="h-24 w-full" />
+            ) : (
+              <div className="space-y-4">
+                {/* Last Walkthrough Info */}
+                {lastWalkthrough ? (
+                  <div className="space-y-2">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Last walkthrough: </span>
+                      <span className="font-medium">
+                        {format(new Date(lastWalkthrough.started_at), 'PPp')}
+                      </span>
+                    </div>
+                    {lastWalkthrough.issues_found > 0 && (
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-orange-500" />
+                        <span className="text-sm font-medium text-orange-600">
+                          {lastWalkthrough.issues_found} issue{lastWalkthrough.issues_found !== 1 ? 's' : ''} found
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    No walkthrough history
+                  </div>
+                )}
+
+                {/* Fixture Count */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">{fixtureStats.total}</span>
+                      <span className="text-muted-foreground ml-1">fixtures in this hallway</span>
+                    </div>
+                    {fixtureStats.out > 0 && (
+                      <>
+                        <div className="h-4 w-px bg-border" />
+                        <div>
+                          <span className="font-medium text-orange-600">{fixtureStats.out}</span>
+                          <span className="text-muted-foreground ml-1">out</span>
+                        </div>
+                      </>
+                    )}
+                    {fixtureStats.needsElectrician > 0 && (
+                      <>
+                        <div className="h-4 w-px bg-border" />
+                        <div>
+                          <span className="font-medium text-red-600">{fixtureStats.needsElectrician}</span>
+                          <span className="text-muted-foreground ml-1">need electrician</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Start Walkthrough Button */}
+                <Button
+                  onClick={() => setWalkthroughOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  disabled={fixtureStats.total === 0}
+                >
+                  <Play className="h-3 w-3 mr-1" />
+                  Start New Walkthrough
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Walkthrough Flow Dialog */}
+      <WalkthroughFlow
+        open={walkthroughOpen}
+        onOpenChange={setWalkthroughOpen}
+        hallwayId={hallwayId}
+      />
+    </>
   );
 }

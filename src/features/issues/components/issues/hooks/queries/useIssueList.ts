@@ -68,21 +68,6 @@ export function useIssueList(filters: IssueFilters, searchQuery?: string) {
           }
         }
 
-        // Apply lighting-specific filters
-        if (filters.lightingType && filters.lightingType !== 'all_lighting_types') {
-          query = query.contains('lighting_fixtures', [{ type: filters.lightingType }]);
-        }
-
-        if (filters.fixtureStatus && filters.fixtureStatus !== 'all_fixture_statuses') {
-          query = query.contains('lighting_fixtures', [{ status: filters.fixtureStatus }]);
-        }
-
-        if (filters.electricalIssue && filters.electricalIssue !== 'all_electrical_issues') {
-          query = query.contains('lighting_fixtures', [{
-            electrical_issues: { [filters.electricalIssue]: true }
-          }]);
-        }
-
         if (filters.hasOverdue) {
           const now = new Date().toISOString();
           query = query.lt('due_date', now);

@@ -11,7 +11,6 @@ export interface EnabledModules {
   inventory: boolean;
   supply_requests: boolean;
   keys: boolean;
-  lighting: boolean;
   maintenance: boolean;
   court_operations: boolean;
   operations: boolean;
@@ -24,7 +23,6 @@ const DEFAULT_MODULES: EnabledModules = {
   inventory: true,
   supply_requests: true,
   keys: true,
-  lighting: true,
   maintenance: true,
   court_operations: true,
   operations: true,
@@ -37,7 +35,7 @@ export function useEnabledModules() {
   
   // Dev-only bypass to quickly explore the app without toggling modules in DB
   // Set VITE_DISABLE_MODULE_GATES=true in .env.local and restart Vite
-  const DISABLE_GATES = import.meta.env.VITE_DISABLE_MODULE_GATES === 'true';
+  const DISABLE_GATES = import.meta.env.DEV && import.meta.env.VITE_DISABLE_MODULE_GATES === 'true';
 
   const fetchEnabledModules = async () => {
     if (DISABLE_GATES) {
@@ -98,11 +96,7 @@ export function useEnabledModules() {
         finalModules = { ...DEFAULT_MODULES, ...systemDefaults, ...validModules };
       }
       
-      // Auto-enable supply_requests and inventory for Supply Department users
-      if ((profile as any)?.departments?.name === 'Supply Department') {
-        finalModules.supply_requests = true;
-        finalModules.inventory = true;
-      }
+      // Module access is now controlled by role permissions, not department names
       
       setEnabledModules(finalModules);
     } catch (error) {

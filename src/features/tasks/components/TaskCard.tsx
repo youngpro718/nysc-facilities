@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { 
   Clock, 
   CheckCircle, 
@@ -15,6 +16,7 @@ import {
   Package,
   MapPin,
   ArrowRight,
+  AlertCircle,
   MoreVertical,
   Loader2
 } from 'lucide-react';
@@ -70,6 +72,7 @@ export function TaskCard({
   onReject,
   isLoading,
 }: TaskCardProps) {
+  const navigate = useNavigate();
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
@@ -170,6 +173,18 @@ export function TaskCard({
                   {format(new Date(task.created_at), 'MMM d, h:mm a')}
                 </span>
               </div>
+
+              {task.issue && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/operations?tab=issues&issue_id=${task.issue!.id}`)}
+                  className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-primary hover:bg-primary/5 transition-colors"
+                  title={task.issue.title}
+                >
+                  <AlertCircle className="h-3 w-3" />
+                  <span className="truncate">Linked issue: {task.issue.title}</span>
+                </button>
+              )}
             </div>
 
             {/* Actions */}

@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
 import * as XLSX from "xlsx";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 interface RoomExcelImportExportProps {
   projectRef: string;
@@ -35,6 +36,8 @@ function autoWidth(ws: XLSX.WorkSheet, data: Record<string, unknown>[]) {
 
 export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps) {
   const { toast } = useToast();
+  const { canAdmin } = useRolePermissions();
+  const canManageSpaces = canAdmin('spaces');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -477,10 +480,12 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
         Export Excel
       </Button>
 
-      <Button variant="outline" size="sm" onClick={handleImportClick} disabled={isImporting}>
-        {isImporting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <FileUp className="h-4 w-4 mr-1.5" />}
-        Import Excel
-      </Button>
+      {canManageSpaces && (
+        <Button variant="outline" size="sm" onClick={handleImportClick} disabled={isImporting}>
+          {isImporting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <FileUp className="h-4 w-4 mr-1.5" />}
+          Import Excel
+        </Button>
+      )}
 
       <Dialog open={showResults} onOpenChange={setShowResults}>
         <DialogContent className="max-w-2xl max-h-[80vh]">

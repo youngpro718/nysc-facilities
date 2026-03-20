@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { NavigationTab, Tab } from "../types";
 import { useAuth } from "@features/auth/hooks/useAuth";
+import { isAdminRole } from "@/routes/roleBasedRouting";
 import { MoreHorizontal } from "lucide-react";
 import { useSupplyPendingCounts } from "@features/supply/hooks/useSupplyPendingCounts";
 import { useStaffTasksPendingCounts } from "@features/tasks/hooks/useStaffTasksPendingCounts";
@@ -17,7 +18,8 @@ interface BottomTabBarProps {
 export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMobileMenu }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
+  const isAdminTier = isAdminRole(profile?.role);
   const { data: supplyCounts } = useSupplyPendingCounts();
   const { data: staffTaskCounts } = useStaffTasksPendingCounts();
 
@@ -30,7 +32,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
     // Tasks: show staff tasks counts (NOT supply orders)
     if (title === 'Tasks') {
       if (!staffTaskCounts) return 0;
-      if (isAdmin) {
+      if (isAdminTier) {
         return staffTaskCounts.pendingApproval;
       }
       return staffTaskCounts.availableToClaim;
@@ -42,7 +44,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
     }
 
     // Supply Requests (Admin): show orders needing approval
-    if (title === 'Supply Requests' && isAdmin) {
+    if (title === 'Supply Requests' && isAdminTier) {
       return supplyCounts?.pendingApprovals || 0;
     }
 
@@ -50,7 +52,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
   };
 
   const handleNav = (title: string) => {
-    const path = getNavigationPath(title, isAdmin);
+    const path = getNavigationPath(title, isAdminTier);
     if (path) navigate(path);
   };
 
@@ -67,7 +69,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
         <div className={cn("grid", hasMore ? "grid-cols-5" : "grid-cols-4")}>
           {primary.map((item) => {
             const Icon = item.icon;
-            const path = getNavigationPath(item.title, isAdmin);
+            const path = getNavigationPath(item.title, isAdminTier);
             const isActive = path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
             const badgeCount = getBadgeCount(item.title);
 

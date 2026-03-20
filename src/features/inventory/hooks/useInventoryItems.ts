@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getInventoryItems } from '@features/supply/services/supplyService';
+import { getInventoryItems } from '@features/supply/services/unifiedSupplyService';
 
 export function useInventoryItems() {
   return useQuery({

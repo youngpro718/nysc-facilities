@@ -25,6 +25,7 @@ import { ItemPhotoUpload } from "./ItemPhotoUpload";
 import { useToast } from "@shared/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useInventoryRealtimeSync } from "@features/inventory/hooks/useOptimizedInventory";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 type InventoryItem = {
   id: string;
   name: string;
@@ -57,6 +58,9 @@ type Room = {
 };
 
 export const InventoryItemsPanel = () => {
+  const { canWrite: canWriteFeature, canAdmin: canAdminFeature } = useRolePermissions();
+  const canEdit = canWriteFeature('inventory');
+  const canDelete = canAdminFeature('inventory');
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -298,11 +302,13 @@ export const InventoryItemsPanel = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full sm:max-w-sm"
         />
-        <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto touch-target">
-          <Plus className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Add Item</span>
-          <span className="sm:hidden">Add</span>
-        </Button>
+        {canEdit && (
+          <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto touch-target">
+            <Plus className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Add Item</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        )}
       </div>
 
       {/* Pagination Controls - Mobile Optimized */}
@@ -424,7 +430,7 @@ export const InventoryItemsPanel = () => {
             <p className="text-muted-foreground mb-4">
               {searchQuery ? "Try adjusting your search criteria." : "Add your first inventory item to get started."}
             </p>
-            {!searchQuery && (
+            {!searchQuery && canEdit && (
               <Button onClick={() => setCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add First Item
@@ -488,36 +494,44 @@ export const InventoryItemsPanel = () => {
                     </div>
                     
                     <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleStockAdjustment(item)}
-                      >
-                        Adjust Stock
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handlePhotoUpload(item)}
-                        title="Upload photo"
-                      >
-                        <Camera className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(item)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(item)}
-                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStockAdjustment(item)}
+                        >
+                          Adjust Stock
+                        </Button>
+                      )}
+                      {canEdit && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePhotoUpload(item)}
+                          title="Upload photo"
+                        >
+                          <Camera className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canEdit && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(item)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(item)}
+                          className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardHeader>

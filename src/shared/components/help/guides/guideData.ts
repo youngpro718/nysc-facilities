@@ -2,7 +2,6 @@ import {
   BookOpen,
   Building2,
   AlertTriangle,
-  Zap,
   Gavel,
   KeyRound,
   Package2,
@@ -42,25 +41,6 @@ export const guideSections: GuideSection[] = [
       {
         question: 'How do I update my profile?',
         answer: 'Click your avatar in the top-right corner to go to your Profile page. Update your name, contact info, and preferences there.',
-      },
-    ],
-  },
-  {
-    id: 'lighting',
-    title: 'Lighting Inspections',
-    icon: Zap,
-    items: [
-      {
-        question: 'How do I inspect lights on a floor?',
-        answer: 'Go to Lighting > Floor View tab. Expand a floor to see hallway sections. Each dot is a fixture: Green = Working, Red = Out, Amber = Ballast. Tap any dot to cycle its status.',
-      },
-      {
-        question: 'How do I add a new hallway section?',
-        answer: 'In Floor View, expand a floor and click "+ Add Section." Enter the name (or tap a direction preset like North, Southwest), set fixture count, choose bulb technology, and click Add.',
-      },
-      {
-        question: 'What is Walkthrough Mode?',
-        answer: 'Click "Walkthrough" on any hallway to step through fixtures one by one. Designed for physical inspections where you walk the hallway and mark each light.',
       },
     ],
   },
@@ -138,16 +118,12 @@ export const guideSections: GuideSection[] = [
   },
   {
     id: 'spaces',
-    title: 'Spaces & Floor Plans',
+    title: 'Spaces & Rooms',
     icon: Building2,
     items: [
       {
         question: 'How do I add a new room?',
         answer: 'Go to Spaces, select building and floor, click "+". Fill in room details (name, number, type, capacity) and save.',
-      },
-      {
-        question: 'How do I view floor plans?',
-        answer: 'In Spaces, select building and floor, click "Floor Plan" tab. Toggle between 2D and 3D views. In 2D, drag objects to rearrange.',
       },
       {
         question: 'How do I assign someone to a room?',

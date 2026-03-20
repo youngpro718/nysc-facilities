@@ -1,8 +1,7 @@
-// Admin Dashboard — main admin landing page
+// Admin Dashboard — Command Center + Building Overview
 import { AdminGreeting } from "@features/dashboard/components/dashboard/AdminGreeting";
-import { GlobalKPIStrip } from "@features/dashboard/components/dashboard/GlobalKPIStrip";
+import { CommandCenter } from "@features/dashboard/components/dashboard/CommandCenter";
 import { BuildingsGrid } from "@features/dashboard/components/dashboard/BuildingsGrid";
-import { PendingSupplyApprovals } from "@features/dashboard/components/dashboard/PendingSupplyApprovals";
 import { ProductionSecurityGuard } from "@features/auth/components/security/ProductionSecurityGuard";
 import { useDashboardData } from "@features/dashboard/hooks/useDashboardData";
 import { Loader2 } from "lucide-react";
@@ -39,7 +38,7 @@ const AdminDashboard = () => {
     return (
       <div className="space-y-8">
         <AdminGreeting onRefresh={refreshData} isLoading={isLoading} />
-        <GlobalKPIStrip />
+        <CommandCenter />
         <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
           <p>No buildings found</p>
         </div>
@@ -51,11 +50,7 @@ const AdminDashboard = () => {
     <div className="space-y-6 sm:space-y-8">
       <AdminGreeting onRefresh={refreshData} isLoading={isLoading || buildingsLoading} />
       
-      <GlobalKPIStrip />
-      
       <ProductionSecurityGuard />
-      
-      <PendingSupplyApprovals />
       
       <BuildingsGrid
         buildings={buildings as any}
@@ -64,6 +59,8 @@ const AdminDashboard = () => {
         activities={activities}
         onMarkAsSeen={handleMarkAsSeen}
       />
+      
+      <CommandCenter />
     </div>
   );
 };

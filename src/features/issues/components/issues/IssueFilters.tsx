@@ -2,9 +2,8 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { TypeFilters } from "./filters/TypeFilters";
-import { LightingFilters } from "./filters/LightingFilters";
 import { IssueFilters as IssueFiltersType } from "./types/FilterTypes";
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { QuickFilters } from "./filters/QuickFilters";
 
 interface IssueFiltersProps {
@@ -20,11 +19,8 @@ export const IssueFilters = ({
   searchQuery,
   viewMode 
 }: IssueFiltersProps) => {
-  const [showLightingFilters, setShowLightingFilters] = useState(false);
-
   const handleTypeChange = useCallback((type: string) => {
     logger.debug("Type filter changed to:", type);
-    setShowLightingFilters(type === 'LIGHTING');
     onFilterChange({ type: type as IssueFiltersType['type'] });
   }, [onFilterChange]);
 
@@ -58,10 +54,6 @@ export const IssueFilters = ({
         </div>
       </div>
 
-      <LightingFilters 
-        onFilterChange={handleFilterChange}
-        showLightingFilters={showLightingFilters}
-      />
     </div>
   );
 };

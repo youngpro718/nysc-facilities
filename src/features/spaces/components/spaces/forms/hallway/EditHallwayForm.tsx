@@ -5,12 +5,15 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditSpaceFormData, editSpaceSchema } from "../../schemas/editSpaceSchema";
 import { supabase } from "@/lib/supabase";
 import { CreateHallwayFields } from "../../forms/space/CreateHallwayFields";
+import { BasicInfoTab } from "./BasicInfoTab";
+import { MaintenanceTab } from "./MaintenanceTab";
 
 interface EditHallwayFormProps {
   id: string;
@@ -93,7 +96,20 @@ export function EditHallwayForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <CreateHallwayFields form={form} />
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="basic">Basic Info</TabsTrigger>
+            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="basic" className="space-y-4">
+            <BasicInfoTab form={form} />
+          </TabsContent>
+
+          <TabsContent value="maintenance" className="space-y-4">
+            <MaintenanceTab form={form} hallwayId={id} />
+          </TabsContent>
+        </Tabs>
         
         <div className="flex justify-end gap-2 pt-4">
           <Button
@@ -103,18 +119,12 @@ export function EditHallwayForm({
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             type="submit"
-            disabled={hallwayMutation.isPending || !form.formState.isDirty}
+            disabled={hallwayMutation.isPending}
           >
-            {hallwayMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update"
-            )}
+            {hallwayMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
           </Button>
         </div>
       </form>
