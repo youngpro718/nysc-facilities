@@ -1,52 +1,33 @@
 
-Problem found:
-- The signup failure is not caused by the `profiles` columns anymore.
-- The current auth logs show a different root cause: Supabase is trying to call `public.log_security_event(..., uuid, jsonb)` during signup, and that exact function signature does not exist.
 
-What I verified:
-- `profiles.room_number` and `profiles.court_position` do exist now.
-- `handle_new_user()` is present and already inserts those fields correctly.
-- The database currently has two overloaded `log_security_event` functions:
-  - `log_security_event(action_type text, resource_type text, resource_id text, details jsonb)`
-  - `log_security_event(p_event_type text, p_target_table text, p_target_id text, p_details text)`
-- The failing call is trying to pass a `uuid` as the third argument, not `text`, so Postgres cannot resolve the function and signup aborts.
+## Add Generic Images for Inventory Items
 
-Most likely source:
-- A trigger or function in the database is calling `log_security_event(..., some_uuid_column, some_jsonb)` without casting the UUID to text.
-- This appears to be coming from database-side auth/signup logic, not from the React client.
+When an inventory item has no uploaded photo, the system will display a relevant generic image based on the item's name. This makes the inventory visually richer without requiring manual photo uploads.
 
-Recommended fix:
-1. Add a compatibility overload:
-   - Create `public.log_security_event(action_type text, resource_type text, resource_id uuid, details jsonb)`
-   - Inside it, delegate to the existing text/jsonb version using `resource_id::text`
-2. Keep the existing text-based function unchanged
-   - This is the safest fix because it supports both old and new callers without breaking anything else.
-3. Then audit database functions/triggers that call `log_security_event`
-   - Standardize them to pass `::text` over time
-   - But that cleanup can be a second pass after signup is restored
+### Approach
 
-Why this is the best fix:
-- Lowest-risk database change
-- Backward compatible with all existing callers
-- Restores signup immediately even if the offending call site is hidden in an older trigger/function
-- Avoids touching frontend auth code unnecessarily
+1. **Create a utility function** (`getGenericItemImage`) that maps common inventory keywords to free stock images from Unsplash (static URLs, no API key needed). For example:
+   - "paper" / "printer" → office supplies image
+   - "soap" / "sanitizer" / "cleaning" → cleaning supplies image  
+   - "bulb" / "light" / "lamp" → lighting image
+   - "chair" / "desk" / "furniture" → furniture image
+   - "pen" / "marker" / "stapler" → stationery image
+   - Default fallback → generic storage/supplies image
 
-Implementation scope:
-- One new SQL migration only
-- No UI changes required
-- Optional follow-up audit of all security/audit functions after the app is stable again
+2. **Update display components** to show the generic image when `photo_url` is empty:
+   - `InventoryTable.tsx` — add an image column to the table
+   - `InventoryItemsPanel.tsx` — show generic image when `photo_url` is missing
+   - `MobileInventoryGrid.tsx` — show generic image when `photo_url` is missing
+   - `SupplyItemCard.tsx` / `InlineItemRow.tsx` — show generic image as fallback
 
-Technical details:
-```text
-Current failure:
-  function public.log_security_event(unknown, unknown, uuid, jsonb) does not exist
+3. **Image sizing**: Small thumbnails (40×40 in tables, 64×64 in cards) with `object-cover` and rounded corners, consistent with existing photo styling.
 
-Safe compatibility patch:
-  create function public.log_security_event(text, text, uuid, jsonb)
-  -> internally call public.log_security_event(text, text, uuid::text, jsonb)
-```
+### Files to Create/Edit
 
-What I would implement next:
-- Add the compatibility overload migration
-- Re-test signup
-- If signup still fails, inspect the exact DB function/trigger calling it and normalize that caller too
+- **New**: `src/utils/inventoryImages.ts` — keyword-to-image mapping utility
+- **Edit**: `src/features/spaces/components/spaces/inventory/components/InventoryTable.tsx` — add image column
+- **Edit**: `src/features/inventory/components/inventory/InventoryItemsPanel.tsx` — fallback image
+- **Edit**: `src/features/spaces/components/spaces/inventory/components/MobileInventoryGrid.tsx` — fallback image
+- **Edit**: `src/features/supply/components/supply/SupplyItemCard.tsx` — fallback image
+- **Edit**: `src/features/supply/components/supply/InlineItemRow.tsx` — fallback image
+
