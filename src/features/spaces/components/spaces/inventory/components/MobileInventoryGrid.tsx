@@ -10,6 +10,7 @@ import {
 import { MoreVertical, Plus, Minus, Package2 } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { getGenericItemImage } from "@/utils/inventoryImages";
 
 interface MobileInventoryGridProps {
   items: InventoryItem[];
@@ -70,15 +71,14 @@ export function MobileInventoryGrid({
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               {/* Item Photo */}
-              {item.photo_url && (
-                <div className="shrink-0">
-                  <img 
-                    src={item.photo_url} 
-                    alt={item.name}
-                    className="w-16 h-16 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
+              <div className="shrink-0">
+                <img 
+                  src={item.photo_url || getGenericItemImage(item.name)} 
+                  alt={item.name}
+                  loading="lazy"
+                  className="w-16 h-16 object-cover rounded-lg border"
+                />
+              </div>
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between mb-2">

@@ -26,6 +26,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useInventoryRealtimeSync } from "@features/inventory/hooks/useOptimizedInventory";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { getGenericItemImage } from "@/utils/inventoryImages";
 type InventoryItem = {
   id: string;
   name: string;
@@ -444,14 +445,13 @@ export const InventoryItemsPanel = () => {
               <Card key={item.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
-                    {/* Photo thumbnail if exists */}
-                    {item.photo_url && (
-                      <img 
-                        src={item.photo_url} 
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded border"
-                      />
-                    )}
+                    {/* Photo thumbnail */}
+                    <img 
+                      src={item.photo_url || getGenericItemImage(item.name)} 
+                      alt={item.name}
+                      loading="lazy"
+                      className="w-16 h-16 object-cover rounded border"
+                    />
                     
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-3">
