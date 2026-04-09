@@ -21,6 +21,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { ReceiptDialog } from '@features/supply/components/supply/ReceiptDialog';
 import type { ReceiptData } from '@features/supply/types/receipt';
 import { useSupplyReceipts } from '@features/supply/hooks/useSupplyReceipts';
+import { createReceiptData } from '@/lib/receiptUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { confirmPickup, cancelSupplyRequest, archiveSupplyRequest } from '@features/supply/services/unifiedSupplyService';
 import { toast } from 'sonner';
@@ -237,8 +238,8 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Receipt button visible on completed cards without expanding */}
-                {isCompleted && (
+                {/* Receipt button visible on all non-cancelled orders */}
+                {request.status !== 'cancelled' && request.status !== 'rejected' && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -368,14 +369,20 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
         );
       })}
 
-      {/* Receipt Dialog */}
-      {selectedReceiptRequestId && receipts && receipts.length > 0 && (
-        <ReceiptDialog
-          open={!!selectedReceiptRequestId}
-          onOpenChange={(open) => !open && setSelectedReceiptRequestId(null)}
-          receiptData={receipts[0].pdf_data as ReceiptData}
-        />
-      )}
+      {/* Receipt Dialog — use DB receipt if available, otherwise generate on-the-fly */}
+      {selectedReceiptRequestId && (() => {
+        const dbReceipt = receipts && receipts.length > 0 ? (receipts[0].pdf_data as ReceiptData) : null;
+        const selectedRequest = requests.find(r => r.id === selectedReceiptRequestId);
+        const receiptData = dbReceipt || (selectedRequest ? createReceiptData(selectedRequest as never) : null);
+        if (!receiptData) return null;
+        return (
+          <ReceiptDialog
+            open={!!selectedReceiptRequestId}
+            onOpenChange={(open) => !open && setSelectedReceiptRequestId(null)}
+            receiptData={receiptData}
+          />
+        );
+      })()}
     </div>
   );
 }
