@@ -18,6 +18,7 @@ import {
   SheetContent,
 } from '@/components/ui/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getGenericItemImage } from '@/utils/inventoryImages';
 
 interface SupplyItemCardProps {
   item: {
@@ -82,17 +83,12 @@ export function SupplyItemCard({
           className="relative h-24 bg-gradient-to-br from-muted to-muted/50 cursor-pointer"
           onClick={() => setDetailOpen(true)}
         >
-          {item.photo_url ? (
-            <img
-              src={item.photo_url}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Package className="h-10 w-10 text-muted-foreground/20" />
-            </div>
-          )}
+          <img
+            src={item.photo_url || getGenericItemImage(item.name)}
+            alt={item.name}
+            loading="lazy"
+            className="w-full h-full object-cover"
+          />
           
           {/* Favorite button */}
           {onToggleFavorite && (
@@ -262,20 +258,14 @@ export function SupplyItemCard({
 
             {/* Hero Image */}
             <div className="px-5 shrink-0">
-              {item.photo_url ? (
-                <div className="w-full rounded-2xl overflow-hidden bg-muted aspect-[16/9]">
-                  <img
-                    src={item.photo_url}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-full rounded-2xl bg-gradient-to-br from-muted to-muted/50 aspect-[16/9] flex flex-col items-center justify-center gap-2">
-                  <Package className="h-16 w-16 text-muted-foreground/20" />
-                  <span className="text-sm text-muted-foreground/40">No image available</span>
-                </div>
-              )}
+              <div className="w-full rounded-2xl overflow-hidden bg-muted aspect-[16/9]">
+                <img
+                  src={item.photo_url || getGenericItemImage(item.name)}
+                  alt={item.name}
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
 
             {/* Info */}

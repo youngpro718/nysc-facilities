@@ -7,6 +7,7 @@ import { MoreHorizontal, Pencil } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
 import { useMemo } from "react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { getGenericItemImage } from "@/utils/inventoryImages";
 
 interface InventoryTableProps {
   items: InventoryItem[];
@@ -53,6 +54,7 @@ export function InventoryTable({
     <><Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-[60px]"></TableHead>
           <TableHead>Item</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Quantity</TableHead>
@@ -66,6 +68,14 @@ export function InventoryTable({
           
           return (
             <TableRow key={item.id}>
+              <TableCell className="w-[60px] p-2">
+                <img
+                  src={item.photo_url || getGenericItemImage(item.name)}
+                  alt={item.name}
+                  loading="lazy"
+                  className="w-10 h-10 object-cover rounded-md border"
+                />
+              </TableCell>
               <TableCell className="font-medium">
                 {item.name}
               </TableCell>
@@ -135,7 +145,7 @@ export function InventoryTable({
         })}
         {!isLoading && (!items || items.length === 0) && (
           <TableRow>
-            <TableCell colSpan={5} className="h-24 text-center">
+            <TableCell colSpan={6} className="h-24 text-center">
               No items found
             </TableCell>
           </TableRow>

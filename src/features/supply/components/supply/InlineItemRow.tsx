@@ -7,6 +7,7 @@ import {
   Sheet,
   SheetContent,
 } from '@/components/ui/sheet';
+import { getGenericItemImage } from '@/utils/inventoryImages';
 
 interface InlineItemRowProps {
   item: {
@@ -252,21 +253,15 @@ export function InlineItemRow({
 
             {/* Image — full width, shorter aspect ratio */}
             <div className="px-5 shrink-0">
-              {item.photo_url ? (
-                <div className="w-full rounded-xl overflow-hidden bg-muted" style={{ maxHeight: '180px' }}>
-                  <img
-                    src={item.photo_url}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                    style={{ maxHeight: '180px' }}
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-28 rounded-xl bg-muted/50 flex flex-col items-center justify-center gap-1.5">
-                  <Package className="h-10 w-10 text-muted-foreground/30" />
-                  <span className="text-xs text-muted-foreground/50">No image</span>
-                </div>
-              )}
+              <div className="w-full rounded-xl overflow-hidden bg-muted" style={{ maxHeight: '180px' }}>
+                <img
+                  src={item.photo_url || getGenericItemImage(item.name)}
+                  alt={item.name}
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  style={{ maxHeight: '180px' }}
+                />
+              </div>
             </div>
 
             {/* Info */}
