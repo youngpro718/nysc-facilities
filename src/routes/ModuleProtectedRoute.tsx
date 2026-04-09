@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useEnabledModules, EnabledModules } from '@shared/hooks/useEnabledModules';
+import { useAuth } from '@features/auth/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, ArrowLeft } from 'lucide-react';
+import { Settings, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface ModuleProtectedRouteProps {
   children: ReactNode;
@@ -13,13 +14,15 @@ interface ModuleProtectedRouteProps {
 
 export function ModuleProtectedRoute({ children, moduleKey, moduleName }: ModuleProtectedRouteProps) {
   const { enabledModules, loading } = useEnabledModules();
-
-  // Always enforce module gating
+  const { isAdmin } = useAuth();
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center text-muted-foreground">Checking module access...</div>
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Checking module access...</p>
+        </div>
       </div>
     );
   }
@@ -48,12 +51,14 @@ export function ModuleProtectedRoute({ children, moduleKey, moduleName }: Module
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Go Back
               </Button>
-              <Button asChild>
-                <NavLink to="/admin">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Admin Center
-                </NavLink>
-              </Button>
+              {isAdmin && (
+                <Button asChild>
+                  <NavLink to="/admin">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Admin Center
+                  </NavLink>
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

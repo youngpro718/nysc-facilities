@@ -143,7 +143,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
 
       {/* Step content */}
       <div className={cn(
-        "transition-all duration-[180ms] ease-out",
+        "transition-all duration-200 ease-out",
         animating && direction === 'forward' ? "opacity-0 translate-x-4" :
         animating && direction === 'back' ? "opacity-0 -translate-x-4" :
         "opacity-100 translate-x-0"
