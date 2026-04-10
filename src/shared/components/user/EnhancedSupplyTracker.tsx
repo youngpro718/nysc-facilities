@@ -396,7 +396,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
       {selectedReceiptRequestId && (() => {
         const dbReceipt = receipts && receipts.length > 0 ? (receipts[0].pdf_data as ReceiptData) : null;
         const selectedRequest = requests.find(r => r.id === selectedReceiptRequestId);
-        const receiptData = dbReceipt || (selectedRequest ? createReceiptData(selectedRequest as never) : null);
+        const receiptData = dbReceipt || (selectedRequest ? createReceiptData(selectedRequest) : null);
         if (!receiptData) return null;
         return (
           <ReceiptDialog
