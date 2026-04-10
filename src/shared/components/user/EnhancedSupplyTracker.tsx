@@ -42,6 +42,23 @@ interface StaffProfile {
   last_name: string | null;
 }
 
+interface SupplyRequestItem {
+  quantity_requested?: number;
+  quantity_approved?: number;
+  quantity_fulfilled?: number;
+  inventory_items?: {
+    name?: string;
+    unit?: string;
+  } | null;
+}
+
+interface RequesterProfile {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  department?: string | null;
+}
+
 interface SupplyRequest {
   id: string;
   title: string;
@@ -50,8 +67,14 @@ interface SupplyRequest {
   created_at: string;
   updated_at: string;
   fulfilled_at?: string;
-  supply_request_items?: unknown[];
+  approved_at?: string;
+  ready_at?: string;
+  fulfilled_by?: string;
+  approval_notes?: string;
+  fulfillment_notes?: string;
+  supply_request_items?: SupplyRequestItem[];
   notes?: string;
+  profiles?: RequesterProfile | null;
   assigned_fulfiller?: StaffProfile | null;
   completed_by?: StaffProfile | null;
   metadata?: {
