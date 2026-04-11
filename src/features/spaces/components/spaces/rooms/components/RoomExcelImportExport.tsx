@@ -6,7 +6,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 interface RoomExcelImportExportProps {
@@ -21,17 +21,17 @@ interface ImportResult {
   error?: string;
 }
 
-// ── Column width helper ───────────────────────────────────────────
-function autoWidth(ws: XLSX.WorkSheet, data: Record<string, unknown>[]) {
+// ── Column width + header style helper ───────────────────────────
+function styleSheet(worksheet: ExcelJS.Worksheet, data: Record<string, unknown>[]) {
   if (!data.length) return;
-  const cols = Object.keys(data[0]);
-  ws["!cols"] = cols.map((key) => {
-    const maxLen = Math.max(
-      key.length,
-      ...data.map((r) => String(r[key] ?? "").length)
-    );
-    return { wch: Math.min(maxLen + 2, 50) };
+  const keys = Object.keys(data[0]);
+  worksheet.columns = keys.map((key) => {
+    const maxLen = Math.max(key.length, ...data.map((r) => String(r[key] ?? "").length));
+    return { header: key, key, width: Math.min(maxLen + 2, 50) };
   });
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { bold: true };
+  headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE0E0E0" } };
 }
 
 export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps) {
@@ -211,23 +211,23 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       }
 
       // ── Build workbook ──
-      const wb = XLSX.utils.book_new();
+      const wb = new ExcelJS.Workbook();
 
-      const ws1 = XLSX.utils.json_to_sheet(roomInfoData);
-      autoWidth(ws1, roomInfoData);
-      XLSX.utils.book_append_sheet(wb, ws1, "Room Info");
+      const ws1 = wb.addWorksheet("Room Info");
+      styleSheet(ws1, roomInfoData);
+      roomInfoData.forEach(row => ws1.addRow(row));
 
-      const ws2 = XLSX.utils.json_to_sheet(issuesData);
-      autoWidth(ws2, issuesData);
-      XLSX.utils.book_append_sheet(wb, ws2, "Persistent Issues");
+      const ws2 = wb.addWorksheet("Persistent Issues");
+      styleSheet(ws2, issuesData);
+      issuesData.forEach(row => ws2.addRow(row));
 
-      const ws3 = XLSX.utils.json_to_sheet(maintenanceData);
-      autoWidth(ws3, maintenanceData);
-      XLSX.utils.book_append_sheet(wb, ws3, "Maintenance Log");
+      const ws3 = wb.addWorksheet("Maintenance Log");
+      styleSheet(ws3, maintenanceData);
+      maintenanceData.forEach(row => ws3.addRow(row));
 
-      const ws4 = XLSX.utils.json_to_sheet(functionData);
-      autoWidth(ws4, functionData);
-      XLSX.utils.book_append_sheet(wb, ws4, "Function History");
+      const ws4 = wb.addWorksheet("Function History");
+      styleSheet(ws4, functionData);
+      functionData.forEach(row => ws4.addRow(row));
 
       // ── Instructions sheet ──
       const helpData = [
@@ -236,11 +236,20 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
         { "Sheet": "Maintenance Log", "What You Can Edit": "Add new rows for maintenance work done. Fill in Date, Type, Description", "Notes": "Cost is optional. DO NOT edit or remove the System ID." },
         { "Sheet": "Function History", "What You Can Edit": "Add rows to record when a room changed function. Fill in Function, Start Date, End Date", "Notes": "Dates should be YYYY-MM-DD format. DO NOT edit or remove System ID." },
       ];
-      const ws5 = XLSX.utils.json_to_sheet(helpData);
-      autoWidth(ws5, helpData);
-      XLSX.utils.book_append_sheet(wb, ws5, "How To Edit");
+      const ws5 = wb.addWorksheet("How To Edit");
+      styleSheet(ws5, helpData);
+      helpData.forEach(row => ws5.addRow(row));
 
-      XLSX.writeFile(wb, `rooms_export_${new Date().toISOString().split("T")[0]}.xlsx`);
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `rooms_export_${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
       toast({ title: "Export successful", description: `${rooms.length} rooms exported across 4 sheets.` });
     } catch (error) {
@@ -266,12 +275,32 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+
+      // Helper: convert a worksheet to array of row objects using first row as headers
+      function sheetToJson(ws: ExcelJS.Worksheet): Record<string, unknown>[] {
+        const headers: string[] = [];
+        const rows: Record<string, unknown>[] = [];
+        ws.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) {
+            row.eachCell(cell => headers.push(cell.value?.toString() || ""));
+          } else {
+            const obj: Record<string, unknown> = {};
+            row.eachCell((cell, colNumber) => {
+              const header = headers[colNumber - 1];
+              if (header) obj[header] = cell.value;
+            });
+            rows.push(obj);
+          }
+        });
+        return rows;
+      }
 
       // ── Process "Room Info" sheet ──
-      const roomInfoSheet = workbook.Sheets["Room Info"];
+      const roomInfoSheet = workbook.getWorksheet("Room Info");
       if (roomInfoSheet) {
-        const rows = XLSX.utils.sheet_to_json(roomInfoSheet) as Record<string, unknown>[];
+        const rows = sheetToJson(roomInfoSheet);
         for (const row of rows) {
           const roomId = row["System ID"] as string;
           if (!roomId || roomId === "(example)") continue;
@@ -323,9 +352,9 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       }
 
       // ── Process "Persistent Issues" sheet ──
-      const issuesSheet = workbook.Sheets["Persistent Issues"];
+      const issuesSheet = workbook.getWorksheet("Persistent Issues");
       if (issuesSheet) {
-        const rows = XLSX.utils.sheet_to_json(issuesSheet) as Record<string, unknown>[];
+        const rows = sheetToJson(issuesSheet);
         // Group issues by room ID
         const issuesByRoom = new Map<string, Record<string, unknown>[]>();
         for (const row of rows) {
@@ -366,9 +395,9 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       }
 
       // ── Process "Maintenance Log" sheet ──
-      const maintSheet = workbook.Sheets["Maintenance Log"];
+      const maintSheet = workbook.getWorksheet("Maintenance Log");
       if (maintSheet) {
-        const rows = XLSX.utils.sheet_to_json(maintSheet) as Record<string, unknown>[];
+        const rows = sheetToJson(maintSheet);
         const maintByRoom = new Map<string, Record<string, unknown>[]>();
         for (const row of rows) {
           const roomId = row["System ID"] as string;
@@ -407,9 +436,9 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       }
 
       // ── Process "Function History" sheet ──
-      const funcSheet = workbook.Sheets["Function History"];
+      const funcSheet = workbook.getWorksheet("Function History");
       if (funcSheet) {
-        const rows = XLSX.utils.sheet_to_json(funcSheet) as Record<string, unknown>[];
+        const rows = sheetToJson(funcSheet);
         const funcByRoom = new Map<string, Record<string, unknown>[]>();
         for (const row of rows) {
           const roomId = row["System ID"] as string;
