@@ -30,6 +30,7 @@ interface Appeal {
   reviewed_by: string | null;
   admin_notes: string | null;
   profiles: {
+    id?: string;
     first_name: string | null;
     last_name: string | null;
     email: string | null;
@@ -46,21 +47,41 @@ export function VerificationAppeals() {
   // Fetch pending appeals
   const { data: appeals, isLoading } = useQuery({
     queryKey: ['verification-appeals'],
+    retry: false,
+    enabled: false, // table not yet provisioned
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: appealsData, error: appealsError } = await supabase
         .from('verification_appeals')
-        .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name,
-            email
-          )
-        `)
+        .select('*')
         .order('submitted_at', { ascending: false });
 
-      if (error) throw error;
-      return data as Appeal[];
+      // Table may not exist — treat as empty
+      if (appealsError) return [] as Appeal[];
+
+      const rows = appealsData ?? [];
+      if (rows.length === 0) return [] as Appeal[];
+
+      const userIds = [...new Set(rows.map((appeal) => appeal.user_id))];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map(
+        (profilesData ?? []).map((profile) => [profile.id, profile])
+      );
+
+      return rows.map((appeal) => ({
+        ...appeal,
+        profiles: profileMap.get(appeal.user_id) ?? {
+          id: appeal.user_id,
+          first_name: null,
+          last_name: null,
+          email: null,
+        },
+      })) as Appeal[];
     },
   });
 

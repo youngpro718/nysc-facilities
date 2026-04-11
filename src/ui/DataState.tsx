@@ -82,28 +82,26 @@ function DefaultLoadingSkeleton({
   count?: number; 
   height?: string;
 }) {
+  let content: ReactNode;
+
   if (type === 'card') {
-    return (
+    content = (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(count)].map((_, i) => (
           <Skeleton key={i} className="h-48" />
         ))}
       </div>
     );
-  }
-
-  if (type === 'list') {
-    return (
+  } else if (type === 'list') {
+    content = (
       <div className="space-y-3">
         {[...Array(count)].map((_, i) => (
           <Skeleton key={i} className="h-16 w-full" />
         ))}
       </div>
     );
-  }
-
-  if (type === 'table') {
-    return (
+  } else if (type === 'table') {
+    content = (
       <div className="space-y-2">
         <Skeleton className="h-10 w-full" /> {/* Header */}
         {[...Array(count)].map((_, i) => (
@@ -111,9 +109,21 @@ function DefaultLoadingSkeleton({
         ))}
       </div>
     );
+  } else {
+    content = <Skeleton style={{ height }} className="w-full" />;
   }
 
-  return <Skeleton style={{ height }} className="w-full" />;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      aria-label="Loading content"
+    >
+      {content}
+      <span className="sr-only">Loading</span>
+    </div>
+  );
 }
 
 function DefaultEmptyState({
@@ -130,7 +140,12 @@ function DefaultEmptyState({
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
       <div className="rounded-full bg-muted p-3 mb-4">
-        {icon || <Inbox className="h-6 w-6 text-muted-foreground" />}
+        {icon || (
+          <Inbox
+            className="h-6 w-6 text-muted-foreground"
+            aria-hidden="true"
+          />
+        )}
       </div>
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-sm text-muted-foreground mb-6 max-w-sm">
@@ -154,7 +169,7 @@ function DefaultErrorState({
 }) {
   return (
     <Alert variant="destructive">
-      <AlertCircle className="h-4 w-4" />
+      <AlertCircle className="h-4 w-4" aria-hidden="true" />
       <AlertTitle>Error</AlertTitle>
       <AlertDescription className="flex items-center justify-between">
         <span>{error.message || 'An unexpected error occurred'}</span>
@@ -165,7 +180,7 @@ function DefaultErrorState({
             onClick={onRetry}
             className="ml-4"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4 mr-2" aria-hidden="true" />
             Retry
           </Button>
         )}

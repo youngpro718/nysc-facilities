@@ -111,7 +111,15 @@ test.describe("Regular User Agent", () => {
 
       if (await newReqBtn.isVisible({ timeout: 8_000 }).catch(() => false)) {
         await newReqBtn.click();
-        await page.waitForTimeout(800);
+        await page.waitForTimeout(600);
+
+        // FAB may open a menu — click "Order Supplies" if present
+        const orderSuppliesBtn = page.getByRole("button", { name: /order supplies/i });
+        if (await orderSuppliesBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+          await orderSuppliesBtn.click();
+          await page.waitForTimeout(800);
+        }
+
         await snap(page, "user-02-supply-request-form-open");
 
         // Form fields present

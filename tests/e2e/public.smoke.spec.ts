@@ -3,7 +3,8 @@ import { expect, test } from "@playwright/test";
 test.describe("public mobile smoke", () => {
   test("login page renders", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: /nysc facilities hub/i })).toBeVisible();
+    // App name is rendered in a <p> tag (not a heading) on the login page
+    await expect(page.getByText(/nysc facilities hub/i)).toBeVisible();
     await expect(page.getByText(/authorized use only/i)).toBeVisible();
   });
 

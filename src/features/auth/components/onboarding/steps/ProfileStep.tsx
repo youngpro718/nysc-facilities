@@ -4,15 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Shield, CheckCircle2, Info } from "lucide-react";
+import { Shield } from "lucide-react";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import {
-  getRoleFromTitle,
-  getRoleDescriptionFromTitle,
-  getAccessDescriptionFromTitle
-} from "@/utils/titleToRoleMapping";
+import type { OnboardingRoleContent } from "../onboardingContent";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const departments = [
@@ -26,7 +22,11 @@ const departments = [
   { value: "other", label: "Other" }
 ];
 
-export function ProfileStep() {
+interface ProfileStepProps {
+  roleContent: OnboardingRoleContent;
+}
+
+export function ProfileStep({ roleContent }: ProfileStepProps) {
   const { profile } = useAuth();
   const [profileData, setProfileData] = useState({
     department: "",
@@ -34,23 +34,6 @@ export function ProfileStep() {
     phone: ""
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [detectedRole, setDetectedRole] = useState<string | null>(null);
-  const [accessDescription, setAccessDescription] = useState<string>("");
-
-  // Detect role based on title
-  useEffect(() => {
-    if (profileData.title) {
-      const role = getRoleFromTitle(profileData.title);
-      const roleDesc = getRoleDescriptionFromTitle(profileData.title);
-      const accessDesc = getAccessDescriptionFromTitle(profileData.title);
-      
-      setDetectedRole(roleDesc);
-      setAccessDescription(accessDesc);
-    } else {
-      setDetectedRole(null);
-      setAccessDescription("");
-    }
-  }, [profileData.title]);
 
   // Auto-save profile data (department, title, phone only — roles are assigned by admin)
   useEffect(() => {
@@ -163,44 +146,27 @@ export function ProfileStep() {
         </div>
       </div>
 
-      {/* Access Level Preview */}
-      {detectedRole && (
-        <Alert className="border-primary/50 bg-primary/5 rounded-xl">
-          <Shield className="h-4 w-4 text-primary" />
-          <AlertDescription>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <p className="text-sm font-medium">
-                  Detected Role: <span className="text-primary">{detectedRole}</span>
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {accessDescription}
-              </p>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Info about title-based access */}
-      <div className="p-4 rounded-xl bg-muted/50 border">
-        <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-          <div className="space-y-1.5">
-            <p className="text-sm font-medium">Automatic Access Assignment</p>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>Supply staff</strong> — inventory & supply access</p>
-              <p><strong>Facilities managers</strong> — building & maintenance</p>
-              <p><strong>Court personnel</strong> — court operations</p>
-              <p><strong>Standard users</strong> — issues & requests</p>
-            </div>
-            {isSaving && (
-              <p className="text-xs text-primary font-medium">Saving...</p>
-            )}
+      {/* Role-specific preview */}
+      <Alert className="border-primary/50 bg-primary/5 rounded-xl">
+        <Shield className="h-4 w-4 text-primary" />
+        <AlertDescription>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">
+              Your onboarding is tailored for <span className="text-primary">{roleContent.label}</span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {roleContent.description}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              First focus: {roleContent.focusPoints[0]}
+            </p>
           </div>
-        </div>
-      </div>
+        </AlertDescription>
+      </Alert>
+
+      {isSaving && (
+        <p className="text-xs text-primary font-medium">Saving...</p>
+      )}
     </div>
   );
 }

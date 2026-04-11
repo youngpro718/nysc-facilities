@@ -18,13 +18,32 @@ export function useVerificationMutations(
       if (approved) {
         // Use admin-selected role, or fall back to 'standard'
         const role = selectedRole || 'standard';
-        const { error } = await supabase.rpc('approve_user_verification', {
+        const { error: rpcError } = await supabase.rpc('approve_user_verification', {
           p_user_id: userId,
           p_role: role,
           p_admin_notes: null
         });
 
-        if (error) throw error;
+        if (rpcError) {
+          logger.warn('approve_user_verification RPC failed, falling back to direct update:', rpcError);
+
+          const { error: statusError } = await supabase.rpc('set_user_approval_status', {
+            p_user_id: userId,
+            p_status: 'verified'
+          });
+          if (statusError) throw statusError;
+
+          const { error: onboardError } = await supabase
+            .from('profiles')
+            .update({ onboarded: true })
+            .eq('id', userId);
+          if (onboardError) throw onboardError;
+
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .upsert({ user_id: userId, role }, { onConflict: 'user_id' });
+          if (roleError) throw roleError;
+        }
         
         toast.success('User approved successfully');
       } else {

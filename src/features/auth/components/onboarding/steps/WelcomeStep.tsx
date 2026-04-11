@@ -1,49 +1,50 @@
-import { Building2, Users, Settings, Shield, Package, AlertTriangle } from "lucide-react";
+import { CheckCircle2, ClipboardList } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import type { OnboardingRoleContent } from "../onboardingContent";
 
-export function WelcomeStep() {
+interface WelcomeStepProps {
+  roleContent: OnboardingRoleContent;
+}
+
+export function WelcomeStep({ roleContent }: WelcomeStepProps) {
   return (
-    <div className="text-center space-y-8 py-4">
-      <div className="space-y-4">
-        <div className="mx-auto w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center">
-          <Building2 className="w-10 h-10 text-primary" />
+    <div className="space-y-6 py-4">
+      <div className="text-center space-y-4">
+        <div className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center bg-primary/10">
+          <ClipboardList className="w-10 h-10 text-primary" />
         </div>
         <div className="space-y-2">
+          <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs font-medium">
+            Tailored for {roleContent.label}
+          </Badge>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Welcome to the Hub
+            Welcome to your workspace
           </h2>
           <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
-            Your central platform for managing facilities and staying connected with your team.
+            {roleContent.intro}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
-        {[
-          { icon: Users, title: "Team Coordination", desc: "Connect with colleagues and manage occupancy" },
-          { icon: Settings, title: "Facility Management", desc: "Handle maintenance and operations" },
-          { icon: Package, title: "Supply Requests", desc: "Order supplies and track deliveries" },
-          { icon: AlertTriangle, title: "Issue Reporting", desc: "Report problems and track resolutions" },
-        ].map((item) => (
-          <div
-            key={item.title}
-            className="flex items-center gap-3 p-4 rounded-xl border bg-card text-left"
-          >
-            <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <item.icon className="w-5 h-5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="font-medium text-sm">{item.title}</h3>
-              <p className="text-xs text-muted-foreground leading-snug mt-0.5">
-                {item.desc}
-              </p>
-            </div>
+      <div className="space-y-2">
+        <div className="rounded-2xl border bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Start with these three
+          </p>
+          <div className="mt-3 space-y-3">
+            {roleContent.focusPoints.map((point) => (
+              <div key={point} className="flex items-start gap-3 rounded-xl bg-muted/30 p-3">
+                <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <p className="text-sm leading-relaxed text-foreground">{point}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
       <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Shield className="w-4 h-4 shrink-0" />
-        <span>Your account is secure and all data is protected</span>
+        <CheckCircle2 className="w-4 h-4 shrink-0 text-green-600" />
+        <span>Your view is trimmed to what matters for your role</span>
       </div>
     </div>
   );

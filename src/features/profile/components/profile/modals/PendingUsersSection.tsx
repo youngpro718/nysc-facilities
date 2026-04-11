@@ -47,20 +47,36 @@ export function PendingUsersSection({
     setProcessingIds(prev => new Set(prev).add(userId));
     
     try {
-      const { data, error } = await supabase
-        .rpc('admin_verify_and_approve', { target_user_id: userId });
+      const { data, error: rpcError } = await supabase
+        .rpc('approve_user_verification', {
+          p_user_id: userId,
+          p_role: 'standard',
+          p_admin_notes: 'Quick approved via admin panel'
+        });
 
-      if (error) {
-        logger.error('[PendingUsersSection] RPC error:', error);
-        throw error;
-      }
+      if (rpcError) {
+        logger.warn('[PendingUsersSection] RPC failed, falling back to direct update:', rpcError);
 
-      if (!data?.success) {
-        throw new Error(data?.message || 'Failed to approve user');
+        const { error: statusError } = await supabase.rpc('set_user_approval_status', {
+          p_user_id: userId,
+          p_status: 'verified'
+        });
+        if (statusError) throw statusError;
+
+        const { error: onboardError } = await supabase
+          .from('profiles')
+          .update({ onboarded: true })
+          .eq('id', userId);
+        if (onboardError) throw onboardError;
+
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .upsert({ user_id: userId, role: 'standard' }, { onConflict: 'user_id' });
+        if (roleError) throw roleError;
       }
 
       logger.debug('[PendingUsersSection] Successfully approved user:', data);
-      toast.success(`${userName} has been verified and approved successfully`);
+      toast.success(`${userName} has been verified and approved as standard user`);
       
       // Trigger parent component refresh
       onVerify(userId);

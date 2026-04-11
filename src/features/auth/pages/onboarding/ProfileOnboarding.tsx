@@ -10,6 +10,7 @@ import { AlertCircle } from 'lucide-react';
 import { useToast } from '@shared/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { APP_INFO } from '@/lib/appInfo';
+import { getOnboardingContent } from '@/features/auth/components/onboarding/onboardingContent';
 
 /**
  * ProfileOnboarding - Profile Completion Page
@@ -27,6 +28,7 @@ export default function ProfileOnboarding() {
   const [department, setDepartment] = useState('');
   const [requestedRole, setRequestedRole] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const onboardingContent = getOnboardingContent(requestedRole);
 
   useEffect(() => {
     // Load existing profile data if available
@@ -138,14 +140,28 @@ export default function ProfileOnboarding() {
           <div className="text-center">
             <h1 className="text-lg font-semibold text-slate-900">Complete Your Profile</h1>
             <p className="text-sm text-slate-500 mt-1">
-              {requestedRole === 'purchasing' && 'Welcome to NYSC Facilities — as a Purchasing user, you\'ll have access to inventory tracking and supply management.'}
-              {requestedRole === 'cmc' && 'Welcome to NYSC Facilities — as a Management user, you\'ll oversee court operations and scheduling.'}
-              {requestedRole === 'court_officer' && 'Welcome to NYSC Facilities — as a Court Officer, you\'ll manage keys and building access.'}
-              {requestedRole === 'court_aide' && 'Welcome to NYSC Facilities — as a Court Aide, you\'ll fulfill supply requests and manage inventory.'}
-              {requestedRole === 'standard' && 'Welcome to NYSC Facilities — you\'ll be able to report issues and request supplies.'}
-              {!requestedRole && 'Just a few details to get you started'}
+              {requestedRole
+                ? onboardingContent.intro
+                : 'Just a few details to get you started'}
             </p>
           </div>
+
+          {requestedRole && (
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Your first focus
+              </p>
+              <p className="text-sm font-medium text-slate-900">{onboardingContent.focusTitle}</p>
+              <ul className="space-y-1.5 text-xs text-slate-600">
+                {onboardingContent.focusPoints.slice(0, 3).map((point) => (
+                  <li key={point} className="flex items-start gap-2">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">

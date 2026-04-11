@@ -69,7 +69,8 @@ export async function injectSession(
 ): Promise<void> {
   await page.addInitScript(
     ({ key, value }: { key: string; value: string }) => {
-      localStorage.setItem(key, value);
+      // App uses sessionStorage for auth tokens (see src/lib/supabase.ts)
+      sessionStorage.setItem(key, value);
       localStorage.setItem("pwa-install-dismissed", "true");
     },
     { key: SUPABASE_STORAGE_KEY, value: JSON.stringify(session) }

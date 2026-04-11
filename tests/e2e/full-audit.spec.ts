@@ -440,12 +440,6 @@ test.describe("AGENT 1 — Cross-Device UI Audit", () => {
     await auditSnap(page, "A1-14-notifications");
   });
 
-  // ── 1o: Lighting page ───────────────────────────────────────────────────────
-  test("A1-15: Lighting page — tabs, layout", async ({ page }) => {
-    await go(page, "/lighting");
-    await auditSnap(page, "A1-15-lighting");
-  });
-
   // ── 1p: Court Live Grid ─────────────────────────────────────────────────────
   test("A1-16: Court Live Grid — layout, filter bar", async ({ page }) => {
     await go(page, "/court-live");
@@ -705,7 +699,7 @@ test.describe("AGENT 3 — Role-Based Access Audit", () => {
 
     // Check admin-exclusive pages
     const adminPages = [
-      "/users", "/admin", "/system-settings", "/lighting", "/court-live",
+      "/users", "/admin", "/system-settings", "/court-live",
       "/access-assignments", "/admin/key-requests", "/admin/supply-requests"
     ];
     for (const p of adminPages) {
@@ -1031,7 +1025,6 @@ test.describe("AGENT 5 — Master Synthesis Health Report", () => {
       { path: "/users", label: "Users" },
       { path: "/admin", label: "Admin Center" },
       { path: "/system-settings", label: "System Settings" },
-      { path: "/lighting", label: "Lighting" },
       { path: "/court-live", label: "Court Live" },
       { path: "/admin/key-requests", label: "Admin Key Requests" },
       { path: "/admin/supply-requests", label: "Admin Supply Requests" },

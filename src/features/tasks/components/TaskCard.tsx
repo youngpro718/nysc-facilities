@@ -1,29 +1,29 @@
 /**
  * TaskCard Component
- * 
+ *
  * Displays a single staff task with actions based on user role
  */
 
 import { useState } from 'react';
-import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Play, 
+import { format, formatDistanceToNow, isPast, isWithinInterval, addHours, isFuture } from 'date-fns';
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
+  Play,
   User,
   Package,
   MapPin,
   ArrowRight,
   AlertCircle,
   MoreVertical,
-  Loader2
+  Loader2,
+  Calendar,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -39,12 +39,11 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import type { StaffTask } from '@features/tasks/types/staffTasks';
-import { 
-  TASK_TYPE_LABELS, 
-  TASK_PRIORITY_LABELS, 
+import {
+  TASK_TYPE_LABELS,
+  TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
-  TASK_PRIORITY_COLORS,
-  TASK_STATUS_COLORS 
+  TASK_STATUS_COLORS
 } from '@features/tasks/types/staffTasks';
 
 interface TaskCardProps {
@@ -60,6 +59,52 @@ interface TaskCardProps {
   isLoading?: boolean;
 }
 
+const PRIORITY_BORDER_COLORS: Record<StaffTask['priority'], string> = {
+  low: 'border-l-slate-400',
+  medium: 'border-l-blue-500',
+  high: 'border-l-orange-500',
+  urgent: 'border-l-red-500',
+};
+
+const PRIORITY_DOT_COLORS: Record<StaffTask['priority'], string> = {
+  low: 'bg-slate-400',
+  medium: 'bg-blue-500',
+  high: 'bg-orange-500',
+  urgent: 'bg-red-500',
+};
+
+function DueDateDisplay({ dueDate, status }: { dueDate: string; status: StaffTask['status'] }) {
+  const date = new Date(dueDate);
+  const isTerminal = status === 'completed' || status === 'cancelled';
+  const overdue = !isTerminal && isPast(date);
+  const dueSoon = !isTerminal && !overdue && isFuture(date) && isWithinInterval(date, { start: new Date(), end: addHours(new Date(), 24) });
+
+  if (overdue) {
+    return (
+      <div className="flex items-center gap-1 text-xs text-red-500 font-medium">
+        <AlertCircle className="h-3 w-3" />
+        <span>Overdue · {format(date, 'MMM d, h:mm a')}</span>
+      </div>
+    );
+  }
+
+  if (dueSoon) {
+    return (
+      <div className="flex items-center gap-1 text-xs text-amber-500 font-medium">
+        <Calendar className="h-3 w-3" />
+        <span>Due soon · {format(date, 'MMM d, h:mm a')}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+      <Calendar className="h-3 w-3" />
+      <span>Due {format(date, 'MMM d, h:mm a')}</span>
+    </div>
+  );
+}
+
 export function TaskCard({
   task,
   variant = 'default',
@@ -72,7 +117,6 @@ export function TaskCard({
   onReject,
   isLoading,
 }: TaskCardProps) {
-  const navigate = useNavigate();
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
@@ -90,22 +134,38 @@ export function TaskCard({
     setRejectionReason('');
   };
 
-  const priorityColor = TASK_PRIORITY_COLORS[task.priority] || 'bg-gray-500';
   const statusColor = TASK_STATUS_COLORS[task.status] || 'bg-gray-500';
+  const borderColor = PRIORITY_BORDER_COLORS[task.priority] || 'border-l-gray-400';
+  const dotColor = PRIORITY_DOT_COLORS[task.priority] || 'bg-gray-400';
 
   const canClaim = task.status === 'approved' && !task.claimed_by;
   const canStart = task.status === 'claimed';
   const canComplete = task.status === 'in_progress' || task.status === 'claimed';
   const needsApproval = task.status === 'pending_approval' && task.is_request;
 
+  const hasActions = showActions && (
+    (needsApproval && onApprove) ||
+    (canClaim && onClaim) ||
+    (canStart && onStart) ||
+    (canComplete && onComplete) ||
+    (onCancel && task.status !== 'completed' && task.status !== 'cancelled')
+  );
+
+  const timeAgo = formatDistanceToNow(new Date(task.created_at), { addSuffix: true });
+
   return (
     <>
-      <Card className="hover:shadow-md transition-shadow">
-        <CardContent className={variant === 'compact' ? 'p-3' : 'p-4'}>
-          <div className="flex items-start justify-between gap-3">
+      <Card className={`hover:shadow-md transition-shadow border-l-4 ${borderColor} flex flex-col`}>
+        <CardContent className={`flex-1 flex flex-col ${variant === 'compact' ? 'p-3' : 'p-4'}`}>
+          {/* Main content area */}
+          <div className="flex items-start justify-between gap-3 flex-1">
             <div className="flex-1 min-w-0">
-              {/* Title and Type */}
+              {/* Title with priority dot and type badge */}
               <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span
+                  className={`shrink-0 h-2 w-2 rounded-full ${dotColor}`}
+                  title={TASK_PRIORITY_LABELS[task.priority]}
+                />
                 <h3 className="font-medium truncate">{task.title}</h3>
                 <Badge variant="outline" className="text-xs shrink-0">
                   {TASK_TYPE_LABELS[task.task_type]}
@@ -119,13 +179,10 @@ export function TaskCard({
                 </p>
               )}
 
-              {/* Status and Priority */}
+              {/* Status badge */}
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <Badge className={`${statusColor} text-white text-xs`}>
                   {TASK_STATUS_LABELS[task.status]}
-                </Badge>
-                <Badge variant="outline" className={`text-xs border-0 ${priorityColor} text-white`}>
-                  {TASK_PRIORITY_LABELS[task.priority]}
                 </Badge>
               </div>
 
@@ -155,7 +212,7 @@ export function TaskCard({
               )}
 
               {/* Meta Info */}
-              <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap mb-1">
                 {task.requester && (
                   <span className="flex items-center gap-1">
                     <User className="h-3 w-3" />
@@ -170,38 +227,33 @@ export function TaskCard({
                 )}
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {format(new Date(task.created_at), 'MMM d, h:mm a')}
+                  {timeAgo}
                 </span>
               </div>
 
-              {task.issue && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/operations?tab=issues&issue_id=${task.issue!.id}`)}
-                  className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-primary hover:bg-primary/5 transition-colors"
-                  title={task.issue.title}
-                >
-                  <AlertCircle className="h-3 w-3" />
-                  <span className="truncate">Linked issue: {task.issue.title}</span>
-                </button>
+              {/* Due Date */}
+              {task.due_date && (
+                <div className="mb-1">
+                  <DueDateDisplay dueDate={task.due_date} status={task.status} />
+                </div>
               )}
+
             </div>
 
-            {/* Actions */}
+            {/* Approval actions and More menu (non-mobile layout) */}
             {showActions && (
               <div className="flex items-center gap-2 shrink-0">
-                {/* Primary Actions */}
                 {needsApproval && onApprove && (
                   <div className="flex gap-1">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => onApprove(task.id)}
                       disabled={isLoading}
                     >
                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="destructive"
                       onClick={() => setShowRejectDialog(true)}
                       disabled={isLoading}
@@ -211,9 +263,36 @@ export function TaskCard({
                   </div>
                 )}
 
+                {/* More Actions Menu */}
+                {(onCancel && task.status !== 'completed' && task.status !== 'cancelled') && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => onCancel(task.id)}
+                        className="text-destructive"
+                      >
+                        Cancel Task
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons: full-width row at card bottom on mobile */}
+          {hasActions && (canClaim || canStart || canComplete) && (
+            <>
+              <div className="border-t mt-3 pt-3 flex gap-2">
                 {canClaim && onClaim && (
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
+                    className="flex-1"
                     onClick={() => onClaim(task.id)}
                     disabled={isLoading}
                   >
@@ -222,8 +301,9 @@ export function TaskCard({
                 )}
 
                 {canStart && onStart && (
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
+                    className="flex-1"
                     onClick={() => onStart(task.id)}
                     disabled={isLoading}
                   >
@@ -237,9 +317,10 @@ export function TaskCard({
                 )}
 
                 {canComplete && onComplete && (
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="default"
+                    className="flex-1"
                     onClick={() => setShowCompleteDialog(true)}
                     disabled={isLoading}
                   >
@@ -251,28 +332,9 @@ export function TaskCard({
                     )}
                   </Button>
                 )}
-
-                {/* More Actions Menu */}
-                {(onCancel && task.status !== 'completed' && task.status !== 'cancelled') && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem 
-                        onClick={() => onCancel(task.id)}
-                        className="text-destructive"
-                      >
-                        Cancel Task
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -326,9 +388,9 @@ export function TaskCard({
             <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleReject} 
+            <Button
+              variant="destructive"
+              onClick={handleReject}
               disabled={!rejectionReason.trim() || isLoading}
             >
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

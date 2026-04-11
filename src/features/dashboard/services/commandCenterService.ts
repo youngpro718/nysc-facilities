@@ -304,7 +304,7 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
   // Fetch recent issues
   const { data: issues } = await supabase
     .from('issues')
-    .select('id, title, status, priority, created_at, profiles!reporter_id(first_name, last_name)')
+    .select('id, title, status, priority, created_at')
     .order('created_at', { ascending: false })
     .limit(10);
 
@@ -313,7 +313,6 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
       id: issue.id,
       type: 'issue' as const,
       title: issue.title,
-      user_name: issue.profiles ? `${issue.profiles.first_name} ${issue.profiles.last_name}` : undefined,
       timestamp: issue.created_at,
       status: issue.status,
       priority: issue.priority,

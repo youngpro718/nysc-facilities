@@ -32,7 +32,7 @@ const BASE_PATH_MAP: Record<string, string> = {
 export function getNavigationPath(title: string, isAdmin?: boolean): string {
   // Role-dependent paths
   if (title === 'Dashboard') return isAdmin ? '/' : '/dashboard';
-  if (title === 'Supply Requests') return isAdmin ? '/admin/supply-requests' : '/supply-requests';
+  if (title === 'Supply Requests') return isAdmin ? '/admin/supply-requests' : '/my-supply-requests';
 
   return BASE_PATH_MAP[title] || '/';
 }

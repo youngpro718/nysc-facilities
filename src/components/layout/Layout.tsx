@@ -235,7 +235,11 @@ function LayoutContent() {
 
         {/* Global Onboarding Wizard */}
         {isAuthenticated && !isLoginPage && showOnboarding && (
-          <OnboardingWizard onComplete={completeOnboarding} onSkip={skipOnboarding} />
+          <OnboardingWizard
+            onComplete={completeOnboarding}
+            onSkip={skipOnboarding}
+            userRole={userRole}
+          />
         )}
 
         <main className="flex-1 pb-28 md:pb-0 safe-area-bottom mobile-main-padding">

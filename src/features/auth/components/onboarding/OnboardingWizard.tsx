@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, ArrowLeft, X } from "lucide-react";
 import { WelcomeStep } from "./steps/WelcomeStep";
@@ -6,10 +6,14 @@ import { ProfileStep } from "./steps/ProfileStep";
 import { FeaturesStep } from "./steps/FeaturesStep";
 import { CompleteStep } from "./steps/CompleteStep";
 import { cn } from "@/lib/utils";
+import { getOnboardingContent } from "./onboardingContent";
+import type { OnboardingRoleContent } from "./onboardingContent";
+import type { UserRole } from "@/config/roles";
 
 export interface OnboardingWizardProps {
   onComplete: () => void;
   onSkip: () => void;
+  userRole?: UserRole | null;
 }
 
 const steps = [
@@ -19,12 +23,13 @@ const steps = [
   { id: 'complete', title: 'Complete', component: CompleteStep }
 ];
 
-export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) {
+export function OnboardingWizard({ onComplete, onSkip, userRole }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [isAnimating, setIsAnimating] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const contentRef = useRef<HTMLDivElement>(null);
+  const roleContent = getOnboardingContent(userRole);
 
   // Scroll to top when step changes
   useEffect(() => {
@@ -61,7 +66,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
   };
 
   const progress = ((currentStep + 1) / steps.length) * 100;
-  const CurrentStepComponent = steps[currentStep].component;
+  const CurrentStepComponent = steps[currentStep].component as ComponentType<{ roleContent: OnboardingRoleContent }>;
   const isLastStep = currentStep === steps.length - 1;
 
   return (
@@ -127,6 +132,18 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
             </div>
           ))}
         </div>
+
+        <div className="px-4 pb-3">
+          <div className="mx-auto max-w-md rounded-2xl border bg-card px-4 py-3 text-center shadow-sm">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Tailored for
+            </p>
+            <p className="mt-1 text-sm font-semibold text-foreground">{roleContent.label}</p>
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+              {roleContent.description}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Content area — scrollable */}
@@ -142,7 +159,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
             !isAnimating && "opacity-100 translate-x-0"
           )}
         >
-          <CurrentStepComponent />
+          <CurrentStepComponent roleContent={roleContent} />
         </div>
       </div>
 

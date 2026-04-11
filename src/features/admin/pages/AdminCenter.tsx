@@ -197,7 +197,7 @@ export default function AdminCenter() {
       const { error: rpcError } = await supabase.rpc('approve_user_verification', {
         p_user_id: userId,
         p_role: selectedRole,
-        p_reason: `Approved via admin panel with role: ${getRoleLabel(selectedRole)}`
+        p_admin_notes: `Approved via admin panel with role: ${getRoleLabel(selectedRole)}`
       });
 
       if (rpcError) {

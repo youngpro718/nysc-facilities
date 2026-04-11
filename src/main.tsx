@@ -16,10 +16,10 @@ initializeStorage().catch(err => {
 if (import.meta.env.PROD) {
   registerServiceWorker({
     onSuccess: (registration) => {
-      console.log('✅ PWA Service Worker registered successfully');
+
     },
     onUpdate: (registration) => {
-      console.log('🔄 New version available! Please refresh to update.');
+
       toast('A new version is available', {
         description: 'Reload to get the latest features and fixes.',
         action: {
@@ -39,7 +39,7 @@ if (import.meta.env.PROD) {
     navigator.serviceWorker.getRegistrations().then(registrations => {
       registrations.forEach(registration => {
         registration.unregister();
-        console.log('🧹 Unregistered service worker in development mode');
+
       });
     });
   }

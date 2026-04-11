@@ -60,13 +60,12 @@ type CreateTaskFormData = z.infer<typeof createTaskSchema>;
 
 interface CreateTaskDialogProps {
   trigger?: React.ReactNode;
-  taskDefaults?: Partial<CreateTaskFormData> & { issue_id?: string };
+  taskDefaults?: Partial<CreateTaskFormData>;
 }
 
 export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const { createTask } = useStaffTasks();
-  const linkedIssueId = taskDefaults?.issue_id;
 
   const defaultValues = useMemo<CreateTaskFormData>(() => ({
     title: taskDefaults?.title ?? '',
@@ -147,7 +146,6 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
       inventory_item_id: data.inventory_item_id || undefined,
       from_room_id: data.from_room_id || undefined,
       to_room_id: data.to_room_id || undefined,
-      issue_id: linkedIssueId || undefined,
       quantity: data.quantity,
       due_date: data.due_date || undefined,
     });
@@ -173,12 +171,6 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
         </DialogHeader>
-
-        {linkedIssueId && (
-          <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary">
-            This task will be linked to the originating issue.
-          </div>
-        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

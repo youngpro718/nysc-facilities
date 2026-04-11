@@ -1,4 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+
+// Load .env.local so test credentials are available to Playwright workers
+const __dirname = dirname(fileURLToPath(import.meta.url));
+config({ path: resolve(__dirname, ".env.local") });
 
 const port = Number(process.env.PLAYWRIGHT_PORT || 4173);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${port}`;
