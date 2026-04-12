@@ -45,6 +45,17 @@ export interface InventoryTransaction {
   created_at: string;
 }
 
+export interface InventoryTransfer {
+  id: string;
+  item_id: string;
+  from_room_id: string;
+  to_room_id: string;
+  quantity: number;
+  transferred_by: string;
+  notes?: string;
+  created_at: string;
+}
+
 export interface InventoryFormInputs {
   name: string;
   sku?: string;

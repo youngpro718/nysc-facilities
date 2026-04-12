@@ -19,6 +19,7 @@ export interface CartItem {
 export function useOrderCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedOrder, setSubmittedOrder] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { mutateAsync: generateReceipt } = useGenerateReceipt();
@@ -136,6 +137,15 @@ export function useOrderCart() {
 
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
       clearCart();
+
+      // Store the submitted order for the confirmation screen
+      if (result?.request) {
+        setSubmittedOrder({
+          ...result.request,
+          approval_required: result?.approval_required,
+        });
+      }
+
       return result;
     } catch (error) {
       const message = error?.message || 'Failed to submit order';
@@ -150,7 +160,11 @@ export function useOrderCart() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [cartItems, toast, queryClient, clearCart, user]);
+  }, [cartItems, toast, queryClient, clearCart, user, isSupervisor]);
+
+  const resetSubmittedOrder = useCallback(() => {
+    setSubmittedOrder(null);
+  }, []);
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const hasRestrictedItems = !isSupervisor && cartItems.some(item => item.requires_justification === true);
@@ -165,5 +179,7 @@ export function useOrderCart() {
     totalItems,
     isSubmitting,
     hasRestrictedItems,
+    submittedOrder,
+    resetSubmittedOrder,
   };
 }

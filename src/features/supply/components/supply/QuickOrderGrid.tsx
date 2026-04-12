@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { OrderConfirmation } from './OrderConfirmation';
 import { useInventoryItems } from '@features/inventory/hooks/useInventoryItems';
 import { useFavoriteItems } from '@features/supply/hooks/useFavoriteItems';
 import { CompactItemList } from './CompactItemList';
@@ -13,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useIsMobile } from '@shared/hooks/use-mobile';
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 
-const ALLOWED_CATEGORIES = ['Office Supplies', 'Furniture'];
+const ALLOWED_CATEGORIES = ['Office Supplies', 'Furniture', 'Cleaning Supplies', 'Technology', 'Safety Equipment', 'Maintenance Supplies'];
 
 export function QuickOrderGrid() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,6 +37,8 @@ export function QuickOrderGrid() {
     totalItems,
     isSubmitting,
     hasRestrictedItems,
+    submittedOrder,
+    resetSubmittedOrder,
   } = useOrderCart();
 
   const filteredItems = useMemo(() => {
@@ -100,6 +103,15 @@ export function QuickOrderGrid() {
   const handleToggleFavorite = async (itemId: string) => {
     await toggleFavorite(itemId);
   };
+
+  if (submittedOrder) {
+    return (
+      <OrderConfirmation
+        order={submittedOrder}
+        onPlaceAnother={resetSubmittedOrder}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">

@@ -11,6 +11,7 @@
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, Package, Sparkles, Grid3X3 } from 'lucide-react';
+import { OrderConfirmation } from './OrderConfirmation';
 import { cn } from '@/lib/utils';
 import { useInventoryItems } from '@features/inventory/hooks/useInventoryItems';
 import { useFavoriteItems } from '@features/supply/hooks/useFavoriteItems';
@@ -21,7 +22,7 @@ import { OrderSummaryFooter } from './OrderSummaryFooter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@shared/hooks/use-mobile';
 
-const ALLOWED_CATEGORIES = ['Office Supplies', 'Furniture'];
+const ALLOWED_CATEGORIES = ['Office Supplies', 'Furniture', 'Cleaning Supplies', 'Technology', 'Safety Equipment', 'Maintenance Supplies'];
 
 const CATEGORY_CONFIG: Record<string, { icon: string; gradient: string; description: string }> = {
   'Office Supplies': {
@@ -33,6 +34,26 @@ const CATEGORY_CONFIG: Record<string, { icon: string; gradient: string; descript
     icon: '🪑',
     gradient: 'from-amber-500/20 to-orange-500/10',
     description: 'Desks, chairs, storage',
+  },
+  'Cleaning Supplies': {
+    icon: '🧹',
+    gradient: 'from-green-500/20 to-emerald-500/10',
+    description: 'Cleaners, mops, trash bags',
+  },
+  'Technology': {
+    icon: '💻',
+    gradient: 'from-purple-500/20 to-violet-500/10',
+    description: 'Computers, cables, peripherals',
+  },
+  'Safety Equipment': {
+    icon: '🦺',
+    gradient: 'from-red-500/20 to-rose-500/10',
+    description: 'PPE, first aid, fire safety',
+  },
+  'Maintenance Supplies': {
+    icon: '🔧',
+    gradient: 'from-gray-500/20 to-slate-500/10',
+    description: 'Tools, parts, repair materials',
   },
 };
 
@@ -54,6 +75,8 @@ export function QuickSupplyRequest() {
     totalItems,
     isSubmitting,
     hasRestrictedItems,
+    submittedOrder,
+    resetSubmittedOrder,
   } = useOrderCart();
 
   // Filter items based on search and category
@@ -122,6 +145,15 @@ export function QuickSupplyRequest() {
   };
 
   const showCategoryCards = !searchTerm && !selectedCategory;
+
+  if (submittedOrder) {
+    return (
+      <OrderConfirmation
+        order={submittedOrder}
+        onPlaceAnother={resetSubmittedOrder}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-full overflow-x-hidden">

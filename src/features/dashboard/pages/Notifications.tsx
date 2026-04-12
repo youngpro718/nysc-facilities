@@ -1,6 +1,7 @@
 import { NotificationBox } from "@features/admin/components/admin/NotificationBox";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { useNotifications } from "@shared/hooks/useNotifications";
+import { useNavigate } from "react-router-dom";
 import { Bell, Check, CheckCheck, Trash2, Inbox } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,45 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+  urgency?: string;
+  action_url?: string;
+  metadata?: unknown;
+  related_id?: string;
+}
+
+function getNotificationRoute(notification: Notification): string | null {
+  if (notification.action_url) return notification.action_url;
+  if ((notification.metadata as any)?.action_url) return (notification.metadata as any).action_url;
+
+  switch (notification.type) {
+    case 'issue_update':
+      return '/operations?tab=issues';
+    case 'new_assignment':
+    case 'staff_task_pending':
+    case 'staff_task_update':
+      return '/tasks';
+    case 'maintenance':
+      return '/operations?tab=maintenance';
+    case 'key_request_approved':
+    case 'key_request_denied':
+    case 'key_request_fulfilled':
+      return '/my-activity?tab=keys';
+    default:
+      return null;
+  }
+}
+
 function UserNotifications() {
   const { user } = useAuth();
-  const { 
+  const navigate = useNavigate();
+  const {
     notifications, 
     unreadCount, 
     markAsRead, 
@@ -64,13 +101,22 @@ function UserNotifications() {
 
       <ScrollArea className="max-h-[70dvh]">
         <div className="space-y-2">
-          {notifications.map((n) => (
-            <Card 
-              key={n.id} 
+          {notifications.map((n) => {
+            const route = getNotificationRoute(n as Notification);
+            return (
+            <Card
+              key={n.id}
               className={cn(
                 "transition-colors",
-                !n.read && "border-primary/30 bg-primary/5"
+                !n.read && "border-primary/30 bg-primary/5",
+                route && "cursor-pointer hover:bg-accent/50"
               )}
+              onClick={() => {
+                if (route) {
+                  markAsRead(n.id);
+                  navigate(route);
+                }
+              }}
             >
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -88,18 +134,19 @@ function UserNotifications() {
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {!n.read && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => markAsRead(n.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}>
                         <Check className="h-3.5 w-3.5" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => clearNotification(n.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={(e) => { e.stopPropagation(); clearNotification(n.id); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       </ScrollArea>
     </div>

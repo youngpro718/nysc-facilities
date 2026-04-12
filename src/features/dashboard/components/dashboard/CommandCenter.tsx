@@ -278,7 +278,22 @@ export function CommandCenter() {
               {activity.slice(0, 8).map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+                  className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    switch (item.type) {
+                      case 'issue':
+                        navigate('/operations?tab=issues');
+                        break;
+                      case 'supply_request':
+                        navigate('/admin/supply-requests');
+                        break;
+                      case 'task':
+                        navigate('/tasks');
+                        break;
+                      default:
+                        navigate('/operations');
+                    }
+                  }}
                 >
                   <div className={`p-2 rounded-full ${
                     item.type === 'issue' ? 'bg-orange-100 dark:bg-orange-950' :

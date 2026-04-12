@@ -30,9 +30,11 @@ import { InventoryManagementTab } from './InventoryManagementTab';
 import { LowStockPanel } from '@features/inventory/components/inventory/LowStockPanel';
 import { staffCompletePickup } from '@features/supply/services/unifiedSupplyService';
 import { toast } from 'sonner';
+import { useAuth } from '@features/auth/hooks/useAuth';
 
 export function ImprovedSupplyStaffDashboard() {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Record<string, unknown> | null>(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +53,78 @@ export function ImprovedSupplyStaffDashboard() {
     },
     onError: (error: unknown) => {
       toast.error('Failed to confirm pickup', { description: getErrorMessage(error) });
+    },
+  });
+
+  // Mutation for quick ready (full-quantity fulfillment)
+  const quickReadyMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      // Fetch the order's items
+      const { data: items, error: itemsError } = await supabase
+        .from('supply_request_items')
+        .select('*, inventory_items(id, name, quantity, unit)')
+        .eq('request_id', orderId);
+
+      if (itemsError) throw itemsError;
+      if (!items || items.length === 0) throw new Error('No items found for this order');
+
+      // Confirm with user
+      const confirmed = window.confirm(`Mark all ${items.length} item${items.length > 1 ? 's' : ''} as fully fulfilled?`);
+      if (!confirmed) throw new Error('Cancelled');
+
+      // Fulfill each item at full quantity
+      for (const item of items) {
+        await supabase
+          .from('supply_request_items')
+          .update({
+            quantity_fulfilled: item.quantity_requested,
+            quantity_approved: item.quantity_requested,
+          })
+          .eq('id', item.id);
+
+        await supabase.rpc('adjust_inventory_quantity', {
+          p_item_id: item.item_id,
+          p_quantity_change: -item.quantity_requested,
+          p_transaction_type: 'fulfilled',
+          p_reference_id: orderId,
+          p_notes: `Order #${orderId.slice(0, 8)} - ${item.quantity_requested}/${item.quantity_requested} fulfilled (Quick Ready)`,
+        });
+      }
+
+      // Fetch current order for metadata
+      const { data: order } = await supabase
+        .from('supply_requests')
+        .select('metadata')
+        .eq('id', orderId)
+        .single();
+
+      // Update order status to ready
+      await supabase
+        .from('supply_requests')
+        .update({
+          status: 'ready',
+          picking_completed_at: new Date().toISOString(),
+          ready_for_delivery_at: new Date().toISOString(),
+          metadata: {
+            ...(order?.metadata || {}),
+            delivery_method: 'pickup',
+            partial_fulfillment: false,
+            fulfilled_by: profile?.id,
+          },
+        })
+        .eq('id', orderId);
+    },
+    onSuccess: () => {
+      toast.success('Order marked as ready (all items fulfilled)');
+      queryClient.invalidateQueries({ queryKey: ['supply-staff-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['supply-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+    },
+    onError: (error: unknown) => {
+      const msg = getErrorMessage(error);
+      if (msg !== 'Cancelled') {
+        toast.error('Failed to quick-ready order', { description: msg });
+      }
     },
   });
 
@@ -360,6 +434,8 @@ export function ImprovedSupplyStaffDashboard() {
                   key={order.id}
                   order={order}
                   onFulfill={() => setSelectedOrder(order)}
+                  onQuickReady={(orderId) => quickReadyMutation.mutate(orderId)}
+                  isQuickReadying={quickReadyMutation.isPending}
                 />
               ))}
             </div>

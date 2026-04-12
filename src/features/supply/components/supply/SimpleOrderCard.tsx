@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Package, User, MapPin, Clock, AlertTriangle, Truck, CheckCircle, ChevronDown, ChevronUp, Flame } from 'lucide-react';
+import { Package, User, MapPin, Clock, AlertTriangle, Truck, CheckCircle, ChevronDown, ChevronUp, Flame, Loader2 } from 'lucide-react';
 import { formatDistanceToNow, formatDistanceToNowStrict } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { OrderETABadge } from './OrderETABadge';
@@ -16,6 +16,8 @@ interface SimpleOrderCardProps {
   showDeliveryConfirm?: boolean;
   onConfirmDelivered?: () => void;
   isConfirmingPickup?: boolean;
+  onQuickReady?: (orderId: string) => void;
+  isQuickReadying?: boolean;
   urgencyClass?: string;
 }
 
@@ -26,6 +28,8 @@ export function SimpleOrderCard({
   showDeliveryConfirm,
   onConfirmDelivered,
   isConfirmingPickup = false,
+  onQuickReady,
+  isQuickReadying = false,
   urgencyClass = '',
 }: SimpleOrderCardProps) {
   const [showAllItems, setShowAllItems] = useState(false);
@@ -167,6 +171,14 @@ export function SimpleOrderCard({
         {/* Items List - Expandable */}
         <div className="border-t pt-3">
           <p className="text-sm font-semibold mb-2">Items Requested ({itemCount}):</p>
+          {order.supply_request_items?.some((item: any) =>
+            (item.inventory_items?.quantity ?? 0) < item.quantity_requested
+          ) && (
+            <div className="flex items-center gap-1.5 text-xs text-amber-600 mb-2">
+              <AlertTriangle className="h-3 w-3" />
+              <span>Some items may have insufficient stock</span>
+            </div>
+          )}
           <div className="space-y-1.5">
             {displayedItems?.map((item: any) => {
               const fulfilled = item.quantity_fulfilled || 0;
@@ -186,6 +198,17 @@ export function SimpleOrderCard({
                     ) : (
                       <span className="font-medium ml-1">Qty: {requested}</span>
                     )}
+                    {' '}
+                    <span className={cn(
+                      "text-xs",
+                      item.inventory_items?.quantity === 0
+                        ? "text-red-500 font-medium"
+                        : item.inventory_items?.quantity <= item.quantity_requested
+                          ? "text-amber-500"
+                          : "text-muted-foreground"
+                    )}>
+                      ({item.inventory_items?.quantity ?? '?'} in stock)
+                    </span>
                   </span>
                 </div>
               );
@@ -252,14 +275,35 @@ export function SimpleOrderCard({
                 View Order
               </Button>
             ) : (
-              <Button 
-                onClick={onFulfill} 
-                className="w-full"
-                size="lg"
-              >
-                <Package className="mr-2 h-4 w-4" />
-                Fulfill Order
-              </Button>
+              <>
+                <Button
+                  onClick={onFulfill}
+                  className={onQuickReady ? "flex-1" : "w-full"}
+                  size="lg"
+                >
+                  <Package className="mr-2 h-4 w-4" />
+                  Fulfill Order
+                </Button>
+                {onQuickReady && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickReady(order.id);
+                    }}
+                    disabled={isQuickReadying}
+                    className="text-green-600 border-green-200 hover:bg-green-50"
+                  >
+                    {isQuickReadying ? (
+                      <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 mr-1.5" />
+                    )}
+                    Quick Ready
+                  </Button>
+                )}
+              </>
             )}
           </div>
         )}

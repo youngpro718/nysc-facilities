@@ -4,9 +4,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Eye, MapPin, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { IssueTypeBadge } from "@features/issues/components/issues/card/IssueTypeBadge";
 import { DeleteIssueButton } from "@features/issues/components/issues/components/DeleteIssueButton";
 import type { EnhancedIssue } from "@features/dashboard/hooks/useAdminIssuesData";
+
+function getIssueAge(createdAt: string): { label: string; urgency: 'normal' | 'warning' | 'critical' } {
+  const created = new Date(createdAt);
+  const now = new Date();
+  const diffMs = now.getTime() - created.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  let label: string;
+  if (diffHours < 1) label = 'Just now';
+  else if (diffHours < 24) label = `${Math.floor(diffHours)}h`;
+  else if (diffDays < 7) label = `${diffDays}d`;
+  else if (diffDays < 30) label = `${Math.floor(diffDays / 7)}w`;
+  else label = `${Math.floor(diffDays / 30)}mo`;
+
+  const urgency = diffDays > 7 ? 'critical' : diffDays > 3 ? 'warning' : 'normal';
+  return { label, urgency };
+}
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
@@ -73,6 +92,7 @@ export function IssueTableView({
             <TableHead className="min-w-[260px]">Title</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Age</TableHead>
             <TableHead>Type</TableHead>
             <TableHead className="min-w-[110px]">Room</TableHead>
             <TableHead className="min-w-[160px]">Reporter</TableHead>
@@ -115,6 +135,27 @@ export function IssueTableView({
                 <Badge variant={getStatusColor(issue.status)} className="text-xs">
                   {issue.status.replace('_', ' ').toUpperCase()}
                 </Badge>
+              </TableCell>
+
+              <TableCell>
+                {issue.status === 'resolved' ? (
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(issue.updated_at || issue.created_at), { addSuffix: true })}
+                  </span>
+                ) : (() => {
+                  const age = getIssueAge(issue.created_at);
+                  return (
+                    <span className={cn(
+                      "text-xs font-medium",
+                      age.urgency === 'critical' && "text-red-500",
+                      age.urgency === 'warning' && "text-amber-500",
+                      age.urgency === 'normal' && "text-muted-foreground",
+                    )}>
+                      {age.urgency === 'critical' && '● '}
+                      {age.label}
+                    </span>
+                  );
+                })()}
               </TableCell>
 
               <TableCell>

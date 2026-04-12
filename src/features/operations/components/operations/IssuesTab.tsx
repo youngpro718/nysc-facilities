@@ -4,16 +4,21 @@
  * Full issues management interface with filtering, search, and list views
  */
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  AlertTriangle, 
+import {
+  AlertTriangle,
   Clock,
   CheckCircle,
   AlertCircle,
   Plus,
-  RefreshCw
+  RefreshCw,
+  X
 } from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import { EnhancedIssuesList } from "@features/issues/components/admin-issues/EnhancedIssuesList";
 import { IssueGroupingControls } from "@features/issues/components/admin-issues/IssueGroupingControls";
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@features/issues/types/issues";
@@ -74,6 +79,32 @@ export function IssuesTab({
   filter,
   roomId,
 }: IssuesTabProps) {
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleBulkStatusUpdate = async (newStatus: string) => {
+    setIsBulkUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', selectedIssues);
+
+      if (error) throw error;
+
+      toast.success(`${selectedIssues.length} issues marked as ${newStatus.replace('_', ' ')}.`);
+      onSelectionChange([]);
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update issues");
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
   const clearFilters = () => {
     onStatusFilterChange('all');
     onPriorityFilterChange('all');
@@ -228,6 +259,39 @@ export function IssuesTab({
           />
         </CardContent>
       </Card>
+
+      {/* Bulk Action Bar */}
+      {selectedIssues.length > 0 && (
+        <div className="sticky bottom-4 z-10 mx-auto w-fit">
+          <div className="flex items-center gap-3 bg-background border shadow-lg rounded-full px-4 py-2">
+            <span className="text-sm font-medium">{selectedIssues.length} selected</span>
+            <div className="h-4 w-px bg-border" />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkStatusUpdate('in_progress')}
+              disabled={isBulkUpdating}
+            >
+              Mark In Progress
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkStatusUpdate('resolved')}
+              disabled={isBulkUpdating}
+            >
+              Mark Resolved
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onSelectionChange([])}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

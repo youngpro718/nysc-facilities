@@ -3,11 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil } from "lucide-react";
+import { ArrowRightLeft, MoreHorizontal, Pencil } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getGenericItemImage } from "@/utils/inventoryImages";
+import { TransferItemDialog } from "./TransferItemDialog";
 
 interface InventoryTableProps {
   items: InventoryItem[];
@@ -27,6 +28,7 @@ export function InventoryTable({
   onDeleteItem
 }: InventoryTableProps) {
   const [confirmDeleteItem, confirmDeleteDialog] = useConfirmDialog();
+  const [transferItem, setTransferItem] = useState<InventoryItem | null>(null);
   // Sort items by name to maintain stable order
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => a.name.localeCompare(b.name));
@@ -131,6 +133,10 @@ export function InventoryTable({
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTransferItem(item)}>
+                      <ArrowRightLeft className="mr-2 h-4 w-4" />
+                      Transfer
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={async () => {
                       const ok = await confirmDeleteItem({ title: 'Delete Item', description: 'Are you sure you want to delete this item? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
                       if (ok) onDeleteItem(item.id);
@@ -153,6 +159,14 @@ export function InventoryTable({
       </TableBody>
     </Table>
     {confirmDeleteDialog}
+    {transferItem && (
+      <TransferItemDialog
+        item={transferItem}
+        currentRoomId={transferItem.storage_room_id}
+        open={!!transferItem}
+        onOpenChange={(open) => !open && setTransferItem(null)}
+      />
+    )}
     </>
   );
 }

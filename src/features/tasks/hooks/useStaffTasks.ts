@@ -252,11 +252,30 @@ export function useStaffTasks(options?: {
         .single();
 
       if (error) throw error;
+
+      // If this is a move_item task, update the inventory item's location
+      const { data: taskData } = await supabase
+        .from('staff_tasks')
+        .select('task_type, inventory_item_id, to_room_id')
+        .eq('id', taskId)
+        .single();
+
+      if (taskData?.task_type === 'move_item' && taskData?.inventory_item_id && taskData?.to_room_id) {
+        await supabase
+          .from('inventory_items')
+          .update({
+            storage_room_id: taskData.to_room_id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', taskData.inventory_item_id);
+      }
+
       return data;
     },
     onSuccess: () => {
       toast.success('Task completed');
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
     },
     onError: (error: unknown) => {
       toast.error('Failed to complete task', { description: getErrorMessage(error) });

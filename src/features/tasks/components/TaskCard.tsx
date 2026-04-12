@@ -317,20 +317,32 @@ export function TaskCard({
                 )}
 
                 {canComplete && onComplete && (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="flex-1"
-                    onClick={() => setShowCompleteDialog(true)}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Complete
-                      </>
-                    )}
-                  </Button>
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onComplete?.(task.id, '');
+                      }}
+                      disabled={isLoading}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-1.5" />
+                          Done
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowCompleteDialog(true)}
+                      disabled={isLoading}
+                    >
+                      Done + Notes
+                    </Button>
+                  </>
                 )}
               </div>
             </>

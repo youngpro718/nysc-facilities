@@ -47,7 +47,7 @@ export const POLLING = {
 // QUERY CACHE STRATEGY (ms)
 // ============================================================================
 export const QUERY_CONFIG = {
-  globalRetry: 1,
+  globalRetry: 3,
 
   stale: {
     realtime:  30_000,
