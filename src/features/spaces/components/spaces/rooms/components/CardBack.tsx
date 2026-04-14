@@ -18,6 +18,7 @@ import { RoomHistoryTimeline } from "./history/RoomHistoryTimeline";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
 import { FinishesStep } from "@features/spaces/components/spaces/forms/room/wizard/steps/FinishesStep";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 
 interface CardBackProps {
   room: EnhancedRoom;
