@@ -71,13 +71,15 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   const resolveIssueMutation = useMutation({
     mutationFn: async () => {
       if (!issueId) return;
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase
         .from('issues')
         .update({
           status: 'resolved',
           resolution_type: resolutionType,
           resolution_notes: resolutionNotes.trim() || null,
-          resolved_at: new Date().toISOString(),
+          resolution_date: new Date().toISOString(),
+          resolved_by: user?.id || null,
         })
         .eq('id', issueId);
 
