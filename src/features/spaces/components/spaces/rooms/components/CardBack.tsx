@@ -140,7 +140,19 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
           )}
         </button>
         <button
-          onClick={() => setActiveTab('notes')}
+          onClick={() => setActiveTab('planned')}
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'planned' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+        >
+          <CalendarClock className="h-3.5 w-3.5 inline mr-1" />
+          Planned
+          {plannedTasks.length > 0 && (
+            <span className="ml-1 inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+              {plannedTasks.length}
+            </span>
+          )}
+        </button>
+        <button
           className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'notes' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
             }`}
         >
