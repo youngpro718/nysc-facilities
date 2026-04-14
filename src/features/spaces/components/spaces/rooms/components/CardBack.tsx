@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap, Pencil, Trash2, Paintbrush } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap, Pencil, Trash2, Paintbrush, CalendarClock } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
