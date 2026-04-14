@@ -527,6 +527,82 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
           </div>
         )}
 
+        {/* Planned Work Tab */}
+        {activeTab === 'planned' && (
+          <div className="space-y-4">
+            {plannedTasks.length === 0 ? (
+              <div className="text-center py-8">
+                <CalendarClock className="h-8 w-8 mx-auto mb-2 text-muted-foreground/60" />
+                <p className="text-sm font-medium mb-1">No planned work</p>
+                <p className="text-xs text-muted-foreground mb-3">Schedule tasks for this room</p>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <CreateTaskDialog
+                    trigger={
+                      <Button variant="outline" size="sm">
+                        <Plus className="h-3.5 w-3.5 mr-1.5" />
+                        Schedule Work
+                      </Button>
+                    }
+                    taskDefaults={{
+                      title: `Work in Room ${room.room_number}`,
+                      task_type: 'maintenance',
+                      priority: 'medium',
+                      to_room_id: room.id,
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {plannedTasks.map((task: any) => {
+                    const priorityColor = ['urgent', 'high'].includes(task.priority)
+                      ? 'border-l-red-500'
+                      : task.priority === 'medium'
+                        ? 'border-l-amber-500'
+                        : 'border-l-blue-500';
+                    return (
+                      <div
+                        key={task.id}
+                        className={`bg-card border border-border border-l-[3px] ${priorityColor} p-3 rounded-md`}
+                      >
+                        <p className="text-sm font-medium leading-tight line-clamp-2">{task.title}</p>
+                        <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {(task.task_type || 'general').replace(/_/g, ' ')}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs capitalize">
+                            {(task.status || 'pending').replace(/_/g, ' ')}
+                          </Badge>
+                          {task.due_date && (
+                            <span>{new Date(task.due_date).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <CreateTaskDialog
+                    trigger={
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Plus className="h-3.5 w-3.5 mr-1.5" />
+                        Schedule More Work
+                      </Button>
+                    }
+                    taskDefaults={{
+                      title: `Work in Room ${room.room_number}`,
+                      task_type: 'maintenance',
+                      priority: 'medium',
+                      to_room_id: room.id,
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Notes Tab */}
         {activeTab === 'notes' && (
           <div className="space-y-3">
