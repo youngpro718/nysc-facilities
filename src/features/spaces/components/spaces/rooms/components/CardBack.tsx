@@ -29,7 +29,24 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
   const { canAdmin } = useRolePermissions();
   const canManageSpaces = canAdmin('spaces');
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'notes' | 'history' | 'finishes'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'planned' | 'notes' | 'history' | 'finishes'>('info');
+
+  // Fetch planned work (tasks linked to this room)
+  const { data: plannedTasks = [] } = useQuery({
+    queryKey: ['room-planned-tasks', room.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_tasks')
+        .select('id, title, status, priority, due_date, task_type, created_at')
+        .eq('to_room_id', room.id)
+        .not('status', 'eq', 'completed')
+        .not('status', 'eq', 'cancelled')
+        .order('due_date', { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30_000,
+  });
 
   // Courtroom photos
   const isCourtroom = room.room_type === 'courtroom';
