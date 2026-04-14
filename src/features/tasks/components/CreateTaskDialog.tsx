@@ -54,6 +54,7 @@ const createTaskSchema = z.object({
   to_room_id: z.string().optional(),
   quantity: z.number().min(1).optional(),
   due_date: z.string().optional(),
+  issue_id: z.string().optional(),
 });
 
 type CreateTaskFormData = z.infer<typeof createTaskSchema>;

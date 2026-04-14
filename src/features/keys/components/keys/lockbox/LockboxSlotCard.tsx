@@ -10,21 +10,23 @@ interface LockboxSlotCardProps {
   lockboxLocation?: string;
 }
 
-function getStatusBorderColor(status: string) {
+function getStatusConfig(status: string) {
   switch (status) {
-    case 'in_box': return 'border-l-green-500';
-    case 'checked_out': return 'border-l-orange-500';
-    case 'missing': return 'border-l-destructive';
-    case 'retired': return 'border-l-muted-foreground/40';
-    default: return 'border-l-border';
+    case 'in_box': return { border: 'border-l-green-500', bg: 'bg-green-50/50 dark:bg-green-950/10', label: 'Available' };
+    case 'checked_out': return { border: 'border-l-orange-500', bg: 'bg-orange-50/50 dark:bg-orange-950/10', label: 'Checked Out' };
+    case 'missing': return { border: 'border-l-destructive', bg: 'bg-red-50/50 dark:bg-red-950/10', label: 'Missing' };
+    case 'retired': return { border: 'border-l-muted-foreground/40', bg: 'bg-muted/30', label: 'Retired' };
+    default: return { border: 'border-l-border', bg: '', label: status };
   }
 }
 
-export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }: LockboxSlotCardProps) {
+export function LockboxSlotCard({ slot, onClick }: LockboxSlotCardProps) {
+  const statusConfig = getStatusConfig(slot.status);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'in_box':
-        return <Badge className="bg-green-500 hover:bg-green-600 text-xs"><CheckCircle className="w-3 h-3 mr-1" /> In Box</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-600 text-xs"><CheckCircle className="w-3 h-3 mr-1" /> Available</Badge>;
       case 'checked_out':
         return <Badge variant="destructive" className="bg-orange-500 hover:bg-orange-600 text-xs"><Key className="w-3 h-3 mr-1" /> Out</Badge>;
       case 'missing':
@@ -68,12 +70,19 @@ export function LockboxSlotCard({ slot, onClick, lockboxName, lockboxLocation }:
       className={cn(
         "flex items-center justify-between p-3 sm:p-4 border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors active:scale-[0.99] touch-manipulation",
         "border-l-4",
-        getStatusBorderColor(slot.status)
+        statusConfig.border,
+        statusConfig.bg
       )}
       onClick={() => onClick(slot)}
     >
       <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-        <div className="flex items-center justify-center w-10 h-10 sm:w-10 sm:h-10 bg-muted rounded-full font-bold text-base sm:text-lg shrink-0">
+        <div className={cn(
+          "flex items-center justify-center w-10 h-10 sm:w-10 sm:h-10 rounded-full font-bold text-base sm:text-lg shrink-0",
+          slot.status === 'in_box' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+          slot.status === 'checked_out' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
+          slot.status === 'missing' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+          'bg-muted'
+        )}>
           {slot.slot_number}
         </div>
         <div className="min-w-0">

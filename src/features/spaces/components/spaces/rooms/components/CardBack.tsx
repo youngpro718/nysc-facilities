@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap, Pencil, Trash2, Paintbrush } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap, Pencil, Trash2, Paintbrush, CalendarClock } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -16,6 +18,7 @@ import { RoomHistoryTimeline } from "./history/RoomHistoryTimeline";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
 import { FinishesStep } from "@features/spaces/components/spaces/forms/room/wizard/steps/FinishesStep";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 
 interface CardBackProps {
   room: EnhancedRoom;
@@ -27,7 +30,24 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
   const { canAdmin } = useRolePermissions();
   const canManageSpaces = canAdmin('spaces');
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'notes' | 'history' | 'finishes'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'issues' | 'planned' | 'notes' | 'history' | 'finishes'>('info');
+
+  // Fetch planned work (tasks linked to this room)
+  const { data: plannedTasks = [] } = useQuery({
+    queryKey: ['room-planned-tasks', room.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_tasks')
+        .select('id, title, status, priority, due_date, task_type, created_at')
+        .eq('to_room_id', room.id)
+        .not('status', 'eq', 'completed')
+        .not('status', 'eq', 'cancelled')
+        .order('due_date', { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30_000,
+  });
 
   // Courtroom photos
   const isCourtroom = room.room_type === 'courtroom';
@@ -121,7 +141,19 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
           )}
         </button>
         <button
-          onClick={() => setActiveTab('notes')}
+          onClick={() => setActiveTab('planned')}
+          className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'planned' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+        >
+          <CalendarClock className="h-3.5 w-3.5 inline mr-1" />
+          Planned
+          {plannedTasks.length > 0 && (
+            <span className="ml-1 inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+              {plannedTasks.length}
+            </span>
+          )}
+        </button>
+        <button
           className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'notes' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
             }`}
         >
@@ -491,6 +523,82 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
                   <Plus className="h-3.5 w-3.5 mr-1.5" />
                   Report New Issue
                 </Button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Planned Work Tab */}
+        {activeTab === 'planned' && (
+          <div className="space-y-4">
+            {plannedTasks.length === 0 ? (
+              <div className="text-center py-8">
+                <CalendarClock className="h-8 w-8 mx-auto mb-2 text-muted-foreground/60" />
+                <p className="text-sm font-medium mb-1">No planned work</p>
+                <p className="text-xs text-muted-foreground mb-3">Schedule tasks for this room</p>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <CreateTaskDialog
+                    trigger={
+                      <Button variant="outline" size="sm">
+                        <Plus className="h-3.5 w-3.5 mr-1.5" />
+                        Schedule Work
+                      </Button>
+                    }
+                    taskDefaults={{
+                      title: `Work in Room ${room.room_number}`,
+                      task_type: 'maintenance',
+                      priority: 'medium',
+                      to_room_id: room.id,
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {plannedTasks.map((task: any) => {
+                    const priorityColor = ['urgent', 'high'].includes(task.priority)
+                      ? 'border-l-red-500'
+                      : task.priority === 'medium'
+                        ? 'border-l-amber-500'
+                        : 'border-l-blue-500';
+                    return (
+                      <div
+                        key={task.id}
+                        className={`bg-card border border-border border-l-[3px] ${priorityColor} p-3 rounded-md`}
+                      >
+                        <p className="text-sm font-medium leading-tight line-clamp-2">{task.title}</p>
+                        <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {(task.task_type || 'general').replace(/_/g, ' ')}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs capitalize">
+                            {(task.status || 'pending').replace(/_/g, ' ')}
+                          </Badge>
+                          {task.due_date && (
+                            <span>{new Date(task.due_date).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <CreateTaskDialog
+                    trigger={
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Plus className="h-3.5 w-3.5 mr-1.5" />
+                        Schedule More Work
+                      </Button>
+                    }
+                    taskDefaults={{
+                      title: `Work in Room ${room.room_number}`,
+                      task_type: 'maintenance',
+                      priority: 'medium',
+                      to_room_id: room.id,
+                    }}
+                  />
+                </div>
               </>
             )}
           </div>

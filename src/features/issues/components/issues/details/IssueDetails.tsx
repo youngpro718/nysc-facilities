@@ -9,7 +9,7 @@ import { IssueComments } from "../card/IssueComments";
 import { toast } from "sonner";
 import { EditIssueForm } from "../forms/EditIssueForm";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IssueDetailsHeader } from "./components/IssueDetailsHeader";
 import { IssueTimelineContent } from "./components/IssueTimelineContent";
@@ -18,11 +18,23 @@ import { IssueDetailsContent } from "./components/IssueDetailsContent";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface IssueDetailsProps {
   issueId: string | null;
   onClose: () => void;
 }
+
+const RESOLUTION_TYPES = [
+  { value: 'fixed', label: 'Fixed' },
+  { value: 'replaced', label: 'Replaced' },
+  { value: 'maintenance_performed', label: 'Maintenance Performed' },
+  { value: 'no_action_needed', label: 'No Action Needed' },
+  { value: 'deferred', label: 'Deferred' },
+];
 
 export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   const queryClient = useQueryClient();
@@ -31,6 +43,11 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   const { issue, issueLoading, timeline, timelineLoading, linkedTasks, linkedTasksLoading } = useIssueData(issueId);
   const { isAdmin, isFacilitiesManager } = useRolePermissions();
   const canCreateTaskFromIssue = isAdmin || isFacilitiesManager;
+
+  // Resolution dialog state
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+  const [resolutionType, setResolutionType] = useState('fixed');
+  const [resolutionNotes, setResolutionNotes] = useState('');
   
   const markAsSeenMutation = useMutation({
     mutationFn: async () => {
@@ -48,6 +65,35 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
     },
     onError: () => {
       toast.error("Failed to mark issue as seen");
+    }
+  });
+
+  const resolveIssueMutation = useMutation({
+    mutationFn: async () => {
+      if (!issueId) return;
+      const { error } = await supabase
+        .from('issues')
+        .update({
+          status: 'resolved',
+          resolution_type: resolutionType,
+          resolution_notes: resolutionNotes.trim() || null,
+          resolved_at: new Date().toISOString(),
+        })
+        .eq('id', issueId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      queryClient.invalidateQueries({ queryKey: ['issues', issueId] });
+      queryClient.invalidateQueries({ queryKey: ['court-issues'] });
+      toast.success("Issue resolved successfully");
+      setResolveDialogOpen(false);
+      setResolutionType('fixed');
+      setResolutionNotes('');
+    },
+    onError: () => {
+      toast.error("Failed to resolve issue");
     }
   });
 
@@ -81,8 +127,26 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
     }
   };
 
+  const isResolved = issue.status === 'resolved';
+
   return (
     <><div className="flex flex-col h-full overflow-hidden">
+      {/* Resolved banner */}
+      {isResolved && (
+        <div className="flex items-center gap-2 px-6 py-2 bg-green-50 dark:bg-green-950/30 border-b border-green-200 dark:border-green-800">
+          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <span className="text-sm font-medium text-green-700 dark:text-green-300">
+            Resolved
+            {(issue as any).resolution_type && ` — ${(issue as any).resolution_type.replace(/_/g, ' ')}`}
+          </span>
+          {(issue as any).resolved_at && (
+            <span className="text-xs text-green-600/70 dark:text-green-400/70 ml-auto">
+              {new Date((issue as any).resolved_at).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      )}
+
       {isEditing ? (
         <>
           <IssueDetailsHeader
@@ -115,7 +179,18 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
             isEditing={false}
           />
           {canCreateTaskFromIssue && (
-            <div className="px-6 pt-4 flex justify-end">
+            <div className="px-6 pt-4 flex justify-end gap-2">
+              {!isResolved && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => setResolveDialogOpen(true)}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                  Resolve
+                </Button>
+              )}
               <CreateTaskDialog
                 trigger={(
                   <Button variant="outline" size="sm">
@@ -195,7 +270,54 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
       )}
     </div>
     {confirmDiscardDialog}
+
+    {/* Resolve Issue Dialog */}
+    <Dialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            Resolve Issue
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Resolution Type</Label>
+            <Select value={resolutionType} onValueChange={setResolutionType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RESOLUTION_TYPES.map(rt => (
+                  <SelectItem key={rt.value} value={rt.value}>{rt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Notes (Optional)</Label>
+            <Textarea
+              placeholder="How was this resolved?"
+              value={resolutionNotes}
+              onChange={(e) => setResolutionNotes(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setResolveDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            className="bg-green-600 hover:bg-green-700 text-white"
+            onClick={() => resolveIssueMutation.mutate()}
+            disabled={resolveIssueMutation.isPending}
+          >
+            {resolveIssueMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Mark Resolved
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 };
-

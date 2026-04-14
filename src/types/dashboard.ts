@@ -41,6 +41,7 @@ export interface UserIssue {
   description: string;
   status: "open" | "in_progress" | "resolved";
   created_at: string;
+  updated_at?: string;
   priority: "low" | "medium" | "high";
   building_id: string;
   seen: boolean;

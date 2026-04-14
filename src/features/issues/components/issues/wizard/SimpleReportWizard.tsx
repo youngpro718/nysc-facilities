@@ -163,10 +163,21 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
 
       const issueType = getBackendIssueType(selectedCategory);
 
+      // Auto-generate descriptive title
+      const roomLabel = selectedSearchedRoom
+        ? `Room ${selectedSearchedRoom.room_number}`
+        : selectedRoom
+          ? `Room ${getRoomNumber(selectedRoom)}`
+          : null;
+      const categoryLabel = selectedCategoryData?.label || issueType;
+      const autoTitle = roomLabel
+        ? `${categoryLabel} Issue - ${roomLabel}`
+        : `${categoryLabel} Issue`;
+
       const { error } = await supabase
         .from('issues')
         .insert({
-          title: `${selectedCategoryData?.label || issueType} Issue`,
+          title: autoTitle,
           description: description.trim(),
           issue_type: issueType,
           priority: 'medium',

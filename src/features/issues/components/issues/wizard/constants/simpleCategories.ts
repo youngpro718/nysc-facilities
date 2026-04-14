@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bolt, Droplet, Thermometer, Trash2, MessageSquare, LucideProps } from "lucide-react";
+import { Bolt, Droplet, Thermometer, Trash2, MessageSquare, Hammer, Armchair, LucideProps } from "lucide-react";
 import { StandardizedIssueType } from "../../constants/issueTypes";
 
 export interface SimpleCategory {
@@ -11,7 +11,7 @@ export interface SimpleCategory {
   mapsTo: StandardizedIssueType;
 }
 
-// Simplified 5-category mapping for regular users
+// Simplified 7-category mapping for regular users
 export const SIMPLE_CATEGORIES: SimpleCategory[] = [
   {
     id: 'electrical',
@@ -36,6 +36,22 @@ export const SIMPLE_CATEGORIES: SimpleCategory[] = [
     color: 'text-orange-500',
     description: 'Temperature, AC, heat',
     mapsTo: 'CLIMATE_CONTROL'
+  },
+  {
+    id: 'structural',
+    label: 'Structural',
+    icon: Hammer,
+    color: 'text-stone-500',
+    description: 'Walls, doors, plaster',
+    mapsTo: 'STRUCTURAL_REPAIR'
+  },
+  {
+    id: 'furniture',
+    label: 'Furniture',
+    icon: Armchair,
+    color: 'text-amber-600',
+    description: 'Desks, chairs, shelving',
+    mapsTo: 'FURNITURE_REPAIR'
   },
   {
     id: 'cleaning',
