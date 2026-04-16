@@ -78,7 +78,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
           status: 'resolved',
           resolution_type: resolutionType,
           resolution_notes: resolutionNotes.trim() || null,
-          resolution_date: new Date().toISOString(),
+          resolved_at: new Date().toISOString(),
           resolved_by: user?.id || null,
         })
         .eq('id', issueId);

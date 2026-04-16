@@ -24,7 +24,7 @@ export const useResolveIssueMutation = () => {
             status: "resolved",
             resolution_type,
             resolution_notes,
-            resolution_date: new Date().toISOString(),
+            resolved_at: new Date().toISOString(),
             resolved_by: (await supabase.auth.getUser()).data.user?.id,
           })
           .eq("id", id);
