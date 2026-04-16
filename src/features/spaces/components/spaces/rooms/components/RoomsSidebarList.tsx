@@ -89,7 +89,7 @@ export function RoomsSidebarList({ rooms, selectedRoomId, onSelect, isLoading }:
                     <ul className="divide-y">
                       {buildingRooms.map((room) => {
                         const isActive = room.id === selectedRoomId;
-                        const issueCount = Array.isArray(room.issues) ? room.issues.length : 0;
+                        const issueCount = Array.isArray(room.issues) ? room.issues.filter((i: any) => i.status === 'open' || i.status === 'in_progress').length : 0;
                         const statusDotColor =
                           room.status === 'active' && issueCount === 0
                             ? 'bg-status-operational'
