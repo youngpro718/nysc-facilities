@@ -161,10 +161,13 @@ interface TermSheetBoardProps {
 
 export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { isAdmin: userIsAdmin } = useRolePermissions();
   const [viewMode, setViewMode] = useState<ViewMode>(() => isMobile ? 'cards' : 'table');
   const [search, setSearch] = useState('');
   const [sortedList, setSortedList] = useState<TermAssignment[]>([]);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [previewIssueId, setPreviewIssueId] = useState<string | null>(null);
   const { toast } = useToast();
   const { personnel } = useCourtPersonnel();
   const queryClient = useQueryClient();
