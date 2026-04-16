@@ -60,7 +60,6 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string | string[]>("");
   const [previewIssueId, setPreviewIssueId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string | string[]>("");
 
   const toggleActiveMutation = useMutation({
     mutationFn: async () => {
