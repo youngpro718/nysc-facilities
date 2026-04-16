@@ -11,9 +11,13 @@ import { useCourtPersonnel } from "@features/court/hooks/useCourtPersonnel";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useToast } from "@shared/hooks/use-toast";
-import { Save, X, Check, Calendar as CalendarIcon, MapPin, Phone, Printer, Users, Gavel, Shield, Trash2, Power } from "lucide-react";
+import { Save, X, Check, Calendar as CalendarIcon, MapPin, Phone, Printer, Users, Gavel, Shield, Trash2, Power, AlertTriangle, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { MaintenanceShutdownSection } from "./MaintenanceShutdownSection";
+import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesIntegration";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { useNavigate } from "react-router-dom";
+import { IssuePreviewSheet } from "@features/issues/components/issues/details/IssuePreviewSheet";
 
 interface CourtAssignmentRow {
   room_id: string;
