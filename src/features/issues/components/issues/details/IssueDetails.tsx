@@ -1,5 +1,4 @@
 
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -56,7 +55,6 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
         .from('issues')
         .update({ seen: true })
         .eq('id', issueId);
-
       if (error) throw error;
     },
     onSuccess: () => {
@@ -82,7 +80,6 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
           resolved_by: user?.id || null,
         })
         .eq('id', issueId);
-
       if (error) throw error;
     },
     onSuccess: () => {
@@ -130,6 +127,43 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   };
 
   const isResolved = issue.status === 'resolved';
+
+  // Action buttons rendered in the header
+  const headerActions = canCreateTaskFromIssue && !isEditing ? (
+    <>
+      {!isResolved && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 text-xs text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
+          onClick={() => setResolveDialogOpen(true)}
+        >
+          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+          Resolve
+        </Button>
+      )}
+      <CreateTaskDialog
+        trigger={(
+          <Button variant="ghost" size="sm" className="h-8 text-xs">
+            Create Task
+          </Button>
+        )}
+        taskDefaults={{
+          title: `Follow-up: ${issue.title}`,
+          description: issue.description || '',
+          task_type: 'maintenance',
+          priority: (() => {
+            const issuePriority = String(issue.priority);
+            return issuePriority === 'urgent' || issuePriority === 'high' || issuePriority === 'critical'
+              ? 'high'
+              : 'medium';
+          })(),
+          to_room_id: issue.room_id || undefined,
+          issue_id: issue.id,
+        }}
+      />
+    </>
+  ) : undefined;
 
   return (
     <><div className="flex flex-col h-full overflow-hidden">
@@ -179,42 +213,8 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
             onEdit={() => setIsEditing(true)}
             onDelete={onClose}
             isEditing={false}
+            actions={headerActions}
           />
-          {canCreateTaskFromIssue && (
-            <div className="px-6 pt-4 flex justify-end gap-2">
-              {!isResolved && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => setResolveDialogOpen(true)}
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                  Resolve
-                </Button>
-              )}
-              <CreateTaskDialog
-                trigger={(
-                  <Button variant="outline" size="sm">
-                    Create Task
-                  </Button>
-                )}
-                taskDefaults={{
-                  title: `Follow-up: ${issue.title}`,
-                  description: issue.description || '',
-                  task_type: 'maintenance',
-                  priority: (() => {
-                    const issuePriority = String(issue.priority);
-                    return issuePriority === 'urgent' || issuePriority === 'high' || issuePriority === 'critical'
-                      ? 'high'
-                      : 'medium';
-                  })(),
-                  to_room_id: issue.room_id || undefined,
-                  issue_id: issue.id,
-                }}
-              />
-            </div>
-          )}
           <ScrollArea className="flex-1">
             <div className="space-y-6 p-6">
               <Tabs defaultValue="details" className="w-full">
