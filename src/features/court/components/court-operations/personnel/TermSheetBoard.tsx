@@ -3,6 +3,9 @@ import { useIsMobile } from '@shared/hooks/use-mobile';
 import { Loader2, GripVertical, AlertTriangle, Calendar, ChevronLeft, ChevronRight, Plus, Phone } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
+import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
+import { IssuePreviewSheet } from '@features/issues/components/issues/details/IssuePreviewSheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -60,9 +63,10 @@ interface SortableRowProps {
   hasUrgent: boolean;
   judge: ReturnType<typeof useCourtPersonnel>['personnel']['judges'][number] | undefined;
   isAdmin?: boolean;
+  onIssueBadgeClick?: () => void;
 }
 
-function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = true }: SortableRowProps) {
+function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = true, onIssueBadgeClick }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: a.id });
 
@@ -96,12 +100,14 @@ function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = tr
         <div className="flex items-center gap-1">
           <span className="font-bold text-primary whitespace-pre-line">{a.part}</span>
           {isAdmin && issueCount > 0 && (
-            <span
-              title={`${issueCount} open issue${issueCount > 1 ? 's' : ''}`}
-              className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold text-white ${hasUrgent ? 'bg-destructive' : 'bg-orange-400'}`}
+            <button
+              type="button"
+              title={`${issueCount} open issue${issueCount > 1 ? 's' : ''} — click to view`}
+              className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold text-white cursor-pointer hover:scale-110 transition-transform ${hasUrgent ? 'bg-destructive' : 'bg-orange-400'}`}
+              onClick={(e) => { e.stopPropagation(); onIssueBadgeClick?.(); }}
             >
               {issueCount}
-            </span>
+            </button>
           )}
         </div>
       </td>
@@ -155,10 +161,13 @@ interface TermSheetBoardProps {
 
 export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { isAdmin: userIsAdmin } = useRolePermissions();
   const [viewMode, setViewMode] = useState<ViewMode>(() => isMobile ? 'cards' : 'table');
   const [search, setSearch] = useState('');
   const [sortedList, setSortedList] = useState<TermAssignment[]>([]);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [previewIssueId, setPreviewIssueId] = useState<string | null>(null);
   const { toast } = useToast();
   const { personnel } = useCourtPersonnel();
   const queryClient = useQueryClient();
@@ -854,6 +863,14 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                             hasUrgent={hasUrgentIssues(a.room_id)}
                             judge={personnel.judges.find(j => j.name === a.justice)}
                             isAdmin={isAdmin}
+                            onIssueBadgeClick={() => {
+                              const issues = getIssuesForRoom(a.room_id);
+                              if (userIsAdmin) {
+                                navigate('/operations?tab=issues');
+                              } else if (issues.length > 0) {
+                                setPreviewIssueId(issues[0].id);
+                              }
+                            }}
                           />
                         ))}
                       </SortableContext>
@@ -939,6 +956,13 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         <span>Criminal Term Sheet • {new Date().toLocaleDateString()}{isAdmin ? ' • Drag rows to reorder' : ''}</span>
         <span>{displayList.length} of {sortedList.length} shown</span>
       </div>
+
+      {/* Issue preview sheet */}
+      <IssuePreviewSheet
+        issueId={previewIssueId}
+        open={!!previewIssueId}
+        onOpenChange={(open) => { if (!open) setPreviewIssueId(null); }}
+      />
     </div>
   );
 };

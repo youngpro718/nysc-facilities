@@ -11,9 +11,13 @@ import { useCourtPersonnel } from "@features/court/hooks/useCourtPersonnel";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useToast } from "@shared/hooks/use-toast";
-import { Save, X, Check, Calendar as CalendarIcon, MapPin, Phone, Printer, Users, Gavel, Shield, Trash2, Power } from "lucide-react";
+import { Save, X, Check, Calendar as CalendarIcon, MapPin, Phone, Printer, Users, Gavel, Shield, Trash2, Power, AlertTriangle, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { MaintenanceShutdownSection } from "./MaintenanceShutdownSection";
+import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesIntegration";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { useNavigate } from "react-router-dom";
+import { IssuePreviewSheet } from "@features/issues/components/issues/details/IssuePreviewSheet";
 
 interface CourtAssignmentRow {
   room_id: string;
@@ -50,8 +54,12 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
   const { personnel } = useCourtPersonnel();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isAdmin } = useRolePermissions();
+  const { getIssuesForRoom } = useCourtIssuesIntegration();
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string | string[]>("");
+  const [previewIssueId, setPreviewIssueId] = useState<string | null>(null);
 
   const toggleActiveMutation = useMutation({
     mutationFn: async () => {
@@ -299,7 +307,65 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
           {renderField('fax', 'Fax', <Printer className="h-3.5 w-3.5" />, row.fax)}
           {renderField('calendar_day', 'Calendar Days', <CalendarIcon className="h-3.5 w-3.5" />, row.calendar_day)}
         </div>
+
+        {/* Issues section */}
+        {(() => {
+          const roomIssues = getIssuesForRoom(row.room_id);
+          if (roomIssues.length === 0) return null;
+          return (
+            <div className="border-t pt-4 space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Issues ({roomIssues.length})
+              </Label>
+              <div className="space-y-1.5">
+                {roomIssues.map((issue: any) => (
+                  <div
+                    key={issue.id}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border hover:bg-muted/50 cursor-pointer transition-colors group"
+                    onClick={() => {
+                      if (isAdmin) {
+                        navigate('/operations?tab=issues');
+                      } else {
+                        setPreviewIssueId(issue.id);
+                      }
+                    }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{issue.title}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Badge
+                          variant="secondary"
+                          className={`text-[10px] px-1.5 py-0 ${
+                            issue.priority === 'high' || issue.priority === 'urgent'
+                              ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                              : issue.priority === 'medium'
+                                ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
+                                : 'bg-green-500/20 text-green-600 dark:text-green-400'
+                          }`}
+                        >
+                          {issue.priority}
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {issue.status?.replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
+
+      {/* Issue preview sheet for non-admin users */}
+      <IssuePreviewSheet
+        issueId={previewIssueId}
+        open={!!previewIssueId}
+        onOpenChange={(open) => { if (!open) setPreviewIssueId(null); }}
+      />
     </div>
   );
 };
