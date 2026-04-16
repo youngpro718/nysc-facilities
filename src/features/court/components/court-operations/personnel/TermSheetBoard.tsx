@@ -63,9 +63,10 @@ interface SortableRowProps {
   hasUrgent: boolean;
   judge: ReturnType<typeof useCourtPersonnel>['personnel']['judges'][number] | undefined;
   isAdmin?: boolean;
+  onIssueBadgeClick?: () => void;
 }
 
-function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = true }: SortableRowProps) {
+function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = true, onIssueBadgeClick }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: a.id });
 
@@ -99,12 +100,14 @@ function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = tr
         <div className="flex items-center gap-1">
           <span className="font-bold text-primary whitespace-pre-line">{a.part}</span>
           {isAdmin && issueCount > 0 && (
-            <span
-              title={`${issueCount} open issue${issueCount > 1 ? 's' : ''}`}
-              className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold text-white ${hasUrgent ? 'bg-destructive' : 'bg-orange-400'}`}
+            <button
+              type="button"
+              title={`${issueCount} open issue${issueCount > 1 ? 's' : ''} — click to view`}
+              className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[9px] font-bold text-white cursor-pointer hover:scale-110 transition-transform ${hasUrgent ? 'bg-destructive' : 'bg-orange-400'}`}
+              onClick={(e) => { e.stopPropagation(); onIssueBadgeClick?.(); }}
             >
               {issueCount}
-            </span>
+            </button>
           )}
         </div>
       </td>
