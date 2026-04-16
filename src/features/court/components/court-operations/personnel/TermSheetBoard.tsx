@@ -863,6 +863,14 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                             hasUrgent={hasUrgentIssues(a.room_id)}
                             judge={personnel.judges.find(j => j.name === a.justice)}
                             isAdmin={isAdmin}
+                            onIssueBadgeClick={() => {
+                              const issues = getIssuesForRoom(a.room_id);
+                              if (userIsAdmin) {
+                                navigate('/operations?tab=issues');
+                              } else if (issues.length > 0) {
+                                setPreviewIssueId(issues[0].id);
+                              }
+                            }}
                           />
                         ))}
                       </SortableContext>
@@ -948,6 +956,13 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         <span>Criminal Term Sheet • {new Date().toLocaleDateString()}{isAdmin ? ' • Drag rows to reorder' : ''}</span>
         <span>{displayList.length} of {sortedList.length} shown</span>
       </div>
+
+      {/* Issue preview sheet */}
+      <IssuePreviewSheet
+        issueId={previewIssueId}
+        open={!!previewIssueId}
+        onOpenChange={(open) => { if (!open) setPreviewIssueId(null); }}
+      />
     </div>
   );
 };
