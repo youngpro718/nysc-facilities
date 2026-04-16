@@ -54,7 +54,12 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
   const { personnel } = useCourtPersonnel();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isAdmin } = useRolePermissions();
+  const { getIssuesForRoom } = useCourtIssuesIntegration();
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string | string[]>("");
+  const [previewIssueId, setPreviewIssueId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string | string[]>("");
 
   const toggleActiveMutation = useMutation({
