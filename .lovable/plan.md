@@ -1,56 +1,40 @@
 
 
-# Fix: Issue Resolution Failing + Audit of Recent Changes
+# Issue Details Panel Cleanup & Court Operations Issue Clickability
 
-## Root Cause of "Failed to resolve"
+## Problem 1: Issue Details Panel Layout
+The issue details sheet that opens when you click "View Details" has layout issues:
+- The header has a large `text-xl` title, edit button, and delete button all cramped together
+- The badges (status, priority, type) are displayed redundantly — once in the header and again in the content area
+- The "Resolve" and "Create Task" buttons sit in an awkward row above the tabs
+- The two-column grid layout crams description + linked tasks into one column while location info sits in another
 
-The mutation in `IssueDetails.tsx` writes to **two columns that don't exist** in the database:
+### Fixes
+1. **`IssueDetailsHeader.tsx`**: Reduce title to `text-lg`, move the status badge inline with the title, and group edit/delete into a compact icon row on the right.
+2. **`IssueDetailsContent.tsx`**: Remove the duplicate `IssueBadges` section at the top (already shown in header). Move location metadata into a compact single-row strip instead of a full column. Keep description and linked tasks in a clean single-column flow.
+3. **`IssueDetails.tsx`**: Move the Resolve and Create Task buttons into the header row (next to edit/delete) so they don't eat a whole row of space.
 
-| Code writes to | Actual DB column |
-|---|---|
-| `resolution_date` | `resolved_at` (exists) |
-| `resolution_type` | **Does not exist** |
+## Problem 2: Court Operations — Issues Not Clickable
+In the Court Operations page, when a room has issues:
+- The `AssignmentDetailPanel` shows a "Has Issues" or "Urgent Issues" badge but there's no way to see what the issues are or click through
+- The `TermSheetBoard` shows an issue count icon but it's not interactive
 
-Supabase silently rejects the entire update because `resolution_type` is not a real column.
+### Fixes (Role-Aware)
 
-## Fix (2 parts)
+4. **`AssignmentDetailPanel.tsx`**: Add an "Issues" section below the maintenance section that lists actual issues for that room (using `getIssuesForRoom`). Each issue shows title, priority, and status. For **admins**, clicking an issue navigates to `/operations?tab=issues` (the Building Issues page). For **CMCs/non-admins**, clicking opens the `IssueDetails` sheet inline (same as the existing sheet component) so they see the details without leaving Court Operations.
 
-### 1. Add `resolution_type` column to the `issues` table
-Run a migration:
-```sql
-ALTER TABLE public.issues
-  ADD COLUMN IF NOT EXISTS resolution_type text;
-```
+5. **`TermSheetBoard.tsx`**: Make the issue count badge clickable. For admins, navigate to the issues page. For non-admins, open the issue detail sheet.
 
-### 2. Fix column name in `IssueDetails.tsx`
-Change line 81 from `resolution_date` to `resolved_at`:
-```typescript
-// Line 81 — change:
-resolution_date: new Date().toISOString(),
-// to:
-resolved_at: new Date().toISOString(),
-```
-
-### 3. Fix the resolved banner display (line 144)
-The banner already correctly reads `resolved_at` — no change needed there. But `resolution_type` was also being read via `(issue as any).resolution_type` which will now work once the column exists.
-
-## Audit of Other Recent Changes
-
-| Feature | Status | Issue |
-|---|---|---|
-| **Issue categories** (Structural, Furniture) | OK | Constants added correctly |
-| **Auto-title generation** | OK | Works in SimpleReportWizard |
-| **Lockbox color-coding** | OK | CSS classes applied correctly |
-| **Lockbox dialog labels** | OK | Human-readable labels in place |
-| **Room planned work tab** | Needs verification | Query references `to_room_id` on `staff_tasks` — needs DB column check |
-| **CreateTaskDialog schema** | OK | `issue_id` added to zod schema |
-| **UserIssue `updated_at`** | OK | Field added to interface |
-| **Supply receipt generation** | OK | On-demand receipt logic in place |
-
-### 4. Verify `to_room_id` exists on `staff_tasks`
-Will check during implementation. If missing, the Room "Planned" tab will silently return empty — not a crash but incorrect.
+6. **Create a shared `IssuePreviewSheet` wrapper** that can be used from Court Operations to show `IssueDetails` in a sheet without navigating away.
 
 ## Files to Change
-- **Migration**: Add `resolution_type` column to `issues`
-- **`src/features/issues/components/issues/details/IssueDetails.tsx`**: Fix `resolution_date` → `resolved_at`
+
+| File | Change |
+|------|--------|
+| `IssueDetailsHeader.tsx` | Compact layout, smaller title, inline actions |
+| `IssueDetailsContent.tsx` | Remove duplicate badges, single-column flow, compact metadata strip |
+| `IssueDetails.tsx` | Move Resolve/Create Task into header area |
+| `AssignmentDetailPanel.tsx` | Add clickable issues list section with role-aware behavior |
+| `TermSheetBoard.tsx` | Make issue count clickable |
+| New: `IssuePreviewSheet.tsx` | Shared sheet wrapper for inline issue viewing from other modules |
 
