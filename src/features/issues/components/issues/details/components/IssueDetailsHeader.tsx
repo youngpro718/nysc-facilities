@@ -19,40 +19,36 @@ interface IssueDetailsHeaderProps {
 
 export const IssueDetailsHeader = ({ title, status, issueId, onEdit, onDelete, isEditing, actions }: IssueDetailsHeaderProps) => {
   return (
-    <DialogHeader className="px-6 pt-5 pb-3 pr-12 border-b">
-      <DialogTitle className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg font-semibold leading-snug break-words">{title}</h2>
-            <IssueStatusBadge status={status} />
-          </div>
-        </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {actions}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onEdit}
-            className="h-8 w-8"
-          >
-            {isEditing ? (
-              <X className="h-4 w-4" />
-            ) : (
-              <Pencil className="h-4 w-4" />
-            )}
-            <span className="sr-only">
-              {isEditing ? "Cancel edit" : "Edit issue"}
-            </span>
-          </Button>
-          {!isEditing && issueId && (
-            <DeleteIssueButton
-              issueId={issueId}
-              onDelete={onDelete}
-              className="h-8 w-8 p-0"
-            />
-          )}
-        </div>
+    <DialogHeader className="px-6 pt-5 pb-3 border-b space-y-2">
+      <DialogTitle className="flex items-center gap-2 flex-wrap pr-10">
+        <h2 className="text-lg font-semibold leading-snug break-words">{title}</h2>
+        <IssueStatusBadge status={status} />
       </DialogTitle>
+      <div className="flex items-center justify-end gap-1">
+        {actions}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onEdit}
+          className="h-8 w-8"
+        >
+          {isEditing ? (
+            <X className="h-4 w-4" />
+          ) : (
+            <Pencil className="h-4 w-4" />
+          )}
+          <span className="sr-only">
+            {isEditing ? "Cancel edit" : "Edit issue"}
+          </span>
+        </Button>
+        {!isEditing && issueId && (
+          <DeleteIssueButton
+            issueId={issueId}
+            onDelete={onDelete}
+            className="h-8 w-8 p-0"
+          />
+        )}
+      </div>
     </DialogHeader>
   );
 };
