@@ -217,7 +217,10 @@ async function getTaskMetrics(): Promise<TaskMetrics> {
     in_progress: taskList.filter(t => t.status === 'in_progress').length,
     completed: taskList.filter(t => t.status === 'completed').length,
     overdue: taskList.filter(t => 
-      t.due_date && new Date(t.due_date) < now && t.status !== 'completed'
+      t.due_date && 
+      new Date(t.due_date) < now && 
+      t.status !== 'completed' && 
+      t.status !== 'cancelled'
     ).length,
     due_today: taskList.filter(t => t.due_date?.startsWith(today)).length,
   };
