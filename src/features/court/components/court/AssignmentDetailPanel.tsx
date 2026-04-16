@@ -307,7 +307,65 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
           {renderField('fax', 'Fax', <Printer className="h-3.5 w-3.5" />, row.fax)}
           {renderField('calendar_day', 'Calendar Days', <CalendarIcon className="h-3.5 w-3.5" />, row.calendar_day)}
         </div>
+
+        {/* Issues section */}
+        {(() => {
+          const roomIssues = getIssuesForRoom(row.room_id);
+          if (roomIssues.length === 0) return null;
+          return (
+            <div className="border-t pt-4 space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Issues ({roomIssues.length})
+              </Label>
+              <div className="space-y-1.5">
+                {roomIssues.map((issue: any) => (
+                  <div
+                    key={issue.id}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border hover:bg-muted/50 cursor-pointer transition-colors group"
+                    onClick={() => {
+                      if (isAdmin) {
+                        navigate('/operations?tab=issues');
+                      } else {
+                        setPreviewIssueId(issue.id);
+                      }
+                    }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{issue.title}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Badge
+                          variant="secondary"
+                          className={`text-[10px] px-1.5 py-0 ${
+                            issue.priority === 'high' || issue.priority === 'urgent'
+                              ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                              : issue.priority === 'medium'
+                                ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
+                                : 'bg-green-500/20 text-green-600 dark:text-green-400'
+                          }`}
+                        >
+                          {issue.priority}
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {issue.status?.replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
+
+      {/* Issue preview sheet for non-admin users */}
+      <IssuePreviewSheet
+        issueId={previewIssueId}
+        open={!!previewIssueId}
+        onOpenChange={(open) => { if (!open) setPreviewIssueId(null); }}
+      />
     </div>
   );
 };
