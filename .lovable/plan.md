@@ -1,33 +1,32 @@
 
 
-# Fix: Issue Details Header Overlap
+# Fix: Orange Dots Showing for Rooms with Only Resolved Issues
 
 ## Problem
-The title and action buttons share a single row. When the title is long (e.g., "Plumbing Issues in Room 302"), it overlaps the Resolve/Create Task/Edit/Delete buttons because there's not enough horizontal space.
+All 5 rooms with orange dots have issues that are **already resolved**. The orange dots persist because:
+1. The issues query fetches ALL issues regardless of status
+2. The sidebar counts all issues — resolved included — to determine the dot color
 
-## Solution: Two-Row Header Layout
+## Solution
 
-Split the header into two distinct rows:
+### Option A (Filter in sidebar — minimal change)
+In `RoomsSidebarList.tsx`, change line 92 to only count open/in-progress issues:
 
-**Row 1 — Title + Status Badge**
-Full-width row for the issue title and status badge. Title gets `truncate` or wraps naturally across the full width. The dialog's built-in close button (top-right) handles closing.
-
-**Row 2 — Action Buttons**
-A separate row below the title with all action buttons (Resolve, Create Task, Edit, Delete) aligned to the right. This gives them guaranteed space and eliminates any overlap with the title.
-
-```text
-┌─────────────────────────────────────────────────┐
-│  Plumbing Issues in Room 302    [Open] badge    │  ← Row 1: full width
-│                        Resolve · Create Task · ✏ · 🗑  │  ← Row 2: actions
-├─────────────────────────────────────────────────┤
-│  Tabs: Details | Timeline | Photos | Comments   │
+```typescript
+const issueCount = Array.isArray(room.issues)
+  ? room.issues.filter(i => i.status === 'open' || i.status === 'in_progress').length
+  : 0;
 ```
 
-## File Changes
+### Option B (Filter at query level — cleaner)
+In `roomQueries.ts`, add `.in('status', ['open', 'in_progress'])` to the issues fetch so resolved issues are never loaded into the room data. This is cleaner but affects every consumer of `room.issues`.
+
+**Recommendation**: Do both. Filter at the query level so we don't load unnecessary data, and also filter in the sidebar as a safety net.
+
+## Files to Change
 
 | File | Change |
 |------|--------|
-| `IssueDetailsHeader.tsx` | Restructure from single flex-row to stacked layout: title row on top, actions row below aligned right. Remove `pr-12` (no longer needed since buttons aren't competing with title). Add small gap between rows. |
-
-No other files need changes — the header component is self-contained and the `actions` prop slot stays the same.
+| `roomQueries.ts` | Add status filter to issues query |
+| `RoomsSidebarList.tsx` | Filter `room.issues` to only count open/in-progress |
 
