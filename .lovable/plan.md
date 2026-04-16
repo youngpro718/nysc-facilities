@@ -1,32 +1,42 @@
 
 
-# Fix: Orange Dots Showing for Rooms with Only Resolved Issues
+# Fix: "1 task is overdue" alert showing cancelled tasks
 
-## Problem
-All 5 rooms with orange dots have issues that are **already resolved**. The orange dots persist because:
-1. The issues query fetches ALL issues regardless of status
-2. The sidebar counts all issues — resolved included — to determine the dot color
-
-## Solution
-
-### Option A (Filter in sidebar — minimal change)
-In `RoomsSidebarList.tsx`, change line 92 to only count open/in-progress issues:
+## Root Cause
+In `commandCenterService.ts` line 219-221, the overdue task filter:
 
 ```typescript
-const issueCount = Array.isArray(room.issues)
-  ? room.issues.filter(i => i.status === 'open' || i.status === 'in_progress').length
-  : 0;
+overdue: taskList.filter(t => 
+  t.due_date && new Date(t.due_date) < now && t.status !== 'completed'
+).length,
 ```
 
-### Option B (Filter at query level — cleaner)
-In `roomQueries.ts`, add `.in('status', ['open', 'in_progress'])` to the issues fetch so resolved issues are never loaded into the room data. This is cleaner but affects every consumer of `room.issues`.
+Only excludes `completed` tasks. **Cancelled tasks with past due dates are being counted as overdue.**
 
-**Recommendation**: Do both. Filter at the query level so we don't load unnecessary data, and also filter in the sidebar as a safety net.
+DB query confirms: there's exactly 1 task ("move") with status=`cancelled` and a past due date — that's the phantom "1 overdue."
+
+For reference, `Tasks.tsx` already gets this right (line 54-56): it excludes both `completed` AND `cancelled`.
+
+## Fix
+
+One line change in `src/features/dashboard/services/commandCenterService.ts`:
+
+```typescript
+overdue: taskList.filter(t => 
+  t.due_date && 
+  new Date(t.due_date) < now && 
+  t.status !== 'completed' && 
+  t.status !== 'cancelled'
+).length,
+```
+
+This will:
+- Make the Command Center "Pending Tasks" card show `0 overdue` instead of `1 overdue`
+- Remove the spurious "Overdue Tasks" alert (line 410 only fires when `overdue > 0`)
 
 ## Files to Change
 
 | File | Change |
 |------|--------|
-| `roomQueries.ts` | Add status filter to issues query |
-| `RoomsSidebarList.tsx` | Filter `room.issues` to only count open/in-progress |
+| `src/features/dashboard/services/commandCenterService.ts` | Add `t.status !== 'cancelled'` to overdue filter (line 219-221) |
 
