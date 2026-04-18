@@ -118,12 +118,12 @@ export const guideSections: GuideSection[] = [
   },
   {
     id: 'spaces',
-    title: 'Spaces & Rooms',
+    title: 'Rooms',
     icon: Building2,
     items: [
       {
         question: 'How do I add a new room?',
-        answer: 'Go to Spaces, select building and floor, click "+". Fill in room details (name, number, type, capacity) and save.',
+        answer: 'Go to Rooms, select building and floor, click "+". Fill in room details (name, number, type, capacity) and save.',
       },
       {
         question: 'How do I assign someone to a room?',

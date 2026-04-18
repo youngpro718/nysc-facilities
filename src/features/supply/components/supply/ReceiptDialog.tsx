@@ -26,7 +26,7 @@ export function ReceiptDialog({ open, onOpenChange, receiptData }: ReceiptDialog
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Supply Order Receipt</DialogTitle>
+          <DialogTitle>Supply Request Receipt</DialogTitle>
         </DialogHeader>
         <SupplyOrderReceipt 
           receiptData={receiptData}

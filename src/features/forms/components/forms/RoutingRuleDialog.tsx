@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface RoutingRule {
   id: string;
@@ -111,7 +112,7 @@ export function RoutingRuleDialog({ open, onOpenChange, editingRule }: RoutingRu
       onOpenChange(false);
     },
     onError: (error) => {
-      toast.error("Failed to save rule: " + error.message);
+      toast.error(`Failed to save rule: ${getErrorMessage(error)}`);
     },
   });
 
@@ -160,7 +161,7 @@ export function RoutingRuleDialog({ open, onOpenChange, editingRule }: RoutingRu
                 <SelectItem value="all">All form types</SelectItem>
                 <SelectItem value="key_request">Key Request</SelectItem>
                 <SelectItem value="supply_request">Supply Request</SelectItem>
-                <SelectItem value="maintenance_request">Maintenance Request</SelectItem>
+                <SelectItem value="maintenance_request">Issue</SelectItem>
                 <SelectItem value="issue_report">Issue Report</SelectItem>
               </SelectContent>
             </Select>

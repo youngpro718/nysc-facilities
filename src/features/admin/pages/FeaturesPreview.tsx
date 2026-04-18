@@ -26,7 +26,7 @@ import {
 const features = [
   {
     icon: Building,
-    title: "Space Management",
+    title: "Room Management",
     description: "View building layouts, room information, and occupancy tracking",
     status: "preview",
     badge: "Core Feature"
@@ -47,8 +47,8 @@ const features = [
   },
   {
     icon: Wrench,
-    title: "Maintenance Requests",
-    description: "Submit and track facility maintenance requests",
+    title: "Issues",
+    description: "Submit and track facility issues",
     status: "locked",
     badge: "Requires Verification"
   },

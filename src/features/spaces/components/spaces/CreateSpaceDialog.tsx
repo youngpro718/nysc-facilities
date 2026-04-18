@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { RoomTypeEnum } from "./rooms/types/roomEnums";
 
 import { FormProvider } from "react-hook-form";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export function CreateSpaceDialog() {
   const [open, setOpen] = useState(false);
@@ -79,7 +80,7 @@ export function CreateSpaceDialog() {
       form.reset();
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : "Failed to create space";
+      const errorMessage = getErrorMessage(error) || "Failed to create space";
       toast.error(errorMessage);
     },
   });
@@ -88,8 +89,8 @@ export function CreateSpaceDialog() {
     try {
       // Validate required fields
       if (!data.name?.trim()) {
-        toast.error("Space name is required");
-        form.setError("name", { message: "Space name is required" });
+        toast.error("Room name is required");
+        form.setError("name", { message: "Room name is required" });
         return;
       }
       
@@ -116,10 +117,10 @@ export function CreateSpaceDialog() {
       <DialogTrigger asChild>
         <Button className="ml-auto" data-testid="add-space-button">
           <Plus className="mr-2 h-4 w-4" />
-          Add Space
+          Add Room
         </Button>
       </DialogTrigger>
-      <ModalFrame title="Create New Space" size="md">
+      <ModalFrame title="Create New Room" size="md">
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
     <CreateSpaceFormFields form={form} />
@@ -136,7 +137,7 @@ export function CreateSpaceDialog() {
         type="submit" 
         disabled={createSpaceMutation.isPending}
       >
-        {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
+        {createSpaceMutation.isPending ? "Creating..." : "Create Room"}
       </Button>
     </div>
           </form>

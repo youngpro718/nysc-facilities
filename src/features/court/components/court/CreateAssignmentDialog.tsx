@@ -20,6 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@shared/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 type CourtTerm = {
   id: string;
@@ -94,7 +95,7 @@ export const CreateAssignmentDialog = ({
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create assignment: " + error.message,
+        description: `Failed to create assignment: ${getErrorMessage(error)}`,
       });
     },
   });

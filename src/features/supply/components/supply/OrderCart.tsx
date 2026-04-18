@@ -80,7 +80,7 @@ export function OrderCart({
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md flex flex-col pb-nav-safe sm:pb-6">
         <SheetHeader>
-          <SheetTitle>Your Order</SheetTitle>
+          <SheetTitle>Your Supply Request</SheetTitle>
           <SheetDescription>
             {items.length === 0 
               ? 'Your cart is empty'

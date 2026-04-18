@@ -42,7 +42,7 @@ export const adminDashboardTour: Step[] = [
 export const spacesMgmtTour: Step[] = [
   {
     target: 'body',
-    content: 'Spaces Management lets you manage the physical hierarchy: Buildings → Floors → Rooms & Hallways. Let\'s explore.',
+    content: 'Rooms Management lets you manage the physical hierarchy: Buildings → Floors → Rooms & Hallways. Let\'s explore.',
     placement: 'center',
     disableBeacon: true,
   },
@@ -333,7 +333,7 @@ export const roleDashboardTour: Step[] = [
 /** Map route paths to their tour steps */
 export function getTourForRoute(pathname: string): { steps: Step[]; title: string } | null {
   if (pathname === '/') return { steps: adminDashboardTour, title: 'Admin Dashboard' };
-  if (pathname === '/spaces') return { steps: spacesMgmtTour, title: 'Spaces Management' };
+  if (pathname === '/spaces') return { steps: spacesMgmtTour, title: 'Rooms Management' };
   if (pathname === '/operations') return { steps: operationsTour, title: 'Operations Center' };
   if (pathname === '/court-operations') return { steps: courtOpsTour, title: 'Court Operations' };
   if (pathname === '/keys') return { steps: keysMgmtTour, title: 'Keys Management' };
@@ -354,7 +354,7 @@ export function getTourForRoute(pathname: string): { steps: Step[]; title: strin
 /** All available tours for the Help Center */
 export const allTours = [
   { id: 'admin-dashboard', title: 'Admin Dashboard', path: '/', description: 'Overview of the main admin hub, navigation, and notifications.', steps: adminDashboardTour },
-  { id: 'spaces', title: 'Spaces Management', path: '/spaces', description: 'Manage buildings, floors, and rooms.', steps: spacesMgmtTour },
+  { id: 'spaces', title: 'Rooms Management', path: '/spaces', description: 'Manage buildings, floors, and rooms.', steps: spacesMgmtTour },
   { id: 'operations', title: 'Operations Center', path: '/operations', description: 'Track issues, maintenance, and supply requests.', steps: operationsTour },
   { id: 'court-ops', title: 'Court Operations', path: '/court-operations', description: 'Manage courtroom sessions, terms, and personnel.', steps: courtOpsTour },
   { id: 'keys', title: 'Keys Management', path: '/keys', description: 'Track key inventory, requests, and assignments.', steps: keysMgmtTour },

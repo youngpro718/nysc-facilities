@@ -22,6 +22,7 @@ import { supabase } from "@/lib/supabase";
 import { EnhancedIssuesList } from "@features/issues/components/admin-issues/EnhancedIssuesList";
 import { IssueGroupingControls } from "@features/issues/components/admin-issues/IssueGroupingControls";
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@features/issues/types/issues";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface IssuesTabProps {
   allIssues: unknown[];
@@ -99,7 +100,7 @@ export function IssuesTab({
       onSelectionChange([]);
       queryClient.invalidateQueries({ queryKey: ['issues'] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update issues");
+      toast.error(getErrorMessage(error) || "Failed to update issues");
     } finally {
       setIsBulkUpdating(false);
     }

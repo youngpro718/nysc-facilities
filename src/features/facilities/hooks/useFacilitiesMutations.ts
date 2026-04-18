@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilitiesService } from '../services/facilitiesService';
 import { toast } from 'sonner';
 import type { Room } from '../model';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 /**
  * Create new room mutation
@@ -24,7 +25,7 @@ export function useCreateRoom() {
       toast.success('Room created successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create room: ${error.message}`);
+      toast.error(`Failed to create room: ${getErrorMessage(error)}`);
     },
   });
 }
@@ -58,7 +59,7 @@ export function useUpdateRoom() {
       if (context?.previousRoom) {
         queryClient.setQueryData(['room', variables.id], context.previousRoom);
       }
-      toast.error(`Failed to update room: ${error.message}`);
+      toast.error(`Failed to update room: ${getErrorMessage(error)}`);
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['room', variables.id] });
@@ -81,7 +82,7 @@ export function useDeleteRoom() {
       toast.success('Room deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete room: ${error.message}`);
+      toast.error(`Failed to delete room: ${getErrorMessage(error)}`);
     },
   });
 }

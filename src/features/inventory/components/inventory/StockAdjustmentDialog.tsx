@@ -22,6 +22,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
 import { Plus, Minus, RotateCw } from "lucide-react";
 import { inventoryQueryKeys } from "@features/inventory/hooks/useOptimizedInventory";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 type InventoryItem = {
   id: string;
@@ -100,7 +101,7 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to adjust stock: " + error.message,
+        description: `Failed to adjust stock: ${getErrorMessage(error)}`,
       });
     },
   });

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { useToast } from "@shared/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface TransferInput {
   itemId: string;
@@ -60,7 +61,7 @@ export function useInventoryTransfer() {
     onError: (error) => {
       toast({
         title: "Transfer failed",
-        description: error instanceof Error ? error.message : "Failed to transfer item",
+        description: getErrorMessage(error) || "Failed to transfer item",
         variant: "destructive"
       });
     }

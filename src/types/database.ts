@@ -29,7 +29,7 @@ export interface Profile {
   phone: string | null;
   department_id: string | null;
   access_level: 'none' | 'read' | 'write' | 'admin' | null;
-  verification_status: 'pending' | 'approved' | 'rejected' | null;
+  verification_status: 'pending' | 'verified' | 'rejected' | null;
   is_approved: boolean;
   feature_flags: Record<string, unknown> | null;
   interface_preferences: {

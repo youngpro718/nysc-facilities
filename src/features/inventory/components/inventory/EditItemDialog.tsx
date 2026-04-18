@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@shared/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 type InventoryItem = {
   id: string;
@@ -187,7 +188,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update item: " + error.message,
+        description: `Failed to update item: ${getErrorMessage(error)}`,
       });
     },
   });

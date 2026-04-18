@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SupplyRequestErrorBoundary } from "@features/supply/components/supply/SupplyRequestErrorBoundary";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 // Simplified filter groups
 const FILTER_GROUPS: Record<string, string[]> = {
@@ -73,7 +74,7 @@ export default function MySupplyRequests() {
             <WifiOff className="h-12 w-12 text-destructive mb-4" />
             <h3 className="text-base font-medium mb-2">Unable to load requests</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-              {error instanceof Error ? error.message : "There was a problem loading your supply requests."}
+              {getErrorMessage(error) || "There was a problem loading your supply requests."}
             </p>
             <Button onClick={handleRetry} disabled={isFetching} className="touch-target">
               <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />

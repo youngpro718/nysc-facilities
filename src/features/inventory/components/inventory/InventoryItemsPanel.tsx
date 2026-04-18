@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useInventoryRealtimeSync } from "@features/inventory/hooks/useOptimizedInventory";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { getGenericItemImage } from "@/utils/inventoryImages";
+import { getErrorMessage } from "@/lib/errorUtils";
 type InventoryItem = {
   id: string;
   name: string;
@@ -190,7 +191,7 @@ export const InventoryItemsPanel = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete item: " + error.message,
+        description: `Failed to delete item: ${getErrorMessage(error)}`,
       });
     },
   });

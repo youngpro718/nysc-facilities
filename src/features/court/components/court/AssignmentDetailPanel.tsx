@@ -18,6 +18,7 @@ import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesI
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { useNavigate } from "react-router-dom";
 import { IssuePreviewSheet } from "@features/issues/components/issues/details/IssuePreviewSheet";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface CourtAssignmentRow {
   room_id: string;
@@ -76,7 +77,7 @@ export const AssignmentDetailPanel = ({ row, onSave, onDelete, hasIssues, urgent
       toast({ title: row.is_active ? "Room deactivated" : "Room activated" });
     },
     onError: (error) => {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+      toast({ variant: "destructive", title: "Error", description: getErrorMessage(error) });
     },
   });
 

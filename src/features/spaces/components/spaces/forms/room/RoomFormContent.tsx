@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useEffect } from "react";
 import { logger } from "@/lib/logger";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface RoomFormContentProps extends RoomFormProps {
   onSubmit: (data: RoomFormData) => Promise<void>;
@@ -98,11 +99,7 @@ export function RoomFormContent({
       await form.handleSubmit(onSubmit)(e);
     } catch (error) {
       logger.error("Form submission error:", error);
-      if (error instanceof Error) {
-        toast.error(`Form submission failed: ${error.message}`);
-      } else {
-        toast.error("Form submission failed. Please check the console for details.");
-      }
+      toast.error(`Form submission failed: ${getErrorMessage(error)}`);
     }
   };
 

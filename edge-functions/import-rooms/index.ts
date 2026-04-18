@@ -2,10 +2,34 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// ALLOWED_ORIGINS is a comma-separated list, e.g. "https://app.example.com".
+// If unset, falls back to "*" so dev/testing keeps working without configuration.
+const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const base = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Vary": "Origin",
+  };
+  if (allowedOrigins.length === 0) {
+    return { ...base, "Access-Control-Allow-Origin": "*" };
+  }
+  const origin = req.headers.get("Origin");
+  if (origin && allowedOrigins.includes(origin)) {
+    return { ...base, "Access-Control-Allow-Origin": origin };
+  }
+  return { ...base, "Access-Control-Allow-Origin": allowedOrigins[0] };
+}
+
+function originAllowed(req: Request): boolean {
+  if (allowedOrigins.length === 0) return true;
+  const origin = req.headers.get("Origin");
+  if (!origin) return true;
+  return allowedOrigins.includes(origin);
+}
 
 interface ImportResult {
   roomId: string;
@@ -16,8 +40,17 @@ interface ImportResult {
 }
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (!originAllowed(req)) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Origin not allowed" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {

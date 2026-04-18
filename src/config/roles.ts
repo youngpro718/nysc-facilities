@@ -37,7 +37,7 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
   {
     value: 'court_aide',
     label: 'Court Aide',
-    description: 'Fulfill supply orders, manage inventory stock, and complete facility tasks',
+    description: 'Fulfill supply requests, manage inventory stock, and complete facility tasks',
     color: 'green',
   },
   {

@@ -270,7 +270,7 @@ export function OrderSummaryFooter({
                   <ShoppingCart className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <span className="block">Your Order</span>
+                  <span className="block">Your Supply Request</span>
                   <span className="text-sm font-normal text-muted-foreground">
                     {totalItems} items total
                   </span>

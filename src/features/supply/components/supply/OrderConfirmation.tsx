@@ -25,15 +25,15 @@ export function OrderConfirmation({ order, onPlaceAnother }: OrderConfirmationPr
         <h1 className="text-2xl font-bold">Order Submitted!</h1>
         <p className="text-muted-foreground">
           {order.approval_required
-            ? "Your order requires approval. You'll be notified when it's reviewed."
-            : "Your order is being processed. You'll be notified when it's ready."}
+            ? "Your supply request requires approval. You'll be notified when it's reviewed."
+            : "Your supply request is being processed. You'll be notified when it's ready."}
         </p>
       </div>
 
       <Card className="p-4">
-        <h3 className="font-medium mb-2">Order Summary</h3>
+        <h3 className="font-medium mb-2">Request Summary</h3>
         <div className="text-sm text-muted-foreground space-y-1">
-          {order.id && <p>Order #{order.id.slice(0, 8)}</p>}
+          {order.id && <p>Request #{order.id.slice(0, 8)}</p>}
           {order.title && <p>{order.title}</p>}
           {order.status && <p>Status: {order.status}</p>}
         </div>

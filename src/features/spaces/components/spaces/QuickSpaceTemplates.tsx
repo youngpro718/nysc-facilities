@@ -20,6 +20,7 @@ import { createSpace } from './services/createSpace';
 import { generateSmartDefaults } from '@/services/spaces/smartRoomDefaults';
 import { RoomPreviewCard } from './RoomPreviewCard';
 import { RoomQuickEditSheet } from './RoomQuickEditSheet';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface SpaceTemplate {
   id: string;
@@ -144,7 +145,7 @@ export function QuickSpaceTemplates({
       setTimeout(onClose, 2000);
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create space';
+      const errorMessage = getErrorMessage(error) || 'Failed to create space';
       toast.error(errorMessage);
     }
   });
@@ -250,7 +251,7 @@ export function QuickSpaceTemplates({
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Choose Space Type</CardTitle>
+        <CardTitle>Choose Room Type</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-3">

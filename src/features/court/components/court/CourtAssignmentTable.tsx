@@ -28,6 +28,7 @@ import {
 import {
   CSS,
 } from '@dnd-kit/utilities';
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface CourtAssignmentRow {
   room_id: string;
@@ -338,7 +339,7 @@ export const CourtAssignmentTable = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update order: " + error.message,
+        description: `Failed to update order: ${getErrorMessage(error)}`,
       });
     },
   });
@@ -381,7 +382,7 @@ export const CourtAssignmentTable = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update assignment: " + error.message,
+        description: `Failed to update assignment: ${getErrorMessage(error)}`,
       });
     },
   });
@@ -405,7 +406,7 @@ export const CourtAssignmentTable = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete assignment: " + error.message,
+        description: `Failed to delete assignment: ${getErrorMessage(error)}`,
       });
     },
   });

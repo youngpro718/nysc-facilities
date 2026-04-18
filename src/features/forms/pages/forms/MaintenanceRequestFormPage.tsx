@@ -44,7 +44,7 @@ export default function MaintenanceRequestFormPage() {
             <CardHeader className="text-center">
               <CardTitle className="text-xl">You're already logged in!</CardTitle>
               <CardDescription>
-                Please use your dashboard to submit maintenance requests.
+                Please use your dashboard to submit issues.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -119,12 +119,12 @@ export default function MaintenanceRequestFormPage() {
       }
 
       setSubmitted(true);
-      toast.success('Maintenance request submitted successfully!', {
-        description: 'Your request will be reviewed shortly.',
+      toast.success('Issue submitted successfully!', {
+        description: 'Your issue will be reviewed shortly.',
       });
     } catch (error) {
-      logger.error('Error submitting maintenance request:', error);
-      toast.error('Failed to submit request', {
+      logger.error('Error submitting issue:', error);
+      toast.error('Failed to submit issue', {
         description: getErrorMessage(error) || 'Please try again later.',
       });
     } finally {
@@ -148,9 +148,9 @@ export default function MaintenanceRequestFormPage() {
               <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
                 <CheckCircle className="w-8 h-8 text-green-500" />
               </div>
-              <CardTitle className="text-2xl">Request Submitted Successfully!</CardTitle>
+              <CardTitle className="text-2xl">Issue Submitted Successfully!</CardTitle>
               <CardDescription>
-                Your maintenance request has been received and will be processed shortly
+                Your issue has been received and will be processed shortly
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -199,7 +199,7 @@ export default function MaintenanceRequestFormPage() {
             Back to Forms
           </Button>
           <h1 className="text-3xl font-bold">NYSC Facilities Hub</h1>
-          <p className="text-lg opacity-90 mt-1">Maintenance Request</p>
+          <p className="text-lg opacity-90 mt-1">Report an Issue</p>
         </div>
       </div>
 
@@ -211,9 +211,9 @@ export default function MaintenanceRequestFormPage() {
               <Wrench className="w-6 h-6 text-orange-500" />
             </div>
             <div>
-              <CardTitle className="text-2xl">Maintenance Request Form</CardTitle>
+              <CardTitle className="text-2xl">Report an Issue</CardTitle>
               <CardDescription>
-                Report maintenance issues or request repairs
+                Report a facility issue or request repairs
               </CardDescription>
             </div>
           </div>

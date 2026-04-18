@@ -14,6 +14,7 @@ import { Loader2, Package, User, Clock, CheckCircle, PackageCheck, AlertCircle }
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@features/auth/hooks/useAuth';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface SupplyRequest {
   id: string;
@@ -108,7 +109,7 @@ export function SupplyFulfillmentPanel() {
       queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
     },
     onError: (error: Error) => {
-      toast.error('Failed to update request', { description: error.message });
+      toast.error('Failed to update request', { description: getErrorMessage(error) });
     },
   });
 
@@ -130,7 +131,7 @@ export function SupplyFulfillmentPanel() {
       queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
     },
     onError: (error: Error) => {
-      toast.error('Failed to update request', { description: error.message });
+      toast.error('Failed to update request', { description: getErrorMessage(error) });
     },
   });
 
@@ -265,7 +266,7 @@ export function SupplyFulfillmentPanel() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-primary" />
-            Supply Orders
+            Supply Requests
           </CardTitle>
           {!isLoading && requests && requests.length > 0 && (
             <div className="flex gap-1.5">
@@ -293,7 +294,7 @@ export function SupplyFulfillmentPanel() {
               <div className="text-center py-8 text-muted-foreground">
                 <PackageCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
                 <p className="font-medium">All caught up!</p>
-                <p className="text-sm">No pending supply orders</p>
+                <p className="text-sm">No pending supply requests</p>
               </div>
             ) : (
               <>

@@ -23,6 +23,7 @@ import { Loader2, AlertTriangle, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { addNewStaff } from '@features/court/services/staffManagement';
 import { supabase } from '@/lib/supabase';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface AddStaffDialogProps {
     open: boolean;
@@ -103,7 +104,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
         onError: (error: Error) => {
             logger.error('Error adding staff:', error);
             toast.error('Failed to add staff member', {
-                description: error.message,
+                description: getErrorMessage(error),
             });
         },
     });

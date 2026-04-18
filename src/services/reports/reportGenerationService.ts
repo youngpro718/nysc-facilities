@@ -164,7 +164,7 @@ export class ReportGenerationService {
     dateRange?: { start: string; end: string }
   ): Promise<GeneratedReport> {
     const config: ReportConfig = {
-      title: 'Space Utilization Report',
+      title: 'Room Utilization Report',
       subtitle: 'Occupancy and usage analysis',
       buildingId,
       dateRange,
@@ -408,7 +408,7 @@ export class ReportGenerationService {
         <div class="summary-card">
             <h3>Key Metrics</h3>
             <ul>
-                <li>Total Spaces: ${reportData.executive_summary.total_spaces}</li>
+                <li>Total Rooms: ${reportData.executive_summary.total_spaces}</li>
                 <li>Average Utilization: ${reportData.executive_summary.average_utilization}%</li>
                 <li>Total Issues: ${reportData.executive_summary.total_issues}</li>
                 <li>Priority Maintenance: ${reportData.executive_summary.maintenance_priority_count}</li>
@@ -488,7 +488,7 @@ export class ReportGenerationService {
 
     // Add executive summary
     rows.push('Executive Summary');
-    rows.push(`Total Spaces,${reportData.executive_summary.total_spaces}`);
+    rows.push(`Total Rooms,${reportData.executive_summary.total_spaces}`);
     rows.push(`Average Utilization,${reportData.executive_summary.average_utilization}%`);
     rows.push(`Total Issues,${reportData.executive_summary.total_issues}`);
     rows.push('');

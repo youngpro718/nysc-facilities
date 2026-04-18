@@ -9,6 +9,7 @@ import { MobileAddInventoryDialog } from "../MobileAddInventoryDialog";
 import { EditInventoryDialog } from "../EditInventoryDialog";
 import { MobileInventoryHeader } from "./MobileInventoryHeader";
 import { MobileInventoryGrid } from "./MobileInventoryGrid";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export function MobileRoomInventory({ roomId }: { roomId: string }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -133,7 +134,7 @@ export function MobileRoomInventory({ roomId }: { roomId: string }) {
     } catch (error) {
       toast({
         title: "Import failed",
-        description: error instanceof Error ? error.message : "Failed to import inventory data.",
+        description: getErrorMessage(error) || "Failed to import inventory data.",
         variant: "destructive",
       });
     }

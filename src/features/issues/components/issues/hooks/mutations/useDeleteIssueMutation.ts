@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface DeleteIssueParams {
   issueId: string;
@@ -88,7 +89,7 @@ export const useDeleteIssueMutation = () => {
       toast.success("Issue deleted successfully");
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete issue: ${error.message}`);
+      toast.error(`Failed to delete issue: ${getErrorMessage(error)}`);
     },
   });
 

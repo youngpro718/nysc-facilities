@@ -16,6 +16,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { Calendar, UserX, UserCheck, AlertCircle, Plus, Loader2, List } from "lucide-react";
 import { format } from "date-fns";
 import { AbsenceCalendar } from "./AbsenceCalendar";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface StaffAbsence {
   id: string;
@@ -354,7 +355,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: {
       toast({
         variant: "destructive",
         title: "Failed to record absence",
-        description: error.message,
+        description: getErrorMessage(error),
       });
     },
   });
@@ -504,7 +505,7 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: {
       toast({
         variant: "destructive",
         title: "Failed to assign coverage",
-        description: error.message,
+        description: getErrorMessage(error),
       });
     },
   });

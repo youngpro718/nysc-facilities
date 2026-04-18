@@ -476,13 +476,13 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                   Location
                 </p>
 
-                {/* Space Type */}
+                {/* Room Type */}
                 <FormField
                   control={form.control}
                   name="space_type"
                   render={({ field }) => (
                     <FormItem className="mb-3">
-                      <FormLabel className="text-xs text-muted-foreground">Space Type</FormLabel>
+                      <FormLabel className="text-xs text-muted-foreground">Room Type</FormLabel>
                       <Select onValueChange={(v) => { field.onChange(v); clearRoom(); }} value={field.value}>
                         <FormControl>
                           <SelectTrigger>

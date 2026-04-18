@@ -78,7 +78,7 @@ export function ItemDetailPanel({
         <div className="mb-4 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 text-sm">
           <p className="font-medium text-amber-700 dark:text-amber-400">Requires supervisor review</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            This item must be reviewed by a supervisor before your order can be approved.
+            This item must be reviewed by a supervisor before your request can be approved.
           </p>
         </div>
       )}

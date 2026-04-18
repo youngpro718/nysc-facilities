@@ -18,7 +18,7 @@ interface EmailFormDialogProps {
 const formTypes = [
   { id: 'key-request', name: 'Key & Elevator Pass Request', path: '/forms/key-request' },
   { id: 'issue-report', name: 'Issue Report', path: '/forms/issue-report' },
-  { id: 'maintenance-request', name: 'Maintenance Request', path: '/forms/maintenance-request' },
+  { id: 'maintenance-request', name: 'Report an Issue', path: '/forms/maintenance-request' },
   { id: 'supply-request', name: 'Supply Request', path: '/request/supplies' },
 ];
 

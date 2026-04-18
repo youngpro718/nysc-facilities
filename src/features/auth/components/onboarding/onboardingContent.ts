@@ -165,11 +165,11 @@ const courtOfficerContent: OnboardingRoleContent = {
   role: 'court_officer',
   label: getRoleLabel('court_officer'),
   description: getRoleDescription('court_officer'),
-  intro: 'You will mostly manage access, keys, and the spaces you oversee.',
+  intro: 'You will mostly manage access, keys, and the rooms you oversee.',
   focusTitle: 'What you should use first',
   focusPoints: [
     'Use Keys to manage checkout, return, and assignment activity.',
-    'Open Spaces to view the rooms and areas you oversee.',
+    'Open Rooms to view the rooms and areas you oversee.',
     'Check your dashboard for a quick overview before moving into the details.',
   ],
   highlights: [
@@ -253,22 +253,22 @@ const facilitiesManagerContent: OnboardingRoleContent = {
   role: 'facilities_manager',
   label: getRoleLabel('facilities_manager'),
   description: getRoleDescription('facilities_manager'),
-  intro: 'You oversee spaces, maintenance, inventory, and daily operations from a single view.',
+  intro: 'You oversee rooms, maintenance, inventory, and daily operations from a single view.',
   focusTitle: 'What your role centers on',
   focusPoints: [
     'Open Operations for issues, maintenance, and supply requests.',
-    'Use Spaces for building and room changes.',
+    'Use Rooms for building and room changes.',
     'Keep keys, inventory, and work queues moving together.',
   ],
   highlights: [
     {
-      title: 'Manage spaces',
+      title: 'Manage rooms',
       description: 'Keep buildings, rooms, and hierarchy up to date.',
       icon: LayoutDashboard,
     },
     {
       title: 'Coordinate work',
-      description: 'Stay on top of issues and maintenance requests.',
+      description: 'Stay on top of issues.',
       icon: Wrench,
     },
     {

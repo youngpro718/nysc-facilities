@@ -319,7 +319,7 @@ export function useAnalyticsAlerts(buildingId?: string) {
       alertList.push({
         id: 'low-utilization',
         type: 'warning',
-        title: 'Low Space Utilization',
+        title: 'Low Room Utilization',
         message: `Average utilization is ${summary.facility_overview.average_utilization}%`,
         action: 'View optimization recommendations',
       });

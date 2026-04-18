@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export function useKeyAssignments(occupantId: string) {
   const queryClient = useQueryClient();
@@ -76,7 +77,7 @@ export function useKeyAssignments(occupantId: string) {
     },
     onError: (error: unknown) => {
       logger.error("Error returning key:", error);
-      toast.error(error.message || "Failed to return key");
+      toast.error(getErrorMessage(error) || "Failed to return key");
     }
   });
 

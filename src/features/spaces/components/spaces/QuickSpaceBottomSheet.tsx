@@ -52,7 +52,7 @@ export function QuickSpaceBottomSheet({
       <SheetContent side="bottom" className="h-[85dvh] flex flex-col">
         <SheetHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <SheetTitle>Add New Space</SheetTitle>
+            <SheetTitle>Add New Room</SheetTitle>
             {(building || floor) && (
               <div className="flex gap-2">
                 {building && (

@@ -2,14 +2,59 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// ALLOWED_ORIGINS is a comma-separated list, e.g. "https://app.example.com".
+// If unset, falls back to "*" so dev/testing keeps working without configuration.
+const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const base = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Vary": "Origin",
+  };
+  if (allowedOrigins.length === 0) {
+    return { ...base, "Access-Control-Allow-Origin": "*" };
+  }
+  const origin = req.headers.get("Origin");
+  if (origin && allowedOrigins.includes(origin)) {
+    return { ...base, "Access-Control-Allow-Origin": origin };
+  }
+  return { ...base, "Access-Control-Allow-Origin": allowedOrigins[0] };
+}
+
+function originAllowed(req: Request): boolean {
+  if (allowedOrigins.length === 0) return true;
+  const origin = req.headers.get("Origin");
+  if (!origin) return true;
+  return allowedOrigins.includes(origin);
+}
+
+// Prefix strings that a spreadsheet engine would evaluate as a formula with a
+// single quote so `=cmd|' /C calc'!A1` pasted into a room name cannot execute
+// when the export is opened in Excel/Sheets/Numbers.
+function escapeFormula<T>(value: T): T {
+  if (typeof value !== "string" || value.length === 0) return value;
+  const first = value.charAt(0);
+  if (first === "=" || first === "+" || first === "-" || first === "@" || first === "\t" || first === "\r") {
+    return ("'" + value) as unknown as T;
+  }
+  return value;
+}
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (!originAllowed(req)) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Origin not allowed" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -66,39 +111,39 @@ Deno.serve(async (req: Request) => {
       
       return {
         "Room ID": room.id,
-        "Name": room.name,
-        "Room Number": room.room_number || "",
-        "Floor": floor?.name || "",
+        "Name": escapeFormula(room.name),
+        "Room Number": escapeFormula(room.room_number || ""),
+        "Floor": escapeFormula(floor?.name || ""),
         "Floor Number": floor?.floor_number || "",
         "Status": room.status,
         "Room Type": room.room_type,
-        "Current Function": room.current_function || "",
+        "Current Function": escapeFormula(room.current_function || ""),
         "Previous Functions (JSON)": JSON.stringify(room.previous_functions || []),
         "Function Change Date": room.function_change_date ? new Date(room.function_change_date).toISOString() : "",
         "Maintenance History (JSON)": JSON.stringify(room.maintenance_history || []),
         "Capacity": room.capacity || "",
         "Current Occupancy": room.current_occupancy || 0,
         "Is Storage": room.is_storage ? "Yes" : "No",
-        "Storage Type": room.storage_type || "",
+        "Storage Type": escapeFormula(room.storage_type || ""),
         "Storage Capacity": room.storage_capacity || "",
-        "Storage Notes": room.storage_notes || "",
+        "Storage Notes": escapeFormula(room.storage_notes || ""),
         "Position X": room.position?.x || 0,
         "Position Y": room.position?.y || 0,
         "Width": room.size?.width || 150,
         "Height": room.size?.height || 100,
         "Rotation": room.rotation || 0,
-        "Phone Number": room.phone_number || "",
-        "Description": room.description || "",
+        "Phone Number": escapeFormula(room.phone_number || ""),
+        "Description": escapeFormula(room.description || ""),
         "Last Inventory Check": room.last_inventory_check ? new Date(room.last_inventory_check).toISOString() : "",
         "Next Maintenance Date": room.next_maintenance_date ? new Date(room.next_maintenance_date).toISOString() : "",
         "Last Inspection Date": room.last_inspection_date || "",
-        "Technology Installed": (room.technology_installed || []).join(", "),
-        "Security Level": room.security_level || "",
-        "Environmental Controls": room.environmental_controls || "",
+        "Technology Installed": escapeFormula((room.technology_installed || []).join(", ")),
+        "Security Level": escapeFormula(room.security_level || ""),
+        "Environmental Controls": escapeFormula(room.environmental_controls || ""),
         "Is Parent": room.is_parent ? "Yes" : "No",
         "Parent Room ID": room.parent_room_id || "",
         "Passkey Enabled": room.passkey_enabled ? "Yes" : "No",
-        "Original Room Type": room.original_room_type || "",
+        "Original Room Type": escapeFormula(room.original_room_type || ""),
         "Temporary Storage Use": room.temporary_storage_use ? "Yes" : "No",
         "Temporary Use Timeline (JSON)": JSON.stringify(room.temporary_use_timeline || {}),
         "Created At": room.created_at ? new Date(room.created_at).toISOString() : "",

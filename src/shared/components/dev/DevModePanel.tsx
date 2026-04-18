@@ -15,21 +15,21 @@ import { getDashboardForRole } from '@/routes/roleBasedRouting';
 const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>> = {
   admin: [
     { label: 'Dashboard', path: '/' },
-    { label: 'Spaces', path: '/spaces' },
+    { label: 'Rooms', path: '/spaces' },
     { label: 'Keys', path: '/keys' },
     { label: 'Access', path: '/access-assignments' },
     { label: 'Admin', path: '/admin' },
   ],
   system_admin: [
     { label: 'Dashboard', path: '/' },
-    { label: 'Spaces', path: '/spaces' },
+    { label: 'Rooms', path: '/spaces' },
     { label: 'Keys', path: '/keys' },
     { label: 'Access', path: '/access-assignments' },
     { label: 'Admin', path: '/admin' },
   ],
   facilities_manager: [
     { label: 'Dashboard', path: '/' },
-    { label: 'Spaces', path: '/spaces' },
+    { label: 'Rooms', path: '/spaces' },
     { label: 'Keys', path: '/keys' },
     { label: 'Access', path: '/access-assignments' },
     { label: 'Admin', path: '/admin' },
@@ -43,7 +43,7 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
   court_officer: [
     { label: 'Dashboard', path: '/court-officer-dashboard' },
     { label: 'Keys', path: '/keys' },
-    { label: 'Spaces', path: '/spaces' },
+    { label: 'Rooms', path: '/spaces' },
     { label: 'Term Sheet', path: '/term-sheet' },
   ],
   purchasing: [

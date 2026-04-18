@@ -21,6 +21,7 @@ import {
 import { useToast } from "@shared/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { exportToExcel, sanitizeForExcel, parseExcelFile } from "@shared/utils/excelExport";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface UserImportExportProps {
   users?: unknown[];
@@ -281,7 +282,7 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
       logger.error('Import error:', error);
       toast({
         title: "Import failed",
-        description: error instanceof Error ? error.message : "Failed to import user data.",
+        description: getErrorMessage(error) || "Failed to import user data.",
         variant: "destructive",
       });
     } finally {

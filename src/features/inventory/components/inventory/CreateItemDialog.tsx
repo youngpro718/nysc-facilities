@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@shared/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 type Category = {
   id: string;
@@ -128,7 +129,7 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create item: " + error.message,
+        description: `Failed to create item: ${getErrorMessage(error)}`,
       });
     },
   });
@@ -142,6 +143,7 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
         title: "Missing field",
         description: "Item name is required.",
       });
+      return;
     }
 
     createItemMutation.mutate(formData);

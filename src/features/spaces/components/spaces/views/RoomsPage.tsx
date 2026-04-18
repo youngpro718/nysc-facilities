@@ -28,6 +28,7 @@ import { RoomExcelImportExport } from "../rooms/components/RoomExcelImportExport
 import { RoomCard } from "../rooms/RoomCard";
 import { useRoomFilters } from "../hooks/useRoomFilters";
 import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
+import { getErrorMessage } from "@/lib/errorUtils";
 import { deleteSpace } from "../services/deleteSpace";
 import { Room } from "../rooms/types/RoomTypes";
 import { useSearchParams } from "react-router-dom";
@@ -119,7 +120,7 @@ const RoomsPage = () => {
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete room. Please try again.",
+        description: getErrorMessage(error) || "Failed to delete room. Please try again.",
         variant: "destructive",
       });
       logger.error('Error deleting room:', error);

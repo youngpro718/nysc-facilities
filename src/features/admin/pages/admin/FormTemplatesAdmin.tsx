@@ -75,7 +75,7 @@ export default function FormTemplatesAdmin() {
     const names: Record<string, string> = {
       key_request: 'Key Request',
       supply_request: 'Supply Request',
-      maintenance_request: 'Maintenance Request',
+      maintenance_request: 'Issue',
       issue_report: 'Issue Report',
       custom: 'Custom',
     };

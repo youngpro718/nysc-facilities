@@ -27,6 +27,7 @@ import {
   stringToStatus,
   stringToStorageType
 } from "./rooms/types/roomEnums";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface EditSpaceDialogProps {
   id: string;
@@ -137,7 +138,7 @@ export function EditSpaceDialog({
       }
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : "Failed to update room";
+      const errorMessage = getErrorMessage(error) || "Failed to update room";
       toast.error(`Update failed: ${errorMessage}`);
     },
   });

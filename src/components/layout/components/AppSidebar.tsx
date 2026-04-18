@@ -51,8 +51,8 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="flex items-center gap-2 min-w-0">
               <div className="relative h-14 w-14 shrink-0">
-                <img src="/nysc-logo-light.png" alt="NYSC" className="h-full w-full object-contain dark:hidden" />
-                <img src="/nysc-logo-dark.png" alt="NYSC" className="h-full w-full object-contain hidden dark:block" />
+                <img src="/nysc-logo-light.webp" alt="NYSC" className="h-full w-full object-contain dark:hidden" />
+                <img src="/nysc-logo-dark.webp" alt="NYSC" className="h-full w-full object-contain hidden dark:block" />
               </div>
               <span className="text-sm font-semibold truncate text-sidebar-foreground">NYSC Facilities</span>
             </div>

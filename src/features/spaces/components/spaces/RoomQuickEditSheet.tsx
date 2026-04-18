@@ -9,6 +9,7 @@ import { ChevronDown, ChevronRight, Save, Package, Camera, Wrench } from 'lucide
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface RoomQuickEditSheetProps {
   open: boolean;
@@ -40,7 +41,7 @@ export function RoomQuickEditSheet({ open, onClose, roomId, roomType, defaultSec
       onClose();
     },
     onError: (error: Error) => {
-      toast.error(`Failed to update room: ${error.message}`);
+      toast.error(`Failed to update room: ${getErrorMessage(error)}`);
     }
   });
 

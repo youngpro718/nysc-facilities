@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface UploadState {
   file: File | null;
@@ -271,7 +272,7 @@ export function MobilePhotoUpload({
         toast.info('Upload cancelled');
       } else {
         logger.error('Upload error:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage = getErrorMessage(error);
         setUploadState(prev => ({
           ...prev,
           error: errorMessage,

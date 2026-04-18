@@ -9,7 +9,7 @@ interface ConnectedSpacesProps {
 export const ConnectedSpaces = ({ connections }: ConnectedSpacesProps) => {
   return (
     <div className="mt-4 space-y-2">
-      <p className="text-sm font-medium">Connected Spaces</p>
+      <p className="text-sm font-medium">Connected Rooms</p>
       <div className="space-y-1">
         {connections?.map((conn) => (
           <div key={conn.id} className="flex items-center gap-2">
@@ -17,7 +17,7 @@ export const ConnectedSpaces = ({ connections }: ConnectedSpacesProps) => {
               {conn.position}
             </Badge>
             <span className="text-sm text-muted-foreground">
-              {conn.to_space?.name || 'Unknown Space'}
+              {conn.to_space?.name || 'Unknown Room'}
             </span>
             {conn.connection_type === 'door' && (
               <Badge variant="secondary" className="text-xs">
@@ -27,7 +27,7 @@ export const ConnectedSpaces = ({ connections }: ConnectedSpacesProps) => {
           </div>
         ))}
         {(!connections || connections.length === 0) && (
-          <p className="text-sm text-muted-foreground">No connected spaces</p>
+          <p className="text-sm text-muted-foreground">No connected rooms</p>
         )}
       </div>
     </div>

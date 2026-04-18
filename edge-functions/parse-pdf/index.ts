@@ -1,11 +1,35 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// ALLOWED_ORIGINS is a comma-separated list, e.g. "https://app.example.com".
+// If unset, falls back to "*" so dev/testing keeps working without configuration.
+const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const base = {
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Vary": "Origin",
+  };
+  if (allowedOrigins.length === 0) {
+    return { ...base, "Access-Control-Allow-Origin": "*" };
+  }
+  const origin = req.headers.get("Origin");
+  if (origin && allowedOrigins.includes(origin)) {
+    return { ...base, "Access-Control-Allow-Origin": origin };
+  }
+  return { ...base, "Access-Control-Allow-Origin": allowedOrigins[0] };
+}
+
+function originAllowed(req: Request): boolean {
+  if (allowedOrigins.length === 0) return true;
+  const origin = req.headers.get("Origin");
+  if (!origin) return true;
+  return allowedOrigins.includes(origin);
+}
 
 interface ExtractedCase {
   sending_part: string;
@@ -31,9 +55,18 @@ interface ExtractedEntry {
 }
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (!originAllowed(req)) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Origin not allowed" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -161,6 +194,23 @@ Deno.serve(async (req: Request) => {
 
     // Step 2: Extract text from PDF
     const arrayBuffer = await fileData.arrayBuffer();
+
+    // Verify the file is actually a PDF via its magic bytes ("%PDF-"). The MIME
+    // type check on upload is spoofable by simply renaming a file to .pdf.
+    const header = new Uint8Array(arrayBuffer).subarray(0, 5);
+    const isPdf =
+      header[0] === 0x25 && // %
+      header[1] === 0x50 && // P
+      header[2] === 0x44 && // D
+      header[3] === 0x46 && // F
+      header[4] === 0x2d;   // -
+    if (!isPdf) {
+      return new Response(
+        JSON.stringify({ success: false, error: "File is not a valid PDF." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const base64Pdf = btoa(
       String.fromCharCode(...new Uint8Array(arrayBuffer))
     );

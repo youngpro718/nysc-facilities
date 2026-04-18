@@ -25,6 +25,7 @@ import { createReceiptData } from '@/lib/receiptUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { confirmPickup, cancelSupplyRequest, archiveSupplyRequest } from '@features/supply/services/unifiedSupplyService';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errorUtils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -134,7 +135,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
       toast.success('Order marked as complete!');
     },
-    onError: (error: Error) => toast.error(error.message || 'Failed to confirm pickup'),
+    onError: (error: Error) => toast.error(getErrorMessage(error) || 'Failed to confirm pickup'),
   });
 
   const cancelRequestMutation = useMutation({
@@ -143,7 +144,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
       toast.success('Request cancelled');
     },
-    onError: (error: Error) => toast.error(error.message || 'Failed to cancel request'),
+    onError: (error: Error) => toast.error(getErrorMessage(error) || 'Failed to cancel request'),
   });
 
   const archiveRequestMutation = useMutation({
@@ -152,7 +153,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
       toast.success('Request archived');
     },
-    onError: (error: Error) => toast.error(error.message || 'Failed to archive request'),
+    onError: (error: Error) => toast.error(getErrorMessage(error) || 'Failed to archive request'),
   });
 
   const visibleRequests = requests.filter(r => !(r.metadata as Record<string, unknown>)?.archived);

@@ -13,6 +13,7 @@ import { batchMapPartsToCourtrooms } from '@features/court/services/courtroomMap
 import { PDFExtractionPreview, type ExtractedPart } from './PDFExtractionPreview';
 import { validateBatch, getValidationSummary } from '@features/court/services/sessionValidation';
 import { parseDailyReportPDF } from '@features/court/services/dailyReportParser';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface UploadDailyReportDialogProps {
   open: boolean;
@@ -175,7 +176,7 @@ export function UploadDailyReportDialog({
     } catch (error) {
       logger.error('Extraction error:', error);
       setExtractionStatus('error');
-      const errorMsg = error instanceof Error ? error.message : 'Failed to extract data from document';
+      const errorMsg = getErrorMessage(error) || 'Failed to extract data from document';
       setErrorMessage(errorMsg);
       toast.error(errorMsg);
     } finally {

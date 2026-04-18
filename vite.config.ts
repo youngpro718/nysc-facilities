@@ -5,31 +5,29 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from 'vite-plugin-pwa';
 
-// Intercept console.error to suppress WebSocket RSV1 errors
-const originalConsoleError = console.error;
-console.error = function(...args: any[]) {
-  const message = args.join(' ');
-  // Suppress RSV1 WebSocket errors from browser extensions
-  if (message.includes('RSV1') || message.includes('ws error') || message.includes('Invalid WebSocket frame')) {
-    return;
-  }
-  originalConsoleError.apply(console, args);
-};
-
-// Suppress WebSocket compression errors that crash the dev server
-process.on('uncaughtException', (err: any) => {
-  if (err.code === 'WS_ERR_UNEXPECTED_RSV_1' || err.message?.includes('RSV1')) {
-    // Silently suppress - this is caused by browser extensions
-    return;
-  }
-  throw err; // Re-throw other errors
-});
-
-// Plugin to handle WebSocket errors gracefully
+// Dev-only plugin: suppress WebSocket RSV1 errors caused by browser extensions
+// injecting bad compression frames. Scoped to `configureServer` so production
+// builds never silently swallow real errors.
 const handleWebSocketErrors = (): Plugin => ({
   name: 'handle-websocket-errors',
+  apply: 'serve',
   configureServer(server) {
-    // Intercept and suppress WebSocket errors
+    const originalConsoleError = console.error;
+    console.error = function(...args: unknown[]) {
+      const message = args.join(' ');
+      if (message.includes('RSV1') || message.includes('ws error') || message.includes('Invalid WebSocket frame')) {
+        return;
+      }
+      originalConsoleError.apply(console, args);
+    };
+
+    process.on('uncaughtException', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'WS_ERR_UNEXPECTED_RSV_1' || err.message?.includes('RSV1')) {
+        return;
+      }
+      throw err;
+    });
+
     const originalOn = server.ws.on?.bind(server.ws);
     if (originalOn) {
       server.ws.on = function(event: string, handler: any) {

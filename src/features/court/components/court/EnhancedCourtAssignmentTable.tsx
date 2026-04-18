@@ -31,6 +31,7 @@ import {
 } from '@dnd-kit/sortable';
 import { AssignmentListItem } from "./AssignmentListItem";
 import { AssignmentDetailPanel } from "./AssignmentDetailPanel";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface CourtAssignmentRow {
   room_id: string;
@@ -159,7 +160,7 @@ export const EnhancedCourtAssignmentTable = () => {
       toast({ title: "Assignment updated", description: "Court assignment has been updated successfully." });
     },
     onError: (error) => {
-      toast({ variant: "destructive", title: "Error", description: "Failed to update: " + error.message });
+      toast({ variant: "destructive", title: "Error", description: `Failed to update: ${getErrorMessage(error)}` });
     },
   });
 

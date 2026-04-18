@@ -79,7 +79,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
         });
 
         if (room.previous_functions && Array.isArray(room.previous_functions)) {
-          room.previous_functions.forEach((func: Record<string, unknown>, idx: number) => {
+          (room.previous_functions as Record<string, unknown>[]).forEach((func, idx) => {
             events.push({
               id: `func-${idx}-${String(func.date || 'unknown')}`,
               date: String(func.date || room.function_change_date || new Date().toISOString()),

@@ -137,7 +137,7 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
       });
       if (error) {
         logger.error("RPC error details:", error);
-        toast.error(`Failed to issue pass: ${error.message || 'Unknown error'}`);
+        toast.error(`Failed to issue pass: ${getErrorMessage(error)}`);
         return;
       }
       toast.success("Elevator pass issued");

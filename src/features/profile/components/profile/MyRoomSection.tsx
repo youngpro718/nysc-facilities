@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useOccupantAssignments } from '@features/occupants/components/occupants/hooks/useOccupantAssignments';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 export function MyRoomSection() {
   const { user } = useAuth();
@@ -45,7 +46,7 @@ export function MyRoomSection() {
     },
     onError: (error: unknown) => {
       logger.error('Error requesting room:', error);
-      toast.error(error.message || 'Failed to submit request');
+      toast.error(getErrorMessage(error) || 'Failed to submit request');
     }
   });
 

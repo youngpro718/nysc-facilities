@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Edit, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { RoutingRuleDialog } from "@features/forms/components/forms/RoutingRuleDialog";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface RoutingRule {
   id: string;
@@ -54,7 +55,7 @@ export default function RoutingRules() {
       toast.success("Rule updated");
     },
     onError: (error) => {
-      toast.error("Failed to update rule: " + error.message);
+      toast.error(`Failed to update rule: ${getErrorMessage(error)}`);
     },
   });
 
@@ -72,7 +73,7 @@ export default function RoutingRules() {
       toast.success("Rule deleted");
     },
     onError: (error) => {
-      toast.error("Failed to delete rule: " + error.message);
+      toast.error(`Failed to delete rule: ${getErrorMessage(error)}`);
     },
   });
 

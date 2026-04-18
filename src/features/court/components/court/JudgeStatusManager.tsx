@@ -25,6 +25,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { useCourtPersonnel, type JudgeStatus } from "@features/court/hooks/useCourtPersonnel";
 import { updateJudgeStatus, addNewJudge, getJudgeDepartureInfo, processJudgeDeparture, moveJudgeToPart, updateJudgeDetails, swapChambers, getAllAssignmentSlots, type JudgeDepartureInfo, type AssignmentSlot } from '@features/court/services/judgeManagement';
 import { PersonnelSelector } from "./PersonnelSelector";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 /**
  * Inline dropdown for quickly changing a judge's status.
@@ -64,7 +65,7 @@ export function JudgeStatusDropdown({
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: getErrorMessage(error),
       });
     },
   });
@@ -263,7 +264,7 @@ function JudgeDepartureDialog({
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: getErrorMessage(error),
       });
     },
   });
@@ -490,7 +491,7 @@ function MoveJudgeDialog({
       onOpenChange(false);
     },
     onError: (error: Error) => {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+      toast({ variant: "destructive", title: "Error", description: getErrorMessage(error) });
     },
   });
 
@@ -630,7 +631,7 @@ function EditJudgeDetailsDialog({
       onOpenChange(false);
     },
     onError: (error: Error) => {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+      toast({ variant: "destructive", title: "Error", description: getErrorMessage(error) });
     },
   });
 
@@ -732,7 +733,7 @@ function SwitchChambersDialog({
       onOpenChange(false);
     },
     onError: (error: Error) => {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+      toast({ variant: "destructive", title: "Error", description: getErrorMessage(error) });
     },
   });
 
@@ -921,7 +922,7 @@ export function AddJudgeDialog({
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: getErrorMessage(error),
       });
     },
   });

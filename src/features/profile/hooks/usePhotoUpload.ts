@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export interface UploadOptions {
   entityId: string;
@@ -97,7 +98,7 @@ export function usePhotoUpload() {
         
       return publicUrl;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = getErrorMessage(error);
       logger.error(`Upload error:`, error);
       setError(errorMessage);
       toast.error(`Failed to upload file: ${errorMessage}`);
@@ -129,14 +130,14 @@ export function usePhotoUpload() {
       
       if (error) {
         logger.error(`Error removing file:`, error);
-        toast.error(`Error removing file: ${error.message}`);
+        toast.error(`Error removing file: ${getErrorMessage(error)}`);
         return false;
       }
       
       return true;
     } catch (error) {
       logger.error('File removal error:', error);
-      toast.error(`Failed to remove file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to remove file: ${getErrorMessage(error)}`);
       return false;
     }
   };
@@ -248,7 +249,7 @@ export function usePhotoUpload() {
         
       return publicUrl;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = getErrorMessage(error);
       logger.error(`Upload error:`, error);
       setError(errorMessage);
       toast.error(`Failed to upload file: ${errorMessage}`);

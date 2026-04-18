@@ -165,7 +165,7 @@ export function FormTemplateBuilderDialog({
                 <SelectContent>
                   <SelectItem value="key_request">Key Request</SelectItem>
                   <SelectItem value="supply_request">Supply Request</SelectItem>
-                  <SelectItem value="maintenance_request">Maintenance Request</SelectItem>
+                  <SelectItem value="maintenance_request">Issue</SelectItem>
                   <SelectItem value="issue_report">Issue Report</SelectItem>
                   <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>

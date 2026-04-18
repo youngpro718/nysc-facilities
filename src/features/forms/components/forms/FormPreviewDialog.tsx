@@ -104,7 +104,7 @@ const formConfigs = {
     ],
   },
   'maintenance-request': {
-    title: 'Maintenance Request Form',
+    title: 'Report an Issue',
     icon: Wrench,
     color: 'text-orange-500',
     fields: [

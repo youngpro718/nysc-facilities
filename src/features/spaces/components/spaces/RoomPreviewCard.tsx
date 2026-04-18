@@ -294,7 +294,7 @@ export function RoomPreviewCard({
             disabled={isCreating || !name || !roomNumber || !buildingId || !floorId}
             className="flex-1 h-12 touch-manipulation"
           >
-            {isCreating ? 'Creating...' : 'Create Space'}
+            {isCreating ? 'Creating...' : 'Create Room'}
           </Button>
         </div>
       </CardContent>

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 import {
     Dialog,
@@ -157,7 +158,7 @@ export function PersonnelFormDialog({
             onOpenChange(false);
         } catch (error: any) {
             console.error("Error saving personnel:", error);
-            toast.error(error.message || "Failed to save personnel");
+            toast.error(getErrorMessage(error) || "Failed to save personnel");
         } finally {
             setIsLoading(false);
         }

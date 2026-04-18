@@ -4,7 +4,7 @@
  */
 
 const BASE_PATH_MAP: Record<string, string> = {
-  'Spaces': '/spaces',
+  'Rooms': '/spaces',
   'New Request': '/request',
   'Operations': '/operations',
   'Building Issues': '/operations',
@@ -41,7 +41,7 @@ export function getNavigationDescription(title: string): string {
   const descriptionMap: Record<string, string> = {
     'Dashboard': 'Overview & stats',
     'New Request': 'Supplies, help, issues, keys',
-    'Spaces': 'Manage buildings',
+    'Rooms': 'Manage buildings',
     'Operations': 'Issues, Maintenance, Supplies',
     'Building Issues': 'Track & resolve building issues',
     'Issues': 'Track problems',

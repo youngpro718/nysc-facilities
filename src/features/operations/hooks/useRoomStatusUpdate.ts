@@ -11,6 +11,7 @@ import { operationsService } from '@/services/operations/operationsService';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { usePermissions } from '@shared/hooks/usePermissions';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface UpdateRoomStatusParams {
   roomId: string;
@@ -66,7 +67,7 @@ export function useRoomStatusUpdate() {
         );
       }
       
-      toast.error(`Failed to update status: ${error.message}`);
+      toast.error(`Failed to update status: ${getErrorMessage(error)}`);
     },
     onSuccess: (data, variables) => {
       // Invalidate and refetch relevant queries

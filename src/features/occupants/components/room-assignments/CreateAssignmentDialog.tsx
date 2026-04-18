@@ -34,6 +34,7 @@ import { ConflictDetectionAlert, type AssignmentConflict } from './ConflictDetec
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface PersonnelOption {
   id: string;
@@ -220,7 +221,7 @@ export function CreateAssignmentDialog({
       setConflicts([]);
     } catch (error) {
       logger.error("Error creating assignment:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create assignment";
+      const errorMessage = getErrorMessage(error) || "Failed to create assignment";
       toast.error(errorMessage);
     } finally {
       setIsCreating(false);

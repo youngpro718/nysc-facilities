@@ -37,7 +37,7 @@ export const navigationItems: NavigationItem[] = [
     moduleKey: undefined,
   },
   {
-    title: 'Spaces',
+    title: 'Rooms',
     href: '/spaces',
     icon: Building2,
     adminOnly: true,
@@ -150,7 +150,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'admin' || userRole === 'system_admin') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
-      { title: 'Spaces', icon: Building2 },
+      { title: 'Rooms', icon: Building2 },
       { title: 'Issues', icon: AlertTriangle },
       { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
@@ -166,7 +166,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'facilities_manager') {
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
-      { title: 'Spaces', icon: Building2 },
+      { title: 'Rooms', icon: Building2 },
       { title: 'Issues', icon: AlertTriangle },
       { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
@@ -195,7 +195,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Keys', icon: KeyRound },
-      { title: 'Spaces', icon: Building2 },
+      { title: 'Rooms', icon: Building2 },
       { title: 'Term Sheet', icon: FileText },
       { title: 'Notifications', icon: MessageSquare },
       { type: "separator" },
@@ -243,7 +243,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
 export function getAdminNavigation(): NavigationTab[] {
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
-    { title: 'Spaces', icon: Building2 },
+    { title: 'Rooms', icon: Building2 },
     { title: 'Issues Management', icon: AlertTriangle },
     { type: "separator" },
     { title: 'Admin Center', icon: UserCog },

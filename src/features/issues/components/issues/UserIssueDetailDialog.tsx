@@ -310,7 +310,7 @@ export function UserIssueDetailDialog({
                     <CardContent className="p-4 space-y-2">
                       <div className="flex items-center gap-2">
                         <Ticket className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium">Work Order Submitted</span>
+                        <span className="text-sm font-medium">External Ticket Submitted</span>
                       </div>
                       <div className="flex items-center gap-2 pl-6">
                         <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
@@ -321,13 +321,13 @@ export function UserIssueDetailDialog({
                       </div>
                       <div className="pl-6">
                         {issue.external_ticket_status === 'entered' && (
-                          <p className="text-xs text-muted-foreground">This issue has been entered into the work order system. Waiting for work to begin.</p>
+                          <p className="text-xs text-muted-foreground">This issue has been entered into the external ticket system. Waiting for work to begin.</p>
                         )}
                         {issue.external_ticket_status === 'in_progress' && (
                           <p className="text-xs text-blue-600 dark:text-blue-400">Work has started on this issue.</p>
                         )}
                         {issue.external_ticket_status === 'completed' && (
-                          <p className="text-xs text-green-600 dark:text-green-400">The work order has been completed. If you can confirm the fix, please use the button below.</p>
+                          <p className="text-xs text-green-600 dark:text-green-400">The external work has been completed. If you can confirm the fix, please use the button below.</p>
                         )}
                       </div>
                     </CardContent>

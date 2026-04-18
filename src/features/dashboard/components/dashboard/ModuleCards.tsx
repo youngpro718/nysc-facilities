@@ -162,7 +162,7 @@ export const SpacesDashboardCard = () => {
 
   return (
     <ModuleCard
-      title="Spaces Management"
+      title="Rooms Management"
       icon={<Building2 className="h-5 w-5 text-blue-500" />}
       count={totalBuildings}
       description={`${activeBuildings} active buildings, ${totalBuildings - activeBuildings} under maintenance`}

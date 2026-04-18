@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { ShoppingCart, Package } from 'lucide-react';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface QuickReorderDialogProps {
   open: boolean;
@@ -93,7 +94,7 @@ export function QuickReorderDialog({ open, onOpenChange, item }: QuickReorderDia
     },
     onError: (error) => {
       toast.error('Failed to submit reorder', {
-        description: error instanceof Error ? error.message : 'Unknown error',
+        description: getErrorMessage(error),
       });
     },
   });

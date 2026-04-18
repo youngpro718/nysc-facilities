@@ -169,7 +169,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="space_type">Space Type</Label>
+              <Label htmlFor="space_type">Room Type</Label>
               <Select 
                 value={formData.space_type} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, space_type: value }))}
@@ -188,7 +188,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
             </div>
 
             <div>
-              <Label htmlFor="space_name">Space Name/Number *</Label>
+              <Label htmlFor="space_name">Room Name/Number *</Label>
               {(formData.space_type === "room" || formData.space_type === "courtroom") && rooms ? (
                 <Select 
                   value={formData.space_id} 

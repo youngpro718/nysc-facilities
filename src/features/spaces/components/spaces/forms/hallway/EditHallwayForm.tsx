@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { CreateHallwayFields } from "../../forms/space/CreateHallwayFields";
 import { BasicInfoTab } from "./BasicInfoTab";
 import { MaintenanceTab } from "./MaintenanceTab";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface EditHallwayFormProps {
   id: string;
@@ -85,7 +86,7 @@ export function EditHallwayForm({
     },
     onError: (error) => {
       logger.error("Update error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to update hallway");
+      toast.error(getErrorMessage(error) || "Failed to update hallway");
     },
   });
 

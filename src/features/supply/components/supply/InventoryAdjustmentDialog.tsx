@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { toast } from 'sonner';
 import { Package, TrendingUp, TrendingDown } from 'lucide-react';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface InventoryItem {
   id: string;
@@ -134,7 +135,7 @@ export function InventoryAdjustmentDialog({
     },
     onError: (error: Error) => {
       toast.error('Failed to adjust inventory', {
-        description: error.message || 'Unknown error occurred',
+        description: getErrorMessage(error),
       });
     },
   });

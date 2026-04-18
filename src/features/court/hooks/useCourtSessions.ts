@@ -10,6 +10,7 @@ import {
 } from '@/types/courtSessions';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 /**
  * Fetch court sessions for a specific date, period, and building.
@@ -308,7 +309,7 @@ export function useCopySessionFromYesterday() {
     },
     onError: (error: Error) => {
       logger.error('Error copying from yesterday:', error);
-      toast.error(error.message || 'Failed to copy from yesterday');
+      toast.error(getErrorMessage(error) || 'Failed to copy from yesterday');
     },
   });
 }

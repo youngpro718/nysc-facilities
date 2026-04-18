@@ -282,7 +282,7 @@ export const MaintenanceScheduleList = () => {
                     ) : schedule.space_name ? (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        Space: {schedule.space_name}
+                        Room: {schedule.space_name}
                       </div>
                     ) : null}
                     <div className="flex items-center gap-1">

@@ -157,7 +157,7 @@ export default function AdvancedAnalyticsDashboard({
           {/* Facility Overview */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Space Utilization</CardTitle>
+              <CardTitle className="text-sm font-medium">Room Utilization</CardTitle>
               <Building className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -438,7 +438,7 @@ export default function AdvancedAnalyticsDashboard({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                Space Optimization Recommendations
+                Room Optimization Recommendations
               </CardTitle>
             </CardHeader>
             <CardContent>

@@ -119,9 +119,9 @@ export function useSystemSettings() {
       // 2) Load module catalog (system-level list only)
       // Define a full default catalog to ensure UI completeness even if DB is sparse
       const defaultCatalog: { id: string; name: string; description: string; enabled?: boolean }[] = [
-        { id: 'spaces', name: 'Spaces Management', description: 'Manage buildings, floors, rooms, and space layouts' },
+        { id: 'spaces', name: 'Rooms Management', description: 'Manage buildings, floors, and rooms' },
         { id: 'operations', name: 'Operations', description: 'Consolidated Issues, Maintenance, and Supply Requests' },
-        { id: 'issues', name: 'Issue Tracking', description: 'Track and resolve facility issues and maintenance requests' },
+        { id: 'issues', name: 'Issue Tracking', description: 'Track and resolve facility issues' },
         { id: 'maintenance', name: 'Maintenance Management', description: 'Schedule and track facility maintenance operations' },
         { id: 'supply_requests', name: 'Supply Requests', description: 'Process and fulfill supply and material requests' },
         { id: 'inventory', name: 'Inventory Management', description: 'Manage supplies, equipment, and inventory tracking' },

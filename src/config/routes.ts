@@ -133,8 +133,8 @@ export const routes: Record<string, RouteConfig> = {
   },
   '/spaces': {
     path: '/spaces',
-    title: 'Space Management',
-    breadcrumbLabel: 'Spaces',
+    title: 'Room Management',
+    breadcrumbLabel: 'Rooms',
     icon: Building2,
     parent: '/',
   },

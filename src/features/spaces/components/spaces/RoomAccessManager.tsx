@@ -11,6 +11,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { RoomAccessSummary } from "@features/occupants/components/access/RoomAccessSummary";
 import { Search, Plus, UserPlus, Key, MapPin, Users, Building2 } from "lucide-react";
 import { format } from "date-fns";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface Room {
   id: string;
@@ -160,7 +161,7 @@ export function RoomAccessManager() {
     onError: (error: any) => {
       toast({ 
         title: "Error", 
-        description: error.message || "Failed to assign occupant to room",
+        description: getErrorMessage(error) || "Failed to assign occupant to room",
         variant: "destructive" 
       });
     },
@@ -184,7 +185,7 @@ export function RoomAccessManager() {
     onError: (error: any) => {
       toast({ 
         title: "Error", 
-        description: error.message || "Failed to remove assignment",
+        description: getErrorMessage(error) || "Failed to remove assignment",
         variant: "destructive" 
       });
     },

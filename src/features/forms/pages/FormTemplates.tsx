@@ -47,8 +47,8 @@ const formTemplates = [
   },
   {
     id: 'maintenance-request',
-    title: 'Maintenance Request',
-    description: 'Request facility maintenance and repairs',
+    title: 'Report an Issue',
+    description: 'Report a facility issue or request repairs',
     icon: Wrench,
     color: 'text-orange-500',
     interactiveForm: '/forms/maintenance-request',

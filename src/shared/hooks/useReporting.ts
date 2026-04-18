@@ -310,7 +310,7 @@ export function useReportingDashboard() {
       includeRecommendations: config.includeRecommendations ?? true,
       sections: config.sections || [
         { id: 'summary', title: 'Executive Summary', type: 'summary' },
-        { id: 'utilization', title: 'Space Utilization', type: 'analytics' },
+        { id: 'utilization', title: 'Room Utilization', type: 'analytics' },
         { id: 'maintenance', title: 'Maintenance Status', type: 'table' },
         { id: 'recommendations', title: 'Recommendations', type: 'recommendations' },
       ],
@@ -360,7 +360,7 @@ export function useReportTemplates() {
       includeRecommendations: true,
       sections: [
         { id: 'executive-summary', title: 'Executive Summary', type: 'summary' as const },
-        { id: 'utilization-analysis', title: 'Space Utilization Analysis', type: 'analytics' as const },
+        { id: 'utilization-analysis', title: 'Room Utilization Analysis', type: 'analytics' as const },
         { id: 'maintenance-status', title: 'Maintenance Status', type: 'table' as const },
         { id: 'issue-analysis', title: 'Issue Analysis', type: 'analytics' as const },
         { id: 'energy-efficiency', title: 'Energy Efficiency', type: 'analytics' as const },
@@ -380,14 +380,14 @@ export function useReportTemplates() {
     },
     
     utilization: {
-      title: 'Space Utilization Report',
-      subtitle: 'Occupancy patterns and space optimization',
+      title: 'Room Utilization Report',
+      subtitle: 'Occupancy patterns and room optimization',
       format: 'pdf' as const,
       includeCharts: true,
       sections: [
         { id: 'utilization-summary', title: 'Utilization Overview', type: 'summary' as const },
         { id: 'occupancy-trends', title: 'Occupancy Trends', type: 'analytics' as const },
-        { id: 'space-optimization', title: 'Space Optimization', type: 'recommendations' as const },
+        { id: 'space-optimization', title: 'Room Optimization', type: 'recommendations' as const },
       ],
     },
     

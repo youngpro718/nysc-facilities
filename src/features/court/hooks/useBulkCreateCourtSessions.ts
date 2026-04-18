@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 /**
  * Convert a short PDF date (e.g. "2/23", "3/16", "3/16H") to YYYY-MM-DD
@@ -170,7 +171,7 @@ export function useBulkCreateCourtSessions() {
     onError: (error) => {
       logger.error('Error creating sessions:', error);
       toast.error('Failed to create sessions', {
-        description: error instanceof Error ? error.message : 'Unknown error',
+        description: getErrorMessage(error),
       });
     },
   });

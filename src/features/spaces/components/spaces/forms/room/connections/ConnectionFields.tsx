@@ -6,11 +6,11 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionFieldsProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-medium">Connected Spaces</CardTitle>
+        <CardTitle className="text-lg font-medium">Connected Rooms</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-center py-8 text-sm text-muted-foreground">
-          Space connections feature is currently disabled.
+          Room connections feature is currently disabled.
         </div>
       </CardContent>
     </Card>

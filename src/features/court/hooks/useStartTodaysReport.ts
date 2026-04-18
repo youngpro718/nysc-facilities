@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { SessionPeriod, BuildingCode } from '@/types/courtSessions';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface StartReportParams {
     date: Date;
@@ -169,7 +170,7 @@ export function useStartTodaysReport() {
         onError: (error) => {
             logger.error('Error starting report:', error);
             toast.error('Failed to start report', {
-                description: error instanceof Error ? error.message : 'Unknown error',
+                description: getErrorMessage(error),
             });
         },
     });

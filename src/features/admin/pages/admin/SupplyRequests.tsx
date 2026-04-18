@@ -367,7 +367,7 @@ export default function AdminSupplyRequests() {
                         )}
                         {request.fulfillment_notes && (
                           <div className="text-sm bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 p-2 rounded">
-                            <span className="font-medium text-xs">Fulfillment: </span>{request.fulfillment_notes}
+                            <span className="font-medium text-xs">Fulfillment notes: </span>{request.fulfillment_notes}
                           </div>
                         )}
                       </div>

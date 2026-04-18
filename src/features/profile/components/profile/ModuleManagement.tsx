@@ -20,8 +20,8 @@ import { useSystemSettings } from "@features/admin/hooks/useSystemSettings";
 const MODULE_CONFIG = [
   {
     key: 'spaces' as const,
-    title: 'Spaces Management',
-    description: 'Manage buildings, floors, rooms, and space layouts',
+    title: 'Rooms Management',
+    description: 'Manage buildings, floors, and rooms',
     icon: Building2,
   },
   {
@@ -33,7 +33,7 @@ const MODULE_CONFIG = [
   {
     key: 'issues' as const,
     title: 'Issues Management',
-    description: 'Track and resolve facility issues and maintenance requests',
+    description: 'Track and resolve facility issues',
     icon: AlertTriangle,
   },
   {

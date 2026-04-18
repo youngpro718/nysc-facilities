@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { KeyAssignment } from "../types/assignmentTypes";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface EditElevatorPassDialogProps {
   open: boolean;
@@ -76,7 +77,7 @@ export function EditElevatorPassDialog({ open, onOpenChange, assignment, onUpdat
         .eq("id", assignment.id);
 
       if (error) {
-        toast.error("Failed to update assignment: " + error.message);
+        toast.error(`Failed to update assignment: ${getErrorMessage(error)}`);
         return;
       }
 
