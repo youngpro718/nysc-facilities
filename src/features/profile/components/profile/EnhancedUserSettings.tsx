@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Loader2, Bell, Mail, Monitor, Palette, Sun, Moon,
-  Lock, Shield, Accessibility, Bot,
+  Lock, Shield, Accessibility,
   AlertTriangle, CheckCircle, Download, RefreshCw,
-  Eye, EyeOff, Trash2,
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
