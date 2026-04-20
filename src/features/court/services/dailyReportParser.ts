@@ -117,12 +117,7 @@ export async function parseDailyReportPDF(file: File): Promise<{
       };
     }
 
-    logger.debug(`📝 Extracted ${text.length} characters — sending to Gemini via edge function...`);
-
-    const geminiKey    = localStorage.getItem('gemini_api_key_override')    || undefined;
-    const openaiKey    = localStorage.getItem('openai_api_key_override')    || undefined;
-    const anthropicKey = localStorage.getItem('anthropic_api_key_override') || undefined;
-    const providerPref = localStorage.getItem('ai_provider_preference')     || undefined;
+    logger.debug(`📝 Extracted ${text.length} characters — sending to extract-court-data edge function...`);
 
     // Fire-and-forget: log invocation for cost visibility and future rate limiting.
     // Do not await — never block extraction on logging.
@@ -134,14 +129,11 @@ export async function parseDailyReportPDF(file: File): Promise<{
       }
     });
 
+    // AI provider keys are managed server-side via Supabase secrets — never sent from the client.
     const { data, error } = await supabase.functions.invoke('extract-court-data', {
       body: {
         pdfText: text,
         fileName: file.name,
-        ...(geminiKey    ? { geminiApiKey:    geminiKey    } : {}),
-        ...(openaiKey    ? { openaiApiKey:    openaiKey    } : {}),
-        ...(anthropicKey ? { anthropicApiKey: anthropicKey } : {}),
-        ...(providerPref ? { preferredProvider: providerPref } : {}),
       },
     });
 
