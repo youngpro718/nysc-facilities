@@ -455,6 +455,9 @@ export function EnhancedUserSettings() {
     setSearchParams(next, { replace: true });
   };
 
+  // One-time purge: remove any AI API keys that older app versions saved to localStorage.
+  useEffect(() => { purgeLegacyAiKeysFromLocalStorage(); }, []);
+
   // Apply theme/display settings immediately when they change.
   useEffect(() => {
     if (isLoading) return;
