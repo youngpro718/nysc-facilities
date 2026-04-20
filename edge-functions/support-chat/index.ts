@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // ALLOWED_ORIGINS is a comma-separated list, e.g. "https://app.example.com,https://staging.example.com".
 // If unset, falls back to "*" so dev/testing keeps working without configuration.
