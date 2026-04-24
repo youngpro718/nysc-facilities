@@ -24,7 +24,7 @@ const CHIPS: {
   dot?: string;
   ring: string;
 }[] = [
-  { key: "all", label: "All", ring: "ring-primary text-primary" },
+  { key: "all", label: "All", ring: "ring-primary" },
   {
     key: "available",
     label: "Available",
@@ -72,8 +72,10 @@ export function MobileKeyStatusChips({
             <span className="text-sm font-medium">{c.label}</span>
             <span
               className={cn(
-                "text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground tabular-nums",
-                isActive && "bg-background",
+                "text-xs px-2 py-0.5 rounded-full tabular-nums",
+                isActive
+                  ? "bg-muted/60 text-foreground"
+                  : "bg-muted text-muted-foreground",
               )}
             >
               {count}
