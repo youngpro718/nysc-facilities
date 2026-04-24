@@ -15,10 +15,17 @@ import { supabase } from "@/lib/supabase";
 import { KeyData } from "@features/keys/components/keys/types/KeyTypes";
 import { DataState, useDataState } from "@/ui/DataState";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { useIsMobile } from "@/shared/hooks/use-mobile";
+import { MobileKeyManagement } from "@features/keys/components/keys/mobile/MobileKeyManagement";
 
 export default function Keys() {
   const { canAdmin } = useRolePermissions();
   const canManageKeys = canAdmin('keys');
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileKeyManagement />;
+  }
   const keyStatsQuery = useQuery({
     queryKey: ["keys-stats"],
     queryFn: async () => {
