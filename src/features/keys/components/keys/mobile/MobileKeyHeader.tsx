@@ -6,14 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 export function MobileKeyHeader() {
   const navigate = useNavigate();
-  // useNotifications may or may not exist in this exact shape — fall back gracefully
-  let unreadCount = 0;
-  try {
-    const notif = (useNotifications as unknown as () => { unreadCount?: number })?.();
-    unreadCount = notif?.unreadCount ?? 0;
-  } catch {
-    unreadCount = 0;
-  }
+  const { unreadCount } = useNotifications();
 
   return (
     <div className="flex items-start justify-between gap-3">
