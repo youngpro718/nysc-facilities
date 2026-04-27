@@ -6,14 +6,8 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@features/auth/hooks/useAuth';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -100,19 +94,19 @@ export function QuickReorderDialog({ open, onOpenChange, item }: QuickReorderDia
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Quick Reorder
-          </DialogTitle>
-          <DialogDescription>
-            Create a supply request to restock this item
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={
+        <span className="flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5" />
+          Quick Reorder
+        </span>
+      }
+      description="Create a supply request to restock this item"
+    >
+        <div className="space-y-4">
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
             <Package className="h-8 w-8 text-muted-foreground" />
             <div>
@@ -170,7 +164,6 @@ export function QuickReorderDialog({ open, onOpenChange, item }: QuickReorderDia
             {reorderMutation.isPending ? 'Submitting...' : 'Submit Reorder'}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
