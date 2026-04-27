@@ -248,7 +248,6 @@ export function RoutingRuleDialog({ open, onOpenChange, editingRule }: RoutingRu
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
