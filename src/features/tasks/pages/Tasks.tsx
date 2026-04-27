@@ -24,6 +24,8 @@ import { TaskCard } from "@features/tasks/components/TaskCard";
 import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPanel";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
+import { useIsMobile } from "@shared/hooks/use-mobile";
 import type { StaffTask, TaskType, TaskPriority } from "@features/tasks/types/staffTasks";
 import { TASK_TYPE_LABELS } from "@features/tasks/types/staffTasks";
 
