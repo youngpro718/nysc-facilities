@@ -928,18 +928,21 @@ export function AddJudgeDialog({
     },
   });
 
+  const addTitleNode = (
+    <div className="flex items-center gap-2">
+      <UserPlus className="h-5 w-5" />
+      Add New Judge
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Add New Judge
-          </DialogTitle>
-          <DialogDescription>
-            Enter the judge's info. Court attorney, chambers, and courtroom are optional but recommended.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="md"
+      title={addTitleNode}
+      description="Enter the judge's info. Court attorney, chambers, and courtroom are optional but recommended."
+    >
 
         <div className="space-y-3 py-2">
           {/* Name row */}
@@ -1134,7 +1137,7 @@ export function AddJudgeDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -1151,8 +1154,7 @@ export function AddJudgeDialog({
           >
             {addMutation.isPending ? "Adding..." : "Add Judge"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
