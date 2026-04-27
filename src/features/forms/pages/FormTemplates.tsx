@@ -12,6 +12,7 @@ import { useFacilityEmail } from '@features/admin/hooks/useFacilityEmail';
 import { EmailFormDialog } from '@features/forms/components/forms/EmailFormDialog';
 import { QRCodeGenerator } from '@features/forms/components/forms/QRCodeGenerator';
 import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 const formTemplates = [
   {
@@ -164,15 +165,14 @@ export default function FormTemplates() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-xl sm:text-3xl font-bold mb-2">Form Templates</h1>
-          <p className="text-muted-foreground text-sm">
-            Fill out forms online instantly or download PDFs - All submissions are tracked in the system
-          </p>
-        </div>
+      <PageHeader
+        title="Form Templates"
+        description="Fill out forms online instantly or download PDFs — All submissions are tracked in the system"
+        icon={ClipboardList}
+        className="mb-0"
+      >
         {isAdmin && (
-          <div className="flex flex-wrap gap-2 shrink-0">
+          <>
             <Button onClick={() => window.location.href = '/admin/form-templates'} size="sm">
               <Plus className="w-4 h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Create Custom Template</span>
@@ -188,9 +188,9 @@ export default function FormTemplates() {
               <span className="hidden sm:inline">QR Code</span>
               <span className="sm:hidden">QR</span>
             </Button>
-          </div>
+          </>
         )}
-      </div>
+      </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {formTemplates.map((template) => {

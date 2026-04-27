@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QuickProcessDialog } from '@features/forms/components/forms/QuickProcessDialog';
 import { CourtReportPreview } from '@features/court/components/court-reports/CourtReportPreview';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Inbox } from 'lucide-react';
 
 export default function FormIntake() {
   const [uploading, setUploading] = useState(false);
@@ -181,18 +183,17 @@ export default function FormIntake() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl sm:text-3xl font-bold mb-2">Form Intake System</h1>
-          <p className="text-muted-foreground">
-            Upload completed forms - All submissions are tracked in the app system
-          </p>
-        </div>
+      <PageHeader
+        title="Form Intake System"
+        description="Upload completed forms — All submissions are tracked in the app system"
+        icon={Inbox}
+        className="mb-0"
+      >
         <Button variant="outline" onClick={() => window.location.href = '/form-templates'}>
           <FileText className="w-4 h-4 mr-2" />
           View Form Templates
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Upload Area */}
       <Card className="p-8">

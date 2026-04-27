@@ -10,6 +10,8 @@ import { Search, UserPlus } from "lucide-react";
 import { UserImportExport } from "@features/admin/components/users/UserImportExport";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminAddUserDialog } from "@features/admin/components/admin/AdminAddUserDialog";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Users as UsersIcon } from "lucide-react";
 
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,21 +66,18 @@ export default function Users() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-2">
-          <h2 className="text-xl sm:text-3xl font-bold tracking-tight">User Management</h2>
-          <p className="text-muted-foreground">
-            Manage user accounts, profiles, and room assignments
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <UserImportExport users={users} onImportSuccess={() => refetch()} />
-          <Button onClick={() => setAddUserOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="User Management"
+        description="Manage user accounts, profiles, and room assignments"
+        icon={UsersIcon}
+        className="mb-0"
+      >
+        <UserImportExport users={users} onImportSuccess={() => refetch()} />
+        <Button onClick={() => setAddUserOpen(true)}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add User
+        </Button>
+      </PageHeader>
 
       <Card>
         <CardHeader>
