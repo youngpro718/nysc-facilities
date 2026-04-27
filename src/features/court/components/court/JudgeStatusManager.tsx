@@ -633,18 +633,21 @@ function EditJudgeDetailsDialog({
     },
   });
 
+  const editTitleNode = (
+    <div className="flex items-center gap-2">
+      <Pencil className="h-5 w-5" />
+      {judgeName} — Details
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Pencil className="h-5 w-5" />
-            {judgeName} — Details
-          </DialogTitle>
-          <DialogDescription>
-            Update court attorney and chambers info.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={editTitleNode}
+      description="Update court attorney and chambers info."
+    >
 
         <div className="space-y-3 py-2">
           <div className="space-y-1">
@@ -680,16 +683,15 @@ function EditJudgeDetailsDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
           <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} size="sm">
             {saveMutation.isPending ? "Saving..." : "Save"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
 
