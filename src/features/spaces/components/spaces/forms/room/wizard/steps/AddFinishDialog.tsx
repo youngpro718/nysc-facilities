@@ -542,7 +542,6 @@ export function AddFinishDialog({
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
