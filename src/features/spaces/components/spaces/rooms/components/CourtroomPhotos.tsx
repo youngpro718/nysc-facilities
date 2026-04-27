@@ -3,11 +3,9 @@ import { useState } from 'react';
 import { getErrorMessage } from "@/lib/errorUtils";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Room } from '../types/RoomTypes';
 import { BadgeInfo, Download, Maximize2, Image as ImageIcon, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -117,6 +115,29 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
   
   const totalPhotos = judgeViewPhotos.length + audienceViewPhotos.length;
   
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={clearPhotos}
+        disabled={isClearing}
+        className="text-destructive hover:bg-destructive/10"
+      >
+        <Trash2 className="h-4 w-4 mr-1" />
+        {isClearing ? 'Clearing...' : 'Clear All'}
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleFullscreen}
+        className="h-8 w-8"
+      >
+        <Maximize2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -129,35 +150,12 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
           <span>View Courtroom Photos ({totalPhotos})</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className={cn(
-        "transition-all duration-300 ease-in-out",
-        fullscreen ? "max-w-[90vw] h-[90vh]" : "sm:max-w-md"
-      )}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Courtroom Photos - {room.name}</span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearPhotos}
-                disabled={isClearing}
-                className="text-red-500 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/20"
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                {isClearing ? 'Clearing...' : 'Clear All'}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleFullscreen}
-                className="h-8 w-8"
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogTitle>
-        </DialogHeader>
+      <ModalFrame
+        title={`Courtroom Photos - ${room.name}`}
+        size={fullscreen ? 'xl' : 'sm'}
+        headerRight={headerActions}
+        className={fullscreen ? 'h-[90vh]' : undefined}
+      >
         
         <div className={cn(
           "space-y-4 mt-2",
@@ -274,7 +272,7 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
             </div>
           )}
         </div>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }
