@@ -77,13 +77,34 @@ export default {
           foreground: "hsl(var(--sidebar-foreground))",
           border: "hsl(var(--sidebar-border))",
         },
-        /* PRD 3.1 — Status semantic colors */
+        /* PRD 3.1 — Status semantic colors (border/icon/text) */
         status: {
           critical: "hsl(var(--status-critical))",
           warning: "hsl(var(--status-warning))",
           operational: "hsl(var(--status-operational))",
           info: "hsl(var(--status-info))",
           neutral: "hsl(var(--status-neutral))",
+        },
+        /* Soft semantic surfaces (low-saturation tinted backgrounds) */
+        "surface-critical": {
+          DEFAULT: "hsl(var(--surface-critical))",
+          foreground: "hsl(var(--surface-critical-foreground))",
+        },
+        "surface-warning": {
+          DEFAULT: "hsl(var(--surface-warning))",
+          foreground: "hsl(var(--surface-warning-foreground))",
+        },
+        "surface-operational": {
+          DEFAULT: "hsl(var(--surface-operational))",
+          foreground: "hsl(var(--surface-operational-foreground))",
+        },
+        "surface-info": {
+          DEFAULT: "hsl(var(--surface-info))",
+          foreground: "hsl(var(--surface-info-foreground))",
+        },
+        "surface-neutral": {
+          DEFAULT: "hsl(var(--surface-neutral))",
+          foreground: "hsl(var(--surface-neutral-foreground))",
         },
         /* PRD 3.1 — Text hierarchy */
         text: {
