@@ -231,7 +231,6 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                         )}
                     </Button>
                 </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        </ModalFrame>
     );
 }
