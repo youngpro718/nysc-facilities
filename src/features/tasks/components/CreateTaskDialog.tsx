@@ -166,10 +166,7 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
-        </DialogHeader>
+      <ModalFrame title="Create New Task" size="md">
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
