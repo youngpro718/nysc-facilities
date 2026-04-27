@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -161,15 +156,17 @@ export function InventoryAdjustmentDialog({
     : item.quantity;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Adjust Inventory
-          </DialogTitle>
-        </DialogHeader>
-
+    <ModalFrame
+      open={open}
+      onOpenChange={(o) => { if (!o) handleClose(); }}
+      size="sm"
+      title={
+        <span className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          Adjust Inventory
+        </span>
+      }
+    >
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Item Info */}
           <div className="p-4 bg-muted/50 rounded-lg">
@@ -252,7 +249,6 @@ export function InventoryAdjustmentDialog({
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

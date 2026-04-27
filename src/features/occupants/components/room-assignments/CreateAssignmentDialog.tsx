@@ -2,14 +2,8 @@
 import React, { useState } from 'react';
 import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -229,15 +223,13 @@ export function CreateAssignmentDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create Room Assignment</DialogTitle>
-          <DialogDescription>
-            Assign a person to a room with specific details.
-          </DialogDescription>
-        </DialogHeader>
-        
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title="Create Room Assignment"
+      description="Assign a person to a room with specific details."
+    >
         <div className="space-y-4">
           {/* Conflict Detection */}
           {conflicts.length > 0 && (
@@ -360,7 +352,6 @@ export function CreateAssignmentDialog({
             {isCreating ? "Creating..." : "Create Assignment"}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

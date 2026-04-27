@@ -1,5 +1,5 @@
 
-import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ModalContent } from "@shared/components/common/common/ModalFrame";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -11,10 +11,7 @@ interface ScheduleDialogProps {
 
 export function ScheduleDialog({ scheduledReports }: ScheduleDialogProps) {
   return (
-    <DialogContent className="max-w-3xl">
-      <DialogHeader>
-        <DialogTitle>Scheduled Reports</DialogTitle>
-      </DialogHeader>
+    <ModalContent size="lg" title="Scheduled Reports">
       <ScrollArea className="h-[400px]">
         <div className="space-y-4">
           {scheduledReports.map((report) => (
@@ -43,7 +40,6 @@ export function ScheduleDialog({ scheduledReports }: ScheduleDialogProps) {
           ))}
         </div>
       </ScrollArea>
-    </DialogContent>
+    </ModalContent>
   );
 }
-
