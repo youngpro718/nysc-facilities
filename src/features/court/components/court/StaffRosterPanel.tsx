@@ -20,14 +20,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Plus, Search, MoreHorizontal, UserMinus, Users, Loader2 } from 'lucide-react';
 import { useCourtPersonnel, PersonnelOption } from '@features/court/hooks/useCourtPersonnel';
 import { useAbsentStaffNames } from '@features/court/hooks/useStaffAbsences';
@@ -268,58 +261,55 @@ export function StaffRosterPanel() {
             />
 
             {/* Departure Dialog — asks for reason */}
-            <Dialog open={!!departTarget} onOpenChange={(open) => {
-                if (!open) {
-                    setDepartTarget(null);
-                    setDepartureReason('promoted');
-                    setDepartureNotes('');
-                }
-            }}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Remove {departTarget?.name}</DialogTitle>
-                        <DialogDescription>
-                            This will remove them from all court assignments. Select the reason they're leaving.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-2">
-                        {/* Reason Selection */}
-                        <div className="space-y-2">
-                            <Label>Reason</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {DEPARTURE_REASONS.map((reason) => (
-                                    <Button
-                                        key={reason.value}
-                                        variant={departureReason === reason.value ? 'default' : 'outline'}
-                                        size="sm"
-                                        className="justify-start text-xs h-auto py-2 px-3"
-                                        onClick={() => setDepartureReason(reason.value)}
-                                    >
-                                        <div className="text-left">
-                                            <div className="font-medium">{reason.label}</div>
-                                            <div className={`text-[10px] ${departureReason === reason.value ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                                                {reason.description}
-                                            </div>
+            <ModalFrame
+                open={!!departTarget}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDepartTarget(null);
+                        setDepartureReason('promoted');
+                        setDepartureNotes('');
+                    }
+                }}
+                size="sm"
+                title={`Remove ${departTarget?.name ?? ''}`}
+                description="This will remove them from all court assignments. Select the reason they're leaving."
+            >
+                <div className="space-y-4">
+                    {/* Reason Selection */}
+                    <div className="space-y-2">
+                        <Label>Reason</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {DEPARTURE_REASONS.map((reason) => (
+                                <Button
+                                    key={reason.value}
+                                    variant={departureReason === reason.value ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="justify-start text-xs h-auto py-2 px-3"
+                                    onClick={() => setDepartureReason(reason.value)}
+                                >
+                                    <div className="text-left">
+                                        <div className="font-medium">{reason.label}</div>
+                                        <div className={`text-[10px] ${departureReason === reason.value ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                                            {reason.description}
                                         </div>
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Optional Notes */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="departure-notes">Notes (optional)</Label>
-                            <Input
-                                id="departure-notes"
-                                value={departureNotes}
-                                onChange={(e) => setDepartureNotes(e.target.value)}
-                                placeholder="e.g., Promoted to Bronx Supreme Court"
-                            />
+                                    </div>
+                                </Button>
+                            ))}
                         </div>
                     </div>
 
-                    <DialogFooter>
+                    {/* Optional Notes */}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="departure-notes">Notes (optional)</Label>
+                        <Input
+                            id="departure-notes"
+                            value={departureNotes}
+                            onChange={(e) => setDepartureNotes(e.target.value)}
+                            placeholder="e.g., Promoted to Bronx Supreme Court"
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
                         <Button
                             variant="outline"
                             onClick={() => setDepartTarget(null)}
@@ -338,9 +328,9 @@ export function StaffRosterPanel() {
                                 'Remove from Command'
                             )}
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </div>
+                </div>
+            </ModalFrame>
         </>
     );
 }
