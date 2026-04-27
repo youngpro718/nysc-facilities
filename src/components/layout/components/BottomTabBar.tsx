@@ -95,8 +95,8 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                   <Icon className={cn("h-[18px] w-[18px]", isActive && "stroke-[2.5]")} aria-hidden="true" />
                   {badgeCount > 0 && (
                     <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-2 h-4 min-w-[16px] px-1 text-[10px] font-bold"
+                      variant="secondary"
+                      className="absolute -top-1 -right-2 h-4 min-w-[16px] px-1 text-[10px] font-bold bg-status-info text-primary-foreground border-0"
                     >
                       {badgeCount > 99 ? '99+' : badgeCount}
                     </Badge>

@@ -88,14 +88,14 @@ export function CommandCenter() {
 
       {/* Warning Alerts */}
       {warningAlerts.length > 0 && criticalAlerts.length === 0 && (
-        <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
-          <AlertCircle className="h-5 w-5 text-orange-600" />
+        <Alert className="border-status-warning/30 bg-surface-warning text-surface-warning-foreground">
+          <AlertCircle className="h-5 w-5 text-status-warning" />
           <AlertDescription className="flex items-center justify-between">
             <div>
-              <strong className="text-orange-900 dark:text-orange-100">
+              <strong>
                 {warningAlerts.length} Warning{warningAlerts.length !== 1 ? 's' : ''}
               </strong>
-              <p className="text-sm mt-1 text-orange-800 dark:text-orange-200">{warningAlerts[0].message}</p>
+              <p className="text-sm mt-1">{warningAlerts[0].message}</p>
             </div>
           </AlertDescription>
         </Alert>
@@ -296,13 +296,13 @@ export function CommandCenter() {
                   }}
                 >
                   <div className={`p-2 rounded-full ${
-                    item.type === 'issue' ? 'bg-orange-100 dark:bg-orange-950' :
-                    item.type === 'supply_request' ? 'bg-green-100 dark:bg-green-950' :
-                    'bg-blue-100 dark:bg-blue-950'
+                    item.type === 'issue' ? 'bg-surface-warning' :
+                    item.type === 'supply_request' ? 'bg-surface-operational' :
+                    'bg-surface-info'
                   }`}>
-                    {item.type === 'issue' ? <AlertTriangle className="h-4 w-4 text-orange-600" /> :
-                     item.type === 'supply_request' ? <Package className="h-4 w-4 text-green-600" /> :
-                     <Activity className="h-4 w-4 text-blue-600" />}
+                    {item.type === 'issue' ? <AlertTriangle className="h-4 w-4 text-status-warning" /> :
+                     item.type === 'supply_request' ? <Package className="h-4 w-4 text-status-operational" /> :
+                     <Activity className="h-4 w-4 text-status-info" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">

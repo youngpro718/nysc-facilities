@@ -60,17 +60,17 @@ interface TaskCardProps {
 }
 
 const PRIORITY_BORDER_COLORS: Record<StaffTask['priority'], string> = {
-  low: 'border-l-slate-400',
-  medium: 'border-l-blue-500',
-  high: 'border-l-orange-500',
-  urgent: 'border-l-red-500',
+  low: 'border-l-status-neutral',
+  medium: 'border-l-status-info',
+  high: 'border-l-status-warning',
+  urgent: 'border-l-status-critical',
 };
 
 const PRIORITY_DOT_COLORS: Record<StaffTask['priority'], string> = {
-  low: 'bg-slate-400',
-  medium: 'bg-blue-500',
-  high: 'bg-orange-500',
-  urgent: 'bg-red-500',
+  low: 'bg-status-neutral',
+  medium: 'bg-status-info',
+  high: 'bg-status-warning',
+  urgent: 'bg-status-critical',
 };
 
 function DueDateDisplay({ dueDate, status }: { dueDate: string; status: StaffTask['status'] }) {

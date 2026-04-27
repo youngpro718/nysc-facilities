@@ -449,47 +449,47 @@ export default function Operations() {
 
           {/* Quick Stats for Issues */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 dark:bg-red-950 dark:border-red-800">
+            <Card className="bg-surface-critical text-surface-critical-foreground border-status-critical/30">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-red-800 dark:text-red-200">Critical Issues</p>
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{enhancedMetrics.criticalCount}</p>
+                    <p className="text-sm font-medium">Critical Issues</p>
+                    <p className="text-2xl font-bold">{enhancedMetrics.criticalCount}</p>
                   </div>
-                  <AlertTriangle className="h-8 w-8 text-red-500" />
+                  <AlertTriangle className="h-8 w-8 text-status-critical" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 dark:bg-orange-950 dark:border-orange-800">
+            <Card className="bg-surface-warning text-surface-warning-foreground border-status-warning/30">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-orange-800 dark:text-orange-200">In Progress</p>
-                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{enhancedMetrics.inProgress}</p>
+                    <p className="text-sm font-medium">In Progress</p>
+                    <p className="text-2xl font-bold">{enhancedMetrics.inProgress}</p>
                   </div>
-                  <Clock className="h-8 w-8 text-orange-500" />
+                  <Clock className="h-8 w-8 text-status-warning" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-950 dark:border-blue-800">
+            <Card className="bg-surface-info text-surface-info-foreground border-status-info/30">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Active Issues</p>
-                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{enhancedMetrics.activeIssues}</p>
+                    <p className="text-sm font-medium">Active Issues</p>
+                    <p className="text-2xl font-bold">{enhancedMetrics.activeIssues}</p>
                   </div>
-                  <AlertCircle className="h-8 w-8 text-blue-500" />
+                  <AlertCircle className="h-8 w-8 text-status-info" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 dark:bg-green-950 dark:border-green-800">
+            <Card className="bg-surface-operational text-surface-operational-foreground border-status-operational/30">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-green-800 dark:text-green-200">Resolved Today</p>
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{enhancedMetrics.resolvedToday}</p>
+                    <p className="text-sm font-medium">Resolved Today</p>
+                    <p className="text-2xl font-bold">{enhancedMetrics.resolvedToday}</p>
                   </div>
-                  <CheckCircle className="h-8 w-8 text-green-500" />
+                  <CheckCircle className="h-8 w-8 text-status-operational" />
                 </div>
               </CardContent>
             </Card>
