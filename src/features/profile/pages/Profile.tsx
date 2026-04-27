@@ -9,6 +9,7 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { EnhancedUserSettings } from "@features/profile/components/profile/EnhancedUserSettings";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { useAuth } from "@features/auth/hooks/useAuth";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Profile() {
   const navigate = useNavigate();
