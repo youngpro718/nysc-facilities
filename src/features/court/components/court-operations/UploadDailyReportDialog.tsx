@@ -271,16 +271,14 @@ export function UploadDailyReportDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Upload Daily Report</DialogTitle>
-          <DialogDescription>
-            Upload a PDF of the daily court report to automatically extract session data.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="md"
+      title="Upload Daily Report"
+      description="Upload a PDF of the daily court report to automatically extract session data."
+    >
+      <div className="space-y-4">
           {/* File Upload */}
           <div className="space-y-2">
             <Label htmlFor="file-upload">Select File</Label>
@@ -387,12 +385,12 @@ export function UploadDailyReportDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={handleCancel} disabled={isExtracting}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleExtract} 
+          <Button
+            onClick={handleExtract}
             disabled={!file || isExtracting || extractCooldown || extractionStatus === 'success'}
           >
             {isExtracting ? (
@@ -409,8 +407,8 @@ export function UploadDailyReportDialog({
               </>
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </ModalFrame>
   );
 }
