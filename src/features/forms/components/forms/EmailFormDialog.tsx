@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -89,17 +90,18 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-5 h-5" />
-            Email Interactive Form Link
-          </DialogTitle>
-          <DialogDescription>
-            Send a link to an online form that can be filled out and submitted instantly
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onClose}
+      size="lg"
+      title={
+        <span className="flex items-center gap-2">
+          <Mail className="w-5 h-5" />
+          Email Interactive Form Link
+        </span>
+      }
+      description="Send a link to an online form that can be filled out and submitted instantly"
+    >
 
         <div className="space-y-4">
           {/* Form Type Selection */}
@@ -181,7 +183,6 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
             {sending ? 'Composing...' : 'Compose Email'}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -153,17 +154,18 @@ export function QuickProcessDialog({ submission, open, onClose }: QuickProcessDi
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Process Form Submission
-          </DialogTitle>
-          <DialogDescription>
-            Enter the details from the PDF to create the request in the system
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onClose}
+      size="lg"
+      title={
+        <span className="flex items-center gap-2">
+          <FileText className="w-5 h-5" />
+          Process Form Submission
+        </span>
+      }
+      description="Enter the details from the PDF to create the request in the system"
+    >
 
         <div className="space-y-4">
           {/* PDF Reference */}
@@ -279,7 +281,6 @@ export function QuickProcessDialog({ submission, open, onClose }: QuickProcessDi
             {submitting ? 'Creating...' : 'Create Request'}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

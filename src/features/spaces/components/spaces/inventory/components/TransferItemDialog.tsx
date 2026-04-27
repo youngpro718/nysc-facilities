@@ -2,14 +2,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import {
   Select,
   SelectContent,
@@ -78,14 +72,13 @@ export function TransferItemDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Transfer Item</DialogTitle>
-          <DialogDescription>
-            Move <strong>{item.name}</strong> to a different room.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title="Transfer Item"
+      description={<>Move <strong>{item.name}</strong> to a different room.</>}
+    >
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="destination-room">Destination Room</Label>
@@ -120,7 +113,6 @@ export function TransferItemDialog({
             {isTransferring ? "Transferring..." : "Transfer"}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

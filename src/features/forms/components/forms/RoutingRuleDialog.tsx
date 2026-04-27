@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -131,14 +125,13 @@ export function RoutingRuleDialog({ open, onOpenChange, editingRule }: RoutingRu
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editingRule ? "Edit Routing Rule" : "Create Routing Rule"}</DialogTitle>
-          <DialogDescription>
-            Configure how form submissions should be automatically routed
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="lg"
+      title={editingRule ? "Edit Routing Rule" : "Create Routing Rule"}
+      description="Configure how form submissions should be automatically routed"
+    >
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -255,7 +248,6 @@ export function RoutingRuleDialog({ open, onOpenChange, editingRule }: RoutingRu
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
