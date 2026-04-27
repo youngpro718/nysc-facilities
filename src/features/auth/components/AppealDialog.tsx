@@ -2,14 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -83,15 +77,13 @@ export function AppealDialog({ open, onOpenChange }: AppealDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Request Account Review</DialogTitle>
-          <DialogDescription>
-            Submit an appeal to request re-review of your account. An administrator will review your
-            request and may approve you for re-evaluation.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={handleClose}
+      size="md"
+      title="Request Account Review"
+      description="Submit an appeal to request re-review of your account. An administrator will review your request and may approve you for re-evaluation."
+    >
 
         {success ? (
           <Alert className="bg-green-50 border-green-200">
