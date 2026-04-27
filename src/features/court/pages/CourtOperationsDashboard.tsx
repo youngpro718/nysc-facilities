@@ -28,6 +28,7 @@ import { useCourtOperationsCounts } from "@features/court/hooks/useCourtOperatio
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export const CourtOperationsDashboard = () => {
   const [tempLocationOpen, setTempLocationOpen] = useState(false);
@@ -126,15 +127,12 @@ export const CourtOperationsDashboard = () => {
       <Breadcrumb />
 
       {/* Page Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-primary/10">
-          <Gavel className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Court Operations</h2>
-          <p className="text-sm text-muted-foreground">Manage court sessions, assignments, and staff</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Court Operations"
+        description="Manage court sessions, assignments, and staff"
+        icon={Gavel}
+        className="mb-0"
+      />
 
       {/* Global Status Alerts (formerly Today Tab) */}
       <TodaysStatusDashboard onNavigateToTab={setTab} />
