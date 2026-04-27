@@ -4,10 +4,9 @@ import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StatusCard } from "@/components/ui/StatusCard";
 import {
   AlertTriangle,
@@ -17,13 +16,10 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  TrendingUp,
   Activity,
-  Users,
   RefreshCw,
   Zap,
-  Boxes,
-  Lightbulb
+  Lightbulb,
 } from "lucide-react";
 
 // Import existing components
@@ -32,6 +28,7 @@ import { IssueGroupingControls } from "@features/issues/components/admin-issues/
 import { OperationsOverviewTab } from "@features/operations/components/operations/OperationsOverviewTab";
 import { MaintenanceTab } from "@features/operations/components/operations/MaintenanceTab";
 import { LightingTab } from "@features/operations/components/operations/LightingTab";
+import { BuildingFilterBar } from "@features/operations/components/operations/BuildingFilterBar";
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@features/issues/types/issues";
 
 
@@ -52,6 +49,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Operations() {
   const [searchParams, setSearchParams] = useSearchParams();
