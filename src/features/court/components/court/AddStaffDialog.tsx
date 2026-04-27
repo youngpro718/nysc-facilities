@@ -2,13 +2,9 @@ import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
     DialogFooter,
-    DialogHeader,
-    DialogTitle,
 } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -114,10 +110,13 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
         : !!(firstName.trim() && lastName.trim());
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Add Staff Member</DialogTitle>
+        <ModalFrame
+            open={open}
+            onOpenChange={onOpenChange}
+            size="sm"
+            title="Add Staff Member"
+            description="Add a new clerk, sergeant, or officer to the system."
+        >
                     <DialogDescription>
                         Add a new clerk, sergeant, or officer to the system.
                     </DialogDescription>
