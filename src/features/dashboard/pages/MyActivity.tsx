@@ -45,6 +45,7 @@ import { useIsMobile } from "@shared/hooks/use-mobile";
 import { UserTasksTab } from "@features/tasks/components/UserTasksTab";
 import { SimpleReportWizard } from "@features/issues/components/issues/wizard/SimpleReportWizard";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 // Status configurations
 const supplyStatusConfig: Record<string, { icon: LucideIcon; label: string; color: string }> = {
