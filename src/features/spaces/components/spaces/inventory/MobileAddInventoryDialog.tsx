@@ -181,15 +181,9 @@ export function MobileAddInventoryDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg w-[95vw] max-h-[95vh] p-0 gap-0">
-        <DialogHeader className="p-4 pb-0">
-          <DialogTitle>Add New Item</DialogTitle>
-        </DialogHeader>
-        
-        <ScrollArea className="flex-1 px-4 pb-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+    <ModalFrame open={open} onOpenChange={handleOpenChange} size="md" title="Add New Item">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               
               {/* Photo Section */}
               <div className="space-y-3">
