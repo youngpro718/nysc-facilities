@@ -444,7 +444,7 @@ export function CoverageAssignmentDialog({
             </div>
           </div>
 
-          <DialogFooter className="mt-6">
+          <div className="flex justify-end gap-2 mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -454,9 +454,8 @@ export function CoverageAssignmentDialog({
             >
               {coverage ? 'Update' : 'Add'} Coverage
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
