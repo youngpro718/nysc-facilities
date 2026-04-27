@@ -2,7 +2,7 @@ import { useState } from "react";
 import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,12 +116,12 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Schedule Maintenance</DialogTitle>
-        </DialogHeader>
-
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="lg"
+      title="Schedule Maintenance"
+    >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -315,7 +315,6 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 };

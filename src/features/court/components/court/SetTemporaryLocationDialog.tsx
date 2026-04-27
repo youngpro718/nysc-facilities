@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -137,14 +137,17 @@ export const SetTemporaryLocationDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Set Temporary Location
-          </DialogTitle>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={
+        <span className="flex items-center gap-2">
+          <MapPin className="h-5 w-5" />
+          Set Temporary Location
+        </span>
+      }
+    >
 
         {courtroomInfo && (
           <div className="bg-gray-50 p-3 rounded-lg mb-4">
@@ -206,8 +209,7 @@ export const SetTemporaryLocationDialog = ({
               </Button>
             </div>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+      </form>
+    </ModalFrame>
   );
 };
