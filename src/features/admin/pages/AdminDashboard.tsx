@@ -46,9 +46,6 @@ const AdminDashboard = () => {
 
       <ProductionSecurityGuard />
 
-      {/* Command Center first — surfaces critical alerts immediately */}
-      <CommandCenter />
-
       {hasBuildings ? (
         <BuildingsGrid
           buildings={buildings as never}
@@ -68,6 +65,9 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Command Center — alerts and quick actions below building overview */}
+      <CommandCenter />
     </div>
   );
 };
