@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,13 +64,9 @@ export function EditLockboxDialog({ lockbox, open, onOpenChange, onSuccess }: Ed
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Lockbox</DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4 py-4">
+    <ModalFrame open={open} onOpenChange={onOpenChange} size="sm" title="Edit Lockbox">
+
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label>Lockbox Name <span className="text-destructive">*</span></Label>
             <Input 
@@ -110,7 +107,6 @@ export function EditLockboxDialog({ lockbox, open, onOpenChange, onSuccess }: Ed
             Save Changes
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
