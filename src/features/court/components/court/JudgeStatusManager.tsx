@@ -266,18 +266,21 @@ function JudgeDepartureDialog({
     (assignmentAction === "clear" || (assignmentAction === "reassign" && newJustice)) &&
     (chambersAction === "clear" || (chambersAction === "reassign" && newChambersOccupant));
 
+  const departureTitleNode = (
+    <div className="flex items-center gap-2 text-destructive">
+      <AlertTriangle className="h-5 w-5" />
+      Judge Departure — {judgeName}
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600">
-            <AlertTriangle className="h-5 w-5" />
-            Judge Departure — {judgeName}
-          </DialogTitle>
-          <DialogDescription>
-            Before removing this judge, decide who takes over their courtroom and chambers.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={departureTitleNode}
+      description="Before removing this judge, decide who takes over their courtroom and chambers."
+    >
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -399,7 +402,7 @@ function JudgeDepartureDialog({
           </div>
         )}
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
@@ -421,9 +424,8 @@ function JudgeDepartureDialog({
               </>
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
 
