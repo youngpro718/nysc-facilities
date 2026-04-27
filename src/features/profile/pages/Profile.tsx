@@ -27,7 +27,8 @@ export default function Profile() {
   if (isMobile) {
     return (
       <div className="space-y-4">
-        
+        <PageHeader title="Profile & Settings" icon={User} />
+
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-12">
             <TabsTrigger value="profile" className="h-10 text-sm touch-manipulation">
