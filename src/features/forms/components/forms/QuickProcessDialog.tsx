@@ -281,7 +281,6 @@ export function QuickProcessDialog({ submission, open, onClose }: QuickProcessDi
             {submitting ? 'Creating...' : 'Create Request'}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

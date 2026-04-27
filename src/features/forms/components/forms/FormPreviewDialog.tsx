@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -186,21 +186,20 @@ export function FormPreviewDialog({ open, onClose, formType }: FormPreviewDialog
   const Icon = config.icon;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`p-3 rounded-lg bg-muted`}>
-              <Icon className={`w-6 h-6 ${config.color}`} />
-            </div>
-            <div>
-              <DialogTitle className="text-2xl">{config.title}</DialogTitle>
-              <DialogDescription>
-                Preview of the form fields users will fill out
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onClose}
+      size="lg"
+      title={
+        <span className="flex items-center gap-3">
+          <span className={`p-3 rounded-lg bg-muted`}>
+            <Icon className={`w-6 h-6 ${config.color}`} />
+          </span>
+          <span className="text-2xl">{config.title}</span>
+        </span>
+      }
+      description="Preview of the form fields users will fill out"
+    >
 
         <Card className="border-2">
           <CardHeader className="bg-muted/50">

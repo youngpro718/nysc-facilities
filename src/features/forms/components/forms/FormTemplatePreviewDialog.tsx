@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { FormTemplate } from '@features/forms/types/formTemplate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -90,11 +90,12 @@ export function FormTemplatePreviewDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Form Preview: {template.template_name}</DialogTitle>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="lg"
+      title={`Form Preview: ${template.template_name}`}
+    >
 
         <div className="space-y-6">
           {/* Template Info */}
