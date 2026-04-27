@@ -420,53 +420,7 @@ export default function Operations() {
             </div>
           </div>
 
-          {/* Quick Stats for Issues */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-surface-critical text-surface-critical-foreground border-status-critical/30">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Critical Issues</p>
-                    <p className="text-2xl font-bold">{enhancedMetrics.criticalCount}</p>
-                  </div>
-                  <AlertTriangle className="h-8 w-8 text-status-critical" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-surface-warning text-surface-warning-foreground border-status-warning/30">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">In Progress</p>
-                    <p className="text-2xl font-bold">{enhancedMetrics.inProgress}</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-status-warning" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-surface-info text-surface-info-foreground border-status-info/30">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Active Issues</p>
-                    <p className="text-2xl font-bold">{enhancedMetrics.activeIssues}</p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-status-info" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-surface-operational text-surface-operational-foreground border-status-operational/30">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Resolved Today</p>
-                    <p className="text-2xl font-bold">{enhancedMetrics.resolvedToday}</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-status-operational" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+
 
           {/* Issues Controls */}
           <div data-tour="ops-filters">
