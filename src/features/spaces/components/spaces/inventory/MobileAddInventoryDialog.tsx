@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Camera, Upload, X } from "lucide-react";
 import { useToast } from "@shared/hooks/use-toast";
 import { STORAGE_BUCKETS, QUERY_CONFIG } from '@/config';
@@ -435,10 +435,8 @@ export function MobileAddInventoryDialog({
                    isUploadingPhoto ? "Uploading..." : "Add Item"}
                 </Button>
               </div>
-            </form>
-          </Form>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+          </form>
+        </Form>
+    </ModalFrame>
   );
 }
