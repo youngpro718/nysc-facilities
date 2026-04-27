@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@shared/hooks/use-toast";
@@ -361,15 +362,13 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: {
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Record Staff Absence</DialogTitle>
-          <DialogDescription>
-            Record a staff member&apos;s absence and send notifications to administrators
-          </DialogDescription>
-        </DialogHeader>
-
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title="Record Staff Absence"
+      description="Record a staff member's absence and send notifications to administrators"
+    >
         <div className="space-y-4">
           <div>
             <Label>Staff Member</Label>
@@ -463,8 +462,7 @@ function AddAbsenceDialog({ open, onOpenChange, availableStaff }: {
             Record Absence
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
 
@@ -513,15 +511,13 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: {
   if (!absence) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Assign Coverage</DialogTitle>
-          <DialogDescription>
-            Assign a staff member to cover for {(absence?.staff as { display_name: string } | undefined)?.display_name || "Unknown"}
-          </DialogDescription>
-        </DialogHeader>
-
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title="Assign Coverage"
+      description={`Assign a staff member to cover for ${(absence?.staff as { display_name: string } | undefined)?.display_name || "Unknown"}`}
+    >
         <div className="space-y-4">
           <div className="p-3 bg-muted rounded-lg text-sm">
             <div className="font-medium mb-1">Absence Details</div>
@@ -568,7 +564,6 @@ function AssignCoverageDialog({ open, onOpenChange, absence, availableStaff }: {
             Assign Coverage
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -134,12 +129,12 @@ export const CreateAssignmentDialog = ({
   const selectedRoom = courtrooms.find(r => r.id === formData.room_id);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Create Court Assignment</DialogTitle>
-        </DialogHeader>
-
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="lg"
+      title="Create Court Assignment"
+    >
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Room Selection */}
           <div className="space-y-2">
@@ -263,7 +258,6 @@ export const CreateAssignmentDialog = ({
             submitLabel="Create Assignment"
           />
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 };

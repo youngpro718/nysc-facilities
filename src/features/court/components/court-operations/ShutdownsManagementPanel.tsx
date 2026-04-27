@@ -13,13 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import {
   AlertTriangle,
   CheckCircle,
@@ -291,13 +286,15 @@ const CreateShutdownDialog = ({
           New Shutdown
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <ModalFrame
+        size="sm"
+        title={
+          <span className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
             Schedule Room Shutdown
-          </DialogTitle>
-        </DialogHeader>
+          </span>
+        }
+      >
         <div className="space-y-4 pt-2">
           <div className="space-y-1.5">
             <Label className="text-xs">Room *</Label>
@@ -406,7 +403,7 @@ const CreateShutdownDialog = ({
             {createMutation.isPending ? "Creating..." : "Schedule Shutdown"}
           </Button>
         </div>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 };

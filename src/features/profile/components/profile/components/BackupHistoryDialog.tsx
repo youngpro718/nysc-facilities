@@ -1,5 +1,5 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw } from "lucide-react";
@@ -21,11 +21,12 @@ export function BackupHistoryDialog({
   onRestore 
 }: BackupHistoryDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Backup History</DialogTitle>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="lg"
+      title="Backup History"
+    >
         <ScrollArea className="h-[400px] rounded-md border p-4">
           <div className="space-y-4">
             {backupVersions.map((backup) => (
@@ -73,7 +74,6 @@ export function BackupHistoryDialog({
             ))}
           </div>
         </ScrollArea>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

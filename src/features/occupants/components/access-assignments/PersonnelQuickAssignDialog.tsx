@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -141,29 +141,31 @@ export function PersonnelQuickAssignDialog({
 
   if (!person) return null;
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              {person.avatar_url && <AvatarImage src={person.avatar_url} alt={person.name} />}
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <span>{person.name}</span>
-              <p className="text-sm font-normal text-muted-foreground">
-                {person.title || person.department || (person.is_registered_user ? 'User' : 'Personnel')}
-              </p>
-            </div>
-          </DialogTitle>
-          <DialogDescription>
-            Manage room assignments for this person.
-          </DialogDescription>
-        </DialogHeader>
+  const titleNode = (
+    <div className="flex items-center gap-3">
+      <Avatar className="h-10 w-10">
+        {person.avatar_url && <AvatarImage src={person.avatar_url} alt={person.name} />}
+        <AvatarFallback className="bg-primary/10 text-primary">
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+      <div>
+        <span>{person.name}</span>
+        <p className="text-sm font-normal text-muted-foreground">
+          {person.title || person.department || (person.is_registered_user ? 'User' : 'Personnel')}
+        </p>
+      </div>
+    </div>
+  );
 
+  return (
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={titleNode}
+      description="Manage room assignments for this person."
+    >
         <div className="space-y-4">
           {/* Current Assignments */}
           <div className="space-y-2">
@@ -300,7 +302,6 @@ export function PersonnelQuickAssignDialog({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
