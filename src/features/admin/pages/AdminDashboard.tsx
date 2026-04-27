@@ -4,7 +4,10 @@ import { CommandCenter } from "@features/dashboard/components/dashboard/CommandC
 import { BuildingsGrid } from "@features/dashboard/components/dashboard/BuildingsGrid";
 import { ProductionSecurityGuard } from "@features/auth/components/security/ProductionSecurityGuard";
 import { useDashboardData } from "@features/dashboard/hooks/useDashboardData";
-import { Loader2, Building2 } from "lucide-react";
+import { Building2 } from "lucide-react";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
+import { useIsMobile } from "@shared/hooks/use-mobile";
+import { LoadingSkeleton } from "@shared/components/common/common/LoadingSkeleton";
 
 const AdminDashboard = () => {
   const {
@@ -17,11 +20,13 @@ const AdminDashboard = () => {
     isLoading,
     isAdmin,
   } = useDashboardData(true);
+  const isMobile = useIsMobile();
 
   if (isLoading || buildingsLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        <LoadingSkeleton type="card" count={1} />
+        <LoadingSkeleton type="grid" count={4} />
       </div>
     );
   }
@@ -37,7 +42,7 @@ const AdminDashboard = () => {
   const buildingList = (buildings as unknown[]) ?? [];
   const hasBuildings = buildingList.length > 0;
 
-  return (
+  const content = (
     <div className="space-y-6 sm:space-y-8">
       <AdminGreeting
         onRefresh={refreshData}
@@ -70,6 +75,11 @@ const AdminDashboard = () => {
       <CommandCenter />
     </div>
   );
+
+  if (isMobile) {
+    return <PullToRefresh onRefresh={refreshData}>{content}</PullToRefresh>;
+  }
+  return content;
 };
 
 export default AdminDashboard;
