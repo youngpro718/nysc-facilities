@@ -116,13 +116,11 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Make a Request</DialogTitle>
-          <DialogDescription>
-            Submit a request and the court aides will assist you.
-          </DialogDescription>
-        </DialogHeader>
+      <ModalFrame
+        title="Make a Request"
+        description="Submit a request and the court aides will assist you."
+        size="md"
+      >
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -262,7 +260,7 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }

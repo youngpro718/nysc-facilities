@@ -406,7 +406,7 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }
