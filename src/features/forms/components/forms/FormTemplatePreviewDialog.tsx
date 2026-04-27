@@ -160,7 +160,6 @@ export function FormTemplatePreviewDialog({
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

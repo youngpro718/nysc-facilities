@@ -183,7 +183,6 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
             {sending ? 'Composing...' : 'Compose Email'}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

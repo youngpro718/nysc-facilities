@@ -270,7 +270,6 @@ export function FormPreviewDialog({ open, onClose, formType }: FormPreviewDialog
             </div>
           </CardContent>
         </Card>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
