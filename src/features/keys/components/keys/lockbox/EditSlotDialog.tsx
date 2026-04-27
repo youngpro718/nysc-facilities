@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,7 +73,6 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
         updated_at: new Date().toISOString()
       };
 
-      // Check if we're moving to a different lockbox
       const isMoving = targetLockboxId !== slot.lockbox_id;
       if (isMoving) {
         updates.lockbox_id = targetLockboxId;
@@ -86,9 +85,8 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
 
       if (updateError) throw updateError;
 
-      // Log the activity
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       let noteText = `Updated label to "${label}"`;
       if (isMoving) {
         noteText = `Moved to different lockbox. ${noteText}`;
@@ -123,75 +121,76 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit3 className="h-5 w-5" />
-            Edit Slot Details
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Slot Label <span className="text-destructive">*</span></Label>
-            <Input 
-              placeholder="e.g. Master Key, Office 101" 
-              value={label} 
-              onChange={(e) => setLabel(e.target.value)}
-              disabled={isUpdating}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Room</Label>
-            <RoomSelector
-              value={roomId || undefined}
-              roomNumber={roomNumber || undefined}
-              onChange={handleRoomChange}
-              disabled={isUpdating}
-            />
-            <p className="text-xs text-muted-foreground">
-              Link this key slot to a room in the system
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Number of Keys <span className="text-destructive">*</span></Label>
-            <Input 
-              type="number"
-              min="1"
-              placeholder="e.g. 1, 2, 3" 
-              value={quantity} 
-              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-              disabled={isUpdating}
-            />
-            <p className="text-xs text-muted-foreground">
-              How many physical keys are in this slot
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Move to Lockbox</Label>
-            <Select value={targetLockboxId} onValueChange={setTargetLockboxId} disabled={isUpdating}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select lockbox..." />
-              </SelectTrigger>
-              <SelectContent>
-                {lockboxes?.map((lockbox) => (
-                  <SelectItem key={lockbox.id} value={lockbox.id}>
-                    {lockbox.name} {lockbox.location_description && `- ${lockbox.location_description}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Change this to move the slot to a different lockbox
-            </p>
-          </div>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={
+        <span className="flex items-center gap-2">
+          <Edit3 className="h-5 w-5" />
+          Edit Slot Details
+        </span>
+      }
+    >
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Slot Label <span className="text-destructive">*</span></Label>
+          <Input
+            placeholder="e.g. Master Key, Office 101"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            disabled={isUpdating}
+          />
         </div>
 
-        <DialogFooter>
+        <div className="space-y-2">
+          <Label>Room</Label>
+          <RoomSelector
+            value={roomId || undefined}
+            roomNumber={roomNumber || undefined}
+            onChange={handleRoomChange}
+            disabled={isUpdating}
+          />
+          <p className="text-xs text-muted-foreground">
+            Link this key slot to a room in the system
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Number of Keys <span className="text-destructive">*</span></Label>
+          <Input
+            type="number"
+            min="1"
+            placeholder="e.g. 1, 2, 3"
+            value={quantity}
+            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+            disabled={isUpdating}
+          />
+          <p className="text-xs text-muted-foreground">
+            How many physical keys are in this slot
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Move to Lockbox</Label>
+          <Select value={targetLockboxId} onValueChange={setTargetLockboxId} disabled={isUpdating}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select lockbox..." />
+            </SelectTrigger>
+            <SelectContent>
+              {lockboxes?.map((lockbox) => (
+                <SelectItem key={lockbox.id} value={lockbox.id}>
+                  {lockbox.name} {lockbox.location_description && `- ${lockbox.location_description}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Change this to move the slot to a different lockbox
+          </p>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUpdating}>
             Cancel
           </Button>
@@ -199,8 +198,8 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
             {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </ModalFrame>
   );
 }

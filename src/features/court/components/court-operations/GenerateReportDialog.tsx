@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,7 +26,6 @@ export function GenerateReportDialog({ open, onOpenChange, reportOptions }: Gene
   const handleDownload = async () => {
     try {
       setIsGenerating(true);
-      
       const fullOptions: DailyReportOptions = {
         ...reportOptions,
         availableHrgs: availableHrgs || undefined,
@@ -35,9 +34,7 @@ export function GenerateReportDialog({ open, onOpenChange, reportOptions }: Gene
         includeHeader,
         includeFooter,
       };
-
       await DailyReportGenerator.generateReport(fullOptions);
-      
       toast.success('Report downloaded successfully');
       onOpenChange(false);
     } catch (error) {
@@ -51,7 +48,6 @@ export function GenerateReportDialog({ open, onOpenChange, reportOptions }: Gene
   const handlePreview = async () => {
     try {
       setIsGenerating(true);
-      
       const fullOptions: DailyReportOptions = {
         ...reportOptions,
         availableHrgs: availableHrgs || undefined,
@@ -60,9 +56,7 @@ export function GenerateReportDialog({ open, onOpenChange, reportOptions }: Gene
         includeHeader,
         includeFooter,
       };
-
       await DailyReportGenerator.openReport(fullOptions);
-      
       toast.success('Report opened in new tab');
     } catch (error) {
       logger.error('Error previewing report:', error);
@@ -73,132 +67,99 @@ export function GenerateReportDialog({ open, onOpenChange, reportOptions }: Gene
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh]">
-        <DialogHeader>
-          <DialogTitle>Generate Daily Report</DialogTitle>
-          <DialogDescription>
-            Add optional notes to your PDF report
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="md"
+      title="Generate Daily Report"
+      description="Add optional notes to your PDF report"
+    >
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="available-hrgs" className="text-sm">Available HRGs</Label>
+          <Textarea
+            id="available-hrgs"
+            placeholder="e.g., 1234, 1567, 2890"
+            value={availableHrgs}
+            onChange={(e) => setAvailableHrgs(e.target.value)}
+            rows={1}
+            className="text-sm"
+          />
+        </div>
 
-        <div className="space-y-3 py-2 overflow-y-auto max-h-[calc(85vh-180px)]">
-          {/* Available HRGs */}
-          <div className="space-y-1.5">
-            <Label htmlFor="available-hrgs" className="text-sm">Available HRGs</Label>
-            <Textarea
-              id="available-hrgs"
-              placeholder="e.g., 1234, 1567, 2890"
-              value={availableHrgs}
-              onChange={(e) => setAvailableHrgs(e.target.value)}
-              rows={1}
-              className="text-sm"
+        <div className="space-y-1.5">
+          <Label htmlFor="coverage-summary" className="text-sm">Coverage Summary</Label>
+          <Textarea
+            id="coverage-summary"
+            placeholder="Coverage notes..."
+            value={coverageSummary}
+            onChange={(e) => setCoverageSummary(e.target.value)}
+            rows={1}
+            className="text-sm"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="general-notes" className="text-sm">General Notes</Label>
+          <Textarea
+            id="general-notes"
+            placeholder="Additional remarks..."
+            value={generalNotes}
+            onChange={(e) => setGeneralNotes(e.target.value)}
+            rows={2}
+            className="text-sm"
+          />
+        </div>
+
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="include-header"
+              checked={includeHeader}
+              onCheckedChange={(checked) => setIncludeHeader(checked as boolean)}
             />
+            <label htmlFor="include-header" className="text-sm leading-none cursor-pointer">
+              Include header
+            </label>
           </div>
 
-          {/* Coverage Summary */}
-          <div className="space-y-1.5">
-            <Label htmlFor="coverage-summary" className="text-sm">Coverage Summary</Label>
-            <Textarea
-              id="coverage-summary"
-              placeholder="Coverage notes..."
-              value={coverageSummary}
-              onChange={(e) => setCoverageSummary(e.target.value)}
-              rows={1}
-              className="text-sm"
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="include-footer"
+              checked={includeFooter}
+              onCheckedChange={(checked) => setIncludeFooter(checked as boolean)}
             />
-          </div>
-
-          {/* General Notes */}
-          <div className="space-y-1.5">
-            <Label htmlFor="general-notes" className="text-sm">General Notes</Label>
-            <Textarea
-              id="general-notes"
-              placeholder="Additional remarks..."
-              value={generalNotes}
-              onChange={(e) => setGeneralNotes(e.target.value)}
-              rows={2}
-              className="text-sm"
-            />
-          </div>
-
-          {/* Options */}
-          <div className="space-y-2 pt-1">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="include-header"
-                checked={includeHeader}
-                onCheckedChange={(checked) => setIncludeHeader(checked as boolean)}
-              />
-              <label
-                htmlFor="include-header"
-                className="text-sm leading-none cursor-pointer"
-              >
-                Include header
-              </label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="include-footer"
-                checked={includeFooter}
-                onCheckedChange={(checked) => setIncludeFooter(checked as boolean)}
-              />
-              <label
-                htmlFor="include-footer"
-                className="text-sm leading-none cursor-pointer"
-              >
-                Include footer notes
-              </label>
-            </div>
-          </div>
-
-          {/* Report Summary */}
-          <div className="rounded-lg border p-2.5 bg-muted/50">
-            <div className="text-xs space-y-0.5">
-              <p>
-                <span className="font-medium">Sessions:</span> {reportOptions.sessions.length}
-              </p>
-              <p>
-                <span className="font-medium">Coverage:</span> {reportOptions.coverages.length}
-              </p>
-            </div>
+            <label htmlFor="include-footer" className="text-sm leading-none cursor-pointer">
+              Include footer notes
+            </label>
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isGenerating}
-          >
+        <div className="rounded-lg border p-2.5 bg-muted/50">
+          <div className="text-xs space-y-0.5">
+            <p>
+              <span className="font-medium">Sessions:</span> {reportOptions.sessions.length}
+            </p>
+            <p>
+              <span className="font-medium">Coverage:</span> {reportOptions.coverages.length}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
             Cancel
           </Button>
-          <Button
-            variant="outline"
-            onClick={handlePreview}
-            disabled={isGenerating}
-          >
-            {isGenerating ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Eye className="h-4 w-4 mr-2" />
-            )}
+          <Button variant="outline" onClick={handlePreview} disabled={isGenerating}>
+            {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
             Preview
           </Button>
-          <Button
-            onClick={handleDownload}
-            disabled={isGenerating}
-          >
-            {isGenerating ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
+          <Button onClick={handleDownload} disabled={isGenerating}>
+            {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
             Download PDF
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </ModalFrame>
   );
 }

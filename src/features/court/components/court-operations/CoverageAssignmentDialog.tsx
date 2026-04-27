@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -234,13 +234,12 @@ export function CoverageAssignmentDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {coverage ? 'Edit' : 'Add'} Coverage Assignment
-          </DialogTitle>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="lg"
+      title={`${coverage ? 'Edit' : 'Add'} Coverage Assignment`}
+    >
 
         {personnelError && (
           <Alert variant="destructive" className="mb-4">
@@ -445,7 +444,7 @@ export function CoverageAssignmentDialog({
             </div>
           </div>
 
-          <DialogFooter className="mt-6">
+          <div className="flex justify-end gap-2 mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -455,9 +454,8 @@ export function CoverageAssignmentDialog({
             >
               {coverage ? 'Update' : 'Add'} Coverage
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

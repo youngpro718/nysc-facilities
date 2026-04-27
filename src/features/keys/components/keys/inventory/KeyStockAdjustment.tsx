@@ -6,14 +6,8 @@ import { useToast } from "@shared/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import {
   Form,
   FormControl,
@@ -132,13 +126,11 @@ export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName:
           Adjust Stock
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Adjust Stock for {keyName}</DialogTitle>
-          <DialogDescription>
-            Update the inventory quantity for this key. This will be recorded in the transaction history.
-          </DialogDescription>
-        </DialogHeader>
+      <ModalFrame
+        size="md"
+        title={`Adjust Stock for ${keyName}`}
+        description="Update the inventory quantity for this key. This will be recorded in the transaction history."
+      >
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -230,7 +222,7 @@ export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName:
             </Button>
           </form>
         </Form>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }
