@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@shared/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -450,75 +450,73 @@ export const MaintenanceIssuesList = () => {
       </AlertDialog>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editingIssue} onOpenChange={() => setEditingIssue(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Maintenance Issue</DialogTitle>
-            <DialogDescription>
-              Update the maintenance issue details below.
-            </DialogDescription>
-          </DialogHeader>
-          {editingIssue && (
-            <div className="space-y-4">
+      <ModalFrame
+        open={!!editingIssue}
+        onOpenChange={() => setEditingIssue(null)}
+        size="lg"
+        title="Edit Maintenance Issue"
+        description="Update the maintenance issue details below."
+      >
+        {editingIssue && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={editingIssue.title}
+                onChange={(e) => setEditingIssue({ ...editingIssue, title: e.target.value })}
+                placeholder="e.g., Broken AC Unit"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={editingIssue.description}
+                onChange={(e) => setEditingIssue({ ...editingIssue, description: e.target.value })}
+                placeholder="Detailed description..."
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
+                <Label htmlFor="priority">Priority</Label>
+                <Select
+                  value={editingIssue.priority}
+                  onValueChange={(value) => setEditingIssue({ ...editingIssue, priority: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="type">Issue Type</Label>
                 <Input
-                  id="title"
-                  value={editingIssue.title}
-                  onChange={(e) => setEditingIssue({ ...editingIssue, title: e.target.value })}
-                  placeholder="e.g., Broken AC Unit"
+                  id="type"
+                  value={editingIssue.issue_type}
+                  onChange={(e) => setEditingIssue({ ...editingIssue, issue_type: e.target.value })}
+                  placeholder="e.g., electrical"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={editingIssue.description}
-                  onChange={(e) => setEditingIssue({ ...editingIssue, description: e.target.value })}
-                  placeholder="Detailed description..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select
-                    value={editingIssue.priority}
-                    onValueChange={(value) => setEditingIssue({ ...editingIssue, priority: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="type">Issue Type</Label>
-                  <Input
-                    id="type"
-                    value={editingIssue.issue_type}
-                    onChange={(e) => setEditingIssue({ ...editingIssue, issue_type: e.target.value })}
-                    placeholder="e.g., electrical"
-                  />
-                </div>
               </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingIssue(null)}>Cancel</Button>
-            <Button onClick={saveIssue}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        )}
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="outline" onClick={() => setEditingIssue(null)}>Cancel</Button>
+          <Button onClick={saveIssue}>Save Changes</Button>
+        </div>
+      </ModalFrame>
     </div>
   );
 };
