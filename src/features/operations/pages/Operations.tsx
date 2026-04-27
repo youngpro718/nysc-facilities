@@ -4,10 +4,9 @@ import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StatusCard } from "@/components/ui/StatusCard";
 import {
   AlertTriangle,
@@ -17,13 +16,10 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  TrendingUp,
   Activity,
-  Users,
   RefreshCw,
   Zap,
-  Boxes,
-  Lightbulb
+  Lightbulb,
 } from "lucide-react";
 
 // Import existing components
@@ -32,6 +28,7 @@ import { IssueGroupingControls } from "@features/issues/components/admin-issues/
 import { OperationsOverviewTab } from "@features/operations/components/operations/OperationsOverviewTab";
 import { MaintenanceTab } from "@features/operations/components/operations/MaintenanceTab";
 import { LightingTab } from "@features/operations/components/operations/LightingTab";
+import { BuildingFilterBar } from "@features/operations/components/operations/BuildingFilterBar";
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@features/issues/types/issues";
 
 
@@ -52,6 +49,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Operations() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -277,72 +275,47 @@ export default function Operations() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <Breadcrumb />
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Facility Operations</h2>
-              <Badge variant="secondary" className="text-xs">
-                <Activity className="h-3 w-3 mr-1" />
-                Live
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Issues, maintenance, and facility scheduling
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {buildingId && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearBuildingFilter}
-                className="text-sm"
-              >
-                <X className="w-4 h-4 mr-1" />
-                Clear Filter
-              </Button>
-            )}
-            <Button onClick={() => setShowQuickReport(true)} size="sm" className="touch-target bg-primary">
-              <Zap className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Quick Report</span>
-              <span className="sm:hidden">Report</span>
-            </Button>
-            <Button onClick={() => setShowScheduleMaintenance(true)} size="sm" className="touch-target">
-              <Calendar className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Schedule Maintenance</span>
-              <span className="sm:hidden">Schedule</span>
-            </Button>
-          </div>
-        </div>
-      </div>
 
-      {/* Building Filter - Dynamic from database */}
-      <div className="flex items-center gap-2 p-3 sm:p-4 border rounded-lg bg-muted/50">
-        <Building2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Building:</span>
-        <div className="flex flex-wrap gap-2">
+      <PageHeader
+        title="Facility Operations"
+        description="Issues, maintenance, and facility scheduling"
+        icon={Activity}
+        className="mb-0"
+      >
+        <Badge variant="secondary" className="text-xs">
+          <Activity className="h-3 w-3 mr-1" />
+          Live
+        </Badge>
+        {buildingId && (
           <Button
-            variant={!buildingId ? "default" : "outline"}
+            variant="outline"
             size="sm"
             onClick={clearBuildingFilter}
-            className="text-xs sm:text-sm"
+            className="text-sm"
           >
-            All Buildings
+            <X className="w-4 h-4 mr-1" />
+            Clear Filter
           </Button>
-          {buildings.map((building: { id: string; name: string }) => (
-            <Button
-              key={building.id}
-              variant={buildingId === building.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setBuildingFilter(building.id)}
-              className="text-xs sm:text-sm"
-            >
-              {building.name}
-            </Button>
-          ))}
-        </div>
-      </div>
+        )}
+        <Button onClick={() => setShowQuickReport(true)} size="sm" className="touch-target bg-primary">
+          <Zap className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Quick Report</span>
+          <span className="sm:hidden">Report</span>
+        </Button>
+        <Button onClick={() => setShowScheduleMaintenance(true)} size="sm" className="touch-target">
+          <Calendar className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Schedule Maintenance</span>
+          <span className="sm:hidden">Schedule</span>
+        </Button>
+      </PageHeader>
+
+      {/* Building Filter */}
+      <BuildingFilterBar
+        buildings={buildings as { id: string; name: string }[]}
+        selectedBuildingId={buildingId}
+        onSelect={(id) => (id ? setBuildingFilter(id) : clearBuildingFilter())}
+      />
+
 
 
       {/* KPI Stats */}
@@ -447,53 +420,7 @@ export default function Operations() {
             </div>
           </div>
 
-          {/* Quick Stats for Issues */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-surface-critical text-surface-critical-foreground border-status-critical/30">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Critical Issues</p>
-                    <p className="text-2xl font-bold">{enhancedMetrics.criticalCount}</p>
-                  </div>
-                  <AlertTriangle className="h-8 w-8 text-status-critical" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-surface-warning text-surface-warning-foreground border-status-warning/30">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">In Progress</p>
-                    <p className="text-2xl font-bold">{enhancedMetrics.inProgress}</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-status-warning" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-surface-info text-surface-info-foreground border-status-info/30">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Active Issues</p>
-                    <p className="text-2xl font-bold">{enhancedMetrics.activeIssues}</p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-status-info" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-surface-operational text-surface-operational-foreground border-status-operational/30">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Resolved Today</p>
-                    <p className="text-2xl font-bold">{enhancedMetrics.resolvedToday}</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-status-operational" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+
 
           {/* Issues Controls */}
           <div data-tour="ops-filters">

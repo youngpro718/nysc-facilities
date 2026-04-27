@@ -4,7 +4,7 @@ import { CommandCenter } from "@features/dashboard/components/dashboard/CommandC
 import { BuildingsGrid } from "@features/dashboard/components/dashboard/BuildingsGrid";
 import { ProductionSecurityGuard } from "@features/auth/components/security/ProductionSecurityGuard";
 import { useDashboardData } from "@features/dashboard/hooks/useDashboardData";
-import { Loader2 } from "lucide-react";
+import { Loader2, Building2 } from "lucide-react";
 
 const AdminDashboard = () => {
   const {
@@ -15,7 +15,7 @@ const AdminDashboard = () => {
     handleMarkAsSeen,
     refreshData,
     isLoading,
-    isAdmin
+    isAdmin,
   } = useDashboardData(true);
 
   if (isLoading || buildingsLoading) {
@@ -34,33 +34,40 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!buildings || (buildings as any[]).length === 0) {
-    return (
-      <div className="space-y-8">
-        <AdminGreeting onRefresh={refreshData} isLoading={isLoading} />
-        <CommandCenter />
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
-          <p>No buildings found</p>
-        </div>
-      </div>
-    );
-  }
+  const buildingList = (buildings as unknown[]) ?? [];
+  const hasBuildings = buildingList.length > 0;
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <AdminGreeting onRefresh={refreshData} isLoading={isLoading || buildingsLoading} />
-      
-      <ProductionSecurityGuard />
-      
-      <BuildingsGrid
-        buildings={buildings as any}
-        isLoading={buildingsLoading}
-        issues={issues}
-        activities={activities}
-        onMarkAsSeen={handleMarkAsSeen}
+      <AdminGreeting
+        onRefresh={refreshData}
+        isLoading={isLoading || buildingsLoading}
       />
-      
+
+      <ProductionSecurityGuard />
+
+      {/* Command Center first — surfaces critical alerts immediately */}
       <CommandCenter />
+
+      {hasBuildings ? (
+        <BuildingsGrid
+          buildings={buildings as never}
+          isLoading={buildingsLoading}
+          issues={issues}
+          activities={activities}
+          onMarkAsSeen={handleMarkAsSeen}
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center min-h-[240px] gap-3 rounded-lg border border-dashed bg-muted/30 p-8 text-center">
+          <Building2 className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+          <div className="space-y-1">
+            <p className="font-medium">No buildings found</p>
+            <p className="text-sm text-muted-foreground">
+              Add a building to see facility overviews and live status here.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
