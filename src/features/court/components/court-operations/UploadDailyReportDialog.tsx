@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -252,23 +252,21 @@ export function UploadDailyReportDialog({
   // Show preview if we have extracted parts
   if (extractionStatus === 'preview' && extractedParts.length > 0) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Review Extracted Data</DialogTitle>
-            <DialogDescription>
-              Review and edit the extracted court session data before importing.
-            </DialogDescription>
-          </DialogHeader>
-          <PDFExtractionPreview
-            parts={extractedParts}
-            buildingCode={buildingCode}
-            onAccept={handleAcceptParts}
-            onCancel={handleBackToUpload}
-            availableRooms={availableRooms}
-          />
-        </DialogContent>
-      </Dialog>
+      <ModalFrame
+        open={open}
+        onOpenChange={onOpenChange}
+        size="xl"
+        title="Review Extracted Data"
+        description="Review and edit the extracted court session data before importing."
+      >
+        <PDFExtractionPreview
+          parts={extractedParts}
+          buildingCode={buildingCode}
+          onAccept={handleAcceptParts}
+          onCancel={handleBackToUpload}
+          availableRooms={availableRooms}
+        />
+      </ModalFrame>
     );
   }
 
