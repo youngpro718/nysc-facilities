@@ -304,7 +304,7 @@ export default function Tasks() {
     </div>
   );
 
-  return (
+  const pageContent = (
     <div className="space-y-6">
       <PageHeader
         title={isCourtAide ? 'My Tasks' : 'Tasks'}
