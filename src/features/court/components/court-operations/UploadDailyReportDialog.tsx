@@ -408,7 +408,6 @@ export function UploadDailyReportDialog({
             )}
           </Button>
         </div>
-      </div>
     </ModalFrame>
   );
 }
