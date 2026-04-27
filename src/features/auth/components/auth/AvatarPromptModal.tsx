@@ -156,7 +156,6 @@ export function AvatarPromptModal({ open, onOpenChange, onComplete }: AvatarProm
             <p>Maximum size: 5MB</p>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
