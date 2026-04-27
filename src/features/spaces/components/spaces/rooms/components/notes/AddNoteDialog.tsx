@@ -180,7 +180,6 @@ export function AddNoteDialog({ roomId, open, onOpenChange }: AddNoteDialogProps
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
