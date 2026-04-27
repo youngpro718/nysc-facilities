@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@shared/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -413,121 +413,115 @@ export const MaintenanceScheduleList = () => {
       </AlertDialog>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editingSchedule} onOpenChange={() => setEditingSchedule(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Maintenance: {editingSchedule?.title}</DialogTitle>
-            <DialogDescription>
-              Update maintenance details and track progress
-            </DialogDescription>
-          </DialogHeader>
-          {editingSchedule && (
-            <div className="space-y-4">
-              {/* Title and Type */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    value={editingSchedule.title}
-                    onChange={(e) => setEditingSchedule({ ...editingSchedule, title: e.target.value })}
-                    placeholder="e.g., Part 59 waxing"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select
-                    value={editingSchedule.maintenance_type}
-                    onValueChange={(value) => setEditingSchedule({ ...editingSchedule, maintenance_type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cleaning">Cleaning</SelectItem>
-                      <SelectItem value="painting">Painting</SelectItem>
-                      <SelectItem value="flooring">Flooring</SelectItem>
-                      <SelectItem value="electrical">Electrical</SelectItem>
-                      <SelectItem value="hvac">HVAC</SelectItem>
-                      <SelectItem value="plumbing">Plumbing</SelectItem>
-                      <SelectItem value="general">General</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Description */}
+      <ModalFrame
+        open={!!editingSchedule}
+        onOpenChange={() => setEditingSchedule(null)}
+        size="lg"
+        title={`Edit Maintenance: ${editingSchedule?.title ?? ''}`}
+        description="Update maintenance details and track progress"
+      >
+        {editingSchedule && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="description">What needs to be done?</Label>
-                <Textarea
-                  id="description"
-                  value={editingSchedule.description || ""}
-                  onChange={(e) => setEditingSchedule({ ...editingSchedule, description: e.target.value })}
-                  placeholder="Describe the work to be performed..."
-                  rows={3}
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={editingSchedule.title}
+                  onChange={(e) => setEditingSchedule({ ...editingSchedule, title: e.target.value })}
+                  placeholder="e.g., Part 59 waxing"
                 />
               </div>
 
-              {/* Status and Priority */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={editingSchedule.status}
-                    onValueChange={(value) => setEditingSchedule({ ...editingSchedule, status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="postponed">Postponed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select
-                    value={editingSchedule.priority}
-                    onValueChange={(value) => setEditingSchedule({ ...editingSchedule, priority: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Notes */}
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes / Updates</Label>
-                <Textarea
-                  id="notes"
-                  value={editingSchedule.notes || ""}
-                  onChange={(e) => setEditingSchedule({ ...editingSchedule, notes: e.target.value })}
-                  placeholder="Add any updates, issues, or important information..."
-                  rows={3}
-                />
+                <Label htmlFor="type">Type</Label>
+                <Select
+                  value={editingSchedule.maintenance_type}
+                  onValueChange={(value) => setEditingSchedule({ ...editingSchedule, maintenance_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cleaning">Cleaning</SelectItem>
+                    <SelectItem value="painting">Painting</SelectItem>
+                    <SelectItem value="flooring">Flooring</SelectItem>
+                    <SelectItem value="electrical">Electrical</SelectItem>
+                    <SelectItem value="hvac">HVAC</SelectItem>
+                    <SelectItem value="plumbing">Plumbing</SelectItem>
+                    <SelectItem value="general">General</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingSchedule(null)}>Cancel</Button>
-            <Button onClick={saveSchedule}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">What needs to be done?</Label>
+              <Textarea
+                id="description"
+                value={editingSchedule.description || ""}
+                onChange={(e) => setEditingSchedule({ ...editingSchedule, description: e.target.value })}
+                placeholder="Describe the work to be performed..."
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={editingSchedule.status}
+                  onValueChange={(value) => setEditingSchedule({ ...editingSchedule, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="postponed">Postponed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select
+                  value={editingSchedule.priority}
+                  onValueChange={(value) => setEditingSchedule({ ...editingSchedule, priority: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes / Updates</Label>
+              <Textarea
+                id="notes"
+                value={editingSchedule.notes || ""}
+                onChange={(e) => setEditingSchedule({ ...editingSchedule, notes: e.target.value })}
+                placeholder="Add any updates, issues, or important information..."
+                rows={3}
+              />
+            </div>
+          </div>
+        )}
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="outline" onClick={() => setEditingSchedule(null)}>Cancel</Button>
+          <Button onClick={saveSchedule}>Save Changes</Button>
+        </div>
+      </ModalFrame>
     </div>
   );
 };
