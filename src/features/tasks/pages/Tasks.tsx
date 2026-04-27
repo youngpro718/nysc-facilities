@@ -569,4 +569,10 @@ export default function Tasks() {
       )}
     </div>
   );
+
+  if (isMobile) {
+    return <PullToRefresh onRefresh={async () => { await refetch(); }}>{pageContent}</PullToRefresh>;
+  }
+  return pageContent;
 }
+
