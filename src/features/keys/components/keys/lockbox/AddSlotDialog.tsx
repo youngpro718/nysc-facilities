@@ -144,7 +144,6 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
             Add Key Slot
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
