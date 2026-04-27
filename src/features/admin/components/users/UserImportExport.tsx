@@ -446,7 +446,7 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
             </div>
           </TabsContent>
         </Tabs>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }
