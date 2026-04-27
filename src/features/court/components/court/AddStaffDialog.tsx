@@ -117,8 +117,6 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
             title="Add Staff Member"
             description="Add a new clerk, sergeant, or officer to the system."
         >
-                    <DialogDescription>
-                        Add a new clerk, sergeant, or officer to the system.
                 <div className="space-y-4 py-2">
                     {/* Name */}
                     <div className="grid grid-cols-2 gap-3">
