@@ -737,19 +737,21 @@ function SwitchChambersDialog({
     },
   });
 
+  const switchTitleNode = (
+    <div className="flex items-center gap-2">
+      <Home className="h-5 w-5 text-purple-600" />
+      Switch Chambers
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5 text-purple-600" />
-            Switch Chambers
-          </DialogTitle>
-          <DialogDescription>
-            Swap chambers between {judgeName}
-            {currentJudge?.chambersRoom ? ` (Room ${currentJudge.chambersRoom})` : " (no chambers)"} and another judge.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={switchTitleNode}
+      description={`Swap chambers between ${judgeName}${currentJudge?.chambersRoom ? ` (Room ${currentJudge.chambersRoom})` : " (no chambers)"} and another judge.`}
+    >
 
         <div className="space-y-3 py-2">
           <div className="space-y-1">
@@ -777,7 +779,7 @@ function SwitchChambersDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
@@ -788,9 +790,8 @@ function SwitchChambersDialog({
           >
             {swapMutation.isPending ? "Swapping..." : "Swap Chambers"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
 
