@@ -2,12 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -154,9 +149,28 @@ export function UserIssueDetailDialog({
   const priorityConfig = issue ? getPriorityConfig(issue.priority) : null;
   const StatusIcon = statusConfig?.icon || AlertCircle;
 
+  const titleNode = issue ? (
+    <div className="flex-1">
+      <span className="text-xl">{issue.title}</span>
+      <div className="flex flex-wrap items-center gap-2 mt-2">
+        <Badge variant={priorityConfig?.variant}>
+          {priorityConfig?.label} Priority
+        </Badge>
+        <Badge variant="outline" className={statusConfig?.color}>
+          <StatusIcon className="h-3 w-3 mr-1" />
+          {statusConfig?.label}
+        </Badge>
+      </div>
+    </div>
+  ) : "Issue";
+
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <ModalFrame
+      open={open}
+      onOpenChange={(isOpen) => !isOpen && onClose()}
+      size="lg"
+      title={titleNode}
+    >
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -168,23 +182,6 @@ export function UserIssueDetailDialog({
           </div>
         ) : (
           <>
-            <DialogHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <DialogTitle className="text-xl">{issue.title}</DialogTitle>
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <Badge variant={priorityConfig?.variant}>
-                      {priorityConfig?.label} Priority
-                    </Badge>
-                    <Badge variant="outline" className={statusConfig?.color}>
-                      <StatusIcon className="h-3 w-3 mr-1" />
-                      {statusConfig?.label}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </DialogHeader>
-
             {/* Progress Bar */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
@@ -420,7 +417,6 @@ export function UserIssueDetailDialog({
             </div>
           </>
         )}
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
