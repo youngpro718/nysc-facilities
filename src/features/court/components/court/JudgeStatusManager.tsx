@@ -490,20 +490,24 @@ function MoveJudgeDialog({
     },
   });
 
+  const moveTitleNode = (
+    <div className="flex items-center gap-2">
+      <ArrowRightLeft className="h-5 w-5 text-blue-600" />
+      Move {judgeName}
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ArrowRightLeft className="h-5 w-5 text-blue-600" />
-            Move {judgeName}
-          </DialogTitle>
-          <DialogDescription>
-            {sourceSlot
-              ? `Currently in Part ${sourceSlot.part} (Room ${sourceSlot.roomNumber}). Pick a new part.`
-              : "No current assignment. Pick a part to assign to."}
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={moveTitleNode}
+      description={sourceSlot
+        ? `Currently in Part ${sourceSlot.part} (Room ${sourceSlot.roomNumber}). Pick a new part.`
+        : "No current assignment. Pick a part to assign to."}
+      className="max-h-[80vh] flex flex-col"
+    >
 
         <div className="space-y-3 flex-1 overflow-hidden">
           <Input
@@ -564,7 +568,7 @@ function MoveJudgeDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
@@ -575,9 +579,8 @@ function MoveJudgeDialog({
           >
             {moveMutation.isPending ? "Moving..." : selectedSlot?.justice ? "Swap Judges" : "Move Judge"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
 
