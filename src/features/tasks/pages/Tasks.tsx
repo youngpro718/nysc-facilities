@@ -24,6 +24,8 @@ import { TaskCard } from "@features/tasks/components/TaskCard";
 import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPanel";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
+import { useIsMobile } from "@shared/hooks/use-mobile";
 import type { StaffTask, TaskType, TaskPriority } from "@features/tasks/types/staffTasks";
 import { TASK_TYPE_LABELS } from "@features/tasks/types/staffTasks";
 
@@ -85,6 +87,7 @@ export default function Tasks() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { userRole, isAdmin: canManageTasks } = useRolePermissions();
+  const isMobile = useIsMobile();
 
   // Court aides default to "my-tasks" tab, others to "active"
   const isCourtAide = userRole === 'court_aide';
@@ -301,7 +304,7 @@ export default function Tasks() {
     </div>
   );
 
-  return (
+  const pageContent = (
     <div className="space-y-6">
       <PageHeader
         title={isCourtAide ? 'My Tasks' : 'Tasks'}
@@ -566,4 +569,10 @@ export default function Tasks() {
       )}
     </div>
   );
+
+  if (isMobile) {
+    return <PullToRefresh onRefresh={async () => { await refetch(); }}>{pageContent}</PullToRefresh>;
+  }
+  return pageContent;
 }
+
