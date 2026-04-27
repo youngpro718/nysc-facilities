@@ -26,6 +26,7 @@ import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPane
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
+import { FilterPills, type FilterPillOption } from "@/components/ui/FilterPills";
 import type { StaffTask, TaskType, TaskPriority } from "@features/tasks/types/staffTasks";
 import { TASK_TYPE_LABELS } from "@features/tasks/types/staffTasks";
 
