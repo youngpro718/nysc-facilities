@@ -1,7 +1,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
@@ -40,11 +41,8 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
           Add Item
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add New Inventory Item</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+      <ModalFrame title="Add New Inventory Item" size="sm">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Input
               placeholder="Item name"
@@ -103,7 +101,7 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
             <Button type="submit">Add Item</Button>
           </div>
         </form>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }

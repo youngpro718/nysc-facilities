@@ -3,12 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { QUERY_CONFIG } from '@/config';
 import { QUERY_KEYS } from '@/lib/queryKeys';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -209,12 +204,12 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Inventory Item</DialogTitle>
-        </DialogHeader>
-
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="md"
+      title="Edit Inventory Item"
+    >
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">
@@ -382,7 +377,6 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
             submitLabel="Update Item"
           />
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 };

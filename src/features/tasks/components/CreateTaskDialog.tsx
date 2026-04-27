@@ -13,12 +13,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -168,10 +166,7 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
-        </DialogHeader>
+      <ModalFrame title="Create New Task" size="md">
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -406,7 +401,7 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }

@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -142,12 +137,12 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Adjust Stock - {item.name}</DialogTitle>
-        </DialogHeader>
-
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={`Adjust Stock - ${item.name}`}
+    >
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Current Stock Info */}
           <div className="bg-muted p-3 rounded-lg">
@@ -239,7 +234,6 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
             submitLabel="Adjust Stock"
           />
         </form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 };

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,19 +78,20 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5 text-primary" />
-            Add Key Slot
-          </DialogTitle>
-          {lockboxName && (
-            <p className="text-sm text-muted-foreground">Adding to {lockboxName}</p>
-          )}
-        </DialogHeader>
-        
-        <div className="space-y-4 py-4">
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={
+        <span className="flex items-center gap-2">
+          <Plus className="h-5 w-5 text-primary" />
+          Add Key Slot
+        </span>
+      }
+      description={lockboxName ? `Adding to ${lockboxName}` : undefined}
+    >
+
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label>Label <span className="text-destructive">*</span></Label>
             <Input 
@@ -142,7 +144,6 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
             Add Key Slot
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

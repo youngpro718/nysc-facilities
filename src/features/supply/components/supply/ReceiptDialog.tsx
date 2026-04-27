@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { SupplyOrderReceipt } from './SupplyOrderReceipt';
 import type { ReceiptData } from '@features/supply/types/receipt';
 import { toast } from 'sonner';
@@ -23,18 +23,18 @@ export function ReceiptDialog({ open, onOpenChange, receiptData }: ReceiptDialog
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Supply Request Receipt</DialogTitle>
-        </DialogHeader>
-        <SupplyOrderReceipt 
-          receiptData={receiptData}
-          onPrint={handlePrint}
-          onDownload={handleDownload}
-          onEmail={handleEmail}
-        />
-      </DialogContent>
-    </Dialog>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Supply Request Receipt"
+      size="xl"
+    >
+      <SupplyOrderReceipt
+        receiptData={receiptData}
+        onPrint={handlePrint}
+        onDownload={handleDownload}
+        onEmail={handleEmail}
+      />
+    </ModalFrame>
   );
 }

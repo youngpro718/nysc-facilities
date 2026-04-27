@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -172,15 +173,17 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
   };
 
   return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Fulfill Order #{order.id.slice(0, 8).toUpperCase()}
-          </DialogTitle>
-        </DialogHeader>
-
+    <ModalFrame
+      open
+      onOpenChange={onClose}
+      size="lg"
+      title={
+        <span className="flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          Fulfill Order #{order.id.slice(0, 8).toUpperCase()}
+        </span>
+      }
+    >
         <div className="space-y-4">
           {/* Order Info */}
           <div className="bg-muted/50 rounded-lg p-4 space-y-1">
@@ -348,7 +351,6 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
             )}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

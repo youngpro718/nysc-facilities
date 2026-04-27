@@ -13,13 +13,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogDescription,
 } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -116,13 +113,11 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Make a Request</DialogTitle>
-          <DialogDescription>
-            Submit a request and the court aides will assist you.
-          </DialogDescription>
-        </DialogHeader>
+      <ModalFrame
+        title="Make a Request"
+        description="Submit a request and the court aides will assist you."
+        size="md"
+      >
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -262,7 +257,7 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }
