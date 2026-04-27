@@ -2,12 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/services/core/supabaseClient";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import {
   Form,
   FormControl,
