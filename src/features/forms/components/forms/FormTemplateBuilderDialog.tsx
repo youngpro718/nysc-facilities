@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -129,13 +129,12 @@ export function FormTemplateBuilderDialog({
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {template ? 'Edit Form Template' : 'Create Form Template'}
-          </DialogTitle>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="xl"
+      title={template ? 'Edit Form Template' : 'Create Form Template'}
+    >
 
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
@@ -327,7 +326,6 @@ export function FormTemplateBuilderDialog({
             {template ? 'Update Template' : 'Create Template'}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
