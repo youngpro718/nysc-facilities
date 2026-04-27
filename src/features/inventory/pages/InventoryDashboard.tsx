@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { Package, Plus, History, BarChart3, MapPin, AlertTriangle, Search, Warehouse } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 interface TabConfig {
   id: string;
@@ -127,39 +128,30 @@ export const InventoryDashboard = () => {
       <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Warehouse className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold">Inventory</h1>
-                <p className="text-sm text-muted-foreground">
-                  Track stock levels and manage supplies
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                onClick={() => navigate('/admin/supply-requests')}
-                variant="outline"
-                className={`w-full sm:w-auto ${newRequestsCount > 0 ? 'ring-2 ring-status-warning/60 shadow-status-warning/30 shadow' : ''}`}
-              >
-                <Package className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Requests</span>
-                <span className="sm:hidden">Requests</span>
-                {newRequestsCount > 0 && (
-                  <Badge variant="secondary" className="ml-2 bg-status-warning text-white">
-                    {newRequestsCount}
-                  </Badge>
-                )}
-              </Button>
-              <Button onClick={() => navigate('/request/supplies')} className="w-full sm:w-auto" data-tour="inventory-order">
-                <Plus className="h-4 w-4 mr-2" />
-                Order Supplies
-              </Button>
-            </div>
-          </div>
+          <PageHeader
+            title="Inventory"
+            description="Track stock levels and manage supplies"
+            icon={Warehouse}
+            className="mb-0"
+          >
+            <Button
+              onClick={() => navigate('/admin/supply-requests')}
+              variant="outline"
+              className={`w-full sm:w-auto ${newRequestsCount > 0 ? 'ring-2 ring-status-warning/60 shadow-status-warning/30 shadow' : ''}`}
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Requests
+              {newRequestsCount > 0 && (
+                <Badge variant="secondary" className="ml-2 bg-status-warning text-white">
+                  {newRequestsCount}
+                </Badge>
+              )}
+            </Button>
+            <Button onClick={() => navigate('/request/supplies')} className="w-full sm:w-auto" data-tour="inventory-order">
+              <Plus className="h-4 w-4 mr-2" />
+              Order Supplies
+            </Button>
+          </PageHeader>
 
           {/* Quick Search Bar */}
           <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg border" data-tour="inventory-search">

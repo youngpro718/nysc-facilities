@@ -9,6 +9,7 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { EnhancedUserSettings } from "@features/profile/components/profile/EnhancedUserSettings";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { useAuth } from "@features/auth/hooks/useAuth";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -26,7 +27,8 @@ export default function Profile() {
   if (isMobile) {
     return (
       <div className="space-y-4">
-        
+        <PageHeader title="Profile & Settings" icon={User} />
+
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-12">
             <TabsTrigger value="profile" className="h-10 text-sm touch-manipulation">
@@ -80,11 +82,12 @@ export default function Profile() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <div className="space-y-2">
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Manage your account and preferences
-        </p>
-      </div>
+      <PageHeader
+        title="Profile & Settings"
+        description="Manage your account and preferences"
+        icon={User}
+      />
+
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="w-full grid grid-cols-2 max-w-md">

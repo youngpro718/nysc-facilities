@@ -45,6 +45,7 @@ import { useIsMobile } from "@shared/hooks/use-mobile";
 import { UserTasksTab } from "@features/tasks/components/UserTasksTab";
 import { SimpleReportWizard } from "@features/issues/components/issues/wizard/SimpleReportWizard";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 // Status configurations
 const supplyStatusConfig: Record<string, { icon: LucideIcon; label: string; color: string }> = {
@@ -114,12 +115,11 @@ export default function MyActivity() {
 
   const content = (
     <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <p className="text-sm text-muted-foreground">
-          Track all your requests and activity
-        </p>
-      </div>
+      <PageHeader
+        title="My Activity"
+        description="Track all your requests and activity"
+        icon={Activity}
+      />
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -129,7 +129,7 @@ export default function MyActivity() {
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <Package className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <Package className="h-5 w-5 text-status-operational" />
               <Badge variant={activeSupplyCount > 0 ? "default" : "secondary"}>
                 {activeSupplyCount}
               </Badge>
@@ -144,7 +144,7 @@ export default function MyActivity() {
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <Key className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Key className="h-5 w-5 text-status-info" />
               <Badge variant={activeKeyCount > 0 ? "default" : "secondary"}>
                 {activeKeyCount}
               </Badge>
@@ -159,7 +159,7 @@ export default function MyActivity() {
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <AlertTriangle className="h-5 w-5 text-status-warning" />
               <Badge variant={activeIssueCount > 0 ? "destructive" : "secondary"}>
                 {activeIssueCount}
               </Badge>
@@ -174,7 +174,7 @@ export default function MyActivity() {
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <Send className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <Send className="h-5 w-5 text-primary" />
               <Badge variant={activeTaskCount > 0 ? "default" : "secondary"}>
                 {activeTaskCount}
               </Badge>
