@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -157,16 +157,15 @@ export function ItemPhotoUpload({
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Camera className="h-5 w-5" />
-            Photo for {itemName}
-          </DialogTitle>
-        </DialogHeader>
+  const titleNode = (
+    <div className="flex items-center gap-2">
+      <Camera className="h-5 w-5" />
+      Photo for {itemName}
+    </div>
+  );
 
+  return (
+    <ModalFrame open={open} onOpenChange={onOpenChange} size="sm" title={titleNode}>
         <div className="space-y-4">
           {/* Current Photo */}
           {currentPhotoUrl && (
@@ -240,7 +239,6 @@ export function ItemPhotoUpload({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

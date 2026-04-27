@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -134,20 +134,25 @@ export function ExtractedDataReview({
     }
   };
 
+  const descriptionNode = (
+    <>
+      Review and edit the extracted session data before adding to the system.
+      {lowConfidenceCount > 0 && (
+        <span className="text-amber-600 dark:text-amber-400 font-medium">
+          {' '}{lowConfidenceCount} {lowConfidenceCount === 1 ? 'session has' : 'sessions have'} low confidence - please review carefully.
+        </span>
+      )}
+    </>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Review Extracted Data</DialogTitle>
-          <DialogDescription>
-            Review and edit the extracted session data before adding to the system.
-            {lowConfidenceCount > 0 && (
-              <span className="text-amber-600 dark:text-amber-400 font-medium">
-                {' '}{lowConfidenceCount} {lowConfidenceCount === 1 ? 'session has' : 'sessions have'} low confidence - please review carefully.
-              </span>
-            )}
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="xl"
+      title="Review Extracted Data"
+      description={descriptionNode}
+    >
 
         {/* Summary */}
         <Alert>
@@ -353,7 +358,7 @@ export function ExtractedDataReview({
           </p>
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
@@ -361,8 +366,7 @@ export function ExtractedDataReview({
             <CheckCircle className="h-4 w-4 mr-2" />
             Approve & Add {sessions.length} Sessions
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }

@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { MobileRoomInventory } from "../../inventory/components/MobileRoomInventory";
 
 interface InventoryDialogEvent extends CustomEvent {
@@ -32,17 +27,16 @@ export function MobileInventoryDialog() {
   }, []);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] h-[90vh] p-0 gap-0">
-        <DialogHeader className="p-4 pb-0 shrink-0">
-          <DialogTitle className="text-base">
-            {roomData?.roomName || 'Storage Room'} - Inventory
-          </DialogTitle>
-        </DialogHeader>
-        <div className="flex-1 overflow-hidden">
-          {roomData && <MobileRoomInventory roomId={roomData.roomId} />}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <ModalFrame
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      size="md"
+      title={`${roomData?.roomName || 'Storage Room'} - Inventory`}
+      className="max-h-[90vh]"
+    >
+      <div className="flex-1 overflow-hidden -mx-4 sm:-mx-6 -my-4 sm:-my-6">
+        {roomData && <MobileRoomInventory roomId={roomData.roomId} />}
+      </div>
+    </ModalFrame>
   );
 }

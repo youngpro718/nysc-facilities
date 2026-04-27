@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { QRCodeSVG } from 'qrcode.react';
@@ -51,19 +51,21 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
     toast.success('Print dialog opened');
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <QrCode className="w-5 h-5" />
-            QR Code for Public Forms
-          </DialogTitle>
-          <DialogDescription>
-            Print and post these QR codes for easy access to forms
-          </DialogDescription>
-        </DialogHeader>
+  const titleNode = (
+    <div className="flex items-center gap-2">
+      <QrCode className="w-5 h-5" />
+      QR Code for Public Forms
+    </div>
+  );
 
+  return (
+    <ModalFrame
+      open={open}
+      onOpenChange={onClose}
+      size="xl"
+      title={titleNode}
+      description="Print and post these QR codes for easy access to forms"
+    >
         <div className="space-y-6">
           {/* QR Code Display */}
           <Card>
@@ -200,7 +202,6 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
             </CardContent>
           </Card>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
