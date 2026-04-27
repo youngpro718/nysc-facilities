@@ -1,35 +1,38 @@
+// Semantic status / priority / type styling — uses design-token surfaces only.
+// Returns Tailwind class strings using the project's semantic surface tokens.
 
 export const getTypeColor = (type: string) => {
   switch (type.toLowerCase()) {
     case 'lighting':
-      return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 border-purple-200 dark:border-purple-800';
+      return 'bg-surface-info text-surface-info-foreground border border-status-info/30';
     default:
-      return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800 border-gray-200';
+      return 'bg-surface-neutral text-surface-neutral-foreground border border-border';
   }
 };
 
 export const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'open':
-      return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 border-yellow-200 dark:border-yellow-800';
+      return 'bg-surface-warning text-surface-warning-foreground border border-status-warning/30';
     case 'in_progress':
-      return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 border-blue-200 dark:border-blue-800';
+      return 'bg-surface-info text-surface-info-foreground border border-status-info/30';
     case 'resolved':
-      return 'bg-green-100 dark:bg-green-900/30 text-green-800 border-green-200 dark:border-green-800';
+      return 'bg-surface-operational text-surface-operational-foreground border border-status-operational/30';
     default:
-      return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800 border-gray-200';
+      return 'bg-surface-neutral text-surface-neutral-foreground border border-border';
   }
 };
 
 export const getPriorityColor = (priority: string) => {
   switch (priority.toLowerCase()) {
     case 'high':
-      return 'bg-red-100 dark:bg-red-900/30 text-red-800 border-red-200 dark:border-red-800';
+    case 'urgent':
+      return 'bg-surface-critical text-surface-critical-foreground border border-status-critical/30';
     case 'medium':
-      return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 border-yellow-200 dark:border-yellow-800';
+      return 'bg-surface-warning text-surface-warning-foreground border border-status-warning/30';
     case 'low':
-      return 'bg-green-100 dark:bg-green-900/30 text-green-800 border-green-200 dark:border-green-800';
+      return 'bg-surface-operational text-surface-operational-foreground border border-status-operational/30';
     default:
-      return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800 border-gray-200';
+      return 'bg-surface-neutral text-surface-neutral-foreground border border-border';
   }
 };
