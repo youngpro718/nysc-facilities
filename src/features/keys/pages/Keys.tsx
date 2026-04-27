@@ -17,6 +17,7 @@ import { DataState, useDataState } from "@/ui/DataState";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { useIsMobile } from "@/shared/hooks/use-mobile";
 import { MobileKeyManagement } from "@features/keys/components/keys/mobile/MobileKeyManagement";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Keys() {
   const { canAdmin } = useRolePermissions();
@@ -47,12 +48,12 @@ export default function Keys() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-safe">
-      <div className="space-y-1">
-        <h1 className="text-xl sm:text-2xl font-bold">Key Management</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage keys, track assignments, and view history
-        </p>
-      </div>
+      <PageHeader
+        title="Key Management"
+        description="Manage keys, track assignments, and view history"
+        icon={KeyRound}
+        className="mb-0"
+      />
 
       <DataState
         {...dataStateProps}

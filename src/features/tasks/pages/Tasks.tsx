@@ -23,6 +23,7 @@ import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { TaskCard } from "@features/tasks/components/TaskCard";
 import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPanel";
+import { PageHeader } from "@/components/layout/PageHeader";
 import type { StaffTask, TaskType, TaskPriority } from "@features/tasks/types/staffTasks";
 import { TASK_TYPE_LABELS } from "@features/tasks/types/staffTasks";
 
@@ -302,26 +303,18 @@ export default function Tasks() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <ClipboardList className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">
-              {isCourtAide ? 'My Tasks' : 'Tasks'}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {isCourtAide
-                ? 'View, claim, and complete tasks assigned to you'
-                : 'Manage staff tasks and approvals'
-              }
-            </p>
-          </div>
-        </div>
+      <PageHeader
+        title={isCourtAide ? 'My Tasks' : 'Tasks'}
+        description={
+          isCourtAide
+            ? 'View, claim, and complete tasks assigned to you'
+            : 'Manage staff tasks and approvals'
+        }
+        icon={ClipboardList}
+        className="mb-0"
+      >
         {canManageTasks && <CreateTaskDialog />}
-      </div>
+      </PageHeader>
 
       {/* Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
