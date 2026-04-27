@@ -6,14 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -273,18 +266,21 @@ function JudgeDepartureDialog({
     (assignmentAction === "clear" || (assignmentAction === "reassign" && newJustice)) &&
     (chambersAction === "clear" || (chambersAction === "reassign" && newChambersOccupant));
 
+  const departureTitleNode = (
+    <div className="flex items-center gap-2 text-destructive">
+      <AlertTriangle className="h-5 w-5" />
+      Judge Departure — {judgeName}
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600">
-            <AlertTriangle className="h-5 w-5" />
-            Judge Departure — {judgeName}
-          </DialogTitle>
-          <DialogDescription>
-            Before removing this judge, decide who takes over their courtroom and chambers.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={departureTitleNode}
+      description="Before removing this judge, decide who takes over their courtroom and chambers."
+    >
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -406,7 +402,7 @@ function JudgeDepartureDialog({
           </div>
         )}
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
@@ -428,9 +424,8 @@ function JudgeDepartureDialog({
               </>
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
 
@@ -495,20 +490,24 @@ function MoveJudgeDialog({
     },
   });
 
+  const moveTitleNode = (
+    <div className="flex items-center gap-2">
+      <ArrowRightLeft className="h-5 w-5 text-blue-600" />
+      Move {judgeName}
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ArrowRightLeft className="h-5 w-5 text-blue-600" />
-            Move {judgeName}
-          </DialogTitle>
-          <DialogDescription>
-            {sourceSlot
-              ? `Currently in Part ${sourceSlot.part} (Room ${sourceSlot.roomNumber}). Pick a new part.`
-              : "No current assignment. Pick a part to assign to."}
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={moveTitleNode}
+      description={sourceSlot
+        ? `Currently in Part ${sourceSlot.part} (Room ${sourceSlot.roomNumber}). Pick a new part.`
+        : "No current assignment. Pick a part to assign to."}
+      className="max-h-[80vh] flex flex-col"
+    >
 
         <div className="space-y-3 flex-1 overflow-hidden">
           <Input
@@ -569,7 +568,7 @@ function MoveJudgeDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
@@ -580,9 +579,8 @@ function MoveJudgeDialog({
           >
             {moveMutation.isPending ? "Moving..." : selectedSlot?.justice ? "Swap Judges" : "Move Judge"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
 
@@ -635,18 +633,21 @@ function EditJudgeDetailsDialog({
     },
   });
 
+  const editTitleNode = (
+    <div className="flex items-center gap-2">
+      <Pencil className="h-5 w-5" />
+      {judgeName} — Details
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Pencil className="h-5 w-5" />
-            {judgeName} — Details
-          </DialogTitle>
-          <DialogDescription>
-            Update court attorney and chambers info.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={editTitleNode}
+      description="Update court attorney and chambers info."
+    >
 
         <div className="space-y-3 py-2">
           <div className="space-y-1">
@@ -682,16 +683,15 @@ function EditJudgeDetailsDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
           <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} size="sm">
             {saveMutation.isPending ? "Saving..." : "Save"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
 
@@ -737,19 +737,21 @@ function SwitchChambersDialog({
     },
   });
 
+  const switchTitleNode = (
+    <div className="flex items-center gap-2">
+      <Home className="h-5 w-5 text-purple-600" />
+      Switch Chambers
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5 text-purple-600" />
-            Switch Chambers
-          </DialogTitle>
-          <DialogDescription>
-            Swap chambers between {judgeName}
-            {currentJudge?.chambersRoom ? ` (Room ${currentJudge.chambersRoom})` : " (no chambers)"} and another judge.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={switchTitleNode}
+      description={`Swap chambers between ${judgeName}${currentJudge?.chambersRoom ? ` (Room ${currentJudge.chambersRoom})` : " (no chambers)"} and another judge.`}
+    >
 
         <div className="space-y-3 py-2">
           <div className="space-y-1">
@@ -777,7 +779,7 @@ function SwitchChambersDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
@@ -788,9 +790,8 @@ function SwitchChambersDialog({
           >
             {swapMutation.isPending ? "Swapping..." : "Swap Chambers"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
 
@@ -927,18 +928,21 @@ export function AddJudgeDialog({
     },
   });
 
+  const addTitleNode = (
+    <div className="flex items-center gap-2">
+      <UserPlus className="h-5 w-5" />
+      Add New Judge
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Add New Judge
-          </DialogTitle>
-          <DialogDescription>
-            Enter the judge's info. Court attorney, chambers, and courtroom are optional but recommended.
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="md"
+      title={addTitleNode}
+      description="Enter the judge's info. Court attorney, chambers, and courtroom are optional but recommended."
+    >
 
         <div className="space-y-3 py-2">
           {/* Name row */}
@@ -1133,7 +1137,7 @@ export function AddJudgeDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -1150,8 +1154,7 @@ export function AddJudgeDialog({
           >
             {addMutation.isPending ? "Adding..." : "Add Judge"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ModalFrame>
   );
 }
