@@ -193,13 +193,12 @@ export function AddFinishDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {editingEntry ? "Edit Entry" : "Add Finish Entry"}
-          </DialogTitle>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={editingEntry ? "Edit Entry" : "Add Finish Entry"}
+    >
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
