@@ -4,14 +4,7 @@ import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import {
   Select,
   SelectContent,
@@ -133,144 +126,144 @@ export function AdminAddUserDialog({ open, onOpenChange, onSuccess }: AdminAddUs
     onOpenChange(false);
   };
 
+  if (created) {
+    return (
+      <ModalFrame
+        open={open}
+        onOpenChange={handleClose}
+        size="sm"
+        title={
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+            Account Created
+          </span>
+        }
+        description={`${created.name}'s account has been created. Share the credentials below — they must verify their email before logging in, then you'll approve them in Admin Center.`}
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-muted/50 p-4 space-y-1 text-sm font-mono">
+            <p><span className="text-muted-foreground">Email:</span> {created.email}</p>
+            <p><span className="text-muted-foreground">Password:</span> {created.password}</p>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <Button variant="outline" onClick={handleCopyCredentials} className="gap-2">
+              {copied ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied!" : "Copy Credentials"}
+            </Button>
+            <Button onClick={handleClose}>Done</Button>
+          </div>
+        </div>
+      </ModalFrame>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        {!created ? (
-          <>
-            <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-              <DialogDescription>
-                Create an account on behalf of a staff member. They will need to verify their email before logging in.
-              </DialogDescription>
-            </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={handleClose}
+      size="sm"
+      title="Add New User"
+      description="Create an account on behalf of a staff member. They will need to verify their email before logging in."
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="add-firstName">First Name <span className="text-destructive">*</span></Label>
+            <Input
+              id="add-firstName"
+              value={form.firstName}
+              onChange={(e) => handleChange("firstName", e.target.value)}
+              placeholder="Jane"
+              disabled={loading}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="add-lastName">Last Name <span className="text-destructive">*</span></Label>
+            <Input
+              id="add-lastName"
+              value={form.lastName}
+              onChange={(e) => handleChange("lastName", e.target.value)}
+              placeholder="Smith"
+              disabled={loading}
+              required
+            />
+          </div>
+        </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="add-firstName">First Name <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="add-firstName"
-                    value={form.firstName}
-                    onChange={(e) => handleChange("firstName", e.target.value)}
-                    placeholder="Jane"
-                    disabled={loading}
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="add-lastName">Last Name <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="add-lastName"
-                    value={form.lastName}
-                    onChange={(e) => handleChange("lastName", e.target.value)}
-                    placeholder="Smith"
-                    disabled={loading}
-                    required
-                  />
-                </div>
-              </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="add-email">Email Address <span className="text-destructive">*</span></Label>
+          <Input
+            id="add-email"
+            type="email"
+            value={form.email}
+            onChange={(e) => handleChange("email", e.target.value)}
+            placeholder="jane.smith@example.com"
+            disabled={loading}
+            required
+          />
+        </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="add-email">Email Address <span className="text-destructive">*</span></Label>
-                <Input
-                  id="add-email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  placeholder="jane.smith@example.com"
-                  disabled={loading}
-                  required
-                />
-              </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="add-title">Job Title <span className="text-xs text-muted-foreground">(optional)</span></Label>
+          <Input
+            id="add-title"
+            value={form.title}
+            onChange={(e) => handleChange("title", e.target.value)}
+            placeholder="e.g., Court Aide, Facilities Manager"
+            disabled={loading}
+          />
+        </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="add-title">Job Title <span className="text-xs text-muted-foreground">(optional)</span></Label>
-                <Input
-                  id="add-title"
-                  value={form.title}
-                  onChange={(e) => handleChange("title", e.target.value)}
-                  placeholder="e.g., Court Aide, Facilities Manager"
-                  disabled={loading}
-                />
-              </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="add-role">Requested Role</Label>
+          <Select value={form.requestedRole} onValueChange={(v) => handleChange("requestedRole", v)} disabled={loading}>
+            <SelectTrigger id="add-role">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SIGNUP_ROLE_OPTIONS.map((role) => (
+                <SelectItem key={role.value} value={role.value}>
+                  {role.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">You can change the final role during approval.</p>
+        </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="add-role">Requested Role</Label>
-                <Select value={form.requestedRole} onValueChange={(v) => handleChange("requestedRole", v)} disabled={loading}>
-                  <SelectTrigger id="add-role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SIGNUP_ROLE_OPTIONS.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">You can change the final role during approval.</p>
-              </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="add-password">Temporary Password <span className="text-destructive">*</span></Label>
+          <Input
+            id="add-password"
+            type="text"
+            value={form.password}
+            onChange={(e) => handleChange("password", e.target.value)}
+            placeholder="Min. 6 characters"
+            disabled={loading}
+            required
+            minLength={6}
+          />
+          <p className="text-xs text-muted-foreground">The user should change this after their first login.</p>
+        </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="add-password">Temporary Password <span className="text-destructive">*</span></Label>
-                <Input
-                  id="add-password"
-                  type="text"
-                  value={form.password}
-                  onChange={(e) => handleChange("password", e.target.value)}
-                  placeholder="Min. 6 characters"
-                  disabled={loading}
-                  required
-                  minLength={6}
-                />
-                <p className="text-xs text-muted-foreground">The user should change this after their first login.</p>
-              </div>
-
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <DialogFooter>
-                <Button type="button" variant="ghost" onClick={handleClose} disabled={loading}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Creating..." : "Create Account"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </>
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                Account Created
-              </DialogTitle>
-              <DialogDescription>
-                {created.name}'s account has been created. Share the credentials below — they must verify their email before logging in, then you'll approve them in Admin Center.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="rounded-lg border bg-muted/50 p-4 space-y-1 text-sm font-mono">
-              <p><span className="text-muted-foreground">Email:</span> {created.email}</p>
-              <p><span className="text-muted-foreground">Password:</span> {created.password}</p>
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={handleCopyCredentials} className="gap-2">
-                {copied ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                {copied ? "Copied!" : "Copy Credentials"}
-              </Button>
-              <Button onClick={handleClose}>Done</Button>
-            </DialogFooter>
-          </>
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
-      </DialogContent>
-    </Dialog>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="ghost" onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creating..." : "Create Account"}
+          </Button>
+        </div>
+      </form>
+    </ModalFrame>
   );
 }
