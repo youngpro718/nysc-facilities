@@ -87,6 +87,7 @@ export default function Tasks() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { userRole, isAdmin: canManageTasks } = useRolePermissions();
+  const isMobile = useIsMobile();
 
   // Court aides default to "my-tasks" tab, others to "active"
   const isCourtAide = userRole === 'court_aide';
