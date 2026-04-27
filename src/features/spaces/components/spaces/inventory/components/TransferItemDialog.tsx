@@ -113,7 +113,6 @@ export function TransferItemDialog({
             {isTransferring ? "Transferring..." : "Transfer"}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
