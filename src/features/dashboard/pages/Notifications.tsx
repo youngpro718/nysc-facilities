@@ -1,14 +1,18 @@
-import { NotificationBox } from "@features/admin/components/admin/NotificationBox";
+import { AdminNotificationsList } from "@features/admin/components/admin/AdminNotificationsList";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { useNotifications } from "@shared/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
-import { Bell, Check, CheckCheck, Trash2, Inbox } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Check, CheckCheck, Trash2, Inbox, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
+import { LoadingSkeleton } from "@shared/components/common/common/LoadingSkeleton";
+import { useIsMobile } from "@shared/hooks/use-mobile";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Notification {
   id: string;
@@ -49,21 +53,17 @@ function UserNotifications() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const {
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    clearNotification, 
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
     clearAllNotifications,
-    isLoading 
+    isLoading
   } = useNotifications(user?.id);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    return <LoadingSkeleton type="card" count={4} />;
   }
 
   if (notifications.length === 0) {
@@ -80,7 +80,6 @@ function UserNotifications() {
 
   return (
     <div className="space-y-3">
-      {/* Actions bar */}
       {unreadCount > 0 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
@@ -104,47 +103,47 @@ function UserNotifications() {
           {notifications.map((n) => {
             const route = getNotificationRoute(n as Notification);
             return (
-            <Card
-              key={n.id}
-              className={cn(
-                "transition-colors",
-                !n.read && "border-primary/30 bg-primary/5",
-                route && "cursor-pointer hover:bg-accent/50"
-              )}
-              onClick={() => {
-                if (route) {
-                  markAsRead(n.id);
-                  navigate(route);
-                }
-              }}
-            >
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h4 className="text-sm font-medium truncate">{n.title}</h4>
-                      {!n.read && (
-                        <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
-                      )}
+              <Card
+                key={n.id}
+                className={cn(
+                  "transition-colors",
+                  !n.read && "border-primary/30 bg-primary/5",
+                  route && "cursor-pointer hover:bg-accent/50"
+                )}
+                onClick={() => {
+                  if (route) {
+                    markAsRead(n.id);
+                    navigate(route);
+                  }
+                }}
+              >
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h4 className="text-sm font-medium truncate">{n.title}</h4>
+                        {!n.read && (
+                          <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{n.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{n.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {!n.read && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}>
-                        <Check className="h-3.5 w-3.5" />
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {!n.read && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}>
+                          <Check className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={(e) => { e.stopPropagation(); clearNotification(n.id); }}>
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={(e) => { e.stopPropagation(); clearNotification(n.id); }}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
@@ -155,10 +154,29 @@ function UserNotifications() {
 
 export default function Notifications() {
   const { isAdmin } = useAuth();
+  const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
-  return (
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: isAdmin ? ['adminNotifications'] : ['notifications'],
+    });
+  };
+
+  const content = (
     <div className="space-y-4 sm:space-y-6">
-      {isAdmin ? <NotificationBox /> : <UserNotifications />}
+      <PageHeader
+        title="Notifications"
+        description={isAdmin ? "Admin alerts and system events" : "Updates relevant to you"}
+        icon={Bell}
+      />
+      {isAdmin ? <AdminNotificationsList /> : <UserNotifications />}
     </div>
   );
+
+  if (isMobile) {
+    return <PullToRefresh onRefresh={handleRefresh}>{content}</PullToRefresh>;
+  }
+
+  return content;
 }
