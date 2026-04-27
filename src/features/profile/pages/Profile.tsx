@@ -82,11 +82,12 @@ export default function Profile() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <div className="space-y-2">
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Manage your account and preferences
-        </p>
-      </div>
+      <PageHeader
+        title="Profile & Settings"
+        description="Manage your account and preferences"
+        icon={User}
+      />
+
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="w-full grid grid-cols-2 max-w-md">
