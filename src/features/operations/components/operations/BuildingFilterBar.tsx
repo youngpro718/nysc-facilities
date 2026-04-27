@@ -1,5 +1,5 @@
 import { Building2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FilterPills, type FilterPillOption } from "@/components/ui/FilterPills";
 
 interface Building {
   id: string;
@@ -21,33 +21,22 @@ export function BuildingFilterBar({
   selectedBuildingId,
   onSelect,
 }: BuildingFilterBarProps) {
+  const ALL = "__all__";
+  const options: FilterPillOption<string>[] = [
+    { label: "All Buildings", value: ALL },
+    ...buildings.map((b) => ({ label: b.name, value: b.id })),
+  ];
+
   return (
     <div className="flex flex-wrap items-center gap-2 p-3 sm:p-4 border rounded-lg bg-muted/50">
-      <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-      <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
-        Building:
-      </span>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={!selectedBuildingId ? "default" : "outline"}
-          size="sm"
-          onClick={() => onSelect(null)}
-          className="text-xs sm:text-sm"
-        >
-          All Buildings
-        </Button>
-        {buildings.map((building) => (
-          <Button
-            key={building.id}
-            variant={selectedBuildingId === building.id ? "default" : "outline"}
-            size="sm"
-            onClick={() => onSelect(building.id)}
-            className="text-xs sm:text-sm"
-          >
-            {building.name}
-          </Button>
-        ))}
-      </div>
+      <Building2 className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
+      <FilterPills
+        options={options}
+        value={selectedBuildingId ?? ALL}
+        onChange={(v) => onSelect(v === ALL ? null : v)}
+        label="Building:"
+        ariaLabel="Filter by building"
+      />
     </div>
   );
 }

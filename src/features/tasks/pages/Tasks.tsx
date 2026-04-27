@@ -26,6 +26,7 @@ import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPane
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
+import { FilterPills, type FilterPillOption } from "@/components/ui/FilterPills";
 import type { StaffTask, TaskType, TaskPriority } from "@features/tasks/types/staffTasks";
 import { TASK_TYPE_LABELS } from "@features/tasks/types/staffTasks";
 
@@ -254,55 +255,37 @@ export default function Tasks() {
     );
   };
 
+  const priorityOptions: FilterPillOption<TaskPriority | 'all'>[] = PRIORITY_FILTERS.map(f => {
+    const isUrgent = f.value === 'urgent';
+    const showPulse = isUrgent && hasUrgentTasks;
+    return {
+      ...f,
+      adornment: showPulse ? (
+        <span className="relative flex h-2 w-2" aria-hidden="true">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
+        </span>
+      ) : null,
+    };
+  });
+
   const filterBar = (
     <div className="space-y-2">
-      {/* Type filters */}
-      <div className="flex gap-2 flex-wrap">
-        {TYPE_FILTERS.map(f => (
-          <button
-            key={f.value}
-            type="button"
-            onClick={() => setTypeFilter(f.value)}
-            className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium transition-colors border ${
-              typeFilter === f.value
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-transparent text-muted-foreground border-border hover:bg-muted'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Priority filters */}
-      <div className="flex gap-2 flex-wrap">
-        {PRIORITY_FILTERS.map(f => {
-          const isUrgent = f.value === 'urgent';
-          const showPulse = isUrgent && hasUrgentTasks;
-          return (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setPriorityFilter(f.value)}
-              className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium transition-colors border flex items-center gap-1.5 ${
-                priorityFilter === f.value
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-transparent text-muted-foreground border-border hover:bg-muted'
-              }`}
-            >
-              {showPulse && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                </span>
-              )}
-              {f.label}
-            </button>
-          );
-        })}
-      </div>
+      <FilterPills
+        options={TYPE_FILTERS}
+        value={typeFilter}
+        onChange={setTypeFilter}
+        ariaLabel="Filter tasks by type"
+      />
+      <FilterPills
+        options={priorityOptions}
+        value={priorityFilter}
+        onChange={setPriorityFilter}
+        ariaLabel="Filter tasks by priority"
+      />
     </div>
   );
+
 
   const pageContent = (
     <div className="space-y-6">
