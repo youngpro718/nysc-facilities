@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Package, 
@@ -220,10 +221,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
                     <Package className="h-3 w-3" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Receive Keys</DialogTitle>
-                  </DialogHeader>
+                <ModalFrame title="Receive Keys" size="sm">
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Enter the quantity received for this order.</p>
                     <div className="space-y-2">
@@ -250,7 +248,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
                       </Button>
                     </div>
                   </div>
-                </DialogContent>
+                </ModalFrame>
               </Dialog>
             )}
 
@@ -262,10 +260,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
                     <ArrowRight className="h-3 w-3" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Update Order Status</DialogTitle>
-                  </DialogHeader>
+                <ModalFrame title="Update Order Status" size="sm">
                   <div className="space-y-4">
                     <p>
                       Change status from <Badge className={statusInfo.color}>{statusInfo.label}</Badge> to{' '}
@@ -298,7 +293,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
                       </Button>
                     </div>
                   </div>
-                </DialogContent>
+                </ModalFrame>
               </Dialog>
             )}
           </div>
