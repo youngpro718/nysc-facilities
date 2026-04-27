@@ -147,7 +147,6 @@ export function AppealDialog({ open, onOpenChange }: AppealDialogProps) {
             </>
           )}
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }

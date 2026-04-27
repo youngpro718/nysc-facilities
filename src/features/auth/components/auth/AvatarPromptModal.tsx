@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, X, Camera, UserPlus } from 'lucide-react';
@@ -61,17 +61,18 @@ export function AvatarPromptModal({ open, onOpenChange, onComplete }: AvatarProm
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Complete Your Profile
-          </DialogTitle>
-          <DialogDescription>
-            Add a profile picture to help others recognize you in the system
-          </DialogDescription>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={
+        <span className="flex items-center gap-2">
+          <UserPlus className="h-5 w-5" />
+          Complete Your Profile
+        </span>
+      }
+      description="Add a profile picture to help others recognize you in the system"
+    >
 
         <div className="space-y-6 py-4">
           <div className="flex justify-center">
