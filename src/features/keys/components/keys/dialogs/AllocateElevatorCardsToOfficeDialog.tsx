@@ -3,13 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -106,15 +100,14 @@ export default function AllocateElevatorCardsToOfficeDialog({ open, onOpenChange
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Allocate Elevator Cards to {officeName}</DialogTitle>
-          <DialogDescription>
-            Record allocations to track how many cards are held by the office. Stock will decrease accordingly.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={`Allocate Elevator Cards to ${officeName}`}
+      description="Record allocations to track how many cards are held by the office. Stock will decrease accordingly."
+    >
+      <div className="space-y-4">
           <div className="rounded-md border p-3 text-sm flex items-start gap-2">
             <Info className="h-4 w-4 mt-0.5 text-muted-foreground" />
             <div>
@@ -150,8 +143,7 @@ export default function AllocateElevatorCardsToOfficeDialog({ open, onOpenChange
               {submitting ? "Allocating..." : "Allocate"}
             </Button>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ModalFrame>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,7 +74,7 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
           status_before: slot.status,
           status_after: newStatus,
           actor_user_id: user?.id,
-          actor_name: personName || (user?.email), 
+          actor_name: personName || (user?.email),
           note: note
         });
 
@@ -93,50 +93,44 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
     }
   };
 
+  const headerRight = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => {
+          setEditDialogOpen(true);
+          onOpenChange(false);
+        }}>
+          <Edit3 className="h-4 w-4 mr-2" />
+          Edit Slot
+        </DropdownMenuItem>
+        {slot.status !== 'missing' && (
+          <DropdownMenuItem
+            className="text-destructive"
+            onClick={() => handleAction('missing')}
+          >
+            Mark Missing
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="flex items-center gap-2">
-                  Slot {slot.slot_number}: {slot.label}
-                </DialogTitle>
-                {lockboxName && (
-                  <p className="text-sm text-muted-foreground">
-                    Lockbox: {lockboxName}
-                  </p>
-                )}
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => {
-                    setEditDialogOpen(true);
-                    onOpenChange(false);
-                  }}>
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    Edit Slot
-                  </DropdownMenuItem>
-                  {slot.status !== 'missing' && (
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => handleAction('missing')}
-                    >
-                      Mark Missing
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </DialogHeader>
-        
-        <div className="space-y-4 py-4">
+      <ModalFrame
+        open={open}
+        onOpenChange={onOpenChange}
+        size="sm"
+        title={`Slot ${slot.slot_number}: ${slot.label}`}
+        description={lockboxName ? `Lockbox: ${lockboxName}` : undefined}
+        headerRight={headerRight}
+      >
+        <div className="space-y-4">
           <div className="bg-muted p-3 rounded-md text-sm space-y-1">
             <div>
               <span className="font-semibold">Status: </span>
@@ -151,9 +145,9 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
           {slot.status === 'in_box' && (
             <div className="space-y-2">
               <Label>Person Taking Key <span className="text-destructive">*</span></Label>
-              <Input 
-                placeholder="e.g. Officer Smith, Plumber..." 
-                value={personName} 
+              <Input
+                placeholder="e.g. Officer Smith, Plumber..."
+                value={personName}
                 onChange={(e) => setPersonName(e.target.value)}
               />
             </div>
@@ -161,53 +155,44 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
 
           <div className="space-y-2">
             <Label>Notes (Optional)</Label>
-            <Textarea 
-              placeholder="Any additional details..." 
-              value={note} 
+            <Textarea
+              placeholder="Any additional details..."
+              value={note}
               onChange={(e) => setNote(e.target.value)}
             />
           </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2">
+            {slot.status === 'in_box' ? (
+              <Button
+                className="w-full sm:w-auto"
+                onClick={() => handleAction('checked_out')}
+                disabled={isLoading}
+              >
+                Check Out Key
+              </Button>
+            ) : (
+              <Button
+                className="w-full sm:w-auto"
+                onClick={() => handleAction('in_box')}
+                disabled={isLoading}
+              >
+                {slot.status === 'missing' ? 'Found — Return Key' : 'Return Key'}
+              </Button>
+            )}
+          </div>
         </div>
+      </ModalFrame>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          {slot.status === 'in_box' ? (
-            <Button 
-              className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600" 
-              onClick={() => handleAction('checked_out')}
-              disabled={isLoading}
-            >
-              Check Out Key
-            </Button>
-          ) : slot.status !== 'missing' ? (
-            <Button 
-              className="w-full sm:w-auto bg-green-500 hover:bg-green-600" 
-              onClick={() => handleAction('in_box')}
-              disabled={isLoading}
-            >
-              Return Key
-            </Button>
-          ) : (
-            <Button 
-              className="w-full sm:w-auto bg-green-500 hover:bg-green-600" 
-              onClick={() => handleAction('in_box')}
-              disabled={isLoading}
-            >
-              Found — Return Key
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <EditSlotDialog 
-      slot={slot}
-      open={editDialogOpen}
-      onOpenChange={(open) => {
-        setEditDialogOpen(open);
-        if (!open) onOpenChange(true);
-      }}
-      onSuccess={onSuccess}
-    />
+      <EditSlotDialog
+        slot={slot}
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) onOpenChange(true);
+        }}
+        onSuccess={onSuccess}
+      />
     </>
   );
 }
