@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -306,10 +307,7 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
           Import/Export Users
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>User Import/Export</DialogTitle>
-        </DialogHeader>
+      <ModalFrame size="md" title="User Import/Export">
 
         <Tabs defaultValue="export" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -448,7 +446,7 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
             </div>
           </TabsContent>
         </Tabs>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }

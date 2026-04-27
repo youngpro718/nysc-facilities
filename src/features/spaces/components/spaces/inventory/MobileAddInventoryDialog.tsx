@@ -4,12 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import {
   Form,
   FormControl,
@@ -29,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Camera, Upload, X } from "lucide-react";
 import { useToast } from "@shared/hooks/use-toast";
 import { STORAGE_BUCKETS, QUERY_CONFIG } from '@/config';
@@ -186,15 +181,9 @@ export function MobileAddInventoryDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg w-[95vw] max-h-[95vh] p-0 gap-0">
-        <DialogHeader className="p-4 pb-0">
-          <DialogTitle>Add New Item</DialogTitle>
-        </DialogHeader>
-        
-        <ScrollArea className="flex-1 px-4 pb-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+    <ModalFrame open={open} onOpenChange={handleOpenChange} size="md" title="Add New Item">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               
               {/* Photo Section */}
               <div className="space-y-3">
@@ -446,10 +435,8 @@ export function MobileAddInventoryDialog({
                    isUploadingPhoto ? "Uploading..." : "Add Item"}
                 </Button>
               </div>
-            </form>
-          </Form>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+          </form>
+        </Form>
+    </ModalFrame>
   );
 }

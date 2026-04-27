@@ -7,14 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { CheckCircle2, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -298,62 +291,57 @@ export function VerificationAppeals() {
       </Card>
 
       {/* Review Dialog */}
-      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {reviewAction === 'approve' ? 'Approve Appeal' : 'Reject Appeal'}
-            </DialogTitle>
-            <DialogDescription>
-              {reviewAction === 'approve'
-                ? 'This will reset the user to pending status for re-review.'
-                : 'This will keep the user in rejected status.'}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedAppeal && (
-            <div className="space-y-4 py-4">
-              <div className="rounded-lg bg-muted p-3 space-y-2">
-                <p className="text-sm font-medium">
-                  {selectedAppeal.profiles.first_name} {selectedAppeal.profiles.last_name}
-                </p>
-                <p className="text-xs text-muted-foreground">{selectedAppeal.profiles.email}</p>
-                <div className="pt-2 border-t">
-                  <p className="text-xs font-medium mb-1">Appeal Reason:</p>
-                  <p className="text-sm">{selectedAppeal.appeal_reason}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="admin-notes">Admin Notes (Optional)</Label>
-                <Textarea
-                  id="admin-notes"
-                  placeholder="Add notes explaining your decision..."
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  rows={3}
-                />
+      <ModalFrame
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        size="sm"
+        title={reviewAction === 'approve' ? 'Approve Appeal' : 'Reject Appeal'}
+        description={reviewAction === 'approve'
+          ? 'This will reset the user to pending status for re-review.'
+          : 'This will keep the user in rejected status.'}
+      >
+        {selectedAppeal && (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-muted p-3 space-y-2">
+              <p className="text-sm font-medium">
+                {selectedAppeal.profiles.first_name} {selectedAppeal.profiles.last_name}
+              </p>
+              <p className="text-xs text-muted-foreground">{selectedAppeal.profiles.email}</p>
+              <div className="pt-2 border-t">
+                <p className="text-xs font-medium mb-1">Appeal Reason:</p>
+                <p className="text-sm">{selectedAppeal.appeal_reason}</p>
               </div>
             </div>
-          )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmitReview}
-              disabled={approveMutation.isPending || rejectMutation.isPending}
-              variant={reviewAction === 'approve' ? 'default' : 'destructive'}
-            >
-              {(approveMutation.isPending || rejectMutation.isPending) && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {reviewAction === 'approve' ? 'Approve Appeal' : 'Reject Appeal'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="space-y-2">
+              <Label htmlFor="admin-notes">Admin Notes (Optional)</Label>
+              <Textarea
+                id="admin-notes"
+                placeholder="Add notes explaining your decision..."
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="outline" onClick={handleCloseDialog}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitReview}
+            disabled={approveMutation.isPending || rejectMutation.isPending}
+            variant={reviewAction === 'approve' ? 'default' : 'destructive'}
+          >
+            {(approveMutation.isPending || rejectMutation.isPending) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            {reviewAction === 'approve' ? 'Approve Appeal' : 'Reject Appeal'}
+          </Button>
+        </div>
+      </ModalFrame>
     </>
   );
 }

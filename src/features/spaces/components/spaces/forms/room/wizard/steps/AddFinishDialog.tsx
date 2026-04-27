@@ -2,12 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/services/core/supabaseClient";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import {
   Form,
   FormControl,
@@ -198,13 +193,12 @@ export function AddFinishDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {editingEntry ? "Edit Entry" : "Add Finish Entry"}
-          </DialogTitle>
-        </DialogHeader>
+    <ModalFrame
+      open={open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      title={editingEntry ? "Edit Entry" : "Add Finish Entry"}
+    >
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -548,7 +542,6 @@ export function AddFinishDialog({
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+    </ModalFrame>
   );
 }
