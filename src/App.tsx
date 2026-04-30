@@ -18,6 +18,8 @@ import { DevModePanel } from "@shared/components/dev/DevModePanel";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import type { UserRole } from "@/config/roles";
 import { QUERY_CONFIG } from '@/config';
+import { RouteSkeleton } from "@/components/ui/RouteSkeleton";
+import { TopProgressBar } from "@/components/ui/TopProgressBar";
 
 // ── Lazy route components ─────────────────────────────────────────────────────
 // Every page is loaded on demand so the initial bundle only contains providers,
@@ -97,17 +99,9 @@ const queryClient = new QueryClient({
   },
 });
 
-function RouteFallback() {
-  return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-label="Loading" />
-    </div>
-  );
-}
-
 function AppContent() {
   return (
-    <Suspense fallback={<RouteFallback />}>
+    <Suspense fallback={<RouteSkeleton />}>
       <Routes>
         {/* Public Routes - No Authentication Required */}
         <Route path="/public-forms" element={<PublicForms />} />
@@ -374,6 +368,7 @@ function App() {
                   <AuthErrorBoundary onError={(error) => logger.error('App: Auth error caught:', error)}>
                     <AuthProvider>
                       <NotificationsWrapper>
+                        <TopProgressBar />
                         <AppContent />
                         <DevModeWrapper />
                       </NotificationsWrapper>
