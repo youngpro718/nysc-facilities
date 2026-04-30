@@ -544,7 +544,7 @@ export function EnhancedUserSettings() {
       )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" /><span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
@@ -554,11 +554,9 @@ export function EnhancedUserSettings() {
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Lock className="h-4 w-4" /><span className="hidden sm:inline">Security</span>
           </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger value="accessibility" className="flex items-center gap-2">
-              <Accessibility className="h-4 w-4" /><span className="hidden sm:inline">Accessibility</span>
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="accessibility" className="flex items-center gap-2">
+            <Accessibility className="h-4 w-4" /><span className="hidden sm:inline">Accessibility</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="notifications">
@@ -570,11 +568,9 @@ export function EnhancedUserSettings() {
         <TabsContent value="security">
           <SecurityTab settings={settings} onChange={updateSetting} isAdmin={isAdmin} />
         </TabsContent>
-        {isAdmin && (
-          <TabsContent value="accessibility">
-            <AccessibilityTab settings={settings} onChange={updateSetting} />
-          </TabsContent>
-        )}
+        <TabsContent value="accessibility">
+          <AccessibilityTab settings={settings} onChange={updateSetting} />
+        </TabsContent>
       </Tabs>
     </div>
   );
