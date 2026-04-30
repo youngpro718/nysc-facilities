@@ -34,6 +34,10 @@ export function TopProgressBar() {
   const trickleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const safetyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether the bar has ever been shown. The "active=false" branch
+  // must not run on the very first render (we have nothing to finish), or
+  // it would set progress to 100 just before the trickle takes over.
+  const shownRef = useRef(false);
 
   const active = fetching > 0 || mutating > 0;
 
@@ -85,7 +89,10 @@ export function TopProgressBar() {
   useEffect(() => {
     clearHide();
     setVisible(true);
-    setProgress((p) => (p < 25 ? 25 : p)); // jump forward only
+    shownRef.current = true;
+    // Jump forward only, but always clamp under the trickle ceiling so the
+    // bar can never display 100% while we're still in a "loading" state.
+    setProgress((p) => Math.min(90, Math.max(p, 25)));
     startTrickle();
     armSafety();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,10 +103,15 @@ export function TopProgressBar() {
     if (active) {
       clearHide();
       setVisible(true);
-      setProgress((p) => (p < 25 ? 25 : p));
+      shownRef.current = true;
+      // Same clamp as above — entering an active state must never show 100%.
+      setProgress((p) => Math.min(90, Math.max(p, 25)));
       startTrickle();
       armSafety();
     } else {
+      // Skip the "finish + hide" branch on the very first render; we haven't
+      // shown anything yet, so there is nothing to finish.
+      if (!shownRef.current) return;
       // No activity — finish and hide
       clearTrickle();
       clearSafety();
@@ -108,6 +120,7 @@ export function TopProgressBar() {
       hideRef.current = setTimeout(() => {
         setVisible(false);
         setProgress(0);
+        shownRef.current = false;
       }, HIDE_DELAY_MS);
     }
   }, [active]);
