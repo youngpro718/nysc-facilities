@@ -240,33 +240,25 @@ export const storageService = {
   },
 
   /**
-   * Ensures required storage buckets exist - for direct use in components
-   * Note: This is now just a verification step as buckets should be created via SQL
+   * Verifies required storage buckets exist.
+   *
+   * NOTE: `supabase.storage.listBuckets()` requires the service role. For
+   * anon/authenticated clients it returns an empty list, which made this
+   * function emit false-negative "Storage bucket not found" warnings on every
+   * page load even though the buckets exist (verified server-side).
+   *
+   * Bucket existence is now treated as an infrastructure concern owned by
+   * migrations. We no longer probe it from the client. If a bucket truly is
+   * missing, the upload/download code paths surface the real error at the
+   * point of use.
    */
-  async ensureBucketsExist(bucketNames: string[]): Promise<void> {
-    try {
-      // Check authentication first
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        logger.debug('Skipping bucket verification: User not authenticated');
-        return;
-      }
-      
-      for (const bucketName of bucketNames) {
-        const exists = await this.checkBucketExists(bucketName);
-        
-        if (exists) {
-          logger.debug(`Verified bucket exists: ${bucketName}`);
-        } else {
-          logger.warn(`Storage bucket not found: ${bucketName}`);
-          // We don't try to create it as it should be created via SQL
-        }
-      }
-    } catch (error) {
-      logger.error('Failed to verify storage buckets:', error);
-    }
+  async ensureBucketsExist(_bucketNames: string[]): Promise<void> {
+    // Intentional no-op — see note above. Kept as an exported function so
+    // existing call sites (`initializeStorage`, `EditSpaceDialog`) compile
+    // unchanged.
+    return;
   },
-  
+
   /**
    * Cleans up orphaned files for an entity
    * @param bucketName Bucket containing the files
