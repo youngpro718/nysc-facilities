@@ -95,15 +95,9 @@ interface EnhancedSupplyTrackerProps {
   featured?: boolean;
 }
 
-const statusLabel: Record<string, string> = {
-  submitted: 'Submitted',
-  received: 'Received',
-  picking: 'Picking',
-  ready: 'Ready for Pickup',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  rejected: 'Rejected',
-};
+// Friendly user-facing status labels live in src/lib/statusLabels.ts so the
+// wording stays consistent across every standard-user surface.
+import { getFriendlySupplyStatus, toneClasses } from '@/lib/statusLabels';
 
 const statusBorder: Record<string, string> = {
   submitted: 'border-l-blue-500',
