@@ -64,8 +64,21 @@ export default function UserDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+      <div className="px-4 sm:px-6 py-6 space-y-6 animate-fade-in" role="status" aria-label="Loading your dashboard">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-full bg-muted animate-pulse" />
+          <div className="space-y-2 flex-1">
+            <div className="h-5 w-40 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-28 rounded bg-muted animate-pulse" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {[0,1,2,3].map(i => <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />)}
+        </div>
+        <div className="space-y-3">
+          {[0,1,2].map(i => <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />)}
+        </div>
+        <span className="sr-only">Loading…</span>
       </div>
     );
   }

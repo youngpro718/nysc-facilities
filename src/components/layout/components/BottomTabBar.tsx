@@ -9,6 +9,7 @@ import { useSupplyPendingCounts } from "@features/supply/hooks/useSupplyPendingC
 import { useStaffTasksPendingCounts } from "@features/tasks/hooks/useStaffTasksPendingCounts";
 import { Badge } from "@/components/ui/badge";
 import { getNavigationPath } from "../utils/navigationPaths";
+import { prefetchRoute } from "@/lib/prefetchRoutes";
 
 interface BottomTabBarProps {
   navigation: NavigationTab[];
@@ -77,6 +78,9 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
               <button
                 key={item.title}
                 onClick={() => handleNav(item.title)}
+                onPointerEnter={() => prefetchRoute(path)}
+                onFocus={() => prefetchRoute(path)}
+                onTouchStart={() => prefetchRoute(path)}
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[48px] touch-target touch-manipulation",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
