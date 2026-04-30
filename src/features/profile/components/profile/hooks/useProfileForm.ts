@@ -105,10 +105,13 @@ export function useProfileForm() {
         throw new Error(userError?.message || "No user found");
       }
 
+      // Use UPDATE (not upsert): profile rows are auto-created by the auth
+      // trigger at signup. Calling upsert from a non-admin user runs through
+      // the INSERT RLS policy (admin-only) and fails with code 42501.
+      // The self-update policy (id = auth.uid()) covers this UPDATE path.
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
+        .update({
           first_name: data.first_name,
           last_name: data.last_name,
           username: data.username,
@@ -120,7 +123,8 @@ export function useProfileForm() {
           language: data.language,
           emergency_contact: data.emergency_contact,
           updated_at: new Date().toISOString(),
-        });
+        })
+        .eq('id', user.id);
 
       if (error) throw error;
 
