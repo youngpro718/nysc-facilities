@@ -14,6 +14,7 @@ export function RouteSkeleton() {
       role="status"
       aria-live="polite"
       aria-label="Loading page"
+      data-testid="route-skeleton"
       className="w-full px-4 sm:px-6 py-6 space-y-6 animate-fade-in"
     >
       {/* Header */}
