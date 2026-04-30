@@ -71,12 +71,8 @@ describe('TopProgressBar', () => {
   });
 
   it('trickles upward while fetching but never reaches 100', () => {
+    fetchingValue = 1; // active from the very first render
     renderBar();
-    act(() => {
-      fetchingValue = 1;
-      // re-render via a route change so the hook re-evaluates
-      screen.getByTestId('go-/a').click();
-    });
     act(() => {
       vi.advanceTimersByTime(5000);
     });
