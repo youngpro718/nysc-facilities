@@ -173,16 +173,26 @@ function ActionRow({
   sub,
   onClick,
   accent,
+  prefetchPath,
 }: {
   icon: React.ElementType;
   label: string;
   sub?: string;
   onClick: () => void;
   accent?: boolean;
+  prefetchPath?: string;
 }) {
+  const handlePrefetch = () => {
+    if (prefetchPath) {
+      // Lazy import so the test setup mock for react-query isn't needed here.
+      import("@/lib/prefetchRoutes").then((m) => m.prefetchRoute(prefetchPath));
+    }
+  };
   return (
     <button
       onClick={onClick}
+      onPointerEnter={handlePrefetch}
+      onFocus={handlePrefetch}
       className={`flex items-center gap-4 w-full rounded-xl px-5 py-4 text-left transition-colors touch-manipulation
         ${accent
           ? "bg-primary text-primary-foreground hover:bg-primary/90"
