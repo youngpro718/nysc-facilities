@@ -168,4 +168,16 @@ Deploy: automatic on `git push origin main` (Netlify)
 
 ---
 
-**Last Updated:** February 2026
+## Perceived-Performance Helpers
+
+When building loading or navigation surfaces, prefer these primitives instead of rolling your own:
+
+- **`<TopProgressBar />`** (mounted globally in `App.tsx`) — automatic 2px progress bar tied to React Query activity + route changes. No setup needed; just don't add competing top-of-screen loaders.
+- **`<RouteSkeleton />`** (`src/components/ui/RouteSkeleton.tsx`) — layout-aware fallback for `<Suspense>` route boundaries. Use this in any new top-level lazy boundary instead of a centered spinner.
+- **`prefetchRoute(path)`** (`src/lib/prefetchRoutes.ts`) — call from `onPointerEnter` / `onFocus` / `onTouchStart` on any nav button to warm the destination chunk. Idempotent and idle-callback-scheduled.
+- **`getFriendlySupplyStatus()` / `getFriendlyIssueStatus()` / `getFriendlyKeyStatus()`** (`src/lib/statusLabels.ts`) — translates internal workflow codes into plain-language labels and tones for user-facing UIs. Pair with `<StatusLegendPopover kind="supply" />` to expose a legend.
+
+---
+
+**Last Updated:** April 2026
+
