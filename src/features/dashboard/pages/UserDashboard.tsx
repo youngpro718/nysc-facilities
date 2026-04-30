@@ -17,7 +17,7 @@ import { CompactHeader } from "@shared/components/user/CompactHeader";
 import { PickupAlertBanner } from "@shared/components/user/PickupAlertBanner";
 import { CompactActivitySection } from "@shared/components/user/CompactActivitySection";
 import { KeyRequestDialog } from "@features/supply/components/requests/KeyRequestDialog";
-import { Package, Send, Key, Loader2, ChevronRight } from "lucide-react";
+import { Package, Send, Key, ChevronRight } from "lucide-react";
 
 export default function UserDashboard() {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
