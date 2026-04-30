@@ -96,26 +96,31 @@ export default function UserDashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
-      <div className="max-w-lg mx-auto space-y-5 pb-24 px-4 sm:px-0">
-        {/* Header: greeting + notifications */}
-        <div className="flex items-start justify-between gap-3 pt-3">
-          <CompactHeader
-            firstName={firstName}
-            lastName={lastName}
-            title={(profile as any)?.title || personnelInfo?.title}
-            department={(profile as any)?.department || (personnelInfo as any)?.department}
-            roomNumber={(profile as any)?.room_number || personnelInfo?.roomNumber}
-            avatarUrl={profile?.avatar_url}
-            role={personnelInfo?.role}
-          />
-          <NotificationDropdown
-            notifications={notifications as any}
-            onMarkAsRead={markAsRead}
-            onMarkAllAsRead={markAllAsRead}
-            onClearNotification={clearNotification}
-            onClearAllNotifications={clearAllNotifications}
-          />
+      <div className="max-w-lg mx-auto space-y-6 pb-24 px-4 sm:px-0">
+        {/* Header: greeting card with subtle gradient + notifications */}
+        <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/8 via-primary/3 to-background p-4 pt-5">
+          <div className="flex items-start justify-between gap-3">
+            <CompactHeader
+              firstName={firstName}
+              lastName={lastName}
+              title={(profile as any)?.title || personnelInfo?.title}
+              department={(profile as any)?.department || (personnelInfo as any)?.department}
+              roomNumber={(profile as any)?.room_number || personnelInfo?.roomNumber}
+              avatarUrl={profile?.avatar_url}
+              role={personnelInfo?.role}
+            />
+            <NotificationDropdown
+              notifications={notifications as any}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+              onClearNotification={clearNotification}
+              onClearAllNotifications={clearAllNotifications}
+            />
+          </div>
         </div>
+
+        {/* First-time-user hint strip (dismissible) */}
+        <OnboardingHintStrip />
 
         {/* Pickup Alert */}
         <PickupAlertBanner count={readyForPickup} onClick={() => navigate("/my-activity")} />
