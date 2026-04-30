@@ -95,6 +95,8 @@ export function AppSidebar() {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => route && navigate(route)}
+                      onPointerEnter={() => prefetchRoute(route)}
+                      onFocus={() => prefetchRoute(route)}
                       className={cn(
                         "flex items-center justify-center w-full h-10 rounded-lg transition-colors",
                         active
@@ -116,6 +118,8 @@ export function AppSidebar() {
               <button
                 key={tab.title}
                 onClick={() => route && navigate(route)}
+                onPointerEnter={() => prefetchRoute(route)}
+                onFocus={() => prefetchRoute(route)}
                 className={cn(
                   "flex items-center gap-2.5 w-full h-10 px-3 rounded-lg text-sm font-medium transition-colors",
                   active
