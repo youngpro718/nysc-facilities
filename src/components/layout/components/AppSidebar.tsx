@@ -7,6 +7,7 @@ import { getRoleBasedNavigation, getNavigationRoutes } from "@/components/layout
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ChevronLeft, LogOut, HelpCircle, LifeBuoy } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { prefetchRoute } from "@/lib/prefetchRoutes";
 import type { NavigationTab } from "@/components/layout/types";
 
 export function AppSidebar() {
