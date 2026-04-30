@@ -124,6 +124,7 @@ export function TopProgressBar() {
   return (
     <div
       aria-hidden="true"
+      data-testid="top-progress-bar"
       className={cn(
         'fixed top-0 left-0 right-0 z-[100] h-[2px] pointer-events-none transition-opacity duration-200',
         visible ? 'opacity-100' : 'opacity-0',

@@ -7,6 +7,7 @@ import { getRoleBasedNavigation, getNavigationRoutes } from "@/components/layout
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ChevronLeft, LogOut, HelpCircle, LifeBuoy } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { prefetchRoute } from "@/lib/prefetchRoutes";
 import type { NavigationTab } from "@/components/layout/types";
 
 export function AppSidebar() {
@@ -94,6 +95,8 @@ export function AppSidebar() {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => route && navigate(route)}
+                      onPointerEnter={() => prefetchRoute(route)}
+                      onFocus={() => prefetchRoute(route)}
                       className={cn(
                         "flex items-center justify-center w-full h-10 rounded-lg transition-colors",
                         active
@@ -115,6 +118,8 @@ export function AppSidebar() {
               <button
                 key={tab.title}
                 onClick={() => route && navigate(route)}
+                onPointerEnter={() => prefetchRoute(route)}
+                onFocus={() => prefetchRoute(route)}
                 className={cn(
                   "flex items-center gap-2.5 w-full h-10 px-3 rounded-lg text-sm font-medium transition-colors",
                   active
