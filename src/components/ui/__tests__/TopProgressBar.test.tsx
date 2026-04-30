@@ -70,12 +70,31 @@ describe('TopProgressBar', () => {
     expect(getBar().className).toContain('opacity-100');
   });
 
-  it('trickles upward while fetching but never reaches 100', () => {
+  it('trickles upward while fetching but never reaches 100 (active from mount)', () => {
     fetchingValue = 1; // active from the very first render
     renderBar();
     act(() => {
       vi.advanceTimersByTime(5000);
     });
+    expect(widthPct()).toBeLessThan(100);
+    expect(widthPct()).toBeLessThanOrEqual(90);
+    expect(widthPct()).toBeGreaterThan(25);
+  });
+
+  it('trickles upward while fetching but never reaches 100 (active flips after mount)', () => {
+    // Hardest case: mounted inactive, then a fetch starts. The component
+    // must NOT show 100% at any point while the fetch is in flight.
+    fetchingValue = 0;
+    renderBar();
+    act(() => {
+      fetchingValue = 1;
+      // Trigger a re-render so useIsFetching is re-read.
+      screen.getByTestId('go-/a').click();
+    });
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(widthPct()).toBeLessThan(100);
     expect(widthPct()).toBeLessThanOrEqual(90);
     expect(widthPct()).toBeGreaterThan(25);
   });
