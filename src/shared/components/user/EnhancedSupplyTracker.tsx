@@ -95,15 +95,9 @@ interface EnhancedSupplyTrackerProps {
   featured?: boolean;
 }
 
-const statusLabel: Record<string, string> = {
-  submitted: 'Submitted',
-  received: 'Received',
-  picking: 'Picking',
-  ready: 'Ready for Pickup',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  rejected: 'Rejected',
-};
+// Friendly user-facing status labels live in src/lib/statusLabels.ts so the
+// wording stays consistent across every standard-user surface.
+import { getFriendlySupplyStatus, toneClasses } from '@/lib/statusLabels';
 
 const statusBorder: Record<string, string> = {
   submitted: 'border-l-blue-500',
@@ -278,9 +272,18 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                   </Button>
                 )}
 
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
-                  {statusLabel[request.status] || request.status}
-                </Badge>
+                {(() => {
+                  const friendly = getFriendlySupplyStatus(request.status);
+                  return (
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] px-1.5 py-0.5 border ${toneClasses(friendly.tone)}`}
+                      title={friendly.description}
+                    >
+                      {friendly.label}
+                    </Badge>
+                  );
+                })()}
 
                 {isExpanded ? (
                   <ChevronUp className="h-4 w-4 text-muted-foreground" />
