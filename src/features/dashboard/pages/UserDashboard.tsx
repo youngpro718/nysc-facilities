@@ -126,6 +126,7 @@ export default function UserDashboard() {
             label="Order Supplies"
             sub={activeSupplyCount > 0 ? `${activeSupplyCount} in progress` : undefined}
             onClick={() => navigate("/request/supplies")}
+            prefetchPath="/request/supplies"
             accent
           />
           <ActionRow
@@ -133,10 +134,11 @@ export default function UserDashboard() {
             label="Make a Request"
             sub={openRequestCount > 0 ? `${openRequestCount} active` : "Move, deliver, set up & more"}
             onClick={() => navigate("/request/help")}
+            prefetchPath="/request/help"
           />
           <ActionRow
             icon={Key}
-            label="Request Key"
+            label="Request a Key"
             sub={keysHeld > 0 ? `${keysHeld} key${keysHeld !== 1 ? "s" : ""} held` : undefined}
             onClick={() => setShowKeyRequestDialog(true)}
           />
