@@ -34,6 +34,10 @@ export function TopProgressBar() {
   const trickleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const safetyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether the bar has ever been shown. The "active=false" branch
+  // must not run on the very first render (we have nothing to finish), or
+  // it would set progress to 100 just before the trickle takes over.
+  const shownRef = useRef(false);
 
   const active = fetching > 0 || mutating > 0;
 
