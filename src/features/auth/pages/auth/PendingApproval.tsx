@@ -134,7 +134,7 @@ export default function PendingApproval() {
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Track procurement and reorder recommendations</li>
                   </>
                 )}
-                {requestedRole === 'cmc' && (
+                {requestedRole === 'court_liaison' && (
                   <>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Manage courtroom assignments and scheduling</li>
                     <li className="flex items-start gap-1.5"><CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />Oversee court terms and operations</li>

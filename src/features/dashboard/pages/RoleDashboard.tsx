@@ -83,7 +83,7 @@ export default function RoleDashboard() {
       const active = data?.filter(r => r.is_active).length || 0;
       return { total, active };
     },
-    enabled: userRole === 'cmc' || userRole === 'court_officer',
+    enabled: userRole === 'court_liaison' || userRole === 'court_officer',
   });
 
   const { data: keyStats } = useQuery({
@@ -136,7 +136,7 @@ export default function RoleDashboard() {
 
   const inlineStats: { label: string; value: string | number; onClick?: () => void }[] = [];
 
-  if (userRole === 'cmc') {
+  if (userRole === 'court_liaison') {
     inlineStats.push(
       { label: 'Active Courtrooms', value: `${courtroomStats?.active || 0}/${courtroomStats?.total || 0}`, onClick: () => navigate('/court-operations') },
       { label: 'My Issues', value: myIssues.length, onClick: () => navigate('/my-activity') },

@@ -38,12 +38,12 @@ export const TITLE_ROLE_MAPPINGS: TitleRoleMapping[] = [
   // CMC - Court Management Coordinator  
   {
     keywords: [
-      "cmc",
+      "court_liaison",
       "court management",
       "management coordinator",
       "operations coordinator"
     ],
-    role: "cmc",
+    role: "court_liaison",
     description: "Court Management Coordinator",
     accessDescription: "Access to court operations, scheduling, and key management"
   },

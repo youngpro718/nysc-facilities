@@ -206,9 +206,9 @@ const courtOfficerContent: OnboardingRoleContent = {
 };
 
 const cmcContent: OnboardingRoleContent = {
-  role: 'cmc',
-  label: getRoleLabel('cmc'),
-  description: getRoleDescription('cmc'),
+  role: 'court_liaison',
+  label: getRoleLabel('court_liaison'),
+  description: getRoleDescription('court_liaison'),
   intro: 'You will manage court operations, schedules, and the information that keeps sessions moving.',
   focusTitle: 'The essentials for your role',
   focusPoints: [

@@ -86,14 +86,14 @@ export function hasModuleAccess(role: UserRole | string | null | undefined, modu
   // Role-specific module access
   const moduleAccess: Record<string, UserRole[]> = {
     spaces: ['admin', 'system_admin', 'facilities_manager', 'court_officer'],
-    operations: ['admin', 'system_admin', 'facilities_manager', 'cmc'],
-    occupants: ['admin', 'system_admin', 'facilities_manager', 'cmc'],
+    operations: ['admin', 'system_admin', 'facilities_manager', 'court_liaison'],
+    occupants: ['admin', 'system_admin', 'facilities_manager', 'court_liaison'],
     inventory: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide'],
-    supply_requests: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide', 'cmc', 'standard'],
-    keys: ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer'],
+    supply_requests: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide', 'court_liaison', 'standard'],
+    keys: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer'],
     maintenance: ['admin', 'system_admin', 'facilities_manager'],
-    court_operations: ['admin', 'system_admin', 'cmc'],
-    dashboard: ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'court_aide', 'standard'],
+    court_operations: ['admin', 'system_admin', 'court_liaison'],
+    dashboard: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'court_aide', 'standard'],
   };
   
   const allowedRoles = moduleAccess[moduleKey] || [];
