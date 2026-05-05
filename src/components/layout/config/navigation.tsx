@@ -99,11 +99,10 @@ export const secondaryNavigationItems: NavigationItem[] = [
     ],
   },
   {
-    title: 'Court Operations',
-    href: '/court-operations',
+    title: 'Term Sheet',
+    href: '/term-sheet',
     icon: Gavel,
-    adminOnly: true,
-    moduleKey: 'court_operations',
+    adminOnly: false,
   },
 ];
 
@@ -177,11 +176,10 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
   
-  // CMC (Court Management Coordinator) navigation
-  if (userRole === 'cmc') {
+  // Court Liaison (term sheet maintainer) navigation
+  if (userRole === 'court_liaison') {
     return [
-      { title: 'Dashboard', icon: LayoutDashboard },
-      { title: 'Court Operations', icon: Gavel },
+      { title: 'Term Sheet', icon: FileText },
       { title: 'Supply Room', icon: Package2 },
       { title: 'My Activity', icon: FileText },
       { title: 'Notifications', icon: MessageSquare },
@@ -277,7 +275,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/keys',
       '/inventory',
       '/tasks',
-      '/court-operations',
+      '/term-sheet',
       '',          // separator placeholder
       '/admin',
     ];
@@ -298,11 +296,10 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
   
-  // CMC (Court Management Coordinator) routes
-  if (userRole === 'cmc') {
+  // Court Liaison routes
+  if (userRole === 'court_liaison') {
     return [
-      '/cmc-dashboard',
-      '/court-operations',
+      '/term-sheet',
       '/supply-room',
       '/my-activity',
       '/notifications',
