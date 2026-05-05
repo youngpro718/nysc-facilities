@@ -13,7 +13,7 @@ export type UserRole =
   | 'court_aide'           // "Court Aide" in UI
   | 'court_officer'        // "Court Officer" in UI
   | 'purchasing'           // "Purchasing" in UI
-  | 'cmc'                  // "Management" in UI
+  | 'court_liaison'        // "Court Liaison" in UI — maintains the courtroom directory
   | 'facilities_manager'   // "Facilities Manager" in UI
   | 'system_admin'         // "System Admin" in UI
   | 'admin';               // Legacy alias → treated as system_admin
@@ -53,9 +53,9 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
     color: 'orange',
   },
   {
-    value: 'cmc',
-    label: 'Court Management Coordinator',
-    description: 'Oversee court operations, manage courtroom scheduling, and coordinate terms',
+    value: 'court_liaison',
+    label: 'Court Liaison',
+    description: 'Maintain the courtroom directory (judges, parts, clerks, sergeants) on the term sheet',
     color: 'purple',
   },
   {
