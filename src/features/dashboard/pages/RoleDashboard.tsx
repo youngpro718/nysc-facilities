@@ -138,7 +138,7 @@ export default function RoleDashboard() {
 
   if (userRole === 'court_liaison') {
     inlineStats.push(
-      { label: 'Active Courtrooms', value: `${courtroomStats?.active || 0}/${courtroomStats?.total || 0}`, onClick: () => navigate('/court-operations') },
+      { label: 'Active Courtrooms', value: `${courtroomStats?.active || 0}/${courtroomStats?.total || 0}`, onClick: () => navigate('/term-sheet') },
       { label: 'My Issues', value: myIssues.length, onClick: () => navigate('/my-activity') },
     );
   } else if (userRole === 'court_officer') {

@@ -236,7 +236,7 @@ const courtLiaisonContent: OnboardingRoleContent = {
   primaryAction: {
     title: 'Open court operations',
     description: 'Go to the workflow you will use most.',
-    path: '/court-operations',
+    path: '/term-sheet',
     icon: Gavel,
   },
   secondaryAction: {

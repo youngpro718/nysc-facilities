@@ -335,7 +335,7 @@ export function getTourForRoute(pathname: string): { steps: Step[]; title: strin
   if (pathname === '/') return { steps: adminDashboardTour, title: 'Admin Dashboard' };
   if (pathname === '/spaces') return { steps: spacesMgmtTour, title: 'Rooms Management' };
   if (pathname === '/operations') return { steps: operationsTour, title: 'Operations Center' };
-  if (pathname === '/court-operations') return { steps: courtOpsTour, title: 'Court Operations' };
+  if (pathname === '/term-sheet') return { steps: courtOpsTour, title: 'Court Operations' };
   if (pathname === '/keys') return { steps: keysMgmtTour, title: 'Keys Management' };
   if (pathname === '/inventory') return { steps: inventoryTour, title: 'Inventory Management' };
   if (pathname === '/access-assignments') return { steps: accessAssignmentsTour, title: 'Access & Assignments' };
@@ -356,7 +356,7 @@ export const allTours = [
   { id: 'admin-dashboard', title: 'Admin Dashboard', path: '/', description: 'Overview of the main admin hub, navigation, and notifications.', steps: adminDashboardTour },
   { id: 'spaces', title: 'Rooms Management', path: '/spaces', description: 'Manage buildings, floors, and rooms.', steps: spacesMgmtTour },
   { id: 'operations', title: 'Operations Center', path: '/operations', description: 'Track issues, maintenance, and supply requests.', steps: operationsTour },
-  { id: 'court-ops', title: 'Court Operations', path: '/court-operations', description: 'Manage courtroom sessions, terms, and personnel.', steps: courtOpsTour },
+  { id: 'court-ops', title: 'Court Operations', path: '/term-sheet', description: 'Manage courtroom sessions, terms, and personnel.', steps: courtOpsTour },
   { id: 'keys', title: 'Keys Management', path: '/keys', description: 'Track key inventory, requests, and assignments.', steps: keysMgmtTour },
   { id: 'inventory', title: 'Inventory Management', path: '/inventory', description: 'Manage supply stock levels and reorder points.', steps: inventoryTour },
   { id: 'access', title: 'Access & Assignments', path: '/access-assignments', description: 'Manage personnel, room assignments, and key assignments.', steps: accessAssignmentsTour },

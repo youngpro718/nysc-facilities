@@ -144,7 +144,7 @@ export const NotificationBox = () => {
         navigate('/admin');
         break;
       case 'court_assignment_change':
-        navigate('/court-operations');
+        navigate('/term-sheet');
         break;
       default:
         navigate('/admin');

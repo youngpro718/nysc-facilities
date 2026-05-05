@@ -209,7 +209,7 @@ export function CommandCenter() {
               variant="outline" 
               size="sm" 
               className="w-full mt-2"
-              onClick={() => navigate('/court-operations')}
+              onClick={() => navigate('/term-sheet')}
             >
               View Operations
               <ArrowRight className="h-3 w-3 ml-2" />
