@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from '@features/auth/hooks/useAuth';
-import { TermSheetBoard } from '@features/court/components/court-operations/personnel/TermSheetBoard';
+import { TermSheetBoard } from '@features/court/components/term-sheet/TermSheetBoard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MaintenanceScheduleList } from "@features/operations/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@features/operations/components/maintenance/MaintenanceIssuesList";

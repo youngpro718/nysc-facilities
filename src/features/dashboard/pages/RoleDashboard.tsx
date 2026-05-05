@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
 import { useUserIssues } from '@features/dashboard/hooks/useUserIssues';
-import { TermSheetBoard } from '@features/court/components/court-operations/personnel/TermSheetBoard';
+import { TermSheetBoard } from '@features/court/components/term-sheet/TermSheetBoard';
 import { supabase } from '@/lib/supabase';
 import { getRoleDashboardConfig } from '@/config/roleDashboardConfig';
 import { Loader2, ChevronRight } from 'lucide-react';

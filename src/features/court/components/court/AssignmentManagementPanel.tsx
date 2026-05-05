@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { EnhancedCourtAssignmentTable } from "./EnhancedCourtAssignmentTable";
-import { TermSheetBoard } from "@features/court/components/court-operations/personnel/TermSheetBoard";
+import { TermSheetBoard } from "@features/court/components/term-sheet/TermSheetBoard";
 import { AddJudgeDialog } from "./JudgeStatusManager";
 import { AddStaffDialog } from "./AddStaffDialog";
 import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesIntegration";
