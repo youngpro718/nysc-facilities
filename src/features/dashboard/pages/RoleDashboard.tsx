@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
 import { useUserIssues } from '@features/dashboard/hooks/useUserIssues';
-import { TermSheetBoard } from '@features/court/components/court-operations/personnel/TermSheetBoard';
+import { TermSheetBoard } from '@features/court/components/term-sheet/TermSheetBoard';
 import { supabase } from '@/lib/supabase';
 import { getRoleDashboardConfig } from '@/config/roleDashboardConfig';
 import { Loader2, ChevronRight } from 'lucide-react';
@@ -83,7 +83,7 @@ export default function RoleDashboard() {
       const active = data?.filter(r => r.is_active).length || 0;
       return { total, active };
     },
-    enabled: userRole === 'cmc' || userRole === 'court_officer',
+    enabled: userRole === 'court_liaison' || userRole === 'court_officer',
   });
 
   const { data: keyStats } = useQuery({
@@ -136,9 +136,9 @@ export default function RoleDashboard() {
 
   const inlineStats: { label: string; value: string | number; onClick?: () => void }[] = [];
 
-  if (userRole === 'cmc') {
+  if (userRole === 'court_liaison') {
     inlineStats.push(
-      { label: 'Active Courtrooms', value: `${courtroomStats?.active || 0}/${courtroomStats?.total || 0}`, onClick: () => navigate('/court-operations') },
+      { label: 'Active Courtrooms', value: `${courtroomStats?.active || 0}/${courtroomStats?.total || 0}`, onClick: () => navigate('/term-sheet') },
       { label: 'My Issues', value: myIssues.length, onClick: () => navigate('/my-activity') },
     );
   } else if (userRole === 'court_officer') {

@@ -17,7 +17,7 @@ const BASE_PATH_MAP: Record<string, string> = {
   'Supply Room': '/supply-room',
   'Keys': '/keys',
   'Maintenance': '/operations?tab=maintenance',
-  'Court Operations': '/court-operations',
+  'Term Sheet': '/term-sheet',
   'My Activity': '/my-activity',
   'My Requests': '/my-activity?tab=keys',
   'My Issues': '/my-activity?tab=reported',
@@ -25,7 +25,6 @@ const BASE_PATH_MAP: Record<string, string> = {
   'Admin Profile': '/admin',
   'Profile': '/profile',
   'System Settings': '/system-settings',
-  'Term Sheet': '/term-sheet',
   'Notifications': '/notifications',
 };
 

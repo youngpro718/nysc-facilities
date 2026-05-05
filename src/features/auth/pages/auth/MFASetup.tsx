@@ -40,7 +40,7 @@ export default function MFASetup() {
           .select('role')
           .eq('user_id', user.id)
           .maybeSingle();
-        const privilegedRoles = ['admin', 'cmc'];
+        const privilegedRoles = ['admin', 'court_liaison'];
         setIsPrivileged(!!data?.role && privilegedRoles.includes(data.role));
       } catch (err) {
         logger.warn('[MFASetup] Role check failed:', err);

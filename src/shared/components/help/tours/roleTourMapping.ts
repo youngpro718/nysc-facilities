@@ -51,8 +51,8 @@ export const ROLE_TOUR_ACCESS: Record<UserRole, string[]> = {
     'request-hub',
   ],
   
-  cmc: [
-    'cmc-dashboard',
+  court_liaison: [
+    'term-sheet',
     'court-ops',
     'spaces', // Read-only access for planning
     'user-dashboard',

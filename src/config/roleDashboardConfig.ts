@@ -11,7 +11,7 @@ import {
   CheckCircle, User, KeyRound, DoorClosed
 } from 'lucide-react';
 
-export type DashboardRole = 'cmc' | 'court_officer' | 'purchasing' | 'court_aide';
+export type DashboardRole = 'court_liaison' | 'court_officer' | 'purchasing' | 'court_aide';
 
 export interface RoleDashboardConfig {
   title: string;
@@ -59,13 +59,13 @@ export interface QuickAction {
 }
 
 export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = {
-  cmc: {
-    title: 'Court Management Dashboard',
-    greeting: 'Court Manager',
+  court_liaison: {
+    title: 'Court Liaison Dashboard',
+    greeting: 'Court Liaison',
     primaryAction: {
-      label: 'Court Operations',
-      path: '/court-operations',
-      icon: Gavel,
+      label: 'Term Sheet',
+      path: '/term-sheet',
+      icon: FileText,
     },
     secondaryAction: {
       label: 'Request Supplies',
@@ -76,16 +76,15 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
       { id: 'activeCourtrooms', label: 'Active Courtrooms', icon: Gavel, description: 'operational' },
       { id: 'myIssues', label: 'My Issues', icon: Wrench, description: 'Open issues you\'ve reported', clickable: true, clickPath: '/my-issues' },
       { id: 'mySupplyRequests', label: 'My Supply Requests', icon: Package, description: 'Active supply requests', clickable: true, clickPath: '/my-supply-requests' },
-      { id: 'upcomingTerms', label: 'Upcoming Terms', icon: Calendar, description: 'Next 30 days' },
     ],
     quickActions: [
-      { id: 'court-ops', title: 'Court Operations', description: 'Manage courtroom assignments and terms', icon: Gavel, path: '/court-operations', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
+      { id: 'term-sheet', title: 'Term Sheet', description: 'View and edit courtroom assignments', icon: FileText, path: '/term-sheet', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
       { id: 'report-issue', title: 'Report Issue', description: 'Report a facility or maintenance issue', icon: Wrench, path: '/my-issues', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-50 dark:bg-orange-950/30' },
       { id: 'request-supplies', title: 'Request Supplies', description: 'Order office supplies and materials', icon: Package, path: '/request/supplies', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950/30' },
       { id: 'my-supplies', title: 'My Supply Requests', description: 'Track your supply request status', icon: FileText, path: '/my-supply-requests', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950/30' },
     ],
     showTermSheet: true,
-    showPerformanceMetrics: true,
+    showPerformanceMetrics: false,
     showInventoryAlerts: false,
     showPendingRequests: false,
   },

@@ -22,7 +22,7 @@ export {
  * Use user_roles table directly for role management
  * Simplified 4-role hierarchy: admin, cmc, court_aide, standard
  */
-export type Role = 'admin' | 'cmc' | 'court_aide' | 'standard';
+export type Role = 'admin' | 'court_liaison' | 'court_aide' | 'standard';
 
 /**
  * Profile data structure matching the database schema

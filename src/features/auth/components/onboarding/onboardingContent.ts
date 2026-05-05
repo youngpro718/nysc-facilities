@@ -205,10 +205,10 @@ const courtOfficerContent: OnboardingRoleContent = {
   completionDescription: 'Everything you need for keys, access, and spaces is now grouped together.',
 };
 
-const cmcContent: OnboardingRoleContent = {
-  role: 'cmc',
-  label: getRoleLabel('cmc'),
-  description: getRoleDescription('cmc'),
+const courtLiaisonContent: OnboardingRoleContent = {
+  role: 'court_liaison',
+  label: getRoleLabel('court_liaison'),
+  description: getRoleDescription('court_liaison'),
   intro: 'You will manage court operations, schedules, and the information that keeps sessions moving.',
   focusTitle: 'The essentials for your role',
   focusPoints: [
@@ -236,13 +236,13 @@ const cmcContent: OnboardingRoleContent = {
   primaryAction: {
     title: 'Open court operations',
     description: 'Go to the workflow you will use most.',
-    path: '/court-operations',
+    path: '/term-sheet',
     icon: Gavel,
   },
   secondaryAction: {
     title: 'Go to dashboard',
     description: 'See your court overview and activity.',
-    path: '/cmc-dashboard',
+    path: '/term-sheet',
     icon: LayoutDashboard,
   },
   completionTitle: 'Your court workspace is ready',
@@ -342,7 +342,7 @@ const ROLE_CONTENT_MAP: Record<UserRole, OnboardingRoleContent> = {
   court_aide: courtAideContent,
   purchasing: purchasingContent,
   court_officer: courtOfficerContent,
-  cmc: cmcContent,
+  court_liaison: courtLiaisonContent,
   facilities_manager: facilitiesManagerContent,
   system_admin: adminContent,
   admin: adminContent,

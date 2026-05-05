@@ -26,7 +26,7 @@ export function useOrderCart() {
   const { user, profile } = useAuth();
 
   // Supervisors (court_officer, cmc, admin) bypass restricted item approval
-  const isSupervisor = ['court_officer', 'cmc', 'admin'].includes(profile?.role || '');
+  const isSupervisor = ['court_officer', 'court_liaison', 'admin'].includes(profile?.role || '');
 
   const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string; requires_justification?: boolean }, quantity: number = 1) => {
     setCartItems(prev => {

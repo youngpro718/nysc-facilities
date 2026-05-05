@@ -1,4 +1,4 @@
-import { TermSheetBoard } from "@features/court/components/court-operations/personnel/TermSheetBoard";
+import { TermSheetBoard } from "@features/court/components/term-sheet/TermSheetBoard";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 /**

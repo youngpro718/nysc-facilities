@@ -47,7 +47,7 @@ function getRoute(notification: any): string | null {
     case 'role_assigned':
     case 'role_changed':
     case 'role_removed': return '/admin';
-    case 'court_assignment_change': return '/court-operations';
+    case 'court_assignment_change': return '/term-sheet';
     default: return null;
   }
 }

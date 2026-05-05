@@ -146,7 +146,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
 
         // 5) MFA enforcement — not yet enabled.
         // When ready, uncomment this block to require TOTP for privileged roles.
-        // const privilegedRoles = ['admin', 'cmc'];
+        // const privilegedRoles = ['admin', 'court_liaison'];
         // const isPrivileged = userRoleData?.role && privilegedRoles.includes(userRoleData.role);
         // if (isPrivileged) {
         //   const { data: factorData, error: factorError } = await withTimeout(

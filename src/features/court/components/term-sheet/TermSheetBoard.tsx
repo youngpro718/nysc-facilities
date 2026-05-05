@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { FileText, Download, FileSpreadsheet, Printer, Search, LayoutGrid, List, Users, Gavel, Shield } from 'lucide-react';
 import { useToast } from '@shared/hooks/use-toast';
 import { useCourtPersonnel } from '@features/court/hooks/useCourtPersonnel';
-import { JudgeStatusBadge } from '@features/court/components/court/JudgeStatusManager';
+import { JudgeStatusBadge } from '@features/court/components/term-sheet/JudgeStatusBadge';
 import { useCourtIssuesIntegration } from '@features/court/hooks/useCourtIssuesIntegration';
 import {
   DropdownMenu,

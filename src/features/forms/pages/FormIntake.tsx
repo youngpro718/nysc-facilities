@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QuickProcessDialog } from '@features/forms/components/forms/QuickProcessDialog';
-import { CourtReportPreview } from '@features/court/components/court-reports/CourtReportPreview';
+
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Inbox } from 'lucide-react';
 
@@ -338,7 +338,7 @@ export default function FormIntake() {
               </Button>
             </div>
             <div className="p-4">
-              <CourtReportPreview reportData={selectedCourtReport} />
+              <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(selectedCourtReport, null, 2)}</pre>
             </div>
           </div>
         </div>

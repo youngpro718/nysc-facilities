@@ -477,7 +477,7 @@ export async function staffCompletePickup(requestId: string) {
     .eq('user_id', user.id)
     .maybeSingle();
 
-  const allowedRoles = ['admin', 'court_aide', 'cmc', 'facilities_manager'];
+  const allowedRoles = ['admin', 'court_aide', 'court_liaison', 'facilities_manager'];
   if (!roleData || !allowedRoles.includes(roleData.role)) {
     throw new Error('Only supply staff can complete pickup on behalf of others');
   }

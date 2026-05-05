@@ -195,7 +195,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, email")
-        .in("role", ["admin", "court_officer", "cmc"])
+        .in("role", ["admin", "court_officer", "court_liaison"])
         .order("last_name");
       if (error) throw error;
       return data || [];

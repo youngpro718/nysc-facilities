@@ -10,7 +10,7 @@ export const USER_ROLES = {
   SYSTEM_ADMIN: 'system_admin',
   ADMIN: 'admin',
   FACILITIES_MANAGER: 'facilities_manager',
-  CMC: 'cmc',
+  CMC: 'court_liaison',
   COURT_OFFICER: 'court_officer',
   PURCHASING: 'purchasing',
   COURT_AIDE: 'court_aide',
@@ -25,20 +25,20 @@ export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
  */
 export const PERMISSIONS = {
   // Facility permissions
-  'facility.view': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'],
-  'facility.update_status': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_aide'],
-  'facility.edit': ['admin', 'system_admin', 'facilities_manager', 'cmc'],
+  'facility.view': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'purchasing', 'court_aide', 'standard'],
+  'facility.update_status': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_aide'],
+  'facility.edit': ['admin', 'system_admin', 'facilities_manager', 'court_liaison'],
   'facility.delete': ['admin', 'system_admin', 'facilities_manager'],
 
   // Issue permissions
-  'issue.view': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'],
-  'issue.create': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'purchasing', 'court_aide', 'standard'],
-  'issue.assign': ['admin', 'system_admin', 'facilities_manager', 'cmc'],
-  'issue.resolve': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_aide'],
+  'issue.view': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'purchasing', 'court_aide', 'standard'],
+  'issue.create': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'purchasing', 'court_aide', 'standard'],
+  'issue.assign': ['admin', 'system_admin', 'facilities_manager', 'court_liaison'],
+  'issue.resolve': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_aide'],
   'issue.delete': ['admin', 'system_admin', 'facilities_manager'],
 
   // Audit trail permissions
-  'audit.view': ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide'],
+  'audit.view': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'purchasing', 'court_aide'],
 
   // Admin permissions (system_admin only — facilities_manager excluded)
   'admin.users': ['admin', 'system_admin'],

@@ -98,7 +98,7 @@ export function useRolePermissions() {
       dashboard: 'admin',
       lighting: 'admin',
     },
-    cmc: {
+    court_liaison: {
       spaces: null,
       issues: 'write',
       occupants: 'read',
@@ -226,7 +226,7 @@ export function useRolePermissions() {
         let effectiveRole: CourtRole = cached.role;
         try {
           const preview = canPreviewRole && typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-          const validRoles: CourtRole[] = ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
+          const validRoles: CourtRole[] = ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'purchasing', 'court_aide', 'standard'];
           if ((cached.role === 'admin' || cached.role === 'system_admin') && preview && validRoles.includes(preview)) {
             effectiveRole = preview;
           }
@@ -298,7 +298,7 @@ export function useRolePermissions() {
       // Admin-only preview role override - now works site-wide for Dev Mode
       try {
         const preview = canPreviewRole && typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-        const validRoles: CourtRole[] = ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
+        const validRoles: CourtRole[] = ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'purchasing', 'court_aide', 'standard'];
         if ((role === 'admin' || role === 'system_admin') && preview && validRoles.includes(preview)) {
           logger.info('[useRolePermissions] Applying preview role override (Dev Mode)');
           effectiveRole = preview;
@@ -368,7 +368,7 @@ export function useRolePermissions() {
   const isAdmin = userRole === 'admin' || userRole === 'system_admin';
   const isSystemAdmin = userRole === 'admin' || userRole === 'system_admin';
   const isFacilitiesManager = userRole === 'facilities_manager';
-  const isCMC = userRole === 'cmc';
+  const isCMC = userRole === 'court_liaison';
   const isCourtAide = userRole === 'court_aide';
   const isPurchasing = userRole === 'purchasing';
   const isPurchasingStaff = userRole === 'purchasing';
@@ -385,7 +385,7 @@ export function useRolePermissions() {
     let effectiveRole: CourtRole = rolePermissionsMap[role] ? role : 'standard';
     try {
       const preview = canPreviewRole && typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
-      const validRoles: CourtRole[] = ['admin', 'system_admin', 'facilities_manager', 'cmc', 'court_officer', 'purchasing', 'court_aide', 'standard'];
+      const validRoles: CourtRole[] = ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'purchasing', 'court_aide', 'standard'];
       if ((role === 'admin' || role === 'system_admin') && preview && validRoles.includes(preview)) {
         effectiveRole = preview;
       }
