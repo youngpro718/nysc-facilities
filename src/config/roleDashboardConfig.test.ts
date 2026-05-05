@@ -11,7 +11,7 @@ describe('role dashboard config', () => {
   });
 
   it('keeps court roles on their intended operational landing pages', () => {
-    expect(getRoleDashboardConfig('cmc')?.primaryAction.path).toBe('/court-operations');
+    expect(getRoleDashboardConfig('court_liaison')?.primaryAction.path).toBe('/term-sheet');
     expect(getRoleDashboardConfig('court_officer')?.primaryAction.path).toBe('/keys');
     expect(getRoleDashboardConfig('court_aide')?.primaryAction.path).toBe('/tasks');
   });

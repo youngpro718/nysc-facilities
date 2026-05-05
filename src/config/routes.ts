@@ -47,12 +47,6 @@ export const routes: Record<string, RouteConfig> = {
     breadcrumbLabel: 'Dashboard',
     icon: LayoutDashboard,
   },
-  '/cmc-dashboard': {
-    path: '/cmc-dashboard',
-    title: 'CMC Dashboard',
-    breadcrumbLabel: 'Dashboard',
-    icon: LayoutDashboard,
-  },
   
   // User request pages
   '/my-activity': {
@@ -143,13 +137,6 @@ export const routes: Record<string, RouteConfig> = {
     title: 'Key Management',
     breadcrumbLabel: 'Keys',
     icon: KeyRound,
-    parent: '/',
-  },
-  '/court-operations': {
-    path: '/court-operations',
-    title: 'Court Operations',
-    breadcrumbLabel: 'Court Operations',
-    icon: Gavel,
     parent: '/',
   },
   
