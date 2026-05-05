@@ -98,7 +98,7 @@ export function useRolePermissions() {
       dashboard: 'admin',
       lighting: 'admin',
     },
-    cmc: {
+    court_liaison: {
       spaces: null,
       issues: 'write',
       occupants: 'read',

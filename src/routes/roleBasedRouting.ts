@@ -25,8 +25,8 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
     path: '/',
     name: 'Facilities Dashboard',
   },
-  cmc: {
-    path: '/cmc-dashboard',
+  court_liaison: {
+    path: '/term-sheet',
     name: 'Court Management Dashboard',
   },
   court_officer: {

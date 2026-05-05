@@ -21,7 +21,7 @@ const ROLE_ICONS: Record<string, string> = {
   court_aide: "📦",
   court_officer: "🔑",
   purchasing: "🛒",
-  cmc: "📋",
+  court_liaison: "📋",
 };
 
 const STEP_LABELS = ["Account", "Profile", "Role"];

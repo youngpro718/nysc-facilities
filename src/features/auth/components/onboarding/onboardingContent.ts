@@ -205,7 +205,7 @@ const courtOfficerContent: OnboardingRoleContent = {
   completionDescription: 'Everything you need for keys, access, and spaces is now grouped together.',
 };
 
-const cmcContent: OnboardingRoleContent = {
+const courtLiaisonContent: OnboardingRoleContent = {
   role: 'court_liaison',
   label: getRoleLabel('court_liaison'),
   description: getRoleDescription('court_liaison'),
@@ -242,7 +242,7 @@ const cmcContent: OnboardingRoleContent = {
   secondaryAction: {
     title: 'Go to dashboard',
     description: 'See your court overview and activity.',
-    path: '/cmc-dashboard',
+    path: '/term-sheet',
     icon: LayoutDashboard,
   },
   completionTitle: 'Your court workspace is ready',
@@ -342,7 +342,7 @@ const ROLE_CONTENT_MAP: Record<UserRole, OnboardingRoleContent> = {
   court_aide: courtAideContent,
   purchasing: purchasingContent,
   court_officer: courtOfficerContent,
-  cmc: cmcContent,
+  court_liaison: courtLiaisonContent,
   facilities_manager: facilitiesManagerContent,
   system_admin: adminContent,
   admin: adminContent,

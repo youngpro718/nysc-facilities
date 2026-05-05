@@ -34,8 +34,8 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
     { label: 'Access', path: '/access-assignments' },
     { label: 'Admin', path: '/admin' },
   ],
-  cmc: [
-    { label: 'Dashboard', path: '/cmc-dashboard' },
+  court_liaison: [
+    { label: 'Dashboard', path: '/term-sheet' },
     { label: 'Court Ops', path: '/court-operations' },
     { label: 'Tasks', path: '/tasks' },
     { label: 'Operations', path: '/operations' },

@@ -346,7 +346,7 @@ export function getTourForRoute(pathname: string): { steps: Step[]; title: strin
   if (pathname === '/my-activity') return { steps: myActivityTour, title: 'My Activity' };
   if (pathname === '/request') return { steps: requestHubTour, title: 'Request Hub' };
   if (pathname === '/court-officer-dashboard') return { steps: roleDashboardTour, title: 'Court Officer Dashboard' };
-  if (pathname === '/cmc-dashboard') return { steps: roleDashboardTour, title: 'CMC Dashboard' };
+  if (pathname === '/term-sheet') return { steps: roleDashboardTour, title: 'CMC Dashboard' };
   if (pathname === '/court-aide-dashboard') return { steps: roleDashboardTour, title: 'Court Aide Dashboard' };
   return null;
 }
