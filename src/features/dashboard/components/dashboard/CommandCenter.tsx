@@ -184,12 +184,12 @@ export function CommandCenter() {
           </CardContent>
         </Card>
 
-        {/* Court Operations Card */}
+        {/* Courtrooms Card */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Gavel className="h-4 w-4" />
-              Court Operations
+              Courtrooms
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -201,17 +201,13 @@ export function CommandCenter() {
               <span className="text-sm text-muted-foreground">Operational</span>
               <Badge variant="outline">{metrics.court.operational}</Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Sessions Today</span>
-              <Badge variant="default">{metrics.court.sessions_today}</Badge>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="w-full mt-2"
               onClick={() => navigate('/term-sheet')}
             >
-              View Operations
+              View Term Sheet
               <ArrowRight className="h-3 w-3 ml-2" />
             </Button>
           </CardContent>
