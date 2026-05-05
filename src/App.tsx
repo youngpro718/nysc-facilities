@@ -63,7 +63,7 @@ const TermSheet = lazy(() => import("@features/court/pages/TermSheet"));
 const InventoryDashboard = lazy(() =>
   import("@features/inventory/pages/InventoryDashboard").then(m => ({ default: m.InventoryDashboard }))
 );
-const LiveCourtGrid = lazy(() => import("@features/court/components/court/LiveCourtGrid"));
+
 const HelpCenter = lazy(() =>
   import("@shared/components/help/HelpCenter").then(m => ({ default: m.HelpCenter }))
 );
