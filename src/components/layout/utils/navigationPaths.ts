@@ -25,7 +25,6 @@ const BASE_PATH_MAP: Record<string, string> = {
   'Admin Profile': '/admin',
   'Profile': '/profile',
   'System Settings': '/system-settings',
-  'Term Sheet': '/term-sheet',
   'Notifications': '/notifications',
 };
 
