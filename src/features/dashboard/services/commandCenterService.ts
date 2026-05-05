@@ -274,9 +274,8 @@ async function getUserMetrics(): Promise<UserMetrics> {
 async function getCourtMetrics(): Promise<CourtMetrics> {
   const today = new Date().toISOString().split('T')[0];
 
-  const [roomsRes, sessionsRes, termsRes] = await Promise.all([
+  const [roomsRes, termsRes] = await Promise.all([
     supabase.from('court_rooms').select('operational_status'),
-    supabase.from('court_sessions').select('id', { count: 'exact', head: true }).eq('session_date', today),
     supabase
       .from('court_terms')
       .select('id', { count: 'exact', head: true })
@@ -289,7 +288,7 @@ async function getCourtMetrics(): Promise<CourtMetrics> {
     total_rooms: rooms.length,
     operational: rooms.filter(r => r.operational_status === 'active' || r.operational_status === 'operational').length,
     maintenance: rooms.filter(r => r.operational_status === 'maintenance').length,
-    sessions_today: sessionsRes.count || 0,
+    sessions_today: 0,
     active_terms: termsRes.count || 0,
   };
 }
