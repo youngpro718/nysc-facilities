@@ -40,7 +40,6 @@ const InstallApp = lazy(() => import("@features/auth/pages/InstallApp"));
 
 // Role dashboards
 const AdminDashboard = lazy(() => import("@features/admin/pages/AdminDashboard"));
-const CMCDashboard = lazy(() => import("@features/court/pages/CMCDashboard"));
 const CourtOfficerDashboard = lazy(() => import("@features/court/pages/CourtOfficerDashboard"));
 const CourtAideWorkCenter = lazy(() => import("@features/court/pages/CourtAideWorkCenter"));
 const UserDashboard = lazy(() => import("@features/dashboard/pages/UserDashboard"));
@@ -61,9 +60,6 @@ const Notifications = lazy(() => import("@features/dashboard/pages/Notifications
 const TermSheet = lazy(() => import("@features/court/pages/TermSheet"));
 
 // Named exports need destructuring inside the factory
-const CourtOperationsDashboard = lazy(() =>
-  import("@features/court/pages/CourtOperationsDashboard").then(m => ({ default: m.CourtOperationsDashboard }))
-);
 const InventoryDashboard = lazy(() =>
   import("@features/inventory/pages/InventoryDashboard").then(m => ({ default: m.InventoryDashboard }))
 );
@@ -135,13 +131,6 @@ function AppContent() {
           } />
 
           {/* Role-Specific Dashboard Routes */}
-          <Route path="/cmc-dashboard" element={
-            <ProtectedRoute>
-              <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Management">
-                <CMCDashboard />
-              </ModuleProtectedRoute>
-            </ProtectedRoute>
-          } />
           <Route path="/court-officer-dashboard" element={
             <ProtectedRoute>
               <CourtOfficerDashboard />
@@ -251,20 +240,6 @@ function AppContent() {
             </ProtectedRoute>
           } />
           {/* Maintenance now handled by Operations page */}
-          <Route path="court-operations" element={
-            <ProtectedRoute>
-              <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Operations">
-                <CourtOperationsDashboard />
-              </ModuleProtectedRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="court-live" element={
-            <ProtectedRoute requireAdmin>
-              <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Operations">
-                <LiveCourtGrid />
-              </ModuleProtectedRoute>
-            </ProtectedRoute>
-          } />
 
 
           {/* Settings Routes */}
