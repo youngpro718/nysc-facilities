@@ -71,7 +71,7 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
           </thead>
           <tbody>${rows}</tbody>
         </table>
-        <div class="footer">Key Reference — ${lockbox.name}</div>
+        <div class="footer">Key Reference — ${esc(lockbox.name)}</div>
         <script>window.print();window.onafterprint=()=>window.close();</script>
       </body>
       </html>
