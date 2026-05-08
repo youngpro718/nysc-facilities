@@ -456,14 +456,25 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   // ── Save sort order mutation (optimistic) ─────────────────────────────────
   const saveSortOrder = useMutation({
     mutationFn: async (updates: { id: string; sort_order: number }[]) => {
-      // Fire updates in parallel for speed
-      const results = await Promise.all(
-        updates.map(u =>
-          supabase.from('court_assignments').update({ sort_order: u.sort_order }).eq('id', u.id),
-        ),
+      // Fire updates in parallel; track which rows failed by id
+      const settled = await Promise.all(
+        updates.map(async u => {
+          const { error } = await supabase
+            .from('court_assignments')
+            .update({ sort_order: u.sort_order })
+            .eq('id', u.id);
+          return { id: u.id, sort_order: u.sort_order, error };
+        }),
       );
-      const firstError = results.find(r => r.error)?.error;
-      if (firstError) throw firstError;
+      const failed = settled.filter(r => r.error);
+      if (failed.length > 0) {
+        const err = new Error(
+          `Failed to update ${failed.length} of ${updates.length} row(s)`,
+        ) as Error & { failedIds?: string[]; firstError?: unknown };
+        err.failedIds = failed.map(f => f.id);
+        err.firstError = failed[0].error;
+        throw err;
+      }
     },
     // Optimistically reorder the cached query so any re-render uses the new order
     onMutate: async (updates) => {
@@ -479,16 +490,40 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
       }
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
-      // Roll back cache and local UI
+    onError: (err: Error & { failedIds?: string[] }, _vars, ctx) => {
       const key = ['term-sheet-board', selectedTermId];
-      if (ctx?.previous) {
-        queryClient.setQueryData(key, ctx.previous);
-        setSortedList(ctx.previous);
+      const previous = ctx?.previous;
+      const failedIds = err?.failedIds;
+
+      if (previous && failedIds && failedIds.length > 0) {
+        // Partial failure: revert sort_order ONLY for rows that failed to save;
+        // keep the successful ones at their new positions.
+        const prevOrderMap = new Map(previous.map(a => [a.id, a.sort_order]));
+        const failedSet = new Set(failedIds);
+        const current = queryClient.getQueryData<TermAssignment[]>(key) ?? previous;
+        const reconciled = [...current]
+          .map(a =>
+            failedSet.has(a.id)
+              ? { ...a, sort_order: prevOrderMap.get(a.id) ?? a.sort_order }
+              : a,
+          )
+          .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999));
+        queryClient.setQueryData(key, reconciled);
+        setSortedList(reconciled);
+        toast({
+          variant: 'destructive',
+          title: 'Partial save',
+          description: `${failedIds.length} row(s) couldn't be reordered and were reverted.`,
+        });
+      } else if (previous) {
+        // Total failure (e.g. network error before any row updated): full rollback.
+        queryClient.setQueryData(key, previous);
+        setSortedList(previous);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save new order.' });
       } else {
         setSortedList(assignments);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save new order.' });
       }
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save new order.' });
     },
     onSettled: () => {
       // Refresh related views without disturbing the optimistic board state
