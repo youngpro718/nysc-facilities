@@ -14,21 +14,24 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    const esc = (s: string) =>
+      String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
     const statusLabel = (s: string) => {
       switch (s) {
         case 'in_box': return 'In Box';
         case 'checked_out': return 'Checked Out';
         case 'missing': return 'Missing';
         case 'retired': return 'Retired';
-        default: return s;
+        default: return esc(s);
       }
     };
 
     const rows = slots.map(slot => `
       <tr>
-        <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center;font-weight:600">${slot.slot_number}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid #ddd">${slot.label}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid #ddd">${slot.room_number || '—'}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center;font-weight:600">${esc(String(slot.slot_number))}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ddd">${esc(slot.label)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ddd">${slot.room_number ? esc(slot.room_number) : '—'}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center">${statusLabel(slot.status)}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center">${slot.quantity > 1 ? slot.quantity : '1'}</td>
       </tr>
@@ -38,7 +41,7 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
       <!DOCTYPE html>
       <html>
       <head>
-        <title>${lockbox.name} - Key Reference</title>
+        <title>${esc(lockbox.name)} - Key Reference</title>
         <style>
           body { font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #222; }
           h1 { font-size: 20px; margin: 0 0 4px 0; }
@@ -50,10 +53,10 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
         </style>
       </head>
       <body>
-        <h1>${lockbox.name}</h1>
+        <h1>${esc(lockbox.name)}</h1>
         <div class="meta">
-          ${lockbox.location_description ? `<div>Location: ${lockbox.location_description}</div>` : ''}
-          <div>Printed: ${format(new Date(), 'MMM d, yyyy h:mm a')}</div>
+          ${lockbox.location_description ? `<div>Location: ${esc(lockbox.location_description)}</div>` : ''}
+          <div>Printed: ${esc(format(new Date(), 'MMM d, yyyy h:mm a'))}</div>
           <div>${slots.length} total slots · ${slots.filter(s => s.status === 'in_box').length} available · ${slots.filter(s => s.status === 'checked_out').length} checked out</div>
         </div>
         <table>
@@ -68,7 +71,7 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
           </thead>
           <tbody>${rows}</tbody>
         </table>
-        <div class="footer">Key Reference — ${lockbox.name}</div>
+        <div class="footer">Key Reference — ${esc(lockbox.name)}</div>
         <script>window.print();window.onafterprint=()=>window.close();</script>
       </body>
       </html>
