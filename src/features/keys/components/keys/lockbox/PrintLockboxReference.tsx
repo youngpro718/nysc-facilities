@@ -14,6 +14,9 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    const esc = (s: string) =>
+      String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
     const statusLabel = (s: string) => {
       switch (s) {
         case 'in_box': return 'In Box';
