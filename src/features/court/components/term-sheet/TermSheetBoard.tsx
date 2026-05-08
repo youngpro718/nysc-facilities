@@ -453,21 +453,47 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     if (assignments.length > 0) setSortedList(assignments);
   }, [assignments]);
 
-  // ── Save sort order mutation ───────────────────────────────────────────────
+  // ── Save sort order mutation (optimistic) ─────────────────────────────────
   const saveSortOrder = useMutation({
     mutationFn: async (updates: { id: string; sort_order: number }[]) => {
-      for (const u of updates) {
-        await supabase.from('court_assignments').update({ sort_order: u.sort_order }).eq('id', u.id);
-      }
+      // Fire updates in parallel for speed
+      const results = await Promise.all(
+        updates.map(u =>
+          supabase.from('court_assignments').update({ sort_order: u.sort_order }).eq('id', u.id),
+        ),
+      );
+      const firstError = results.find(r => r.error)?.error;
+      if (firstError) throw firstError;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
+    // Optimistically reorder the cached query so any re-render uses the new order
+    onMutate: async (updates) => {
+      const key = ['term-sheet-board', selectedTermId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<TermAssignment[]>(key);
+      if (previous) {
+        const orderMap = new Map(updates.map(u => [u.id, u.sort_order]));
+        const next = [...previous]
+          .map(a => ({ ...a, sort_order: orderMap.get(a.id) ?? a.sort_order }))
+          .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999));
+        queryClient.setQueryData(key, next);
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      // Roll back cache and local UI
+      const key = ['term-sheet-board', selectedTermId];
+      if (ctx?.previous) {
+        queryClient.setQueryData(key, ctx.previous);
+        setSortedList(ctx.previous);
+      } else {
+        setSortedList(assignments);
+      }
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save new order.' });
+    },
+    onSettled: () => {
+      // Refresh related views without disturbing the optimistic board state
       queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
       queryClient.invalidateQueries({ queryKey: ['court-assignments-table'] });
-    },
-    onError: () => {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save new order.' });
-      setSortedList(assignments); // revert
     },
   });
 
@@ -479,6 +505,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
       const oldIndex = prev.findIndex(a => a.id === active.id);
       const newIndex = prev.findIndex(a => a.id === over.id);
       const reordered = arrayMove(prev, oldIndex, newIndex);
+      // Fire-and-forget; cache + local state already reflect the new order
       saveSortOrder.mutate(reordered.map((a, i) => ({ id: a.id, sort_order: i + 1 })));
       return reordered;
     });
