@@ -1,12 +1,17 @@
 import { TermSheetBoard } from "@features/court/components/term-sheet/TermSheetBoard";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
+import { useAuth } from "@features/auth/hooks/useAuth";
 
 /**
- * Public Term Sheet Page
- * Accessible to all users to view current court term assignments
- * Uses the same TermSheetBoard component as Court Operations
+ * Term Sheet Page
+ * - All authenticated users can view
+ * - admin / system_admin / court_liaison can edit (DB RLS enforces this too)
  */
 export default function TermSheet() {
+  const { profile } = useAuth();
+  const role = profile?.role;
+  const canEdit = role === 'admin' || role === 'system_admin' || role === 'court_liaison';
+
   return (
     <div className="space-y-4 pb-20 md:pb-8">
       <Breadcrumb />
@@ -16,9 +21,8 @@ export default function TermSheet() {
           Current court assignments and personnel
         </p>
       </div>
-      
-      {/* Use the same TermSheetBoard component, but with admin features hidden */}
-      <TermSheetBoard isAdmin={false} />
+
+      <TermSheetBoard isAdmin={canEdit} />
     </div>
   );
 }
