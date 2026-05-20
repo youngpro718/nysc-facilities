@@ -240,11 +240,13 @@ export function useReportDownload() {
 
   const previewReport = useCallback((report: GeneratedReport) => {
     if (report.format === 'json' || report.format === 'csv') {
-      // Open in new window for preview
+      // Open in new window for preview - use textContent to prevent XSS
       const newWindow = window.open();
       if (newWindow) {
-        newWindow.document.write(`<pre>${report.data}</pre>`);
         newWindow.document.title = report.title;
+        const pre = newWindow.document.createElement('pre');
+        pre.textContent = String(report.data ?? '');
+        newWindow.document.body.appendChild(pre);
       }
     } else if (report.format === 'pdf') {
       // For PDF, would typically use a PDF viewer
