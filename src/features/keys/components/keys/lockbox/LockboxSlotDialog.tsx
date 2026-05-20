@@ -198,10 +198,7 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
       <EditSlotDialog
         slot={slot}
         open={editDialogOpen}
-        onOpenChange={(open) => {
-          setEditDialogOpen(open);
-          if (!open) onOpenChange(true);
-        }}
+        onOpenChange={setEditDialogOpen}
         onSuccess={onSuccess}
       />
     </>
