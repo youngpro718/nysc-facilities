@@ -376,6 +376,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         clerks: string[] | null;
         calendar_day: string | null;
         sort_order: number | null;
+        updated_at: string | null;
       }
       interface RoomRow {
         id: string;
@@ -417,6 +418,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
               sergeant: a.sergeant || '—',
               clerks: Array.isArray(a.clerks) ? a.clerks.filter(c => c && c !== '—') : [],
               sort_order: a.sort_order ?? 9999,
+              updated_at: a.updated_at ?? null,
             } as TermAssignment;
           })
           .filter((r): r is TermAssignment => r !== null);
@@ -425,7 +427,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
       // Try fetching with term_id filter
       let query = supabase
         .from("court_assignments")
-        .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order, term_id")
+        .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order, updated_at, term_id")
         .order("sort_order");
 
       if (selectedTermId) {
@@ -438,7 +440,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
       if (assignmentsError && assignmentsError.message?.includes('term_id')) {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from("court_assignments")
-          .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order")
+          .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order, updated_at")
           .order("sort_order");
         if (fallbackError) throw fallbackError;
         return joinWithRooms((fallbackData || []) as AssignmentRow[]);
