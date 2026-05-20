@@ -459,23 +459,37 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   // ── Save sort order mutation (optimistic) ─────────────────────────────────
   const saveSortOrder = useMutation({
     mutationFn: async (updates: { id: string; sort_order: number }[]) => {
-      // Fire updates in parallel; track which rows failed by id
-      const settled = await Promise.all(
-        updates.map(async u => {
-          const { error } = await supabase
-            .from('court_assignments')
-            .update({ sort_order: u.sort_order })
-            .eq('id', u.id);
-          return { id: u.id, sort_order: u.sort_order, error };
-        }),
-      );
-      const failed = settled.filter(r => r.error);
-      if (failed.length > 0) {
+      // Build payload with expected_updated_at from the current cache so the
+      // server can reject the reorder if another user changed any of these
+      // rows since we last read them.
+      const key = ['term-sheet-board', selectedTermId];
+      const cached = queryClient.getQueryData<TermAssignment[]>(key) ?? [];
+      const updatedAtMap = new Map(cached.map(a => [a.id, a.updated_at]));
+
+      const items = updates.map(u => ({
+        id: u.id,
+        sort_order: u.sort_order,
+        expected_updated_at: updatedAtMap.get(u.id) ?? null,
+      }));
+
+      const { data, error } = await supabase.rpc('reorder_court_assignments', {
+        p_term_id: selectedTermId ?? null,
+        p_items: items,
+      });
+
+      if (error) {
+        const err = new Error(error.message) as Error & { failedIds?: string[]; conflict?: boolean };
+        throw err;
+      }
+
+      const result = (data ?? {}) as { updated?: number; conflicts?: string[] };
+      const conflicts = Array.isArray(result.conflicts) ? result.conflicts : [];
+      if (conflicts.length > 0) {
         const err = new Error(
-          `Failed to update ${failed.length} of ${updates.length} row(s)`,
-        ) as Error & { failedIds?: string[]; firstError?: unknown };
-        err.failedIds = failed.map(f => f.id);
-        err.firstError = failed[0].error;
+          `Reorder conflict: ${conflicts.length} row(s) were modified by someone else`,
+        ) as Error & { failedIds?: string[]; conflict?: boolean };
+        err.failedIds = conflicts;
+        err.conflict = true;
         throw err;
       }
     },
@@ -493,40 +507,33 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
       }
       return { previous };
     },
-    onError: (err: Error & { failedIds?: string[] }, _vars, ctx) => {
+    onError: (err: Error & { failedIds?: string[]; conflict?: boolean }, _vars, ctx) => {
       const key = ['term-sheet-board', selectedTermId];
       const previous = ctx?.previous;
-      const failedIds = err?.failedIds;
 
-      if (previous && failedIds && failedIds.length > 0) {
-        // Partial failure: revert sort_order ONLY for rows that failed to save;
-        // keep the successful ones at their new positions.
-        const prevOrderMap = new Map(previous.map(a => [a.id, a.sort_order]));
-        const failedSet = new Set(failedIds);
-        const current = queryClient.getQueryData<TermAssignment[]>(key) ?? previous;
-        const reconciled = [...current]
-          .map(a =>
-            failedSet.has(a.id)
-              ? { ...a, sort_order: prevOrderMap.get(a.id) ?? a.sort_order }
-              : a,
-          )
-          .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999));
-        queryClient.setQueryData(key, reconciled);
-        setSortedList(reconciled);
+      // Conflict (another user changed the same rows) → full rollback and refetch
+      if (err?.conflict) {
+        if (previous) {
+          queryClient.setQueryData(key, previous);
+          setSortedList(previous);
+        }
+        queryClient.invalidateQueries({ queryKey: key });
         toast({
           variant: 'destructive',
-          title: 'Partial save',
-          description: `${failedIds.length} row(s) couldn't be reordered and were reverted.`,
+          title: 'Reorder conflict',
+          description: 'Someone else changed these rows. Refreshing the latest order — please try again.',
         });
-      } else if (previous) {
-        // Total failure (e.g. network error before any row updated): full rollback.
+        return;
+      }
+
+      // Any other error → full rollback
+      if (previous) {
         queryClient.setQueryData(key, previous);
         setSortedList(previous);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save new order.' });
       } else {
         setSortedList(assignments);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save new order.' });
       }
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save new order.' });
     },
     onSettled: () => {
       // Refresh related views without disturbing the optimistic board state
