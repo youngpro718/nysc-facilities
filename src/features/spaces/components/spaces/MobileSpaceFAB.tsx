@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { DoorOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@shared/hooks/use-mobile';
@@ -49,11 +49,11 @@ export function MobileSpaceFAB({
         >
           <Button
             size="lg"
-            className="h-14 w-14 rounded-full shadow-lg group active:scale-95 transition-transform touch-manipulation"
+            className="h-14 w-14 rounded-full shadow-lg group active:scale-95 transition-transform touch-manipulation bg-courthouse-accent hover:bg-courthouse-accent/90 text-white"
             onClick={() => setIsOpen(true)}
-            aria-label="Add new space"
+            aria-label="Add new room or space"
           >
-            <Plus className="h-6 w-6" />
+            <DoorOpen className="h-6 w-6" />
             {hasContext && (
               <Badge 
                 variant="secondary" 
