@@ -52,6 +52,7 @@ interface TermAssignment {
   sergeant: string;
   clerks: string[];
   sort_order: number;
+  updated_at: string | null; // used for optimistic concurrency on reorder
 }
 
 type ViewMode = 'table' | 'cards';
