@@ -18,6 +18,7 @@ const BASE_PATH_MAP: Record<string, string> = {
   'Keys': '/keys',
   'Maintenance': '/operations?tab=maintenance',
   'Term Sheet': '/term-sheet',
+  'Court Operations': '/term-sheet',
   'My Activity': '/my-activity',
   'My Requests': '/my-activity?tab=keys',
   'My Issues': '/my-activity?tab=reported',
