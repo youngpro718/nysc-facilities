@@ -144,7 +144,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Rooms', icon: Building2 },
       { title: 'Issues', icon: AlertTriangle },
-      { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Tasks', icon: Package },
@@ -160,7 +159,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Rooms', icon: Building2 },
       { title: 'Issues', icon: AlertTriangle },
-      { title: 'Access & Assignments', icon: UserCheck },
+      
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Tasks', icon: Package },
