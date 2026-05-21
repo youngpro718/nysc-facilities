@@ -154,6 +154,7 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
           )}
         </button>
         <button
+          onClick={() => setActiveTab('notes')}
           className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'notes' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
             }`}
         >
