@@ -132,36 +132,60 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
       <div className="flex-1 p-6 space-y-6 overflow-y-auto">
         {/* Primary Metrics Grid */}
         <div className="grid grid-cols-2 gap-4">
-          {/* Issues Status - Large Visual */}
+          {/* Health Snapshot */}
           <div className="col-span-2">
-            <div className={`relative min-h-[8rem] sm:min-h-[10rem] flex flex-col justify-between bg-card border rounded-lg p-4 transition-all ${hasIssues ? 'border-red-500/50 bg-red-500/5' : 'border-green-500/50 bg-green-500/5'
-              }`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className={`h-4 w-4 ${hasIssues ? 'text-red-500' : 'text-green-500'}`} />
-                  <span className="text-xs font-medium text-muted-foreground">Open Issues</span>
+            {(() => {
+              const palette =
+                health.level === "critical"
+                  ? { border: "border-red-500/50", bg: "bg-red-500/5", text: "text-red-600 dark:text-red-400", label: "Critical", icon: AlertTriangle }
+                  : health.level === "attention"
+                  ? { border: "border-amber-500/50", bg: "bg-amber-500/5", text: "text-amber-600 dark:text-amber-400", label: "Needs attention", icon: AlertTriangle }
+                  : { border: "border-green-500/50", bg: "bg-green-500/5", text: "text-green-600 dark:text-green-400", label: "All clear", icon: CheckCircle2 };
+              const Icon = palette.icon;
+              return (
+                <div className={`relative min-h-[8rem] sm:min-h-[10rem] flex flex-col bg-card border rounded-lg p-4 transition-all ${palette.border} ${palette.bg}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Icon className={`h-4 w-4 ${palette.text}`} />
+                      <span className={`text-xs font-semibold uppercase tracking-wide ${palette.text}`}>{palette.label}</span>
+                    </div>
+                    {hasIssues && (
+                      <span className={`text-3xl sm:text-4xl font-bold ${palette.text}`}>{health.openCount}</span>
+                    )}
+                  </div>
+
+                  {hasIssues ? (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      {health.urgentCount > 0 && (
+                        <Badge variant="destructive" className="text-xs">{health.urgentCount} urgent</Badge>
+                      )}
+                      {health.prolongedCount > 0 && (
+                        <Badge variant="outline" className="text-xs border-amber-500 text-amber-700 dark:text-amber-400">
+                          {health.prolongedCount} prolonged ({health.oldestProlongedDays}d)
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">No open issues recorded.</p>
+                  )}
+
+                  {health.latestIssue && (
+                    <div className="mt-auto pt-3 flex items-center gap-1.5 text-xs text-muted-foreground border-t border-border/40">
+                      <Clock className="h-3 w-3 shrink-0" />
+                      <span className="truncate">
+                        <span className="font-medium text-foreground">{health.latestIssue.title}</span>
+                        {" · "}
+                        {health.latestIssueDaysAgo === 0 ? "today" : `${health.latestIssueDaysAgo}d ago`}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div className="flex flex-col items-center justify-center flex-1 py-1">
-                <div className={`text-4xl sm:text-5xl font-bold ${hasIssues ? 'text-red-500' : 'text-green-500'}`}>
-                  {unresolvedIssues.length}
-                </div>
-                {hasIssues && highSeverityCount > 0 && (
-                  <Badge variant="destructive" className="mt-2">
-                    {highSeverityCount} urgent
-                  </Badge>
-                )}
-              </div>
-              {!hasIssues && (
-                <div className="text-center mt-2">
-                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                    All Clear ✓
-                  </span>
-                </div>
-              )}
-            </div>
+              );
+            })()}
           </div>
         </div>
+
+
 
         {/* Secondary Info Cards */}
         <div className="grid grid-cols-2 gap-3">
