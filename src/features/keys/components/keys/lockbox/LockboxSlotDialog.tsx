@@ -108,6 +108,7 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
       <DropdownMenuContent
         align="end"
         sideOffset={8}
+        disablePortal
         className="z-[120] w-44"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
