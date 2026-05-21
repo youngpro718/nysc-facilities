@@ -41,6 +41,7 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   if (!slot) return null;
 
@@ -94,25 +95,26 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
   };
 
   const headerRight = (
-    <DropdownMenu modal={false}>
+    <DropdownMenu open={actionsOpen} onOpenChange={setActionsOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
+          aria-label="Slot actions"
         >
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="z-[60]"
+        sideOffset={8}
+        className="z-[120] w-44"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <DropdownMenuItem
           onSelect={(e) => {
             e.preventDefault();
+            setActionsOpen(false);
             setEditDialogOpen(true);
           }}
         >
@@ -122,7 +124,10 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
         {slot.status !== 'missing' && (
           <DropdownMenuItem
             className="text-destructive"
-            onClick={() => handleAction('missing')}
+            onSelect={() => {
+              setActionsOpen(false);
+              handleAction('missing');
+            }}
           >
             Mark Missing
           </DropdownMenuItem>
