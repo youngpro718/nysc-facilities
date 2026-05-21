@@ -154,6 +154,13 @@ function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = tr
           <span className="text-muted-foreground/40">—</span>
         )}
       </td>
+      {isAdmin && (
+        <td className="px-2 py-2 text-right">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onEditClick} title="Edit assignment">
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        </td>
+      )}
     </tr>
   );
 }
