@@ -66,12 +66,11 @@ interface SortableRowProps {
   hasUrgent: boolean;
   judge: ReturnType<typeof useCourtPersonnel>['personnel']['judges'][number] | undefined;
   isAdmin?: boolean;
-  isAdmin?: boolean;
   onIssueBadgeClick?: () => void;
   onEditClick?: () => void;
 }
 
-function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = true, onIssueBadgeClick }: SortableRowProps) {
+function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = true, onIssueBadgeClick, onEditClick }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: a.id });
 
