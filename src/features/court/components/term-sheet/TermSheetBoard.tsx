@@ -997,7 +997,18 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                         </span>
                       )}
                     </div>
-                    <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">Rm {a.room}</Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">Rm {a.room}</Badge>
+                      {isAdmin && (
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Edit assignment"
+                          onClick={() => setEditingAssignment({
+                            id: a.id, part: a.part, justice: a.justice, room: a.room,
+                            tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
+                          })}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <CardContent className="p-3 space-y-2">
                     <div className="flex items-center gap-1.5">
