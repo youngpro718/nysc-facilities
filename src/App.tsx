@@ -47,7 +47,7 @@ const UserDashboard = lazy(() => import("@features/dashboard/pages/UserDashboard
 // Feature pages
 const Spaces = lazy(() => import("@features/spaces/pages/Spaces"));
 const Operations = lazy(() => import("@features/operations/pages/Operations"));
-const AccessAssignments = lazy(() => import("@features/occupants/pages/AccessAssignments"));
+
 const Keys = lazy(() => import("@features/keys/pages/Keys"));
 const Profile = lazy(() => import("@features/profile/pages/Profile"));
 const MyRequests = lazy(() => import("@features/dashboard/pages/MyRequests"));
@@ -156,13 +156,6 @@ function AppContent() {
             <ProtectedRoute>
               <ModuleProtectedRoute moduleKey="operations" moduleName="Operations Management">
                 <Operations />
-              </ModuleProtectedRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="access-assignments" element={
-            <ProtectedRoute requireAdmin>
-              <ModuleProtectedRoute moduleKey="occupants" moduleName="Access & Assignments">
-                <AccessAssignments />
               </ModuleProtectedRoute>
             </ProtectedRoute>
           } />

@@ -69,13 +69,6 @@ export const secondaryNavigationItems: NavigationItem[] = [
     moduleKey: undefined,
   },
   {
-    title: 'Access & Assignments',
-    href: '/access-assignments',
-    icon: UserCheck,
-    adminOnly: true,
-    moduleKey: 'occupants',
-  },
-  {
     title: 'Assets',
     href: '/assets',
     icon: Package,
@@ -151,7 +144,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Rooms', icon: Building2 },
       { title: 'Issues', icon: AlertTriangle },
-      { title: 'Access & Assignments', icon: UserCheck },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Tasks', icon: Package },
@@ -167,7 +159,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Rooms', icon: Building2 },
       { title: 'Issues', icon: AlertTriangle },
-      { title: 'Access & Assignments', icon: UserCheck },
+      
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Tasks', icon: Package },
@@ -271,7 +263,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/', // Admin Dashboard
       '/spaces',
       '/operations', // Contains Issues, Maintenance, Supply Requests
-      '/access-assignments',
       '/keys',
       '/inventory',
       '/tasks',
@@ -287,7 +278,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/', // Facilities Dashboard
       '/spaces',
       '/operations',
-      '/access-assignments',
+      
       '/keys',
       '/inventory',
       '/tasks',

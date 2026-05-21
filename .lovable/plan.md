@@ -1,115 +1,62 @@
-## Goal
+## 1. Fix Keys edit (desktop) — ⋯ menu in slot popup does nothing
 
-Remove the heavy "court operations" machinery (sessions, coverage, daily reports, CMC dashboard) while keeping:
-- Courtrooms as spaces
-- The Term Sheet as a read-only directory everyone can view
-- Courtroom personnel names (judge, part, clerks, sergeant, phone) for fast lookup
-- The Court Aide work center, untouched
+**Root cause:** the previous patch added `onOpenChange(false)` before opening EditSlotDialog. On desktop, closing the parent `ModalFrame` unmounts the EditSlotDialog instance (it's a child of the parent), so `setEditDialogOpen(true)` fires against a torn-down tree and nothing renders. Mobile worked because the drawer keeps children mounted longer.
 
-## What gets removed
+**Fix (LockboxSlotDialog.tsx):**
+- Stop closing the parent on Edit click. Just open EditSlotDialog directly: `onClick={() => setEditDialogOpen(true)}`.
+- Render `<EditSlotDialog>` as a sibling using a portal-safe pattern (it already uses Radix Dialog → portals to body, so z-index `z-[70]` on its content + `onCloseAutoFocus={e => e.preventDefault()}` is enough).
+- Add `modal={false}` on the inner DropdownMenu OR ensure pointer-events aren't locked by Radix when the second dialog mounts on top.
+- Verify Mark Missing still works (it relies on parent closing after action — keep that path unchanged).
 
-**Routes / pages**
-- `/cmc-dashboard` (`CMCDashboard.tsx`)
-- `/court-operations` (`CourtOperationsDashboard.tsx`) and the entire `components/court-operations/` folder (sessions, coverage, daily reports, conflict panels, shutdowns, absence)
-- `TermSheetBoard` embed inside `MaintenanceDashboard.tsx`
-- Court reports feature (`components/court-reports/`, `dailyReportParser`, AI extraction)
+## 2. Remove "Access & Assignments" page
 
-**Hooks / services tied to scheduling**
-- `useCourtSessions`, `useBulkCreateCourtSessions`, `useStartTodaysReport`
-- `useCoverageAssignments`, `conflictDetectionService`, `sessionValidation`
-- `useCourtOperationsRealtime`, `useCourtOperationsCounts`, `useCMCMetrics`, `cmcDashboardService`
+- Delete the route in `src/App.tsx` (`access-assignments`) and any lazy import.
+- Remove the nav entry in `src/components/layout/config/navigation.tsx` (line 73) and from the two role-permission arrays (lines 274, 290).
+- Remove the page file(s) under `src/features/access` (or wherever the route element lives) and any dashboard links/cards that point to `/access-assignments`.
+- Search-and-clean `rg "access-assignments"` to catch stray references (mobile nav, quick actions, etc.).
+- Keep the underlying tables/RLS untouched (occupant_room_assignments etc. still power room occupants); only the standalone page is removed.
 
-**Role**
-- Delete `cmc` role. Reassign existing CMC users → `standard`.
-- Add a new `court_liaison` role with one capability: edit `court_assignments` (the term sheet directory). No dashboard, no extras.
-- Update role hierarchy: `admin`, `court_liaison`, `court_officer`, `court_aide`, `standard`.
+## 3. Room history & at-a-glance card status
 
-**Database (drop)**
-- `court_sessions`
-- `coverage_assignments`
-- `cmc_court_operations_view`, `cmc_permissions` views
-- Helper fns no longer used: `is_cmc()`, `is_court_operations_manager()` (or repurpose)
-- Triggers tied to dropped tables (judge status sync from sessions, session validation)
+**Goal:** replace the static "All clear" with a real, practical snapshot driven by Building Issues, focused on *big and prolonged* problems.
 
-**Database (keep)**
-- `court_rooms` — these are spaces
-- `court_assignments` — the directory backing the Term Sheet
-- `court_terms` — kept only as the grouping for the active term sheet (no scheduling UI)
+### Data sources (already in DB)
+- `issues` table filtered by `room_id` — status (open/in_progress/resolved), priority, created_at, resolved_at, photos, notes.
+- Derive "prolonged" = open or in_progress AND `now() - created_at > 7 days`.
+- Derive "major" = priority in ('high','urgent') OR prolonged.
 
-## What stays / gets touched lightly
+### Room card (front) — replace "All clear" block
+Show a compact health line:
 
-- **Term Sheet page** (`/term-sheet`): keep as-is for viewing. Edit access narrows to `admin` + `court_liaison`. Remove any "CMC" branding.
-- **Court Aide Work Center** (`/court-aide-dashboard`): untouched.
-- **Court Officer Dashboard**: untouched (already scoped to Keys / Spaces / Term Sheet view).
-- **Room detail / spaces**: continue showing assigned personnel pulled from `court_assignments` so you can find people quickly.
-
-## Navigation & dashboards
-
-- Remove "Court Operations" and "CMC Dashboard" from sidebar/nav (`navigation.tsx`, `navigationPaths.ts`, `DesktopNavigation`, `MobileNavigationGrid`).
-- `roleBasedRouting.ts`: drop `cmc` mapping; `court_liaison` → `/term-sheet`.
-- `Command Center` (admin): drop court-session metrics, keep courtroom *health* (operational status of court rooms as spaces).
-- `roleDashboardConfig.ts` + tests: remove cmc entries, add court_liaison.
-
-## Cleanup pass
-
-- Delete CMC docs: `CMC_DASHBOARD_IMPROVEMENTS.md`.
-- `useEnabledModules.ts`: drop `court_operations` flag.
-- `hasModuleAccess`: drop `court_operations` entry, remove `cmc` from module lists.
-- Memory: prune all `features/court-operations/*` memory files (sessions, coverage, AI extraction, smart judge logic, grid keyboard nav, report context, session validation, status registry, judge sync). Keep memories tied to `court_assignments`/term sheet directory only.
-
-## Database migration outline
-
-```sql
--- 1. Drop scheduling tables (cascades remove RLS, triggers, FKs)
-DROP TABLE IF EXISTS coverage_assignments CASCADE;
-DROP TABLE IF EXISTS court_sessions CASCADE;
-
--- 2. Drop CMC views & helper fns
-DROP VIEW IF EXISTS cmc_court_operations_view;
-DROP VIEW IF EXISTS cmc_permissions;
-DROP FUNCTION IF EXISTS is_court_operations_manager();
--- is_cmc() kept temporarily until callers removed, then dropped
-
--- 3. Add court_liaison to app_role enum
-ALTER TYPE app_role ADD VALUE IF NOT EXISTS 'court_liaison';
-
--- 4. Reassign cmc users -> standard, then add court_liaison where appropriate (manual)
-UPDATE user_roles SET role = 'standard' WHERE role = 'cmc';
-
--- 5. RLS on court_assignments: allow UPDATE/INSERT for admin + court_liaison
-DROP POLICY IF EXISTS court_assignments_cmc_write ON court_assignments;
-CREATE POLICY court_assignments_liaison_write ON court_assignments
-  FOR ALL TO authenticated
-  USING (has_role(auth.uid(),'admin') OR has_role(auth.uid(),'system_admin') OR has_role(auth.uid(),'court_liaison'))
-  WITH CHECK (has_role(auth.uid(),'admin') OR has_role(auth.uid(),'system_admin') OR has_role(auth.uid(),'court_liaison'));
-
--- 6. Remove 'cmc' from enum (Postgres can't drop enum values directly;
---    leave value in place with no users — safe and standard practice)
+```text
+[●] Attention  ·  2 open  ·  1 prolonged (14d)  ·  last activity 2d ago
 ```
 
-## Code change checklist
+Rules:
+- **Critical** (red dot): any urgent open issue, or 2+ prolonged.
+- **Attention** (amber): any open issue or 1 prolonged.
+- **Good** (green): no open issues in the last 30 days.
+- One-liner of the most recent event (e.g. "Leak reported · 2d ago") underneath.
 
-1. **Migration** as above.
-2. **Delete files**: `src/features/court/pages/CMCDashboard.tsx`, `CourtOperationsDashboard.tsx`; `components/court-operations/` (entire folder); `components/court-reports/` (entire folder); `services/cmcDashboardService.ts`, `conflictDetectionService.ts`, `sessionValidation.ts`, `dailyReportParser.ts`; `hooks/useCMCMetrics.ts`, `useCourtSessions.ts`, `useCoverageAssignments.ts`, `useBulkCreateCourtSessions.ts`, `useStartTodaysReport.ts`, `useCourtOperationsRealtime.ts`, `useCourtOperationsCounts.ts`; `CMC_DASHBOARD_IMPROVEMENTS.md`.
-3. **App.tsx / routes.ts**: remove `/cmc-dashboard`, `/court-operations` routes.
-4. **Navigation configs**: drop CMC + Court Operations entries.
-5. **roleBasedRouting.ts** + **roleDashboardConfig.ts** (+ tests): swap cmc → court_liaison; new dashboard target `/term-sheet`.
-6. **roles.ts** / `UserRole` type: replace `cmc` with `court_liaison`.
-7. **MaintenanceDashboard.tsx**: remove the embedded `TermSheetBoard` (it has its own page).
-8. **CommandCenter.tsx** + `commandCenterService.ts`: drop session/coverage queries; keep courtroom health (counts from `court_rooms`).
-9. **TermSheet.tsx + AssignmentManagementPanel.tsx**: gate edit affordances behind `admin || court_liaison`.
-10. **useEnabledModules + hasModuleAccess**: prune `court_operations`.
-11. **Onboarding / tour content / dev panel**: scrub CMC references.
-12. **Memory**: delete obsolete court-operations memory files, update index.
+### Room detail — new "History" tab
+A single chronological timeline (reusing existing `RoomHistoryTimeline.tsx`) with:
+- Issues opened / status changed / resolved (with photo thumbnail + note preview).
+- A pinned "Ongoing concerns" section at top listing prolonged or recurring issues (same title reported 2+ times in 90 days) so they don't get buried.
+- Filter chips: All · Open · Resolved · Major only.
+- Empty state explains how to log an issue (deep-link to Building Issues → New, pre-filled with this room).
 
-## Out of scope (explicitly)
+### Recording issues from the room
+- Add a primary "Report Issue" button on the room detail header that opens the Building Issues create dialog pre-scoped to this room (no page jump).
+- After save, optimistically prepend the event to the timeline.
 
-- No new "alert/broadcast" feature in this pass — separate conversation.
-- No changes to Court Aide functionality.
-- No changes to courtroom space records, photos, or floorplan.
+### Files likely touched
+- `src/features/spaces/components/spaces/rooms/cards/RoomDetails.tsx` (status block)
+- `src/features/spaces/components/spaces/rooms/RoomCard.tsx` / `MobileRoomCard.tsx` (front summary)
+- `src/features/spaces/components/spaces/rooms/components/history/RoomHistoryTimeline.tsx` (group + pin prolonged)
+- New small hook `useRoomHealth(roomId)` returning `{ status, openCount, prolongedCount, lastEvent }`.
 
-## Risk notes
+## Out of scope
+- No schema changes; everything derives from `issues` + existing room data.
+- No changes to Building Issues module itself beyond the deep-link prefill.
 
-- Dropping `court_sessions`/`coverage_assignments` is irreversible — confirmed no export needed.
-- Existing CMC users will land on the standard dashboard after reassignment; you can promote specific people to `court_liaison` afterwards.
-- Postgres enum values can't be removed cleanly; `cmc` stays in the enum but unused — harmless.
+Approve and I'll implement in this order: (1) slot menu fix → (2) remove Access & Assignments → (3) room health + history upgrades.

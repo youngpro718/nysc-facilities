@@ -281,6 +281,47 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
         </div>
       )}
 
+      {/* Pinned Ongoing Concerns — prolonged open issues */}
+      {(() => {
+        const prolonged = realEvents
+          .filter(
+            (e) =>
+              (e.status === "open" || e.status === "in_progress") &&
+              differenceInDays(new Date(), new Date(e.date)) >= 7
+          )
+          .sort(
+            (a, b) =>
+              differenceInDays(new Date(), new Date(a.date)) <
+              differenceInDays(new Date(), new Date(b.date))
+                ? 1
+                : -1
+          );
+        if (prolonged.length === 0) return null;
+        return (
+          <div className="bg-red-50 dark:bg-red-950/20 border border-red-300 dark:border-red-900 rounded-md p-2.5 space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-semibold text-red-700 dark:text-red-400">
+              <AlertCircle className="h-3.5 w-3.5" />
+              Ongoing Concerns ({prolonged.length})
+            </div>
+            <div className="space-y-1">
+              {prolonged.slice(0, 4).map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => handleEventClick(p)}
+                  className="w-full text-left text-xs flex items-center justify-between gap-2 hover:bg-red-100/60 dark:hover:bg-red-900/30 rounded px-1.5 py-1 transition-colors"
+                >
+                  <span className="truncate font-medium text-foreground">{p.title}</span>
+                  <span className="shrink-0 text-red-700 dark:text-red-400 tabular-nums">
+                    {differenceInDays(new Date(), new Date(p.date))}d open
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+
       {/* Summary insights */}
       <div className="grid grid-cols-3 gap-2">
         <div className="text-center p-2 bg-muted/30 rounded-md border">
