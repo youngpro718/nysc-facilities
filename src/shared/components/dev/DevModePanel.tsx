@@ -17,21 +17,19 @@ const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>>
     { label: 'Dashboard', path: '/' },
     { label: 'Rooms', path: '/spaces' },
     { label: 'Keys', path: '/keys' },
-    { label: 'Access', path: '/access-assignments' },
     { label: 'Admin', path: '/admin' },
   ],
   system_admin: [
     { label: 'Dashboard', path: '/' },
     { label: 'Rooms', path: '/spaces' },
     { label: 'Keys', path: '/keys' },
-    { label: 'Access', path: '/access-assignments' },
     { label: 'Admin', path: '/admin' },
   ],
   facilities_manager: [
     { label: 'Dashboard', path: '/' },
     { label: 'Rooms', path: '/spaces' },
     { label: 'Keys', path: '/keys' },
-    { label: 'Access', path: '/access-assignments' },
+    
     { label: 'Admin', path: '/admin' },
   ],
   court_liaison: [
