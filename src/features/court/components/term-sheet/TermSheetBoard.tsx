@@ -179,6 +179,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const [sortedList, setSortedList] = useState<TermAssignment[]>([]);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [previewIssueId, setPreviewIssueId] = useState<string | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<EditableAssignment | null>(null);
   const { toast } = useToast();
   const { personnel } = useCourtPersonnel();
   const queryClient = useQueryClient();
