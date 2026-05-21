@@ -753,7 +753,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                {isAdmin && isTodayInSelectedTerm && (
+                {isAdmin && (
                   <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={enterTermEditMode}>
                     Edit
                   </Button>
@@ -768,7 +768,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
             </div>
           )}
           {/* Admin: Start Next Term button */}
-          {isAdmin && isTodayInSelectedTerm && !editingTerm && (
+          {isAdmin && !editingTerm && (
             <div className="mt-2 pt-2 border-t border-primary/10 flex justify-end">
               <Button variant="outline" size="sm" className="h-7 text-xs"
                 disabled={startNextTermMutation.isPending}
