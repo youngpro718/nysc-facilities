@@ -2,15 +2,15 @@
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowRightFromLine, Users, ShoppingBag, AlertTriangle, Building, Pencil, Layers } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users, ShoppingBag, AlertTriangle, Building, Pencil, Layers, CheckCircle2, Clock } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
-import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesIntegration";
 import { getNormalizedCurrentUse } from "../utils/currentUse";
 import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
 import { useChildRoomCount } from "@features/spaces/hooks/useChildRooms";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { useRoomHealth } from "@features/spaces/hooks/useRoomHealth";
 
 interface CardFrontProps {
   room: EnhancedRoom;
@@ -23,12 +23,11 @@ interface CardFrontProps {
 export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNoteClick }: CardFrontProps) {
   const { canAdmin } = useRolePermissions();
   const canManageSpaces = canAdmin('spaces');
-  const { getIssuesForRoom } = useCourtIssuesIntegration();
-  const unresolvedIssues = getIssuesForRoom(room.id);
-  const hasIssues = unresolvedIssues.length > 0;
-  const highSeverityCount = unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())).length;
+  const health = useRoomHealth(room.id);
+  const hasIssues = health.openCount > 0;
   const currentUse = getNormalizedCurrentUse(room);
   const { data: childRoomCount = 0 } = useChildRoomCount(room.id);
+
 
   // Courtroom photos
   const isCourtroom = room.room_type === 'courtroom';
