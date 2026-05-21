@@ -110,12 +110,12 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
         className="z-[60]"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
-        <DropdownMenuItem onClick={() => {
-          onOpenChange(false);
-          // Wait for parent dialog to close before opening the edit dialog
-          // so focus/pointer-events don't conflict between the two modals.
-          setTimeout(() => setEditDialogOpen(true), 150);
-        }}>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            setEditDialogOpen(true);
+          }}
+        >
           <Edit3 className="h-4 w-4 mr-2" />
           Edit Slot
         </DropdownMenuItem>
