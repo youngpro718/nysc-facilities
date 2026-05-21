@@ -40,6 +40,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { generateTermSheetPDF } from './TermSheetPDFExport';
+import { AssignmentEditDialog, type EditableAssignment } from './AssignmentEditDialog';
+import { Pencil } from 'lucide-react';
 
 interface TermAssignment {
   id: string;        // assignment id — used as DnD key
