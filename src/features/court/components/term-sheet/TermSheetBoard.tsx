@@ -1062,6 +1062,13 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         open={!!previewIssueId}
         onOpenChange={(open) => { if (!open) setPreviewIssueId(null); }}
       />
+
+      {/* Per-row assignment editor */}
+      <AssignmentEditDialog
+        assignment={editingAssignment}
+        open={!!editingAssignment}
+        onOpenChange={(open) => { if (!open) setEditingAssignment(null); }}
+      />
     </div>
   );
 };
