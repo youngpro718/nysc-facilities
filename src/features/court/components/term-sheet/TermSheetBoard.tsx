@@ -955,6 +955,10 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                                 setPreviewIssueId(issues[0].id);
                               }
                             }}
+                            onEditClick={() => setEditingAssignment({
+                              id: a.id, part: a.part, justice: a.justice, room: a.room,
+                              tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
+                            })}
                           />
                         ))}
                       </SortableContext>
