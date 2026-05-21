@@ -927,6 +927,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                       <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px] hidden md:table-cell">Fax</th>
                       <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Sgt.</th>
                       <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Clerks</th>
+                      {isAdmin && <th className="px-2 py-2.5 w-10" />}
                     </tr>
                   </thead>
                   <tbody className="divide-y">
