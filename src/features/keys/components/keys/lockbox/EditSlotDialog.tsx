@@ -125,6 +125,9 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
       open={open}
       onOpenChange={onOpenChange}
       size="sm"
+      // Ensure this nested dialog renders above the parent LockboxSlotDialog
+      // (parent DialogContent is z-[105]; bump this one above it).
+      className="z-[115]"
       title={
         <span className="flex items-center gap-2">
           <Edit3 className="h-5 w-5" />
