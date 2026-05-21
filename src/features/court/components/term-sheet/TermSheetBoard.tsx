@@ -40,6 +40,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { generateTermSheetPDF } from './TermSheetPDFExport';
+import { AssignmentEditDialog, type EditableAssignment } from './AssignmentEditDialog';
+import { Pencil } from 'lucide-react';
 
 interface TermAssignment {
   id: string;        // assignment id — used as DnD key
@@ -65,9 +67,10 @@ interface SortableRowProps {
   judge: ReturnType<typeof useCourtPersonnel>['personnel']['judges'][number] | undefined;
   isAdmin?: boolean;
   onIssueBadgeClick?: () => void;
+  onEditClick?: () => void;
 }
 
-function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = true, onIssueBadgeClick }: SortableRowProps) {
+function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = true, onIssueBadgeClick, onEditClick }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: a.id });
 
@@ -151,6 +154,13 @@ function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = tr
           <span className="text-muted-foreground/40">—</span>
         )}
       </td>
+      {isAdmin && (
+        <td className="px-2 py-2 text-right">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onEditClick} title="Edit assignment">
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        </td>
+      )}
     </tr>
   );
 }
@@ -169,6 +179,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const [sortedList, setSortedList] = useState<TermAssignment[]>([]);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [previewIssueId, setPreviewIssueId] = useState<string | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<EditableAssignment | null>(null);
   const { toast } = useToast();
   const { personnel } = useCourtPersonnel();
   const queryClient = useQueryClient();
@@ -916,6 +927,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                       <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px] hidden md:table-cell">Fax</th>
                       <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Sgt.</th>
                       <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Clerks</th>
+                      {isAdmin && <th className="px-2 py-2.5 w-10" />}
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -943,6 +955,10 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                                 setPreviewIssueId(issues[0].id);
                               }
                             }}
+                            onEditClick={() => setEditingAssignment({
+                              id: a.id, part: a.part, justice: a.justice, room: a.room,
+                              tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
+                            })}
                           />
                         ))}
                       </SortableContext>
@@ -981,7 +997,18 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                         </span>
                       )}
                     </div>
-                    <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">Rm {a.room}</Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">Rm {a.room}</Badge>
+                      {isAdmin && (
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Edit assignment"
+                          onClick={() => setEditingAssignment({
+                            id: a.id, part: a.part, justice: a.justice, room: a.room,
+                            tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
+                          })}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <CardContent className="p-3 space-y-2">
                     <div className="flex items-center gap-1.5">
@@ -1034,6 +1061,13 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         issueId={previewIssueId}
         open={!!previewIssueId}
         onOpenChange={(open) => { if (!open) setPreviewIssueId(null); }}
+      />
+
+      {/* Per-row assignment editor */}
+      <AssignmentEditDialog
+        assignment={editingAssignment}
+        open={!!editingAssignment}
+        onOpenChange={(open) => { if (!open) setEditingAssignment(null); }}
       />
     </div>
   );
