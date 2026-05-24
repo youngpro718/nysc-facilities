@@ -138,7 +138,7 @@ export function RoomsSidebarList({
                                 {thumb ? (
                                   <img
                                     src={thumb as string}
-                                    alt=""
+                                    alt={`Room ${room.room_number || room.name}`}
                                     loading="lazy"
                                     className="h-full w-full object-cover"
                                   />
