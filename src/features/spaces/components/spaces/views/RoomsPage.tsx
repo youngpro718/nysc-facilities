@@ -111,6 +111,12 @@ const RoomsPage = () => {
     return (list[0] as Room) ?? null;
   }, [filteredAndSortedRooms, selectedRoomForPanel?.id]);
 
+  const panelAssignment = useMemo(() => {
+    if (!panelRoom || panelRoom.room_type !== 'courtroom') return null;
+    return assignmentsByRoomId?.get(panelRoom.id) ?? null;
+  }, [panelRoom, assignmentsByRoomId]);
+
+
   const deleteRoomMutation = useMutation({
     mutationFn: (roomId: string) => deleteSpace(roomId, 'room'),
     onSuccess: () => {
