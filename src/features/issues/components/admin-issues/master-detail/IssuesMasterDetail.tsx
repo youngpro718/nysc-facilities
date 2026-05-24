@@ -71,14 +71,14 @@ export function IssuesMasterDetail({
   useEffect(() => {
     if (!isLoading && filteredIssues.length > 0 && !selectedIssue) {
       const params = new URLSearchParams(searchParams);
-      params.set("issue_id", filteredIssues[0].id);
+      params.set("issue", filteredIssues[0].id);
       setSearchParams(params, { replace: true });
     }
   }, [isLoading, filteredIssues, selectedIssue, searchParams, setSearchParams]);
 
   const handleSelect = (id: string) => {
     const params = new URLSearchParams(searchParams);
-    params.set("issue_id", id);
+    params.set("issue", id);
     setSearchParams(params, { replace: true });
   };
 
