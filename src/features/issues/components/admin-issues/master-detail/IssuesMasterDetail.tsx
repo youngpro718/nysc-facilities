@@ -35,7 +35,7 @@ export function IssuesMasterDetail({
   roomId,
 }: IssuesMasterDetailProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const selectedId = searchParams.get("issue_id");
+  const selectedId = searchParams.get("issue");
 
   const filteredIssues = useMemo(() => {
     let result = issues;
