@@ -35,6 +35,7 @@ import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@feat
 // Import dialogs
 import { IssueDialog } from "@features/issues/components/issues/IssueDialog";
 import { IssueDialogManager } from "@features/issues/components/issues/components/IssueDialogManager";
+import { IssuesMasterDetail } from "@features/issues/components/admin-issues/master-detail/IssuesMasterDetail";
 import { useDialogManager } from "@shared/hooks/useDialogManager";
 import { ScheduleMaintenanceDialog } from "@features/operations/components/maintenance/ScheduleMaintenanceDialog";
 import { ReportIssueDialog } from "@features/operations/components/maintenance/ReportIssueDialog";
@@ -442,44 +443,58 @@ export default function Operations() {
             />
           </div>
 
-          {/* Issues Table */}
-          <Card className="shadow-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5" />
-                    All Issues ({allIssues?.length || 0})
-                  </CardTitle>
-                  <CardDescription>
-                    Complete list of facility issues with detailed information and management options
-                  </CardDescription>
+          {/* Issues — master/detail for card view, table/timeline for others */}
+          {viewMode !== 'table' && viewMode !== 'timeline' ? (
+            <IssuesMasterDetail
+              issues={allIssues || []}
+              searchQuery={searchQuery}
+              onIssueUpdate={refreshAllData}
+              isLoading={isLoading}
+              buildingId={buildingId}
+              filter={filter}
+              statusFilter={statusFilter}
+              priorityFilter={priorityFilter}
+              roomId={roomIdParam}
+            />
+          ) : (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5" />
+                      All Issues ({allIssues?.length || 0})
+                    </CardTitle>
+                    <CardDescription>
+                      Complete list of facility issues with detailed information and management options
+                    </CardDescription>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <EnhancedIssuesList
-                issues={allIssues || []}
-                viewMode={viewMode}
-                groupingMode={groupingMode}
-                searchQuery={searchQuery}
-                selectedIssues={selectedIssues}
-                onSelectionChange={setSelectedIssues}
-                onIssueUpdate={refreshAllData}
-                onIssueSelect={(issueId) => {
-                  const newParams = new URLSearchParams(searchParams);
-                  newParams.set('issue_id', issueId);
-                  setSearchParams(newParams);
-                }}
-                isLoading={isLoading}
-                buildingId={buildingId}
-                filter={filter}
-                statusFilter={statusFilter}
-                priorityFilter={priorityFilter}
-                roomId={roomIdParam}
-              />
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="p-0">
+                <EnhancedIssuesList
+                  issues={allIssues || []}
+                  viewMode={viewMode}
+                  groupingMode={groupingMode}
+                  searchQuery={searchQuery}
+                  selectedIssues={selectedIssues}
+                  onSelectionChange={setSelectedIssues}
+                  onIssueUpdate={refreshAllData}
+                  onIssueSelect={(issueId) => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.set('issue_id', issueId);
+                    setSearchParams(newParams);
+                  }}
+                  isLoading={isLoading}
+                  buildingId={buildingId}
+                  filter={filter}
+                  statusFilter={statusFilter}
+                  priorityFilter={priorityFilter}
+                  roomId={roomIdParam}
+                />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="maintenance" className="flex-1 min-h-0 overflow-y-auto space-y-4 mt-4">
