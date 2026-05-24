@@ -68,6 +68,7 @@ const RoomsPage = () => {
   const urlRoomId = searchParams.get('room');
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({});
+  const { data: assignmentsByRoomId } = useCourtAssignmentsMap();
   const { filteredAndSortedRooms } = useRoomFilters({
     rooms,
     searchQuery,
