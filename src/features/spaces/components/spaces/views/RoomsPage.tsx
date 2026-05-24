@@ -33,8 +33,7 @@ import { deleteSpace } from "../services/deleteSpace";
 import { Room } from "../rooms/types/RoomTypes";
 import { useSearchParams } from "react-router-dom";
 import { useCourtAssignmentsMap } from "@features/spaces/hooks/queries/useCourtAssignmentsMap";
-import { Badge } from "@/components/ui/badge";
-import { Gavel, Users } from "lucide-react";
+import { CourtroomAssignmentHeader } from "../rooms/components/CourtroomAssignmentHeader";
 
 // Define a type for sort options to fix the TS error
 export type SortOption =
