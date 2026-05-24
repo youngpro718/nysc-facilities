@@ -208,7 +208,7 @@ const RoomsPage = () => {
       {!isMobile ? (
         <ResizablePanelGroup
           direction="horizontal"
-          className="h-[calc(100dvh-220px)] min-h-[520px] rounded-lg border"
+          className="flex-1 min-h-0 rounded-lg border"
         >
           <ResizablePanel defaultSize={28} minSize={22} maxSize={38}>
             <div className="h-full min-h-0">
