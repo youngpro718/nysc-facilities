@@ -9,6 +9,8 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useCourtAssignmentsMap } from "@features/spaces/hooks/queries/useCourtAssignmentsMap";
+import { CourtroomAssignmentHeader } from "./CourtroomAssignmentHeader";
 
 interface MobileRoomDrawerProps {
   room: Room | null;
@@ -24,7 +26,13 @@ export function MobileRoomDrawer({
   onDelete
 }: MobileRoomDrawerProps) {
   const [confirmDeleteRoom, confirmDeleteDialog] = useConfirmDialog();
+  const { data: assignmentsByRoomId } = useCourtAssignmentsMap();
   if (!room) return null;
+
+  const assignment =
+    room.room_type === "courtroom"
+      ? assignmentsByRoomId?.get(room.id) ?? null
+      : null;
 
   return (
     <><Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -40,7 +48,8 @@ export function MobileRoomDrawer({
             </button>
           </DrawerClose>
         </DrawerHeader>
-        <div className="p-2 h-[75dvh] overflow-hidden">
+        <div className="px-3 pb-2 flex flex-col gap-3 h-[75dvh] overflow-y-auto">
+          {assignment && <CourtroomAssignmentHeader assignment={assignment} />}
           <RoomCard
             room={room}
             onDelete={onDelete ? async (id) => {
