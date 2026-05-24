@@ -206,22 +206,54 @@ const RoomsPage = () => {
 
       {/* Main Content Area - Master Detail View with left sidebar */}
       {!isMobile ? (
-        <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="h-[calc(100dvh-220px)] min-h-[520px] rounded-lg border"
+        >
           <ResizablePanel defaultSize={28} minSize={22} maxSize={38}>
-            <div className="h-full">
+            <div className="h-full min-h-0">
               <RoomsSidebarList
                 rooms={filteredAndSortedRooms}
                 selectedRoomId={selectedRoomForPanel?.id}
                 onSelect={handleRoomSelect}
                 isLoading={isLoading}
+                assignmentsByRoomId={assignmentsByRoomId}
               />
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={72}>
-            <div className="p-6 h-full min-h-[520px] max-h-[calc(100vh-140px)] overflow-hidden flex items-start justify-center">
+            <div className="h-full min-h-0 overflow-y-auto p-6 flex items-start justify-center">
               {panelRoom ? (
-                <div className="w-full h-full max-w-2xl">
+                <div className="w-full max-w-2xl space-y-3">
+                  {panelRoom.room_type === 'courtroom' && assignmentsByRoomId?.get(panelRoom.id) && (
+                    (() => {
+                      const a = assignmentsByRoomId.get(panelRoom.id)!;
+                      const clerks = Array.isArray(a.clerks) ? a.clerks.filter(Boolean) : [];
+                      return (
+                        <div className="rounded-lg border bg-card p-3 flex flex-wrap items-center gap-2">
+                          <Gavel className="h-4 w-4 text-muted-foreground" />
+                          {a.part && (
+                            <Badge variant="secondary" className="text-xs">Part {a.part}</Badge>
+                          )}
+                          {a.justice && (
+                            <span className="text-sm font-medium text-foreground">{a.justice}</span>
+                          )}
+                          {clerks.length > 0 && (
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground ml-2">
+                              <Users className="h-3.5 w-3.5" />
+                              {clerks.join(', ')}
+                            </span>
+                          )}
+                          {a.sergeant && (
+                            <span className="text-xs text-muted-foreground ml-2">
+                              Sgt. {a.sergeant}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()
+                  )}
                   <RoomCard
                     room={panelRoom}
                     onDelete={(id) => setDeleteRoomId(id)}
