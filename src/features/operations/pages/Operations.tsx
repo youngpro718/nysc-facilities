@@ -35,6 +35,7 @@ import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@feat
 // Import dialogs
 import { IssueDialog } from "@features/issues/components/issues/IssueDialog";
 import { IssueDialogManager } from "@features/issues/components/issues/components/IssueDialogManager";
+import { IssuesMasterDetail } from "@features/issues/components/admin-issues/master-detail/IssuesMasterDetail";
 import { useDialogManager } from "@shared/hooks/useDialogManager";
 import { ScheduleMaintenanceDialog } from "@features/operations/components/maintenance/ScheduleMaintenanceDialog";
 import { ReportIssueDialog } from "@features/operations/components/maintenance/ReportIssueDialog";
@@ -443,7 +444,7 @@ export default function Operations() {
           </div>
 
           {/* Issues — master/detail for card view, table/timeline for others */}
-          {viewMode === 'card' ? (
+          {viewMode !== 'table' && viewMode !== 'timeline' ? (
             <IssuesMasterDetail
               issues={allIssues || []}
               searchQuery={searchQuery}
