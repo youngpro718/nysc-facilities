@@ -273,7 +273,8 @@ export default function Operations() {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="flex flex-col h-[calc(100svh-140px)] min-h-[560px]">
+      <div className="shrink-0 space-y-6 sm:space-y-8">
       <Breadcrumb />
 
       <PageHeader
