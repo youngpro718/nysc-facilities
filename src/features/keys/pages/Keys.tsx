@@ -47,28 +47,30 @@ export default function Keys() {
   const dataStateProps = useDataState(keyStatsQuery);
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-safe">
-      <PageHeader
-        title="Key Management"
-        description="Manage keys, track assignments, and view history"
-        icon={KeyRound}
-        className="mb-0"
-      />
+    <div className="flex flex-col h-[calc(100svh-140px)] min-h-[520px] pb-safe">
+      <div className="shrink-0 space-y-4 sm:space-y-6">
+        <PageHeader
+          title="Key Management"
+          description="Manage keys, track assignments, and view history"
+          icon={KeyRound}
+          className="mb-0"
+        />
 
-      <DataState
-        {...dataStateProps}
-        loadingSkeleton={{ type: 'card', count: 4, height: '120px' }}
-        emptyState={{
-          title: 'No key data available',
-          description: 'Key statistics will appear here once data is available.',
-          icon: <KeyRound className="h-6 w-6 text-muted-foreground" />,
-        }}
-      >
-        {(keyStats) => <KeyStatisticsCards keyStats={keyStats} isLoading={false} />}
-      </DataState>
+        <DataState
+          {...dataStateProps}
+          loadingSkeleton={{ type: 'card', count: 4, height: '120px' }}
+          emptyState={{
+            title: 'No key data available',
+            description: 'Key statistics will appear here once data is available.',
+            icon: <KeyRound className="h-6 w-6 text-muted-foreground" />,
+          }}
+        >
+          {(keyStats) => <KeyStatisticsCards keyStats={keyStats} isLoading={false} />}
+        </DataState>
+      </div>
 
-      <Tabs defaultValue="lockbox" className="space-y-4 sm:space-y-6">
-        <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+      <Tabs defaultValue="lockbox" className="flex-1 min-h-0 flex flex-col mt-4 sm:mt-6">
+        <div className="shrink-0 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
           <TabsList className="inline-flex sm:grid sm:w-full sm:grid-cols-6 bg-muted min-w-max sm:min-w-0 h-10 sm:h-10" data-tour="keys-tabs">
             <TabsTrigger
               value="lockbox"
@@ -117,29 +119,29 @@ export default function Keys() {
           </TabsList>
         </div>
 
-        <TabsContent value="lockbox" className="space-y-6 mt-4">
+        <TabsContent value="lockbox" className="flex-1 min-h-0 overflow-y-auto space-y-6 mt-4">
           <LockboxView />
         </TabsContent>
 
-        <TabsContent value="inventory" className="space-y-6 mt-4">
+        <TabsContent value="inventory" className="flex-1 min-h-0 overflow-y-auto space-y-6 mt-4">
           <KeyInventorySection />
           <KeyOrderSection />
         </TabsContent>
 
-        <TabsContent value="assignments" className="space-y-4 mt-4">
+        <TabsContent value="assignments" className="flex-1 min-h-0 overflow-y-auto space-y-4 mt-4">
           <KeyAssignmentSection />
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-4 mt-4">
+        <TabsContent value="history" className="flex-1 min-h-0 overflow-y-auto space-y-4 mt-4">
           <KeyHistorySection />
         </TabsContent>
 
-        <TabsContent value="elevator-passes" className="space-y-4 mt-4">
+        <TabsContent value="elevator-passes" className="flex-1 min-h-0 overflow-y-auto space-y-4 mt-4">
           <ElevatorPassSection />
         </TabsContent>
 
         {canManageKeys && (
-          <TabsContent value="manage" className="space-y-4 mt-4">
+          <TabsContent value="manage" className="flex-1 min-h-0 overflow-y-auto space-y-4 mt-4">
             <div className="space-y-2 mb-6">
               <h2 className="text-xl font-semibold">Lockbox Management</h2>
               <p className="text-sm text-muted-foreground">
