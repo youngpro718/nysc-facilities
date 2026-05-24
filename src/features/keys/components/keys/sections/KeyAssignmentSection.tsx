@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useKeyAssignments } from "../hooks/useKeyAssignments";
-import { KeyAssignmentTable } from "../components/KeyAssignmentTable";
+import { KeyAssignmentList } from "../components/KeyAssignmentList";
 import { KeyAssignment } from "../types/assignmentTypes";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
@@ -73,10 +73,12 @@ export function KeyAssignmentSection() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
         <div>
           <h2 className="text-2xl font-bold">Active Assignments</h2>
-          <p className="text-muted-foreground">Currently assigned keys and their holders</p>
+          <p className="text-sm text-muted-foreground">
+            {assignments?.length ?? 0} currently assigned keys and their holders
+          </p>
         </div>
         <Button
           variant="outline"
@@ -115,12 +117,13 @@ export function KeyAssignmentSection() {
         </Button>
       </div>
 
-      <KeyAssignmentTable
+      <KeyAssignmentList
         assignments={assignments}
         isProcessing={isProcessing}
         onReturnKey={handleReturn}
         onEditAssignment={handleEdit}
       />
+
 
       <EditElevatorPassDialog
         open={editDialogOpen}
