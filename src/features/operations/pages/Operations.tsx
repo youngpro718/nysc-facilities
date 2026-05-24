@@ -358,9 +358,10 @@ export default function Operations() {
           />
         </div>
       )}
+      </div>
 
       {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 min-h-0 flex flex-col mt-6 sm:mt-8">
         <TabsList className="grid w-full grid-cols-4" data-tour="ops-tabs">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
