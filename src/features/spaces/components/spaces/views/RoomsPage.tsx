@@ -169,9 +169,9 @@ const RoomsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-4 h-[calc(100svh-180px)] min-h-[520px]">
       {/* Filter Bar with Export/Import */}
-      <div className="flex flex-wrap justify-between gap-4">
+      <div className="flex flex-wrap justify-between gap-4 shrink-0">
         <div className="flex-1 min-w-0">
           {isMobile ? (
             <MobileFilterBar
