@@ -77,6 +77,9 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
       toast({ title: 'Assignment updated' });
       queryClient.invalidateQueries({ queryKey: ['court-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['term-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
+      queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
+      queryClient.invalidateQueries({ queryKey: ['court-assignments-table'] });
       queryClient.invalidateQueries({ queryKey: ['court-issues-integration'] });
       onOpenChange(false);
     },
