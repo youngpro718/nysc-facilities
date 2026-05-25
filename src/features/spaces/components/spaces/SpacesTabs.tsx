@@ -9,10 +9,10 @@ const SpacesTabs = () => {
   const activeRooms = rooms?.filter(r => r.status === 'active').length ?? 0;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-3 h-full min-h-0">
       {/* Header with room counts */}
-      <div className="border-b sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center justify-between px-1 pt-4 pb-2">
+      <div className="border-b shrink-0 bg-background">
+        <div className="flex items-center justify-between px-1 pt-2 pb-2">
           <h2 className="text-lg font-semibold">Rooms</h2>
           <div className="hidden sm:flex items-center gap-2">
             {totalRooms > 0 && (
@@ -26,10 +26,8 @@ const SpacesTabs = () => {
       </div>
 
       {/* Main Content */}
-      <div className="min-w-0">
-        <div className="min-h-[500px]">
-          <RoomsPage />
-        </div>
+      <div className="min-w-0 flex-1 min-h-0">
+        <RoomsPage />
       </div>
     </div>
   );

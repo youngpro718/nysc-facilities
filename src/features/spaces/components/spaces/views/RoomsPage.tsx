@@ -174,7 +174,7 @@ const RoomsPage = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 h-[calc(100svh-180px)] min-h-[520px]">
+    <div className="flex flex-col gap-4 h-[calc(100svh-260px)] min-h-[520px] overflow-hidden">
       {/* Filter Bar with Export/Import */}
       <div className="flex flex-wrap justify-between gap-4 shrink-0">
         <div className="flex-1 min-w-0">
