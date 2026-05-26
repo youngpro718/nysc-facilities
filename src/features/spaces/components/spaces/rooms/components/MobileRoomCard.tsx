@@ -64,9 +64,8 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
   const x = useMotionValue(0);
   const actionWidth = 140; // Width of action buttons area
   
-  // Transform for action buttons opacity
+  // Transform for action buttons opacity (no scale — scaling misaligns the strip)
   const actionsOpacity = useTransform(x, [-actionWidth, -40, 0], [1, 0.5, 0]);
-  const actionsScale = useTransform(x, [-actionWidth, -20, 0], [1, 0.8, 0.6]);
   
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     const threshold = actionWidth / 2;
@@ -92,8 +91,8 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
         {/* Swipe Action Buttons (revealed on swipe) */}
         {canManageSpaces && (
         <motion.div 
-          className="absolute inset-y-0 right-0 flex items-stretch"
-          style={{ opacity: actionsOpacity, scale: actionsScale }}
+          className="absolute inset-y-0 right-0 flex items-stretch h-full"
+          style={{ opacity: actionsOpacity }}
         >
           <EditSpaceDialog
             id={room.id}
@@ -124,7 +123,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
               type: "room"
             }}
           >
-            <button className="w-[70px] flex items-center justify-center bg-blue-500 text-white touch-manipulation">
+            <button className="w-[70px] h-full min-h-[44px] flex items-center justify-center bg-blue-500 text-white touch-manipulation">
               <Pencil className="h-5 w-5" />
             </button>
           </EditSpaceDialog>
@@ -134,7 +133,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
               const ok = await confirmDeleteRoom({ title: 'Delete Room', description: 'Delete this room? This cannot be undone.', confirmLabel: 'Delete', variant: 'destructive' });
               if (ok) onDelete?.(room.id);
             }}
-            className="w-[70px] flex items-center justify-center bg-destructive text-destructive-foreground touch-manipulation"
+            className="w-[70px] h-full min-h-[44px] flex items-center justify-center bg-destructive text-destructive-foreground touch-manipulation"
           >
             <Trash2 className="h-5 w-5" />
           </button>
@@ -146,10 +145,11 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
           drag={canManageSpaces ? "x" : false}
           dragConstraints={{ left: -actionWidth, right: 0 }}
           dragElastic={0.1}
+          dragDirectionLock
           onDragEnd={handleDragEnd}
           animate={{ x: isSwipedOpen ? -actionWidth : 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          style={{ x }}
+          style={{ x, touchAction: 'pan-y', willChange: 'transform' }}
           className="relative"
         >
           <Card 
