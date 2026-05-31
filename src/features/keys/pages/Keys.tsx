@@ -9,7 +9,9 @@ import { KeyStatisticsCards } from "@features/keys/components/keys/KeyStatistics
 import { LockboxView } from "@features/keys/components/keys/lockbox/LockboxView";
 import { LockboxManagement } from "@features/keys/components/keys/lockbox/LockboxManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Users, History, KeyRound, Box, Settings } from "lucide-react";
+import { Package, Users, History, KeyRound, Box, Settings, Monitor } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyData } from "@features/keys/components/keys/types/KeyTypes";
