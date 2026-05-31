@@ -9,7 +9,9 @@ import { KeyStatisticsCards } from "@features/keys/components/keys/KeyStatistics
 import { LockboxView } from "@features/keys/components/keys/lockbox/LockboxView";
 import { LockboxManagement } from "@features/keys/components/keys/lockbox/LockboxManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Users, History, KeyRound, Box, Settings } from "lucide-react";
+import { Package, Users, History, KeyRound, Box, Settings, Monitor } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyData } from "@features/keys/components/keys/types/KeyTypes";
@@ -23,6 +25,7 @@ export default function Keys() {
   const { canAdmin } = useRolePermissions();
   const canManageKeys = canAdmin('keys');
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   if (isMobile) {
     return <MobileKeyManagement />;
@@ -49,12 +52,24 @@ export default function Keys() {
   return (
     <div className="flex flex-col h-[calc(100svh-140px)] min-h-[520px] pb-safe">
       <div className="shrink-0 space-y-4 sm:space-y-6">
-        <PageHeader
-          title="Key Management"
-          description="Manage keys, track assignments, and view history"
-          icon={KeyRound}
-          className="mb-0"
-        />
+        <div className="flex items-start justify-between gap-3">
+          <PageHeader
+            title="Key Management"
+            description="Manage keys, track assignments, and view history"
+            icon={KeyRound}
+            className="mb-0 flex-1"
+          />
+          <Button
+            variant="default"
+            size="lg"
+            className="shrink-0 h-12 rounded-xl gap-2 shadow-sm"
+            onClick={() => navigate("/keys/kiosk")}
+          >
+            <Monitor className="h-5 w-5" />
+            Kiosk Mode
+          </Button>
+        </div>
+
 
         <DataState
           {...dataStateProps}
