@@ -125,14 +125,27 @@ export default function KeysKiosk() {
 
   const filteredFind = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return slots.slice(0, 50);
-    return slots.filter((s) =>
-      s.label.toLowerCase().includes(q) ||
-      String(s.slot_number).includes(q) ||
-      (s.room_number || "").toLowerCase().includes(q) ||
-      (s.lockbox_name || "").toLowerCase().includes(q)
-    );
-  }, [slots, query]);
+    let list = slots;
+    if (category !== "all") {
+      list = list.filter((s) => categorize(s) === category);
+    }
+    if (q) {
+      list = list.filter((s) =>
+        s.label.toLowerCase().includes(q) ||
+        String(s.slot_number).includes(q) ||
+        (s.room_number || "").toLowerCase().includes(q) ||
+        (s.lockbox_name || "").toLowerCase().includes(q)
+      );
+    }
+    return q ? list : list.slice(0, 100);
+  }, [slots, query, category]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<Category, number> = { all: slots.length, chambers: 0, robing: 0, courtroom: 0, other: 0 };
+    for (const s of slots) counts[categorize(s)]++;
+    return counts;
+  }, [slots]);
+
 
   const out = useMemo(
     () => slots.filter((s) => s.status === "checked_out").sort((a, b) =>
