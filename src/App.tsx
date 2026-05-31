@@ -174,6 +174,13 @@ function AppContent() {
               </ModuleProtectedRoute>
             </ProtectedRoute>
           } />
+          <Route path="/keys/kiosk" element={
+            <ProtectedRoute>
+              <ModuleProtectedRoute moduleKey="keys" moduleName="Keys Management">
+                <KeysKiosk />
+              </ModuleProtectedRoute>
+            </ProtectedRoute>
+          } />
           {/* Admin Center - Team & User Management */}
           <Route path="admin" element={
             <ProtectedRoute requireSystemAdmin>
