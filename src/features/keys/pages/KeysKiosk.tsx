@@ -272,9 +272,13 @@ export default function KeysKiosk() {
           <FindTab
             query={query}
             setQuery={setQuery}
+            category={category}
+            setCategory={setCategory}
+            counts={categoryCounts}
             results={filteredFind}
             onAction={openAction}
           />
+
         ) : (
           <OutTab list={out} onCheckIn={openAction} />
         )}
