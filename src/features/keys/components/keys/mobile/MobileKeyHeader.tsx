@@ -1,4 +1,4 @@
-import { Bell } from "lucide-react";
+import { Bell, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/shared/hooks/useNotifications";
@@ -9,29 +9,40 @@ export function MobileKeyHeader() {
   const { unreadCount } = useNotifications();
 
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="space-y-1 min-w-0">
-        <h1 className="text-2xl font-bold leading-tight">Key Management</h1>
-        <p className="text-sm text-muted-foreground">
-          Find a key and know exactly where it is.
-        </p>
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1 min-w-0">
+          <h1 className="text-2xl font-bold leading-tight">Key Management</h1>
+          <p className="text-sm text-muted-foreground">
+            Find a key and know exactly where it is.
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative shrink-0 h-11 w-11"
+          onClick={() => navigate("/notifications")}
+          aria-label="Notifications"
+        >
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <Badge
+              variant="destructive"
+              className="absolute -top-0.5 -right-0.5 h-5 min-w-5 rounded-full p-0 text-[10px] flex items-center justify-center"
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </Badge>
+          )}
+        </Button>
       </div>
+
       <Button
-        variant="ghost"
-        size="icon"
-        className="relative shrink-0 h-11 w-11"
-        onClick={() => navigate("/notifications")}
-        aria-label="Notifications"
+        size="lg"
+        className="w-full h-14 rounded-2xl text-base gap-2 shadow-sm"
+        onClick={() => navigate("/keys/kiosk")}
       >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <Badge
-            variant="destructive"
-            className="absolute -top-0.5 -right-0.5 h-5 min-w-5 rounded-full p-0 text-[10px] flex items-center justify-center"
-          >
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </Badge>
-        )}
+        <Monitor className="h-5 w-5" />
+        Open Kiosk Mode
       </Button>
     </div>
   );
