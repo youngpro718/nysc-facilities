@@ -52,12 +52,24 @@ export default function Keys() {
   return (
     <div className="flex flex-col h-[calc(100svh-140px)] min-h-[520px] pb-safe">
       <div className="shrink-0 space-y-4 sm:space-y-6">
-        <PageHeader
-          title="Key Management"
-          description="Manage keys, track assignments, and view history"
-          icon={KeyRound}
-          className="mb-0"
-        />
+        <div className="flex items-start justify-between gap-3">
+          <PageHeader
+            title="Key Management"
+            description="Manage keys, track assignments, and view history"
+            icon={KeyRound}
+            className="mb-0 flex-1"
+          />
+          <Button
+            variant="default"
+            size="lg"
+            className="shrink-0 h-12 rounded-xl gap-2 shadow-sm"
+            onClick={() => navigate("/keys/kiosk")}
+          >
+            <Monitor className="h-5 w-5" />
+            Kiosk Mode
+          </Button>
+        </div>
+
 
         <DataState
           {...dataStateProps}
