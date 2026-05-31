@@ -357,10 +357,13 @@ function statusPill(status: string) {
 }
 
 function FindTab({
-  query, setQuery, results, onAction,
+  query, setQuery, category, setCategory, counts, results, onAction,
 }: {
   query: string;
   setQuery: (v: string) => void;
+  category: Category;
+  setCategory: (c: Category) => void;
+  counts: Record<Category, number>;
   results: EnrichedSlot[];
   onAction: (s: EnrichedSlot) => void;
 }) {
@@ -386,6 +389,33 @@ function FindTab({
           </Button>
         )}
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        {CATEGORIES.map((c) => {
+          const active = category === c.id;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setCategory(c.id)}
+              className={cn(
+                "h-12 px-5 rounded-full border-2 text-base font-semibold transition-all active:scale-[0.97] flex items-center gap-2",
+                active
+                  ? "bg-primary text-primary-foreground border-primary shadow"
+                  : "bg-card text-foreground border-border hover:border-primary/50"
+              )}
+            >
+              {c.label}
+              <span className={cn(
+                "inline-flex items-center justify-center min-w-[1.75rem] h-6 rounded-full px-2 text-sm font-bold",
+                active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-foreground"
+              )}>
+                {counts[c.id]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
 
       {results.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
