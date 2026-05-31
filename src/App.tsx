@@ -49,6 +49,7 @@ const Spaces = lazy(() => import("@features/spaces/pages/Spaces"));
 const Operations = lazy(() => import("@features/operations/pages/Operations"));
 
 const Keys = lazy(() => import("@features/keys/pages/Keys"));
+const KeysKiosk = lazy(() => import("@features/keys/pages/KeysKiosk"));
 const Profile = lazy(() => import("@features/profile/pages/Profile"));
 const MyRequests = lazy(() => import("@features/dashboard/pages/MyRequests"));
 const MyIssues = lazy(() => import("@features/issues/pages/MyIssues"));
