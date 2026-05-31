@@ -1,54 +1,59 @@
-## Goals
-Fix the two reported mobile bugs on the Rooms page (can't scroll, swipe-edit button misaligned), then sweep adjacent mobile surfaces for the same patterns and verify mobile-relevant security/UX hygiene.
+## Kiosk Mode for Keys
 
-## Confirmed root causes
+Goal: a dead-simple, high-contrast, large-touch screen designed for a shared desk monitor. Court officers tap one button to find a room's key or see what's out, and check keys in/out without typing more than a name.
 
-**1. Rooms page won't scroll on mobile**
-`src/features/spaces/components/spaces/views/RoomsPage.tsx` line 177 wraps everything in:
+### 1. Entry point
+- Add a new route `/keys/kiosk` (separate page, no app chrome — full-screen).
+- On the existing Keys page header (desktop + mobile), add a prominent **"Kiosk Mode"** toggle button (icon: Monitor) that opens `/keys/kiosk` in the same tab. Visible to court_officer, court_aide, admin, system_admin.
+- Kiosk page has an **Exit** button (top-right) returning to `/keys`.
+
+### 2. Layout
+Full-viewport (`h-dvh`), dark-on-light, oversized typography. Two giant tabs at the top:
+
+```text
+┌──────────────────────────────────────────────┐
+│  [ 🔑 Find a Key ]    [ 📋 Keys Out ]   Exit │
+├──────────────────────────────────────────────┤
+│                                              │
+│           (tab content area)                 │
+│                                              │
+└──────────────────────────────────────────────┘
 ```
-<div className="flex flex-col gap-4 h-[calc(100svh-260px)] min-h-[520px] overflow-hidden">
-```
-That fixed height + `overflow-hidden` caps the mobile view. On mobile the inner `RoomsContent` is a plain vertical list with no internal scroller, so rows past the viewport are clipped and unreachable. (Same pattern that broke the Issues page.)
 
-**2. Swipe-reveal Edit/Delete buttons misaligned**
-In `MobileRoomCard.tsx` the action strip uses both `opacity` and `scale` motion transforms (`actionsScale` goes 0.6 → 1). The scale is applied to the whole absolutely-positioned strip, so the buttons visually shrink toward the strip's transform-origin and no longer line up with the right edge of the swiped card — the Edit button appears offset/floating. Other contributors: the strip uses `inset-y-0 right-0` with `items-stretch` but the Edit button is an `EditSpaceDialog` wrapper whose trigger isn't guaranteed to stretch to full height.
+Tabs are >=72px tall, text >=24px, touch targets >=56px.
 
-## Fix plan
+### 3. Tab A — Find a Key
+- One huge search input at top: "Search room number, name, or key…" with on-screen number pad shortcut (e.g. `1300`).
+- Results render as large cards (one per match) showing:
+  - Room number + name (huge)
+  - Key name + lockbox/slot location ("Box A, Slot 12")
+  - Status pill: **Available** (green) or **Checked out to {name} · {time ago}** (amber)
+  - Primary action button: **Check Out** (if available) or **Check In** (if out)
+- Tap a card → bottom sheet with name capture (autocomplete from occupants) → confirm. Writes to `lockbox_activity_logs` + updates slot state via existing flow.
 
-### A. Rooms page scroll (mobile)
-- Remove the fixed-height wrapper on mobile. Keep desktop master/detail height (it needs it for the ResizablePanelGroup), but on mobile let the page grow naturally.
-- Approach: split the container — `flex flex-col gap-4` always, then apply `md:h-[calc(100svh-260px)] md:min-h-[520px] md:overflow-hidden` only at `md:` and up. The mobile `RoomsContent` list will then scroll inside the page's normal scroll container.
-- Verify the parent `Spaces.tsx` / Layout already provides page-level scrolling on mobile (it does — main has `mobile-main-padding`).
+### 4. Tab B — Keys Out
+- Grid/list of every currently checked-out key, sorted by most recent.
+- Each row: room + key, who has it (big), how long ago, and a single **Check In** button.
+- Live-refresh every 15s via react-query.
 
-### B. Swipe action alignment
-- Drop the `scale` transform on the action strip; keep `opacity` only. Scaling a position-absolute strip causes the visible misalignment.
-- Make both buttons full-height explicitly (`h-full`) and ensure the `EditSpaceDialog` child button stretches (wrap trigger in a `h-full flex` or pass `asChild` properly).
-- Tighten `actionWidth` math: 2 × 70px = 140 ✓ (already correct).
-- Add `will-change-transform` and `touch-action: pan-y` on the draggable card so vertical page scroll isn't hijacked by the horizontal drag gesture.
+### 5. Reuse existing data + mutations
+- Read from the same queries used in `MobileKeyManagement` (`lockboxes`, `lockbox_slots`, `lockbox_activity_logs`).
+- Reuse existing check-in/check-out handlers (extract them from current dialog if needed) so RLS + audit logs stay consistent. No new DB tables or policies.
 
-### C. Mobile deep-dive sweep (read-only audit + small fixes where found)
-Check the same "fixed height + overflow-hidden" anti-pattern and swipe/transform issues on:
-- Keys, Inventory, Supply, Tasks, Term Sheet, Operations (already fixed), Dashboard
-- `MobileRoomDrawer`, `RoomQuickEditSheet`, `QuickSpaceBottomSheet` — confirm they scroll inside the sheet and respect safe-area
-- `BottomTabBar` + FABs — confirm they don't cover content (mobile-main-padding already handles, verify each page applies it)
-- Touch targets ≥44px on swipe buttons, filter chips, FAB
-- Inputs ≥16px font-size to prevent iOS zoom (already enforced globally, spot-check)
+### 6. Styling
+- Semantic tokens only; large radii (`rounded-2xl`), thick borders, status colors from existing system.
+- Optional "Always-on" flag stored in localStorage so the toggle button can hide chrome and prevent accidental exit (single Exit button, no nav).
 
-Fix any clear regressions found during the sweep; list anything larger as follow-ups instead of expanding scope here.
+### 7. Files (new / changed)
+- New: `src/features/keys/pages/KeysKiosk.tsx`
+- New: `src/features/keys/components/keys/kiosk/KioskHeader.tsx`
+- New: `src/features/keys/components/keys/kiosk/FindKeyTab.tsx`
+- New: `src/features/keys/components/keys/kiosk/KeysOutTab.tsx`
+- New: `src/features/keys/components/keys/kiosk/CheckInOutSheet.tsx`
+- Changed: `src/config/routes.ts` (register `/keys/kiosk`, no sidebar nav)
+- Changed: `src/features/keys/pages/Keys.tsx` + `MobileKeyHeader.tsx` (add Kiosk button)
 
-### D. Security spot-check (mobile-relevant)
-- Confirm no role/permission checks are gated only on `useIsMobile` or client storage.
-- Confirm `RoomQuickEditSheet` / `EditSpaceDialog` mutations still go through the same RLS-protected endpoints on mobile (no mobile-only bypass).
-- Confirm the swipe Delete action goes through `delete_room_cascade` RPC (per project memory) and not a raw delete.
-- No new RLS work expected; report findings if anything is off.
-
-## Verification
-- Reload Rooms on mobile viewport (440×672): scroll the full list, swipe a row left, confirm Edit + Delete sit flush against the right edge and tap targets land correctly.
-- Repeat on a long room list to confirm last row is reachable.
-- Tap Edit → confirm `EditSpaceDialog` opens; tap Delete → confirm confirm dialog and cascade.
-- Quick pass on Keys / Inventory / Tasks mobile lists for scrollability.
-
-## Out of scope
-- Redesigning the mobile Rooms card layout
-- Adding new mobile features (filters, sorting UI changes)
-- Server-side schema changes
+### Out of scope
+- No new database tables or RLS changes.
+- No changes to existing desktop/mobile Keys UI beyond the toggle button.
+- No PIN/lock for exiting kiosk (can add later if you want true lockdown).
