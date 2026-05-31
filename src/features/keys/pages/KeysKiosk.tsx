@@ -14,11 +14,28 @@ import { cn } from "@/lib/utils";
 import { LockboxSlot } from "../components/keys/types/LockboxTypes";
 
 type Tab = "find" | "out";
+type Category = "all" | "chambers" | "robing" | "courtroom" | "other";
+
+const CATEGORIES: { id: Category; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "chambers", label: "Chambers" },
+  { id: "robing", label: "Robing Rooms" },
+  { id: "courtroom", label: "Courtrooms" },
+  { id: "other", label: "Other" },
+];
 
 interface EnrichedSlot extends LockboxSlot {
   lockbox_name?: string;
   checked_out_to?: string | null;
   checked_out_at?: string | null;
+}
+
+function categorize(s: EnrichedSlot): Category {
+  const hay = `${s.label || ""} ${s.room_number || ""}`.toLowerCase();
+  if (hay.includes("chamber")) return "chambers";
+  if (hay.includes("robing")) return "robing";
+  if (hay.includes("courtroom") || hay.includes("court room") || /\bpart\b/.test(hay) || /\bctrm\b/.test(hay)) return "courtroom";
+  return "other";
 }
 
 function timeAgo(iso?: string | null) {
@@ -37,6 +54,7 @@ export default function KeysKiosk() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("find");
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<Category>("all");
   const [actionSlot, setActionSlot] = useState<EnrichedSlot | null>(null);
   const [personName, setPersonName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -107,14 +125,27 @@ export default function KeysKiosk() {
 
   const filteredFind = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return slots.slice(0, 50);
-    return slots.filter((s) =>
-      s.label.toLowerCase().includes(q) ||
-      String(s.slot_number).includes(q) ||
-      (s.room_number || "").toLowerCase().includes(q) ||
-      (s.lockbox_name || "").toLowerCase().includes(q)
-    );
-  }, [slots, query]);
+    let list = slots;
+    if (category !== "all") {
+      list = list.filter((s) => categorize(s) === category);
+    }
+    if (q) {
+      list = list.filter((s) =>
+        s.label.toLowerCase().includes(q) ||
+        String(s.slot_number).includes(q) ||
+        (s.room_number || "").toLowerCase().includes(q) ||
+        (s.lockbox_name || "").toLowerCase().includes(q)
+      );
+    }
+    return q ? list : list.slice(0, 100);
+  }, [slots, query, category]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<Category, number> = { all: slots.length, chambers: 0, robing: 0, courtroom: 0, other: 0 };
+    for (const s of slots) counts[categorize(s)]++;
+    return counts;
+  }, [slots]);
+
 
   const out = useMemo(
     () => slots.filter((s) => s.status === "checked_out").sort((a, b) =>
@@ -241,9 +272,13 @@ export default function KeysKiosk() {
           <FindTab
             query={query}
             setQuery={setQuery}
+            category={category}
+            setCategory={setCategory}
+            counts={categoryCounts}
             results={filteredFind}
             onAction={openAction}
           />
+
         ) : (
           <OutTab list={out} onCheckIn={openAction} />
         )}
@@ -322,10 +357,13 @@ function statusPill(status: string) {
 }
 
 function FindTab({
-  query, setQuery, results, onAction,
+  query, setQuery, category, setCategory, counts, results, onAction,
 }: {
   query: string;
   setQuery: (v: string) => void;
+  category: Category;
+  setCategory: (c: Category) => void;
+  counts: Record<Category, number>;
   results: EnrichedSlot[];
   onAction: (s: EnrichedSlot) => void;
 }) {
@@ -351,6 +389,33 @@ function FindTab({
           </Button>
         )}
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        {CATEGORIES.map((c) => {
+          const active = category === c.id;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setCategory(c.id)}
+              className={cn(
+                "h-12 px-5 rounded-full border-2 text-base font-semibold transition-all active:scale-[0.97] flex items-center gap-2",
+                active
+                  ? "bg-primary text-primary-foreground border-primary shadow"
+                  : "bg-card text-foreground border-border hover:border-primary/50"
+              )}
+            >
+              {c.label}
+              <span className={cn(
+                "inline-flex items-center justify-center min-w-[1.75rem] h-6 rounded-full px-2 text-sm font-bold",
+                active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-foreground"
+              )}>
+                {counts[c.id]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
 
       {results.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
