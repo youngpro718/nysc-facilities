@@ -25,6 +25,7 @@ export default function Keys() {
   const { canAdmin } = useRolePermissions();
   const canManageKeys = canAdmin('keys');
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   if (isMobile) {
     return <MobileKeyManagement />;
