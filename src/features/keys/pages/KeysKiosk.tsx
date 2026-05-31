@@ -14,11 +14,28 @@ import { cn } from "@/lib/utils";
 import { LockboxSlot } from "../components/keys/types/LockboxTypes";
 
 type Tab = "find" | "out";
+type Category = "all" | "chambers" | "robing" | "courtroom" | "other";
+
+const CATEGORIES: { id: Category; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "chambers", label: "Chambers" },
+  { id: "robing", label: "Robing Rooms" },
+  { id: "courtroom", label: "Courtrooms" },
+  { id: "other", label: "Other" },
+];
 
 interface EnrichedSlot extends LockboxSlot {
   lockbox_name?: string;
   checked_out_to?: string | null;
   checked_out_at?: string | null;
+}
+
+function categorize(s: EnrichedSlot): Category {
+  const hay = `${s.label || ""} ${s.room_number || ""}`.toLowerCase();
+  if (hay.includes("chamber")) return "chambers";
+  if (hay.includes("robing")) return "robing";
+  if (hay.includes("courtroom") || hay.includes("court room") || /\bpart\b/.test(hay) || /\bctrm\b/.test(hay)) return "courtroom";
+  return "other";
 }
 
 function timeAgo(iso?: string | null) {
@@ -37,6 +54,7 @@ export default function KeysKiosk() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("find");
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<Category>("all");
   const [actionSlot, setActionSlot] = useState<EnrichedSlot | null>(null);
   const [personName, setPersonName] = useState("");
   const [submitting, setSubmitting] = useState(false);
