@@ -85,6 +85,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             user_rejected: '🚫',
             role_assigned: '👤',
             role_removed: '➖',
+            out_of_stock: '🚨',
             low_stock: '📉',
           };
 
