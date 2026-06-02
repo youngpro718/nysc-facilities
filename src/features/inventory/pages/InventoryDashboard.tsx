@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Package, Plus, History, BarChart3, MapPin, AlertTriangle, Search, Warehouse } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { needsAttention } from "@features/inventory/utils/stockStatus";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/PageHeader";
 
