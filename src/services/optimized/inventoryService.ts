@@ -220,7 +220,7 @@ export class OptimizedInventoryService {
 
       return data.map((category: any): OptimizedInventoryCategory => {
         const items = category.inventory_items || [];
-        const lowStockItems = items.filter((item: any) => item.quantity <= item.minimum_quantity);
+        const lowStockItems = items.filter((item: any) => needsAttention(item));
         const totalQuantity = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
         return {
