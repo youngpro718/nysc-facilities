@@ -64,11 +64,11 @@ export class OptimizedInventoryService {
           acc.total_items++;
           acc.total_value += item.quantity;
           
-          if (item.quantity <= item.minimum_quantity) {
+          if (needsAttention(item)) {
             acc.low_stock_count++;
           }
           
-          if (item.quantity === 0) {
+          if (isOutOfStock(item)) {
             acc.out_of_stock_count++;
           }
           
