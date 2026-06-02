@@ -20,6 +20,7 @@ import {
   ChevronUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isLowStock as isLowStockHelper, isOutOfStock as isOutOfStockHelper } from "@features/inventory/utils/stockStatus";
 
 type StorageRoom = {
   id: string;
