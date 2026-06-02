@@ -1,7 +1,7 @@
 // Optimized Inventory Service
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import { isLowStock, isOutOfStock, needsAttention } from '@/features/inventory/utils/stockStatus';
+import { isOutOfStock, needsAttention } from '@/features/inventory/utils/stockStatus';
 
 // Optimized types for inventory management
 export interface OptimizedInventoryItem {
