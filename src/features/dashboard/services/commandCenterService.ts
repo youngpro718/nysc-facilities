@@ -7,6 +7,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { needsAttention } from '@/features/inventory/utils/stockStatus';
 
 // ============================================================================
 // TYPES
