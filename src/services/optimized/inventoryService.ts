@@ -175,7 +175,7 @@ export class OptimizedInventoryService {
       if (error) throw error;
 
       // Filter low stock items using database minimum_quantity
-      const lowStockItems = data.filter((item: any) => item.quantity <= item.minimum_quantity);
+      const lowStockItems = data.filter((item: any) => needsAttention(item));
 
       return lowStockItems.map((item: any): OptimizedInventoryItem => ({
         id: item.id,
