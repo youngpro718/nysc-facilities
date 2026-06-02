@@ -54,13 +54,11 @@ export const InventoryDashboard = () => {
         .in('status', ['submitted', 'pending']);
       if (typeof reqCount === 'number') setNewRequestsCount(reqCount);
 
-      // Low stock count — use each item's actual minimum_quantity (include negatives)
+      // Low stock count — centralized rule (includes out-of-stock for tracked items)
       const { data: stockItems } = await supabase
         .from('inventory_items')
         .select('id, quantity, minimum_quantity');
-      const lowCount = (stockItems || []).filter(
-        item => item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
-      ).length;
+      const lowCount = (stockItems || []).filter(needsAttention).length;
       setLowStockCount(lowCount);
 
       // Total items count
