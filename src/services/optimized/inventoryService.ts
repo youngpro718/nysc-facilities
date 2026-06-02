@@ -140,7 +140,7 @@ export class OptimizedInventoryService {
         category_name: item.inventory_categories?.name,
         category_color: item.inventory_categories?.color,
         last_updated: item.updated_at,
-        is_low_stock: item.quantity <= item.minimum_quantity,
+        is_low_stock: needsAttention(item),
       }));
     } catch (error) {
       logger.error('Error fetching inventory items:', error);
@@ -277,7 +277,7 @@ export class OptimizedInventoryService {
         category_name: item.inventory_categories?.name,
         category_color: item.inventory_categories?.color,
         last_updated: item.updated_at,
-        is_low_stock: item.quantity <= item.minimum_quantity,
+        is_low_stock: needsAttention(item),
       }));
     } catch (error) {
       logger.error('Error searching inventory items:', error);
@@ -324,7 +324,7 @@ export class OptimizedInventoryService {
         category_name: item.inventory_categories?.name,
         category_color: item.inventory_categories?.color,
         last_updated: item.updated_at,
-        is_low_stock: item.quantity <= item.minimum_quantity,
+        is_low_stock: needsAttention(item),
       }));
     } catch (error) {
       logger.error('Error fetching items by category:', error);
