@@ -452,8 +452,8 @@ export const StorageRoomsPanel = () => {
                           <p className="text-sm text-muted-foreground text-center py-6">No items in this room</p>
                         ) : (
                           room.items.map((item) => {
-                            const isLow = item.minimum_quantity > 0 && item.quantity > 0 && item.quantity < item.minimum_quantity;
-                            const isOut = item.quantity === 0;
+                            const isLow = isLowStockHelper(item);
+                            const isOut = isOutOfStockHelper(item);
                             const stockPercent = item.minimum_quantity > 0 
                               ? Math.min(100, Math.round((item.quantity / item.minimum_quantity) * 100))
                               : 100;
