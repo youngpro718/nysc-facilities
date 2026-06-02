@@ -105,9 +105,7 @@ export const InventoryOverviewPanel = () => {
         .order("quantity", { ascending: true });
       if (error) throw error;
 
-      const filtered = (data || []).filter(
-        item => item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
-      );
+      const filtered = (data || []).filter(needsAttention);
 
       const categoryIds = Array.from(new Set(filtered.map(i => i.category_id).filter(Boolean))) as string[];
       const categoriesById = new Map<string, string>();
