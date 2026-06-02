@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateInventoryStockQueries } from '@features/inventory/utils/invalidation';
 import { DialogFooter } from '@/components/ui/dialog';
 import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
