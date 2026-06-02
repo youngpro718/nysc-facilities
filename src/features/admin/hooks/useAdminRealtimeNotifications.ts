@@ -59,8 +59,15 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             user_rejected: ['adminNotifications'],
             role_assigned: ['adminNotifications'],
             role_removed: ['adminNotifications'],
-            low_stock: ['inventory-items', 'low-stock-items', 'out-of-stock-items', 'low-stock-overview', 'inventory-overview-items', 'court-aide-alerts'],
+            low_stock: ['inventory-items', 'low-stock-items', 'out-of-stock-items', 'low-stock-overview', 'inventory-overview-items', 'inventory-stats', 'court-aide-alerts'],
+            out_of_stock: ['inventory-items', 'low-stock-items', 'out-of-stock-items', 'low-stock-overview', 'inventory-overview-items', 'inventory-stats', 'court-aide-alerts'],
           };
+
+          // Non-admin inventory roles only see inventory-related notifications
+          const INVENTORY_TYPES = ['low_stock', 'out_of_stock'];
+          if (!isAdmin && !INVENTORY_TYPES.includes(notification.notification_type)) {
+            return;
+          }
 
           const extraKeys = typeQueryMap[notification.notification_type];
           if (extraKeys) {
