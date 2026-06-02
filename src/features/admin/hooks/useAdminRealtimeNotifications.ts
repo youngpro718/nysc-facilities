@@ -119,7 +119,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
       logger.debug('[AdminRealtime] Cleaning up');
       supabase.removeChannel(channel);
     };
-  }, [user?.id, isAdmin, queryClient]);
+  }, [user?.id, isAdmin, shouldSubscribe, userRole, queryClient]);
 
   return {
     isConnected,
