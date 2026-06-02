@@ -181,10 +181,9 @@ async function getSupplyMetrics(): Promise<SupplyMetrics> {
   const requestList = requests || [];
   const today = new Date().toISOString().split('T')[0];
   
-  // Calculate low stock items in JavaScript
-  const lowStockItems = (allItems || []).filter(
-    item => item.quantity < (item.minimum_quantity || 0)
-  );
+  // Calculate low stock items using centralized helper
+  const { needsAttention } = await import('@/features/inventory/utils/stockStatus');
+  const lowStockItems = (allItems || []).filter(needsAttention);
 
   return {
     total_requests: requestList.length,
