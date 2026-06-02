@@ -17,15 +17,20 @@ interface AdminRealtimeNotificationHook {
  * Direct table listeners were removed to prevent duplicate toasts.
  */
 export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, userRole } = useAuth() as any;
   const [isConnected, setIsConnected] = useState(false);
   const [lastNotification, setLastNotification] = useState<Record<string, unknown> | null>(null);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!user?.id || !isAdmin) return;
+  // Roles that should also receive inventory low-stock / out-of-stock toasts
+  const INVENTORY_ROLES = ['purchasing', 'facilities_manager'];
+  const isInventoryRole = INVENTORY_ROLES.includes(userRole);
+  const shouldSubscribe = isAdmin || isInventoryRole;
 
-    logger.debug('[AdminRealtime] Setting up admin notifications listener for:', user.id);
+  useEffect(() => {
+    if (!user?.id || !shouldSubscribe) return;
+
+    logger.debug('[AdminRealtime] Setting up notifications listener for:', user.id, 'role:', userRole);
 
     const channel = supabase
       .channel('admin-realtime-hub')
