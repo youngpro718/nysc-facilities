@@ -355,8 +355,8 @@ export const StorageRoomsPanel = () => {
                         <p className="text-sm text-muted-foreground text-center py-4">No items</p>
                       ) : (
                         room.items.map((item) => {
-                          const isLow = item.minimum_quantity > 0 && item.quantity > 0 && item.quantity < item.minimum_quantity;
-                          const isOut = item.quantity === 0;
+                          const isLow = isLowStockHelper(item);
+                          const isOut = isOutOfStockHelper(item);
                           return (
                             <div
                               key={item.id}
