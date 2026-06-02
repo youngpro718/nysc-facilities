@@ -7,6 +7,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { needsAttention } from '@/features/inventory/utils/stockStatus';
 
 // ============================================================================
 // TYPES
@@ -181,10 +182,8 @@ async function getSupplyMetrics(): Promise<SupplyMetrics> {
   const requestList = requests || [];
   const today = new Date().toISOString().split('T')[0];
   
-  // Calculate low stock items in JavaScript
-  const lowStockItems = (allItems || []).filter(
-    item => item.quantity < (item.minimum_quantity || 0)
-  );
+  // Calculate low stock items using centralized helper
+  const lowStockItems = (allItems || []).filter(needsAttention);
 
   return {
     total_requests: requestList.length,
@@ -369,14 +368,14 @@ export async function getSystemAlerts(): Promise<SystemAlert[]> {
     });
   }
 
-  // Low stock alert
-  if (metrics.supply.low_stock_items > 5) {
+  // Low stock alert — show for any tracked item below minimum
+  if (metrics.supply.low_stock_items > 0) {
     alerts.push({
       id: 'low-stock',
-      severity: 'warning',
+      severity: metrics.supply.low_stock_items > 5 ? 'warning' : 'info',
       category: 'maintenance',
       title: 'Low Stock Items',
-      message: `${metrics.supply.low_stock_items} inventory items are below minimum quantity`,
+      message: `${metrics.supply.low_stock_items} inventory ${metrics.supply.low_stock_items === 1 ? 'item is' : 'items are'} below minimum quantity`,
       timestamp: new Date().toISOString(),
       acknowledged: false,
     });

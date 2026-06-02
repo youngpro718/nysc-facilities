@@ -10,6 +10,7 @@ import { Package, AlertTriangle, ArrowRight, ShoppingCart } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { isLowStock, isOutOfStock, needsAttention } from "@features/inventory/utils/stockStatus";
 
 type LowStockItem = {
   id: string;
@@ -104,9 +105,7 @@ export const InventoryOverviewPanel = () => {
         .order("quantity", { ascending: true });
       if (error) throw error;
 
-      const filtered = (data || []).filter(
-        item => item.minimum_quantity > 0 && item.quantity < item.minimum_quantity
-      );
+      const filtered = (data || []).filter(needsAttention);
 
       const categoryIds = Array.from(new Set(filtered.map(i => i.category_id).filter(Boolean))) as string[];
       const categoriesById = new Map<string, string>();
@@ -132,12 +131,10 @@ export const InventoryOverviewPanel = () => {
     retry: 2,
   });
 
-  // Computed stats
+  // Computed stats — centralized
   const totalItems = allItems?.length ?? 0;
-  const outOfStock = allItems?.filter(i => i.quantity <= 0).length ?? 0;
-  const lowStockCount = allItems?.filter(
-    i => i.minimum_quantity > 0 && i.quantity > 0 && i.quantity < i.minimum_quantity
-  ).length ?? 0;
+  const outOfStock = allItems?.filter(isOutOfStock).length ?? 0;
+  const lowStockCount = allItems?.filter(isLowStock).length ?? 0;
   const totalLowStockFromQuery = lowStockItems?.length ?? 0;
   const hasActionItems = outOfStock > 0 || lowStockCount > 0;
 

@@ -1,6 +1,7 @@
 // Optimized Inventory Service
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { isOutOfStock, needsAttention } from '@/features/inventory/utils/stockStatus';
 
 // Optimized types for inventory management
 export interface OptimizedInventoryItem {
@@ -63,11 +64,11 @@ export class OptimizedInventoryService {
           acc.total_items++;
           acc.total_value += item.quantity;
           
-          if (item.quantity <= item.minimum_quantity) {
+          if (needsAttention(item)) {
             acc.low_stock_count++;
           }
           
-          if (item.quantity === 0) {
+          if (isOutOfStock(item)) {
             acc.out_of_stock_count++;
           }
           
@@ -139,7 +140,7 @@ export class OptimizedInventoryService {
         category_name: item.inventory_categories?.name,
         category_color: item.inventory_categories?.color,
         last_updated: item.updated_at,
-        is_low_stock: item.quantity <= item.minimum_quantity,
+        is_low_stock: needsAttention(item),
       }));
     } catch (error) {
       logger.error('Error fetching inventory items:', error);
@@ -174,7 +175,7 @@ export class OptimizedInventoryService {
       if (error) throw error;
 
       // Filter low stock items using database minimum_quantity
-      const lowStockItems = data.filter((item: any) => item.quantity <= item.minimum_quantity);
+      const lowStockItems = data.filter((item: any) => needsAttention(item));
 
       return lowStockItems.map((item: any): OptimizedInventoryItem => ({
         id: item.id,
@@ -219,7 +220,7 @@ export class OptimizedInventoryService {
 
       return data.map((category: any): OptimizedInventoryCategory => {
         const items = category.inventory_items || [];
-        const lowStockItems = items.filter((item: any) => item.quantity <= item.minimum_quantity);
+        const lowStockItems = items.filter((item: any) => needsAttention(item));
         const totalQuantity = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
         return {
@@ -276,7 +277,7 @@ export class OptimizedInventoryService {
         category_name: item.inventory_categories?.name,
         category_color: item.inventory_categories?.color,
         last_updated: item.updated_at,
-        is_low_stock: item.quantity <= item.minimum_quantity,
+        is_low_stock: needsAttention(item),
       }));
     } catch (error) {
       logger.error('Error searching inventory items:', error);
@@ -323,7 +324,7 @@ export class OptimizedInventoryService {
         category_name: item.inventory_categories?.name,
         category_color: item.inventory_categories?.color,
         last_updated: item.updated_at,
-        is_low_stock: item.quantity <= item.minimum_quantity,
+        is_low_stock: needsAttention(item),
       }));
     } catch (error) {
       logger.error('Error fetching items by category:', error);

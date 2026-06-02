@@ -17,15 +17,20 @@ interface AdminRealtimeNotificationHook {
  * Direct table listeners were removed to prevent duplicate toasts.
  */
 export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, userRole } = useAuth() as any;
   const [isConnected, setIsConnected] = useState(false);
   const [lastNotification, setLastNotification] = useState<Record<string, unknown> | null>(null);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!user?.id || !isAdmin) return;
+  // Roles that should also receive inventory low-stock / out-of-stock toasts
+  const INVENTORY_ROLES = ['purchasing', 'facilities_manager'];
+  const isInventoryRole = INVENTORY_ROLES.includes(userRole);
+  const shouldSubscribe = isAdmin || isInventoryRole;
 
-    logger.debug('[AdminRealtime] Setting up admin notifications listener for:', user.id);
+  useEffect(() => {
+    if (!user?.id || !shouldSubscribe) return;
+
+    logger.debug(`[AdminRealtime] Setting up notifications listener for: ${user.id} role: ${userRole}`);
 
     const channel = supabase
       .channel('admin-realtime-hub')
@@ -54,8 +59,15 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             user_rejected: ['adminNotifications'],
             role_assigned: ['adminNotifications'],
             role_removed: ['adminNotifications'],
-            low_stock: ['inventory-items', 'low-stock-items', 'out-of-stock-items', 'low-stock-overview', 'inventory-overview-items', 'court-aide-alerts'],
+            low_stock: ['inventory-items', 'low-stock-items', 'out-of-stock-items', 'low-stock-overview', 'inventory-overview-items', 'inventory-stats', 'court-aide-alerts'],
+            out_of_stock: ['inventory-items', 'low-stock-items', 'out-of-stock-items', 'low-stock-overview', 'inventory-overview-items', 'inventory-stats', 'court-aide-alerts'],
           };
+
+          // Non-admin inventory roles only see inventory-related notifications
+          const INVENTORY_TYPES = ['low_stock', 'out_of_stock'];
+          if (!isAdmin && !INVENTORY_TYPES.includes(notification.notification_type)) {
+            return;
+          }
 
           const extraKeys = typeQueryMap[notification.notification_type];
           if (extraKeys) {
@@ -73,6 +85,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             user_rejected: '🚫',
             role_assigned: '👤',
             role_removed: '➖',
+            out_of_stock: '🚨',
             low_stock: '📉',
           };
 
@@ -106,7 +119,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
       logger.debug('[AdminRealtime] Cleaning up');
       supabase.removeChannel(channel);
     };
-  }, [user?.id, isAdmin, queryClient]);
+  }, [user?.id, isAdmin, shouldSubscribe, userRole, queryClient]);
 
   return {
     isConnected,

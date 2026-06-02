@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateInventoryStockQueries } from '@features/inventory/utils/invalidation';
 import { DialogFooter } from '@/components/ui/dialog';
 import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { Button } from '@/components/ui/button';
@@ -117,11 +118,9 @@ export function InventoryAdjustmentDialog({
       );
       
       // Invalidate all inventory-related queries to force refresh
-      queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      invalidateInventoryStockQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory-items-all'] });
-      queryClient.invalidateQueries({ queryKey: ['storage-rooms'] });
-      
+
       // Also refetch immediately to ensure UI updates
       await queryClient.refetchQueries({ queryKey: ['inventory-items'] });
       await queryClient.refetchQueries({ queryKey: ['inventory-items-all'] });
