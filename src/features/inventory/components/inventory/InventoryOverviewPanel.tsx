@@ -10,6 +10,7 @@ import { Package, AlertTriangle, ArrowRight, ShoppingCart } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { isLowStock, isOutOfStock, needsAttention } from "@features/inventory/utils/stockStatus";
 
 type LowStockItem = {
   id: string;
