@@ -125,8 +125,8 @@ export const StorageRoomsPanel = () => {
 
   const storageRoomsWithItems: StorageRoomWithItems[] = (storageRooms || []).map(room => {
     const roomItems = (inventoryItems || []).filter(item => item.storage_room_id === room.id);
-    const lowStockItems = roomItems.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
-    const outOfStockItems = roomItems.filter(item => item.quantity === 0);
+    const lowStockItems = roomItems.filter(isLowStockHelper);
+    const outOfStockItems = roomItems.filter(isOutOfStockHelper);
     const totalQuantity = roomItems.reduce((sum, item) => sum + item.quantity, 0);
     
     // Capacity: use storage_capacity if set, otherwise estimate from item count
