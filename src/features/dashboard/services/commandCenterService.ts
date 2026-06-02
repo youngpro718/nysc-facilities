@@ -368,14 +368,14 @@ export async function getSystemAlerts(): Promise<SystemAlert[]> {
     });
   }
 
-  // Low stock alert
-  if (metrics.supply.low_stock_items > 5) {
+  // Low stock alert — show for any tracked item below minimum
+  if (metrics.supply.low_stock_items > 0) {
     alerts.push({
       id: 'low-stock',
-      severity: 'warning',
+      severity: metrics.supply.low_stock_items > 5 ? 'warning' : 'info',
       category: 'maintenance',
       title: 'Low Stock Items',
-      message: `${metrics.supply.low_stock_items} inventory items are below minimum quantity`,
+      message: `${metrics.supply.low_stock_items} inventory ${metrics.supply.low_stock_items === 1 ? 'item is' : 'items are'} below minimum quantity`,
       timestamp: new Date().toISOString(),
       acknowledged: false,
     });
