@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
 import { toast } from "@/components/ui/use-toast";
+import { invalidateInventoryStockQueries } from "@features/inventory/utils/invalidation";
 
 export interface InventoryItem {
   id: string;
