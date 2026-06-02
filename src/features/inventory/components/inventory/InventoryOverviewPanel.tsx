@@ -131,12 +131,10 @@ export const InventoryOverviewPanel = () => {
     retry: 2,
   });
 
-  // Computed stats
+  // Computed stats — centralized
   const totalItems = allItems?.length ?? 0;
-  const outOfStock = allItems?.filter(i => i.quantity <= 0).length ?? 0;
-  const lowStockCount = allItems?.filter(
-    i => i.minimum_quantity > 0 && i.quantity > 0 && i.quantity < i.minimum_quantity
-  ).length ?? 0;
+  const outOfStock = allItems?.filter(isOutOfStock).length ?? 0;
+  const lowStockCount = allItems?.filter(isLowStock).length ?? 0;
   const totalLowStockFromQuery = lowStockItems?.length ?? 0;
   const hasActionItems = outOfStock > 0 || lowStockCount > 0;
 
