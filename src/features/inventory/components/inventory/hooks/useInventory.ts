@@ -100,7 +100,7 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      invalidateInventoryStockQueries(queryClient);
       toast({
         title: "Success",
         description: "Item created successfully",
@@ -134,7 +134,7 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      invalidateInventoryStockQueries(queryClient);
       toast({
         title: "Success",
         description: "Item updated successfully",
@@ -164,7 +164,7 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      invalidateInventoryStockQueries(queryClient);
       toast({
         title: "Success",
         description: "Item deleted successfully",
