@@ -30,7 +30,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
   useEffect(() => {
     if (!user?.id || !shouldSubscribe) return;
 
-    logger.debug('[AdminRealtime] Setting up notifications listener for:', user.id, 'role:', userRole);
+    logger.debug(`[AdminRealtime] Setting up notifications listener for: ${user.id} role: ${userRole}`);
 
     const channel = supabase
       .channel('admin-realtime-hub')
