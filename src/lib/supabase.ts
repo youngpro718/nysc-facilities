@@ -91,11 +91,11 @@ export const authService = {
 
     // Sequential (not Promise.all) — concurrent fetches saturate Safari's
     // connection pool right after the auth token rotation.
-    const rolesResult = await withRetry<{ role: string }>('user_roles', () =>
-      supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle()
+    const rolesResult = await withRetry<{ role: string }>('user_roles', async () =>
+      await supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle()
     );
-    const profileResult = await withRetry<Record<string, unknown>>('profiles', () =>
-      supabase.from('profiles').select(`*, departments(name)`).eq('id', userId).maybeSingle()
+    const profileResult = await withRetry<Record<string, unknown>>('profiles', async () =>
+      await supabase.from('profiles').select(`*, departments(name)`).eq('id', userId).maybeSingle()
     );
 
     // If either query truly failed (after retries), throw — callers must
