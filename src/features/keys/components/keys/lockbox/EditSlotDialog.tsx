@@ -181,7 +181,7 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
             <SelectTrigger>
               <SelectValue placeholder="Select lockbox..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[120]">
               {lockboxes?.map((lockbox) => (
                 <SelectItem key={lockbox.id} value={lockbox.id}>
                   {lockbox.name} {lockbox.location_description && `- ${lockbox.location_description}`}
