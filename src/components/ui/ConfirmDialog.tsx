@@ -7,6 +7,8 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
+    AlertDialogOverlay,
+    AlertDialogPortal,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { AlertTriangle, Trash2, Info } from 'lucide-react';
@@ -39,24 +41,27 @@ export function ConfirmDialog({
 
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                        <Icon className={`h-5 w-5 ${variant === 'destructive' ? 'text-destructive' : 'text-amber-500'}`} />
-                        {title}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>{description}</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={onConfirm}
-                        className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
-                    >
-                        {confirmLabel}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
+            <AlertDialogPortal>
+                <AlertDialogOverlay className="z-[200]" />
+                <AlertDialogContent className="z-[201]">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <Icon className={`h-5 w-5 ${variant === 'destructive' ? 'text-destructive' : 'text-amber-500'}`} />
+                            {title}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>{description}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={onConfirm}
+                            className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+                        >
+                            {confirmLabel}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialogPortal>
         </AlertDialog>
     );
 }
