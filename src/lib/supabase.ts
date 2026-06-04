@@ -62,36 +62,57 @@ export const authService = {
   },
   fetchUserProfile: async (userId: string) => {
     const startTime = Date.now();
-    logger.debug('[authService.fetchUserProfile] Starting parallel fetch for user:', userId);
-    
-    // OPTIMIZATION: Fetch user roles and profile in parallel instead of sequentially
-    const [rolesResult, profileResult] = await Promise.all([
-      supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle(),
-      supabase
-        .from('profiles')
-        .select(`
-          *,
-          departments(name)
-        `)
-        .eq('id', userId)
-        .maybeSingle()
-    ]);
+    logger.debug('[authService.fetchUserProfile] Starting sequential fetch with retry for user:', userId);
 
+    // Retry helper — mobile Safari aborts concurrent fetches during auth
+    // handshake with "TypeError: Load failed". Retry with small backoff.
+    const withRetry = async <T>(
+      label: string,
+      fn: () => Promise<{ data: T | null; error: unknown }>,
+      attempts = 3
+    ): Promise<{ data: T | null; error: unknown }> => {
+      let lastError: unknown = null;
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const result = await fn();
+          if (!result.error) return result;
+          lastError = result.error;
+        } catch (err) {
+          lastError = err;
+        }
+        if (i < attempts - 1) {
+          const delay = 250 * Math.pow(2, i);
+          logger.warn(`[authService.fetchUserProfile] ${label} attempt ${i + 1} failed, retrying in ${delay}ms`);
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
+      return { data: null, error: lastError };
+    };
+
+    // Sequential (not Promise.all) — concurrent fetches saturate Safari's
+    // connection pool right after the auth token rotation.
+    const rolesResult = await withRetry<{ role: string }>('user_roles', async () =>
+      await supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle()
+    );
+    const profileResult = await withRetry<Record<string, unknown>>('profiles', async () =>
+      await supabase.from('profiles').select(`*, departments(name)`).eq('id', userId).maybeSingle()
+    );
+
+    // If either query truly failed (after retries), throw — callers must
+    // distinguish "user has no role" from "network failed" so we never
+    // misroute an admin as 'standard'.
     if (rolesResult.error) {
-      logger.error('[authService.fetchUserProfile] Error fetching user roles:', rolesResult.error);
+      logger.error('[authService.fetchUserProfile] Error fetching user roles after retries:', rolesResult.error);
+      throw new Error('Failed to load user role: ' + ((rolesResult.error as { message?: string })?.message || 'network error'));
     }
-
     if (profileResult.error) {
-      logger.error('[authService.fetchUserProfile] Error fetching profile:', profileResult.error);
+      logger.error('[authService.fetchUserProfile] Error fetching profile after retries:', profileResult.error);
+      throw new Error('Failed to load user profile: ' + ((profileResult.error as { message?: string })?.message || 'network error'));
     }
 
-    const role = rolesResult.data?.role || 'standard';
+    const role = (rolesResult.data as { role?: string } | null)?.role || 'standard';
     const isAdmin = role === 'admin' || role === 'system_admin';
-    const profile = profileResult.data ? { ...profileResult.data, role } : null;
+    const profile = profileResult.data ? { ...(profileResult.data as Record<string, unknown>), role } as never : null;
 
     const elapsed = Date.now() - startTime;
     logger.debug(`[authService.fetchUserProfile] Completed in ${elapsed}ms - role: ${role}, isAdmin: ${isAdmin}, profile: ${!!profile}`);

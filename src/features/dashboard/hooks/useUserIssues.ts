@@ -33,9 +33,9 @@ export function useUserIssues(userId: string | undefined) {
   const { data: userIssues = [], refetch: refetchIssues, isLoading } = useQuery<UserIssue[]>({
     queryKey: ['userIssues', userId],
     queryFn: async () => {
-      try {
+      const runQuery = async () => {
         if (!userId) throw new IssueError('No user ID available');
-        const { data, error } = await supabase
+        return supabase
           .from('issues')
           .select(`
             id,
@@ -61,10 +61,19 @@ export function useUserIssues(userId: string | undefined) {
           `)
           .or(`created_by.eq.${userId},reported_by.eq.${userId}`)
           .order('created_at', { ascending: false });
+      };
 
+      try {
+        // Retry once on network failure (mobile Safari "Load failed").
+        let result = await runQuery();
+        if (result.error) {
+          await new Promise(r => setTimeout(r, 400));
+          result = await runQuery();
+        }
+        const { data, error } = result;
         if (error) throw new IssueError(`Failed to fetch user issues: ${error.message}`);
         if (!data) throw new IssueError('No issues data returned');
-        
+
         return (data as any[])?.map((issue: any) => ({
           ...issue,
           buildings: issue.buildings?.[0] || { name: 'Unknown Building' },

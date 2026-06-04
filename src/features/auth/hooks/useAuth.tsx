@@ -306,6 +306,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       //   return;
       // }
 
+      // Don't redirect if we don't have a real profile/role — a transient
+      // network failure must never silently bounce an admin to /dashboard.
+      if (!userData.profile) {
+        logger.warn('[useAuth.handleRedirect] No profile available, skipping redirect');
+        return;
+      }
+
       const userRole = userData.profile?.role;
       const correctDashboard = getDashboardForRole(userRole);
 
@@ -339,7 +346,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           isFetchingProfile.current = true;
-          const userData = await authService.fetchUserProfile(currentSession.user.id);
+          let userData: { isAdmin: boolean; profile: UserProfile | null };
+          try {
+            userData = await authService.fetchUserProfile(currentSession.user.id);
+          } catch (fetchError) {
+            logger.error('[useAuth.initializeAuth] Profile fetch failed after retries', fetchError);
+            isFetchingProfile.current = false;
+            if (mounted) {
+              toast.error("Couldn't verify your account", {
+                description: 'Network issue — please refresh or sign in again.',
+              });
+            }
+            // Do NOT default role / redirect. Leave existing state untouched
+            // so an admin is never silently routed as 'standard'.
+            return;
+          }
           isFetchingProfile.current = false;
 
           if (!mounted) return;
@@ -457,6 +478,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (error) {
             isFetchingProfile.current = false;
             logger.error('Error fetching user data after sign in', error);
+            if (mounted) {
+              toast.error("Couldn't verify your account", {
+                description: 'Network issue — please refresh or sign in again.',
+              });
+            }
+            // Do NOT reset existing isAdmin/profile state, and do NOT redirect.
           }
         })();
       } else if (event === 'SIGNED_OUT') {

@@ -1,69 +1,68 @@
-## Inventory Low-Stock Alerting Audit
+# Mobile login → wrong dashboard: root cause + fix
 
-### What I found
+## What's happening
 
-I traced every place inventory stock is checked, alerted, displayed, and invalidated. The pipeline works in pieces but has real gaps that explain why removing items doesn't always alert.
+The console logs from your mobile session show the actual culprit (not a UI bug):
 
-**1. DB trigger fires only once per crossing** (`public.notify_low_stock` on `inventory_items`)
-The trigger only inserts an `admin_notifications` row when `OLD.quantity >= OLD.minimum_quantity AND NEW.quantity < NEW.minimum_quantity`. Consequences:
-- If an item is already low and you remove more (e.g., 4 → 2 → 0), no new alert ever fires.
-- Hitting zero ("out of stock") never escalates — urgency would have been `high`, but the trigger never re-runs.
-- Raising `minimum_quantity` above current `quantity` (now logically low) doesn't fire — the OLD comparison uses OLD.minimum_quantity.
-- An UPDATE that doesn't touch `quantity` or `minimum_quantity` still re-evaluates and can spam if both sides flip-flop.
+```
+[ERROR] [authService.fetchUserProfile] Error fetching user roles: TypeError: Load failed
+[ERROR] [authService.fetchUserProfile] Error fetching profile:    TypeError: Load failed
+```
 
-**2. Inconsistent "low stock" definition across the UI** (8+ call sites)
-| Location | Rule |
-|---|---|
-| `services/optimized/inventoryService.ts` | `quantity <= minimum_quantity` (no `> 0` guard) |
-| `dashboard/commandCenterService.ts` | `quantity < (minimum_quantity || 0)` |
-| `inventory/pages/InventoryDashboard.tsx` | `minimum_quantity > 0 && quantity < minimum_quantity` |
-| `StorageRoomsPanel.tsx` / `InventoryOverviewPanel.tsx` | `minimum_quantity > 0 && quantity > 0 && quantity < minimum_quantity` (excludes zero!) |
-| `useOptimizedInventory.ts` (critical) | `quantity > 0 && quantity <= minimum_quantity * 0.5` |
+On mobile Safari, on first sign-in the browser fires ~30 parallel requests (Spaces preload, issues, sessions, roles, profile, etc.). Several of those `fetch()` calls abort with `TypeError: Load failed` — a known Safari behavior when too many concurrent requests are kicked off during a page transition / right after auth token rotation.
 
-Result: the same item shows as low-stock in one panel and not another, and out-of-stock items get hidden in two panels.
+In `src/lib/supabase.ts` → `authService.fetchUserProfile`, when those errors happen the code does this:
 
-**3. Realtime toast is admin-only**
-`useAdminRealtimeNotifications` is guarded by `isAdmin`. Supply staff, purchasing, and facilities managers never see low-stock toasts even though they act on them.
+```ts
+if (rolesResult.error) { logger.error(...); }   // swallowed
+if (profileResult.error) { logger.error(...); } // swallowed
+const role = rolesResult.data?.role || 'standard';   // ← defaults to standard
+const isAdmin = role === 'admin' || role === 'system_admin'; // false
+```
 
-**4. Command center surfaces low-stock only when > 5 items**
-`commandCenterService.ts` line 373 gates the alert behind `low_stock_items > 5`. Small inventories never trigger the dashboard banner.
+`useAuth` then calls `handleRedirect`, which calls `getDashboardForRole('standard')` → `/dashboard`. So an admin who is on mobile and hits a flaky load gets dropped on the standard user dashboard.
 
-**5. Cache invalidation map is incomplete**
-The realtime hook invalidates `low-stock-items`, `low-stock-overview`, etc., but writes from `useInventory`, `InventoryAdjustmentDialog`, and supply fulfillment don't all invalidate the same keys, so panels can stay stale until refresh.
+It looks like "the admin dashboard is broken on mobile," but the admin dashboard never gets a chance to load — the user is misrouted as `standard` because their role fetch failed and the failure was silently treated as "no role."
 
-### Plan
+## The fix
 
-**A. Fix the DB trigger** (migration)
-- Re-fire on every UPDATE that lowers `quantity` while still below `minimum_quantity`, with debouncing: only insert if the most recent `low_stock` notification for that `related_id` is older than 30 minutes OR severity changes (low → out_of_stock).
-- Add an explicit `out_of_stock` notification type when `quantity` hits 0 from any positive value, with `urgency = 'high'`.
-- Fire when `minimum_quantity` is raised above current `quantity`.
-- Guard with `minimum_quantity > 0` so items without a min never alert.
+### 1. Stop defaulting to `standard` on fetch failure
+`src/lib/supabase.ts` — `fetchUserProfile`:
+- If `rolesResult.error` or `profileResult.error` is set, **throw** instead of returning a fabricated profile.
+- Return a discriminated result (`{ ok: true, profile, isAdmin } | { ok: false, error }`) so callers can distinguish "user really has no role" from "network failed."
 
-**B. Centralize the low-stock rule** (frontend)
-- Add `src/features/inventory/utils/stockStatus.ts` exporting:
-  - `isLowStock(item)` → `minimum_quantity > 0 && quantity > 0 && quantity < minimum_quantity`
-  - `isOutOfStock(item)` → `minimum_quantity > 0 && quantity <= 0`
-  - `isCritical(item)` → `isLowStock && quantity <= minimum_quantity * 0.5`
-  - `getStockStatus(item)` → `'ok' | 'low' | 'critical' | 'out'`
-- Replace all 8 inline implementations with these helpers. Counts will finally agree across dashboard, overview, storage rooms, and command center.
+### 2. Retry the role/profile fetch
+Add a small retry helper (3 attempts, 250 ms / 750 ms backoff) around the two queries. Mobile Safari almost always succeeds on attempt 2.
 
-**C. Broaden realtime delivery**
-- Create `useInventoryRealtimeNotifications` (or extend the admin hook) that subscribes to `admin_notifications` filtered to `notification_type IN ('low_stock','out_of_stock')` for roles: `admin`, `purchasing`, `facilities_manager`, `supply` staff. Toast + query invalidation.
+Serialize the two queries on the first attempt as well — running them with `Promise.all` is what's saturating Safari's connection pool during the auth handshake. Sequential is ~50 ms slower but reliable.
 
-**D. Remove the > 5 gate on the command center**
-- Show the alert whenever `low_stock_items + out_of_stock_items > 0`, with severity scaling on count.
+### 3. Don't redirect until we have a real role
+`src/features/auth/hooks/useAuth.tsx`:
+- In both `initializeAuth` and the `onAuthStateChange` SIGNED_IN branch, if `fetchUserProfile` throws, **do not** call `handleRedirect`. Keep `isLoading=true`, show a toast ("Couldn't verify your account, retrying…"), and re-attempt once. If it still fails, sign out and send the user back to `/login` with an error rather than guessing their role.
+- Only flip `isAdmin` / `userRole` / `profile` to "empty" values on explicit SIGNED_OUT, never on a fetch error.
 
-**E. Tighten cache invalidation**
-- Audit `invalidationMap.ts` and every inventory write path (`useInventory`, `InventoryAdjustmentDialog`, `unifiedSupplyService.markOrderReady`, `useOptimizedInventory` mutations) to invalidate the same standard set: `['inventory-items']`, `['low-stock-items']`, `['low-stock-overview']`, `['inventory-overview-items']`, `['inventory-stats']`, `['court-aide-alerts']`.
+### 4. Protect the dashboard router itself
+`getDashboardForRole(undefined)` currently returns `/dashboard`. Change `useAuth.handleRedirect` so it bails out (no navigation) when `userData.profile` is null — that way a transient failure can never silently bounce an admin off `/`.
 
-**F. QA pass**
-- Manually walk the scenarios: drop above-min → low, low → lower, low → 0, raise min above qty, restock back above min. Confirm each produces the expected notification, toast, and panel update for admin, purchasing, and supply staff.
+### 5. Quiet the secondary noise
+The same "Load failed" storm is causing the `get_enhanced_room` warnings and `useUserIssues` errors you see in the log. They're symptoms of the same Safari connection-pool saturation; once `fetchUserProfile` retries cleanly they go away, but we'll also add a 2-attempt retry to `useUserIssues` for resilience.
 
-### Out of scope (flagging only)
-- Email/SMS escalation for `out_of_stock` — separate ask.
-- Per-room low-stock alerts (current trigger is global per item).
+## Files to change
 
-### Technical notes
-- Migration touches only `public.notify_low_stock` (replace) and adds an optional `notification_type='out_of_stock'`; no schema column changes.
-- All frontend changes are presentation/logic only; no Supabase types regeneration needed.
-- Roles use existing `has_role()` helpers — no new tables.
+- `src/lib/supabase.ts` — rewrite `fetchUserProfile`: sequential + retry + throw on error.
+- `src/features/auth/hooks/useAuth.tsx` — don't redirect on failure; retry once; preserve prior auth state.
+- `src/routes/roleBasedRouting.ts` — leave behavior, but document that `undefined` role must not be passed by callers.
+- `src/features/dashboard/hooks/useUserIssues.ts` — wrap the fetch with a 2-attempt retry.
+
+## What I will NOT change
+
+- No DB / RLS changes — your role data is fine, the failure is purely client-side network.
+- No new dependencies.
+- No UI changes to the dashboards themselves.
+
+## How we'll verify
+
+After the change, on mobile:
+1. Log in as admin → should land on `/` (admin dashboard) every time, even with a slow connection.
+2. Console should no longer show `[authService.fetchUserProfile] Error fetching user roles` followed by a redirect to `/dashboard`.
+3. If the network is truly down, you should see a "Couldn't verify your account" toast and stay on `/login` instead of being shown the standard dashboard.
