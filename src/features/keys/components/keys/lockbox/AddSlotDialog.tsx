@@ -78,7 +78,8 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
       
       // Reset
       setLabel("");
-      setRoomNumber("");
+      setRoomId(null);
+      setRoomNumber(null);
       setQuantity(1);
       setNotes("");
     } catch (error) {
