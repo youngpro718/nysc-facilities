@@ -97,6 +97,46 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
     }
   };
 
+  const handleDelete = async () => {
+    if (!slot) return;
+    setIsDeleting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Log deletion before deleting (cascade would remove logs otherwise)
+      const { error: logError } = await supabase
+        .from('lockbox_activity_logs')
+        .insert({
+          slot_id: slot.id,
+          action: 'delete',
+          status_before: slot.status,
+          status_after: 'deleted',
+          actor_user_id: user?.id,
+          actor_name: user?.email,
+          note: `Slot "${slot.label}" deleted from lockbox`,
+        });
+
+      if (logError) logger.error('Error logging slot deletion:', logError);
+
+      const { error: deleteError } = await supabase
+        .from('lockbox_slots')
+        .delete()
+        .eq('id', slot.id);
+
+      if (deleteError) throw deleteError;
+
+      toast.success("Slot deleted successfully");
+      onSuccess();
+      onOpenChange(false);
+      setDeleteConfirmOpen(false);
+    } catch (error) {
+      logger.error('Error deleting slot:', error);
+      toast.error(getErrorMessage(error) || "Failed to delete slot");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const headerRight = (
     <DropdownMenu open={actionsOpen} onOpenChange={setActionsOpen} modal={false}>
       <DropdownMenuTrigger asChild>
@@ -136,6 +176,16 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
             Mark Missing
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem
+          className="text-destructive"
+          onSelect={() => {
+            setActionsOpen(false);
+            setDeleteConfirmOpen(true);
+          }}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete Slot
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
