@@ -478,6 +478,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (error) {
             isFetchingProfile.current = false;
             logger.error('Error fetching user data after sign in', error);
+            if (mounted) {
+              toast.error("Couldn't verify your account", {
+                description: 'Network issue — please refresh or sign in again.',
+              });
+            }
+            // Do NOT reset existing isAdmin/profile state, and do NOT redirect.
           }
         })();
       } else if (event === 'SIGNED_OUT') {
