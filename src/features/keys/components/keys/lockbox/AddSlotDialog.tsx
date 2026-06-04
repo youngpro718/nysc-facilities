@@ -23,10 +23,20 @@ interface AddSlotDialogProps {
 
 export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open, onOpenChange, onSuccess }: AddSlotDialogProps) {
   const [label, setLabel] = useState("");
-  const [roomNumber, setRoomNumber] = useState("");
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  const handleRoomChange = (newRoomId: string | null, newRoomNumber: string | null) => {
+    setRoomId(newRoomId);
+    setRoomNumber(newRoomNumber);
+    // Auto-fill label if empty
+    if (newRoomNumber && !label.trim()) {
+      setLabel(`Room ${newRoomNumber}`);
+    }
+  };
 
   const handleCreate = async () => {
     if (!label.trim()) {
