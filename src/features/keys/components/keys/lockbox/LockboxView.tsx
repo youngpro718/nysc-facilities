@@ -207,6 +207,17 @@ export function LockboxView() {
           onSuccess={handleAddSlotSuccess}
         />
       )}
+
+      {selectedLockboxId && (
+        <BulkAddChambersDialog
+          lockboxId={selectedLockboxId}
+          lockboxName={selectedLockbox?.name}
+          existingSlotCount={slots.length}
+          open={bulkChambersOpen}
+          onOpenChange={setBulkChambersOpen}
+          onSuccess={handleAddSlotSuccess}
+        />
+      )}
     </div>
   );
 }
