@@ -22,6 +22,7 @@ export function LockboxView() {
   const [selectedLockboxId, setSelectedLockboxId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [addSlotDialogOpen, setAddSlotDialogOpen] = useState(false);
+  const [bulkChambersOpen, setBulkChambersOpen] = useState(false);
 
   // Fetch all lockboxes with slot counts
   const { data: lockboxes, refetch: refetchLockboxes } = useQuery({
