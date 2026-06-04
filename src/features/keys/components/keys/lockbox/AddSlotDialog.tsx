@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
+import { RoomSelector } from "./RoomSelector";
 
 interface AddSlotDialogProps {
   lockboxId: string;
