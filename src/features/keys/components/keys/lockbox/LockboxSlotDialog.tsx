@@ -43,6 +43,8 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
   const [isLoading, setIsLoading] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!slot) return null;
 
