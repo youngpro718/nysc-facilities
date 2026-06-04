@@ -155,6 +155,16 @@ export function LockboxView() {
             <span className="hidden sm:inline">Add Key Slot</span>
             <span className="sm:hidden">Add</span>
           </Button>
+          <Button
+            onClick={() => setBulkChambersOpen(true)}
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+          >
+            <Building2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Bulk Add Chambers</span>
+            <span className="sm:hidden">Chambers</span>
+          </Button>
           <PrintLockboxReference lockbox={selectedLockbox} slots={slots} />
         </div>
       )}
