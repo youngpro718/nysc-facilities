@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { LockboxSlot } from "../types/LockboxTypes";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Edit3, MoreHorizontal } from "lucide-react";
+import { Edit3, MoreHorizontal, Trash2 } from "lucide-react";
 import { EditSlotDialog } from "./EditSlotDialog";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
