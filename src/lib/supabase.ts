@@ -110,9 +110,9 @@ export const authService = {
       throw new Error('Failed to load user profile: ' + ((profileResult.error as { message?: string })?.message || 'network error'));
     }
 
-    const role = rolesResult.data?.role || 'standard';
+    const role = (rolesResult.data as { role?: string } | null)?.role || 'standard';
     const isAdmin = role === 'admin' || role === 'system_admin';
-    const profile = profileResult.data ? { ...profileResult.data, role } : null;
+    const profile = profileResult.data ? { ...(profileResult.data as Record<string, unknown>), role } as never : null;
 
     const elapsed = Date.now() - startTime;
     logger.debug(`[authService.fetchUserProfile] Completed in ${elapsed}ms - role: ${role}, isAdmin: ${isAdmin}, profile: ${!!profile}`);
