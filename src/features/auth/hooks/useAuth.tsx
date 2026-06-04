@@ -346,7 +346,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           isFetchingProfile.current = true;
-          const userData = await authService.fetchUserProfile(currentSession.user.id);
+          let userData: { isAdmin: boolean; profile: UserProfile | null };
+          try {
+            userData = await authService.fetchUserProfile(currentSession.user.id);
+          } catch (fetchError) {
+            logger.error('[useAuth.initializeAuth] Profile fetch failed after retries', fetchError);
+            isFetchingProfile.current = false;
+            if (mounted) {
+              toast.error("Couldn't verify your account", {
+                description: 'Network issue — please refresh or sign in again.',
+              });
+            }
+            // Do NOT default role / redirect. Leave existing state untouched
+            // so an admin is never silently routed as 'standard'.
+            return;
+          }
           isFetchingProfile.current = false;
 
           if (!mounted) return;
