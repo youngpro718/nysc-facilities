@@ -11,8 +11,7 @@ import { AddSlotDialog } from "./AddSlotDialog";
 import { BulkAddChambersDialog } from "./BulkAddChambersDialog";
 import { PrintLockboxReference } from "./PrintLockboxReference";
 import { toast } from "sonner";
-import { Building2 } from "lucide-react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function LockboxView() {
