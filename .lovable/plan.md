@@ -1,44 +1,23 @@
-## Goal
-Make it fast to provision a lockbox with all chambers keys in one shot — auto-creating one slot per chamber room, linked to the room, with a per-slot key quantity.
+## Issue
+In **Edit Slot Details** (and elsewhere a slot is edited from a Lockbox dialog), clicking the **Room** dropdown opens the picker but room rows can't be selected. Root cause: the EditSlotDialog's `ModalFrame` is raised to `z-[115]` so it sits above the parent `LockboxSlotDialog` (`z-[105]`), but `RoomSelector` uses a Radix `Popover` whose `PopoverContent` defaults to `z-50`. The popover is rendered in a portal *behind* the dialog overlay, so pointer events fall through to the dialog instead of the room list.
 
-## UX
+## Fix
 
-In the Lockbox view, add a new button **"Bulk Add Chambers"** next to the existing "Add Key Slot" / "Create Lockbox" actions.
+1. **`src/features/keys/components/keys/lockbox/RoomSelector.tsx`**
+   - Add a `zIndexClass` prop (default `z-50`) and apply it to `<PopoverContent className={...} />`.
+   - Also pass `sideOffset={4}` and `collisionPadding={8}` so it stays visible on mobile.
 
-It opens a dialog: **Add Chambers to Lockbox**
+2. **`src/features/keys/components/keys/lockbox/EditSlotDialog.tsx`**
+   - Pass `zIndexClass="z-[120]"` to `<RoomSelector />` so the popover sits above the `z-[115]` edit dialog.
+   - Same for the **Move to Lockbox** Radix `Select`: wrap its `SelectContent` with `className="z-[120]"` so it isn't hidden behind the dialog.
 
-- Target lockbox: defaults to currently selected lockbox; dropdown to switch (or "Create new lockbox…" inline).
-- Filter row: search box + building/floor filter.
-- List of all rooms where `room_type = 'chamber'`, each row showing:
-  - Checkbox (selected by default)
-  - Room number + name + building/floor
-  - "Already in this lockbox" badge if a slot already links to that room (checkbox disabled)
-  - Quantity input (number, default 1, min 1, max 10) — how many physical keys for that chamber
-  - Optional label override (defaults to `Chambers <room_number>`)
-- Footer: "Default quantity for all" quick-set + Select all / Clear + primary button **Add N slots**.
+3. **`src/features/keys/components/keys/lockbox/AddSlotDialog.tsx`** — Add a `RoomSelector` here too (currently it only takes a free-text room number, which makes "add rooms… select from buildings" hard). Replace the plain `room_number` Input with `<RoomSelector zIndexClass="z-[110]" />` so newly added slots can be linked to a real room at creation time. Persist both `room_id` and `room_number` on insert.
 
-Submitting creates one `lockbox_slots` row per selected chamber:
-- `lockbox_id` = target
-- `slot_number` = continues from current max slot number in that lockbox
-- `label` = override or `Chambers <room_number>`
-- `room_id`, `room_number` from the room
-- `quantity` = per-row value
-- `status` = `in_box`
+4. **`src/features/keys/components/keys/lockbox/BulkAddChambersDialog.tsx`** — no changes needed (already links by `room_id`).
 
-Also writes a `lockbox_activity_logs` entry per slot (`action: 'status_change'`, note: `Bulk-added chambers key (qty N)`).
-
-Success toast: `Added N chambers to <lockbox name>`. List refreshes.
-
-## Technical
-
-New files:
-- `src/features/keys/components/keys/lockbox/BulkAddChambersDialog.tsx` — the dialog described above. Uses `ModalFrame`, `useQuery` to load chamber rooms (`rooms` join `floors`→`buildings` for display) and existing slots for the target lockbox (to mark/disable duplicates). Batches inserts with a single `supabase.from('lockbox_slots').insert([...]).select()` then a second insert into `lockbox_activity_logs`. Invalidates the `lockboxes` and slots queries on success.
-
-Edited files:
-- `src/features/keys/components/keys/lockbox/LockboxView.tsx` — add a "Bulk Add Chambers" button (shown only when a lockbox is selected) and wire it to the new dialog, passing `lockboxId`, `lockboxName`, current `slots.length` (for starting slot_number) and `onSuccess` that calls `fetchSlots()` + `refetchLockboxes()`.
-
-No DB schema changes — `lockbox_slots` already has `room_id`, `room_number`, `quantity`, `label`, `slot_number`, `status`. RLS already allows authenticated inserts (same path the existing AddSlotDialog uses).
+5. **Sanity audit of the editing path** while in there:
+   - Confirm `EditSlotDialog` saves `room_id` and `room_number` together (it already does).
+   - Confirm the parent `LockboxSlotDialog` refetches after edit success so the room badge updates (it already calls `onSuccess`).
 
 ## Out of scope
-- Robing rooms / other room types (can be added later by generalizing the dialog to take a room_type filter).
-- Editing key quantities after bulk add — already supported by the existing EditSlotDialog.
+- Changing the slot list UI, lockbox CRUD, or RLS. This is a z-index / wiring fix plus enabling room linking at slot-creation time.

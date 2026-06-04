@@ -38,9 +38,10 @@ interface RoomSelectorProps {
   onChange: (roomId: string | null, roomNumber: string | null) => void;
   disabled?: boolean;
   onCreateRoom?: (roomNumber: string) => void;
+  zIndexClass?: string;
 }
 
-export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRoom }: RoomSelectorProps) {
+export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRoom, zIndexClass = "z-50" }: RoomSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
