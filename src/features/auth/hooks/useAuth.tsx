@@ -306,6 +306,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       //   return;
       // }
 
+      // Don't redirect if we don't have a real profile/role — a transient
+      // network failure must never silently bounce an admin to /dashboard.
+      if (!userData.profile) {
+        logger.warn('[useAuth.handleRedirect] No profile available, skipping redirect');
+        return;
+      }
+
       const userRole = userData.profile?.role;
       const correctDashboard = getDashboardForRole(userRole);
 
