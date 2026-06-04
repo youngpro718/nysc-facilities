@@ -260,6 +260,16 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
         onOpenChange={setEditDialogOpen}
         onSuccess={onSuccess}
       />
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete Slot"
+        description={`Are you sure you want to delete Slot ${slot.slot_number}: "${slot.label}"? This action cannot be undone and will remove all associated activity history.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </>
   );
 }
