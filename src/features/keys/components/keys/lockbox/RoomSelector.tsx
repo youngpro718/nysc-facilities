@@ -38,9 +38,10 @@ interface RoomSelectorProps {
   onChange: (roomId: string | null, roomNumber: string | null) => void;
   disabled?: boolean;
   onCreateRoom?: (roomNumber: string) => void;
+  zIndexClass?: string;
 }
 
-export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRoom }: RoomSelectorProps) {
+export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRoom, zIndexClass = "z-50" }: RoomSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
@@ -144,7 +145,7 @@ export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRo
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[350px] p-0" align="start">
+        <PopoverContent className={cn("w-[350px] p-0", zIndexClass)} align="start" sideOffset={4} collisionPadding={8}>
           <Command shouldFilter={false}>
             <CommandInput 
               placeholder="Search rooms..." 

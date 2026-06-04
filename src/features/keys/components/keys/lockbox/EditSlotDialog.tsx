@@ -153,6 +153,7 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
             roomNumber={roomNumber || undefined}
             onChange={handleRoomChange}
             disabled={isUpdating}
+            zIndexClass="z-[120]"
           />
           <p className="text-xs text-muted-foreground">
             Link this key slot to a room in the system
@@ -180,7 +181,7 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
             <SelectTrigger>
               <SelectValue placeholder="Select lockbox..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[120]">
               {lockboxes?.map((lockbox) => (
                 <SelectItem key={lockbox.id} value={lockbox.id}>
                   {lockbox.name} {lockbox.location_description && `- ${lockbox.location_description}`}

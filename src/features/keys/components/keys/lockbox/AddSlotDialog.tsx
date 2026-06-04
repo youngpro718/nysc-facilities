@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
+import { RoomSelector } from "./RoomSelector";
 
 interface AddSlotDialogProps {
   lockboxId: string;
@@ -22,10 +23,20 @@ interface AddSlotDialogProps {
 
 export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open, onOpenChange, onSuccess }: AddSlotDialogProps) {
   const [label, setLabel] = useState("");
-  const [roomNumber, setRoomNumber] = useState("");
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  const handleRoomChange = (newRoomId: string | null, newRoomNumber: string | null) => {
+    setRoomId(newRoomId);
+    setRoomNumber(newRoomNumber);
+    // Auto-fill label if empty
+    if (newRoomNumber && !label.trim()) {
+      setLabel(`Room ${newRoomNumber}`);
+    }
+  };
 
   const handleCreate = async () => {
     if (!label.trim()) {
@@ -43,7 +54,8 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
           lockbox_id: lockboxId,
           slot_number: newSlotNumber,
           label: label.trim(),
-          room_number: roomNumber.trim() || null,
+          room_id: roomId,
+          room_number: roomNumber || null,
           quantity,
           status: 'in_box',
         })
@@ -66,7 +78,8 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
       
       // Reset
       setLabel("");
-      setRoomNumber("");
+      setRoomId(null);
+      setRoomNumber(null);
       setQuantity(1);
       setNotes("");
     } catch (error) {
@@ -103,13 +116,17 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
           </div>
 
           <div className="space-y-2">
-            <Label>Room Number</Label>
-            <Input 
-              placeholder="e.g. 401" 
-              value={roomNumber} 
-              onChange={(e) => setRoomNumber(e.target.value)}
+            <Label>Room</Label>
+            <RoomSelector
+              value={roomId || undefined}
+              roomNumber={roomNumber || undefined}
+              onChange={handleRoomChange}
               disabled={isCreating}
+              zIndexClass="z-[120]"
             />
+            <p className="text-xs text-muted-foreground">
+              Link this slot to a room — search by number, judge, or building.
+            </p>
           </div>
 
           <div className="space-y-2">
