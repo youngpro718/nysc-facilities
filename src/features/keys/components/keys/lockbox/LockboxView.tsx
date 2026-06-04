@@ -8,9 +8,10 @@ import { LockboxSlotDialog } from "./LockboxSlotDialog";
 import { LockboxSelector } from "./LockboxSelector";
 import { CreateLockboxDialog } from "./CreateLockboxDialog";
 import { AddSlotDialog } from "./AddSlotDialog";
+import { BulkAddChambersDialog } from "./BulkAddChambersDialog";
 import { PrintLockboxReference } from "./PrintLockboxReference";
 import { toast } from "sonner";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function LockboxView() {
@@ -21,6 +22,7 @@ export function LockboxView() {
   const [selectedLockboxId, setSelectedLockboxId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [addSlotDialogOpen, setAddSlotDialogOpen] = useState(false);
+  const [bulkChambersOpen, setBulkChambersOpen] = useState(false);
 
   // Fetch all lockboxes with slot counts
   const { data: lockboxes, refetch: refetchLockboxes } = useQuery({
@@ -153,6 +155,16 @@ export function LockboxView() {
             <span className="hidden sm:inline">Add Key Slot</span>
             <span className="sm:hidden">Add</span>
           </Button>
+          <Button
+            onClick={() => setBulkChambersOpen(true)}
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+          >
+            <Building2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Bulk Add Chambers</span>
+            <span className="sm:hidden">Chambers</span>
+          </Button>
           <PrintLockboxReference lockbox={selectedLockbox} slots={slots} />
         </div>
       )}
@@ -192,6 +204,17 @@ export function LockboxView() {
           existingSlotCount={slots.length}
           open={addSlotDialogOpen}
           onOpenChange={setAddSlotDialogOpen}
+          onSuccess={handleAddSlotSuccess}
+        />
+      )}
+
+      {selectedLockboxId && (
+        <BulkAddChambersDialog
+          lockboxId={selectedLockboxId}
+          lockboxName={selectedLockbox?.name}
+          existingSlotCount={slots.length}
+          open={bulkChambersOpen}
+          onOpenChange={setBulkChambersOpen}
           onSuccess={handleAddSlotSuccess}
         />
       )}
