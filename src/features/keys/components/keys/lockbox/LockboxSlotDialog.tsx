@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { LockboxSlot } from "../types/LockboxTypes";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Edit3, MoreHorizontal } from "lucide-react";
+import { Edit3, MoreHorizontal, Trash2 } from "lucide-react";
 import { EditSlotDialog } from "./EditSlotDialog";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,8 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
   const [isLoading, setIsLoading] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!slot) return null;
 
@@ -94,6 +97,46 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
     }
   };
 
+  const handleDelete = async () => {
+    if (!slot) return;
+    setIsDeleting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Log deletion before deleting (cascade would remove logs otherwise)
+      const { error: logError } = await supabase
+        .from('lockbox_activity_logs')
+        .insert({
+          slot_id: slot.id,
+          action: 'delete',
+          status_before: slot.status,
+          status_after: 'deleted',
+          actor_user_id: user?.id,
+          actor_name: user?.email,
+          note: `Slot "${slot.label}" deleted from lockbox`,
+        });
+
+      if (logError) logger.error('Error logging slot deletion:', logError);
+
+      const { error: deleteError } = await supabase
+        .from('lockbox_slots')
+        .delete()
+        .eq('id', slot.id);
+
+      if (deleteError) throw deleteError;
+
+      toast.success("Slot deleted successfully");
+      onSuccess();
+      onOpenChange(false);
+      setDeleteConfirmOpen(false);
+    } catch (error) {
+      logger.error('Error deleting slot:', error);
+      toast.error(getErrorMessage(error) || "Failed to delete slot");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const headerRight = (
     <DropdownMenu open={actionsOpen} onOpenChange={setActionsOpen} modal={false}>
       <DropdownMenuTrigger asChild>
@@ -133,6 +176,16 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
             Mark Missing
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem
+          className="text-destructive"
+          onSelect={() => {
+            setActionsOpen(false);
+            setDeleteConfirmOpen(true);
+          }}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete Slot
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -206,6 +259,16 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onSuccess={onSuccess}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete Slot"
+        description={`Are you sure you want to delete Slot ${slot.slot_number}: "${slot.label}"? This action cannot be undone and will remove all associated activity history.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
       />
     </>
   );
