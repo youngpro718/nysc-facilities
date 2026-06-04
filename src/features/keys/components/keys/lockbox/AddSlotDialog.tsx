@@ -116,13 +116,17 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
           </div>
 
           <div className="space-y-2">
-            <Label>Room Number</Label>
-            <Input 
-              placeholder="e.g. 401" 
-              value={roomNumber} 
-              onChange={(e) => setRoomNumber(e.target.value)}
+            <Label>Room</Label>
+            <RoomSelector
+              value={roomId || undefined}
+              roomNumber={roomNumber || undefined}
+              onChange={handleRoomChange}
               disabled={isCreating}
+              zIndexClass="z-[120]"
             />
+            <p className="text-xs text-muted-foreground">
+              Link this slot to a room — search by number, judge, or building.
+            </p>
           </div>
 
           <div className="space-y-2">
