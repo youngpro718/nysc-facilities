@@ -48,12 +48,16 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
         throw new Error("Please enter a valid quantity");
       }
 
+      const currentQuantity = Number(item.quantity) || 0;
+
       // Calculate new quantity
-      const newQuantity = adjustmentType === "add" 
-        ? item.quantity + adjustmentQuantity 
+      const newQuantity = adjustmentType === "add"
+        ? currentQuantity + adjustmentQuantity
         : adjustmentType === "remove"
-        ? Math.max(0, item.quantity - adjustmentQuantity)
+        ? Math.max(0, currentQuantity - adjustmentQuantity)
         : adjustmentQuantity;
+
+      console.log("[StockAdjustment] updating", { itemId: item.id, currentQuantity, newQuantity, adjustmentType });
 
       // CRITICAL: First update the inventory_items table
       const { error: updateError } = await supabase
@@ -61,7 +65,10 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
         .update({ quantity: newQuantity })
         .eq("id", item.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("[StockAdjustment] update error", updateError);
+        throw updateError;
+      }
 
       // Then create transaction record
       const { error: transactionError } = await supabase
@@ -70,30 +77,41 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
           item_id: item.id,
           transaction_type: adjustmentType,
           quantity: adjustmentQuantity,
-          previous_quantity: item.quantity,
+          previous_quantity: currentQuantity,
           new_quantity: newQuantity,
           notes: notes || null,
         });
 
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error("[StockAdjustment] transaction insert error", transactionError);
+        // Non-fatal: the stock change already succeeded.
+      }
+
+      return { adjustmentQuantity, newQuantity };
     },
-    onSuccess: () => {
-      invalidateInventoryStockQueries(queryClient);
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === "inventory-items" ||
-          query.queryKey[0] === "inventory-stats" ||
-          query.queryKey[0] === "recent-transactions" ||
-          query.queryKey[0] === "optimized-inventory",
-      });
-      
+    onSuccess: (result) => {
       toast({
         title: "Stock adjusted",
-        description: `Successfully ${adjustmentType === "add" ? "added" : adjustmentType === "remove" ? "removed" : "adjusted"} ${quantity} ${item.unit || "units"} for ${item.name}.`,
+        description: `Successfully ${adjustmentType === "add" ? "added" : adjustmentType === "remove" ? "removed" : "adjusted"} ${result?.adjustmentQuantity ?? quantity} ${item.unit || "units"} for ${item.name}.`,
       });
       handleClose();
+
+      // Refresh caches after closing so a stray throw can't trap the dialog open.
+      try {
+        invalidateInventoryStockQueries(queryClient);
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            query.queryKey[0] === "inventory-items" ||
+            query.queryKey[0] === "inventory-stats" ||
+            query.queryKey[0] === "recent-transactions" ||
+            query.queryKey[0] === "optimized-inventory",
+        });
+      } catch (err) {
+        console.error("[StockAdjustment] invalidation error", err);
+      }
     },
     onError: (error) => {
+      console.error("[StockAdjustment] mutation error", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -102,8 +120,10 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    console.log("[StockAdjustment] submit clicked", { isPending: adjustStockMutation.isPending });
+    if (adjustStockMutation.isPending) return;
     adjustStockMutation.mutate();
   };
 

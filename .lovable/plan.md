@@ -1,46 +1,43 @@
-## Plan
+# Fix: "Adjust Stock" submit button does nothing
 
-### 1. Make inventory stock status consistent everywhere
-Standardize all inventory tabs to use the existing centralized stock rules in `src/features/inventory/utils/stockStatus.ts`:
-- `isLowStock`: tracked item with quantity below minimum, but above zero
-- `isOutOfStock`: tracked item at zero or below
-- `needsAttention`: low stock or out of stock
+## Symptom
+On `/inventory?tab=stock` (and Alerts), opening the Adjust Stock dialog and clicking the **Adjust Stock** submit button leaves the dialog open with no spinner, no toast, and no visible change. The user has to click Cancel to close it.
 
-This will fix cases where Overview shows an alert but Stock/Alerts/Storage do not match.
+## Investigation so far
+- `StockAdjustmentDialog.tsx` form wiring looks correct: `<form onSubmit={handleSubmit}>` + `FormButtons` with `type="submit"`.
+- `invalidateInventoryStockQueries` util and `inventoryQueryKeys` export both exist.
+- RLS on `inventory_items` and `inventory_item_transactions` allows the `admin` role to write.
+- Schema fields used in the insert (`item_id`, `transaction_type`, `quantity`, `previous_quantity`, `new_quantity`, `notes`) all exist and are not generated columns.
+- No network or console activity was recorded for the failed click in the current preview snapshot, which suggests either (a) the form submit isn't firing, or (b) the mutation throws synchronously and the error toast is being suppressed.
 
-### 2. Align inventory dashboard counts and badges
-Update these areas so they report the same numbers:
-- `InventoryDashboard.tsx`: keep tab badge count based on `needsAttention`
-- `InventoryOverviewPanel.tsx`: use full attention counts, not a truncated low-stock preview count
-- `InventoryItemsPanel.tsx`: use centralized `getStockStatus` instead of local logic that currently marks `quantity === minimum_quantity` as low
-- `LowStockPanel.tsx`: keep low-stock and out-of-stock separated visually, but ensure the total matches Overview and tab badges
-- `StorageRoomsPanel.tsx`: ensure storage room low/out counts follow the same rule set
-- `RoleDashboard.tsx`: replace the hardcoded `quantity < 10` low-stock query with the minimum-quantity based logic
+## Diagnostic steps
+1. Ask the user to reproduce with DevTools open and report:
+   - Whether the submit button shows a spinner.
+   - Whether a PATCH `inventory_items` and POST `inventory_item_transactions` request is sent.
+   - Any red console errors.
+2. If no request fires: add a temporary `console.log` at the top of `handleSubmit` and inside `mutationFn` to confirm where execution stops.
 
-### 3. Fix inventory refresh/invalidation gaps
-Update inventory mutations so creating, editing, deleting, adjusting stock, and uploading photos refresh every affected inventory query:
-- overview stats
-- low-stock alerts
-- out-of-stock alerts
-- stock list
-- storage rooms
-- optimized inventory hooks
+## Likely fixes (apply based on diagnosis)
 
-This prevents one tab from showing fresh stock data while another tab still shows stale cached data.
+### A. If submit is firing but mutation errors silently
+- Wrap `mutationFn` work in a `try/catch` that logs to console, so React Query's `onError` is guaranteed to fire and show the destructive toast.
+- Verify `item.quantity` is a number (not `undefined`/`null`); coerce with `Number(item.quantity) || 0` before arithmetic.
 
-### 4. Prevent the admin dashboard from briefly looking like a regular user
-Fix role loading so the app does not fall back to `standard` while role/profile data is still unresolved:
-- remove/soften the 3-second `useRolePermissions` timeout that sets standard permissions
-- keep navigation/sidebar in a loading skeleton state until role resolution succeeds or shows an explicit retry state
-- avoid routing admin users to `/dashboard` because role/profile is temporarily missing
+### B. If submit isn't firing at all
+- Most likely culprit: nested interactive element swallowing the click, or the Radix `Select` capturing keyboard/Enter focus. Fix by:
+  - Ensuring the submit button is not inside a portal that breaks the form association (it isn't currently, but verify after any ModalFrame change).
+  - Adding an explicit `onClick={handleSubmit}` fallback on the submit button when used inside a Radix dialog/drawer.
 
-This targets the symptom where the app initially looks like a regular user, then goes to the correct admin dashboard after interaction.
+### C. If onSuccess throws after a successful write
+- Defensive: guard `invalidateInventoryStockQueries(queryClient)` and the subsequent `invalidateQueries({ predicate })` in a `try/catch` so a stray throw doesn't prevent `handleClose()` from running.
+- Move `handleClose()` to run before invalidation so the dialog always closes on success.
 
-### 5. Verify the fix
-After implementation, check:
-- low-stock/out-of-stock numbers match across Overview, Alerts, Stock, Storage, and role dashboard
-- changing stock updates all tabs without reload
-- root `/` no longer flashes or falls back to the regular user dashboard for admin/system admin/facilities manager roles
+## Verification
+- Adjusting stock from both the Stock tab and the Alerts tab updates the item quantity in the DB.
+- Toast appears (success or destructive).
+- Dialog auto-closes on success.
+- Overview, Stock, Alerts, Storage, and the role dashboard all reflect the new quantity without a manual page reload.
 
-## Expected result
-Inventory pages will share one source of truth for stock status, and admin users should see the correct admin dashboard/navigation after loading instead of a temporary regular-user view.
+## Out of scope
+- No DB schema or RLS changes.
+- No changes to the broader inventory invalidation strategy already shipped earlier in this session.
