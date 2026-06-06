@@ -117,7 +117,8 @@ export const LowStockPanel = () => {
       const raw = (data || []) as Record<string, unknown>[];
       const base = toBaseItems(raw);
       const enriched = await enrichItems(raw, base);
-      return enriched.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity < item.minimum_quantity);
+      const { isLowStock } = await import("@features/inventory/utils/stockStatus");
+      return enriched.filter(item => isLowStock({ quantity: item.quantity, minimum_quantity: item.minimum_quantity }));
     },
   });
 
@@ -127,13 +128,14 @@ export const LowStockPanel = () => {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
-        .lte("quantity", 0)
         .order("name");
 
       if (error) throw error;
       const raw = (data || []) as Record<string, unknown>[];
-      const base = toBaseItems(raw);
-      return enrichItems(raw, base);
+      const { isOutOfStock } = await import("@features/inventory/utils/stockStatus");
+      const filteredRaw = raw.filter(r => isOutOfStock({ quantity: r.quantity as number, minimum_quantity: r.minimum_quantity as number }));
+      const base = toBaseItems(filteredRaw);
+      return enrichItems(filteredRaw, base);
     },
   });
 

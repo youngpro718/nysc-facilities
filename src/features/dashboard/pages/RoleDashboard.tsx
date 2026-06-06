@@ -50,8 +50,11 @@ export default function RoleDashboard() {
   const { data: lowStockCount = 0 } = useQuery({
     queryKey: ['role-dashboard-low-stock'],
     queryFn: async () => {
-      const { count } = await supabase.from('inventory_items').select('*', { count: 'exact', head: true }).lt('quantity', 10);
-      return count || 0;
+      const { data } = await supabase
+        .from('inventory_items')
+        .select('id, quantity, minimum_quantity');
+      const { needsAttention } = await import('@features/inventory/utils/stockStatus');
+      return (data || []).filter(needsAttention).length;
     },
     enabled: userRole === 'purchasing' || userRole === 'court_aide',
   });
