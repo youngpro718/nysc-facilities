@@ -17,6 +17,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
 import { Plus, Minus, RotateCw } from "lucide-react";
 import { inventoryQueryKeys } from "@features/inventory/hooks/useOptimizedInventory";
+import { invalidateInventoryStockQueries } from "@features/inventory/utils/invalidation";
 import { getErrorMessage } from "@/lib/errorUtils";
 
 type InventoryItem = {
@@ -77,13 +78,13 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
       if (transactionError) throw transactionError;
     },
     onSuccess: () => {
-      // Invalidate ALL inventory-related queries using predicate matching
-      queryClient.invalidateQueries({ 
-        predicate: (query) => 
-          query.queryKey[0] === "inventory-items" || 
+      invalidateInventoryStockQueries(queryClient);
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "inventory-items" ||
           query.queryKey[0] === "inventory-stats" ||
           query.queryKey[0] === "recent-transactions" ||
-          query.queryKey[0] === "optimized-inventory"
+          query.queryKey[0] === "optimized-inventory",
       });
       
       toast({
