@@ -328,12 +328,11 @@ export function useRolePermissions() {
       hasFetchedRef.current = true;
     } catch (error) {
       logger.warn('[useRolePermissions] Error in fetchUserRoleAndPermissions', error);
-      
-      // Set fallback to standard user on error
-      setUserRole(null);
-      setPermissions(rolePermissionsMap.standard);
+
+      // Do NOT downgrade to 'standard' on error — that would briefly show
+      // admins a regular-user dashboard. Surface a retry banner instead.
       setPermissionError('Permissions failed to load. Please retry.');
-      
+
       toast({
         title: "Error",
         description: "Failed to load user permissions.",
