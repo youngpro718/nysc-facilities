@@ -28,6 +28,8 @@ import { useInventoryRealtimeSync } from "@features/inventory/hooks/useOptimized
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { getGenericItemImage } from "@/utils/inventoryImages";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { isLowStock, isOutOfStock } from "@features/inventory/utils/stockStatus";
+import { invalidateInventoryStockQueries } from "@features/inventory/utils/invalidation";
 type InventoryItem = {
   id: string;
   name: string;
@@ -285,8 +287,9 @@ export const InventoryItemsPanel = () => {
   };
 
   const getStockStatus = (quantity: number, minimumQuantity: number) => {
-    if (quantity === 0) return { label: "Out of Stock", color: "bg-destructive text-destructive-foreground" };
-    if (quantity > 0 && quantity <= minimumQuantity) return { label: "Low Stock", color: "bg-destructive/10 text-destructive" };
+    const item = { quantity, minimum_quantity: minimumQuantity };
+    if (isOutOfStock(item)) return { label: "Out of Stock", color: "bg-destructive text-destructive-foreground" };
+    if (isLowStock(item)) return { label: "Low Stock", color: "bg-destructive/10 text-destructive" };
     return { label: "In Stock", color: "bg-secondary text-secondary-foreground" };
   };
 
