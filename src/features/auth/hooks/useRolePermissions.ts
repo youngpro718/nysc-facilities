@@ -434,13 +434,12 @@ export function useRolePermissions() {
       }
     });
     
-    // OPTIMIZATION: Reduced timeout from 5s to 3s since we now have cache
+    // Safety timeout: surface a retry banner but DO NOT downgrade to standard
+    // permissions — that would briefly show admins a regular-user dashboard.
     const timeout = setTimeout(() => {
       if (loading) {
-        logger.warn('[useRolePermissions] Timeout: forcing loading=false after 3 seconds');
+        logger.warn('[useRolePermissions] Timeout: permissions still loading after 5s');
         setLoading(false);
-        setUserRole(null);
-        setPermissions(rolePermissionsMap.standard);
         setPermissionError('Permissions failed to load. Please retry.');
         toast({
           title: "Loading Timeout",
@@ -448,7 +447,7 @@ export function useRolePermissions() {
           variant: "destructive",
         });
       }
-    }, 3000);
+    }, 5000);
     
     // Only fetch if we haven't already fetched
     if (!hasFetchedRef.current) {
