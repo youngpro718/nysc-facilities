@@ -147,7 +147,7 @@ function AppContent() {
 
           <Route path="/spaces" element={
             <ProtectedRoute>
-              <ModuleProtectedRoute moduleKey="spaces" moduleName="Rooms Management">
+              <ModuleProtectedRoute moduleKey="spaces" moduleName="Spaces">
                 <Spaces />
               </ModuleProtectedRoute>
             </ProtectedRoute>
@@ -249,9 +249,11 @@ function AppContent() {
           <Route path="settings/security/2fa" element={<Navigate to="/profile?tab=settings" replace />} />
           <Route path="settings/security/session" element={<Navigate to="/profile?tab=settings" replace />} />
           <Route path="profile/settings" element={<Navigate to="/profile?tab=settings" replace />} />
-          {/* Legacy operations routes redirected to consolidated Operations hub */}
+          {/* Issues / Maintenance / Lighting are first-class siblings; the Operations
+              page renders them via tabs, so deep-link each route into the correct tab. */}
           <Route path="issues" element={<Navigate to="/operations?tab=issues" replace />} />
           <Route path="maintenance" element={<Navigate to="/operations?tab=maintenance" replace />} />
+          <Route path="lighting" element={<Navigate to="/operations?tab=lighting" replace />} />
 
           {/* User Routes */}
           {/* /request redirects to dashboard — quick actions are inline via FAB */}

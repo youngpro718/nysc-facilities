@@ -4,19 +4,25 @@
  */
 
 const BASE_PATH_MAP: Record<string, string> = {
-  'Rooms': '/spaces',
+  // 'Spaces' is the section that contains rooms.
+  'Spaces': '/spaces',
+  'Rooms': '/spaces', // legacy label, kept as alias
   'New Request': '/request',
-  'Operations': '/operations',
-  'Building Issues': '/operations',
-  'Issues': '/operations?tab=issues',
-  
-  'Occupants': '/occupants',
+  // Issues / Maintenance / Lighting are first-class siblings.
+  // Each resolves to the Operations page with the correct tab pre-selected.
+  'Issues': '/issues',
+  'Maintenance': '/maintenance',
+  'Lighting': '/lighting',
+  // Legacy aliases for the old consolidated "Operations" entry.
+  'Operations': '/issues',
+  'Building Issues': '/issues',
+  'Personnel': '/occupants',
+  'Occupants': '/occupants', // legacy label, kept as alias
   'Inventory': '/inventory',
   'Tasks': '/tasks',
   'Supplies': '/tasks',
   'Supply Room': '/supply-room',
   'Keys': '/keys',
-  'Maintenance': '/operations?tab=maintenance',
   'Term Sheet': '/term-sheet',
   'Court Operations': '/term-sheet',
   'My Activity': '/my-activity',
@@ -41,12 +47,15 @@ export function getNavigationDescription(title: string): string {
   const descriptionMap: Record<string, string> = {
     'Dashboard': 'Overview & stats',
     'New Request': 'Supplies, help, issues, keys',
-    'Rooms': 'Manage buildings',
-    'Operations': 'Issues, Maintenance, Supplies',
+    'Spaces': 'Buildings, floors, and rooms',
+    'Rooms': 'Buildings, floors, and rooms',
+    'Operations': 'Issues, maintenance, lighting',
     'Building Issues': 'Track & resolve building issues',
-    'Issues': 'Track problems',
+    'Issues': 'Report and track issues',
+    'Lighting': 'Lighting fixtures and outages',
     'Access & Assignments': 'Access levels & assignments',
-    'Occupants': 'Manage people',
+    'Personnel': 'Manage personnel',
+    'Occupants': 'Manage personnel',
     'Inventory': 'Stock & assets',
     'Tasks': 'Staff task management',
     'Supplies': 'Staff task management',

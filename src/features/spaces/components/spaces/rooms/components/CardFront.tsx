@@ -194,7 +194,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
             <div className="bg-card border border-border rounded-lg p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium text-muted-foreground">Occupants</span>
+                <span className="text-xs font-medium text-muted-foreground">Personnel</span>
               </div>
               <div className="text-xl font-bold">{room.current_occupants.length}</div>
               <div className="text-xs text-muted-foreground truncate mt-1">

@@ -133,7 +133,7 @@ export function KeyHistorySection() {
 
   const prettyLabel = (key: string) => {
     const m: Record<string, string> = {
-      occupant_id: "Occupant",
+      occupant_id: "Personnel",
       assigned_at: "Assigned",
       returned_at: "Returned",
       is_spare: "Spare key",

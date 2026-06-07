@@ -141,7 +141,7 @@ export function EditElevatorPassDialog({ open, onOpenChange, assignment, onUpdat
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="occupant">Occupant</SelectItem>
+                <SelectItem value="occupant">Personnel</SelectItem>
                 <SelectItem value="security">Security</SelectItem>
                 <SelectItem value="office">Office/External</SelectItem>
               </SelectContent>

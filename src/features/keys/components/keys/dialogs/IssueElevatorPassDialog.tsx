@@ -193,7 +193,7 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
 
           {recipientType === "occupant" ? (
             <div className="space-y-2">
-              <Label>Occupant</Label>
+              <Label>Personnel</Label>
               <Input
                 placeholder="Search by name or email"
                 value={occupantQuery}
