@@ -1,43 +1,64 @@
-# Fix: "Adjust Stock" submit button does nothing
+# Full App Audit — Prioritized Backlog
 
-## Symptom
-On `/inventory?tab=stock` (and Alerts), opening the Adjust Stock dialog and clicking the **Adjust Stock** submit button leaves the dialog open with no spinner, no toast, and no visible change. The user has to click Cancel to close it.
+## Goal
+One ranked backlog. No long prose report. Every finding has: severity, axis, evidence (file/route/table), effort, recommendation. Brutal tone — calls out generic/confused/weak choices, not just bugs.
 
-## Investigation so far
-- `StockAdjustmentDialog.tsx` form wiring looks correct: `<form onSubmit={handleSubmit}>` + `FormButtons` with `type="submit"`.
-- `invalidateInventoryStockQueries` util and `inventoryQueryKeys` export both exist.
-- RLS on `inventory_items` and `inventory_item_transactions` allows the `admin` role to write.
-- Schema fields used in the insert (`item_id`, `transaction_type`, `quantity`, `previous_quantity`, `new_quantity`, `notes`) all exist and are not generated columns.
-- No network or console activity was recorded for the failed click in the current preview snapshot, which suggests either (a) the form submit isn't firing, or (b) the mutation throws synchronously and the error toast is being suppressed.
+## How I'll run it (parallel investigation, then synthesis)
 
-## Diagnostic steps
-1. Ask the user to reproduce with DevTools open and report:
-   - Whether the submit button shows a spinner.
-   - Whether a PATCH `inventory_items` and POST `inventory_item_transactions` request is sent.
-   - Any red console errors.
-2. If no request fires: add a temporary `console.log` at the top of `handleSubmit` and inside `mutationFn` to confirm where execution stops.
+I'll spawn 4 read-only sub-investigators in parallel, each owning one axis. They return raw findings; I de-dupe, rank, and produce the backlog.
 
-## Likely fixes (apply based on diagnosis)
+### 1. Security & data access
+- Re-run `security--run_security_scan` + `supabase--linter` for a fresh baseline.
+- For every table in `public`: confirm RLS enabled, GRANTs sane, no `profiles.role`/`profiles.department` used in policies, no `USING (true)` on sensitive tables.
+- Audit every edge function: JWT verification, service-role key usage, input validation, path traversal, CORS.
+- Storage buckets: which are public, which leak PII (personnel photos, key photos, issue attachments, room photos).
+- Secrets: scan repo for hardcoded keys, check anon key is the only client-side key.
+- Auth: session refresh redirect guard, password reset route, role escalation paths, `user_roles` write policies.
+- Audit-log integrity: who can insert/update/delete `audit_logs`, `security_audit_log`, `role_audit_log`.
 
-### A. If submit is firing but mutation errors silently
-- Wrap `mutationFn` work in a `try/catch` that logs to console, so React Query's `onError` is guaranteed to fire and show the destructive toast.
-- Verify `item.quantity` is a number (not `undefined`/`null`); coerce with `Number(item.quantity) || 0` before arithmetic.
+### 2. Functional / wiring
+- Walk every route in the router: dead routes, role-gated routes that misroute, 404s.
+- Sidebar/nav: every link resolves, every role sees the correct subset (admin, court_liaison, court_officer, court_aide, standard, purchasing, facilities_manager, system_admin).
+- React Query: mutations that don't invalidate, stale lists after create/update/delete, missing optimistic rollback.
+- Realtime subscriptions: leaks, missing cleanup, channels that never fire.
+- Forms: Zod coverage, Radix Select null handling, disabled-state during submit, error toasts.
+- Cross-module dependencies: term sheet ↔ court_assignments, keys ↔ key_requests, issues ↔ rooms, inventory low-stock thresholds.
+- Dead code: unused hooks, orphan components, removed CMC scheduling residue.
 
-### B. If submit isn't firing at all
-- Most likely culprit: nested interactive element swallowing the click, or the Radix `Select` capturing keyboard/Enter focus. Fix by:
-  - Ensuring the submit button is not inside a portal that breaks the form association (it isn't currently, but verify after any ModalFrame change).
-  - Adding an explicit `onClick={handleSubmit}` fallback on the submit button when used inside a Radix dialog/drawer.
+### 3. Product identity & UX critique (the brutal part)
+- Brand: does "NYSC Facilities Hub" actually have an identity, or is it shadcn-default? Voice, naming, iconography, empty states.
+- IA: 8 roles × N modules — is the mental model coherent or a pile of features? "Building Issues" vs "Operations" vs "Maintenance" vs "Lighting Issues" — overlapping concepts.
+- Dashboards: per role, what's the first screen actually telling them? Is it useful or vanity stats?
+- Naming consistency: Spaces vs Rooms vs Floors vs Unified Spaces; Term Sheet vs Courtroom Directory; Personnel vs Occupants vs Staff vs Profiles.
+- Feature bloat: 130+ tables. Which features are zombies (no traffic, no clear owner)?
+- Mobile-first claim vs reality on /term-sheet, /spaces, /issues, /keys.
 
-### C. If onSuccess throws after a successful write
-- Defensive: guard `invalidateInventoryStockQueries(queryClient)` and the subsequent `invalidateQueries({ predicate })` in a `try/catch` so a stray throw doesn't prevent `handleClose()` from running.
-- Move `handleClose()` to run before invalidation so the dialog always closes on success.
+### 4. Visual design & polish
+- Typography: still defaulting to Inter-ish stack? Heading hierarchy actually used?
+- Color: semantic tokens vs raw classes audit (`text-white`, `bg-black`, hardcoded hex).
+- Contrast (WCAG AA) on status pills, priority dots, muted text.
+- Density: card padding, table row height, mobile tap targets ≥44px.
+- Motion: gratuitous vs purposeful, reduced-motion respect.
+- Empty/loading/error states: skeletons present? Empty states have CTA?
+- iOS: `h-dvh`, safe-area, sticky headers under notch.
 
-## Verification
-- Adjusting stock from both the Stock tab and the Alerts tab updates the item quantity in the DB.
-- Toast appears (success or destructive).
-- Dialog auto-closes on success.
-- Overview, Stock, Alerts, Storage, and the role dashboard all reflect the new quantity without a manual page reload.
+## Deliverable format
+
+Single Markdown file at `/mnt/documents/audit-backlog.md` (and rendered as a `presentation-artifact`):
+
+```text
+| # | Sev | Axis | Title | Evidence | Effort | Recommendation |
+```
+
+- Severity: P0 (security/data loss), P1 (broken or unsafe), P2 (confused/inconsistent), P3 (polish).
+- Axes: SEC, FN, UX, UI.
+- Sorted P0 → P3, then by axis.
+- Followed by a short "Identity Critique" section (≤30 lines) — the unfiltered take on what the app *is* vs what it's trying to be, and 3 concrete repositioning moves.
 
 ## Out of scope
-- No DB schema or RLS changes.
-- No changes to the broader inventory invalidation strategy already shipped earlier in this session.
+- No code changes in this pass. You triage the backlog, then we attack items in follow-up builds.
+- No penetration testing beyond what the Supabase scanner + manual policy review can catch.
+- No performance profiling unless I trip over something egregious.
+
+## Expected runtime
+~5–10 minutes of parallel investigation, then the backlog file.
