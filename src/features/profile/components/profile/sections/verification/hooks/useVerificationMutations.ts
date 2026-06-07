@@ -16,7 +16,9 @@ export function useVerificationMutations(
   ) => {
     try {
       if (approved) {
-        // Use admin-selected role, or fall back to 'standard'
+        // Use admin-selected role, or fall back to 'standard'.
+        // Only the SECURITY DEFINER RPC is allowed to assign roles —
+        // never write to user_roles directly from the client.
         const role = selectedRole || 'standard';
         const { error: rpcError } = await supabase.rpc('approve_user_verification', {
           p_user_id: userId,
@@ -24,27 +26,8 @@ export function useVerificationMutations(
           p_admin_notes: null
         });
 
-        if (rpcError) {
-          logger.warn('approve_user_verification RPC failed, falling back to direct update:', rpcError);
+        if (rpcError) throw rpcError;
 
-          const { error: statusError } = await supabase.rpc('set_user_approval_status', {
-            p_user_id: userId,
-            p_status: 'verified'
-          });
-          if (statusError) throw statusError;
-
-          const { error: onboardError } = await supabase
-            .from('profiles')
-            .update({ onboarded: true })
-            .eq('id', userId);
-          if (onboardError) throw onboardError;
-
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .upsert({ user_id: userId, role }, { onConflict: 'user_id' });
-          if (roleError) throw roleError;
-        }
-        
         toast.success('User approved successfully');
       } else {
         const { error } = await supabase.rpc('reject_user_verification', {
@@ -87,43 +70,18 @@ export function useVerificationMutations(
 
   const handleToggleAdmin = async (userId: string, isAdmin: boolean) => {
     try {
-      if (isAdmin) {
-        // Check if role already exists
-        const { data: existingRole, error: checkError } = await supabase
-          .from('user_roles')
-          .select()
-          .eq('user_id', userId)
-          .eq('role', 'admin')
-          .maybeSingle();
-
-        if (checkError) throw checkError;
-
-        // Only insert if role doesn't exist
-        if (!existingRole) {
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: userId,
-              role: 'admin'
-            });
-
-          if (roleError) throw roleError;
-        }
-      } else {
-        // Remove admin role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', userId)
-          .eq('role', 'admin');
-
-        if (roleError) throw roleError;
+      // Route all admin role changes through SECURITY DEFINER RPCs —
+      // never INSERT/DELETE on user_roles directly from the client.
+      const rpc = isAdmin ? 'promote_to_admin' : 'demote_from_admin';
+      const { data, error } = await supabase.rpc(rpc, { target_user_id: userId });
+      if (error) throw error;
+      if (data && (data as { success?: boolean }).success === false) {
+        throw new Error((data as { message?: string }).message || 'Failed to update admin status');
       }
-      
       refetchUsers();
     } catch (error) {
       logger.error('Error toggling admin status:', error);
-      toast.error('Failed to update admin status');
+      toast.error('Failed to update admin status', { description: getErrorMessage(error) });
     }
   };
 

@@ -315,6 +315,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   // Purchasing routes - inventory and supply focused
   if (userRole === 'purchasing') {
     return [
+      '/dashboard',
       '/inventory',
       '/supply-room',
       '/notifications',
