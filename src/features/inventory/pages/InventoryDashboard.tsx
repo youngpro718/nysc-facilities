@@ -201,7 +201,7 @@ export const InventoryDashboard = () => {
                 <TooltipTrigger asChild>
                   <TabsTrigger 
                     value={tab.id} 
-                    className="flex items-center gap-1.5 px-2 py-2 data-[state=active]:bg-background"
+                    className="flex items-center gap-1.5 px-2 py-2"
                   >
                     {tab.icon}
                     <span className="hidden md:inline text-sm">{tab.label}</span>
