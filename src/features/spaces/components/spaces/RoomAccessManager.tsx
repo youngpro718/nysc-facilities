@@ -245,10 +245,10 @@ export function RoomAccessManager() {
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium">Occupant</label>
+                  <label className="text-sm font-medium">Personnel</label>
                   <Select value={selectedOccupantId} onValueChange={setSelectedOccupantId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select occupant" />
+                      <SelectValue placeholder="Select personnel" />
                     </SelectTrigger>
                     <SelectContent>
                       {occupants?.map((occupant) => (

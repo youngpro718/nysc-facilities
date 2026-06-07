@@ -126,7 +126,7 @@ export function useSystemSettings() {
         { id: 'supply_requests', name: 'Supply Requests', description: 'Process and fulfill supply and material requests' },
         { id: 'inventory', name: 'Inventory Management', description: 'Manage supplies, equipment, and inventory tracking' },
         { id: 'keys', name: 'Key Management', description: 'Manage key assignments and access control' },
-        { id: 'occupants', name: 'Occupant Management', description: 'Manage room assignments and occupant information' },
+        { id: 'occupants', name: 'Personnel Management', description: 'Manage room assignments and personnel information' },
         { id: 'court_operations', name: 'Court Operations', description: 'Specialized court scheduling and operations' },
         { id: 'analytics', name: 'Advanced Analytics', description: 'AI-powered insights and predictive analytics' },
         { id: 'reports', name: 'Reporting System', description: 'Generate and schedule facility reports' },
