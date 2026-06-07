@@ -42,12 +42,13 @@ export async function signIn(email: string, password: string) {
   
   if (error) throw error;
   
-  // NOTE: Email verification enforcement is skeleton-only for now.
-  // When ready to enforce, uncomment the block below.
-  // if (!data.user?.email_confirmed_at) {
-  //   await supabase.auth.signOut();
-  //   throw new Error('Email not verified. Please check your email for the verification link.');
-  // }
+  // Defence-in-depth: refuse sign-in until the email is verified.
+  // Supabase's "Confirm email" setting is the primary enforcement; this
+  // protects against misconfiguration of that setting.
+  if (!data.user?.email_confirmed_at) {
+    await supabase.auth.signOut();
+    throw new Error('Email not verified. Please check your email for the verification link.');
+  }
   
   return data.user;
 }

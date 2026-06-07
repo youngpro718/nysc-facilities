@@ -94,13 +94,12 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
             return;
           }
 
-          // 2) Email verification — skeleton only, not enforced yet.
-          // When ready to enforce, uncomment the block below.
-          // if (!session.user.email_confirmed_at) {
-          //   logger.debug('[OnboardingGuard] Email not verified, redirecting to verify');
-          //   navigate('/auth/verify', { replace: true });
-          //   return;
-          // }
+          // 2) Email verification — enforced.
+          if (!session.user.email_confirmed_at) {
+            logger.debug('[OnboardingGuard] Email not verified, redirecting to verify');
+            navigate('/auth/verify', { replace: true });
+            return;
+          }
 
           profile = profileResult as Record<string, unknown> | null;
 

@@ -47,29 +47,20 @@ export function useEnhancedAdminMutation(refetchUsers: () => void) {
 
   const demoteFromAdmin = async (userId: string, userName: string): Promise<void> => {
     try {
-      const currentUserId = await getCurrentUserId();
-      
-      // Prevent self-demotion
-      if (userId === currentUserId) {
-        toast.error('You cannot remove your own admin privileges');
-        return;
+      // All self-demotion / last-admin / row-locking checks live in the RPC.
+      const { data, error } = await supabase
+        .rpc('demote_from_admin', { target_user_id: userId });
+
+      if (error) {
+        logger.error('[useEnhancedAdminMutation] demote RPC error:', error);
+        throw error;
       }
 
-      // Check if this is the last admin
-      const adminCount = await getAdminCount();
-      if (adminCount <= 1) {
-        toast.error('Cannot remove the last admin user');
+      if (!data?.success) {
+        const msg = data?.message || 'Failed to remove admin privileges';
+        toast.error(msg);
         return;
       }
-
-      // Remove admin role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('role', 'admin');
-
-      if (roleError) throw roleError;
 
       toast.success(`${userName} admin privileges have been revoked`);
       refetchUsers();
