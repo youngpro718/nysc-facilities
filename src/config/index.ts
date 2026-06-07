@@ -15,7 +15,11 @@ function requireEnv(name: string): string {
 export const API_CONFIG = {
   supabase: {
     url: requireEnv('VITE_SUPABASE_URL'),
-    anonKey: requireEnv('VITE_SUPABASE_ANON_KEY'),
+    // Support both VITE_SUPABASE_PUBLISHABLE_KEY (Lovable-managed) and
+    // legacy VITE_SUPABASE_ANON_KEY env names.
+    anonKey:
+      (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
+      requireEnv('VITE_SUPABASE_ANON_KEY'),
   },
 } as const;
 
