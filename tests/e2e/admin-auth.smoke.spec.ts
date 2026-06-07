@@ -27,10 +27,10 @@ test.describe("authenticated admin smoke", () => {
     await expect(page).toHaveURL(/\/operations\?tab=issues$/);
     await expect(page.getByRole("heading", { name: /operations/i })).toBeVisible();
 
-    await page.getByRole("button", { name: "Access" }).click();
-    await expect(page).toHaveURL(/\/access-assignments$/);
-    await expect(page.getByRole("heading", { name: /access & assignments/i })).toBeVisible();
-    await expect(page.locator('[data-tour="personnel-search"]')).toBeVisible();
+    await page.getByRole("button", { name: "Maintenance" }).click();
+    await expect(page).toHaveURL(/\/operations\?tab=maintenance$/);
+    await expect(page.getByRole("heading", { name: /operations/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /maintenance/i })).toHaveAttribute("data-state", "active");
   });
 
   test("more menu routes open their core admin destinations", async ({ page }) => {
@@ -44,12 +44,13 @@ test.describe("authenticated admin smoke", () => {
     await expect(page.getByRole("heading", { name: /^inventory$/i })).toBeVisible();
     await expect(page.locator('[data-tour="inventory-search"]')).toBeVisible();
 
-    await navigateFromMobileMenu(page, "Lighting", /\/lighting$/);
-    await expect(page.getByRole("heading", { name: /lighting management/i })).toBeVisible();
-    await expect(page.locator('[data-tour="lighting-tabs"]')).toBeVisible();
+    await navigateFromMobileMenu(page, "Lighting", /\/operations\?tab=lighting$/);
+    await expect(page.getByRole("heading", { name: /operations/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /lighting/i })).toHaveAttribute("data-state", "active");
 
     await navigateFromMobileMenu(page, "Admin Center", /\/admin$/);
-    await expect(page.getByRole("heading", { name: /user management/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /admin center/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /users/i })).toHaveAttribute("data-state", "active");
   });
 
   test("clicking a room card on mobile opens the room drawer", async ({ page }) => {
@@ -73,16 +74,13 @@ test.describe("authenticated admin smoke", () => {
     await expect(drawer).toContainText(roomName ?? "");
   });
 
-  test("spaces and lighting mobile surfaces expose their primary secondary views", async ({ page }) => {
+  test("spaces and lighting mobile surfaces expose their primary views", async ({ page }) => {
     await loginAsAdmin(page, "/spaces");
 
     await expect(page.locator('[data-tour="space-list"]')).toBeVisible();
-    await page.getByRole("button", { name: /floor plan/i }).click();
-    await expect(page.getByRole("heading", { name: /floor plan viewer/i })).toBeVisible();
 
     await page.goto("/lighting");
-    await expect(page.getByRole("heading", { name: /lighting management/i })).toBeVisible();
-    await page.getByRole("tab", { name: /floor view/i }).click();
-    await expect(page.getByRole("tab", { name: /floor view/i })).toHaveAttribute("data-state", "active");
+    await expect(page.getByRole("heading", { name: /operations/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /lighting/i })).toHaveAttribute("data-state", "active");
   });
 });

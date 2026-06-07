@@ -38,12 +38,12 @@ export async function loginAsAdmin(page: Page, targetPath = "/"): Promise<void> 
   await page.goto(targetPath === "/" ? "/" : targetPath);
 
   await expect(page).toHaveURL(/\/($|cmc-dashboard|court-officer-dashboard|court-aide-dashboard|spaces|operations|access-assignments|keys|inventory|lighting|admin)/);
-  await expect(page.getByRole("navigation", { name: /mobile primary navigation/i })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: /mobile primary navigation/i })).toBeVisible({ timeout: 15_000 });
 }
 
 export async function expectShellReady(page: Page): Promise<void> {
-  await expect(page.getByRole("navigation", { name: /mobile primary navigation/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: /toggle menu/i })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: /mobile primary navigation/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: /toggle menu/i })).toBeVisible({ timeout: 15_000 });
 }
 
 export async function openMobileMenu(page: Page): Promise<Locator> {

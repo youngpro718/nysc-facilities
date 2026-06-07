@@ -182,58 +182,58 @@ function AppContent() {
             </ProtectedRoute>
           } />
           {/* Admin Center - Team & User Management */}
-          <Route path="admin" element={
+          <Route path="/admin" element={
             <ProtectedRoute requireSystemAdmin>
               <AdminCenter />
             </ProtectedRoute>
           } />
           {/* System Settings merged into Admin Center */}
-          <Route path="system-settings" element={<Navigate to="/admin?tab=system" replace />} />
+          <Route path="/system-settings" element={<Navigate to="/admin?tab=system" replace />} />
           {/* /users route removed — use /admin instead */}
-          <Route path="users" element={<Navigate to="/admin" replace />} />
-          <Route path="admin/key-requests" element={
+          <Route path="/users" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/key-requests" element={
             <ProtectedRoute requireAdmin>
               <AdminKeyRequests />
             </ProtectedRoute>
           } />
-          <Route path="admin/supply-requests" element={
+          <Route path="/admin/supply-requests" element={
             <ProtectedRoute requireAdmin>
               <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Requests">
                 <AdminSupplyRequests />
               </ModuleProtectedRoute>
             </ProtectedRoute>
           } />
-          <Route path="notifications" element={
+          <Route path="/notifications" element={
             <ProtectedRoute>
               <Notifications />
             </ProtectedRoute>
           } />
           {/* /form-templates and /form-intake removed — redirect to dashboard */}
-          <Route path="form-templates" element={<Navigate to="/dashboard" replace />} />
-          <Route path="form-intake" element={<Navigate to="/dashboard" replace />} />
-          <Route path="admin/routing-rules" element={
+          <Route path="/form-templates" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/form-intake" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/admin/routing-rules" element={
             <ProtectedRoute requireSystemAdmin>
               <RoutingRules />
             </ProtectedRoute>
           } />
-          <Route path="admin/form-templates" element={
+          <Route path="/admin/form-templates" element={
             <ProtectedRoute requireSystemAdmin>
               <FormTemplatesAdmin />
             </ProtectedRoute>
           } />
           {/* Tasks Management */}
-          <Route path="tasks" element={
+          <Route path="/tasks" element={
             <ProtectedRoute>
               <Tasks />
             </ProtectedRoute>
           } />
-          <Route path="my-supply-requests" element={
+          <Route path="/my-supply-requests" element={
             <ProtectedRoute>
               <MySupplyRequests />
             </ProtectedRoute>
           } />
-          <Route path="supply-requests" element={<Navigate to="/my-supply-requests" replace />} />
-          <Route path="supply-room" element={
+          <Route path="/supply-requests" element={<Navigate to="/my-supply-requests" replace />} />
+          <Route path="/supply-room" element={
             <ProtectedRoute>
               <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Room">
                 <SupplyRoom />
@@ -257,51 +257,51 @@ function AppContent() {
 
           {/* User Routes */}
           {/* /request redirects to dashboard — quick actions are inline via FAB */}
-          <Route path="request" element={<Navigate to="/dashboard" replace />} />
-          <Route path="request/help" element={
+          <Route path="/request" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/request/help" element={
             <ProtectedRoute>
               <HelpRequestPage />
             </ProtectedRoute>
           } />
-          <Route path="request/supplies" element={
+          <Route path="/request/supplies" element={
             <ProtectedRoute>
               <SupplyOrderPage />
             </ProtectedRoute>
           } />
-          <Route path="dashboard" element={
+          <Route path="/dashboard" element={
             <ProtectedRoute>
               <UserDashboard />
             </ProtectedRoute>
           } />
           {/* Unified My Activity page */}
-          <Route path="my-activity" element={
+          <Route path="/my-activity" element={
             <ProtectedRoute>
               <MyActivity />
             </ProtectedRoute>
           } />
           {/* Legacy routes - keep for backwards compatibility */}
-          <Route path="my-requests" element={
+          <Route path="/my-requests" element={
             <ProtectedRoute>
               <MyRequests />
             </ProtectedRoute>
           } />
-          <Route path="my-issues" element={
+          <Route path="/my-issues" element={
             <ProtectedRoute>
               <MyIssues />
             </ProtectedRoute>
           } />
-          <Route path="profile" element={
+          <Route path="/profile" element={
             <ProtectedRoute>
               <Profile />
             </ProtectedRoute>
           } />
-          <Route path="term-sheet" element={
+          <Route path="/term-sheet" element={
             <ProtectedRoute>
               <TermSheet />
             </ProtectedRoute>
           } />
           {/* Help Center */}
-          <Route path="help" element={
+          <Route path="/help" element={
             <ProtectedRoute>
               <HelpCenter />
             </ProtectedRoute>
@@ -333,7 +333,7 @@ function DevModeWrapper() {
   // Only render for actual admins
   if (!isAdmin) return null;
 
-  return <DevModePanel realRole="admin" />;
+  return <DevModePanel realRole={realRole} />;
 }
 
 function App() {

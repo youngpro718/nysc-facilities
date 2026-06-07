@@ -133,10 +133,11 @@ export function CompactActivitySection({
           <TabsList className="w-full grid grid-cols-3 h-auto p-1">
             <TabsTrigger 
               value="supplies" 
+              aria-label={`Supplies${activeSupplies.length > 0 ? `, ${activeSupplies.length} active` : ''}`}
               className="flex items-center gap-1.5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">Supplies</span>
+              <span className="sr-only sm:not-sr-only">Supplies</span>
               {activeSupplies.length > 0 && (
                 <Badge 
                   variant={readyForPickup.length > 0 ? "destructive" : "secondary"} 
@@ -149,10 +150,11 @@ export function CompactActivitySection({
             
             <TabsTrigger 
               value="requests"
+              aria-label={`Requests${openRequests.length > 0 ? `, ${openRequests.length} open` : ''}`}
               className="flex items-center gap-1.5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               <Send className="h-4 w-4" />
-              <span className="hidden sm:inline">Requests</span>
+              <span className="sr-only sm:not-sr-only">Requests</span>
               {openRequests.length > 0 && (
                 <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
                   {openRequests.length}
@@ -162,10 +164,11 @@ export function CompactActivitySection({
             
             <TabsTrigger 
               value="keys"
+              aria-label={`Keys${keysHeld + pendingKeyRequests > 0 ? `, ${keysHeld + pendingKeyRequests} total` : ''}`}
               className="flex items-center gap-1.5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               <Key className="h-4 w-4" />
-              <span className="hidden sm:inline">Keys</span>
+              <span className="sr-only sm:not-sr-only">Keys</span>
               {(keysHeld > 0 || pendingKeyRequests > 0) && (
                 <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
                   {keysHeld + pendingKeyRequests}

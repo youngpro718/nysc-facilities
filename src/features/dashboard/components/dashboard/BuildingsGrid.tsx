@@ -119,7 +119,8 @@ export function BuildingsGrid({
             totalFixtures={effectiveTotal}
             buildingIssues={buildingIssues}
             buildingActivities={buildingActivities}
-            onMarkAsSeen={onMarkAsSeen}
+            _onMarkAsSeen={onMarkAsSeen}
+            index={index}
           />
         );
       })}

@@ -10,11 +10,11 @@ import { useCommandCenter } from '@features/dashboard/hooks/useCommandCenter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StatusCard } from '@/components/ui/StatusCard';
 import { formatDistanceToNow } from 'date-fns';
+import { motion } from 'framer-motion';
 import {
   AlertTriangle,
   Activity,
@@ -24,9 +24,6 @@ import {
   Building2,
   Gavel,
   TrendingUp,
-  Clock,
-  CheckCircle,
-  XCircle,
   AlertCircle,
   Shield,
   Zap,
@@ -272,9 +269,11 @@ export function CommandCenter() {
           ) : (
             <div className="space-y-3">
               {activity.slice(0, 8).map((item) => (
-                <div
+                <motion.div
                   key={item.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer"
+                  className="relative flex items-start gap-3 p-3 pl-5 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer overflow-hidden"
+                  whileHover={{ scale: 1.005, x: 2 }}
+                  transition={{ duration: 0.15 }}
                   onClick={() => {
                     switch (item.type) {
                       case 'issue':
@@ -291,6 +290,13 @@ export function CommandCenter() {
                     }
                   }}
                 >
+                  {/* Left-side 3px indicator bar matching type */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${
+                    item.type === 'issue' ? 'bg-orange-500' :
+                    item.type === 'supply_request' ? 'bg-emerald-500' :
+                    'bg-blue-500'
+                  }`} />
+
                   <div className={`p-2 rounded-full ${
                     item.type === 'issue' ? 'bg-surface-warning' :
                     item.type === 'supply_request' ? 'bg-surface-operational' :
@@ -329,7 +335,7 @@ export function CommandCenter() {
                       <span>{formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
@@ -337,48 +343,59 @@ export function CommandCenter() {
       </Card>
 
       {/* Quick Actions */}
-      <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+      <Card className="border border-border bg-gradient-to-br from-card to-accent/5 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
+            <Zap className="h-5 w-5 text-primary animate-pulse" />
             Quick Actions
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col gap-2"
-              onClick={() => navigate('/admin/users')}
-            >
-              <Users className="h-6 w-6" />
-              <span className="text-sm">Manage Users</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col gap-2"
-              onClick={() => navigate('/admin/supply-requests')}
-            >
-              <Package className="h-6 w-6" />
-              <span className="text-sm">Supply Requests</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col gap-2"
-              onClick={() => navigate('/operations?tab=issues')}
-            >
-              <AlertTriangle className="h-6 w-6" />
-              <span className="text-sm">View Issues</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col gap-2"
-              onClick={() => navigate('/admin/settings')}
-            >
-              <Shield className="h-6 w-6" />
-              <span className="text-sm">System Settings</span>
-            </Button>
-          </div>
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.05
+                }
+              }
+            }}
+            initial="hidden"
+            animate="show"
+          >
+            {[
+              { title: "Manage Users", path: "/admin/users", icon: Users, desc: "Manage accounts & security" },
+              { title: "Supply Requests", path: "/admin/supply-requests", icon: Package, desc: "Approve and track inventory" },
+              { title: "View Issues", path: "/operations?tab=issues", icon: AlertTriangle, desc: "Monitor active facility reports" },
+              { title: "System Settings", path: "/admin/settings", icon: Shield, desc: "Configure application options" }
+            ].map((act, idx) => {
+              const Icon = act.icon;
+              return (
+                <motion.div
+                  key={idx}
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    show: { opacity: 1, y: 0 }
+                  }}
+                  whileHover={{ scale: 1.015, y: -2 }}
+                  whileTap={{ scale: 0.985 }}
+                  onClick={() => navigate(act.path)}
+                  className="flex items-center gap-3 p-4 rounded-xl border border-border/60 bg-card hover:bg-accent/40 hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
+                >
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-foreground">{act.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{act.desc}</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/60 shrink-0" />
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </CardContent>
       </Card>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { X, Download, Apple } from 'lucide-react';
@@ -10,13 +11,27 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallPrompt() {
+  const location = useLocation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const quietRoutes = [
+    '/login',
+    '/reset-password',
+    '/auth',
+    '/onboarding',
+    '/verification-pending',
+    '/public-forms',
+    '/submit-form',
+    '/forms',
+  ];
+  const isQuietRoute = quietRoutes.some((path) => location.pathname.startsWith(path));
 
   useEffect(() => {
     // Don't show if already installed
-    if (isStandalone()) {
+    if (isStandalone() || isQuietRoute) {
+      setDeferredPrompt(null);
+      setShowIOSInstructions(false);
       return;
     }
 
@@ -50,7 +65,7 @@ export function InstallPrompt() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [isQuietRoute]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
@@ -86,7 +101,7 @@ export function InstallPrompt() {
   };
 
   // Don't render if dismissed or already installed
-  if (dismissed || isStandalone()) {
+  if (dismissed || isStandalone() || isQuietRoute) {
     return null;
   }
 

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { APP_INFO } from '@/lib/appInfo';
+import { useIsMobile } from '@shared/hooks/use-mobile';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -28,6 +29,7 @@ function renderMarkdown(text: string) {
 }
 
 export function SupportChatWidget() {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([GREETING]);
   const [input, setInput] = useState('');
@@ -41,6 +43,10 @@ export function SupportChatWidget() {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [open, messages]);
+
+  if (isMobile) {
+    return null;
+  }
 
   const send = async () => {
     const text = input.trim();

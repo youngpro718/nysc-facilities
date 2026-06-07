@@ -541,3 +541,32 @@
 /* Animated glow utility classes */
 .animate-yellow-glow { animation: yellow-glow 2.2s ease-in-out infinite; }
 .animate-purple-glow { animation: purple-glow 2.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .animate-spin,
+  .animate-scale-in,
+  .animate-slide-in-up,
+  .animate-slide-out-down,
+  .animate-red-glow,
+  .animate-blue-glow,
+  .animate-yellow-glow,
+  .animate-purple-glow,
+  .animate-pulse,
+  .animate-bounce {
+    animation: none !important;
+  }
+
+  .transition-all,
+  .transition-colors,
+  .transition-opacity,
+  .transition-transform,
+  .transition-shadow {
+    transition-duration: 0.01ms !important;
+  }
+}

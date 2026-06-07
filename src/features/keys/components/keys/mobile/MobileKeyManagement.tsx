@@ -215,11 +215,13 @@ export function MobileKeyManagement() {
       <div className="px-4 pt-2 pb-3 space-y-4">
         <MobileKeyHeader />
         <MobileKeySearch value={query} onChange={setQuery} />
-        <MobileKeyStatusChips
-          active={statusFilter}
-          onChange={setStatusFilter}
-          counts={counts}
-        />
+        <div data-tour="keys-tabs">
+          <MobileKeyStatusChips
+            active={statusFilter}
+            onChange={setStatusFilter}
+            counts={counts}
+          />
+        </div>
       </div>
 
       {boxes.length > 0 && (

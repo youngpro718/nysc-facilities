@@ -1,0 +1,84 @@
+/* ── Login Page Background Effects ──
+   Decorative animated gradient orbs and glow.
+   Respects prefers-reduced-motion. */
+
+.login-bg {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0c1929 70%, #0f172a 100%);
+}
+
+/* Subtle animated gradient orbs */
+.login-bg::before,
+.login-bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.login-bg::before {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, #1e40af 0%, transparent 70%);
+  top: -20%;
+  right: -10%;
+  animation: login-orb-1 20s ease-in-out infinite;
+}
+
+.login-bg::after {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #3730a3 0%, transparent 70%);
+  bottom: -15%;
+  left: -10%;
+  animation: login-orb-2 25s ease-in-out infinite;
+}
+
+/* Radial center glow behind the card */
+.login-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 700px;
+  height: 500px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgba(30, 64, 175, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Glass card effect */
+.login-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Orb animations */
+@keyframes login-orb-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30px, 40px) scale(1.05); }
+  66% { transform: translate(20px, -20px) scale(0.95); }
+}
+
+@keyframes login-orb-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.08); }
+  66% { transform: translate(-20px, 20px) scale(0.92); }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .login-bg::before,
+  .login-bg::after {
+    animation: none !important;
+  }
+}

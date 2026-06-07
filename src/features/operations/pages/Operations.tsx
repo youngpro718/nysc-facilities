@@ -49,7 +49,6 @@ import { useAuth } from "@features/auth/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Operations() {
@@ -165,7 +164,7 @@ export default function Operations() {
 
   // React to `tab` query param changes
   useEffect(() => {
-    if (tabParam && ['overview', 'issues', 'maintenance'].includes(tabParam)) {
+    if (tabParam && ['overview', 'issues', 'maintenance', 'lighting'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -277,8 +276,6 @@ export default function Operations() {
     <div className="flex flex-col">
 
       <div className="space-y-6 sm:space-y-8">
-
-      <Breadcrumb />
 
       <PageHeader
         title="Facility Operations"

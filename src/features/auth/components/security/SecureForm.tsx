@@ -116,9 +116,14 @@ export function SecureForm({
     }
   }, [email, password, validateForm, onSubmit, logSecurityEvent, isRateLimited, sanitizeInput]);
   return <div className="max-w-md mx-auto p-0">
-      <div className="flex items-center gap-2 mb-4">
-        <Shield className="h-5 w-5 text-primary" />
-        <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+      <div className="mb-4 space-y-1">
+        <div className="flex items-center gap-2">
+          <Shield className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+        </div>
+        {title.toLowerCase().includes('sign in') && (
+          <p className="text-sm text-muted-foreground">Sign in to continue</p>
+        )}
       </div>
 
       {errors.length > 0 && <Alert variant="destructive" className="mb-4">

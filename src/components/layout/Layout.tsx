@@ -1,5 +1,9 @@
 // Layout component — app shell with sidebar navigation, header, and floating controls
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { getRouteConfig } from "@/config/routes";
+import { Breadcrumb } from "./Breadcrumb";
+import { PageTransition } from "./PageTransition";
+import { AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@features/auth/hooks/useAuth";
@@ -99,12 +103,16 @@ function LayoutContent() {
     // Outside SidebarProvider (login page) — default to expanded
   }
 
-  // Derive page title from current path
+  // Derive page title from route config, falling back to path-based generation
   const getPageTitle = () => {
     const path = location.pathname;
+    const routeConfig = getRouteConfig(path);
+    if (routeConfig?.title) return routeConfig.title;
+    // Fallback: generate from path segments
     if (path === '/') return 'Dashboard';
-    const segment = path.split('/').filter(Boolean)[0] || '';
-    return segment
+    const segments = path.split('/').filter(Boolean);
+    const lastSegment = segments[segments.length - 1] || '';
+    return lastSegment
       .replace(/-/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
@@ -242,9 +250,14 @@ function LayoutContent() {
           />
         )}
 
-        <main className="flex-1 pb-28 md:pb-0 safe-area-bottom mobile-main-padding">
+        <main className="flex-1 pb-40 md:pb-0 safe-area-bottom mobile-main-padding">
           <div className="px-2 sm:px-4 lg:px-8 py-2 sm:py-6">
-            <Outlet />
+            <Breadcrumb className="mb-2 hidden md:block" />
+            <AnimatePresence mode="wait">
+              <PageTransition key={location.pathname}>
+                <Outlet />
+              </PageTransition>
+            </AnimatePresence>
           </div>
         </main>
 

@@ -1,8 +1,9 @@
 
 import { useNavigate } from "react-router-dom";
-import { Building2, Layers, DoorClosed, Activity, AlertTriangle, ArrowRight, type LucideIcon } from "lucide-react";
+import { Layers, DoorClosed, Activity, AlertTriangle, ArrowRight, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import type { BuildingWithLighting } from "@/utils/dashboardUtils";
 
 interface IssueLike {
@@ -36,7 +37,8 @@ interface BuildingCardProps {
   totalFixtures: number;
   buildingIssues: IssueLike[];
   buildingActivities: ActivityLike[];
-  onMarkAsSeen: (issueId: string) => void;
+  _onMarkAsSeen: (issueId: string) => void;
+  index?: number;
 }
 
 export const BuildingCard = ({
@@ -47,7 +49,8 @@ export const BuildingCard = ({
   workingFixtures,
   totalFixtures,
   buildingIssues,
-  onMarkAsSeen,
+  _onMarkAsSeen,
+  index = 0,
 }: BuildingCardProps) => {
   const navigate = useNavigate();
   const isOperational = building?.status === "active";
@@ -59,7 +62,10 @@ export const BuildingCard = ({
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.05, ease: [0.215, 0.61, 0.355, 1] }}
       className={cn(
         "rounded-xl border border-border bg-card overflow-hidden cursor-pointer",
         "transition-all duration-150 ease-in-out",
@@ -73,6 +79,8 @@ export const BuildingCard = ({
         <img
           src={buildingImage}
           alt={building?.name}
+          loading="lazy"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -126,7 +134,7 @@ export const BuildingCard = ({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

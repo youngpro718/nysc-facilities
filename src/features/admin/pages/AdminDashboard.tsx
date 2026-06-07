@@ -8,6 +8,7 @@ import { Building2 } from "lucide-react";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { LoadingSkeleton } from "@shared/components/common/common/LoadingSkeleton";
+import type { BuildingWithLighting } from "@/utils/dashboardUtils";
 
 const AdminDashboard = () => {
   const {
@@ -39,7 +40,7 @@ const AdminDashboard = () => {
     );
   }
 
-  const buildingList = (buildings as unknown[]) ?? [];
+  const buildingList = (buildings ?? []) as BuildingWithLighting[];
   const hasBuildings = buildingList.length > 0;
 
   const content = (
@@ -53,7 +54,7 @@ const AdminDashboard = () => {
 
       {hasBuildings ? (
         <BuildingsGrid
-          buildings={buildings as never}
+          buildings={buildingList}
           isLoading={buildingsLoading}
           issues={issues}
           activities={activities}

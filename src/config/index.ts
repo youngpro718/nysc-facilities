@@ -1,10 +1,21 @@
 // ============================================================================
 // API & SUPABASE
 // ============================================================================
+function requireEnv(name: string): string {
+  const value = import.meta.env[name] as string | undefined;
+  if (!value) {
+    throw new Error(
+      `Missing required environment variable: ${name}. ` +
+      `Copy .env.production.example to .env.local and fill in your Supabase credentials.`
+    );
+  }
+  return value;
+}
+
 export const API_CONFIG = {
   supabase: {
-    url: (import.meta.env.VITE_SUPABASE_URL as string) || 'https://fmymhtuiqzhupjyopfvi.supabase.co',
-    anonKey: (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE',
+    url: requireEnv('VITE_SUPABASE_URL'),
+    anonKey: requireEnv('VITE_SUPABASE_ANON_KEY'),
   },
 } as const;
 
