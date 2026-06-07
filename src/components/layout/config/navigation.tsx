@@ -370,18 +370,21 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
 
 // Function to get filtered navigation items based on role permissions
 export function getFilteredNavigationItems(permissions: RolePermissions, userRole: CourtRole): NavigationItem[] {
+  const isAdminTier = userRole === 'admin' || userRole === 'system_admin' || userRole === 'facilities_manager';
+
   return navigationItems.filter(item => {
-    // Always show dashboard
-    if (item.href === '/' || item.href === '/dashboard') return true;
-    
+    // Dashboard routing: admin-tier sees only '/', everyone else only '/dashboard'
+    if (item.href === '/') return isAdminTier;
+    if (item.href === '/dashboard') return !isAdminTier;
+
     // Check role permissions for feature-based items
     if (item.moduleKey && item.moduleKey in permissions) {
       return permissions[item.moduleKey as keyof RolePermissions] !== null;
     }
-    
+
     // For non-module items, use existing admin logic
-    if (item.adminOnly && userRole !== 'admin' && userRole !== 'system_admin' && userRole !== 'facilities_manager') return false;
-    
+    if (item.adminOnly && !isAdminTier) return false;
+
     return true;
   });
 }
