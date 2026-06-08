@@ -1,61 +1,59 @@
-# Faster Court-Officer Onboarding
+## Goal
 
-Goal: a court officer with a trusted email goes from "Create account" → email click → working app in under 60 seconds, with zero duplicate data entry.
+Finish the seamless onboarding for court officers (apply the pending DB migration) and rework the Court Officer dashboard so it surfaces what an officer actually needs day-to-day.
 
-## What changes (plain English)
+## Part 1 — Apply onboarding migration (already drafted, awaiting approval)
 
-1. **Auto-approve trusted email domains.** When someone signs up with an approved court email domain (e.g. `@nycourts.gov`, `@nycourts.gov.in`, configurable), their account is marked verified immediately on email confirmation — no admin wait. Admins still get a notification with a one-click "Revoke" action.
-2. **Everyone else still waits for admin.** The pending-approval page stays the same for unknown domains.
-3. **Drop the redundant profile page.** Signup already collects first/last/title/role, so the standalone profile step disappears for users who completed signup. (Guard still redirects there only for legacy accounts missing data.)
-4. **Skip the in-app tour by default.** First login goes straight to the dashboard. The tour moves to the Help menu as "Take the tour", and we surface a single inline "New here? Tour the app" link on the dashboard for 7 days.
-5. **Tighten the signup form copy.** Role step says "Court officers from approved emails get in instantly" so the user knows what to expect.
-6. **Faster guard.** `OnboardingGuard` already fans out in parallel; we'll trim the redundant `getSession` call after `getUser` and short-circuit the role lookup when the profile says verified.
+Run the previously prepared migration:
+- `trusted_email_domains` table (admin-managed, authenticated read) seeded with `nycourts.gov → court_officer`.
+- `handle_trusted_signup(p_user_id)` security-definer function: on email verification, if the email's domain matches and the requested role matches `auto_role`, set `verification_status='verified'`, `is_approved=true`, insert into `user_roles`, and write an `admin_notifications` row (`auto_approved_signup`).
+- `on_auth_user_email_confirmed` trigger on `auth.users` that fires when `email_confirmed_at` transitions from null.
 
-## Resulting flow for a court officer
+Net effect: a `@nycourts.gov` signup who picks "Court Officer" lands on the dashboard the moment they click the verify link — no admin wait, admins still get notified.
 
-```text
-Signup (3 quick steps, ~20s)
-   ↓
-Email verification link
-   ↓
-Trusted domain? ──yes──> Dashboard (auto-approved, admin notified)
-   ↓ no
-Pending approval screen ──> admin approves ──> Dashboard
-```
+## Part 2 — Court Officer dashboard upgrade
 
-## Technical details
+File: `src/features/court/pages/CourtOfficerDashboard.tsx`
 
-### Database
-- New table `trusted_email_domains` (`domain text pk`, `auto_role app_role`, `created_by`, `created_at`). Seed with `nycourts.gov` mapped to `court_officer`. Admin-only RLS + grants.
-- New SECURITY DEFINER function `public.handle_trusted_signup(p_user_id uuid)`:
-  - Looks up the user's email domain.
-  - If it matches `trusted_email_domains` and the user's `requested_role` matches the domain's `auto_role`, sets `profiles.verification_status = 'verified'`, `is_approved = true`, inserts into `user_roles`, and writes an `admin_notifications` row with type `auto_approved_signup`.
-- Trigger `on_auth_user_confirmed` on `auth.users` (AFTER UPDATE of `email_confirmed_at`) calls `handle_trusted_signup` so approval happens the instant the verification link is clicked.
+Today it shows: 3 key stat cards, active key assignments, pending key requests alert, Quick Actions (Keys / Spaces / Term Sheet), and Term Sheet preview. That's a good base but it under-uses the officer's actual scope (Keys + Spaces + Term Sheet + reporting issues).
 
-### Frontend
-- `OnboardingGuard.tsx`: remove the secondary `getSession` call (use the user from `getUser`); skip the role query when `profile.verification_status === 'verified'` and the only remaining check is MFA (still disabled).
-- `App.tsx`: keep `/onboarding/profile` route for legacy accounts but stop linking to it from signup flows. Update `SimpleSignupForm.handleSubmit` success path: route trusted-domain users to `/` instead of `/verification-pending` once their email is verified; everyone else still goes to `/verification-pending`.
-- `VerifyEmail.tsx`: after confirming the token, re-fetch profile; if `verification_status === 'verified'`, navigate straight to `/`.
-- `SimpleSignupForm.tsx`: small copy tweak on step 3 ("Court officers from approved emails get in instantly. Others wait for admin review.").
-- `Layout.tsx`: change `showOnboarding` default to `false` for new users; expose `startOnboarding()` from the help menu and add a dismissible "Take the tour" banner on the dashboard for accounts <7 days old.
+Add / change:
 
-### Admin notification
-- `admin_notifications.type = 'auto_approved_signup'` rendered in the existing admin bell with actions "View profile" and "Revoke access" (calls existing `set_user_approval_status` RPC with `'rejected'`).
+1. **Stat strip → 4 cards** (mobile: 2x2, desktop: 4 across)
+   - Total Keys, Checked Out, Available *(kept)*
+   - **Pending Key Requests** (new) — replaces the standalone alert below; tap → `/admin/key-requests`. Variant warning when > 0.
 
-### Files touched
-- New migration: `db/migrations/066_trusted_email_domains.sql`
-- `src/routes/OnboardingGuard.tsx`
-- `src/features/auth/components/auth/SimpleSignupForm.tsx`
-- `src/features/auth/pages/auth/VerifyEmail.tsx`
-- `src/components/layout/Layout.tsx`
-- `src/features/admin/services/adminNotifications.ts` (render new type)
-- `src/features/help/components/...` (add "Take the tour" entry)
+2. **My Reported Issues card** (new, left column under key assignments)
+   - Pulls last 5 issues where `reported_by = user.id` and `status != 'resolved'`.
+   - Shows title, room, status pill, age.
+   - Header action "Report issue" → `/my-issues` (matches existing pattern).
+   - Empty state: "No open issues you've reported."
 
-## Out of scope
-- Changing the role taxonomy or what court officers can access (Keys/Spaces/Term Sheet stays).
-- Email template restyling.
-- MFA enforcement (still commented out in the guard).
+3. **Today's Key Activity** (new, compact strip above active assignments)
+   - Counts from `key_assignments` for today: checked out today, returned today.
+   - Gives officers a quick "what changed on my shift" read.
 
-## Open follow-ups after build
-- Admin UI to add/remove trusted domains (small settings page) — can ship in a follow-up.
-- Analytics event "signup_to_first_action" so we can measure the speedup.
+4. **Recently Returned Keys** (new tab/section toggle on the Active Assignments card)
+   - Same card gets a small `Active | Recent Returns` toggle. Recent = `returned_at` in last 24h, limit 5. Useful for verifying turn-ins.
+
+5. **Quick Actions** — add a fourth action:
+   - **Report an Issue** → `/my-issues` (officers are on the floor; quick-report is high-value).
+   - Keep Keys, Building Layout, Term Sheet.
+
+6. **Keep** the Term Sheet preview in the right column.
+
+7. **Drop** the standalone Pending Key Requests alert card (folded into the stat strip).
+
+### Technical notes
+- All new queries use the existing `supabase` client and `QUERY_CONFIG.refetch.realtime`.
+- Status pills use existing `text-foreground` + `hsl(var(--status-*))` tokens already in the file — no new color classes.
+- Toggle uses local `useState<'active' | 'recent'>` — no new dependencies.
+- Issues query selects: `id, title, status, created_at, rooms:room_id (room_number)` filtered by `reported_by = user.id`.
+- Today's key activity uses two `count: 'exact', head: true` queries with `gte('assigned_at', startOfDay)` and `gte('returned_at', startOfDay)`.
+- Layout stays `grid-cols-1 lg:grid-cols-5` (3 + 2); mobile order unchanged.
+
+## Out of scope (will follow up if you want)
+
+- Admin UI for managing `trusted_email_domains`.
+- Lighting/maintenance widgets — court officers don't own those.
+- Signup-to-first-action analytics.
