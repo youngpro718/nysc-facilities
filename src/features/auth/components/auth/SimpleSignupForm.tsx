@@ -252,7 +252,9 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
           <div className="space-y-4">
             <div className="space-y-1">
               <h3 className="text-base font-semibold">What's your role?</h3>
-              <p className="text-xs text-muted-foreground">An admin will confirm this before you can sign in.</p>
+              <p className="text-xs text-muted-foreground">
+                Court officers signing up with an approved court email get in instantly. Other roles wait for a quick admin review.
+              </p>
             </div>
             <div className="space-y-2">
               {SIGNUP_ROLE_OPTIONS.map((role) => (
