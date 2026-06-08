@@ -15,7 +15,7 @@ export function useOnboarding() {
       return;
     }
 
-    // Admins bypass onboarding wizard - they get immediate access
+    // Admins bypass entirely
     if (profile?.access_level === 'admin' || profile?.role === 'admin' || profile?.role === 'system_admin' || profile?.role === 'facilities_manager') {
       logger.debug('[useOnboarding] Admin user detected, bypassing onboarding wizard');
       setShowOnboarding(false);
@@ -23,36 +23,30 @@ export function useOnboarding() {
       return;
     }
 
-    // Only show onboarding for verified & approved users
-    if (profile?.verification_status !== 'verified') {
-      logger.debug('[useOnboarding] User not verified, blocking onboarding');
-      setShowOnboarding(false);
-      return;
-    }
+    // Tour is now opt-in: it never auto-shows on first login.
+    // Users launch it on demand via the "Take the tour" entry in Help.
+    setShowOnboarding(false);
 
-    // Check if onboarding was already completed or skipped (DB is source of truth)
     const hasCompletedInDb = profile?.onboarding_completed || profile?.onboarding_skipped;
-    // Fallback to localStorage for backward compatibility
     const hasCompletedInLocalStorage = localStorage.getItem(`onboarding-${onboardingId}`);
-
-    if (hasCompletedInDb || hasCompletedInLocalStorage) {
-      logger.debug('[useOnboarding] Onboarding already completed/skipped');
-      setShowOnboarding(false);
-      setOnboardingComplete(true);
-    } else {
-      // Verified user who hasn't completed onboarding — show wizard
-      logger.debug('[useOnboarding] Showing onboarding wizard for verified user');
-      setShowOnboarding(true);
-      setOnboardingComplete(false);
-    }
+    setOnboardingComplete(Boolean(hasCompletedInDb || hasCompletedInLocalStorage));
   }, [onboardingId, profile?.verification_status, profile?.onboarding_completed, profile?.onboarding_skipped, profile?.access_level, profile?.role]);
+
+  // Other parts of the app launch the tour on demand via a window event.
+  useEffect(() => {
+    const handler = () => setShowOnboarding(true);
+    window.addEventListener('start-onboarding-tour', handler);
+    return () => window.removeEventListener('start-onboarding-tour', handler);
+  }, []);
+
+  const startOnboarding = () => setShowOnboarding(true);
 
   const completeOnboarding = async () => {
     if (onboardingId) {
       try {
         await supabase
           .from('profiles')
-          .update({ 
+          .update({
             onboarding_completed: true,
             onboarding_completed_at: new Date().toISOString()
           })
@@ -62,7 +56,6 @@ export function useOnboarding() {
       }
       localStorage.setItem(`onboarding-${onboardingId}`, 'completed');
     }
-    // Clean up legacy localStorage flags
     try {
       localStorage.removeItem('ONBOARD_AFTER_SIGNUP');
       localStorage.removeItem('ONBOARD_AFTER_SIGNUP_EMAIL');
@@ -76,7 +69,7 @@ export function useOnboarding() {
       try {
         await supabase
           .from('profiles')
-          .update({ 
+          .update({
             onboarding_skipped: true,
             onboarding_completed_at: new Date().toISOString()
           })
@@ -97,6 +90,7 @@ export function useOnboarding() {
   return {
     showOnboarding,
     onboardingComplete,
+    startOnboarding,
     completeOnboarding,
     skipOnboarding
   };
