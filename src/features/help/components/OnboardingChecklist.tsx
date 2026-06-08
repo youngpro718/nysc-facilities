@@ -91,6 +91,18 @@ export function OnboardingChecklist() {
             </div>
           ))}
         </div>
+        <div className="mt-4 pt-4 border-t flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Want a quick walkthrough of the app?
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => window.dispatchEvent(new Event('start-onboarding-tour'))}
+          >
+            Take the tour
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
