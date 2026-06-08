@@ -37,7 +37,9 @@ export default function VerifyEmail() {
           title: 'Email Verified',
           description: 'Your email has been verified successfully.',
         });
-        setTimeout(() => navigate('/dashboard', { replace: true }), TIMEOUTS.verificationRedirect);
+        // Send to root — OnboardingGuard will route auto-approved users straight to
+        // the dashboard, or to the pending-approval page if they still need review.
+        setTimeout(() => navigate('/', { replace: true }), TIMEOUTS.verificationRedirect);
       }
     } catch (error) {
       logger.error('[VerifyEmail] Check failed:', error);
