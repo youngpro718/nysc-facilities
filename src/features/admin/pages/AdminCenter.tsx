@@ -89,19 +89,6 @@ function SystemSettingsContent() {
         </CardContent>
       </Card>
 
-      {/* Database Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Database Management</CardTitle>
-          <CardDescription>
-            Export data, create backups, and manage database operations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DatabaseSection />
-        </CardContent>
-      </Card>
-    </div>
   );
 }
 
