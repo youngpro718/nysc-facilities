@@ -88,7 +88,7 @@ function SystemSettingsContent() {
           <ModuleManagement />
         </CardContent>
       </Card>
-
+    </div>
   );
 }
 
