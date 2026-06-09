@@ -1,59 +1,91 @@
+
 ## Goal
 
-Finish the seamless onboarding for court officers (apply the pending DB migration) and rework the Court Officer dashboard so it surfaces what an officer actually needs day-to-day.
+Make signup → first useful screen take as few taps as possible, remove "personalization" fluff that doesn't serve the corporate use case, and make sure every role's dashboard shows only what that role actually needs. Ship something we can hand to real users this week.
 
-## Part 1 — Apply onboarding migration (already drafted, awaiting approval)
+## Direction check (what I'd change vs. keep)
 
-Run the previously prepared migration:
-- `trusted_email_domains` table (admin-managed, authenticated read) seeded with `nycourts.gov → court_officer`.
-- `handle_trusted_signup(p_user_id)` security-definer function: on email verification, if the email's domain matches and the requested role matches `auto_role`, set `verification_status='verified'`, `is_approved=true`, insert into `user_roles`, and write an `admin_notifications` row (`auto_approved_signup`).
-- `on_auth_user_email_confirmed` trigger on `auth.users` that fires when `email_confirmed_at` transitions from null.
+**Keep**
+- Email/password + admin approval gate. That's the contract with the courts.
+- Auto-approval for `@nycourts.gov` court officers (already in place).
+- Per-role dashboards driven by `roleDashboardConfig.ts` — that pattern is right.
 
-Net effect: a `@nycourts.gov` signup who picks "Court Officer" lands on the dashboard the moment they click the verify link — no admin wait, admins still get notified.
+**Drop**
+- The 4-step post-verification "Onboarding Wizard" (Welcome → Profile → Features → Complete). It's the main reason signup feels slow.
+- The `ProfileStep` that asks for department/title/phone *again* after signup already collected name + title.
+- The `OnboardingChecklist` auto-popup on dashboards. Tour stays opt-in from Help only.
+- "Tell us about yourself" tone, emoji role icons, "This appears on your profile and activity feed" copy. Replace with neutral corporate phrasing.
 
-## Part 2 — Court Officer dashboard upgrade
+## Part 1 — Signup: 3 steps → 2 steps
 
-File: `src/features/court/pages/CourtOfficerDashboard.tsx`
+`src/features/auth/components/auth/SimpleSignupForm.tsx`
 
-Today it shows: 3 key stat cards, active key assignments, pending key requests alert, Quick Actions (Keys / Spaces / Term Sheet), and Term Sheet preview. That's a good base but it under-uses the officer's actual scope (Keys + Spaces + Term Sheet + reporting issues).
+- **Step 1 — Account**: work email + password (unchanged).
+- **Step 2 — Identity + Role** (merged): First name, Last name, Role selector. Drop the optional Job Title field — title isn't used for routing (roles are admin-assigned) and just adds a field to skip. Drop emoji icons on role cards; use small lucide icons that match the rest of the app.
+- Copy changes: "Create your account" / "Your details" / no "This appears on your profile" line.
+- Button label on submit: "Create account" (not "Request access").
 
-Add / change:
+Net: one fewer screen, one fewer field, more corporate tone.
 
-1. **Stat strip → 4 cards** (mobile: 2x2, desktop: 4 across)
-   - Total Keys, Checked Out, Available *(kept)*
-   - **Pending Key Requests** (new) — replaces the standalone alert below; tap → `/admin/key-requests`. Variant warning when > 0.
+## Part 2 — Kill the post-verification wizard
 
-2. **My Reported Issues card** (new, left column under key assignments)
-   - Pulls last 5 issues where `reported_by = user.id` and `status != 'resolved'`.
-   - Shows title, room, status pill, age.
-   - Header action "Report issue" → `/my-issues` (matches existing pattern).
-   - Empty state: "No open issues you've reported."
+- Remove the `OnboardingWizard` mount from wherever it auto-launches for new users. Verified users land **directly** on their role dashboard via `OnboardingGuard` + `getDashboardForRole`.
+- Keep `OnboardingWizard.tsx` + steps on disk **only** if "Take the tour" in Help still launches it; otherwise delete the wizard + `ProfileStep`/`WelcomeStep`/`FeaturesStep`/`CompleteStep` files. I'll confirm during implementation and remove what's dead.
+- `useOnboarding` already no longer auto-shows the tour, but it still reads/writes `onboarding_completed`/`onboarding_skipped`. Simplify it to: expose `startOnboarding` (manual launch) and nothing else. Remove the localStorage `ONBOARD_AFTER_SIGNUP*` bookkeeping that no longer has a consumer.
+- Remove `OnboardingChecklist` from dashboards (or hide it behind an explicit Help action). It's classic SaaS "personalization" the user said they don't want.
 
-3. **Today's Key Activity** (new, compact strip above active assignments)
-   - Counts from `key_assignments` for today: checked out today, returned today.
-   - Gives officers a quick "what changed on my shift" read.
+## Part 3 — Profile page: remove personalization fluff
 
-4. **Recently Returned Keys** (new tab/section toggle on the Active Assignments card)
-   - Same card gets a small `Active | Recent Returns` toggle. Recent = `returned_at` in last 24h, limit 5. Useful for verifying turn-ins.
+`src/features/profile/pages/Profile.tsx` + `profileSchema.ts`
 
-5. **Quick Actions** — add a fourth action:
-   - **Report an Issue** → `/my-issues` (officers are on the floor; quick-report is high-value).
-   - Keep Keys, Building Layout, Term Sheet.
+Keep only what the org actually needs:
+- Name, work email (read-only), phone, department, title, avatar.
 
-6. **Keep** the Term Sheet preview in the right column.
+Remove from the profile UI:
+- Bio / "about you" textarea.
+- Language picker, time zone picker (single-org, one timezone — server-side default is fine).
+- Emergency contact block (HR concern, not facilities-app concern).
+- Any "preferences" / "customize dashboard" surface (`DashboardCustomizationProvider` UI entry points). The provider can stay for admins; just don't expose the customize UI to standard/court roles.
 
-7. **Drop** the standalone Pending Key Requests alert card (folded into the stat strip).
+DB columns stay — we're just hiding them from the UI so we don't have to migrate anything.
 
-### Technical notes
-- All new queries use the existing `supabase` client and `QUERY_CONFIG.refetch.realtime`.
-- Status pills use existing `text-foreground` + `hsl(var(--status-*))` tokens already in the file — no new color classes.
-- Toggle uses local `useState<'active' | 'recent'>` — no new dependencies.
-- Issues query selects: `id, title, status, created_at, rooms:room_id (room_number)` filtered by `reported_by = user.id`.
-- Today's key activity uses two `count: 'exact', head: true` queries with `gte('assigned_at', startOfDay)` and `gte('returned_at', startOfDay)`.
-- Layout stays `grid-cols-1 lg:grid-cols-5` (3 + 2); mobile order unchanged.
+## Part 4 — Per-role dashboard pass
 
-## Out of scope (will follow up if you want)
+Quick audit + fixes against `roleDashboardConfig.ts` and the actual dashboard pages:
 
-- Admin UI for managing `trusted_email_domains`.
-- Lighting/maintenance widgets — court officers don't own those.
-- Signup-to-first-action analytics.
+**court_officer** (`/court-officer-dashboard`)
+- Current: 4 stat cards, Today's Activity, Active/Recent assignment toggle, My Reported Issues, Quick Actions, Term Sheet preview.
+- Verdict: good. One fix — `lockboxStatus` and `activeCourtrooms` stats aren't wired to live data on this page; either wire them or drop them so the strip matches what the page actually shows (Total / Checked Out / Available / Pending Requests).
+
+**court_liaison** (`/term-sheet` as landing)
+- Verdict: landing them directly on Term Sheet is right (it's their job). Verify the Term Sheet page has the "My Issues" + "My Supply Requests" counters from the config visible at the top; if not, add a slim stat strip.
+
+**purchasing** (`/inventory` as landing)
+- Verdict: works. Add a 3-stat header strip (Low Stock / Pending Requests / Reorder Recs) using the existing config so it matches the dashboard contract.
+
+**court_aide** (`/court-aide-dashboard`)
+- Verdict: keep. Confirm the 4 stats (Available Tasks / My Active / Supply Requests / Low Stock) all bind to real queries — drop any that are stubbed.
+
+**standard** (`/dashboard`)
+- This is everyone without a specialized role. Strip to: My Issues, My Supply Requests, Report an Issue, Request Supplies. Remove generic "BuildingsGrid", building activities, KPI strips — none of that is useful to a standard user.
+
+**admin / facilities_manager / system_admin** (`/`)
+- Out of scope for this pass. Already dense; we'll tune separately if needed.
+
+## Part 5 — Verify the speed claim
+
+After the changes, measure: signup form submit → dashboard render. Target: ≤ 3 screens total (Account → Details+Role → email-verify wait → dashboard). For trusted-domain officers: 3 screens (no wizard, no checklist, no profile prompt).
+
+## Out of scope
+
+- Changing the admin approval flow itself.
+- Touching the admin dashboards.
+- Removing DB columns for the dropped profile fields (UI hide only).
+- Email-template / branding changes.
+
+## Technical notes
+
+- Files likely edited: `SimpleSignupForm.tsx`, `useOnboarding.ts`, `Profile.tsx`, `profileSchema.ts`, `CourtOfficerDashboard.tsx`, `RoleDashboard.tsx` (for liaison/purchasing strip), `UserDashboard.tsx`, dashboard pages that mount `OnboardingChecklist`.
+- Files likely deleted: `OnboardingWizard.tsx`, `steps/ProfileStep.tsx`, `steps/WelcomeStep.tsx`, `steps/FeaturesStep.tsx`, `steps/CompleteStep.tsx`, `OnboardingChecklist.tsx` (if no remaining consumer).
+- No DB migration required.
+- No new dependencies.
