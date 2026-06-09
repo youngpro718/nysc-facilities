@@ -1,11 +1,8 @@
-
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { useProfileForm } from "./hooks/useProfileForm";
 import { BasicInfoFields } from "./form-sections/BasicInfoFields";
 import { WorkInfoFields } from "./form-sections/WorkInfoFields";
-import { PreferencesFields } from "./form-sections/PreferencesFields";
-import { EmergencyContactFields } from "./form-sections/EmergencyContactFields";
 
 export function PersonalInfoForm() {
   const { form, isLoading, onSubmit } = useProfileForm();
@@ -15,11 +12,9 @@ export function PersonalInfoForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <BasicInfoFields form={form} />
         <WorkInfoFields form={form} />
-        <PreferencesFields form={form} />
-        <EmergencyContactFields form={form} />
-        
-        <Button 
-          type="submit" 
+
+        <Button
+          type="submit"
           disabled={isLoading}
           className="w-full sm:w-auto h-11 touch-manipulation active:scale-[0.98]"
         >

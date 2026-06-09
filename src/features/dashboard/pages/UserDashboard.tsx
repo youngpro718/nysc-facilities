@@ -17,7 +17,7 @@ import { CompactHeader } from "@shared/components/user/CompactHeader";
 import { PickupAlertBanner } from "@shared/components/user/PickupAlertBanner";
 import { CompactActivitySection } from "@shared/components/user/CompactActivitySection";
 import { KeyRequestDialog } from "@features/supply/components/requests/KeyRequestDialog";
-import { OnboardingHintStrip } from "@features/dashboard/components/dashboard/OnboardingHintStrip";
+
 import { Package, Send, Key, ChevronRight } from "lucide-react";
 
 export default function UserDashboard() {
@@ -119,8 +119,6 @@ export default function UserDashboard() {
           </div>
         </div>
 
-        {/* First-time-user hint strip (dismissible) */}
-        <OnboardingHintStrip />
 
         {/* Pickup Alert */}
         <PickupAlertBanner count={readyForPickup} onClick={() => navigate("/my-activity")} />

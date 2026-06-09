@@ -18,8 +18,6 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@features/admin/components/admin/NotificationBox";
 import { RefreshCw, Search } from "lucide-react";
 import { GlobalSearchPalette } from "./components/GlobalSearchPalette";
-import { useOnboarding } from "@features/auth/hooks/useOnboarding";
-import { OnboardingWizard } from "@features/auth/components/onboarding/OnboardingWizard";
 import { Button } from "@/components/ui/button";
 import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
@@ -52,7 +50,6 @@ function LayoutContent() {
   }, []);
   const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
   const { permissions, userRole, profile, loading: permissionsLoading, permissionError, refetch } = useRolePermissions();
-  const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
   const navReady = !!userRole && !permissionsLoading;
   const navigation = navReady
@@ -239,15 +236,6 @@ function LayoutContent() {
               </div>
             </div>
           </header>
-        )}
-
-        {/* Global Onboarding Wizard */}
-        {isAuthenticated && !isLoginPage && showOnboarding && (
-          <OnboardingWizard
-            onComplete={completeOnboarding}
-            onSkip={skipOnboarding}
-            userRole={userRole}
-          />
         )}
 
         <main className="flex-1 pb-40 md:pb-0 safe-area-bottom mobile-main-padding">
