@@ -30,7 +30,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRateLimitManager } from "@features/auth/hooks/useRateLimitManager";
-import { DatabaseSection } from "@features/profile/components/profile/DatabaseSection";
 import { ModuleManagement } from "@features/profile/components/profile/ModuleManagement";
 import { VerificationAppeals } from "@features/admin/components/VerificationAppeals";
 import { QrCode } from "lucide-react";
@@ -87,19 +86,6 @@ function SystemSettingsContent() {
         </CardHeader>
         <CardContent>
           <ModuleManagement />
-        </CardContent>
-      </Card>
-
-      {/* Database Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Database Management</CardTitle>
-          <CardDescription>
-            Export data, create backups, and manage database operations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DatabaseSection />
         </CardContent>
       </Card>
     </div>

@@ -25,12 +25,6 @@ const MODULE_CONFIG = [
     icon: Building2,
   },
   {
-    key: 'operations' as const,
-    title: 'Operations',
-    description: 'Consolidated Issues, Maintenance, and Supply Requests',
-    icon: AlertTriangle,
-  },
-  {
     key: 'issues' as const,
     title: 'Issues Management',
     description: 'Track and resolve facility issues',
