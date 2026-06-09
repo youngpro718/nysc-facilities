@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTour } from './TourProvider';
 import { allTours } from './tours/tourSteps';
 import { guideSections } from './guides/guideData';
-import { OnboardingChecklist } from '@/features/help/components/OnboardingChecklist';
+
 import { HelpContentViewer } from '@/features/help/components/HelpContentViewer';
 import { useRolePermissions } from '@/features/auth/hooks/useRolePermissions';
 import { getToursForRole } from './tours/roleTourMapping';
@@ -106,7 +106,6 @@ export function HelpCenter() {
         <TabsList>
           <TabsTrigger value="guides">Help Articles</TabsTrigger>
           <TabsTrigger value="tours">Interactive Tours</TabsTrigger>
-          <TabsTrigger value="onboarding">Getting Started</TabsTrigger>
           <TabsTrigger value="faq">FAQ</TabsTrigger>
         </TabsList>
 
@@ -199,24 +198,6 @@ export function HelpCenter() {
           </div>
         </TabsContent>
 
-        {/* Onboarding Checklist Tab */}
-        <TabsContent value="onboarding" className="space-y-6">
-          <OnboardingChecklist />
-          
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="flex items-center gap-4 py-6">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Lightbulb className="h-6 w-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold">Complete your onboarding</h3>
-                <p className="text-sm text-muted-foreground">
-                  Follow the checklist above to get familiar with the system. Each step is designed to help you understand your role and responsibilities.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* FAQ Tab (Legacy hardcoded guides) */}
         <TabsContent value="faq" className="space-y-6">

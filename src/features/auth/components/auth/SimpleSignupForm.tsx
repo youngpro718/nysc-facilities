@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowRight, ArrowLeft, Check, User, Mail, Lock, Briefcase } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, Check, Mail, Lock } from "lucide-react";
 import { useSecureAuth } from "@features/auth/hooks/useSecureAuth";
 import { toast } from "sonner";
 import { SIGNUP_ROLE_OPTIONS } from "@/config/roles";
@@ -16,15 +16,7 @@ interface SimpleSignupFormProps {
   onSuccess?: () => void;
 }
 
-const ROLE_ICONS: Record<string, string> = {
-  standard: "👤",
-  court_aide: "📦",
-  court_officer: "🔑",
-  purchasing: "🛒",
-  court_liaison: "📋",
-};
-
-const STEP_LABELS = ["Account", "Profile", "Role"];
+const STEP_LABELS = ["Account", "Details"];
 
 export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormProps) {
   const { secureSignUp, isLoading } = useSecureAuth();
@@ -39,7 +31,6 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
     password: "",
     firstName: "",
     lastName: "",
-    title: "",
     requestedRole: "",
   });
 
@@ -60,8 +51,13 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
 
   const canAdvance = () => {
     if (step === 0) return formData.email.trim().length > 0 && formData.password.length >= 8;
-    if (step === 1) return formData.firstName.trim().length > 0 && formData.lastName.trim().length > 0;
-    if (step === 2) return !!formData.requestedRole;
+    if (step === 1) {
+      return (
+        formData.firstName.trim().length > 0 &&
+        formData.lastName.trim().length > 0 &&
+        !!formData.requestedRole
+      );
+    }
     return false;
   };
 
@@ -73,16 +69,12 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
       const data = await secureSignUp(formData.email, formData.password, {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
-        title: formData.title.trim() || null,
+        title: null,
         requested_role: formData.requestedRole,
       });
 
       if (data?.user) {
-        try {
-          localStorage.setItem('ONBOARD_AFTER_SIGNUP', 'true');
-          localStorage.setItem('ONBOARD_AFTER_SIGNUP_EMAIL', formData.email);
-        } catch { /* no-op */ }
-        toast.success("Account created! Check your email to verify.");
+        toast.success("Account created. Check your email to verify.");
         setTimeout(() => navigate('/verification-pending'), 0);
         onSuccess?.();
       }
@@ -141,19 +133,17 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
         ))}
       </div>
 
-      {/* Step content */}
       <div className={cn(
         "transition-all duration-200 ease-out",
         animating && direction === 'forward' ? "opacity-0 translate-x-4" :
         animating && direction === 'back' ? "opacity-0 -translate-x-4" :
         "opacity-100 translate-x-0"
       )}>
-
         {step === 0 && (
           <div className="space-y-4">
             <div className="space-y-1">
               <h3 className="text-base font-semibold text-foreground">Create your account</h3>
-              <p className="text-xs text-muted-foreground">You'll use these to sign in.</p>
+              <p className="text-xs text-muted-foreground">Use your work email.</p>
             </div>
             <div className="space-y-3">
               <div className="space-y-1.5">
@@ -165,7 +155,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
                     type="email"
                     value={formData.email}
                     onChange={e => set("email", e.target.value)}
-                    placeholder="you@courts.ny.gov"
+                    placeholder="you@nycourts.gov"
                     className="pl-9"
                     autoFocus
                   />
@@ -200,95 +190,68 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
         {step === 1 && (
           <div className="space-y-4">
             <div className="space-y-1">
-              <h3 className="text-base font-semibold">Tell us about yourself</h3>
-              <p className="text-xs text-muted-foreground">This appears on your profile and activity feed.</p>
-            </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="su-first" className="text-xs font-medium">First name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    <Input
-                      id="su-first"
-                      value={formData.firstName}
-                      onChange={e => set("firstName", e.target.value)}
-                      placeholder="John"
-                      className="pl-9"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="su-last" className="text-xs font-medium">Last name</Label>
-                  <Input
-                    id="su-last"
-                    value={formData.lastName}
-                    onChange={e => set("lastName", e.target.value)}
-                    placeholder="Smith"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="su-title" className="text-xs font-medium">
-                  Job title <span className="text-muted-foreground font-normal">(optional)</span>
-                </Label>
-                <div className="relative">
-                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    id="su-title"
-                    value={formData.title}
-                    onChange={e => set("title", e.target.value)}
-                    placeholder="e.g. Facilities Manager"
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <h3 className="text-base font-semibold">What's your role?</h3>
+              <h3 className="text-base font-semibold">Your details</h3>
               <p className="text-xs text-muted-foreground">
-                Court officers signing up with an approved court email get in instantly. Other roles wait for a quick admin review.
+                Court officers with a <span className="font-medium text-foreground">@nycourts.gov</span> email are approved automatically. Other roles wait for a brief admin review.
               </p>
             </div>
-            <div className="space-y-2">
-              {SIGNUP_ROLE_OPTIONS.map((role) => (
-                <button
-                  key={role.value}
-                  type="button"
-                  onClick={() => set("requestedRole", role.value)}
-                  className={cn(
-                    "w-full flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all duration-150",
-                    formData.requestedRole === role.value
-                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                      : "border-border bg-background hover:border-primary/40 hover:bg-muted/40"
-                  )}
-                >
-                  <span className="text-xl mt-0.5 shrink-0 select-none">{ROLE_ICONS[role.value] ?? "👤"}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-foreground">{role.label}</span>
-                      {formData.requestedRole === role.value && (
-                        <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center shrink-0">
-                          <Check className="h-2.5 w-2.5 text-primary-foreground" />
-                        </div>
-                      )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="su-first" className="text-xs font-medium">First name</Label>
+                <Input
+                  id="su-first"
+                  value={formData.firstName}
+                  onChange={e => set("firstName", e.target.value)}
+                  placeholder="John"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="su-last" className="text-xs font-medium">Last name</Label>
+                <Input
+                  id="su-last"
+                  value={formData.lastName}
+                  onChange={e => set("lastName", e.target.value)}
+                  placeholder="Smith"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Role</Label>
+              <div className="space-y-2">
+                {SIGNUP_ROLE_OPTIONS.map((role) => (
+                  <button
+                    key={role.value}
+                    type="button"
+                    onClick={() => set("requestedRole", role.value)}
+                    className={cn(
+                      "w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-all duration-150",
+                      formData.requestedRole === role.value
+                        ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                        : "border-border bg-background hover:border-primary/40 hover:bg-muted/40"
+                    )}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-foreground">{role.label}</span>
+                        {formData.requestedRole === role.value && (
+                          <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center shrink-0">
+                            <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{role.description}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{role.description}</p>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Navigation buttons */}
       <div className="flex items-center gap-2 pt-1">
         {step > 0 && (
           <Button
@@ -303,7 +266,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
           </Button>
         )}
 
-        {step < 2 ? (
+        {step < STEP_LABELS.length - 1 ? (
           <Button
             type="button"
             size="sm"
@@ -323,7 +286,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
           >
             {isProcessing || isLoading
               ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating account…</>
-              : <>Request access <ArrowRight className="h-4 w-4" /></>
+              : <>Create account <ArrowRight className="h-4 w-4" /></>
             }
           </Button>
         )}
