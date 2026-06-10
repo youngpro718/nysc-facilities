@@ -86,7 +86,7 @@ export default function RoleDashboard() {
       const active = data?.filter(r => r.is_active).length || 0;
       return { total, active };
     },
-    enabled: userRole === 'court_liaison' || userRole === 'court_officer',
+    enabled: userRole === 'court_liaison',
   });
 
   const { data: keyStats } = useQuery({
@@ -97,7 +97,7 @@ export default function RoleDashboard() {
       const checkedOut = data?.filter(k => k.status === 'checked_out').length || 0;
       return { total, checkedOut };
     },
-    enabled: userRole === 'court_officer',
+    enabled: false,
   });
 
   const { data: recentActivity = [] } = useQuery({
@@ -143,11 +143,6 @@ export default function RoleDashboard() {
     inlineStats.push(
       { label: 'Active Courtrooms', value: `${courtroomStats?.active || 0}/${courtroomStats?.total || 0}`, onClick: () => navigate('/term-sheet') },
       { label: 'My Issues', value: myIssues.length, onClick: () => navigate('/my-activity') },
-    );
-  } else if (userRole === 'court_officer') {
-    inlineStats.push(
-      { label: 'Keys Issued', value: keyStats?.total || 0, onClick: () => navigate('/keys') },
-      { label: 'Checked Out', value: keyStats?.checkedOut || 0, onClick: () => navigate('/keys') },
     );
   } else if (userRole === 'purchasing') {
     inlineStats.push(
