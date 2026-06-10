@@ -127,6 +127,35 @@ export function KeyInventorySection() {
     }
   };
 
+  const handleForceDeleteKey = async () => {
+    if (!keyToDelete) return;
+    try {
+      const { error: returnErr } = await supabase
+        .from("key_assignments")
+        .update({ returned_at: new Date().toISOString() })
+        .eq("key_id", keyToDelete.id)
+        .is("returned_at", null);
+      if (returnErr) {
+        toast.error("Could not return assignments: " + getErrorMessage(returnErr));
+        return;
+      }
+      const { error } = await supabase.rpc("safely_delete_key", {
+        key_id_to_delete: keyToDelete.id,
+      });
+      if (error) {
+        toast.error("Error deleting key: " + getErrorMessage(error));
+        return;
+      }
+      toast.success(`Deleted ${keyToDelete.name} and returned all assignments`);
+      refetch();
+    } catch (error) {
+      logger.error("Error force-deleting key:", error);
+      toast.error("Error deleting key: " + (getErrorMessage(error) || "Unknown error"));
+    } finally {
+      setKeyToDelete(null);
+    }
+  };
+
   const handleToggleCaptainOfficeCopy = async (
     keyId: string,
     currentStatus: boolean
@@ -263,6 +292,7 @@ export function KeyInventorySection() {
         keyToDelete={keyToDelete}
         onOpenChange={() => setKeyToDelete(null)}
         onConfirmDelete={handleDeleteKey}
+        onForceDelete={canManage ? handleForceDeleteKey : undefined}
       />
 
       <ImportKeysDialog
