@@ -13,11 +13,18 @@ export default function TermSheet() {
 
   return (
     <div className="space-y-4 pb-20 md:pb-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Criminal Term Sheet</h1>
-        <p className="text-sm text-muted-foreground">
-          Current court assignments and personnel
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Criminal Term Sheet</h1>
+          <p className="text-sm text-muted-foreground">
+            Current court assignments and personnel
+          </p>
+        </div>
+        {!canEdit && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+            Read-only
+          </span>
+        )}
       </div>
 
       <TermSheetBoard isAdmin={canEdit} />

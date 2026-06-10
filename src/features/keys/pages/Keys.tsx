@@ -11,7 +11,7 @@ import { LockboxManagement } from "@features/keys/components/keys/lockbox/Lockbo
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Users, History, KeyRound, Box, Settings, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { KeyData } from "@features/keys/components/keys/types/KeyTypes";
@@ -26,6 +26,15 @@ export default function Keys() {
   const canManageKeys = canAdmin('keys');
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ["lockbox", "inventory", "assignments", "history", "elevator-passes", "manage"];
+  const requestedTab = searchParams.get("tab") ?? "lockbox";
+  const activeTab = validTabs.includes(requestedTab) ? requestedTab : "lockbox";
+  const handleTabChange = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", value);
+    setSearchParams(next, { replace: true });
+  };
 
   const keyStatsQuery = useQuery({
     queryKey: ["keys-stats"],
@@ -85,7 +94,7 @@ export default function Keys() {
         </DataState>
       </div>
 
-      <Tabs defaultValue="lockbox" className="flex-1 min-h-0 flex flex-col mt-4 sm:mt-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 min-h-0 flex flex-col mt-4 sm:mt-6">
         <div className="shrink-0 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
           <TabsList className="inline-flex sm:grid sm:w-full sm:grid-cols-6 bg-muted min-w-max sm:min-w-0 h-10 sm:h-10" data-tour="keys-tabs">
             <TabsTrigger
@@ -93,35 +102,35 @@ export default function Keys() {
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <Box className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline text-sm">Lockbox</span>
+              <span className="text-xs sm:text-sm">Lockbox</span>
             </TabsTrigger>
             <TabsTrigger
               value="inventory"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <Package className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline text-sm">Keys</span>
+              <span className="text-xs sm:text-sm">Keys</span>
             </TabsTrigger>
             <TabsTrigger
               value="assignments"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <Users className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline text-sm">Assign</span>
+              <span className="text-xs sm:text-sm">Assign</span>
             </TabsTrigger>
             <TabsTrigger
               value="history"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <History className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline text-sm">History</span>
+              <span className="text-xs sm:text-sm">History</span>
             </TabsTrigger>
             <TabsTrigger
               value="elevator-passes"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
             >
               <KeyRound className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline text-sm">Passes</span>
+              <span className="text-xs sm:text-sm">Passes</span>
             </TabsTrigger>
             {canManageKeys && (
               <TabsTrigger
@@ -129,7 +138,7 @@ export default function Keys() {
                 className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
               >
                 <Settings className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden sm:inline text-sm">Manage</span>
+                <span className="text-xs sm:text-sm">Manage</span>
               </TabsTrigger>
             )}
           </TabsList>
