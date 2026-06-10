@@ -1,4 +1,5 @@
 
+import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { Layers, DoorClosed, Activity, AlertTriangle, ArrowRight, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -100,12 +101,35 @@ export const BuildingCard = ({
 
       {/* Stat row */}
       <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
-        <StatCell icon={Layers} value={floorCount} label="Floors" />
-        <StatCell icon={DoorClosed} value={roomCount} label="Rooms" />
+        <StatCell
+          icon={Layers}
+          value={floorCount}
+          label="Floors"
+          ariaLabel={`View floors for ${building?.name}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (building?.id) navigate(`/spaces?building=${building.id}&pick=floor`);
+          }}
+        />
+        <StatCell
+          icon={DoorClosed}
+          value={roomCount}
+          label="Rooms"
+          ariaLabel={`View rooms in ${building?.name}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (building?.id) navigate(`/spaces?building=${building.id}`);
+          }}
+        />
         <StatCell
           icon={Activity}
           value={`${healthPct}%`}
           label="Health"
+          ariaLabel={`View lighting health for ${building?.name}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (building?.id) navigate(`/operations?tab=lighting&building=${building.id}`);
+          }}
           valueClassName={cn(
             healthPct >= 90 ? "text-status-operational" :
             healthPct >= 70 ? "text-status-warning" :
@@ -143,17 +167,30 @@ function StatCell({
   value,
   label,
   valueClassName,
+  onClick,
+  ariaLabel,
 }: {
   icon: LucideIcon;
   value: string | number;
   label: string;
   valueClassName?: string;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  ariaLabel?: string;
 }) {
   return (
-    <div className="flex flex-col items-center py-3 gap-0.5">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className={cn(
+        "flex flex-col items-center py-3 gap-0.5 min-h-[64px]",
+        "transition-colors hover:bg-card-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        !onClick && "cursor-default"
+      )}
+    >
       <Icon className="h-3.5 w-3.5 text-text-secondary mb-1" />
       <span className={cn("text-base font-bold", valueClassName)}>{value}</span>
       <span className="text-[11px] text-text-secondary">{label}</span>
-    </div>
+    </button>
   );
 }

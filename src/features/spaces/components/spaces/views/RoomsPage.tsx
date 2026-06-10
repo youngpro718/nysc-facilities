@@ -34,6 +34,7 @@ import { Room } from "../rooms/types/RoomTypes";
 import { useSearchParams } from "react-router-dom";
 import { useCourtAssignmentsMap } from "@features/spaces/hooks/queries/useCourtAssignmentsMap";
 import { CourtroomAssignmentHeader } from "../rooms/components/CourtroomAssignmentHeader";
+import { BuildingFloorScopeBar } from "../rooms/components/BuildingFloorScopeBar";
 
 // Define a type for sort options to fix the TS error
 export type SortOption =
@@ -65,6 +66,9 @@ const RoomsPage = () => {
 
   // Read room ID from URL query parameter
   const urlRoomId = searchParams.get('room');
+  const urlBuildingId = searchParams.get('building');
+  const urlFloorId = searchParams.get('floor');
+  const autoExpandFloor = searchParams.get('pick') === 'floor';
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({});
   const { data: assignmentsByRoomId } = useCourtAssignmentsMap();
@@ -73,10 +77,26 @@ const RoomsPage = () => {
     searchQuery,
     sortBy,
     statusFilter,
-    selectedBuilding: "all",
-    selectedFloor: "all",
+    selectedBuilding: urlBuildingId || "all",
+    selectedFloor: urlFloorId || "all",
     roomTypeFilter,
   });
+
+  const clearBuildingScope = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('building');
+    next.delete('floor');
+    next.delete('pick');
+    setSearchParams(next, { replace: true });
+  };
+
+  const selectFloorScope = (floorId: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (floorId) next.set('floor', floorId);
+    else next.delete('floor');
+    next.delete('pick');
+    setSearchParams(next, { replace: true });
+  };
   // Sync selection with URL query parameter
   useEffect(() => {
     const list = filteredAndSortedRooms ?? [];
@@ -175,6 +195,17 @@ const RoomsPage = () => {
 
   return (
     <div className="flex flex-col gap-4 md:h-[calc(100svh-260px)] md:min-h-[520px] md:overflow-hidden">
+      {/* Building/Floor scope bar (only when scoped via URL) */}
+      {urlBuildingId && (
+        <BuildingFloorScopeBar
+          buildingId={urlBuildingId}
+          floorId={urlFloorId}
+          autoExpand={autoExpandFloor}
+          onClearBuilding={clearBuildingScope}
+          onSelectFloor={selectFloorScope}
+        />
+      )}
+
       {/* Filter Bar with Export/Import */}
       <div className="flex flex-wrap justify-between gap-4 shrink-0">
         <div className="flex-1 min-w-0">

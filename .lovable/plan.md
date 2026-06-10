@@ -1,77 +1,61 @@
 ## Goal
-1. Lock down `purchasing` and `court_aide` to only what they actually use.
-2. Give every signed-in user access to the Term Sheet (read-only directory).
-3. Keep Rooms (Spaces) and Keys restricted to admin tier + court_liaison (+ court_officer for Keys, since that was just set up last turn).
-4. Fix the P0 routing/back-button bugs surfaced in the QA audit so every role lands and returns to the right place.
+When you click **Floors / Rooms / Health** on a BuildingCard, the Spaces page should auto-scope to that building and let you drill further by floor. Right now all three send you to `/spaces?building=ID` but `RoomsPage` hardcodes `selectedBuilding: "all"` and ignores the URL, so nothing actually filters.
 
----
-
-## Role matrix after this change
-
-| Role | Tabs (in order) | Default landing |
-|---|---|---|
-| admin / system_admin | Dashboard, Spaces, Issues, Maintenance, Lighting, Keys, Inventory, Tasks, Court Operations, Term Sheet, Admin Center | `/` |
-| facilities_manager | Dashboard, Spaces, Issues, Maintenance, Lighting, Keys, Inventory, Tasks, Term Sheet, Profile | `/` |
-| court_liaison | Term Sheet, Keys, Supply Room, My Activity, Notifications, Profile | `/term-sheet` |
-| court_officer | Keys *(unchanged from last turn)* | `/keys` |
-| **purchasing** *(new)* | Inventory, Tasks, Term Sheet, Profile | `/inventory` |
-| **court_aide** *(new)* | Tasks, Inventory, Term Sheet, Profile | `/tasks` |
-| standard | Dashboard, My Activity, Term Sheet, Notifications, Profile | `/dashboard` |
-
-Notes:
-- Purchasing loses: Dashboard, Supply Room, Notifications nav entries.
-- Court_aide loses: Dashboard, Supply Room, Notifications nav entries.
-- Standard already has Term Sheet — no change.
-- Court_officer remains keys-only as set last turn (no Term Sheet) — confirm if you want it added too.
-
----
+## What "exceptional" looks like
+- Click **Floors** on 100 Centre Street → Spaces opens scoped to that building, with a compact floor strip ("1 · 10 · 11 · 13 · 14") at the top. Pick a floor → rooms collapse to just that floor.
+- Click **Rooms** → Spaces opens scoped to that building, floor strip available but defaulted to "All floors".
+- Click **Health** → routes to Lighting tab filtered by the building so you see affected fixtures grouped by room.
+- Building name + active floor render as removable chips (✕ to clear). Closing the chip restores "all buildings".
+- All scope lives in URL (`?building=…&floor=…`), so browser Back behaves correctly and deep links are shareable.
+- No new page, no modal, no extra tab — the strip slides in only when a building is scoped.
 
 ## Changes
 
-### A. Role permissions — `src/features/auth/hooks/useRolePermissions.ts`
-- `purchasing`: `inventory: 'admin'`, `supply_orders: 'admin'` (needed for inventory features); set `supply_requests: null`, `operations: null`, `dashboard: null`, `issues: null`. Keep all spaces/keys/maintenance/court_operations/lighting `null`.
-- `court_aide`: keep `inventory: 'admin'`; set `supply_requests: null`, `supply_orders: null`, `issues: null`, `occupants: null`, `operations: null`, `dashboard: null`. (Tasks page has its own permissioning, not in this map.)
-- No change to other roles' permission rows.
+### 1. `src/features/dashboard/components/dashboard/BuildingCard.tsx`
+- Make each stat cell its own clickable target (stop propagation):
+  - **Floors** → `navigate('/spaces?building=ID&pick=floor')` (`pick=floor` tells RoomsPage to auto-open the floor strip even on mobile).
+  - **Rooms** → `navigate('/spaces?building=ID')`.
+  - **Health** → `navigate('/operations?tab=lighting&building=ID')`.
+- Card body (image area) keeps current `/spaces?building=ID`.
+- Add `aria-label`s and replace divs with buttons for the stat cells (a11y + hit target ≥44px).
 
-### B. Navigation tabs + routes — `src/components/layout/config/navigation.tsx`
-- Replace `purchasing` block with: `Inventory`, `Tasks`, `Term Sheet`, separator, `Profile`. Route array: `['/inventory','/tasks','/term-sheet','','/profile']`.
-- Replace `court_aide` block with: `Tasks`, `Inventory`, `Term Sheet`, separator, `Profile`. Route array: `['/tasks','/inventory','/term-sheet','','/profile']`.
-- Fix `getFilteredNavigationItems` (line 367): replace hardcoded `/dashboard` check with `getDashboardForRole(userRole)` so purchasing/court_aide don't get pushed back to `/dashboard`.
+### 2. `src/features/spaces/components/spaces/views/RoomsPage.tsx`
+- Read `building` and `floor` from `useSearchParams`; pass them into `useRoomFilters` instead of the hardcoded `"all"`.
+- Preserve them in `handleRoomSelect` (already preserves other params — already correct via `URLSearchParams(searchParams)`).
+- Render the new `<BuildingFloorScopeBar />` above the FilterBar when `building` is set.
 
-### C. Default landings — `src/routes/roleBasedRouting.ts`
-- `purchasing` → `/inventory` (already correct).
-- `court_aide` → change `/court-aide-dashboard` → `/tasks` (matches user intent that Tasks is the primary surface).
-- `hasModuleAccess` map: drop `purchasing` and `court_aide` from `dashboard`; drop `court_aide` from `supply_requests`; keep `inventory` for both.
+### 3. **New** `src/features/spaces/components/spaces/rooms/components/BuildingFloorScopeBar.tsx`
+- Inputs: `buildingId`, `floorId`, `onClearBuilding`, `onSelectFloor`, `autoExpand` (from `pick=floor`).
+- Pulls building name + floors for that building via a small query (`useBuildingFloors(buildingId)` — see #4).
+- Layout (single row, wraps on mobile):
+  - `[ 🏢 100 Centre Street ✕ ]`
+  - Horizontal scroll chips: `All floors` · `1` · `10` · `11` · `13` … (sorted by `floor_number`)
+  - Selected chip uses primary variant; others outline.
+- When `autoExpand` and on mobile, ensure the strip is in view (scrollIntoView on mount).
+- Uses semantic tokens (`bg-card`, `text-foreground`, `border-border`) — no hardcoded colors.
 
-### D. Mobile nav path resolution — `src/components/layout/utils/navigationPaths.ts`
-- Make `Dashboard` resolution role-aware via `getDashboardForRole` instead of the boolean `isAdmin` flag (so purchasing → `/inventory`, court_aide → `/tasks` if "Dashboard" tab is ever rendered for them by legacy code).
+### 4. **New** `src/features/spaces/components/spaces/hooks/queries/useBuildingFloors.ts`
+- Wraps Supabase `floors` query: `select('id, name, floor_number').eq('building_id', buildingId).order('floor_number')`.
+- Returns `{ building, floors }` (building via `buildings` select). Cached by react-query.
 
-### E. Mobile breadcrumb / back-button — `src/components/layout/Layout.tsx`
-- Remove `hidden md:block` on the `<Breadcrumb>` so the back chevron is reachable on mobile (root cause of the "back button doesn't return me to admin" report).
+### 5. `src/features/spaces/components/spaces/hooks/useRoomFilters.ts`
+- No change needed — it already supports `selectedBuilding` / `selectedFloor`. We're just stopping the page from passing `"all"`.
 
-### F. Orphan cleanup — `src/App.tsx`
-- Remove the `/court-aide-dashboard` route and the orphan `/court-officer-dashboard` route (neither role lands there anymore). Add redirects from those paths to the new defaults to be safe for bookmarked URLs.
-
-### G. Profile avatar guard — `src/components/layout/Layout.tsx`
-- Hide the header avatar's click-to-profile for `court_officer` (keys-only role has no Profile).
-
-### H. FAB hidden-paths trim — `src/components/ui/FloatingActionButton.tsx`
-- Also hide FAB for `purchasing`, `court_aide`, `court_officer` (the quick actions — Order Supplies / Request Help / Request Key — aren't part of their workflow and currently cause confusing back-stack jumps).
-
----
+### 6. Operations page wiring (light touch)
+- Verify `/operations` accepts `?building=` and `?tab=lighting`. If `?building=` is ignored, scope it the same way (one-line `useSearchParams` read into the existing filter state). If this turns out to be larger, surface as a follow-up — do not balloon the scope.
 
 ## Out of scope
-- No DB / RLS changes. All restrictions are UI + client routing; server policies already cover access.
-- No visual redesign.
-- No change to admin / system_admin / facilities_manager / court_liaison / standard navigation contents (only standard already had Term Sheet).
+- No DB / RLS / schema changes.
+- No redesign of the RoomsPage layout or sidebar.
+- No change to existing FilterBar quick filters.
+- No new mobile drawer; the scope bar is just a row above the existing FilterBar.
 
-## QA after build
-1. Log in (or Dev-Mode preview) as each of: purchasing, court_aide, standard, court_liaison, court_officer, facilities_manager, admin.
-2. Confirm tab bar matches the matrix above on mobile and desktop.
-3. From each tab, open a detail page → tap back → confirm it returns to that tab's root, not `/dashboard`.
-4. Confirm Term Sheet is reachable for purchasing, court_aide, standard, court_liaison (read-only).
-5. Confirm `/spaces`, `/keys`, `/maintenance`, `/lighting` redirect away for purchasing / court_aide / standard.
-6. Confirm FAB no longer appears for purchasing / court_aide / court_officer.
-
-## One question before I implement
-**Court_officer** is currently keys-only (no Term Sheet). Your message said "give everybody who's a user a term sheet." Should I also add Term Sheet to court_officer, or keep them strictly keys-only as set last turn? Default if you don't reply: **keep keys-only**.
+## QA checklist
+1. Admin dashboard → click 100 Centre Street **Floors** → URL becomes `/spaces?building=…&pick=floor`. Strip visible, lists every floor of that building only.
+2. Tap "11" → only 11th-floor rooms render; URL gets `&floor=…`.
+3. Tap ✕ on building chip → URL clears building+floor; sidebar shows all rooms.
+4. Browser **Back** from inside a room returns to the scoped Spaces view (because scope is preserved in URL).
+5. Click **Rooms** stat → scope bar shows building chip but "All floors" selected.
+6. Click **Health** stat → lands on Operations / Lighting filtered by that building.
+7. Mobile (440 px wide): chips horizontally scroll, no clipping; building chip wraps to its own line if needed.
+8. No regressions when visiting `/spaces` with no query params (strip hidden, behaves as today).
