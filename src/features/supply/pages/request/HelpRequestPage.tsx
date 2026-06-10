@@ -76,6 +76,7 @@ interface SubmittedRequest {
 
 export default function HelpRequestPage() {
   const navigate = useNavigate();
+  const goHome = useGoHome();
   const { requestTask } = useStaffTasks();
   
   const [step, setStep] = useState<'select' | 'describe' | 'setup' | 'success'>('select');
