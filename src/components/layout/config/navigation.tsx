@@ -180,6 +180,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Tasks', icon: Package },
+      { title: 'Term Sheet', icon: FileText },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
