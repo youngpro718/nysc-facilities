@@ -10,6 +10,7 @@ import { StorageRoomsPanel } from "@features/inventory/components/inventory/Stor
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+// Note: Tooltip imports retained for other elements; per-tab tooltips removed because TooltipTrigger asChild was overwriting TabsTrigger's data-state.
 import { Package, Plus, History, BarChart3, MapPin, AlertTriangle, Search, Warehouse } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { needsAttention } from "@features/inventory/utils/stockStatus";
