@@ -86,7 +86,7 @@ export default function RoleDashboard() {
       const active = data?.filter(r => r.is_active).length || 0;
       return { total, active };
     },
-    enabled: userRole === 'court_liaison' || userRole === 'court_officer',
+    enabled: userRole === 'court_liaison',
   });
 
   const { data: keyStats } = useQuery({
