@@ -195,6 +195,17 @@ const RoomsPage = () => {
 
   return (
     <div className="flex flex-col gap-4 md:h-[calc(100svh-260px)] md:min-h-[520px] md:overflow-hidden">
+      {/* Building/Floor scope bar (only when scoped via URL) */}
+      {urlBuildingId && (
+        <BuildingFloorScopeBar
+          buildingId={urlBuildingId}
+          floorId={urlFloorId}
+          autoExpand={autoExpandFloor}
+          onClearBuilding={clearBuildingScope}
+          onSelectFloor={selectFloorScope}
+        />
+      )}
+
       {/* Filter Bar with Export/Import */}
       <div className="flex flex-wrap justify-between gap-4 shrink-0">
         <div className="flex-1 min-w-0">
