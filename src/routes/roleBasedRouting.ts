@@ -85,7 +85,7 @@ export function hasModuleAccess(role: UserRole | string | null | undefined, modu
   
   // Role-specific module access
   const moduleAccess: Record<string, UserRole[]> = {
-    spaces: ['admin', 'system_admin', 'facilities_manager', 'court_officer'],
+    spaces: ['admin', 'system_admin', 'facilities_manager'],
     operations: ['admin', 'system_admin', 'facilities_manager', 'court_liaison'],
     occupants: ['admin', 'system_admin', 'facilities_manager', 'court_liaison'],
     inventory: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide'],
@@ -93,7 +93,7 @@ export function hasModuleAccess(role: UserRole | string | null | undefined, modu
     keys: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer'],
     maintenance: ['admin', 'system_admin', 'facilities_manager'],
     court_operations: ['admin', 'system_admin', 'court_liaison'],
-    dashboard: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'court_aide', 'standard'],
+    dashboard: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_aide', 'standard'],
   };
   
   const allowedRoles = moduleAccess[moduleKey] || [];
