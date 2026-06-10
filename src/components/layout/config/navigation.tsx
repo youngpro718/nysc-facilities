@@ -316,14 +316,10 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
 
-  // Court Officer (Major / Security) routes
+  // Court Officer (Major / Security) routes — keys-only
   if (userRole === 'court_officer') {
     return [
-      '/court-officer-dashboard',
       '/keys',
-      '/spaces',
-      '/term-sheet',
-      '/notifications',
       '', // Separator
       '/profile',
     ];
