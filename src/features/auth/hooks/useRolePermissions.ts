@@ -141,8 +141,8 @@ export function useRolePermissions() {
       lighting: null,
     },
     court_officer: {
-      spaces: 'read',
-      issues: 'write',
+      spaces: null,
+      issues: null,
       occupants: null,
       inventory: null,
       supply_requests: null,
@@ -151,8 +151,8 @@ export function useRolePermissions() {
       maintenance: null,
       court_operations: null,
       operations: null,
-      dashboard: 'read',
-      lighting: 'write',
+      dashboard: null,
+      lighting: null,
     },
     standard: {
       spaces: null,
