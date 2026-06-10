@@ -27,9 +27,14 @@ interface Notification {
   related_id?: string;
 }
 
+function isSafeInternalPath(value: unknown): value is string {
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//');
+}
+
 function getNotificationRoute(notification: Notification): string | null {
-  if (notification.action_url) return notification.action_url;
-  if ((notification.metadata as any)?.action_url) return (notification.metadata as any).action_url;
+  if (isSafeInternalPath(notification.action_url)) return notification.action_url as string;
+  const metaUrl = (notification.metadata as any)?.action_url;
+  if (isSafeInternalPath(metaUrl)) return metaUrl;
 
   switch (notification.type) {
     case 'issue_update':

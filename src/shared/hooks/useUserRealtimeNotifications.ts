@@ -41,12 +41,14 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           const notification = payload.new;
           setLastNotification(notification);
 
+          const rawUrl = notification.action_url;
+          const safeUrl = typeof rawUrl === 'string' && rawUrl.startsWith('/') ? rawUrl : null;
           const toastOptions = {
             duration: notification.urgency === 'high' ? 8000 : 4000,
-            action: notification.action_url
+            action: safeUrl
               ? {
                   label: 'View',
-                  onClick: () => (window.location.href = notification.action_url),
+                  onClick: () => (window.location.href = safeUrl),
                 }
               : undefined,
           };
