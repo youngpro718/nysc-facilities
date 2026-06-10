@@ -169,6 +169,20 @@ export default defineConfig(({ mode }) => ({
       }
     })
   ].filter(Boolean),
+  build: {
+    rollupOptions: {
+      output: {
+        // Split stable vendor libraries into their own cacheable chunks.
+        // Loaded on demand like any chunk; this mainly prevents large libs
+        // from being inlined into route chunks and improves cache hit rates.
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-charts': ['recharts'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

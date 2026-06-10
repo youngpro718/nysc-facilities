@@ -3,7 +3,8 @@
  * Replaces xlsx library to address security vulnerabilities
  */
 
-import ExcelJS from 'exceljs';
+// ExcelJS is ~940KB — loaded on demand so it never lands in route bundles.
+const loadExcelJS = async () => (await import('exceljs')).default;
 
 /**
  * Sanitize string values to prevent Excel formula injection
@@ -34,6 +35,7 @@ export const exportToExcel = async (
   }
 
   // Create workbook and worksheet
+  const ExcelJS = await loadExcelJS();
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet(sheetName);
 
@@ -93,6 +95,7 @@ export const exportMultipleSheets = async (
   sheets: Array<{ name: string; data: unknown[] }>,
   filename: string
 ): Promise<void> => {
+  const ExcelJS = await loadExcelJS();
   const workbook = new ExcelJS.Workbook();
 
   for (const sheet of sheets) {
@@ -152,6 +155,7 @@ export const exportMultipleSheets = async (
  * @returns Promise with array of objects
  */
 export const parseExcelFile = async (file: File): Promise<unknown[]> => {
+  const ExcelJS = await loadExcelJS();
   const workbook = new ExcelJS.Workbook();
   const arrayBuffer = await file.arrayBuffer();
   await workbook.xlsx.load(arrayBuffer);

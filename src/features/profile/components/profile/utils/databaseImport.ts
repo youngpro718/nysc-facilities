@@ -1,9 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import { ExportableTable } from "../backupUtils";
 import { parseExcelFile } from "@shared/utils/excelExport";
-import ExcelJS from 'exceljs';
 
 export async function importDatabase(file: File, exportableTables: readonly ExportableTable[]) {
+  // ExcelJS is loaded on demand to keep it out of route bundles
+  const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
   const arrayBuffer = await file.arrayBuffer();
   await workbook.xlsx.load(arrayBuffer);

@@ -27,9 +27,6 @@ export default function Keys() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
-  if (isMobile) {
-    return <MobileKeyManagement />;
-  }
   const keyStatsQuery = useQuery({
     queryKey: ["keys-stats"],
     queryFn: async () => {
@@ -48,6 +45,10 @@ export default function Keys() {
   });
 
   const dataStateProps = useDataState(keyStatsQuery);
+
+  if (isMobile) {
+    return <MobileKeyManagement />;
+  }
 
   return (
     <div className="flex flex-col h-[calc(100svh-140px)] min-h-[520px] pb-safe">

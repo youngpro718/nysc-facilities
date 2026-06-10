@@ -12,7 +12,6 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useToast } from "@shared/hooks/use-toast";
 import { getSupplyRequests } from '@features/supply/services/unifiedSupplyService';
-import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { SupplyRequestActions } from "@features/supply/components/supply/SupplyRequestActions";
 
 interface SupplyRequestWithUser {
@@ -143,7 +142,6 @@ export default function AdminSupplyRequests() {
 
   return (
     <PageContainer>
-      <Breadcrumb />
       <PageHeader
         title="Supply Requests"
         description="View and manage all supply requests"

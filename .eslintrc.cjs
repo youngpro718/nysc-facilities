@@ -22,6 +22,9 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
+
+    // Empty catch blocks are used deliberately for localStorage guards
+    'no-empty': ['error', { allowEmptyCatch: true }],
     
     // ========================================================================
     // ARCHITECTURAL GUARDRAILS
@@ -85,6 +88,13 @@ module.exports = {
       files: ['src/providers/**/*.ts', 'src/providers/**/*.tsx'],
       rules: {
         'no-restricted-imports': 'off',
+      },
+    },
+    {
+      // Playwright specs: `use` fixtures are not React hooks
+      files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+      rules: {
+        'react-hooks/rules-of-hooks': 'off',
       },
     },
   ],

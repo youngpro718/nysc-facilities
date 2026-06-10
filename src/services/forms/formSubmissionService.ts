@@ -18,7 +18,7 @@ export async function createKeyRequestFromForm(
 ): Promise<FormSubmissionResult> {
   try {
     // Try to find or create user profile
-    let userProfile = await findUserByEmail(formData.requestor_email);
+    const userProfile = await findUserByEmail(formData.requestor_email);
     const targetUserId = userProfile?.id || userId;
 
     // Find room ID if room number provided
@@ -69,7 +69,7 @@ export async function createSupplyRequestFromForm(
   submissionId: string
 ): Promise<FormSubmissionResult> {
   try {
-    let userProfile = await findUserByEmail(formData.requestor_email);
+    const userProfile = await findUserByEmail(formData.requestor_email);
     const targetUserId = userProfile?.id || userId;
 
     // Create supply request
@@ -131,7 +131,7 @@ export async function createMaintenanceRequestFromForm(
   submissionId: string
 ): Promise<FormSubmissionResult> {
   try {
-    let userProfile = await findUserByEmail(formData.requestor_email);
+    const userProfile = await findUserByEmail(formData.requestor_email);
     const targetUserId = userProfile?.id || userId;
 
     // Find room if specified
@@ -187,7 +187,7 @@ export async function createIssueFromForm(
   submissionId: string
 ): Promise<FormSubmissionResult> {
   try {
-    let userProfile = await findUserByEmail(formData.requestor_email);
+    const userProfile = await findUserByEmail(formData.requestor_email);
     const targetUserId = userProfile?.id || userId;
 
     // Create issue

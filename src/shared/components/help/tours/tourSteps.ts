@@ -1,4 +1,4 @@
-import { Step } from 'react-joyride';
+import type { Step } from 'react-joyride';
 
 /**
  * Tour step definitions for each page/module.

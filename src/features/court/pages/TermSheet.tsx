@@ -1,5 +1,4 @@
 import { TermSheetBoard } from "@features/court/components/term-sheet/TermSheetBoard";
-import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { useAuth } from "@features/auth/hooks/useAuth";
 
 /**
@@ -14,7 +13,6 @@ export default function TermSheet() {
 
   return (
     <div className="space-y-4 pb-20 md:pb-8">
-      <Breadcrumb />
       <div>
         <h1 className="text-2xl font-semibold">Criminal Term Sheet</h1>
         <p className="text-sm text-muted-foreground">

@@ -115,7 +115,7 @@ function LayoutContent() {
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen w-full bg-background overflow-x-hidden">
       {/* Global Search Palette (⌘K) */}
       {isAdmin && <GlobalSearchPalette open={searchOpen} onOpenChange={setSearchOpen} />}
 

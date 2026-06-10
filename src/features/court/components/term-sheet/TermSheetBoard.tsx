@@ -39,7 +39,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { generateTermSheetPDF } from './TermSheetPDFExport';
 import { AssignmentEditDialog, type EditableAssignment } from './AssignmentEditDialog';
 import { Pencil } from 'lucide-react';
 
@@ -590,6 +589,8 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     }
     setPdfLoading(true);
     try {
+      // Lazy-load the jsPDF-based exporter so the library is fetched on demand
+      const { generateTermSheetPDF } = await import('./TermSheetPDFExport');
       await generateTermSheetPDF(sortedList);
       toast({ title: '✅ PDF exported', description: 'Official term sheet downloaded.' });
     } catch (err) {

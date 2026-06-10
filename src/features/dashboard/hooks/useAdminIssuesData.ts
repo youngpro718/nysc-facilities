@@ -83,7 +83,7 @@ export const useAdminIssuesData = (page = 0) => {
             .filter(Boolean)
         )] as string[];
 
-        let reporterMap = new Map<string, { id: string; first_name: string; last_name: string; email: string; title?: string }>();
+        const reporterMap = new Map<string, { id: string; first_name: string; last_name: string; email: string; title?: string }>();
         if (reporterIds.length > 0) {
           const { data: profiles } = await supabase
             .from('profiles')

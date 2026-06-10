@@ -49,7 +49,7 @@ export function useEnabledModules() {
       if (!user) return;
 
       // Load system-level module defaults from catalog (if available)
-      let systemDefaults: Partial<EnabledModules> = {};
+      const systemDefaults: Partial<EnabledModules> = {};
       try {
         const { data: sysMods } = await supabase
           .from('system_modules' as any)
@@ -149,7 +149,7 @@ export function useEnabledModules() {
 
   const resetToDefaults = async () => {
     // Pull latest system defaults and reset profile to those
-    let systemDefaults: Partial<EnabledModules> = {};
+    const systemDefaults: Partial<EnabledModules> = {};
     try {
       const { data: sysMods } = await supabase
         .from('system_modules' as any)

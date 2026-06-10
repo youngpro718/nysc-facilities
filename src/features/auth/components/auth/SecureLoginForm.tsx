@@ -131,20 +131,13 @@ export const SecureLoginForm = ({
         </>
       )}
       
-      <div className="text-center space-y-2">
+      <div className="text-center">
         <button
           type="button"
           className="text-primary hover:underline underline-offset-2 block mx-auto"
           onClick={() => toast.info("Please contact your administrator to reset your password")}
         >
           Forgot password?
-        </button>
-        <button
-          type="button"
-          className="text-muted-foreground hover:text-foreground underline underline-offset-2 text-sm block mx-auto"
-          onClick={() => toast.info("Try a simpler password (6+ characters) or contact admin for account setup")}
-        >
-          Password issues?
         </button>
       </div>
 

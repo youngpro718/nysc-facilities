@@ -1,5 +1,6 @@
 
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
   RoomTypeEnum, 
@@ -162,9 +163,8 @@ export async function createSpace(data: CreateSpaceFormData) {
 
       return door;
     }
-
-    
   } catch (error) {
+    logger.error('createSpace failed:', error);
     throw error;
   }
 }

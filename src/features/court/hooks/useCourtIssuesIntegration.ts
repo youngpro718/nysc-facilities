@@ -101,8 +101,8 @@ export const useCourtIssuesIntegration = () => {
       // Batch-fetch court room and assignment data to avoid N+1 queries
       const roomIds = Array.from(new Set((data || []).map((i: any) => i.room_id).filter(Boolean)));
 
-      let roomsByRoomId = new Map<string, { courtroom_number: string | null }>();
-      let assignmentsByRoomId = new Map<string, { justice: string; clerks: string[]; sergeant: string }>();
+      const roomsByRoomId = new Map<string, { courtroom_number: string | null }>();
+      const assignmentsByRoomId = new Map<string, { justice: string; clerks: string[]; sergeant: string }>();
 
       if (roomIds.length > 0) {
         const [{ data: courtRooms }, { data: courtAssignments }] = await Promise.all([

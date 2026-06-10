@@ -135,7 +135,7 @@ export function GlobalSearchPalette({ open, onOpenChange }: GlobalSearchPaletteP
 
         // Fetch floor+building info for matched rooms
         const floorIds = [...new Set(uniqueRooms.map((r) => r.floor_id).filter(Boolean))] as string[];
-        let floorMap = new Map<string, { name: string; building_name: string }>();
+        const floorMap = new Map<string, { name: string; building_name: string }>();
         if (floorIds.length > 0) {
           const { data: floors } = await supabase
             .from("floors")
@@ -168,7 +168,7 @@ export function GlobalSearchPalette({ open, onOpenChange }: GlobalSearchPaletteP
 
         // Fetch room info for matched issues
         const issueRoomIds = [...new Set(uniqueIssues.map((i) => i.room_id).filter(Boolean))] as string[];
-        let issueRoomMap = new Map<string, { name: string; room_number: string | null }>();
+        const issueRoomMap = new Map<string, { name: string; room_number: string | null }>();
         if (issueRoomIds.length > 0) {
           const { data: issueRooms } = await supabase
             .from("rooms")

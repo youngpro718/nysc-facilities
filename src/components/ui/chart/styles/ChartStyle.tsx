@@ -3,6 +3,8 @@ import { ChartConfig, THEMES } from "../context/ChartContext";
 
 // Allowlist for CSS color values: hex, rgb/rgba, hsl/hsla, named colors, CSS vars
 const SAFE_COLOR_RE = /^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\)|var\(--[a-zA-Z0-9-]+\)|[a-zA-Z]+)$/;
+// Allowlist for config keys interpolated into CSS custom property names
+const SAFE_KEY_RE = /^[a-zA-Z0-9_-]+$/;
 
 function sanitizeColor(value: string): string | null {
   const trimmed = value.trim();
@@ -14,6 +16,7 @@ export function ChartStyle({ id, config }: { id: string; config: ChartConfig }) 
     const vars: Record<string, Record<string, string>> = {};
 
     for (const [key, item] of Object.entries(config)) {
+      if (!SAFE_KEY_RE.test(key)) continue;
       const selector = `[data-chart="${id}"]`;
 
       if ("color" in item && item.color) {
@@ -52,7 +55,6 @@ export function ChartStyle({ id, config }: { id: string; config: ChartConfig }) 
 
   if (!css) return null;
 
-  // All color values in `css` are validated against SAFE_COLOR_RE before injection.
-  // eslint-disable-next-line react/no-danger
+  // All keys and color values in `css` are validated before injection.
   return <style dangerouslySetInnerHTML={{ __html: css }} />;
 }

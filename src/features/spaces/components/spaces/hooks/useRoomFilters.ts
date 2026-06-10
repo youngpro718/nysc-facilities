@@ -30,7 +30,7 @@ export function useRoomFilters({
   const filteredAndSortedRooms = useMemo(() => {
     if (!rooms) return [];
     
-    let filtered = rooms.filter(room => {
+    const filtered = rooms.filter(room => {
       const searchFields = [
         room.name?.toLowerCase() || '',
         room.room_number?.toLowerCase() || '',

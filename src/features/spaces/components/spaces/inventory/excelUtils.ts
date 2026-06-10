@@ -102,8 +102,7 @@ export const generateTemplate = () => {
 };
 
 export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> => {
-  try {
-    const jsonData = await parseExcelFileUtil(file);
+  const jsonData = await parseExcelFileUtil(file);
     
     if (!jsonData || jsonData.length === 0) {
       throw new Error('No data found in Excel file');
@@ -157,8 +156,5 @@ export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> =
       };
     });
     
-    return processedData;
-  } catch (error) {
-    throw error;
-  }
+  return processedData;
 };

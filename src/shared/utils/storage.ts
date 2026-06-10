@@ -33,7 +33,7 @@ export const storageService = {
       }
       
       // Verify bucket exists before attempting upload
-      let bucketExists = await this.checkBucketExists(bucketName);
+      const bucketExists = await this.checkBucketExists(bucketName);
       
       // If bucket doesn't exist, try to create it
       if (!bucketExists) {

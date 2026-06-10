@@ -6,7 +6,9 @@ import { useToast } from "@shared/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
-import ExcelJS from "exceljs";
+// Type-only import keeps ExcelJS (~940KB) out of the Spaces route chunk;
+// the library is loaded on demand in the export/import handlers.
+import type ExcelJS from "exceljs";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 interface RoomExcelImportExportProps {
@@ -211,7 +213,8 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       }
 
       // ── Build workbook ──
-      const wb = new ExcelJS.Workbook();
+      const ExcelJSLib = (await import("exceljs")).default;
+      const wb = new ExcelJSLib.Workbook();
 
       const ws1 = wb.addWorksheet("Room Info");
       styleSheet(ws1, roomInfoData);
@@ -275,7 +278,8 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = new ExcelJS.Workbook();
+      const ExcelJSLib = (await import("exceljs")).default;
+      const workbook = new ExcelJSLib.Workbook();
       await workbook.xlsx.load(arrayBuffer);
 
       // Helper: convert a worksheet to array of row objects using first row as headers

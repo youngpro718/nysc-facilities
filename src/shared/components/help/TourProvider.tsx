@@ -1,7 +1,14 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import Joyride, { CallBackProps, STATUS, ACTIONS, EVENTS, Step } from 'react-joyride';
+import React, { createContext, useContext, useState, useCallback, Suspense } from 'react';
+import type { CallBackProps, Step } from 'react-joyride';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getTourForRoute } from './tours/tourSteps';
+
+// react-joyride is lazy-loaded so the tour library stays out of the main bundle.
+// These mirror react-joyride's public STATUS/ACTIONS/EVENTS string constants.
+const Joyride = React.lazy(() => import('react-joyride'));
+const STATUS = { FINISHED: 'finished', SKIPPED: 'skipped' } as const;
+const ACTIONS = { CLOSE: 'close', PREV: 'prev' } as const;
+const EVENTS = { STEP_AFTER: 'step:after', TARGET_NOT_FOUND: 'error:target_not_found' } as const;
 
 interface TourContextType {
   /** Start the tour for the current page */
@@ -152,30 +159,34 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      <Joyride
-        key={tourKey}
-        steps={steps}
-        stepIndex={stepIndex}
-        run={run}
-        continuous
-        showSkipButton
-        showProgress
-        scrollToFirstStep
-        disableOverlayClose
-        disableScrolling={false}
-        callback={handleJoyrideCallback}
-        styles={TOUR_STYLES}
-        locale={{
-          back: 'Back',
-          close: 'Close',
-          last: 'Done',
-          next: 'Next',
-          skip: 'Skip tour',
-        }}
-        floaterProps={{
-          disableAnimation: false,
-        }}
-      />
+      {steps.length > 0 && (
+        <Suspense fallback={null}>
+          <Joyride
+            key={tourKey}
+            steps={steps}
+            stepIndex={stepIndex}
+            run={run}
+            continuous
+            showSkipButton
+            showProgress
+            scrollToFirstStep
+            disableOverlayClose
+            disableScrolling={false}
+            callback={handleJoyrideCallback}
+            styles={TOUR_STYLES}
+            locale={{
+              back: 'Back',
+              close: 'Close',
+              last: 'Done',
+              next: 'Next',
+              skip: 'Skip tour',
+            }}
+            floaterProps={{
+              disableAnimation: false,
+            }}
+          />
+        </Suspense>
+      )}
     </TourContext.Provider>
   );
 }
