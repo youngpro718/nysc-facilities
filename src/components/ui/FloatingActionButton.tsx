@@ -10,6 +10,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, X, Package, HelpCircle, AlertTriangle, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@shared/hooks/use-mobile';
+import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuickIssueReportButton } from '@shared/components/user/QuickIssueReportButton';
 
@@ -17,6 +18,7 @@ export function FloatingActionButton() {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { userRole } = useRolePermissions();
   const [isOpen, setIsOpen] = useState(false);
 
   // Don't show on form pages, login, auth pages, spaces (has its own FAB),
@@ -50,8 +52,9 @@ export function FloatingActionButton() {
   ];
   const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
 
-  // Only show on mobile
-  if (!isMobile) {
+  // Roles whose workflow doesn't include quick request actions
+  const rolesWithoutFAB = ['purchasing', 'court_aide', 'court_officer'];
+  if (!isMobile || (userRole && rolesWithoutFAB.includes(userRole))) {
     return null;
   }
 
