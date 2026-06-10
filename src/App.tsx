@@ -40,8 +40,6 @@ const InstallApp = lazy(() => import("@features/auth/pages/InstallApp"));
 
 // Role dashboards
 const AdminDashboard = lazy(() => import("@features/admin/pages/AdminDashboard"));
-const CourtOfficerDashboard = lazy(() => import("@features/court/pages/CourtOfficerDashboard"));
-const CourtAideWorkCenter = lazy(() => import("@features/court/pages/CourtAideWorkCenter"));
 const UserDashboard = lazy(() => import("@features/dashboard/pages/UserDashboard"));
 
 // Feature pages
