@@ -131,19 +131,9 @@ function AppContent() {
             </ProtectedRoute>
           } />
 
-          {/* Role-Specific Dashboard Routes */}
-          <Route path="/court-officer-dashboard" element={
-            <ProtectedRoute>
-              <CourtOfficerDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/court-aide-dashboard" element={
-            <ProtectedRoute>
-              <ModuleProtectedRoute moduleKey="inventory" moduleName="Supply Management">
-                <CourtAideWorkCenter />
-              </ModuleProtectedRoute>
-            </ProtectedRoute>
-          } />
+          {/* Legacy role-specific dashboards — redirect to new defaults */}
+          <Route path="/court-officer-dashboard" element={<Navigate to="/keys" replace />} />
+          <Route path="/court-aide-dashboard" element={<Navigate to="/tasks" replace />} />
 
           <Route path="/spaces" element={
             <ProtectedRoute>

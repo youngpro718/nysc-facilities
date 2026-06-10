@@ -240,7 +240,7 @@ function LayoutContent() {
 
         <main className="flex-1 pb-40 md:pb-0 safe-area-bottom mobile-main-padding">
           <div className="px-2 sm:px-4 lg:px-8 py-2 sm:py-6">
-            <Breadcrumb className="mb-2 hidden md:block" />
+            <Breadcrumb className="mb-2" />
             <AnimatePresence mode="wait">
               <PageTransition key={location.pathname}>
                 <Outlet />
