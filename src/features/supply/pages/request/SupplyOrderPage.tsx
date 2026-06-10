@@ -7,13 +7,13 @@
 
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@shared/hooks/use-mobile';
+import { useGoHome } from '@shared/hooks/useHomePath';
 import { QuickSupplyRequest } from '@features/supply/components/supply/QuickSupplyRequest';
 import { QuickOrderGrid } from '@features/supply/components/supply/QuickOrderGrid';
 
 export default function SupplyOrderPage() {
-  const navigate = useNavigate();
+  const goHome = useGoHome();
   const isMobile = useIsMobile();
 
   return (
@@ -23,7 +23,7 @@ export default function SupplyOrderPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate(-1)}
+          onClick={goHome}
           className="shrink-0 h-9 w-9 touch-manipulation"
         >
           <ArrowLeft className="h-5 w-5" />

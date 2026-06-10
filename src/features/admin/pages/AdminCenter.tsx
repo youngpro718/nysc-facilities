@@ -374,7 +374,7 @@ export default function AdminCenter() {
     return (
       <div className="space-y-4 pb-20 px-3 sm:px-0">
         <div className="flex items-center gap-2 pt-2">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/', { replace: true })} className="h-9 w-9">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-xl font-semibold">Admin Center</h1>

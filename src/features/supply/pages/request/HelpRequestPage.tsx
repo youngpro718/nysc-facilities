@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useGoHome } from '@shared/hooks/useHomePath';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, 
@@ -152,7 +153,7 @@ export default function HelpRequestPage() {
       setStep('select');
       setDescription('');
     } else {
-      navigate(-1); // Go back to previous page
+      goHome(); // Role-aware home (admin -> "/", standard -> "/dashboard", etc.)
     }
   };
 
@@ -164,7 +165,7 @@ export default function HelpRequestPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={goHome}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

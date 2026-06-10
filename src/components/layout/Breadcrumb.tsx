@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { getBreadcrumbTrail } from '@/config/routes';
 import { usePermissions } from '@shared/hooks/usePermissions';
+import { useGoHome } from '@shared/hooks/useHomePath';
 
 interface BreadcrumbProps {
   className?: string;
@@ -26,21 +27,22 @@ export function Breadcrumb({ className }: BreadcrumbProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin } = usePermissions();
-  
+  const goHome = useGoHome();
+
   const trail = getBreadcrumbTrail(location.pathname);
-  
+
   // Don't show breadcrumb on home/dashboard pages
   if (trail.length <= 1) {
     return null;
   }
 
-  // Mobile view - just show back button
+  // Mobile view - deterministic back to parent route, or role-aware home as fallback
   const handleBack = () => {
     if (trail.length > 1) {
       const parentRoute = trail[trail.length - 2];
       navigate(parentRoute.path);
     } else {
-      navigate(-1);
+      goHome();
     }
   };
 

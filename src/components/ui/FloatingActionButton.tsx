@@ -19,7 +19,8 @@ export function FloatingActionButton() {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Don't show on form pages, login, auth pages, spaces (has its own FAB), etc.
+  // Don't show on form pages, login, auth pages, spaces (has its own FAB),
+  // or on the destinations the FAB itself navigates to.
   const hiddenPaths = [
     '/forms/',
     '/login',
@@ -28,6 +29,9 @@ export function FloatingActionButton() {
     '/request/',
     '/spaces',
     '/operations',
+    '/issues',
+    '/maintenance',
+    '/lighting',
     '/keys',
     '/inventory',
     '/tasks',
@@ -37,6 +41,12 @@ export function FloatingActionButton() {
     '/profile',
     '/settings',
     '/admin',
+    '/my-activity',
+    '/my-requests',
+    '/my-issues',
+    '/my-supply-requests',
+    '/notifications',
+    '/system-settings',
   ];
   const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
 
