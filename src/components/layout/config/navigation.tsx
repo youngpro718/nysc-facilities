@@ -202,8 +202,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'court_officer') {
     return [
       { title: 'Keys', icon: KeyRound },
-      { type: "separator" },
-      { title: 'Profile', icon: User },
     ];
   }
 
