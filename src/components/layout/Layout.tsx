@@ -218,21 +218,24 @@ function LayoutContent() {
                   <ThemeToggle />
                 </div>
 
-                {/* Profile Avatar */}
-                <button
-                  className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
-                  title="Profile"
-                  data-tour="user-avatar"
-                  onClick={() => navigate('/profile')}
-                >
-                  <UserAvatar
-                    src={(profile as any)?.avatar_url as string | undefined}
-                    firstName={(profile as any)?.first_name as string | undefined}
-                    lastName={(profile as any)?.last_name as string | undefined}
-                    className="h-7 w-7 sm:h-8 sm:w-8"
-                    showFallbackIcon
-                  />
-                </button>
+                {/* Profile Avatar — hidden for keys-only court_officer */}
+                {userRole !== 'court_officer' && (
+                  <button
+                    className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
+                    title="Profile"
+                    aria-label="Open profile"
+                    data-tour="user-avatar"
+                    onClick={() => navigate('/profile')}
+                  >
+                    <UserAvatar
+                      src={(profile as any)?.avatar_url as string | undefined}
+                      firstName={(profile as any)?.first_name as string | undefined}
+                      lastName={(profile as any)?.last_name as string | undefined}
+                      className="h-7 w-7 sm:h-8 sm:w-8"
+                      showFallbackIcon
+                    />
+                  </button>
+                )}
               </div>
             </div>
           </header>
