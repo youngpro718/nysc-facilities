@@ -1,4 +1,5 @@
 
+import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { Layers, DoorClosed, Activity, AlertTriangle, ArrowRight, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
