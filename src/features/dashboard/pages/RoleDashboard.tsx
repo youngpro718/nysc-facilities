@@ -97,7 +97,7 @@ export default function RoleDashboard() {
       const checkedOut = data?.filter(k => k.status === 'checked_out').length || 0;
       return { total, checkedOut };
     },
-    enabled: userRole === 'court_officer',
+    enabled: false,
   });
 
   const { data: recentActivity = [] } = useQuery({
