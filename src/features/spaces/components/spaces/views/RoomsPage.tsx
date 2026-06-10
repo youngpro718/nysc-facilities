@@ -34,6 +34,7 @@ import { Room } from "../rooms/types/RoomTypes";
 import { useSearchParams } from "react-router-dom";
 import { useCourtAssignmentsMap } from "@features/spaces/hooks/queries/useCourtAssignmentsMap";
 import { CourtroomAssignmentHeader } from "../rooms/components/CourtroomAssignmentHeader";
+import { BuildingFloorScopeBar } from "../rooms/components/BuildingFloorScopeBar";
 
 // Define a type for sort options to fix the TS error
 export type SortOption =
@@ -65,6 +66,9 @@ const RoomsPage = () => {
 
   // Read room ID from URL query parameter
   const urlRoomId = searchParams.get('room');
+  const urlBuildingId = searchParams.get('building');
+  const urlFloorId = searchParams.get('floor');
+  const autoExpandFloor = searchParams.get('pick') === 'floor';
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({});
   const { data: assignmentsByRoomId } = useCourtAssignmentsMap();
@@ -73,10 +77,26 @@ const RoomsPage = () => {
     searchQuery,
     sortBy,
     statusFilter,
-    selectedBuilding: "all",
-    selectedFloor: "all",
+    selectedBuilding: urlBuildingId || "all",
+    selectedFloor: urlFloorId || "all",
     roomTypeFilter,
   });
+
+  const clearBuildingScope = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('building');
+    next.delete('floor');
+    next.delete('pick');
+    setSearchParams(next, { replace: true });
+  };
+
+  const selectFloorScope = (floorId: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (floorId) next.set('floor', floorId);
+    else next.delete('floor');
+    next.delete('pick');
+    setSearchParams(next, { replace: true });
+  };
   // Sync selection with URL query parameter
   useEffect(() => {
     const list = filteredAndSortedRooms ?? [];
