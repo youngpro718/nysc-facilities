@@ -144,11 +144,6 @@ export default function RoleDashboard() {
       { label: 'Active Courtrooms', value: `${courtroomStats?.active || 0}/${courtroomStats?.total || 0}`, onClick: () => navigate('/term-sheet') },
       { label: 'My Issues', value: myIssues.length, onClick: () => navigate('/my-activity') },
     );
-  } else if (userRole === 'court_officer') {
-    inlineStats.push(
-      { label: 'Keys Issued', value: keyStats?.total || 0, onClick: () => navigate('/keys') },
-      { label: 'Checked Out', value: keyStats?.checkedOut || 0, onClick: () => navigate('/keys') },
-    );
   } else if (userRole === 'purchasing') {
     inlineStats.push(
       { label: 'Low Stock Items', value: lowStockCount, onClick: () => navigate('/inventory') },
