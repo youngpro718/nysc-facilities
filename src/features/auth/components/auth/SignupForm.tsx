@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Mail, Building2, Loader2, User, Phone, Camera, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -44,7 +44,7 @@ export const SignupForm = ({
   const { secureSignUp, isLoading: authLoading } = useSecureAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [title, setTitle] = useState("");
+  // Note: "Official Title" free-text field was removed; courtPosition dropdown is now the single source of title.
   const [phone, setPhone] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [courtPosition, setCourtPosition] = useState("");
@@ -85,7 +85,7 @@ export const SignupForm = ({
       const userData: UserSignupData = {
         first_name: firstName,
         last_name: lastName,
-        title: title || undefined,
+        title: courtPosition || undefined,
         phone: phone || undefined,
         department_id: departmentId || undefined,
         court_position: courtPosition || undefined,
@@ -151,27 +151,40 @@ export const SignupForm = ({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="courtPosition" className="text-slate-700">Court Position</Label>
+            <Label htmlFor="courtPosition" className="text-slate-700">Your Role / Title</Label>
             <Select value={courtPosition} onValueChange={setCourtPosition}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select your position (optional)" />
+              <SelectTrigger id="courtPosition">
+                <SelectValue placeholder="Select the title closest to your role" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="judge">Judge</SelectItem>
-                <SelectItem value="clerk">Court Clerk</SelectItem>
-                <SelectItem value="officer">Court Officer</SelectItem>
-                <SelectItem value="officer_sergeant">Court Officer Sergeant</SelectItem>
-                <SelectItem value="officer_lieutenant">Court Officer Lieutenant</SelectItem>
-                <SelectItem value="officer_major">Court Officer Major</SelectItem>
-                <SelectItem value="court_attorney">Court Attorney</SelectItem>
-                <SelectItem value="court_reporter">Court Reporter</SelectItem>
-                <SelectItem value="court_interpreter">Court Interpreter</SelectItem>
-                <SelectItem value="court_analyst">Court Analyst</SelectItem>
-                <SelectItem value="assistant_court_analyst">Assistant Court Analyst</SelectItem>
-                <SelectItem value="clerical">Clerical Staff</SelectItem>
-                <SelectItem value="administrative">Administrative Staff</SelectItem>
+              <SelectContent className="max-h-72">
+                <SelectGroup>
+                  <SelectLabel>Judiciary</SelectLabel>
+                  <SelectItem value="judge">Judge</SelectItem>
+                  <SelectItem value="court_attorney">Court Attorney</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Court Officers</SelectLabel>
+                  <SelectItem value="officer">Court Officer</SelectItem>
+                  <SelectItem value="officer_sergeant">Sergeant</SelectItem>
+                  <SelectItem value="officer_lieutenant">Lieutenant</SelectItem>
+                  <SelectItem value="officer_major">Major</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Courtroom Staff</SelectLabel>
+                  <SelectItem value="clerk">Court Clerk</SelectItem>
+                  <SelectItem value="court_reporter">Court Reporter</SelectItem>
+                  <SelectItem value="court_interpreter">Court Interpreter</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Analysts & Administrative</SelectLabel>
+                  <SelectItem value="court_analyst">Court Analyst</SelectItem>
+                  <SelectItem value="assistant_court_analyst">Assistant Court Analyst</SelectItem>
+                  <SelectItem value="clerical">Clerical Staff</SelectItem>
+                  <SelectItem value="administrative">Administrative Staff</SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
+            <p className="text-xs text-slate-500">Pick the closest match — an administrator confirms your final access during approval.</p>
           </div>
         </div>
       )
@@ -242,16 +255,6 @@ export const SignupForm = ({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-slate-700">Official Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className=""
-              placeholder="Enter your official title (optional)"
-            />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="roomNumber" className="text-slate-700">Room/Office Number</Label>
             <Input
               id="roomNumber"
@@ -268,27 +271,37 @@ export const SignupForm = ({
     {
       id: "emergency",
       icon: <Phone className="h-5 w-5 text-slate-500" />,
-      title: "Emergency Contact",
+      title: "Emergency Contact (optional)",
       children: (
         <div className="space-y-4">
-          <Input
-            placeholder="Contact Name (optional)"
-            value={emergencyContact.name}
-            onChange={(e) => setEmergencyContact(prev => ({ ...prev, name: e.target.value }))}
-            className=""
-          />
-          <Input
-            placeholder="Contact Phone (optional)"
-            value={emergencyContact.phone}
-            onChange={(e) => setEmergencyContact(prev => ({ ...prev, phone: e.target.value }))}
-            className=""
-          />
-          <Input
-            placeholder="Relationship (optional)"
-            value={emergencyContact.relationship}
-            onChange={(e) => setEmergencyContact(prev => ({ ...prev, relationship: e.target.value }))}
-            className=""
-          />
+          <div className="space-y-2">
+            <Label htmlFor="ec-name" className="text-slate-700">Contact Name</Label>
+            <Input
+              id="ec-name"
+              placeholder="Full name"
+              value={emergencyContact.name}
+              onChange={(e) => setEmergencyContact(prev => ({ ...prev, name: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ec-phone" className="text-slate-700">Contact Phone</Label>
+            <Input
+              id="ec-phone"
+              type="tel"
+              placeholder="Phone number"
+              value={emergencyContact.phone}
+              onChange={(e) => setEmergencyContact(prev => ({ ...prev, phone: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ec-rel" className="text-slate-700">Relationship</Label>
+            <Input
+              id="ec-rel"
+              placeholder="e.g., Spouse, Parent, Sibling"
+              value={emergencyContact.relationship}
+              onChange={(e) => setEmergencyContact(prev => ({ ...prev, relationship: e.target.value }))}
+            />
+          </div>
         </div>
       )
     },
@@ -335,7 +348,7 @@ export const SignupForm = ({
 
   return (
     <form className="space-y-6" onSubmit={handleSignup}>
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion type="multiple" defaultValue={["personal", "contact"]} className="w-full">
         {formSections.map((section) => (
           <AccordionItem key={section.id} value={section.id} className="border-border">
             <AccordionTrigger className="text-slate-800 hover:text-slate-900">
