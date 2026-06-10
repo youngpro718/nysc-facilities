@@ -35,9 +35,15 @@ const BASE_PATH_MAP: Record<string, string> = {
   'Notifications': '/notifications',
 };
 
-export function getNavigationPath(title: string, isAdmin?: boolean): string {
+export function getNavigationPath(title: string, isAdmin?: boolean, userRole?: string | null): string {
   // Role-dependent paths
-  if (title === 'Dashboard') return isAdmin ? '/' : '/dashboard';
+  if (title === 'Dashboard') {
+    if (userRole === 'purchasing') return '/inventory';
+    if (userRole === 'court_aide') return '/tasks';
+    if (userRole === 'court_officer') return '/keys';
+    if (userRole === 'court_liaison') return '/term-sheet';
+    return isAdmin ? '/' : '/dashboard';
+  }
   if (title === 'Supply Requests') return isAdmin ? '/admin/supply-requests' : '/my-supply-requests';
 
   return BASE_PATH_MAP[title] || '/';
