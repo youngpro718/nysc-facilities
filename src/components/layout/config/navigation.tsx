@@ -202,8 +202,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'court_officer') {
     return [
       { title: 'Keys', icon: KeyRound },
-      { type: "separator" },
-      { title: 'Profile', icon: User },
     ];
   }
 
@@ -320,8 +318,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   if (userRole === 'court_officer') {
     return [
       '/keys',
-      '', // Separator
-      '/profile',
     ];
   }
 
