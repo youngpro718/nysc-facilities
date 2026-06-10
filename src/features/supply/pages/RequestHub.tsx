@@ -5,6 +5,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Package, HelpCircle, AlertTriangle, Key, ArrowLeft, ChevronRight, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useGoHome } from '@shared/hooks/useHomePath';
 
 interface QuickAction {
   id: string;
@@ -57,12 +58,13 @@ const quickActions: QuickAction[] = [
 
 export default function RequestHub() {
   const navigate = useNavigate();
+  const goHome = useGoHome();
 
   return (
     <div className="container max-w-xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0 -ml-2">
+        <Button variant="ghost" size="icon" onClick={goHome} className="shrink-0 -ml-2">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
