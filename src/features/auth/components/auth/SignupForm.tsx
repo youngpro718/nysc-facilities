@@ -44,7 +44,7 @@ export const SignupForm = ({
   const { secureSignUp, isLoading: authLoading } = useSecureAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [title, setTitle] = useState("");
+  // Note: "Official Title" free-text field was removed; courtPosition dropdown is now the single source of title.
   const [phone, setPhone] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [courtPosition, setCourtPosition] = useState("");
@@ -85,7 +85,7 @@ export const SignupForm = ({
       const userData: UserSignupData = {
         first_name: firstName,
         last_name: lastName,
-        title: title || undefined,
+        title: courtPosition || undefined,
         phone: phone || undefined,
         department_id: departmentId || undefined,
         court_position: courtPosition || undefined,
