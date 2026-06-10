@@ -292,6 +292,7 @@ export function KeyInventorySection() {
         keyToDelete={keyToDelete}
         onOpenChange={() => setKeyToDelete(null)}
         onConfirmDelete={handleDeleteKey}
+        onForceDelete={canManage ? handleForceDeleteKey : undefined}
       />
 
       <ImportKeysDialog
