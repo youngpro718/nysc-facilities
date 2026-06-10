@@ -197,29 +197,24 @@ export const InventoryDashboard = () => {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full grid grid-cols-5 h-auto p-1">
             {tabs.map((tab) => (
-              <Tooltip key={tab.id}>
-                <TooltipTrigger asChild>
-                  <TabsTrigger 
-                    value={tab.id} 
-                    className="flex items-center gap-1.5 px-2 py-2"
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                title={tab.tooltip}
+                className="flex items-center gap-1.5 px-2 py-2"
+              >
+                {tab.icon}
+                <span className="hidden md:inline text-sm">{tab.label}</span>
+                <span className="inline md:hidden text-xs">{tab.shortLabel}</span>
+                {tab.badge !== undefined && (
+                  <Badge
+                    variant={tab.badgeVariant || "secondary"}
+                    className="ml-1 h-5 min-w-[20px] px-1 flex items-center justify-center text-xs"
                   >
-                    {tab.icon}
-                    <span className="hidden md:inline text-sm">{tab.label}</span>
-                    <span className="inline md:hidden text-xs">{tab.shortLabel}</span>
-                    {tab.badge !== undefined && (
-                      <Badge 
-                        variant={tab.badgeVariant || "secondary"} 
-                        className="ml-1 h-5 min-w-[20px] px-1 flex items-center justify-center text-xs"
-                      >
-                        {tab.badge}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs">
-                  {tab.tooltip}
-                </TooltipContent>
-              </Tooltip>
+                    {tab.badge}
+                  </Badge>
+                )}
+              </TabsTrigger>
             ))}
           </TabsList>
 
