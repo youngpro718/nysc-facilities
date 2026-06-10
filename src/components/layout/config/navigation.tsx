@@ -205,26 +205,23 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
 
-  // Purchasing navigation - inventory and supply focused
+  // Purchasing navigation - inventory + tasks only
   if (userRole === 'purchasing') {
     return [
-      { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Inventory', icon: Boxes },
-      { title: 'Supply Room', icon: Package2 },
-      { title: 'Notifications', icon: MessageSquare },
+      { title: 'Tasks', icon: Package },
+      { title: 'Term Sheet', icon: FileText },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
   }
 
-  // Court Aide (Supply Staff) navigation - task-focused with supply/inventory access
+  // Court Aide navigation - tasks + inventory only
   if (userRole === 'court_aide') {
     return [
-      { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Tasks', icon: Package },
-      { title: 'Supply Room', icon: Package2 },
       { title: 'Inventory', icon: Boxes },
-      { title: 'Notifications', icon: MessageSquare },
+      { title: 'Term Sheet', icon: FileText },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
@@ -321,26 +318,23 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
 
-  // Purchasing routes - inventory and supply focused
+  // Purchasing routes - inventory + tasks only
   if (userRole === 'purchasing') {
     return [
-      '/dashboard',
       '/inventory',
-      '/supply-room',
-      '/notifications',
+      '/tasks',
+      '/term-sheet',
       '', // Separator
       '/profile',
     ];
   }
 
-  // Court Aide (Supply Staff) routes - task-focused with supply/inventory access
+  // Court Aide routes - tasks + inventory only
   if (userRole === 'court_aide') {
     return [
-      '/court-aide-dashboard',
       '/tasks',
-      '/supply-room',
       '/inventory',
-      '/notifications',
+      '/term-sheet',
       '', // Separator
       '/profile',
     ];
@@ -360,11 +354,14 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
 // Function to get filtered navigation items based on role permissions
 export function getFilteredNavigationItems(permissions: RolePermissions, userRole: CourtRole): NavigationItem[] {
   const isAdminTier = userRole === 'admin' || userRole === 'system_admin' || userRole === 'facilities_manager';
+  // Roles whose default landing is NOT a dashboard route
+  const noDashboardRoles: CourtRole[] = ['purchasing', 'court_aide', 'court_officer', 'court_liaison'];
+  const hasDashboard = !noDashboardRoles.includes(userRole);
 
   return navigationItems.filter(item => {
-    // Dashboard routing: admin-tier sees only '/', everyone else only '/dashboard'
+    // Dashboard routing: admin-tier sees only '/', dashboard-eligible non-admins see '/dashboard'
     if (item.href === '/') return isAdminTier;
-    if (item.href === '/dashboard') return !isAdminTier;
+    if (item.href === '/dashboard') return !isAdminTier && hasDashboard;
 
     // Check role permissions for feature-based items
     if (item.moduleKey && item.moduleKey in permissions) {

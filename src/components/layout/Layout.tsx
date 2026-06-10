@@ -218,21 +218,24 @@ function LayoutContent() {
                   <ThemeToggle />
                 </div>
 
-                {/* Profile Avatar */}
-                <button
-                  className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
-                  title="Profile"
-                  data-tour="user-avatar"
-                  onClick={() => navigate('/profile')}
-                >
-                  <UserAvatar
-                    src={(profile as any)?.avatar_url as string | undefined}
-                    firstName={(profile as any)?.first_name as string | undefined}
-                    lastName={(profile as any)?.last_name as string | undefined}
-                    className="h-7 w-7 sm:h-8 sm:w-8"
-                    showFallbackIcon
-                  />
-                </button>
+                {/* Profile Avatar — hidden for keys-only court_officer */}
+                {userRole !== 'court_officer' && (
+                  <button
+                    className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
+                    title="Profile"
+                    aria-label="Open profile"
+                    data-tour="user-avatar"
+                    onClick={() => navigate('/profile')}
+                  >
+                    <UserAvatar
+                      src={(profile as any)?.avatar_url as string | undefined}
+                      firstName={(profile as any)?.first_name as string | undefined}
+                      lastName={(profile as any)?.last_name as string | undefined}
+                      className="h-7 w-7 sm:h-8 sm:w-8"
+                      showFallbackIcon
+                    />
+                  </button>
+                )}
               </div>
             </div>
           </header>
@@ -240,7 +243,7 @@ function LayoutContent() {
 
         <main className="flex-1 pb-40 md:pb-0 safe-area-bottom mobile-main-padding">
           <div className="px-2 sm:px-4 lg:px-8 py-2 sm:py-6">
-            <Breadcrumb className="mb-2 hidden md:block" />
+            <Breadcrumb className="mb-2" />
             <AnimatePresence mode="wait">
               <PageTransition key={location.pathname}>
                 <Outlet />

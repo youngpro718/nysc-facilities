@@ -38,8 +38,8 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
     name: 'Inventory',
   },
   court_aide: {
-    path: '/court-aide-dashboard',
-    name: 'Work Center',
+    path: '/tasks',
+    name: 'Tasks',
   },
   standard: {
     path: '/dashboard',
@@ -89,11 +89,13 @@ export function hasModuleAccess(role: UserRole | string | null | undefined, modu
     operations: ['admin', 'system_admin', 'facilities_manager', 'court_liaison'],
     occupants: ['admin', 'system_admin', 'facilities_manager', 'court_liaison'],
     inventory: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide'],
-    supply_requests: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide', 'court_liaison', 'standard'],
+    tasks: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide'],
+    term_sheet: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_aide', 'purchasing', 'standard'],
+    supply_requests: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'standard'],
     keys: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer'],
     maintenance: ['admin', 'system_admin', 'facilities_manager'],
     court_operations: ['admin', 'system_admin', 'court_liaison'],
-    dashboard: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_aide', 'standard'],
+    dashboard: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'standard'],
   };
   
   const allowedRoles = moduleAccess[moduleKey] || [];
