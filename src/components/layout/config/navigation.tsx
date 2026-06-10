@@ -198,14 +198,10 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
 
-  // Court Officer (Major / Security) navigation
+  // Court Officer (Major / Security) navigation — keys-only
   if (userRole === 'court_officer') {
     return [
-      { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Keys', icon: KeyRound },
-      { title: 'Spaces', icon: Building2 },
-      { title: 'Term Sheet', icon: FileText },
-      { title: 'Notifications', icon: MessageSquare },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
