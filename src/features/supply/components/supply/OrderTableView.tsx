@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Package, CheckCircle, Truck, AlertTriangle, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { EditDeliveryLocationButton } from './EditDeliveryLocationButton';
 
 interface OrderTableViewProps {
   orders: any[];
