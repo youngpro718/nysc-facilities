@@ -17,26 +17,30 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
  
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
- 
+    /* Brand: judicial navy — primary actions, links, focus */
+    --primary: 217 60% 30%;
+    --primary-foreground: 0 0% 100%;
+
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
- 
+
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
- 
+
     --accent: 0 0% 96.1%;
     --accent-foreground: 0 0% 9%;
- 
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
- 
+
     --border: 0 0% 89.1%;
     --input: 0 0% 89.1%;
-    --ring: 0 0% 3.9%;
- 
+    --ring: 217 60% 38%;
+
     --radius: 0.5rem;
+
+    /* Brand: brass gold — reserved for selective accents (badges, highlights) */
+    --brand-gold: 41 60% 46%;
 
     /* Status colors */
     --success: 142 71% 45%;
@@ -94,8 +98,8 @@
     --text-secondary: 220 9% 46%;
     --text-muted: 220 9% 46%;
 
-    /* ── PRD 3.1 — Brand accent ── */
-    --color-accent: 0 72% 51%;
+    /* ── PRD 3.1 — Brand accent (judicial navy; matches --primary) ── */
+    --color-accent: 217 60% 34%;
   }
 
   /* .light — forces light mode CSS variables on any subtree (e.g. login page) */
@@ -106,8 +110,8 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 217 60% 30%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
@@ -118,7 +122,9 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.1%;
     --input: 0 0% 89.1%;
-    --ring: 0 0% 3.9%;
+    --ring: 217 60% 38%;
+    --color-accent: 217 60% 34%;
+    --brand-gold: 41 60% 46%;
     --surface: 0 0% 96%;
     --surface-foreground: 0 0% 3.9%;
     --sidebar: 0 0% 97%;
@@ -141,24 +147,27 @@
     --popover: 0 0% 4%;
     --popover-foreground: 0 0% 98%;
  
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
- 
+    /* Brand: judicial navy, lifted for dark surfaces */
+    --primary: 215 75% 55%;
+    --primary-foreground: 0 0% 100%;
+
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
- 
+
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
- 
+
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;
- 
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
- 
+
     --border: 0 0% 17%;
     --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    --ring: 215 75% 58%;
+
+    --brand-gold: 42 65% 56%;
 
     /* Status colors for dark mode */
     --success: 142 71% 45%;
@@ -216,8 +225,8 @@
     --text-secondary: 220 9% 64%;
     --text-muted: 220 9% 46%;
 
-    /* ── PRD 3.1 — Brand accent ── */
-    --color-accent: 0 72% 51%;
+    /* ── PRD 3.1 — Brand accent (judicial navy; matches --primary) ── */
+    --color-accent: 215 75% 60%;
   }
 
   /* Theme Variants — applied on top of light/dark, override accent + chrome */

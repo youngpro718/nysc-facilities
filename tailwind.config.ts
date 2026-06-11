@@ -114,6 +114,7 @@ export default {
           muted: "hsl(var(--text-muted))",
         },
         "color-accent": "hsl(var(--color-accent))",
+        "brand-gold": "hsl(var(--brand-gold))",
       },
       borderRadius: {
         lg: "var(--radius)",

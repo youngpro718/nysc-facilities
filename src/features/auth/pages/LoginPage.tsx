@@ -50,7 +50,7 @@ const LoginPage = () => {
             alt="NYSC Logo"
             width={72}
             height={72}
-            className="h-[72px] w-[72px] object-contain drop-shadow-lg"
+            className="h-[72px] w-[72px] object-cover rounded-full ring-1 ring-white/25 shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
           />
           <div>
             <h1 className="text-xl font-bold text-white tracking-tight">
