@@ -15,7 +15,7 @@ import { WorkCenterStats } from '@features/court/components/court-aide/WorkCente
 import { NotificationDropdown } from '@shared/components/user/NotificationDropdown';
 
 import { Link } from 'react-router-dom';
-import { Package, Package2, AlertTriangle } from 'lucide-react';
+import { Package, Package2 } from 'lucide-react';
 
 export default function CourtAideWorkCenter() {
   const { user, profile } = useAuth();
