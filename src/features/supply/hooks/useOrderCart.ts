@@ -69,7 +69,7 @@ export function useOrderCart() {
     title?: string;
     description?: string;
     justification?: string;
-    priority?: 'low' | 'medium' | 'high';
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
     delivery_location?: string;
     requested_delivery_date?: string;
   }) => {
@@ -94,14 +94,14 @@ export function useOrderCart() {
     setIsSubmitting(true);
     try {
       // Auto-generate title from items if not provided
-      const autoTitle = options?.title || 
+      const autoTitle = options?.title ||
         `Request for ${cartItems.slice(0, 3).map(i => i.item_name).join(', ')}${cartItems.length > 3 ? '...' : ''}`;
 
       const payload = {
         title: autoTitle,
         description: options?.description || '',
         justification: options?.justification || 'Standard supply request',
-        priority: (options?.priority || 'medium') as 'low' | 'medium' | 'high',
+        priority: (options?.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
         delivery_location: options?.delivery_location || '',
         requested_delivery_date: options?.requested_delivery_date || null,
         items: cartItems.map(item => ({
@@ -112,7 +112,7 @@ export function useOrderCart() {
       };
 
       const result = await submitSupplyOrder(payload);
-      
+
       // Generate confirmation receipt
       if (result?.request) {
         try {
@@ -124,30 +124,41 @@ export function useOrderCart() {
           });
         } catch (receiptError) {
           logger.error('Failed to generate receipt:', receiptError);
-          // Don't fail the order if receipt generation fails
         }
       }
-      
+
       toast({
-        title: 'Order submitted',
+        title: result?.approval_required ? 'Sent for approval' : 'Order submitted',
         description: result?.approval_required && !isSupervisor
-          ? 'Your order requires supervisor approval. A confirmation receipt has been generated.'
-          : 'Your order was submitted successfully. Check your receipt for details.',
+          ? (result?.approval_reason
+              ? `${result.approval_reason}. A supervisor will review it shortly.`
+              : 'A supervisor will review your order shortly.')
+          : "Your order was submitted. We'll notify you when it's ready.",
       });
 
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
+      // Also invalidate the recent-locations cache so the new location appears next time
+      queryClient.invalidateQueries({ queryKey: ['supplyRecentDeliveryLocations'] });
       clearCart();
 
-      // Store the submitted order for the confirmation screen
+      // Store the submitted order for the confirmation screen — include items + meta
       if (result?.request) {
         setSubmittedOrder({
           ...result.request,
           approval_required: result?.approval_required,
+          approval_reason: result?.approval_reason,
+          delivery_location: payload.delivery_location,
+          priority: payload.priority,
+          items: cartItems.map(i => ({
+            item_name: i.item_name,
+            quantity: i.quantity,
+            item_unit: i.item_unit,
+          })),
         });
       }
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       const message = error?.message || 'Failed to submit order';
       toast({
         title: 'Submission Failed',
