@@ -8,6 +8,7 @@ import { Package, User, MapPin, Clock, AlertTriangle, Truck, CheckCircle, Chevro
 import { formatDistanceToNow, formatDistanceToNowStrict } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { OrderETABadge } from './OrderETABadge';
+import { EditDeliveryLocationButton } from './EditDeliveryLocationButton';
 
 interface SimpleOrderCardProps {
   order: any;
