@@ -38,8 +38,8 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
     name: 'Inventory',
   },
   court_aide: {
-    path: '/tasks',
-    name: 'Tasks',
+    path: '/work-center',
+    name: 'Work Center',
   },
   standard: {
     path: '/dashboard',

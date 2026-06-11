@@ -31,6 +31,7 @@ const BASE_PATH_MAP: Record<string, string> = {
   'Admin Center': '/admin',
   'Admin Profile': '/admin',
   'Profile': '/profile',
+  'Work Center': '/work-center',
   'System Settings': '/system-settings',
   'Notifications': '/notifications',
 };
@@ -39,7 +40,7 @@ export function getNavigationPath(title: string, isAdmin?: boolean, userRole?: s
   // Role-dependent paths
   if (title === 'Dashboard') {
     if (userRole === 'purchasing') return '/inventory';
-    if (userRole === 'court_aide') return '/tasks';
+    if (userRole === 'court_aide') return '/work-center';
     if (userRole === 'court_officer') return '/keys';
     if (userRole === 'court_liaison') return '/term-sheet';
     return isAdmin ? '/' : '/dashboard';

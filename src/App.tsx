@@ -41,6 +41,7 @@ const InstallApp = lazy(() => import("@features/auth/pages/InstallApp"));
 // Role dashboards
 const AdminDashboard = lazy(() => import("@features/admin/pages/AdminDashboard"));
 const UserDashboard = lazy(() => import("@features/dashboard/pages/UserDashboard"));
+const CourtAideWorkCenter = lazy(() => import("@features/court/pages/CourtAideWorkCenter"));
 
 // Feature pages
 const Spaces = lazy(() => import("@features/spaces/pages/Spaces"));
@@ -286,6 +287,11 @@ function AppContent() {
           <Route path="/term-sheet" element={
             <ProtectedRoute>
               <TermSheet />
+            </ProtectedRoute>
+          } />
+          <Route path="/work-center" element={
+            <ProtectedRoute>
+              <CourtAideWorkCenter />
             </ProtectedRoute>
           } />
           {/* Help Center */}
