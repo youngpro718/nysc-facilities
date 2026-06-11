@@ -49,6 +49,44 @@ export function getNavigationPath(title: string, isAdmin?: boolean, userRole?: s
   return BASE_PATH_MAP[title] || '/';
 }
 
+/* Nav routes that redirect into the Operations page, keyed by ?tab value. */
+const OPERATIONS_TAB_ROUTES: Record<string, string> = {
+  issues: '/issues',
+  maintenance: '/maintenance',
+  lighting: '/lighting',
+};
+
+/**
+ * Whether a nav item's route should render as active for the current location.
+ *
+ * Handles two cases plain `pathname.startsWith(route)` gets wrong:
+ * - Issues/Maintenance/Lighting redirect to /operations?tab=…, so the pathname
+ *   never stays on the nav route itself. The active tab decides the item.
+ *   (No tab / the overview tab counts as Issues, the section's entry point.)
+ * - Routes that pin a tab (e.g. /my-activity?tab=keys) only match when the
+ *   current URL has that tab, so sibling items don't all light up at once.
+ */
+export function isNavRouteActive(route: string, pathname: string, search: string): boolean {
+  if (!route) return false;
+  if (route === '/') return pathname === '/';
+
+  const [base, routeQuery] = route.split('?');
+
+  if (pathname === '/operations' || pathname.startsWith('/operations/')) {
+    const tab = new URLSearchParams(search).get('tab') ?? 'issues';
+    const owner = OPERATIONS_TAB_ROUTES[tab] ?? '/issues';
+    return base === owner || base === '/operations';
+  }
+
+  if (!(pathname === base || pathname.startsWith(`${base}/`))) return false;
+
+  if (routeQuery) {
+    const wantedTab = new URLSearchParams(routeQuery).get('tab');
+    if (wantedTab) return new URLSearchParams(search).get('tab') === wantedTab;
+  }
+  return true;
+}
+
 export function getNavigationDescription(title: string): string {
   const descriptionMap: Record<string, string> = {
     'Dashboard': 'Overview & stats',

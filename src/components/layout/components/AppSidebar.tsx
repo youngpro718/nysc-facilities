@@ -8,6 +8,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ChevronLeft, LogOut, HelpCircle, LifeBuoy } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { prefetchRoute } from "@/lib/prefetchRoutes";
+import { isNavRouteActive } from "@/components/layout/utils/navigationPaths";
 import type { NavigationTab } from "@/components/layout/types";
 
 export function AppSidebar() {
@@ -33,11 +34,8 @@ export function AppSidebar() {
     ? userRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
     : "";
 
-  const isActive = (route: string) => {
-    if (!route) return false;
-    if (route === "/") return location.pathname === "/";
-    return location.pathname.startsWith(route);
-  };
+  const isActive = (route: string) =>
+    isNavRouteActive(route, location.pathname, location.search);
 
   return (
     <TooltipProvider delayDuration={0}>

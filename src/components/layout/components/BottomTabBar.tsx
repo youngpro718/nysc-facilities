@@ -8,7 +8,7 @@ import { MoreHorizontal } from "lucide-react";
 import { useSupplyPendingCounts } from "@features/supply/hooks/useSupplyPendingCounts";
 import { useStaffTasksPendingCounts } from "@features/tasks/hooks/useStaffTasksPendingCounts";
 import { Badge } from "@/components/ui/badge";
-import { getNavigationPath } from "../utils/navigationPaths";
+import { getNavigationPath, isNavRouteActive } from "../utils/navigationPaths";
 import { prefetchRoute } from "@/lib/prefetchRoutes";
 
 interface BottomTabBarProps {
@@ -71,7 +71,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
           {primary.map((item) => {
             const Icon = item.icon;
             const path = getNavigationPath(item.title, isAdminTier);
-            const isActive = path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+            const isActive = isNavRouteActive(path, location.pathname, location.search);
             const badgeCount = getBadgeCount(item.title);
 
             return (
