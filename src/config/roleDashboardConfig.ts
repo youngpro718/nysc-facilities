@@ -107,10 +107,9 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
       { id: 'reorderRecommendations', label: 'Reorder Recommendations', icon: TrendingUp, description: 'Items to consider' },
     ],
     quickActions: [
-      { id: 'inventory', title: 'Inventory Overview', description: 'View stock levels and reorder recommendations', icon: Warehouse, path: '/inventory', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950/30' },
-      { id: 'supply-room', title: 'Supply Room', description: 'View supply requests and assist with planning', icon: Package, path: '/supply-room', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
-      { id: 'supply-requests', title: 'Supply Requests', description: 'View all supply requests', icon: FileText, path: '/admin/supply-requests', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950/30' },
-      { id: 'report-issue', title: 'Report Issue', description: 'Report a facility or maintenance issue', icon: Wrench, path: '/my-issues', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-50 dark:bg-orange-950/30' },
+      { id: 'supply-room', title: 'Supply Room', description: 'Fulfill and track supply requests', icon: Package, path: '/supply-room', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
+      { id: 'inventory', title: 'Inventory', description: 'Stock levels and reorder recommendations', icon: Warehouse, path: '/inventory', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950/30' },
+      { id: 'tasks', title: 'Tasks', description: 'Operational tasks assigned to you', icon: ClipboardList, path: '/tasks', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950/30' },
     ],
     showTermSheet: false,
     showPerformanceMetrics: false,
