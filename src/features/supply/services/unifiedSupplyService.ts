@@ -172,7 +172,21 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     requires_justification: i.requires_justification ?? false,
   }));
 
-  const approvalRequired = requiresApprovalForItems(liteItems);
+  // Quantity guard: any single line >=25 OR total >=50 routes to approval
+  const LINE_QTY_THRESHOLD = 25;
+  const TOTAL_QTY_THRESHOLD = 50;
+  const totalQty = payload.items.reduce((s, i) => s + (i.quantity_requested || 0), 0);
+  const maxLineQty = payload.items.reduce((m, i) => Math.max(m, i.quantity_requested || 0), 0);
+  const highQuantity = maxLineQty >= LINE_QTY_THRESHOLD || totalQty >= TOTAL_QTY_THRESHOLD;
+
+  const restrictedItems = liteItems.filter(i => i.requires_justification);
+  const approvalRequired = restrictedItems.length > 0 || highQuantity;
+
+  const approvalReason = restrictedItems.length > 0
+    ? `Contains restricted item${restrictedItems.length > 1 ? 's' : ''}: ${restrictedItems.map(i => i.name).join(', ')}`
+    : highQuantity
+      ? `High quantity (${totalQty} total, max line ${maxLineQty})`
+      : null;
 
   const insertData: Record<string, unknown> = {
     requester_id: session.user.id,
@@ -185,7 +199,7 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     requested_delivery_date: payload.requested_delivery_date || null,
     delivery_location: payload.delivery_location || '',
     status: approvalRequired ? 'pending_approval' : 'submitted',
-    approval_notes: approvalRequired ? 'approval_required:auto' : null,
+    approval_notes: approvalReason,
   };
 
   const { data: request, error: reqErr } = await supabase
@@ -223,8 +237,8 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
       .from('supply_request_status_history')
       .insert({
         request_id: request.id,
-        status: 'submitted',
-        notes: approvalRequired ? 'Auto-flagged: approval required' : null,
+        status: approvalRequired ? 'pending_approval' : 'submitted',
+        notes: approvalReason || null,
         changed_by: session.user.id,
         changed_at: new Date().toISOString(),
       });
@@ -232,7 +246,24 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     logger.error('Failed to record status history — audit gap:', histErr);
   }
 
-  return { request, approval_required: approvalRequired };
+  // Notify admins when an order needs approval
+  if (approvalRequired) {
+    try {
+      await supabase.from('admin_notifications').insert({
+        notification_type: 'supply_request_approval',
+        title: 'Supply order needs approval',
+        message: `${payload.title} — ${approvalReason}`,
+        urgency: payload.priority === 'urgent' ? 'high' : 'medium',
+        related_table: 'supply_requests',
+        related_id: request.id,
+        metadata: { reason: approvalReason, total_qty: totalQty },
+      });
+    } catch (notifErr) {
+      logger.error('Failed to create admin notification:', notifErr);
+    }
+  }
+
+  return { request, approval_required: approvalRequired, approval_reason: approvalReason };
 }
 
 /**
