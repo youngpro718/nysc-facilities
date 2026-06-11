@@ -205,14 +205,12 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
 
-  // Purchasing navigation - inventory + tasks only
+  // Purchasing navigation - operational supply chain focus
   if (userRole === 'purchasing') {
     return [
+      { title: 'Supply Room', icon: Package2 },
       { title: 'Inventory', icon: Boxes },
       { title: 'Tasks', icon: Package },
-      { title: 'Term Sheet', icon: FileText },
-      { type: "separator" },
-      { title: 'Profile', icon: User },
     ];
   }
 
@@ -318,14 +316,12 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
 
-  // Purchasing routes - inventory + tasks only
+  // Purchasing routes - operational supply chain focus
   if (userRole === 'purchasing') {
     return [
+      '/supply-room',
       '/inventory',
       '/tasks',
-      '/term-sheet',
-      '', // Separator
-      '/profile',
     ];
   }
 
