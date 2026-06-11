@@ -92,14 +92,14 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
     title: 'Purchasing Dashboard',
     greeting: 'Purchasing',
     primaryAction: {
-      label: 'View Inventory',
-      path: '/inventory',
-      icon: Warehouse,
-    },
-    secondaryAction: {
       label: 'Supply Room',
       path: '/supply-room',
       icon: Package,
+    },
+    secondaryAction: {
+      label: 'Inventory',
+      path: '/inventory',
+      icon: Warehouse,
     },
     statsConfig: [
       { id: 'lowStockItems', label: 'Low Stock Items', icon: AlertCircle, description: 'Need attention', clickable: true, clickPath: '/inventory' },
