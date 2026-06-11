@@ -316,14 +316,12 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
 
-  // Purchasing routes - inventory + tasks only
+  // Purchasing routes - operational supply chain focus
   if (userRole === 'purchasing') {
     return [
+      '/supply-room',
       '/inventory',
       '/tasks',
-      '/term-sheet',
-      '', // Separator
-      '/profile',
     ];
   }
 
