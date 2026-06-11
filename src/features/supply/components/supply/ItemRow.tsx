@@ -33,7 +33,17 @@ export function ItemRow({
     >
       {/* Item info */}
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm truncate">{item.name}</div>
+        <div className="font-medium text-sm truncate flex items-center gap-1.5">
+          <span className="truncate">{item.name}</span>
+          {item.requires_justification && (
+            <span
+              className="shrink-0 inline-flex items-center h-4 px-1.5 rounded-full text-[9px] font-semibold uppercase tracking-wide border border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10"
+              title="Requires supervisor approval"
+            >
+              Approval
+            </span>
+          )}
+        </div>
         <div className="text-xs text-muted-foreground">
           {item.inventory_categories?.name || item.unit || 'Supply'}
         </div>
