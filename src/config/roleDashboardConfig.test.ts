@@ -13,6 +13,9 @@ describe('role dashboard config', () => {
   it('keeps court roles on their intended operational landing pages', () => {
     expect(getRoleDashboardConfig('court_liaison')?.primaryAction.path).toBe('/term-sheet');
     expect(getRoleDashboardConfig('court_officer')?.primaryAction.path).toBe('/keys');
-    expect(getRoleDashboardConfig('court_aide')?.primaryAction.path).toBe('/tasks');
+  });
+
+  it('no longer exposes a card-grid dashboard config for court_aide (Work Center replaces it)', () => {
+    expect(getRoleDashboardConfig('court_aide')).toBeNull();
   });
 });

@@ -216,14 +216,14 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
 
-  // Court Aide navigation - tasks + inventory only
+  // Court Aide navigation - operations role: Work Center, Tasks, Supply Room, Inventory, Term Sheet
   if (userRole === 'court_aide') {
     return [
+      { title: 'Work Center', icon: LayoutDashboard },
       { title: 'Tasks', icon: Package },
+      { title: 'Supply Room', icon: Package2 },
       { title: 'Inventory', icon: Boxes },
       { title: 'Term Sheet', icon: FileText },
-      { type: "separator" },
-      { title: 'Profile', icon: User },
     ];
   }
 
@@ -329,14 +329,14 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
 
-  // Court Aide routes - tasks + inventory only
+  // Court Aide routes - operations role
   if (userRole === 'court_aide') {
     return [
+      '/work-center',
       '/tasks',
+      '/supply-room',
       '/inventory',
       '/term-sheet',
-      '', // Separator
-      '/profile',
     ];
   }
 
@@ -355,7 +355,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
 export function getFilteredNavigationItems(permissions: RolePermissions, userRole: CourtRole): NavigationItem[] {
   const isAdminTier = userRole === 'admin' || userRole === 'system_admin' || userRole === 'facilities_manager';
   // Roles whose default landing is NOT a dashboard route
-  const noDashboardRoles: CourtRole[] = ['purchasing', 'court_aide', 'court_officer', 'court_liaison'];
+  const noDashboardRoles: CourtRole[] = ['purchasing', 'court_officer', 'court_liaison'];
   const hasDashboard = !noDashboardRoles.includes(userRole);
 
   return navigationItems.filter(item => {

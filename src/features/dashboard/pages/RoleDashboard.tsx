@@ -44,7 +44,7 @@ export default function RoleDashboard() {
       const { count } = await supabase.from('supply_requests').select('*', { count: 'exact', head: true }).in('status', ['pending', 'approved']);
       return count || 0;
     },
-    enabled: userRole === 'court_aide' || userRole === 'purchasing',
+    enabled: userRole === 'purchasing',
   });
 
   const { data: lowStockCount = 0 } = useQuery({
@@ -56,7 +56,7 @@ export default function RoleDashboard() {
       const { needsAttention } = await import('@features/inventory/utils/stockStatus');
       return (data || []).filter(needsAttention).length;
     },
-    enabled: userRole === 'purchasing' || userRole === 'court_aide',
+    enabled: userRole === 'purchasing',
   });
 
   const { data: availableTasksCount = 0 } = useQuery({
@@ -65,7 +65,7 @@ export default function RoleDashboard() {
       const { count } = await supabase.from('staff_tasks').select('*', { count: 'exact', head: true }).eq('status', 'approved').is('claimed_by', null);
       return count || 0;
     },
-    enabled: userRole === 'court_aide',
+    enabled: false,
   });
 
   const { data: myActiveTasksCount = 0 } = useQuery({
@@ -75,7 +75,7 @@ export default function RoleDashboard() {
       const { count } = await supabase.from('staff_tasks').select('*', { count: 'exact', head: true }).or(`claimed_by.eq.${user.id},assigned_to.eq.${user.id}`).in('status', ['claimed', 'in_progress']);
       return count || 0;
     },
-    enabled: userRole === 'court_aide' && !!user?.id,
+    enabled: false,
   });
 
   const { data: courtroomStats } = useQuery({
@@ -149,11 +149,6 @@ export default function RoleDashboard() {
       { label: 'Low Stock Items', value: lowStockCount, onClick: () => navigate('/inventory') },
       { label: 'Pending Requests', value: pendingRequestsCount, onClick: () => navigate('/supply-room') },
     );
-  } else if (userRole === 'court_aide') {
-    inlineStats.push(
-      { label: 'Available Tasks', value: availableTasksCount, onClick: () => navigate('/tasks') },
-      { label: 'Supply Requests', value: pendingRequestsCount, onClick: () => navigate('/supply-room') },
-    );
   }
 
   return (
@@ -207,15 +202,7 @@ export default function RoleDashboard() {
         </div>
       )}
 
-      {/* ── Role-specific focused content ── */}
-      {userRole === 'court_aide' && (
-        <FocusedTaskList
-          myActive={myActiveTasksCount}
-          available={availableTasksCount}
-          pending={pendingRequestsCount}
-          navigate={navigate}
-        />
-      )}
+      {/* court_aide handled by dedicated /work-center page */}
 
       {/* ── Recent Activity ── */}
       <div>
