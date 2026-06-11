@@ -11,7 +11,7 @@ import {
   CheckCircle, User, KeyRound, DoorClosed
 } from 'lucide-react';
 
-export type DashboardRole = 'court_liaison' | 'court_officer' | 'purchasing' | 'court_aide';
+export type DashboardRole = 'court_liaison' | 'court_officer' | 'purchasing';
 
 export interface RoleDashboardConfig {
   title: string;
@@ -146,36 +146,7 @@ export const roleDashboardConfigs: Record<DashboardRole, RoleDashboardConfig> = 
     showInventoryAlerts: false,
     showPendingRequests: false,
   },
-  court_aide: {
-    title: 'Court Aide Dashboard',
-    greeting: 'Court Aide',
-    primaryAction: {
-      label: 'My Tasks',
-      path: '/tasks',
-      icon: ClipboardList,
-    },
-    secondaryAction: {
-      label: 'Supply Room',
-      path: '/supply-room',
-      icon: Package,
-    },
-    statsConfig: [
-      { id: 'availableTasks', label: 'Available Tasks', icon: Clock, description: 'Ready to claim', clickable: true, clickPath: '/tasks' },
-      { id: 'myActiveTasks', label: 'My Active Tasks', icon: ClipboardList, description: 'In progress', clickable: true, clickPath: '/tasks' },
-      { id: 'pendingRequests', label: 'Supply Requests', icon: Package, description: 'Awaiting fulfillment', clickable: true, clickPath: '/supply-room' },
-      { id: 'lowStockItems', label: 'Low Stock', icon: AlertCircle, description: 'Need attention', clickable: true, clickPath: '/inventory' },
-    ],
-    quickActions: [
-      { id: 'view-tasks', title: 'View Tasks', description: 'See and claim available tasks', icon: ClipboardList, path: '/tasks', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-950/30' },
-      { id: 'supply-room', title: 'Supply Room', description: 'Fulfill supply requests', icon: Package, path: '/supply-room', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
-      { id: 'inventory', title: 'Inventory', description: 'Manage stock levels and items', icon: Warehouse, path: '/inventory', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950/30' },
-      { id: 'my-completed', title: 'My Completed', description: 'View your completed work', icon: CheckCircle, path: '/tasks?tab=completed', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
-    ],
-    showTermSheet: false,
-    showPerformanceMetrics: true,
-    showInventoryAlerts: true,
-    showPendingRequests: true,
-  },
+  // court_aide intentionally omitted — uses dedicated /work-center page instead
 };
 
 export function getRoleDashboardConfig(role: string): RoleDashboardConfig | null {

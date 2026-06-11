@@ -12,17 +12,13 @@ import { SupplyFulfillmentPanel } from '@features/court/components/court-aide/Su
 import { TodaySchedule } from '@features/court/components/court-aide/TodaySchedule';
 import { AlertsBar } from '@features/court/components/court-aide/AlertsBar';
 import { WorkCenterStats } from '@features/court/components/court-aide/WorkCenterStats';
-import { CompactHeader } from '@shared/components/user/CompactHeader';
 import { NotificationDropdown } from '@shared/components/user/NotificationDropdown';
-import { Button } from '@/components/ui/button';
-import { useUserPersonnelInfo } from '@features/court/hooks/useUserPersonnelInfo';
 
 import { Link } from 'react-router-dom';
-import { Package, ClipboardList, AlertTriangle, Settings, Scale } from 'lucide-react';
+import { Package, Package2, AlertTriangle } from 'lucide-react';
 
 export default function CourtAideWorkCenter() {
   const { user, profile } = useAuth();
-  const { data: personnelInfo } = useUserPersonnelInfo(user?.id);
   const {
     notifications = [],
     markAsRead,
@@ -32,59 +28,32 @@ export default function CourtAideWorkCenter() {
   } = useNotifications(user?.id);
 
   const firstName = profile?.first_name || 'there';
-  const lastName = profile?.last_name || '';
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6 px-3 sm:px-0">
-      {/* Header */}
-      <div className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <CompactHeader
-            firstName={firstName}
-            lastName={lastName}
-            title={(profile as any)?.title || personnelInfo?.title || 'Court Aide'}
-            department={(profile as any)?.department || (personnelInfo as any)?.department}
-            roomNumber={(profile as any)?.room_number || personnelInfo?.roomNumber}
-            avatarUrl={profile?.avatar_url}
-            role="Court Aide"
-          />
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <NotificationDropdown
-              notifications={notifications as any}
-              onMarkAsRead={markAsRead}
-              onMarkAllAsRead={markAllAsRead}
-              onClearNotification={clearNotification}
-              onClearAllNotifications={clearAllNotifications}
-            />
-          </div>
+    <div className="space-y-6 pb-6 px-3 sm:px-0">
+      {/* Operations header — no avatar/room/department; this is a work surface, not a profile */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Court Aide · Work Center
+          </p>
+          <h1 className="text-2xl font-bold text-foreground mt-1">
+            {firstName ? `${firstName}'s shift` : 'Work Center'}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{today}</p>
         </div>
-        
-        {/* Action buttons */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
-          <Button variant="outline" size="sm" asChild className="shrink-0">
-            <Link to="/inventory">
-              <Package className="h-4 w-4 mr-2" />
-              Inventory
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="shrink-0">
-            <Link to="/term-sheet">
-              <Scale className="h-4 w-4 mr-2" />
-              Term Sheet
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="shrink-0">
-            <Link to="/tasks">
-              <ClipboardList className="h-4 w-4 mr-2" />
-              All Tasks
-            </Link>
-          </Button>
-          <Button variant="ghost" size="icon" asChild className="shrink-0 h-9 w-9">
-            <Link to="/profile">
-              <Settings className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
+        <NotificationDropdown
+          notifications={notifications as any}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onClearNotification={clearNotification}
+          onClearAllNotifications={clearAllNotifications}
+        />
       </div>
 
       {/* Alerts Bar */}
@@ -95,32 +64,36 @@ export default function CourtAideWorkCenter() {
 
       {/* Main Work Panels - Stack on mobile, side by side on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-        {/* Left: Task Queue */}
         <TaskWorkQueue />
-
-        {/* Right: Supply Fulfillment */}
         <SupplyFulfillmentPanel />
       </div>
 
       {/* Today's Schedule */}
       <TodaySchedule />
 
-      {/* Quick Actions Footer - Sticky on mobile */}
-      <div className="fixed bottom-20 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t md:relative md:bottom-auto md:p-0 md:bg-transparent md:border-0 md:backdrop-blur-none">
-        <div className="flex items-center justify-center gap-3 max-w-lg mx-auto">
-          <Button variant="outline" size="sm" asChild className="flex-1 md:flex-none">
-            <Link to="/supply-room">
-              <Package className="h-4 w-4 mr-2" />
-              Supply Room
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="flex-1 md:flex-none">
-            <Link to="/operations?tab=issues">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              Report Issue
-            </Link>
-          </Button>
-        </div>
+      {/* Compact secondary actions — operational only */}
+      <div className="flex flex-wrap gap-2 pt-2">
+        <Link
+          to="/supply-room"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+        >
+          <Package2 className="h-4 w-4" />
+          Supply Room
+        </Link>
+        <Link
+          to="/inventory"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+        >
+          <Package className="h-4 w-4" />
+          Inventory
+        </Link>
+        <Link
+          to="/operations?tab=issues"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+        >
+          <AlertTriangle className="h-4 w-4" />
+          Report Issue
+        </Link>
       </div>
     </div>
   );
