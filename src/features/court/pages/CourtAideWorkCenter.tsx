@@ -15,7 +15,7 @@ import { WorkCenterStats } from '@features/court/components/court-aide/WorkCente
 import { NotificationDropdown } from '@shared/components/user/NotificationDropdown';
 
 import { Link } from 'react-router-dom';
-import { Package, Package2, AlertTriangle } from 'lucide-react';
+import { Package, Package2 } from 'lucide-react';
 
 export default function CourtAideWorkCenter() {
   const { user, profile } = useAuth();
@@ -86,13 +86,6 @@ export default function CourtAideWorkCenter() {
         >
           <Package className="h-4 w-4" />
           Inventory
-        </Link>
-        <Link
-          to="/operations?tab=issues"
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
-        >
-          <AlertTriangle className="h-4 w-4" />
-          Report Issue
         </Link>
       </div>
     </div>
