@@ -151,6 +151,9 @@ export function OrderCart({
             </div>
           ) : (
             <>
+              {/* Profile completeness banner — shows when department/home room missing */}
+              <ProfileIncompleteBanner />
+
               {/* Approval notice (if needed) */}
               {needsApproval && (
                 <div className="flex gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
