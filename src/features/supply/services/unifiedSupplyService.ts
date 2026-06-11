@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import { InventoryItemWithFlag, requiresApprovalForItems, OrderStatus, STATUS_TRANSITIONS } from '@features/supply/constants';
+import { InventoryItemWithFlag, OrderStatus, STATUS_TRANSITIONS } from '@features/supply/constants';
 
 // ============================================================================
 // TYPES
