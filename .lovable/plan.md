@@ -1,13 +1,45 @@
-# Stop the "too many signup attempts" lockouts
+## Why the order isn't visible
 
-## Why this is happening
-Every failed signup from the earlier "Database error" bug still counted as an attempt, so the rate-limit table now has rows blocking those emails for up to 30 minutes. On top of that, `secureSignUp` calls `checkRateLimit(email, 'signup')` before every signup with the same 10-attempts / 15-minutes / 30-minute lockout policy used for logins — too aggressive for signup, which is a low-abuse surface, and the cause of the warning your user just saw.
+Rashida Taylor (`rtaylor@nycourts.gov`) submitted a supply order today at **11:38 AM ET** (`d3c5b499…`, status `pending_approval`, justification flagged "[APPROVAL REQUIRED]").
 
-## Fix
-1. **Remove the rate-limit gate from signup** in `src/features/auth/hooks/useSecureAuth.ts` — drop the `checkRateLimit(... 'signup')` call and the resulting "Too many signup attempts" error. Login rate limiting stays in place unchanged.
-2. **Clear all current signup blocks** in the database so anyone who got locked out from the earlier database errors can sign up immediately (`DELETE FROM public.app_rate_limits WHERE attempt_type = 'signup'`).
-3. **Keep Supabase Auth's own per-IP signup throttle** (built-in, abuse-proof) as the only signup throttle — that's enough protection without trapping legitimate court staff.
+The Supply Staff Dashboard (`ImprovedSupplyStaffDashboard.tsx`) intentionally hides `pending_approval` rows — its "New" tab only shows `submitted | approved | received | picking`. So purchasing/court_aide staff never see it, and it just sits there until someone visits a separate approvals view.
 
-## Out of scope
-- No changes to login rate limiting.
-- No changes to the signup form, validators, or the trusted-domain auto-approval logic (already fixed last turn).
+The admin Supply Requests page already lists it under "All Status" / "Pending Approval", but it's not eye-catching, and there's no count/badge prompting action.
+
+## What to change
+
+### 1. Approve Rashida's stuck order (data fix)
+Update `supply_requests.d3c5b499-96fa-49fa-ad04-85d85dae7ad9`:
+- `status` → `approved`
+- `approved_at` → `now()`
+- `approved_by` → an admin profile id (Jack Duchatelier `272dfe36-…`)
+- Insert a row into `supply_request_status_history` recording the approval.
+
+This moves it into the standard fulfillment queue immediately.
+
+### 2. Make `pending_approval` orders impossible to miss
+
+**Staff dashboard (`ImprovedSupplyStaffDashboard.tsx`)**
+- Add a new first tab "Needs Approval" that fetches orders with `status = 'pending_approval'`.
+- Tab label shows the count as an amber badge (matches existing status color in `statusConfig`).
+- When the tab is empty, hide the tab entirely so it only appears when there's work to do.
+- For admin/purchasing roles, the tab includes inline **Approve** / **Reject** buttons that call the existing `approveSupplyRequest()` / `rejectSupplyRequest()` from `unifiedSupplyService`.
+- For other roles (e.g. court_aide who can't approve), the tab is read-only and shows "Awaiting admin approval".
+
+**Admin Supply Requests page (`SupplyRequests.tsx`)**
+- Pin a small amber alert banner at the top of the list when at least one request is `pending_approval`: "N supply requests are waiting for approval" with a quick filter button that sets `filterStatus = 'pending_approval'`.
+
+No schema changes, no RLS changes — `pending_approval` already has working policies and the approve/reject RPCs already exist.
+
+### Technical details
+
+- Files to edit:
+  - `src/features/supply/components/supply/ImprovedSupplyStaffDashboard.tsx` — add tab, query, badge count, status filter branch (line ~246 filter switch + line ~374 tabs block).
+  - `src/features/admin/pages/admin/SupplyRequests.tsx` — add banner above filters (~line 158).
+- Data fix issued via the insert tool (UPDATE + INSERT into history).
+- Reuse `approveSupplyRequest` / `rejectSupplyRequest` from `@features/supply/services/unifiedSupplyService` — no new service code.
+- Invalidate `['supply-staff-orders']`, `['supply-orders']`, `['supply-requests']` after approve/reject (existing pattern).
+
+### Out of scope
+- Changing what triggers `pending_approval` in the first place (the `[APPROVAL REQUIRED]` rule) — leaving the approval gate as-is.
+- Email/push notifications when orders need approval — can be a follow-up.
