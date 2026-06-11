@@ -8,6 +8,7 @@ import { Package, User, MapPin, Clock, AlertTriangle, Truck, CheckCircle, Chevro
 import { formatDistanceToNow, formatDistanceToNowStrict } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { OrderETABadge } from './OrderETABadge';
+import { EditDeliveryLocationButton } from './EditDeliveryLocationButton';
 
 interface SimpleOrderCardProps {
   order: any;
@@ -134,11 +135,15 @@ export function SimpleOrderCard({
           </div>
           
           {/* Delivery location - prominent */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <Badge variant="outline" className="font-semibold text-sm px-2.5 py-0.5">
               {deliveryRoom}
             </Badge>
+            <EditDeliveryLocationButton
+              requestId={order.id}
+              currentLocation={order.delivery_location}
+            />
           </div>
           
           {/* Time in queue with urgency coloring */}

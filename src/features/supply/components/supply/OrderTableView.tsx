@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Package, CheckCircle, Truck, AlertTriangle, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { EditDeliveryLocationButton } from './EditDeliveryLocationButton';
 
 interface OrderTableViewProps {
   orders: any[];
@@ -164,7 +165,14 @@ export function OrderTableView({
                   {department}
                 </TableCell>
                 <TableCell className="hidden lg:table-cell text-muted-foreground">
-                  {location}
+                  <div className="flex items-center gap-1">
+                    <span className={!order.delivery_location ? 'italic' : ''}>{location}</span>
+                    <EditDeliveryLocationButton
+                      requestId={order.id}
+                      currentLocation={order.delivery_location}
+                      variant="icon"
+                    />
+                  </div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   <Badge variant="outline">{itemCount} item{itemCount !== 1 ? 's' : ''}</Badge>

@@ -700,6 +700,23 @@ export async function updateSupplyRequestStatus(
 }
 
 /**
+ * Update only the delivery location on a supply request. Used by staff/admins
+ * when a requester forgot to specify (or mistyped) the drop-off room.
+ */
+export async function updateSupplyRequestDeliveryLocation(
+  id: string,
+  deliveryLocation: string
+) {
+  const trimmed = deliveryLocation.trim();
+  if (!trimmed) throw new Error('Delivery location cannot be empty');
+  const { error } = await supabase
+    .from('supply_requests')
+    .update({ delivery_location: trimmed })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+/**
  * @deprecated Use markOrderReady or fulfillSupplyRequest instead
  */
 export async function updateSupplyRequestItems(
