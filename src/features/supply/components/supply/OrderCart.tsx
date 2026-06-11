@@ -235,10 +235,17 @@ export function OrderCart({
 
               {/* Delivery */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" />
-                  Deliver to
-                </Label>
+                <div className="flex items-baseline justify-between">
+                  <Label className="text-xs font-medium flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Deliver to <span className="text-destructive">*</span>
+                  </Label>
+                  {profile.homeRoomNumber && (
+                    <span className="text-[10px] text-muted-foreground">
+                      Home room: {profile.homeRoomNumber}
+                    </span>
+                  )}
+                </div>
                 {locationOptions.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {locationOptions.map(opt => {
@@ -257,7 +264,7 @@ export function OrderCart({
                         >
                           {opt.label}
                           {opt.isPrimary && (
-                            <span className="text-[9px] opacity-70 ml-0.5">★</span>
+                            <span className="text-[9px] opacity-70 ml-0.5">★ home</span>
                           )}
                         </button>
                       );
@@ -265,12 +272,30 @@ export function OrderCart({
                   </div>
                 )}
                 <Input
-                  placeholder="Or enter a room number / location"
+                  placeholder={
+                    profile.homeRoomNumber
+                      ? 'Or send to a different room (type a room number)'
+                      : 'Type the room number where this should be delivered'
+                  }
                   value={deliveryLocation}
                   onChange={(e) => setDeliveryLocation(e.target.value)}
-                  className="h-11"
+                  className={cn(
+                    'h-11',
+                    attemptedSubmit && missingLocation && 'border-destructive focus-visible:ring-destructive'
+                  )}
                   inputMode="text"
+                  aria-invalid={attemptedSubmit && missingLocation}
                 />
+                {attemptedSubmit && missingLocation && (
+                  <p className="text-xs text-destructive">
+                    A delivery location is required so staff knows where to bring your order.
+                  </p>
+                )}
+                {!missingLocation && isDifferentFromHome && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Heads up — you're sending this to {trimmedLocation}, not your home room ({profile.homeRoomNumber}).
+                  </p>
+                )}
               </div>
 
               {/* Priority */}
