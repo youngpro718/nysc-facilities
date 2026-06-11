@@ -28,9 +28,10 @@ import { PartialFulfillmentDialog } from './PartialFulfillmentDialog';
 import { LiveIndicator } from '@shared/components/common/common/LiveIndicator';
 import { InventoryManagementTab } from './InventoryManagementTab';
 import { LowStockPanel } from '@features/inventory/components/inventory/LowStockPanel';
-import { staffCompletePickup } from '@features/supply/services/unifiedSupplyService';
+import { staffCompletePickup, approveSupplyRequest, rejectSupplyRequest } from '@features/supply/services/unifiedSupplyService';
 import { toast } from 'sonner';
 import { useAuth } from '@features/auth/hooks/useAuth';
+
 
 export function ImprovedSupplyStaffDashboard() {
   const queryClient = useQueryClient();
@@ -216,6 +217,52 @@ export function ImprovedSupplyStaffDashboard() {
     // refetchInterval disabled
   });
 
+  // Fetch pending-approval orders so they don't get lost in the queue
+  const { data: pendingApprovalOrders } = useQuery({
+    queryKey: ['supply-staff-pending-approval'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('supply_requests')
+        .select(`
+          *,
+          profiles:requester_id (first_name, last_name, email, department),
+          supply_request_items (
+            *,
+            inventory_items (id, name, quantity, unit, sku)
+          )
+        `)
+        .eq('status', 'pending_approval')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const userRole = profile?.role;
+  const canApprove = ['admin', 'system_admin', 'purchasing', 'facilities_manager'].includes(userRole || '');
+
+  const approveMutation = useMutation({
+    mutationFn: (id: string) => approveSupplyRequest(id),
+    onSuccess: () => {
+      toast.success('Order approved');
+      queryClient.invalidateQueries({ queryKey: ['supply-staff-pending-approval'] });
+      queryClient.invalidateQueries({ queryKey: ['supply-staff-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
+    },
+    onError: (e: unknown) => toast.error('Failed to approve', { description: getErrorMessage(e) }),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => rejectSupplyRequest(id, reason),
+    onSuccess: () => {
+      toast.success('Order rejected');
+      queryClient.invalidateQueries({ queryKey: ['supply-staff-pending-approval'] });
+      queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
+    },
+    onError: (e: unknown) => toast.error('Failed to reject', { description: getErrorMessage(e) }),
+  });
+
+
   // Subscribe to real-time updates
   useEffect(() => {
     const channel = supabase
@@ -263,12 +310,14 @@ export function ImprovedSupplyStaffDashboard() {
   // Calculate counts - use actual statuses
   const newCount = (allOrders || []).filter(o => ['submitted', 'approved', 'received', 'picking'].includes(o.status)).length;
   const readyCount = (allOrders || []).filter(o => o.status === 'ready').length;
+  const pendingApprovalCount = (pendingApprovalOrders || []).length;
   const completedTodayCount = (allOrders || []).filter(o => {
     if (o.status !== 'completed') return false;
     const today = new Date().toDateString();
     const completedDate = new Date(o.fulfilled_at || o.updated_at).toDateString();
     return today === completedDate;
   }).length;
+
 
   const handleRefresh = () => {
     refetch();
@@ -372,8 +421,19 @@ export function ImprovedSupplyStaffDashboard() {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} data-tour="supply-orders">
-        <TabsList className="grid w-full grid-cols-4" data-tour="supply-status">
+        <TabsList className={`grid w-full ${pendingApprovalCount > 0 ? 'grid-cols-5' : 'grid-cols-4'}`} data-tour="supply-status">
+          {pendingApprovalCount > 0 && (
+            <TabsTrigger value="approval" className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <span className="hidden sm:inline">Needs Approval</span>
+              <span className="sm:hidden">Approve</span>
+              <Badge className="ml-1 bg-amber-500 text-white hover:bg-amber-500">
+                {pendingApprovalCount}
+              </Badge>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="new" className="flex items-center gap-2">
+
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">New Orders</span>
             <span className="sm:hidden">New</span>
@@ -405,8 +465,89 @@ export function ImprovedSupplyStaffDashboard() {
           </TabsTrigger>
         </TabsList>
 
+        {/* Needs Approval Tab */}
+        <TabsContent value="approval" className="space-y-3">
+          {(pendingApprovalOrders || []).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CheckCircle className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">All caught up</h3>
+              <p className="text-sm text-muted-foreground">No orders waiting for approval.</p>
+            </div>
+          ) : (
+            (pendingApprovalOrders || []).map((order: any) => {
+              const requester = order.profiles
+                ? `${order.profiles.first_name ?? ''} ${order.profiles.last_name ?? ''}`.trim() || order.profiles.email
+                : 'Unknown';
+              const itemCount = order.supply_request_items?.length || 0;
+              return (
+                <Card key={order.id} className="border-l-4 border-l-amber-500">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-foreground">{requester}</span>
+                          <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30">
+                            Needs Approval
+                          </Badge>
+                          {order.priority && order.priority !== 'medium' && (
+                            <Badge variant="secondary" className="capitalize">{order.priority}</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {itemCount} item{itemCount !== 1 ? 's' : ''}
+                          {order.delivery_location ? ` · ${order.delivery_location}` : ''}
+                          {' · '}{new Date(order.created_at).toLocaleString()}
+                        </p>
+                        {order.justification && (
+                          <p className="text-sm text-foreground mt-2 line-clamp-2">{order.justification}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button size="sm" variant="outline" onClick={() => setSelectedOrder(order)}>
+                        View details
+                      </Button>
+                      {canApprove ? (
+                        <>
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 min-h-[44px]"
+                            disabled={approveMutation.isPending}
+                            onClick={() => approveMutation.mutate(order.id)}
+                          >
+                            <CheckCircle className="mr-1 h-4 w-4" /> Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="min-h-[44px]"
+                            disabled={rejectMutation.isPending}
+                            onClick={() => {
+                              const reason = window.prompt('Reason for rejecting this request?');
+                              if (reason && reason.trim()) {
+                                rejectMutation.mutate({ id: order.id, reason: reason.trim() });
+                              }
+                            }}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground self-center">
+                          Awaiting admin approval
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </TabsContent>
+
         {/* New Orders Tab */}
         <TabsContent value="new" className="space-y-4">
+
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center space-y-2">
