@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils';
 import type { CartItem } from '@features/supply/hooks/useOrderCart';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useDeliveryLocations } from '@features/supply/hooks/useDeliveryLocations';
+import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
+import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
 import {
   Sheet,
   SheetContent,
