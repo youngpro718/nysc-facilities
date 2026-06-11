@@ -1,61 +1,84 @@
-## Goal
-When you click **Floors / Rooms / Health** on a BuildingCard, the Spaces page should auto-scope to that building and let you drill further by floor. Right now all three send you to `/spaces?building=ID` but `RoomsPage` hardcodes `selectedBuilding: "all"` and ignores the URL, so nothing actually filters.
+# Fix Account Creation (Signup 500)
 
-## What "exceptional" looks like
-- Click **Floors** on 100 Centre Street → Spaces opens scoped to that building, with a compact floor strip ("1 · 10 · 11 · 13 · 14") at the top. Pick a floor → rooms collapse to just that floor.
-- Click **Rooms** → Spaces opens scoped to that building, floor strip available but defaulted to "All floors".
-- Click **Health** → routes to Lighting tab filtered by the building so you see affected fixtures grouped by room.
-- Building name + active floor render as removable chips (✕ to clear). Closing the chip restores "all buildings".
-- All scope lives in URL (`?building=…&floor=…`), so browser Back behaves correctly and deep links are shareable.
-- No new page, no modal, no extra tab — the strip slides in only when a building is scoped.
+## Root cause
 
-## Changes
+The Supabase auth log shows every `/signup` returning **500: Database error updating user** with:
 
-### 1. `src/features/dashboard/components/dashboard/BuildingCard.tsx`
-- Make each stat cell its own clickable target (stop propagation):
-  - **Floors** → `navigate('/spaces?building=ID&pick=floor')` (`pick=floor` tells RoomsPage to auto-open the floor strip even on mobile).
-  - **Rooms** → `navigate('/spaces?building=ID')`.
-  - **Health** → `navigate('/operations?tab=lighting&building=ID')`.
-- Card body (image area) keeps current `/spaces?building=ID`.
-- Add `aria-label`s and replace divs with buttons for the stat cells (a11y + hit target ≥44px).
+```
+ERROR: column "role" does not exist (SQLSTATE 42703)
+```
 
-### 2. `src/features/spaces/components/spaces/views/RoomsPage.tsx`
-- Read `building` and `floor` from `useSearchParams`; pass them into `useRoomFilters` instead of the hardcoded `"all"`.
-- Preserve them in `handleRoomSelect` (already preserves other params — already correct via `URLSearchParams(searchParams)`).
-- Render the new `<BuildingFloorScopeBar />` above the FilterBar when `building` is set.
+The `public.prevent_profile_privilege_escalation` trigger (BEFORE UPDATE on `public.profiles`) still references `NEW.role` / `OLD.role`:
 
-### 3. **New** `src/features/spaces/components/spaces/rooms/components/BuildingFloorScopeBar.tsx`
-- Inputs: `buildingId`, `floorId`, `onClearBuilding`, `onSelectFloor`, `autoExpand` (from `pick=floor`).
-- Pulls building name + floors for that building via a small query (`useBuildingFloors(buildingId)` — see #4).
-- Layout (single row, wraps on mobile):
-  - `[ 🏢 100 Centre Street ✕ ]`
-  - Horizontal scroll chips: `All floors` · `1` · `10` · `11` · `13` … (sorted by `floor_number`)
-  - Selected chip uses primary variant; others outline.
-- When `autoExpand` and on mobile, ensure the strip is in view (scrollIntoView on mount).
-- Uses semantic tokens (`bg-card`, `text-foreground`, `border-border`) — no hardcoded colors.
+```sql
+OR NEW.role IS DISTINCT FROM OLD.role
+```
 
-### 4. **New** `src/features/spaces/components/spaces/hooks/queries/useBuildingFloors.ts`
-- Wraps Supabase `floors` query: `select('id, name, floor_number').eq('building_id', buildingId).order('floor_number')`.
-- Returns `{ building, floors }` (building via `buildings` select). Cached by react-query.
+But `profiles.role` no longer exists — roles were moved to `public.user_roles`. Any UPDATE on `profiles` now throws.
 
-### 5. `src/features/spaces/components/spaces/hooks/useRoomFilters.ts`
-- No change needed — it already supports `selectedBuilding` / `selectedFloor`. We're just stopping the page from passing `"all"`.
+This breaks signup because `handle_new_user` (trigger on `auth.users`) runs `INSERT ... ON CONFLICT (id) DO UPDATE ...` on `profiles`. The UPDATE path fires `prevent_profile_privilege_escalation`, which immediately fails with the missing-column error, rolling back the entire signup transaction.
 
-### 6. Operations page wiring (light touch)
-- Verify `/operations` accepts `?building=` and `?tab=lighting`. If `?building=` is ignored, scope it the same way (one-line `useSearchParams` read into the existing filter state). If this turns out to be larger, surface as a follow-up — do not balloon the scope.
+A secondary issue: there are two identical AFTER UPDATE triggers on `auth.users` (`on_auth_user_email_confirmed` and `trg_auth_user_email_confirmed`) both calling `public.on_auth_user_email_confirmed()`. They double-fire `handle_trusted_signup()` on every email confirmation — wasteful and risks double-side-effects.
 
-## Out of scope
-- No DB / RLS / schema changes.
-- No redesign of the RoomsPage layout or sidebar.
-- No change to existing FilterBar quick filters.
-- No new mobile drawer; the scope bar is just a row above the existing FilterBar.
+## Plan
 
-## QA checklist
-1. Admin dashboard → click 100 Centre Street **Floors** → URL becomes `/spaces?building=…&pick=floor`. Strip visible, lists every floor of that building only.
-2. Tap "11" → only 11th-floor rooms render; URL gets `&floor=…`.
-3. Tap ✕ on building chip → URL clears building+floor; sidebar shows all rooms.
-4. Browser **Back** from inside a room returns to the scoped Spaces view (because scope is preserved in URL).
-5. Click **Rooms** stat → scope bar shows building chip but "All floors" selected.
-6. Click **Health** stat → lands on Operations / Lighting filtered by that building.
-7. Mobile (440 px wide): chips horizontally scroll, no clipping; building chip wraps to its own line if needed.
-8. No regressions when visiting `/spaces` with no query params (strip hidden, behaves as today).
+### 1. Migration: repair the privilege-escalation trigger
+
+Recreate `public.prevent_profile_privilege_escalation` without the broken `NEW.role`/`OLD.role` comparison. Role changes are already protected on the canonical `user_roles` table (via `audit_role_changes` / RLS), so removing this check does not regress security.
+
+```sql
+CREATE OR REPLACE FUNCTION public.prevent_profile_privilege_escalation()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  is_priv boolean;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;  -- service role / trigger context
+  END IF;
+
+  SELECT public.is_admin() OR public.is_privileged() INTO is_priv;
+  IF is_priv THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.is_approved          IS DISTINCT FROM OLD.is_approved
+  OR NEW.is_suspended         IS DISTINCT FROM OLD.is_suspended
+  OR NEW.access_level         IS DISTINCT FROM OLD.access_level
+  OR NEW.verification_status  IS DISTINCT FROM OLD.verification_status
+  OR NEW.mfa_enforced         IS DISTINCT FROM OLD.mfa_enforced
+  OR NEW.enabled_modules      IS DISTINCT FROM OLD.enabled_modules
+  OR NEW.feature_flags        IS DISTINCT FROM OLD.feature_flags
+  OR NEW.onboarding_completed IS DISTINCT FROM OLD.onboarding_completed
+  THEN
+    RAISE EXCEPTION 'Not allowed to modify privileged profile fields'
+      USING ERRCODE = '42501';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+```
+
+### 2. Migration: drop the duplicate auth trigger
+
+Keep `on_auth_user_email_confirmed`, drop `trg_auth_user_email_confirmed`:
+
+```sql
+DROP TRIGGER IF EXISTS trg_auth_user_email_confirmed ON auth.users;
+```
+
+### 3. Verify
+
+- Re-run a signup with a fresh email and an existing email; both should return 200 instead of 500.
+- Confirm Supabase auth logs show no further `column "role" does not exist` errors.
+- Confirm `handle_trusted_signup` runs exactly once on email confirmation.
+
+## Notes / out of scope
+
+- No frontend changes needed. `SimpleSignupForm` + `useSecureAuth` flow is correct.
+- Other audit findings (rate-limit / sanitize RPCs) are present and functioning — not the cause.
+- I'll also keep `prevent_profile_self_escalation` as-is; it already guards `role` safely via `to_jsonb(NEW) ? 'role'`.
