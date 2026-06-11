@@ -183,11 +183,8 @@ export function useSecureAuth() {
         throw new Error(passwordErrors.length > 0 ? passwordErrors.join(', ') : 'Password must be at least 8 characters');
       }
 
-      // Check rate limiting
-      const rateLimitOk = await checkRateLimit(email, 'signup');
-      if (!rateLimitOk) {
-        throw new Error('Too many signup attempts. Please try again later.');
-      }
+      // Note: no app-level signup rate limit. Supabase Auth's built-in
+      // per-IP signup throttle is the only signup throttle.
 
       // Sanitize inputs
       const sanitizedEmail = await sanitizeInput(email);
