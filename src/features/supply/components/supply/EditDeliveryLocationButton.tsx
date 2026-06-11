@@ -37,8 +37,8 @@ export function EditDeliveryLocationButton({
   variant = 'inline',
   className,
 }: EditDeliveryLocationButtonProps) {
-  const { canManage, canAdmin } = useRolePermissions();
-  const allowed = canManage('supply_requests') || canAdmin('supply_requests');
+  const { canWrite, canAdmin } = useRolePermissions();
+  const allowed = canWrite('supply_requests') || canAdmin('supply_requests');
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(currentLocation ?? '');
   const { toast } = useToast();
