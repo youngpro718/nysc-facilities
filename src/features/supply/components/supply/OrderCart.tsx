@@ -62,8 +62,10 @@ export function OrderCart({
   isSubmitting,
 }: OrderCartProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const { user } = useAuth();
   const { options: locationOptions, defaultLocation } = useDeliveryLocations(user?.id);
+  const profile = useProfileCompleteness(user?.id);
 
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [priority, setPriority] = useState<'medium' | 'high' | 'urgent'>('medium');
@@ -84,6 +86,12 @@ export function OrderCart({
   const maxLineQty = items.reduce((m, i) => Math.max(m, i.quantity), 0);
   const highQuantity = maxLineQty >= 25 || totalQty >= 50;
   const needsApproval = hasRestrictedItems || highQuantity;
+  const trimmedLocation = deliveryLocation.trim();
+  const missingLocation = trimmedLocation.length === 0;
+  const isDifferentFromHome =
+    !!profile.homeRoomNumber &&
+    trimmedLocation.length > 0 &&
+    trimmedLocation.toLowerCase() !== profile.homeRoomNumber.toLowerCase();
 
   const approvalReason = hasRestrictedItems
     ? `Contains ${restrictedItems.length === 1 ? '' : restrictedItems.length + ' '}restricted item${restrictedItems.length === 1 ? '' : 's'}: ${restrictedItems.map(i => i.item_name).join(', ')}`
@@ -92,12 +100,15 @@ export function OrderCart({
       : null;
 
   const handleSubmit = async () => {
+    setAttemptedSubmit(true);
+    if (missingLocation) return; // hard-block: need a delivery location
     await onSubmit({
       priority,
-      delivery_location: deliveryLocation.trim(),
+      delivery_location: trimmedLocation,
       justification: reason,
       requested_delivery_date: neededBy || undefined,
     });
+    setAttemptedSubmit(false);
     setIsOpen(false);
   };
 
