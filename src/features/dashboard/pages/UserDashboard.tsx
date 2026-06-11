@@ -19,11 +19,21 @@ import { CompactActivitySection } from "@shared/components/user/CompactActivityS
 import { KeyRequestDialog } from "@features/supply/components/requests/KeyRequestDialog";
 
 import { Package, Send, Key, ChevronRight } from "lucide-react";
+import { getDashboardForRole } from "@/routes/roleBasedRouting";
 
 export default function UserDashboard() {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  // Redirect non-standard roles (admin, court_officer, etc.) to their own dashboard
+  useEffect(() => {
+    if (isLoading) return;
+    const role = profile?.role;
+    if (!role || role === "standard") return;
+    const target = getDashboardForRole(role);
+    if (target && target !== "/dashboard") navigate(target, { replace: true });
+  }, [isLoading, profile?.role, navigate]);
 
   const {
     notifications = [],
