@@ -155,7 +155,27 @@ export default function AdminSupplyRequests() {
         </Button>
       </PageHeader>
 
+      {/* Pending approval banner */}
+      {(() => {
+        const pendingCount = requests.filter(r => r.status === 'pending_approval').length;
+        if (pendingCount === 0 || filterStatus === 'pending_approval') return null;
+        return (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-foreground">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <span>
+                <strong>{pendingCount}</strong> supply request{pendingCount !== 1 ? 's are' : ' is'} waiting for approval.
+              </span>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setFilterStatus('pending_approval')}>
+              Review
+            </Button>
+          </div>
+        );
+      })()}
+
       {/* Filters */}
+
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
