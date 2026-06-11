@@ -13,12 +13,14 @@ import { TodaySchedule } from '@features/court/components/court-aide/TodaySchedu
 import { AlertsBar } from '@features/court/components/court-aide/AlertsBar';
 import { WorkCenterStats } from '@features/court/components/court-aide/WorkCenterStats';
 import { NotificationDropdown } from '@shared/components/user/NotificationDropdown';
+import { useCourtAideRealtime } from '@features/court/hooks/useCourtAideRealtime';
 
 import { Link } from 'react-router-dom';
 import { Package, Package2 } from 'lucide-react';
 
 export default function CourtAideWorkCenter() {
   const { user, profile } = useAuth();
+  useCourtAideRealtime();
   const {
     notifications = [],
     markAsRead,
