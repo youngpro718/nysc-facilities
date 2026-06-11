@@ -20,6 +20,7 @@ import { Package, Package2 } from 'lucide-react';
 
 export default function CourtAideWorkCenter() {
   const { user, profile } = useAuth();
+  useCourtAideRealtime();
   const {
     notifications = [],
     markAsRead,
