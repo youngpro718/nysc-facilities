@@ -465,8 +465,89 @@ export function ImprovedSupplyStaffDashboard() {
           </TabsTrigger>
         </TabsList>
 
+        {/* Needs Approval Tab */}
+        <TabsContent value="approval" className="space-y-3">
+          {(pendingApprovalOrders || []).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CheckCircle className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">All caught up</h3>
+              <p className="text-sm text-muted-foreground">No orders waiting for approval.</p>
+            </div>
+          ) : (
+            (pendingApprovalOrders || []).map((order: any) => {
+              const requester = order.profiles
+                ? `${order.profiles.first_name ?? ''} ${order.profiles.last_name ?? ''}`.trim() || order.profiles.email
+                : 'Unknown';
+              const itemCount = order.supply_request_items?.length || 0;
+              return (
+                <Card key={order.id} className="border-l-4 border-l-amber-500">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-foreground">{requester}</span>
+                          <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30">
+                            Needs Approval
+                          </Badge>
+                          {order.priority && order.priority !== 'medium' && (
+                            <Badge variant="secondary" className="capitalize">{order.priority}</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {itemCount} item{itemCount !== 1 ? 's' : ''}
+                          {order.delivery_location ? ` · ${order.delivery_location}` : ''}
+                          {' · '}{new Date(order.created_at).toLocaleString()}
+                        </p>
+                        {order.justification && (
+                          <p className="text-sm text-foreground mt-2 line-clamp-2">{order.justification}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button size="sm" variant="outline" onClick={() => setSelectedOrder(order)}>
+                        View details
+                      </Button>
+                      {canApprove ? (
+                        <>
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 min-h-[44px]"
+                            disabled={approveMutation.isPending}
+                            onClick={() => approveMutation.mutate(order.id)}
+                          >
+                            <CheckCircle className="mr-1 h-4 w-4" /> Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="min-h-[44px]"
+                            disabled={rejectMutation.isPending}
+                            onClick={() => {
+                              const reason = window.prompt('Reason for rejecting this request?');
+                              if (reason && reason.trim()) {
+                                rejectMutation.mutate({ id: order.id, reason: reason.trim() });
+                              }
+                            }}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground self-center">
+                          Awaiting admin approval
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </TabsContent>
+
         {/* New Orders Tab */}
         <TabsContent value="new" className="space-y-4">
+
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center space-y-2">
