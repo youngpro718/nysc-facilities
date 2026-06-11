@@ -1,22 +1,31 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ALLOWED_ORIGINS is a comma-separated list, e.g. "https://app.example.com".
-// If unset, falls back to "*" so dev/testing keeps working without configuration.
-const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+// ALLOWED_ORIGINS is a comma-separated list, e.g. "https://app.example.com,https://staging.example.com".
+// If unset, falls back to a safe default list of known production/preview origins
+// instead of a permissive wildcard so unknown sites cannot make credentialed cross-origin requests.
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://nyscfhub.com",
+  "https://www.nyscfhub.com",
+  "https://nysc-facilities.lovable.app",
+  "https://id-preview--e785d8ca-c2d1-4fcc-af24-583a7e48eaa6.lovable.app",
+  "https://e785d8ca-c2d1-4fcc-af24-583a7e48eaa6.lovableproject.com",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+const configuredOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
+const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : DEFAULT_ALLOWED_ORIGINS;
+
 function getCorsHeaders(req: Request): Record<string, string> {
   const base = {
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Vary": "Origin",
   };
-  if (allowedOrigins.length === 0) {
-    return { ...base, "Access-Control-Allow-Origin": "*" };
-  }
   const origin = req.headers.get("Origin");
   if (origin && allowedOrigins.includes(origin)) {
     return { ...base, "Access-Control-Allow-Origin": origin };
@@ -25,9 +34,8 @@ function getCorsHeaders(req: Request): Record<string, string> {
 }
 
 function originAllowed(req: Request): boolean {
-  if (allowedOrigins.length === 0) return true;
   const origin = req.headers.get("Origin");
-  if (!origin) return true;
+  if (!origin) return true; // non-browser / same-origin request
   return allowedOrigins.includes(origin);
 }
 
