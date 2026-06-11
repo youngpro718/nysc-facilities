@@ -217,6 +217,52 @@ export function ImprovedSupplyStaffDashboard() {
     // refetchInterval disabled
   });
 
+  // Fetch pending-approval orders so they don't get lost in the queue
+  const { data: pendingApprovalOrders } = useQuery({
+    queryKey: ['supply-staff-pending-approval'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('supply_requests')
+        .select(`
+          *,
+          profiles:requester_id (first_name, last_name, email, department),
+          supply_request_items (
+            *,
+            inventory_items (id, name, quantity, unit, sku)
+          )
+        `)
+        .eq('status', 'pending_approval')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const userRole = profile?.role;
+  const canApprove = ['admin', 'system_admin', 'purchasing', 'facilities_manager'].includes(userRole || '');
+
+  const approveMutation = useMutation({
+    mutationFn: (id: string) => approveSupplyRequest(id),
+    onSuccess: () => {
+      toast.success('Order approved');
+      queryClient.invalidateQueries({ queryKey: ['supply-staff-pending-approval'] });
+      queryClient.invalidateQueries({ queryKey: ['supply-staff-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
+    },
+    onError: (e: unknown) => toast.error('Failed to approve', { description: getErrorMessage(e) }),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => rejectSupplyRequest(id, reason),
+    onSuccess: () => {
+      toast.success('Order rejected');
+      queryClient.invalidateQueries({ queryKey: ['supply-staff-pending-approval'] });
+      queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
+    },
+    onError: (e: unknown) => toast.error('Failed to reject', { description: getErrorMessage(e) }),
+  });
+
+
   // Subscribe to real-time updates
   useEffect(() => {
     const channel = supabase
