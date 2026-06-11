@@ -421,8 +421,19 @@ export function ImprovedSupplyStaffDashboard() {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} data-tour="supply-orders">
-        <TabsList className="grid w-full grid-cols-4" data-tour="supply-status">
+        <TabsList className={`grid w-full ${pendingApprovalCount > 0 ? 'grid-cols-5' : 'grid-cols-4'}`} data-tour="supply-status">
+          {pendingApprovalCount > 0 && (
+            <TabsTrigger value="approval" className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <span className="hidden sm:inline">Needs Approval</span>
+              <span className="sm:hidden">Approve</span>
+              <Badge className="ml-1 bg-amber-500 text-white hover:bg-amber-500">
+                {pendingApprovalCount}
+              </Badge>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="new" className="flex items-center gap-2">
+
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">New Orders</span>
             <span className="sm:hidden">New</span>
