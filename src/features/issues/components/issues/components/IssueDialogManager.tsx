@@ -45,7 +45,10 @@ export const IssueDialogManager = ({ dialogState, onClose }: IssueDialogManagerP
           open={dialogState.isOpen} 
           onOpenChange={handleSheetOpenChange}
         >
-          <SheetContent side="right" className="w-full sm:w-3/4 md:w-2/3 lg:w-1/2">
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 gap-0 flex flex-col"
+          >
             <VisuallyHidden>
               <SheetTitle>Issue Details</SheetTitle>
             </VisuallyHidden>

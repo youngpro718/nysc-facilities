@@ -216,13 +216,13 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
             actions={headerActions}
           />
           <ScrollArea className="flex-1">
-            <div className="space-y-6 p-6">
-              <Tabs defaultValue="details" className="w-full">
-                <TabsList className="w-full justify-start">
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                  <TabsTrigger value="photos">Photos</TabsTrigger>
-                  <TabsTrigger value="comments">Comments</TabsTrigger>
+            <div className="space-y-6 px-6 py-6">
+              <Tabs defaultValue="details" className="w-full space-y-5">
+                <TabsList className="w-full justify-start h-auto p-1 bg-muted/60 flex-wrap gap-1">
+                  <TabsTrigger value="details" className="text-sm">Details</TabsTrigger>
+                  <TabsTrigger value="timeline" className="text-sm">Timeline</TabsTrigger>
+                  <TabsTrigger value="photos" className="text-sm">Photos</TabsTrigger>
+                  <TabsTrigger value="comments" className="text-sm">Comments</TabsTrigger>
                 </TabsList>
 
                 <TabsContent 

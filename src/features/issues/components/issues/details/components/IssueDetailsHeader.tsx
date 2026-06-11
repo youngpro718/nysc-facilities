@@ -19,12 +19,12 @@ interface IssueDetailsHeaderProps {
 
 export const IssueDetailsHeader = ({ title, status, issueId, onEdit, onDelete, isEditing, actions }: IssueDetailsHeaderProps) => {
   return (
-    <DialogHeader className="px-6 pt-5 pb-3 border-b space-y-2">
-      <DialogTitle className="flex items-center gap-2 flex-wrap pr-10">
-        <h2 className="text-lg font-semibold leading-snug break-words">{title}</h2>
+    <DialogHeader className="px-6 pt-6 pb-4 border-b space-y-3 pr-14">
+      <DialogTitle className="flex items-start gap-3 flex-wrap">
+        <h2 className="text-xl font-semibold leading-tight break-words flex-1 min-w-0">{title}</h2>
         <IssueStatusBadge status={status} />
       </DialogTitle>
-      <div className="flex items-center justify-end gap-1">
+      <div className="flex items-center justify-end gap-1 flex-wrap">
         {actions}
         <Button
           variant="ghost"
