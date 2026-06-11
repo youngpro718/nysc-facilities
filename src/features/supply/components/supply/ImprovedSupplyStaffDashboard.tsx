@@ -310,12 +310,14 @@ export function ImprovedSupplyStaffDashboard() {
   // Calculate counts - use actual statuses
   const newCount = (allOrders || []).filter(o => ['submitted', 'approved', 'received', 'picking'].includes(o.status)).length;
   const readyCount = (allOrders || []).filter(o => o.status === 'ready').length;
+  const pendingApprovalCount = (pendingApprovalOrders || []).length;
   const completedTodayCount = (allOrders || []).filter(o => {
     if (o.status !== 'completed') return false;
     const today = new Date().toDateString();
     const completedDate = new Date(o.fulfilled_at || o.updated_at).toDateString();
     return today === completedDate;
   }).length;
+
 
   const handleRefresh = () => {
     refetch();
