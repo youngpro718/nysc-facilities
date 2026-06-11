@@ -11,6 +11,7 @@ import { useIsMobile } from '@shared/hooks/use-mobile';
 import { useGoHome } from '@shared/hooks/useHomePath';
 import { QuickSupplyRequest } from '@features/supply/components/supply/QuickSupplyRequest';
 import { QuickOrderGrid } from '@features/supply/components/supply/QuickOrderGrid';
+import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
 
 export default function SupplyOrderPage() {
   const goHome = useGoHome();
@@ -30,6 +31,8 @@ export default function SupplyOrderPage() {
         </Button>
         <h1 className="text-lg sm:text-2xl font-bold truncate">Order Supplies</h1>
       </div>
+
+      <ProfileIncompleteBanner className="mb-3 shrink-0" />
 
       {/* Desktop: List + Detail Panel | Mobile: Card-based browsing */}
       <div className="flex-1 min-h-0">

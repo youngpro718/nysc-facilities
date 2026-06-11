@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils';
 import type { CartItem } from '@features/supply/hooks/useOrderCart';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useDeliveryLocations } from '@features/supply/hooks/useDeliveryLocations';
+import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
+import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
 import {
   Sheet,
   SheetContent,
@@ -60,8 +62,10 @@ export function OrderCart({
   isSubmitting,
 }: OrderCartProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const { user } = useAuth();
   const { options: locationOptions, defaultLocation } = useDeliveryLocations(user?.id);
+  const profile = useProfileCompleteness(user?.id);
 
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [priority, setPriority] = useState<'medium' | 'high' | 'urgent'>('medium');
@@ -82,6 +86,12 @@ export function OrderCart({
   const maxLineQty = items.reduce((m, i) => Math.max(m, i.quantity), 0);
   const highQuantity = maxLineQty >= 25 || totalQty >= 50;
   const needsApproval = hasRestrictedItems || highQuantity;
+  const trimmedLocation = deliveryLocation.trim();
+  const missingLocation = trimmedLocation.length === 0;
+  const isDifferentFromHome =
+    !!profile.homeRoomNumber &&
+    trimmedLocation.length > 0 &&
+    trimmedLocation.toLowerCase() !== profile.homeRoomNumber.toLowerCase();
 
   const approvalReason = hasRestrictedItems
     ? `Contains ${restrictedItems.length === 1 ? '' : restrictedItems.length + ' '}restricted item${restrictedItems.length === 1 ? '' : 's'}: ${restrictedItems.map(i => i.item_name).join(', ')}`
@@ -90,12 +100,15 @@ export function OrderCart({
       : null;
 
   const handleSubmit = async () => {
+    setAttemptedSubmit(true);
+    if (missingLocation) return; // hard-block: need a delivery location
     await onSubmit({
       priority,
-      delivery_location: deliveryLocation.trim(),
+      delivery_location: trimmedLocation,
       justification: reason,
       requested_delivery_date: neededBy || undefined,
     });
+    setAttemptedSubmit(false);
     setIsOpen(false);
   };
 
@@ -138,6 +151,9 @@ export function OrderCart({
             </div>
           ) : (
             <>
+              {/* Profile completeness banner — shows when department/home room missing */}
+              <ProfileIncompleteBanner />
+
               {/* Approval notice (if needed) */}
               {needsApproval && (
                 <div className="flex gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
@@ -219,10 +235,17 @@ export function OrderCart({
 
               {/* Delivery */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" />
-                  Deliver to
-                </Label>
+                <div className="flex items-baseline justify-between">
+                  <Label className="text-xs font-medium flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Deliver to <span className="text-destructive">*</span>
+                  </Label>
+                  {profile.homeRoomNumber && (
+                    <span className="text-[10px] text-muted-foreground">
+                      Home room: {profile.homeRoomNumber}
+                    </span>
+                  )}
+                </div>
                 {locationOptions.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {locationOptions.map(opt => {
@@ -241,7 +264,7 @@ export function OrderCart({
                         >
                           {opt.label}
                           {opt.isPrimary && (
-                            <span className="text-[9px] opacity-70 ml-0.5">★</span>
+                            <span className="text-[9px] opacity-70 ml-0.5">★ home</span>
                           )}
                         </button>
                       );
@@ -249,12 +272,30 @@ export function OrderCart({
                   </div>
                 )}
                 <Input
-                  placeholder="Or enter a room number / location"
+                  placeholder={
+                    profile.homeRoomNumber
+                      ? 'Or send to a different room (type a room number)'
+                      : 'Type the room number where this should be delivered'
+                  }
                   value={deliveryLocation}
                   onChange={(e) => setDeliveryLocation(e.target.value)}
-                  className="h-11"
+                  className={cn(
+                    'h-11',
+                    attemptedSubmit && missingLocation && 'border-destructive focus-visible:ring-destructive'
+                  )}
                   inputMode="text"
+                  aria-invalid={attemptedSubmit && missingLocation}
                 />
+                {attemptedSubmit && missingLocation && (
+                  <p className="text-xs text-destructive">
+                    A delivery location is required so staff knows where to bring your order.
+                  </p>
+                )}
+                {!missingLocation && isDifferentFromHome && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Heads up — you're sending this to {trimmedLocation}, not your home room ({profile.homeRoomNumber}).
+                  </p>
+                )}
               </div>
 
               {/* Priority */}
@@ -346,7 +387,7 @@ export function OrderCart({
 
         {/* Sticky submit bar */}
         {items.length > 0 && (
-          <div className="absolute bottom-0 inset-x-0 p-3 pb-safe border-t bg-background/95 backdrop-blur">
+          <div className="absolute bottom-0 inset-x-0 p-3 pb-safe border-t bg-background/95 backdrop-blur space-y-1.5">
             <Button
               type="button"
               onClick={handleSubmit}
@@ -356,9 +397,11 @@ export function OrderCart({
               <Send className="h-4 w-4 mr-2" />
               {isSubmitting
                 ? 'Submitting…'
-                : needsApproval
-                  ? `Send ${totalItems} item${totalItems === 1 ? '' : 's'} for approval`
-                  : `Submit order (${totalItems} item${totalItems === 1 ? '' : 's'})`}
+                : missingLocation
+                  ? 'Add a delivery location to submit'
+                  : needsApproval
+                    ? `Send ${totalItems} item${totalItems === 1 ? '' : 's'} for approval`
+                    : `Submit order (${totalItems} item${totalItems === 1 ? '' : 's'})`}
             </Button>
           </div>
         )}
