@@ -387,7 +387,7 @@ export function OrderCart({
 
         {/* Sticky submit bar */}
         {items.length > 0 && (
-          <div className="absolute bottom-0 inset-x-0 p-3 pb-safe border-t bg-background/95 backdrop-blur">
+          <div className="absolute bottom-0 inset-x-0 p-3 pb-safe border-t bg-background/95 backdrop-blur space-y-1.5">
             <Button
               type="button"
               onClick={handleSubmit}
@@ -397,9 +397,11 @@ export function OrderCart({
               <Send className="h-4 w-4 mr-2" />
               {isSubmitting
                 ? 'Submitting…'
-                : needsApproval
-                  ? `Send ${totalItems} item${totalItems === 1 ? '' : 's'} for approval`
-                  : `Submit order (${totalItems} item${totalItems === 1 ? '' : 's'})`}
+                : missingLocation
+                  ? 'Add a delivery location to submit'
+                  : needsApproval
+                    ? `Send ${totalItems} item${totalItems === 1 ? '' : 's'} for approval`
+                    : `Submit order (${totalItems} item${totalItems === 1 ? '' : 's'})`}
             </Button>
           </div>
         )}
