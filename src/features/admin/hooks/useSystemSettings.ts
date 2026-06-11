@@ -226,68 +226,23 @@ export function useSystemSettings() {
     },
   });
 
-  // Run system health check
-  const runHealthCheck = useMutation({
-    mutationFn: async () => {
-      // Trigger a fresh health read
-      queryClient.invalidateQueries({ queryKey: ['system-status'] });
-      queryClient.invalidateQueries({ queryKey: ['system-stats'] });
-      
-      return { success: true, message: 'System health check completed successfully' };
-    },
-  });
-
-  // Backup database
-  const backupDatabase = useMutation({
-    mutationFn: async () => {
-      // Simulate backup process
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // In a real app, this would trigger actual backup
-      return { success: true, message: 'Database backup completed successfully' };
-    },
-  });
-
-  // Clear cache
-  const clearCache = useMutation({
-    mutationFn: async () => {
-      // Call server-side maintenance RPC
-      const { data, error } = await supabase.rpc('clear_app_cache' as any);
-      // Regardless of server response, refresh client caches to reflect any changes
-      queryClient.clear();
-      if (error) {
-        return { success: false, message: 'Server cache clear failed' };
-      }
-      const msg = (data as Record<string, unknown>)?.message as string | undefined;
-      return { success: true, message: msg || 'Cache cleared successfully' };
-    },
-  });
-
   return {
     // Data
     systemStats,
     systemStatus,
     modules,
-    
+
     // Loading states
     isLoading: statsLoading || statusLoading || modulesLoading,
     statsLoading,
     statusLoading,
     modulesLoading,
-    
+
     // Errors
     error: statsError || statusError || modulesError,
-    
+
     // Mutations
     toggleModule: toggleModule.mutate,
-    runHealthCheck: runHealthCheck.mutate,
-    backupDatabase: backupDatabase.mutate,
-    clearCache: clearCache.mutate,
-    
-    // Mutation states
     isTogglingModule: toggleModule.isPending,
-    isRunningHealthCheck: runHealthCheck.isPending,
-    isBackingUp: backupDatabase.isPending,
-    isClearingCache: clearCache.isPending,
   };
 }

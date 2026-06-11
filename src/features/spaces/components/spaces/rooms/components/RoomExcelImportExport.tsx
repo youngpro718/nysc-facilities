@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 // the library is loaded on demand in the export/import handlers.
 import type ExcelJS from "exceljs";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { sheetToJson } from "@shared/utils/excelExport";
 
 interface RoomExcelImportExportProps {
   projectRef: string;
@@ -282,25 +283,6 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       const workbook = new ExcelJSLib.Workbook();
       await workbook.xlsx.load(arrayBuffer);
 
-      // Helper: convert a worksheet to array of row objects using first row as headers
-      function sheetToJson(ws: ExcelJS.Worksheet): Record<string, unknown>[] {
-        const headers: string[] = [];
-        const rows: Record<string, unknown>[] = [];
-        ws.eachRow((row, rowNumber) => {
-          if (rowNumber === 1) {
-            row.eachCell(cell => headers.push(cell.value?.toString() || ""));
-          } else {
-            const obj: Record<string, unknown> = {};
-            row.eachCell((cell, colNumber) => {
-              const header = headers[colNumber - 1];
-              if (header) obj[header] = cell.value;
-            });
-            rows.push(obj);
-          }
-        });
-        return rows;
-      }
-
       // ── Process "Room Info" sheet ──
       const roomInfoSheet = workbook.getWorksheet("Room Info");
       if (roomInfoSheet) {
@@ -338,6 +320,20 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
               updateData.technology_installed = t ? t.split(",").map(s => s.trim()).filter(Boolean) : [];
               changes.push("technology");
             }
+
+            // Date columns — exported as YYYY-MM-DD; accept that format back
+            const parseDateCell = (v: unknown): string | null | undefined => {
+              if (v === undefined) return undefined;
+              if (v === null || v === "") return null;
+              const s = String(v).split("T")[0];
+              return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined;
+            };
+            const lastInspection = parseDateCell(row["Last Inspection"]);
+            if (lastInspection !== undefined) { updateData.last_inspection_date = lastInspection; changes.push("last_inspection"); }
+            else if (row["Last Inspection"]) errorMessages.push(`Room ${roomId}: Invalid Last Inspection date "${row["Last Inspection"]}" (use YYYY-MM-DD)`);
+            const nextMaintenance = parseDateCell(row["Next Maintenance"]);
+            if (nextMaintenance !== undefined) { updateData.next_maintenance_date = nextMaintenance; changes.push("next_maintenance"); }
+            else if (row["Next Maintenance"]) errorMessages.push(`Room ${roomId}: Invalid Next Maintenance date "${row["Next Maintenance"]}" (use YYYY-MM-DD)`);
 
             if (Object.keys(updateData).length > 0) {
               updateData.updated_at = new Date().toISOString();

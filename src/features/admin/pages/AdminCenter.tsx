@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRateLimitManager } from "@features/auth/hooks/useRateLimitManager";
+import { useSystemSettings } from "@features/admin/hooks/useSystemSettings";
 import { ModuleManagement } from "@features/profile/components/profile/ModuleManagement";
 import { VerificationAppeals } from "@features/admin/components/VerificationAppeals";
 import { QrCode } from "lucide-react";
@@ -52,8 +53,58 @@ interface UserProfile {
 
 function SystemSettingsContent() {
   const navigate = useNavigate();
+  const { systemStatus, systemStats, statusLoading, statsLoading } = useSystemSettings();
+
+  const healthItems = [
+    { label: 'System', value: systemStatus?.system ?? '—', ok: systemStatus?.system === 'online' },
+    { label: 'Database', value: systemStatus?.database ?? '—', ok: systemStatus?.database === 'connected' },
+    { label: 'Security', value: systemStatus?.security ?? '—', ok: systemStatus?.security === 'secure' },
+  ];
+
+  const statItems = [
+    { label: 'Users', value: systemStats?.totalUsers },
+    { label: 'Spaces', value: systemStats?.totalSpaces },
+    { label: 'Issues', value: systemStats?.totalIssues },
+    { label: 'Supply Requests', value: systemStats?.totalSupplyRequests },
+    { label: 'Inventory Items', value: systemStats?.totalInventoryItems },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* System Health */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">System Health</CardTitle>
+          <CardDescription>Live status from the database health check</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {healthItems.map((item) => (
+              <Badge
+                key={item.label}
+                variant="outline"
+                className={`gap-1.5 px-3 py-1 ${statusLoading ? 'opacity-50' : ''}`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${item.ok ? 'bg-status-operational' : 'bg-status-warning'}`}
+                />
+                {item.label}: <span className="font-medium capitalize">{item.value}</span>
+              </Badge>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 border-t">
+            {statItems.map((item) => (
+              <div key={item.label}>
+                <p className="text-xl font-bold tracking-tight">
+                  {statsLoading ? '…' : item.value ?? 0}
+                </p>
+                <p className="text-xs text-muted-foreground">{item.label}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* App Install Card */}
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-4">
@@ -76,12 +127,13 @@ function SystemSettingsContent() {
         </CardContent>
       </Card>
 
-      {/* Module Management */}
+      {/* Module Visibility */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Module Management</CardTitle>
+          <CardTitle className="text-lg">Module Visibility</CardTitle>
           <CardDescription>
-            Enable or disable features across the application
+            Hide modules you don't use from your navigation. This only affects your
+            account — other users' access is controlled by their role.
           </CardDescription>
         </CardHeader>
         <CardContent>

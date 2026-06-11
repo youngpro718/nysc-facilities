@@ -1,161 +1,103 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Building2, 
-  AlertTriangle, 
-  Users, 
-  Package, 
-  KeyRound, 
-  Zap, 
-  Wrench, 
-  Gavel,
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Building2,
+  Package,
+  KeyRound,
+  Wrench,
   Boxes,
-  Settings2
 } from "lucide-react";
 import { useSystemSettings } from "@features/admin/hooks/useSystemSettings";
 
-const MODULE_CONFIG = [
+/**
+ * Only the modules that are actually enforced by ModuleProtectedRoute.
+ * Keys not listed here have no effect anywhere in the app, so showing
+ * a switch for them would be lying to the admin.
+ */
+const ENFORCED_MODULES = [
   {
-    key: 'spaces' as const,
-    title: 'Rooms Management',
-    description: 'Manage buildings, floors, and rooms',
+    key: "spaces",
+    title: "Spaces",
+    description: "Buildings, floors, and room management",
     icon: Building2,
   },
   {
-    key: 'issues' as const,
-    title: 'Issues Management',
-    description: 'Track and resolve facility issues',
-    icon: AlertTriangle,
-  },
-  {
-    key: 'occupants' as const,
-    title: 'Occupants Management',
-    description: 'Manage room assignments and occupant information',
-    icon: Users,
-  },
-  {
-    key: 'inventory' as const,
-    title: 'Inventory Management',
-    description: 'Track inventory items, stock levels, and transactions',
-    icon: Boxes,
-  },
-  {
-    key: 'supply_requests' as const,
-    title: 'Supply Requests',
-    description: 'Process and fulfill supply and material requests',
-    icon: Package,
-  },
-  {
-    key: 'keys' as const,
-    title: 'Keys Management',
-    description: 'Manage key requests, assignments, and inventory',
-    icon: KeyRound,
-  },
-  {
-    key: 'maintenance' as const,
-    title: 'Maintenance Management',
-    description: 'Schedule and track facility maintenance operations',
+    key: "operations",
+    title: "Operations",
+    description: "Issues, maintenance, and lighting",
     icon: Wrench,
   },
   {
-    key: 'court_operations' as const,
-    title: 'Court Operations',
-    description: 'Manage court assignments, terms, and operations',
-    icon: Gavel,
+    key: "inventory",
+    title: "Inventory",
+    description: "Stock levels, supplies, and storage rooms",
+    icon: Boxes,
   },
-];
+  {
+    key: "keys",
+    title: "Keys",
+    description: "Key inventory, assignments, and elevator passes",
+    icon: KeyRound,
+  },
+  {
+    key: "supply_requests",
+    title: "Supply Requests",
+    description: "Request approval and fulfillment",
+    icon: Package,
+  },
+] as const;
 
 export function ModuleManagement() {
   const { modules, toggleModule, isTogglingModule, modulesLoading } = useSystemSettings();
 
-  const handleModuleToggle = (moduleId: string, enabled: boolean) => {
-    toggleModule({ moduleId, enabled });
-  };
-
-  const getActiveModulesCount = () => {
-    return modules.filter(module => module.enabled).length;
-  };
-
   if (modulesLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings2 className="h-5 w-5" />
-            Module Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4">Loading module preferences...</div>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        {ENFORCED_MODULES.map((m) => (
+          <Skeleton key={m.key} className="h-[68px] rounded-lg" />
+        ))}
+      </div>
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings2 className="h-5 w-5" />
-          Module Management
-        </CardTitle>
-        <CardDescription>
-          Control which modules are enabled for your admin interface. Disabling unused modules can improve performance.
-        </CardDescription>
-        <div className="flex items-center gap-2 mt-2">
-          <Badge variant="outline">
-            {getActiveModulesCount()}/{modules.length} modules enabled
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid gap-4">
-          {modules.map((module) => {
-            // Find matching config for icon
-            const config = MODULE_CONFIG.find(c => c.key === module.id);
-            const Icon = config?.icon || Settings2;
-            
-            return (
-              <div key={module.id} className="flex items-center justify-between gap-3 p-4 border rounded-lg">
-                <div className="flex items-start gap-3 min-w-0 flex-1">
-                  <div className={`p-2 rounded-md ${module.enabled ? 'bg-primary/10' : 'bg-muted'}`}>
-                    <Icon className={`h-4 w-4 ${module.enabled ? 'text-primary' : 'text-muted-foreground'}`} />
-                  </div>
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Label className="text-sm font-medium">{module.name}</Label>
-                      <Badge variant={module.enabled ? "default" : "secondary"} className="text-xs shrink-0">
-                        {module.enabled ? "Enabled" : "Disabled"}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground break-words">
-                      {module.description}
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  className="shrink-0"
-                  checked={module.enabled}
-                  onCheckedChange={(checked) => handleModuleToggle(module.id, checked)}
-                  disabled={isTogglingModule}
-                />
-              </div>
-            );
-          })}
-        </div>
+  const enabledByKey = new Map(modules.map((m) => [m.id, m.enabled]));
 
-        <div className="pt-4 border-t">
-          <div className="space-y-0.5">
-            <p className="font-medium">Module Preferences</p>
-            <p className="text-sm text-muted-foreground">
-              Changes are saved automatically and take effect immediately
-            </p>
+  return (
+    <div className="space-y-3">
+      {ENFORCED_MODULES.map((module) => {
+        const Icon = module.icon;
+        const enabled = enabledByKey.get(module.key) ?? true;
+
+        return (
+          <div
+            key={module.key}
+            className="flex items-center justify-between gap-3 p-4 border rounded-lg"
+          >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className={`p-2 rounded-md shrink-0 ${enabled ? "bg-primary/10" : "bg-muted"}`}>
+                <Icon className={`h-4 w-4 ${enabled ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+              <div className="min-w-0">
+                <Label className="text-sm font-medium">{module.title}</Label>
+                <p className="text-sm text-muted-foreground truncate">{module.description}</p>
+              </div>
+            </div>
+            {!enabled && (
+              <Badge variant="secondary" className="shrink-0 text-xs">
+                Hidden
+              </Badge>
+            )}
+            <Switch
+              className="shrink-0"
+              checked={enabled}
+              onCheckedChange={(checked) => toggleModule({ moduleId: module.key, enabled: checked })}
+              disabled={isTogglingModule}
+            />
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        );
+      })}
+    </div>
   );
 }

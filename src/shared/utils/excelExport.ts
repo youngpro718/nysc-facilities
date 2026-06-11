@@ -150,6 +150,83 @@ export const exportMultipleSheets = async (
 };
 
 /**
+ * Normalize a raw ExcelJS cell value to a plain primitive so that files
+ * edited in Excel survive the round trip back into the app:
+ * - Excel auto-links emails/URLs → { text, hyperlink } objects
+ * - formatting part of a cell → { richText: [...] } objects
+ * - formulas → { formula, result } objects
+ * - typed dates → JS Date objects (normalized to YYYY-MM-DD)
+ * - our own formula-injection guard ('=foo) → leading apostrophe stripped
+ */
+export const normalizeCellValue = (value: unknown): unknown => {
+  if (value === null || value === undefined) return value;
+
+  if (value instanceof Date) {
+    return value.toISOString().split('T')[0];
+  }
+
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    if ('richText' in obj && Array.isArray(obj.richText)) {
+      return (obj.richText as Array<{ text?: string }>).map((r) => r.text ?? '').join('');
+    }
+    if ('hyperlink' in obj) {
+      return normalizeCellValue(obj.text ?? obj.hyperlink);
+    }
+    if ('formula' in obj || 'sharedFormula' in obj) {
+      return normalizeCellValue(obj.result ?? '');
+    }
+    if ('error' in obj) {
+      return null;
+    }
+    return value;
+  }
+
+  if (typeof value === 'string' && /^'[=+\-@]/.test(value)) {
+    // Undo sanitizeForExcel's injection guard on re-import
+    return value.slice(1);
+  }
+
+  return value;
+};
+
+/**
+ * Convert a worksheet to row objects keyed by the first (header) row.
+ * Headers are indexed by column number, so a blank header cell can't
+ * shift every later column out of alignment.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const sheetToJson = (worksheet: any): Record<string, unknown>[] => {
+  const headers: string[] = [];
+  const rows: Record<string, unknown>[] = [];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  worksheet.eachRow((row: any, rowNumber: number) => {
+    if (rowNumber === 1) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      row.eachCell({ includeEmpty: true }, (cell: any, colNumber: number) => {
+        headers[colNumber - 1] = normalizeCellValue(cell.value)?.toString().trim() || '';
+      });
+    } else {
+      const rowData: Record<string, unknown> = {};
+      let hasValue = false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      row.eachCell((cell: any, colNumber: number) => {
+        const header = headers[colNumber - 1];
+        if (header) {
+          const v = normalizeCellValue(cell.value);
+          rowData[header] = v;
+          if (v !== null && v !== undefined && v !== '') hasValue = true;
+        }
+      });
+      if (hasValue) rows.push(rowData);
+    }
+  });
+
+  return rows;
+};
+
+/**
  * Parse Excel file to JSON
  * @param file Excel file to parse
  * @returns Promise with array of objects
@@ -165,27 +242,5 @@ export const parseExcelFile = async (file: File): Promise<unknown[]> => {
     throw new Error('No worksheet found in file');
   }
 
-  const data: unknown[] = [];
-  const headers: string[] = [];
-
-  worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) {
-      // First row is headers
-      row.eachCell(cell => {
-        headers.push(cell.value?.toString() || '');
-      });
-    } else {
-      // Data rows
-      const rowData: Record<string, unknown> = {};
-      row.eachCell((cell, colNumber) => {
-        const header = headers[colNumber - 1];
-        if (header) {
-          rowData[header] = cell.value;
-        }
-      });
-      data.push(rowData);
-    }
-  });
-
-  return data;
+  return sheetToJson(worksheet);
 };
