@@ -1,12 +1,24 @@
 /**
- * SetupRequestForm - Structured form for room setup requests
- * 
- * Collects: room selection, date needed, attendee count, setup type, notes
+ * SetupRequestForm - Structured form for room / event setup requests
+ *
+ * The core ask is "bring these items to this room at this time":
+ * furniture with quantities, destination room, date + time, and how
+ * the room should be arranged.
  */
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { ArrowLeft, Loader2, Users, Calendar, LayoutGrid } from 'lucide-react';
+import {
+  ArrowLeft,
+  Loader2,
+  Users,
+  Calendar,
+  Clock,
+  MapPin,
+  Minus,
+  Plus,
+  Armchair,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,11 +36,18 @@ import { useOccupantAssignments, DetailedRoomAssignment } from '@features/occupa
 
 export type SetupType = 'meeting' | 'hearing' | 'training' | 'event' | 'other';
 
+export interface SetupItemRequest {
+  name: string;
+  quantity: number;
+}
+
 export interface SetupRequestData {
   roomId: string | null;
   roomDisplay: string;
   dateNeeded: Date | undefined;
-  attendeeCount: number;
+  timeNeeded: string;
+  items: SetupItemRequest[];
+  attendeeCount: number | null;
   setupType: SetupType;
   additionalNotes: string;
 }
@@ -40,12 +59,15 @@ interface SetupRequestFormProps {
 }
 
 const SETUP_TYPES: { value: SetupType; label: string }[] = [
+  { value: 'event', label: 'Event' },
   { value: 'meeting', label: 'Meeting' },
   { value: 'hearing', label: 'Hearing' },
   { value: 'training', label: 'Training' },
-  { value: 'event', label: 'Event' },
   { value: 'other', label: 'Other' },
 ];
+
+// Items court aides are most often asked to bring
+const FURNITURE_ITEMS = ['Tables', 'Chairs', 'Desks', 'Podium', 'Easel'] as const;
 
 export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupRequestFormProps) {
   const { user } = useAuth();
@@ -54,8 +76,11 @@ export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupReques
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const [manualRoomEntry, setManualRoomEntry] = useState('');
   const [dateNeeded, setDateNeeded] = useState<Date | undefined>(undefined);
+  const [timeNeeded, setTimeNeeded] = useState('');
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [otherItem, setOtherItem] = useState('');
   const [attendeeCount, setAttendeeCount] = useState<string>('');
-  const [setupType, setSetupType] = useState<SetupType>('meeting');
+  const [setupType, setSetupType] = useState<SetupType>('event');
   const [additionalNotes, setAdditionalNotes] = useState('');
 
   // Get user's assigned rooms (non-storage only)
@@ -83,15 +108,29 @@ export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupReques
     return manualRoomEntry || 'Unspecified room';
   };
 
+  const adjustQuantity = (item: string, delta: number) => {
+    setQuantities(prev => {
+      const next = Math.max(0, (prev[item] ?? 0) + delta);
+      return { ...prev, [item]: next };
+    });
+  };
+
+  const collectItems = (): SetupItemRequest[] => {
+    const items: SetupItemRequest[] = FURNITURE_ITEMS
+      .filter(name => (quantities[name] ?? 0) > 0)
+      .map(name => ({ name, quantity: quantities[name] }));
+    if (otherItem.trim()) {
+      items.push({ name: otherItem.trim(), quantity: 1 });
+    }
+    return items;
+  };
+
   const isValid = (): boolean => {
-    // Must have a room (selected or manual entry)
     const hasRoom = (selectedRoomId && selectedRoomId !== 'other') || manualRoomEntry.trim();
-    // Must have a date
     const hasDate = !!dateNeeded;
-    // Must have attendee count
-    const hasCount = parseInt(attendeeCount) > 0;
-    
-    return !!hasRoom && hasDate && hasCount;
+    // Need either items to bring or arrangement notes — otherwise there's nothing to do
+    const hasWork = collectItems().length > 0 || additionalNotes.trim().length > 0;
+    return !!hasRoom && hasDate && hasWork;
   };
 
   const handleSubmit = () => {
@@ -101,7 +140,9 @@ export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupReques
       roomId: selectedRoomId === 'other' ? null : selectedRoomId || null,
       roomDisplay: getRoomDisplay(),
       dateNeeded,
-      attendeeCount: parseInt(attendeeCount) || 0,
+      timeNeeded,
+      items: collectItems(),
+      attendeeCount: parseInt(attendeeCount) > 0 ? parseInt(attendeeCount) : null,
       setupType,
       additionalNotes,
     });
@@ -115,15 +156,69 @@ export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupReques
         </Button>
         <div>
           <h1 className="text-2xl font-bold">Set up a room</h1>
-          <p className="text-muted-foreground text-sm">Tell us what you need</p>
+          <p className="text-muted-foreground text-sm">What should we bring, where, and when?</p>
         </div>
       </div>
 
       <div className="space-y-5">
+        {/* What's needed */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <Armchair className="h-4 w-4 text-muted-foreground" />
+            What do you need brought in?
+          </Label>
+          <div className="rounded-xl border divide-y">
+            {FURNITURE_ITEMS.map(item => {
+              const qty = quantities[item] ?? 0;
+              return (
+                <div key={item} className="flex items-center justify-between px-4 py-2.5">
+                  <span className={`text-sm ${qty > 0 ? 'font-medium' : 'text-muted-foreground'}`}>
+                    {item}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-full"
+                      disabled={qty === 0}
+                      onClick={() => adjustQuantity(item, -1)}
+                      aria-label={`Fewer ${item}`}
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </Button>
+                    <span className={`w-8 text-center text-sm tabular-nums ${qty > 0 ? 'font-semibold' : 'text-muted-foreground/50'}`}>
+                      {qty}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-full"
+                      onClick={() => adjustQuantity(item, 1)}
+                      aria-label={`More ${item}`}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="px-4 py-2.5">
+              <Input
+                placeholder="Something else? (e.g., extension cords, coat rack)"
+                value={otherItem}
+                onChange={(e) => setOtherItem(e.target.value)}
+                className="border-0 px-0 h-8 shadow-none focus-visible:ring-0 text-sm"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Room Selection */}
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
-            <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+            <MapPin className="h-4 w-4 text-muted-foreground" />
             Which room?
           </Label>
           {isLoadingRooms ? (
@@ -152,8 +247,7 @@ export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupReques
               onChange={(e) => setManualRoomEntry(e.target.value)}
             />
           )}
-          
-          {/* Manual entry when "other" is selected */}
+
           {selectedRoomId === 'other' && (
             <Input
               placeholder="Enter room number or name"
@@ -164,61 +258,84 @@ export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupReques
           )}
         </div>
 
-        {/* Date Needed */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            When do you need it?
-          </Label>
-          <DatePicker
-            value={dateNeeded}
-            onChange={setDateNeeded}
-            placeholder="Select date"
-          />
+        {/* When: date + time side by side */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              What day?
+            </Label>
+            <DatePicker
+              value={dateNeeded}
+              onChange={setDateNeeded}
+              placeholder="Select date"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              By what time?
+            </Label>
+            <Input
+              type="time"
+              value={timeNeeded}
+              onChange={(e) => setTimeNeeded(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* Attendee Count */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            How many people?
-          </Label>
-          <Input
-            type="number"
-            min="1"
-            placeholder="Number of attendees"
-            value={attendeeCount}
-            onChange={(e) => setAttendeeCount(e.target.value)}
-          />
+        {/* Occasion + headcount side by side */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>What's the occasion?</Label>
+            <Select value={setupType} onValueChange={(v) => setSetupType(v as SetupType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SETUP_TYPES.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              How many people? <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Input
+              type="number"
+              min="1"
+              placeholder="Headcount"
+              value={attendeeCount}
+              onChange={(e) => setAttendeeCount(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* Setup Type */}
+        {/* Arrangement notes */}
         <div className="space-y-2">
-          <Label>What type of setup?</Label>
-          <Select value={setupType} onValueChange={(v) => setSetupType(v as SetupType)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SETUP_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Additional Notes */}
-        <div className="space-y-2">
-          <Label>Special requirements (optional)</Label>
+          <Label>How should the room be arranged?</Label>
           <Textarea
-            placeholder="e.g., Need projector, whiteboard, specific seating arrangement..."
+            placeholder="e.g., 6 tables along the back wall, chairs in rows facing the podium, leave space near the door..."
             value={additionalNotes}
             onChange={(e) => setAdditionalNotes(e.target.value)}
             rows={3}
           />
         </div>
+
+        {/* Live summary so the request reads back like the real ask */}
+        {(collectItems().length > 0 && dateNeeded) && (
+          <p className="text-xs text-muted-foreground rounded-lg bg-muted/50 px-3 py-2">
+            {collectItems().map(i => `${i.quantity > 1 ? `${i.quantity} ` : ''}${i.name}`).join(', ')}
+            {' → '}{getRoomDisplay()}
+            {' on '}{format(dateNeeded, 'EEE, MMM d')}
+            {timeNeeded ? ` by ${timeNeeded}` : ''}
+          </p>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">

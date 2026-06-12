@@ -7,21 +7,22 @@
  * 3. Success confirmation with auto-redirect
  */
 
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoHome } from '@shared/hooks/useHomePath';
 import { format } from 'date-fns';
-import { 
-  ArrowLeft, 
-  Sofa, 
-  Truck, 
-  LayoutGrid, 
+import {
+  ArrowLeft,
+  Armchair,
+  Truck,
+  Sofa,
   HelpCircle,
   Loader2,
   CheckCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@features/auth/hooks/useAuth';
 import { useStaffTasks } from '@features/tasks/hooks/useStaffTasks';
 import { SetupRequestForm, SetupRequestData } from '@features/supply/components/request/SetupRequestForm';
 import type { TaskType } from '@features/tasks/types/staffTasks';
@@ -36,30 +37,30 @@ interface HelpOption {
 
 const helpOptions: HelpOption[] = [
   {
+    id: 'setup',
+    label: 'Set up a room',
+    description: 'Tables, chairs, desks brought in and arranged for an event',
+    icon: Armchair,
+    placeholder: 'e.g., Set up conference room 201 for a meeting with 12 people',
+  },
+  {
+    id: 'delivery',
+    label: 'Bring me something',
+    description: 'Deliver items to a room',
+    icon: Truck,
+    placeholder: 'e.g., Deliver 2 chairs to Room 310 by Friday morning',
+  },
+  {
     id: 'move_item',
     label: 'Move something',
-    description: 'Furniture, equipment, boxes',
+    description: 'Furniture, equipment, or boxes between rooms',
     icon: Sofa,
     placeholder: 'e.g., Move the desk from Room 101 to Room 205',
   },
   {
-    id: 'delivery',
-    label: 'Deliver something',
-    description: 'Bring items to a location',
-    icon: Truck,
-    placeholder: 'e.g., Deliver 2 chairs to Room 310',
-  },
-  {
-    id: 'setup',
-    label: 'Set up a room',
-    description: 'Arrange furniture, equipment',
-    icon: LayoutGrid,
-    placeholder: 'e.g., Set up conference room 201 for a meeting with 12 people',
-  },
-  {
     id: 'general',
     label: 'Something else',
-    description: 'Other help needed',
+    description: 'Any other help from the court aides',
     icon: HelpCircle,
     placeholder: 'Describe what you need help with...',
   },
@@ -70,29 +71,38 @@ interface SubmittedRequest {
   title: string;
   roomDisplay?: string;
   dateNeeded?: Date;
+  timeNeeded?: string;
+  items?: string;
   setupType?: string;
-  attendeeCount?: number;
+  attendeeCount?: number | null;
 }
 
 export default function HelpRequestPage() {
   const navigate = useNavigate();
   const goHome = useGoHome();
+  const [searchParams] = useSearchParams();
+  const { profile } = useAuth();
   const { requestTask } = useStaffTasks();
-  
-  const [step, setStep] = useState<'select' | 'describe' | 'setup' | 'success'>('select');
-  const [selectedType, setSelectedType] = useState<HelpOption | null>(null);
+
+  // Where this user normally tracks these requests. Admins manage staff-task
+  // requests on /tasks; everyone else has My Activity in their navigation.
+  const isAdminish = profile?.role === 'admin' || profile?.role === 'system_admin';
+  const trackPath = isAdminish ? '/tasks' : '/my-activity?tab=requests';
+  const trackLabel = isAdminish ? 'Tasks' : 'My Activity';
+
+  // Deep link: /request/help?type=setup jumps straight into that flow
+  const typeParam = searchParams.get('type');
+  const initialOption = helpOptions.find(o => o.id === typeParam) ?? null;
+
+  const [step, setStep] = useState<'select' | 'describe' | 'setup' | 'success'>(
+    initialOption ? (initialOption.id === 'setup' ? 'setup' : 'describe') : 'select'
+  );
+  const [selectedType, setSelectedType] = useState<HelpOption | null>(initialOption);
   const [description, setDescription] = useState('');
   const [submittedRequest, setSubmittedRequest] = useState<SubmittedRequest | null>(null);
 
-  // Auto-redirect to My Activity after success
-  useEffect(() => {
-    if (step === 'success') {
-      const timer = setTimeout(() => {
-        navigate('/my-activity?tab=requests');
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [step, navigate]);
+  // No auto-redirect: let the user read the confirmation and choose
+  // where to go (track the request, submit another, or go home).
 
   const handleTypeSelect = (option: HelpOption) => {
     setSelectedType(option);
@@ -119,17 +129,36 @@ export default function HelpRequestPage() {
 
   const handleSetupSubmit = async (data: SetupRequestData) => {
     const setupTypeLabel = data.setupType.charAt(0).toUpperCase() + data.setupType.slice(1);
-    const title = `${data.roomDisplay} - ${setupTypeLabel} for ${data.attendeeCount} people`;
-    
+    const itemsSummary = data.items
+      .map(i => (i.quantity > 1 ? `${i.quantity} ${i.name}` : i.name))
+      .join(', ');
+
+    // Title reads like the actual ask: "Room 628 — Event setup: 6 Tables, 30 Chairs"
+    const title = itemsSummary
+      ? `${data.roomDisplay} — ${setupTypeLabel} setup: ${itemsSummary}`
+      : `${data.roomDisplay} — ${setupTypeLabel} setup`;
+
     const descriptionParts = [
       `Room: ${data.roomDisplay}`,
       `Date: ${data.dateNeeded ? format(data.dateNeeded, 'EEEE, MMMM d, yyyy') : 'Not specified'}`,
-      `Setup type: ${setupTypeLabel}`,
-      `Attendees: ${data.attendeeCount}`,
+      `Time: ${data.timeNeeded || 'Not specified'}`,
+      `Occasion: ${setupTypeLabel}`,
     ];
-    
-    if (data.additionalNotes) {
-      descriptionParts.push(`\nNotes: ${data.additionalNotes}`);
+    if (itemsSummary) descriptionParts.push(`Items needed: ${itemsSummary}`);
+    if (data.attendeeCount) descriptionParts.push(`Attendees: ${data.attendeeCount}`);
+    if (data.additionalNotes) descriptionParts.push(`\nArrangement: ${data.additionalNotes}`);
+
+    // due_date puts the setup on the aides' schedule for that day/time
+    let dueDate: string | undefined;
+    if (data.dateNeeded) {
+      const due = new Date(data.dateNeeded);
+      if (data.timeNeeded) {
+        const [h, m] = data.timeNeeded.split(':').map(Number);
+        due.setHours(h || 0, m || 0, 0, 0);
+      } else {
+        due.setHours(9, 0, 0, 0);
+      }
+      dueDate = due.toISOString();
     }
 
     await requestTask.mutateAsync({
@@ -137,12 +166,15 @@ export default function HelpRequestPage() {
       description: descriptionParts.join('\n'),
       task_type: 'setup',
       to_room_id: data.roomId || undefined,
+      due_date: dueDate,
     });
 
     setSubmittedRequest({
       title,
       roomDisplay: data.roomDisplay,
       dateNeeded: data.dateNeeded,
+      timeNeeded: data.timeNeeded,
+      items: itemsSummary || undefined,
       setupType: setupTypeLabel,
       attendeeCount: data.attendeeCount,
     });
@@ -285,32 +317,43 @@ export default function HelpRequestPage() {
           <div className="bg-muted/50 rounded-lg p-4 text-left max-w-sm mx-auto space-y-2">
             <p className="text-sm"><span className="text-muted-foreground">Room:</span> {submittedRequest.roomDisplay}</p>
             {submittedRequest.dateNeeded && (
-              <p className="text-sm"><span className="text-muted-foreground">Date:</span> {format(submittedRequest.dateNeeded, 'EEEE, MMMM d, yyyy')}</p>
+              <p className="text-sm">
+                <span className="text-muted-foreground">When:</span> {format(submittedRequest.dateNeeded, 'EEEE, MMMM d, yyyy')}
+                {submittedRequest.timeNeeded ? ` by ${submittedRequest.timeNeeded}` : ''}
+              </p>
             )}
-            <p className="text-sm"><span className="text-muted-foreground">Setup:</span> {submittedRequest.setupType} for {submittedRequest.attendeeCount} people</p>
+            {submittedRequest.items && (
+              <p className="text-sm"><span className="text-muted-foreground">Items:</span> {submittedRequest.items}</p>
+            )}
+            <p className="text-sm">
+              <span className="text-muted-foreground">Occasion:</span> {submittedRequest.setupType}
+              {submittedRequest.attendeeCount ? ` for ${submittedRequest.attendeeCount} people` : ''}
+            </p>
           </div>
         ) : (
           <p className="text-muted-foreground max-w-sm mx-auto">
             Your request has been sent to the court aides.
           </p>
         )}
-        
+
         <p className="text-sm text-muted-foreground">
-          You can track your request status in My Activity.
-          Redirecting in 3 seconds...
+          The court aides have been notified. Track its status in {trackLabel} anytime.
         </p>
-        
+
         <div className="pt-4 flex flex-col gap-2">
-          <Button onClick={() => navigate('/my-activity?tab=requests')}>
-            View My Requests
+          <Button onClick={() => navigate(trackPath)}>
+            Track in {trackLabel}
           </Button>
-          <Button variant="ghost" onClick={() => {
+          <Button variant="outline" onClick={() => {
             setStep('select');
             setSelectedType(null);
             setDescription('');
             setSubmittedRequest(null);
           }}>
             Submit Another Request
+          </Button>
+          <Button variant="ghost" onClick={goHome}>
+            Done
           </Button>
         </div>
       </div>

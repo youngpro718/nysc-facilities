@@ -88,6 +88,8 @@ export interface RequestTaskInput {
   from_room_id?: string;
   to_room_id?: string;
   quantity?: number;
+  /** When the work is needed — surfaces the request on aides' schedules */
+  due_date?: string;
 }
 
 export const TASK_TYPE_LABELS: Record<TaskType, string> = {
