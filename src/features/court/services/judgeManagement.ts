@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { JudgeStatus } from '@features/court/hooks/useCourtPersonnel';
+import { getCurrentTermId } from '@features/court/utils/currentTerm';
 
 /**
  * Update a judge's status (active, jho, departed)
@@ -75,6 +76,8 @@ export async function addNewJudge(params: {
 
   // Step 2: Create or update court assignment if courtroom OR part is provided
   if (params.courtroomId || params.part) {
+    // Assignments are per term — only touch the current term's sheet
+    const termId = await getCurrentTermId();
     let roomId: string | null = null;
     let roomNumber = '';
 
@@ -94,10 +97,12 @@ export async function addNewJudge(params: {
 
     // Check if this part already has an assignment (conflict detection)
     if (params.part) {
-      const { data: allAssignments } = await supabase
+      let partQuery = supabase
         .from('court_assignments')
         .select('id, part, justice, room_id, room_number')
         .not('part', 'is', null);
+      if (termId) partQuery = partQuery.eq('term_id', termId);
+      const { data: allAssignments } = await partQuery;
 
       const existingAssignment = allAssignments?.find(
         a => a.part?.toLowerCase() === params.part!.toLowerCase()
@@ -122,26 +127,29 @@ export async function addNewJudge(params: {
     }
 
     // No existing assignment for this part — check if room already has a row
-    const { data: existingRoom } = await supabase
+    let roomQuery = supabase
       .from('court_assignments')
       .select('id')
-      .eq('room_id', roomId)
-      .maybeSingle();
+      .eq('room_id', roomId);
+    if (termId) roomQuery = roomQuery.eq('term_id', termId);
+    const { data: existingRoom } = await roomQuery.maybeSingle();
 
     if (existingRoom) {
       // Update existing row to preserve clerks/sergeant
       await supabase.from('court_assignments')
         .update({ justice: displayName, part: params.part || null })
-        .eq('room_id', roomId);
+        .eq('id', existingRoom.id);
     } else {
-      const { data: maxSort } = await supabase
+      let sortQuery = supabase
         .from('court_assignments')
         .select('sort_order')
         .order('sort_order', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
+      if (termId) sortQuery = sortQuery.eq('term_id', termId);
+      const { data: maxSort } = await sortQuery.maybeSingle();
 
       await supabase.from('court_assignments').insert({
+        term_id: termId,
         room_id: roomId,
         room_number: roomNumber,
         part: params.part || null,
@@ -182,12 +190,14 @@ export async function getJudgeDepartureInfo(personnelId: string): Promise<JudgeD
 
   if (judgeError || !judge) return null;
 
-  // Get their court assignment
-  const { data: assignment } = await supabase
+  // Get their court assignment (current term only — past terms keep their history)
+  const termId = await getCurrentTermId();
+  let assignmentQuery = supabase
     .from('court_assignments')
     .select('id, part, room_number, room_id, clerks, sergeant')
-    .eq('justice', judge.display_name)
-    .maybeSingle();
+    .eq('justice', judge.display_name);
+  if (termId) assignmentQuery = assignmentQuery.eq('term_id', termId);
+  const { data: assignment } = await assignmentQuery.maybeSingle();
 
   return {
     personnelId: judge.id,
@@ -224,11 +234,14 @@ export async function processJudgeDeparture(params: {
   // 1. Mark judge as departed
   await updateJudgeStatus(params.personnelId, 'departed');
 
-  // 2. Handle court assignment (case-insensitive match)
-  const { data: allAssignments } = await supabase
+  // 2. Handle court assignment (case-insensitive match, current term only)
+  const departTermId = await getCurrentTermId();
+  let departQuery = supabase
     .from('court_assignments')
     .select('id, justice')
     .not('justice', 'is', null);
+  if (departTermId) departQuery = departQuery.eq('term_id', departTermId);
+  const { data: allAssignments } = await departQuery;
 
   const matchingAssignment = allAssignments?.find(
     a => a.justice?.toLowerCase() === params.displayName.toLowerCase()
@@ -385,10 +398,13 @@ export interface AssignmentSlot {
 }
 
 export async function getAllAssignmentSlots(): Promise<AssignmentSlot[]> {
-  const { data, error } = await supabase
+  const termId = await getCurrentTermId();
+  let query = supabase
     .from('court_assignments')
     .select('id, part, room_number, justice')
     .order('part');
+  if (termId) query = query.eq('term_id', termId);
+  const { data, error } = await query;
 
   if (error) throw error;
 

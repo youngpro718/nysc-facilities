@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { getCurrentTermId } from '@features/court/utils/currentTerm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -57,10 +58,13 @@ export function TermSheetPreview({
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ['term-sheet-preview'],
     queryFn: async () => {
-      const { data: assignmentsData, error: assignmentsError } = await supabase
+      const termId = await getCurrentTermId();
+      let assignmentsQuery = supabase
         .from("court_assignments")
         .select("*")
         .order("sort_order");
+      if (termId) assignmentsQuery = assignmentsQuery.eq("term_id", termId);
+      const { data: assignmentsData, error: assignmentsError } = await assignmentsQuery;
 
       if (assignmentsError) throw assignmentsError;
 

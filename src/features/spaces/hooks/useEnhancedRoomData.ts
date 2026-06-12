@@ -98,11 +98,16 @@ export function useEnhancedRoomData(roomId: string) {
             .single();
           courtRoomData = courtRoom;
   
-          const { data: assignment } = await supabase
+          // Assignments are per term — without the filter a room matches rows
+          // from past terms and maybeSingle() errors on multiple results
+          const { getCurrentTermId } = await import('@features/court/utils/currentTerm');
+          const termId = await getCurrentTermId();
+          let assignmentQuery = supabase
             .from('court_assignments')
             .select('id')
-            .eq('room_id', roomId)
-            .maybeSingle();
+            .eq('room_id', roomId);
+          if (termId) assignmentQuery = assignmentQuery.eq('term_id', termId);
+          const { data: assignment } = await assignmentQuery.maybeSingle();
           courtAssignment = assignment;
         }
       }

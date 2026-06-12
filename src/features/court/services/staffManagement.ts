@@ -1,5 +1,20 @@
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { getCurrentTermId } from '@features/court/utils/currentTerm';
+
+/**
+ * Fetch a room's assignment row scoped to the current term. Assignments are
+ * stored per term, so an unscoped room_id lookup can match rows from past terms.
+ */
+async function fetchCurrentTermAssignment(roomId: string) {
+    const termId = await getCurrentTermId();
+    let query = supabase
+        .from('court_assignments')
+        .select('id, clerks, sergeant')
+        .eq('room_id', roomId);
+    if (termId) query = query.eq('term_id', termId);
+    return query.maybeSingle();
+}
 
 type StaffRole = 'clerk' | 'sergeant' | 'officer' | 'judge';
 
@@ -64,11 +79,7 @@ export async function assignStaffToRoom(
     role: 'clerk' | 'sergeant' | 'officer',
     roomId: string
 ): Promise<{ displacedStaff: string | null }> {
-    const { data: assignment, error: fetchErr } = await supabase
-        .from('court_assignments')
-        .select('id, clerks, sergeant')
-        .eq('room_id', roomId)
-        .maybeSingle();
+    const { data: assignment, error: fetchErr } = await fetchCurrentTermAssignment(roomId);
 
     if (fetchErr) throw fetchErr;
     if (!assignment) {
@@ -107,11 +118,7 @@ export async function removeStaffFromRoom(
     role: 'clerk' | 'sergeant' | 'officer',
     roomId: string
 ): Promise<void> {
-    const { data: assignment, error: fetchErr } = await supabase
-        .from('court_assignments')
-        .select('id, clerks, sergeant')
-        .eq('room_id', roomId)
-        .maybeSingle();
+    const { data: assignment, error: fetchErr } = await fetchCurrentTermAssignment(roomId);
 
     if (fetchErr) throw fetchErr;
     if (!assignment) return;

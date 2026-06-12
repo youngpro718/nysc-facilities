@@ -8,16 +8,21 @@ import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@shared/hooks/use-toast';
 import { useCourtPersonnel } from '@features/court/hooks/useCourtPersonnel';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export interface EditableAssignment {
   id: string;
   part: string;
   justice: string;
   room: string;
+  room_id: string;
   tel: string;
   fax: string;
   sergeant: string;
@@ -44,6 +49,8 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
   const [tel, setTel] = useState('');
   const [fax, setFax] = useState('');
   const [clerkToAdd, setClerkToAdd] = useState<string>(NONE);
+  const [roomId, setRoomId] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!assignment) return;
@@ -54,7 +61,28 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
     setTel(assignment.tel === '—' ? '' : assignment.tel);
     setFax(assignment.fax === '—' ? '' : assignment.fax);
     setClerkToAdd(NONE);
+    setRoomId(assignment.room_id);
+    setConfirmDelete(false);
   }, [assignment]);
+
+  // Active courtrooms (shared cache with the board's Add Part picker)
+  const { data: courtroomOptions = [] } = useQuery({
+    queryKey: ['active-courtrooms'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('court_rooms')
+        .select('room_id, room_number, courtroom_number, is_active, rooms:room_id(room_number, name)')
+        .eq('is_active', true);
+      if (error) throw error;
+      return (data || [])
+        .map((r: any) => ({
+          roomId: r.room_id as string,
+          label: `Room ${r.rooms?.room_number || r.room_number || r.courtroom_number || '?'}${r.rooms?.name ? ` — ${r.rooms.name}` : ''}`,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -66,6 +94,7 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
         clerks: clerks.length ? clerks : null,
         tel: tel.trim() || null,
         fax: fax.trim() || null,
+        ...(roomId && roomId !== assignment.room_id ? { room_id: roomId } : {}),
       };
       const { error } = await supabase
         .from('court_assignments')
@@ -85,6 +114,34 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
     },
     onError: (e: any) => {
       toast({ title: 'Update failed', description: e?.message ?? 'Please try again', variant: 'destructive' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!assignment) throw new Error('No assignment');
+      const { data, error } = await supabase
+        .from('court_assignments')
+        .delete()
+        .eq('id', assignment.id)
+        .select('id');
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to remove parts");
+      }
+    },
+    onSuccess: () => {
+      toast({ title: 'Part removed from this term' });
+      queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
+      queryClient.invalidateQueries({ queryKey: ['court-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['court-assignments-enhanced'] });
+      queryClient.invalidateQueries({ queryKey: ['court-assignments-table'] });
+      setConfirmDelete(false);
+      onOpenChange(false);
+    },
+    onError: (e: any) => {
+      setConfirmDelete(false);
+      toast({ title: 'Could not remove part', description: e?.message ?? 'Please try again', variant: 'destructive' });
     },
   });
 
@@ -112,7 +169,14 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Room</Label>
-              <Input value={assignment?.room ?? ''} disabled />
+              <Select value={roomId} onValueChange={setRoomId}>
+                <SelectTrigger><SelectValue placeholder={assignment?.room ? `Room ${assignment.room}` : 'Select room'} /></SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {courtroomOptions.map(o => (
+                    <SelectItem key={o.roomId} value={o.roomId}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -183,13 +247,44 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-            {saveMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
-            Save
+        <DialogFooter className="sm:justify-between">
+          <Button
+            variant="ghost"
+            className="text-destructive hover:text-destructive"
+            onClick={() => setConfirmDelete(true)}
+            disabled={deleteMutation.isPending}
+          >
+            Remove Part…
           </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+              {saveMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+              Save
+            </Button>
+          </div>
         </DialogFooter>
+
+        <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove {assignment?.part || 'this part'} from the term?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This removes the row from the current term sheet only — other terms are not affected.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => deleteMutation.mutate()}
+              >
+                {deleteMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+                Remove Part
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

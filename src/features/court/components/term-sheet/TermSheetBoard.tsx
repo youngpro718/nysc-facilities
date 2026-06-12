@@ -23,6 +23,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
   DndContext,
   closestCenter,
   KeyboardSensor,
@@ -286,59 +293,108 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     onError: (err) => toast({ variant: 'destructive', title: 'Error', description: String(err) }),
   });
 
-  // ── Start next term (one-click) ────────────────────────────────────────────
+  // ── Start next term (dialog) ───────────────────────────────────────────────
   const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
   const nextTermName = (name: string): string => {
-    const match = name.match(/^(.*?\s*)(I{1,3}|IV|VI{0,3}|IX|XI{0,2}|X{0,3})(\s*.*)$/i);
-    if (!match) return name + ' II';
-    const idx = romanNumerals.indexOf(match[2].toUpperCase());
-    const next = idx >= 0 && idx < romanNumerals.length - 1 ? romanNumerals[idx + 1] : romanNumerals[0];
-    return `${match[1]}${next}${match[3]}`;
+    // Trailing roman numeral, e.g. "Term III" → "Term IV"
+    const match = name.match(/^(.*?)\s*([IVX]+)\s*$/i);
+    if (match) {
+      const idx = romanNumerals.indexOf(match[2].toUpperCase());
+      if (idx >= 0) {
+        const next = idx < romanNumerals.length - 1 ? romanNumerals[idx + 1] : romanNumerals[0];
+        return `${match[1]} ${next}`.trim();
+      }
+    }
+    // Trailing arabic number, e.g. "Term 3" → "Term 4"
+    const num = name.match(/^(.*?)\s*(\d+)\s*$/);
+    if (num) return `${num[1]} ${parseInt(num[2], 10) + 1}`.trim();
+    return `${name} II`;
+  };
+
+  const [newTermOpen, setNewTermOpen] = useState(false);
+  const [newTermName, setNewTermName] = useState('');
+  const [newTermStart, setNewTermStart] = useState('');
+  const [newTermEnd, setNewTermEnd] = useState('');
+  const [newTermCopy, setNewTermCopy] = useState(true);
+
+  const openNewTermDialog = () => {
+    const latest = allTerms[0];
+    const today = new Date().toISOString().slice(0, 10);
+    let startDate: string;
+    let durDays = 28;
+    if (latest && latest.rawStart && latest.rawEnd) {
+      const prevEnd = new Date(latest.rawEnd + 'T12:00:00');
+      const prevStart = new Date(latest.rawStart + 'T12:00:00');
+      durDays = Math.max(Math.round((prevEnd.getTime() - prevStart.getTime()) / 86400000), 28);
+      if (latest.rawEnd >= today) {
+        // Previous term still running/ends today — next term starts the day after
+        const ns = new Date(prevEnd); ns.setDate(ns.getDate() + 1);
+        startDate = ns.toISOString().slice(0, 10);
+      } else {
+        // Previous term ended in the past — don't back-date, start today
+        startDate = today;
+      }
+    } else {
+      startDate = today;
+    }
+    const ne = new Date(startDate + 'T12:00:00'); ne.setDate(ne.getDate() + durDays);
+    setNewTermName(latest ? nextTermName(latest.name) : 'Term I');
+    setNewTermStart(startDate);
+    setNewTermEnd(ne.toISOString().slice(0, 10));
+    setNewTermCopy(!!latest);
+    setNewTermOpen(true);
   };
 
   const startNextTermMutation = useMutation({
     mutationFn: async () => {
       const latest = allTerms[0];
-      // Compute next term name + dates
-      const termName = latest ? nextTermName(latest.name) : 'Term I';
-      let startDate: string, endDate: string;
-      if (latest) {
-        const prevEnd = new Date(latest.rawEnd + 'T12:00:00');
-        const prevStart = new Date(latest.rawStart + 'T12:00:00');
-        const ns = new Date(prevEnd); ns.setDate(ns.getDate() + 1);
-        const dur = Math.max(Math.round((prevEnd.getTime() - prevStart.getTime()) / 86400000), 28);
-        const ne = new Date(ns); ne.setDate(ne.getDate() + dur);
-        startDate = ns.toISOString().slice(0, 10);
-        endDate = ne.toISOString().slice(0, 10);
-      } else {
-        const today = new Date();
-        startDate = today.toISOString().slice(0, 10);
-        const fw = new Date(today); fw.setDate(fw.getDate() + 28);
-        endDate = fw.toISOString().slice(0, 10);
-      }
-      // Insert new term
+      const name = newTermName.trim();
+      if (!name) throw new Error('Term name is required');
+      if (!newTermStart || !newTermEnd) throw new Error('Start and end dates are required');
+      if (newTermStart >= newTermEnd) throw new Error('End date must be after the start date');
+      const overlapping = allTerms.find(t => t.rawStart <= newTermEnd && t.rawEnd >= newTermStart);
+      if (overlapping) throw new Error(`Dates overlap with "${overlapping.name}" (${overlapping.startDate} – ${overlapping.endDate})`);
+
       const { data: newTerm, error: insertErr } = await supabase
         .from('court_terms')
-        .insert({ term_name: termName, start_date: startDate, end_date: endDate })
+        .insert({
+          term_name: name,
+          start_date: newTermStart,
+          end_date: newTermEnd,
+          // Legacy required columns: year of the term + courthouse location
+          term_number: newTermStart.slice(0, 4),
+          location: 'New York',
+          status: 'active',
+          term_status: 'active',
+        })
         .select('id')
         .single();
       if (insertErr) throw insertErr;
-      // Copy assignments from previous term
-      if (latest && newTerm) {
-        await supabase.rpc('copy_term_assignments', {
+
+      let copied = 0;
+      if (newTermCopy && latest && newTerm) {
+        const { data: count, error: copyErr } = await supabase.rpc('copy_term_assignments', {
           p_source_term_id: latest.id,
           p_target_term_id: newTerm.id,
         });
+        if (copyErr) throw new Error(`Term created, but copying assignments failed: ${copyErr.message}`);
+        copied = typeof count === 'number' ? count : 0;
       }
-      return newTerm;
+      return { copied, copiedFrom: latest?.name };
     },
-    onSuccess: () => {
+    onSuccess: ({ copied, copiedFrom }) => {
       hasAutoSelected.current = false;
       queryClient.invalidateQueries({ queryKey: ['court-terms-all'] });
       queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
-      toast({ title: 'Next term started', description: 'Assignments copied. Edit them as needed.' });
+      setNewTermOpen(false);
+      toast({
+        title: 'New term started',
+        description: newTermCopy && copiedFrom
+          ? `${copied} assignment${copied !== 1 ? 's' : ''} copied from ${copiedFrom}. Edit them as needed.`
+          : 'Blank term created. Add parts to build the sheet.',
+      });
     },
-    onError: (err) => toast({ variant: 'destructive', title: 'Error', description: String(err) }),
+    onError: (err: Error) => toast({ variant: 'destructive', title: 'Could not start term', description: err.message }),
   });
 
   // ── Save staff edits ───────────────────────────────────────────────────────
@@ -350,9 +406,15 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const saveStaffMutation = useMutation({
     mutationFn: async () => {
       for (const row of editStaffRows) {
-        await supabase.from('court_admin_staff')
+        const { data, error } = await supabase.from('court_admin_staff')
           .update({ title: row.title, name: row.name, phone: row.phone, room: row.room })
-          .eq('id', row.id);
+          .eq('id', row.id)
+          .select('id');
+        if (error) throw error;
+        // RLS-denied updates return no error and zero rows — surface that
+        if (!data || data.length === 0) {
+          throw new Error("You don't have permission to edit the directory");
+        }
       }
     },
     onSuccess: () => {
@@ -360,7 +422,57 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
       setEditingStaff(false);
       toast({ title: 'Directory updated', description: 'Staff changes saved.' });
     },
-    onError: (err) => toast({ variant: 'destructive', title: 'Error', description: String(err) }),
+    onError: (err: Error) => toast({ variant: 'destructive', title: 'Could not save directory', description: err.message }),
+  });
+
+  // ── Add / remove parts ──────────────────────────────────────────────────────
+  const [addPartOpen, setAddPartOpen] = useState(false);
+  const [newPartLabel, setNewPartLabel] = useState('');
+  const [newPartRoomId, setNewPartRoomId] = useState('');
+
+  // Active courtrooms for the room picker (value = rooms.id, matching court_assignments.room_id)
+  const { data: courtroomOptions = [] } = useQuery({
+    queryKey: ['active-courtrooms'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('court_rooms')
+        .select('room_id, room_number, courtroom_number, is_active, rooms:room_id(room_number, name)')
+        .eq('is_active', true);
+      if (error) throw error;
+      return (data || [])
+        .map((r: any) => ({
+          roomId: r.room_id as string,
+          roomNumber: (r.rooms?.room_number || r.room_number || r.courtroom_number || '') as string,
+          label: `Room ${r.rooms?.room_number || r.room_number || r.courtroom_number || '?'}${r.rooms?.name ? ` — ${r.rooms.name}` : ''}`,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const addPartMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedTermId) throw new Error('Select a term first');
+      if (!newPartLabel.trim()) throw new Error('Part name is required');
+      if (!newPartRoomId) throw new Error('Pick a courtroom');
+      const maxSort = sortedList.reduce((m, a) => Math.max(m, a.sort_order ?? 0), 0);
+      const { error } = await supabase.from('court_assignments').insert({
+        term_id: selectedTermId,
+        room_id: newPartRoomId,
+        room_number: courtroomOptions.find(o => o.roomId === newPartRoomId)?.roomNumber ?? '',
+        part: newPartLabel.trim(),
+        sort_order: maxSort + 1,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
+      setAddPartOpen(false);
+      setNewPartLabel('');
+      setNewPartRoomId('');
+      toast({ title: 'Part added', description: 'Use the pencil to assign a justice and staff.' });
+    },
+    onError: (err: Error) => toast({ variant: 'destructive', title: 'Could not add part', description: err.message }),
   });
 
   const sensors = useSensors(
@@ -655,6 +767,12 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {isAdmin && selectedTermId && (
+            <Button variant="outline" size="sm" className="h-8 text-xs px-2" onClick={() => setAddPartOpen(true)}>
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Add Part
+            </Button>
+          )}
           <div className="relative">
             <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -710,8 +828,8 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
             </div>
           </div>
           {isAdmin && (
-            <Button size="sm" onClick={() => startNextTermMutation.mutate()} disabled={startNextTermMutation.isPending}>
-              {startNextTermMutation.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
+            <Button size="sm" onClick={openNewTermDialog}>
+              <Plus className="h-3.5 w-3.5 mr-1" />
               Start First Term
             </Button>
           )}
@@ -782,11 +900,8 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
           {/* Admin: Start Next Term button */}
           {isAdmin && !editingTerm && (
             <div className="mt-2 pt-2 border-t border-primary/10 flex justify-end">
-              <Button variant="outline" size="sm" className="h-7 text-xs"
-                disabled={startNextTermMutation.isPending}
-                onClick={() => startNextTermMutation.mutate()}
-              >
-                {startNextTermMutation.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={openNewTermDialog}>
+                <Plus className="h-3 w-3 mr-1" />
                 Start Next Term
               </Button>
             </div>
@@ -957,7 +1072,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                               }
                             }}
                             onEditClick={() => setEditingAssignment({
-                              id: a.id, part: a.part, justice: a.justice, room: a.room,
+                              id: a.id, part: a.part, justice: a.justice, room: a.room, room_id: a.room_id,
                               tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
                             })}
                           />
@@ -1003,7 +1118,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                       {isAdmin && (
                         <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Edit assignment"
                           onClick={() => setEditingAssignment({
-                            id: a.id, part: a.part, justice: a.justice, room: a.room,
+                            id: a.id, part: a.part, justice: a.justice, room: a.room, room_id: a.room_id,
                             tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
                           })}>
                           <Pencil className="h-3 w-3" />
@@ -1070,6 +1185,83 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         open={!!editingAssignment}
         onOpenChange={(open) => { if (!open) setEditingAssignment(null); }}
       />
+
+      {/* Start next term */}
+      <Dialog open={newTermOpen} onOpenChange={setNewTermOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Start New Term</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label className="text-xs">Term Name</Label>
+              <Input value={newTermName} onChange={e => setNewTermName(e.target.value)} placeholder='e.g. Term IV or "June 2026 Term"' />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Start Date</Label>
+                <Input type="date" value={newTermStart} onChange={e => setNewTermStart(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">End Date</Label>
+                <Input type="date" value={newTermEnd} onChange={e => setNewTermEnd(e.target.value)} />
+              </div>
+            </div>
+            {allTerms.length > 0 && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox checked={newTermCopy} onCheckedChange={(v) => setNewTermCopy(v === true)} />
+                <span>Copy all assignments from <strong>{allTerms[0].name}</strong></span>
+              </label>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Everyone can see the new term immediately; only term editors can change it.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNewTermOpen(false)}>Cancel</Button>
+            <Button onClick={() => startNextTermMutation.mutate()} disabled={startNextTermMutation.isPending}>
+              {startNextTermMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+              Start Term
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add part */}
+      <Dialog open={addPartOpen} onOpenChange={setAddPartOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Part{currentTerm ? ` · ${currentTerm.name}` : ''}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label className="text-xs">Part</Label>
+              <Input value={newPartLabel} onChange={e => setNewPartLabel(e.target.value)} placeholder="e.g. Part 50" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Courtroom</Label>
+              <Select value={newPartRoomId} onValueChange={setNewPartRoomId}>
+                <SelectTrigger><SelectValue placeholder="Pick a courtroom" /></SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {courtroomOptions.map(o => (
+                    <SelectItem key={o.roomId} value={o.roomId}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The part is added at the bottom of the sheet — drag to reposition, and use the pencil to assign a justice and staff.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAddPartOpen(false)}>Cancel</Button>
+            <Button onClick={() => addPartMutation.mutate()} disabled={addPartMutation.isPending}>
+              {addPartMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+              Add Part
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

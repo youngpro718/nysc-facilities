@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { getCurrentTermId } from "@features/court/utils/currentTerm";
 
 export interface RoomCourtAssignment {
   part: string | null;
@@ -12,9 +13,12 @@ export function useCourtAssignmentsMap() {
   return useQuery({
     queryKey: ["court_assignments_map"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const termId = await getCurrentTermId();
+      let query = supabase
         .from("court_assignments")
         .select("room_id, part, justice, clerks, sergeant");
+      if (termId) query = query.eq("term_id", termId);
+      const { data, error } = await query;
       if (error) throw error;
       const map = new Map<string, RoomCourtAssignment>();
       for (const row of data ?? []) {
