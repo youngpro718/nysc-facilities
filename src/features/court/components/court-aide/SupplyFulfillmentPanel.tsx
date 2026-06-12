@@ -21,7 +21,7 @@ interface SupplyRequest {
   status: string;
   created_at: string;
   priority: string;
-  notes: string | null;
+  description: string | null;
   requester_id: string;
   profiles: {
     first_name: string;
@@ -53,7 +53,7 @@ export function SupplyFulfillmentPanel() {
           status,
           created_at,
           priority,
-          notes,
+          description,
           requester_id,
           profiles!requester_id (
             first_name,
@@ -68,7 +68,7 @@ export function SupplyFulfillmentPanel() {
             )
           )
         `)
-        .in('status', ['submitted', 'received', 'picking', 'ready'])
+        .in('status', ['submitted', 'approved', 'received', 'picking', 'ready'])
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -136,7 +136,7 @@ export function SupplyFulfillmentPanel() {
   });
 
   // Group by status pipeline
-  const newOrders = requests?.filter(r => ['submitted', 'received'].includes(r.status)) || [];
+  const newOrders = requests?.filter(r => ['submitted', 'approved', 'received'].includes(r.status)) || [];
   const inProgress = requests?.filter(r => r.status === 'picking') || [];
   const readyForPickup = requests?.filter(r => r.status === 'ready') || [];
 
@@ -153,6 +153,7 @@ export function SupplyFulfillmentPanel() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'submitted': return <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">New Order</Badge>;
+      case 'approved': return <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">Approved</Badge>;
       case 'received': return <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">Received</Badge>;
       case 'picking': return <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30">Picking</Badge>;
       case 'ready': return <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30">Ready</Badge>;
@@ -161,7 +162,7 @@ export function SupplyFulfillmentPanel() {
   };
 
   const renderRequest = (request: SupplyRequest) => {
-    const isNew = ['submitted', 'received'].includes(request.status);
+    const isNew = ['submitted', 'approved', 'received'].includes(request.status);
     const isPicking = request.status === 'picking';
     const isReady = request.status === 'ready';
 
@@ -200,10 +201,10 @@ export function SupplyFulfillmentPanel() {
               ))}
             </div>
 
-            {/* Notes */}
-            {request.notes && (
+            {/* Requester's note */}
+            {request.description && (
               <p className="text-xs text-muted-foreground italic mb-1.5">
-                "{request.notes}"
+                "{request.description}"
               </p>
             )}
 
@@ -290,7 +291,20 @@ export function SupplyFulfillmentPanel() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : isError || requests?.length === 0 ? (
+            ) : isError ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertCircle className="h-12 w-12 mx-auto mb-3 text-destructive/40" />
+                <p className="font-medium text-destructive">Couldn't load supply requests</p>
+                <p className="text-sm mb-3">Check your connection or permissions</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] })}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : requests?.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <PackageCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
                 <p className="font-medium">All caught up!</p>

@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { getRoleDashboardConfig } from '@/config/roleDashboardConfig';
 
 describe('role dashboard config', () => {
-  it('keeps purchasing anchored to inventory and supply room actions', () => {
+  it('keeps purchasing anchored to supply room and inventory actions', () => {
     const config = getRoleDashboardConfig('purchasing');
 
-    expect(config?.primaryAction.path).toBe('/inventory');
-    expect(config?.secondaryAction?.path).toBe('/supply-room');
+    expect(config?.primaryAction.path).toBe('/supply-room');
+    expect(config?.secondaryAction?.path).toBe('/inventory');
     expect(config?.quickActions.some(action => action.path === '/purchasing-dashboard')).toBe(false);
   });
 

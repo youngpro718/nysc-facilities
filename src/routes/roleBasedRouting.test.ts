@@ -19,8 +19,8 @@ const emptyPermissions: RolePermissions = {
 };
 
 describe('purchasing route mapping', () => {
-  it('routes purchasing to the real inventory landing page', () => {
-    expect(getDashboardForRole('purchasing')).toBe('/inventory');
+  it('routes purchasing to the supply room landing page', () => {
+    expect(getDashboardForRole('purchasing')).toBe('/supply-room');
   });
 
   it('does not expose the deprecated purchasing dashboard path', () => {

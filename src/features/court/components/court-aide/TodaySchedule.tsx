@@ -50,7 +50,7 @@ export function TodaySchedule() {
           due_date,
           status,
           to_room:rooms!staff_tasks_to_room_id_fkey(room_number, name),
-          creator:profiles!staff_tasks_created_by_fkey(first_name, last_name)
+          creator:profiles!staff_tasks_created_by_profiles_fkey(first_name, last_name)
         `)
         .or(`assigned_to.eq.${user?.id},claimed_by.eq.${user?.id}`)
         .not('status', 'in', '("completed","cancelled","rejected")')

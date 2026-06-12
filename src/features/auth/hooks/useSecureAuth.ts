@@ -43,9 +43,13 @@ export function useSecureAuth() {
     }
   }, []);
 
-  const secureSignIn = useCallback(async (email: string, password: string) => {
+  const secureSignIn = useCallback(async (rawEmail: string, password: string) => {
     setIsLoading(true);
-    
+
+    // Normalize so rate limiting, reset, and auth all key on the same identifier
+    // (Supabase Auth is case-insensitive on email; the rate limiter is not)
+    const email = rawEmail.trim().toLowerCase();
+
     try {
       // Validate inputs
       const emailValidation = await validateEmail(email);
@@ -60,8 +64,8 @@ export function useSecureAuth() {
       // Do NOT enforce password policy on sign-in; only on sign-up.
       // Rationale: existing users may have older/shorter passwords; Supabase will handle auth validity.
 
-      // Check rate limiting
-      const rateLimitOk = await checkRateLimit(email, 'login');
+      // Check rate limiting (must use the same max as getRemainingAttempts displays)
+      const rateLimitOk = await checkRateLimit(email, 'login', RETRY.loginMaxAttempts);
       if (!rateLimitOk) {
         const attemptInfo = await getRemainingAttempts(email);
         await logSecurityEvent('rate_limit_exceeded', 'authentication', undefined, {
@@ -156,9 +160,11 @@ export function useSecureAuth() {
     }
   }, [validateEmail, sanitizeInput, checkRateLimit, logSecurityEvent, getRemainingAttempts]);
 
-  const secureSignUp = useCallback(async (email: string, password: string, userData: Record<string, unknown>) => {
+  const secureSignUp = useCallback(async (rawEmail: string, password: string, userData: Record<string, unknown>) => {
     setIsLoading(true);
-    
+
+    const email = rawEmail.trim().toLowerCase();
+
     try {
       // Validate inputs
       const emailValidation = await validateEmail(email);

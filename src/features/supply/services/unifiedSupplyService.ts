@@ -246,22 +246,9 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     logger.error('Failed to record status history — audit gap:', histErr);
   }
 
-  // Notify admins when an order needs approval
-  if (approvalRequired) {
-    try {
-      await supabase.from('admin_notifications').insert({
-        notification_type: 'supply_request_approval',
-        title: 'Supply order needs approval',
-        message: `${payload.title} — ${approvalReason}`,
-        urgency: payload.priority === 'urgent' ? 'high' : 'medium',
-        related_table: 'supply_requests',
-        related_id: request.id,
-        metadata: { reason: approvalReason, total_qty: totalQty },
-      });
-    } catch (notifErr) {
-      logger.error('Failed to create admin notification:', notifErr);
-    }
-  }
+  // Admin notification for pending approvals is created server-side by the
+  // trg_notify_admins_pending_supply_approval trigger (admin_notifications RLS
+  // blocks non-admin inserts, so a client-side insert here would silently fail).
 
   return { request, approval_required: approvalRequired, approval_reason: approvalReason };
 }

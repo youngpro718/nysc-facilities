@@ -35,7 +35,6 @@ export function SecureForm({
     validateEmail,
     validatePassword,
     sanitizeInput,
-    checkRateLimit,
     logSecurityEvent
   } = useSecurityValidation();
   const handleEmailChange = useCallback((value: string) => {
@@ -52,13 +51,9 @@ export function SecureForm({
     setIsValidating(true);
     const allErrors: string[] = [];
     try {
-      // Check rate limit first
-      const rateLimitOk = await checkRateLimit(email, 'login');
-      if (!rateLimitOk) {
-        setIsRateLimited(true);
-        allErrors.push('Too many attempts. Please try again later.');
-        return allErrors;
-      }
+      // NOTE: no rate-limit check here. check_rate_limit INCREMENTS the attempt
+      // counter, and secureSignIn already performs the authoritative check —
+      // checking here too burned 2 attempts per login click.
 
       // Validate email
       const emailValidation = await validateEmail(email);
@@ -78,7 +73,7 @@ export function SecureForm({
     } finally {
       setIsValidating(false);
     }
-  }, [email, password, title, validateEmail, validatePassword, checkRateLimit]);
+  }, [email, password, title, validateEmail, validatePassword]);
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (isRateLimited) {
@@ -108,9 +103,14 @@ export function SecureForm({
         email: sanitizedEmail
       });
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      // Reflect lockouts thrown by secureSignIn in the form UI
+      if (/too many login attempts|temporarily locked/i.test(message)) {
+        setIsRateLimited(true);
+      }
       await logSecurityEvent('form_submission_failed', 'authentication', undefined, {
         email: sanitizedEmail,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: message
       });
       throw error;
     }
