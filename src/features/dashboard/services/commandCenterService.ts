@@ -283,9 +283,12 @@ async function getCourtMetrics(): Promise<CourtMetrics> {
 
   const rooms = roomsRes.data || [];
 
+  // Live data uses null / 'open' / 'occupied' for working rooms — count
+  // operational as anything not explicitly out of service
+  const outOfService = new Set(['maintenance', 'closed', 'inactive', 'shutdown']);
   return {
     total_rooms: rooms.length,
-    operational: rooms.filter(r => r.operational_status === 'active' || r.operational_status === 'operational').length,
+    operational: rooms.filter(r => !outOfService.has(r.operational_status ?? '')).length,
     maintenance: rooms.filter(r => r.operational_status === 'maintenance').length,
     sessions_today: 0,
     active_terms: termsRes.count || 0,

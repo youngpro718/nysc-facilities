@@ -1,35 +1,41 @@
 /**
  * CommandCenter Component
- * 
- * Enhanced admin dashboard with real-time system monitoring,
- * metrics, alerts, and quick actions
+ *
+ * Admin operations panel: KPI strip, actionable attention queue,
+ * activity timeline, and quick access to admin destinations.
+ * Every link routes to a real page.
  */
 
 import { useNavigate } from 'react-router-dom';
 import { useCommandCenter } from '@features/dashboard/hooks/useCommandCenter';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { StatusCard } from '@/components/ui/StatusCard';
 import { formatDistanceToNow } from 'date-fns';
-import { motion } from 'framer-motion';
 import {
   AlertTriangle,
-  Activity,
   Package,
-  ClipboardList,
   Users,
-  Building2,
   Gavel,
-  TrendingUp,
   AlertCircle,
-  Shield,
-  Zap,
   ArrowRight,
   RefreshCw,
+  CheckCircle2,
+  KeyRound,
+  Boxes,
+  Settings2,
+  ChevronRight,
+  LayoutGrid,
 } from 'lucide-react';
+
+type StatusTone = 'operational' | 'warning' | 'critical' | 'info';
+
+const TONE_DOT: Record<StatusTone, string> = {
+  operational: 'bg-emerald-500',
+  warning: 'bg-amber-500',
+  critical: 'bg-red-500',
+  info: 'bg-sky-500',
+};
 
 export function CommandCenter() {
   const navigate = useNavigate();
@@ -43,8 +49,12 @@ export function CommandCenter() {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Failed to load command center metrics. Please refresh the page.
+        <AlertDescription className="flex items-center justify-between gap-3">
+          <span>Couldn't load command center metrics.</span>
+          <Button variant="outline" size="sm" onClick={refetch}>
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+            Retry
+          </Button>
         </AlertDescription>
       </Alert>
     );
@@ -53,379 +63,265 @@ export function CommandCenter() {
   const criticalAlerts = alerts.filter(a => a.severity === 'critical');
   const warningAlerts = alerts.filter(a => a.severity === 'warning');
 
+  // ── KPI strip ───────────────────────────────────────────────────────────
+  const kpis: Array<{
+    label: string;
+    value: string | number;
+    sub: string;
+    tone: StatusTone;
+    to: string;
+  }> = [
+    {
+      label: 'Active Issues',
+      value: metrics.issues.open + metrics.issues.in_progress,
+      sub: metrics.issues.critical > 0
+        ? `${metrics.issues.critical} critical`
+        : `${metrics.issues.today} new today`,
+      tone: metrics.issues.critical > 0 ? 'critical' : metrics.issues.open > 10 ? 'warning' : 'operational',
+      to: '/operations?tab=issues',
+    },
+    {
+      label: 'Room Health',
+      value: `${metrics.rooms.health_percentage}%`,
+      sub: `${metrics.rooms.active} of ${metrics.rooms.total} active`,
+      tone: metrics.rooms.health_percentage >= 80 ? 'operational' : metrics.rooms.health_percentage >= 60 ? 'warning' : 'critical',
+      to: '/spaces',
+    },
+    {
+      label: 'Supply Requests',
+      value: metrics.supply.total_requests,
+      sub: `${metrics.supply.pending_approval} awaiting approval`,
+      tone: metrics.supply.pending_approval > 0 ? 'warning' : 'operational',
+      to: '/admin/supply-requests',
+    },
+    {
+      label: 'Open Tasks',
+      value: metrics.tasks.pending + metrics.tasks.in_progress,
+      sub: metrics.tasks.overdue > 0
+        ? `${metrics.tasks.overdue} overdue`
+        : `${metrics.tasks.due_today} due today`,
+      tone: metrics.tasks.overdue > 0 ? 'warning' : 'operational',
+      to: '/tasks',
+    },
+  ];
+
+  // ── Needs-attention queue (only real, actionable items) ────────────────
+  const attention: Array<{
+    label: string;
+    count: number;
+    tone: StatusTone;
+    to: string;
+  }> = [
+    { label: 'Critical issues', count: metrics.issues.critical, tone: 'critical', to: '/operations?tab=issues' },
+    { label: 'Users awaiting approval', count: metrics.users.pending_approval, tone: 'warning', to: '/admin?tab=users' },
+    { label: 'Supply orders to approve', count: metrics.supply.pending_approval, tone: 'warning', to: '/admin/supply-requests' },
+    { label: 'Overdue tasks', count: metrics.tasks.overdue, tone: 'warning', to: '/tasks' },
+    { label: 'Low stock items', count: metrics.supply.low_stock_items, tone: 'info', to: '/inventory' },
+    { label: 'Rooms in maintenance', count: metrics.rooms.maintenance, tone: 'info', to: '/spaces' },
+  ].filter(item => item.count > 0);
+
+  // ── Quick access (every path verified against the router) ──────────────
+  const quickLinks = [
+    { label: 'Users', to: '/admin?tab=users', icon: Users },
+    { label: 'Supply Requests', to: '/admin/supply-requests', icon: Package },
+    { label: 'Key Requests', to: '/admin/key-requests', icon: KeyRound },
+    { label: 'Issues', to: '/operations?tab=issues', icon: AlertTriangle },
+    { label: 'Inventory', to: '/inventory', icon: Boxes },
+    { label: 'Term Sheet', to: '/term-sheet', icon: Gavel },
+    { label: 'Spaces', to: '/spaces', icon: LayoutGrid },
+    { label: 'System Settings', to: '/admin?tab=system', icon: Settings2 },
+  ];
+
+  const activityTone = (type: string): StatusTone =>
+    type === 'issue' ? 'warning' : type === 'supply_request' ? 'operational' : 'info';
+
+  const activityTarget = (type: string): string =>
+    type === 'issue' ? '/operations?tab=issues' :
+    type === 'supply_request' ? '/admin/supply-requests' :
+    type === 'task' ? '/tasks' : '/operations';
+
   return (
-    <div className="space-y-6">
-      {/* Header with Refresh */}
+    <div className="space-y-5">
+      {/* Section header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Command Center</h2>
-          <p className="text-sm text-muted-foreground">Real-time system monitoring and control</p>
+          <h2 className="text-lg font-semibold tracking-tight">Command Center</h2>
+          <p className="text-xs text-muted-foreground">
+            {metrics.users.total_users} users · {metrics.court.operational} of {metrics.court.total_rooms} courtrooms operational
+            {metrics.issues.avg_resolution_time_hours ? ` · ${metrics.issues.avg_resolution_time_hours}h avg resolution` : ''}
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={refetch}>
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={refetch}>
+          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
           Refresh
         </Button>
       </div>
 
-      {/* Critical Alerts Banner */}
-      {criticalAlerts.length > 0 && (
-        <Alert variant="destructive" className="border-2">
-          <AlertTriangle className="h-5 w-5" />
-          <AlertDescription className="flex items-center justify-between">
-            <div>
-              <strong>{criticalAlerts.length} Critical Alert{criticalAlerts.length !== 1 ? 's' : ''}</strong>
-              <p className="text-sm mt-1">{criticalAlerts[0].message}</p>
-            </div>
-            <Button variant="destructive" size="sm" onClick={() => navigate('/admin/alerts')}>
-              View All
+      {/* Critical / warning banner */}
+      {criticalAlerts.length > 0 ? (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between gap-3">
+            <span>
+              <strong>{criticalAlerts.length} critical alert{criticalAlerts.length !== 1 ? 's' : ''}</strong>
+              <span className="block text-sm mt-0.5">{criticalAlerts[0].message}</span>
+            </span>
+            <Button variant="destructive" size="sm" onClick={() => navigate('/operations?tab=issues')}>
+              Review
             </Button>
           </AlertDescription>
         </Alert>
-      )}
-
-      {/* Warning Alerts */}
-      {warningAlerts.length > 0 && criticalAlerts.length === 0 && (
+      ) : warningAlerts.length > 0 && (
         <Alert className="border-status-warning/30 bg-surface-warning text-surface-warning-foreground">
-          <AlertCircle className="h-5 w-5 text-status-warning" />
-          <AlertDescription className="flex items-center justify-between">
-            <div>
-              <strong>
-                {warningAlerts.length} Warning{warningAlerts.length !== 1 ? 's' : ''}
-              </strong>
-              <p className="text-sm mt-1">{warningAlerts[0].message}</p>
-            </div>
+          <AlertCircle className="h-4 w-4 text-status-warning" />
+          <AlertDescription>
+            <strong>{warningAlerts.length} warning{warningAlerts.length !== 1 ? 's' : ''}</strong>
+            <span className="block text-sm mt-0.5">{warningAlerts[0].message}</span>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Primary KPI Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatusCard
-          title="Active Issues"
-          value={metrics.issues.open + metrics.issues.in_progress}
-          subLabel={`${metrics.issues.critical} critical`}
-          icon={AlertTriangle}
-          statusVariant={
-            metrics.issues.critical > 0 ? 'critical' :
-            metrics.issues.open > 10 ? 'warning' : 'operational'
-          }
-          onClick={() => navigate('/operations?tab=issues')}
-        />
-        <StatusCard
-          title="Room Health"
-          value={`${metrics.rooms.health_percentage}%`}
-          subLabel={`${metrics.rooms.active}/${metrics.rooms.total} active`}
-          icon={Building2}
-          statusVariant={
-            metrics.rooms.health_percentage >= 80 ? 'operational' :
-            metrics.rooms.health_percentage >= 60 ? 'warning' : 'critical'
-          }
-          onClick={() => navigate('/spaces')}
-        />
-        <StatusCard
-          title="Supply Requests"
-          value={metrics.supply.total_requests}
-          subLabel={`${metrics.supply.pending_approval} pending approval`}
-          icon={Package}
-          statusVariant={
-            metrics.supply.pending_approval > 10 ? 'warning' : 'info'
-          }
-          onClick={() => navigate('/admin/supply-requests')}
-        />
-        <StatusCard
-          title="Pending Tasks"
-          value={metrics.tasks.pending + metrics.tasks.in_progress}
-          subLabel={`${metrics.tasks.overdue} overdue`}
-          icon={ClipboardList}
-          statusVariant={
-            metrics.tasks.overdue > 0 ? 'warning' : 'operational'
-          }
-          onClick={() => navigate('/tasks')}
-        />
+      {/* KPI strip — one container, divider-separated cells */}
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-border">
+          {kpis.map(kpi => (
+            <button
+              key={kpi.label}
+              type="button"
+              onClick={() => navigate(kpi.to)}
+              className="group flex flex-col items-start gap-1 p-4 sm:p-5 text-left transition-colors hover:bg-accent/40 active:scale-[0.99]"
+            >
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {kpi.label}
+              </span>
+              <span className="text-2xl sm:text-3xl font-semibold tabular-nums tracking-tight">
+                {kpi.value}
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className={`h-1.5 w-1.5 rounded-full ${TONE_DOT[kpi.tone]}`} />
+                {kpi.sub}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Secondary Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Users Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              User Management
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Total Users</span>
-              <span className="font-semibold">{metrics.users.total_users}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Active</span>
-              <Badge variant="outline">{metrics.users.active_users}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Pending Approval</span>
-              <Badge variant={metrics.users.pending_approval > 5 ? 'destructive' : 'secondary'}>
-                {metrics.users.pending_approval}
-              </Badge>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full mt-2"
-              onClick={() => navigate('/admin/users')}
-            >
-              Manage Users
-              <ArrowRight className="h-3 w-3 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Courtrooms Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Gavel className="h-4 w-4" />
-              Courtrooms
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Courtrooms</span>
-              <span className="font-semibold">{metrics.court.total_rooms}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Operational</span>
-              <Badge variant="outline">{metrics.court.operational}</Badge>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full mt-2"
-              onClick={() => navigate('/term-sheet')}
-            >
-              View Term Sheet
-              <ArrowRight className="h-3 w-3 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Performance Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Issues Today</span>
-              <Badge variant="outline">{metrics.issues.today}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">This Week</span>
-              <Badge variant="outline">{metrics.issues.this_week}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Avg Resolution</span>
-              <Badge variant="secondary">
-                {metrics.issues.avg_resolution_time_hours 
-                  ? `${metrics.issues.avg_resolution_time_hours}h`
-                  : 'N/A'}
-              </Badge>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full mt-2"
-              onClick={() => navigate('/admin/analytics')}
-            >
-              View Analytics
-              <ArrowRight className="h-3 w-3 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Recent Activity
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/admin/activity')}>
-              View All
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
+      {/* Attention queue + activity timeline */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* Needs attention */}
+        <div className="lg:col-span-2 rounded-xl border bg-card">
+          <div className="px-4 py-3 border-b">
+            <h3 className="text-sm font-semibold">Needs Attention</h3>
           </div>
-          <CardDescription>Latest system events and user actions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {activity.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No recent activity</p>
+          {attention.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+              <CheckCircle2 className="h-7 w-7 text-emerald-500/70" />
+              <p className="text-sm font-medium">All clear</p>
+              <p className="text-xs text-muted-foreground">Nothing is waiting on you right now</p>
+            </div>
           ) : (
-            <div className="space-y-3">
-              {activity.slice(0, 8).map((item) => (
-                <motion.div
-                  key={item.id}
-                  className="relative flex items-start gap-3 p-3 pl-5 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer overflow-hidden"
-                  whileHover={{ scale: 1.005, x: 2 }}
-                  transition={{ duration: 0.15 }}
-                  onClick={() => {
-                    switch (item.type) {
-                      case 'issue':
-                        navigate('/operations?tab=issues');
-                        break;
-                      case 'supply_request':
-                        navigate('/admin/supply-requests');
-                        break;
-                      case 'task':
-                        navigate('/tasks');
-                        break;
-                      default:
-                        navigate('/operations');
-                    }
-                  }}
+            <div className="divide-y">
+              {attention.map(item => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => navigate(item.to)}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/40 active:scale-[0.995]"
                 >
-                  {/* Left-side 3px indicator bar matching type */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${
-                    item.type === 'issue' ? 'bg-orange-500' :
-                    item.type === 'supply_request' ? 'bg-emerald-500' :
-                    'bg-blue-500'
-                  }`} />
-
-                  <div className={`p-2 rounded-full ${
-                    item.type === 'issue' ? 'bg-surface-warning' :
-                    item.type === 'supply_request' ? 'bg-surface-operational' :
-                    'bg-surface-info'
-                  }`}>
-                    {item.type === 'issue' ? <AlertTriangle className="h-4 w-4 text-status-warning" /> :
-                     item.type === 'supply_request' ? <Package className="h-4 w-4 text-status-operational" /> :
-                     <Activity className="h-4 w-4 text-status-info" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-muted-foreground capitalize">
-                        {item.type.replace('_', ' ')}
-                      </span>
-                      {item.status && (
-                        <Badge variant="outline" className="text-xs">
-                          {item.status}
-                        </Badge>
-                      )}
-                      {item.priority && (
-                        <Badge 
-                          variant={
-                            item.priority === 'high' || item.priority === 'urgent' ? 'destructive' :
-                            item.priority === 'medium' ? 'default' : 'secondary'
-                          }
-                          className="text-xs"
-                        >
-                          {item.priority}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="font-medium text-sm truncate">{item.title}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      {item.user_name && <span>{item.user_name}</span>}
-                      <span>•</span>
-                      <span>{formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}</span>
-                    </div>
-                  </div>
-                </motion.div>
+                  <span className={`flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-xs font-semibold tabular-nums text-white ${TONE_DOT[item.tone]}`}>
+                    {item.count}
+                  </span>
+                  <span className="flex-1 text-sm">{item.label}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                </button>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Quick Actions */}
-      <Card className="border border-border bg-gradient-to-br from-card to-accent/5 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary animate-pulse" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
-            variants={{
-              hidden: { opacity: 0 },
-              show: {
-                opacity: 1,
-                transition: {
-                  staggerChildren: 0.05
-                }
-              }
-            }}
-            initial="hidden"
-            animate="show"
-          >
-            {[
-              { title: "Manage Users", path: "/admin/users", icon: Users, desc: "Manage accounts & security" },
-              { title: "Supply Requests", path: "/admin/supply-requests", icon: Package, desc: "Approve and track inventory" },
-              { title: "View Issues", path: "/operations?tab=issues", icon: AlertTriangle, desc: "Monitor active facility reports" },
-              { title: "System Settings", path: "/admin/settings", icon: Shield, desc: "Configure application options" }
-            ].map((act, idx) => {
-              const Icon = act.icon;
-              return (
-                <motion.div
-                  key={idx}
-                  variants={{
-                    hidden: { opacity: 0, y: 10 },
-                    show: { opacity: 1, y: 0 }
-                  }}
-                  whileHover={{ scale: 1.015, y: -2 }}
-                  whileTap={{ scale: 0.985 }}
-                  onClick={() => navigate(act.path)}
-                  className="flex items-center gap-3 p-4 rounded-xl border border-border/60 bg-card hover:bg-accent/40 hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
+        {/* Recent activity */}
+        <div className="lg:col-span-3 rounded-xl border bg-card">
+          <div className="px-4 py-3 border-b">
+            <h3 className="text-sm font-semibold">Recent Activity</h3>
+          </div>
+          {activity.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">No recent activity</p>
+          ) : (
+            <div className="divide-y">
+              {activity.slice(0, 8).map(item => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => navigate(activityTarget(item.type))}
+                  className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent/40"
                 >
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground">{act.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{act.desc}</p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground/60 shrink-0" />
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </CardContent>
-      </Card>
+                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${TONE_DOT[activityTone(item.type)]}`} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{item.title}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {item.type.replace('_', ' ')}
+                      {item.status ? ` · ${item.status}` : ''}
+                      {item.user_name ? ` · ${item.user_name}` : ''}
+                      {' · '}
+                      {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                    </span>
+                  </span>
+                  {item.priority && (item.priority === 'high' || item.priority === 'urgent') && (
+                    <span className="mt-0.5 shrink-0 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400">
+                      {item.priority}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick access */}
+      <div>
+        <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Quick Access
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {quickLinks.map(link => {
+            const Icon = link.icon;
+            return (
+              <button
+                key={link.to + link.label}
+                type="button"
+                onClick={() => navigate(link.to)}
+                className="group flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2.5 text-left transition-all hover:border-primary/30 hover:bg-accent/40 active:translate-y-px"
+              >
+                <Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+                <span className="flex-1 truncate text-sm font-medium">{link.label}</span>
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
 
 function CommandCenterSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <Skeleton className="h-9 w-24" />
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-44" />
+        <Skeleton className="h-3 w-72" />
       </div>
-      
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-[110px]" />
+      <Skeleton className="h-[120px] rounded-xl" />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        <Skeleton className="lg:col-span-2 h-[280px] rounded-xl" />
+        <Skeleton className="lg:col-span-3 h-[280px] rounded-xl" />
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-11 rounded-lg" />
         ))}
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-[200px]" />
-        ))}
-      </div>
-
-      <Skeleton className="h-[400px]" />
     </div>
   );
 }
