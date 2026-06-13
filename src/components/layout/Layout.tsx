@@ -16,7 +16,8 @@ import { AppSidebar } from "./components/AppSidebar";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@features/admin/components/admin/NotificationBox";
-import { RefreshCw, Search } from "lucide-react";
+import { RefreshCw, Search, Package, AlertTriangle } from "lucide-react";
+import { QuickIssueReportButton } from "@shared/components/user/QuickIssueReportButton";
 import { GlobalSearchPalette } from "./components/GlobalSearchPalette";
 import { Button } from "@/components/ui/button";
 import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
@@ -195,6 +196,26 @@ function LayoutContent() {
 
               {/* Right utilities */}
               <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                {/* Report Issue — available to every role */}
+                <QuickIssueReportButton variant="outline" size="sm" className="h-8 px-2">
+                  <AlertTriangle className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Report Issue</span>
+                </QuickIssueReportButton>
+
+                {/* Order Supplies — everyone except court aides (they fulfill orders) */}
+                {userRole !== 'court_aide' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => navigate('/request/supplies')}
+                    title="Order Supplies"
+                  >
+                    <Package className="h-4 w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Order Supplies</span>
+                  </Button>
+                )}
+
                 {isAdmin && (
                   <button
                     onClick={() => setSearchOpen(true)}
@@ -218,8 +239,8 @@ function LayoutContent() {
                   <ThemeToggle />
                 </div>
 
-                {/* Profile Avatar — hidden for keys-only court_officer */}
-                {userRole !== 'court_officer' && (
+                {/* Profile Avatar — all roles (needed for My Room / self-service) */}
+                {(
                   <button
                     className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
                     title="Profile"
