@@ -14,7 +14,7 @@ import { CreateAssignmentDialog } from "@features/occupants/components/room-assi
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Users as UsersIcon, MapPin } from "lucide-react";
 
-interface AssignTarget { id: string; name: string; email: string; source_type: 'profile'; }
+interface AssignTarget { id: string; name: string; email: string; department: string | null; source_type: 'profile'; }
 
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -151,6 +151,7 @@ export default function Users() {
                         id: user.id,
                         name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
                         email: user.email,
+                        department: null,
                         source_type: 'profile',
                       })}
                     >
