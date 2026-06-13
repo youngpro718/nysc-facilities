@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { logger } from '@/lib/logger';
 import { useQueryClient } from '@tanstack/react-query';
 import { submitSupplyOrder } from '@features/supply/services/unifiedSupplyService';
@@ -19,6 +19,11 @@ export interface CartItem {
 export function useOrderCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Synchronous re-entrancy latch: a fast double-tap can fire submit twice
+  // before the isSubmitting state re-render disables the button. The ref
+  // flips immediately, so the second call is dropped and no duplicate order
+  // is created.
+  const submittingRef = useRef(false);
   const [submittedOrder, setSubmittedOrder] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -32,9 +37,11 @@ export function useOrderCart() {
     setCartItems(prev => {
       const existingIndex = prev.findIndex(i => i.item_id === item.id);
       if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex].quantity += quantity;
-        return updated;
+        // Replace the item object (don't mutate in place) so memoized
+        // consumers re-render correctly.
+        return prev.map((it, idx) =>
+          idx === existingIndex ? { ...it, quantity: it.quantity + quantity } : it
+        );
       }
       return [...prev, {
         item_id: item.id,
@@ -91,6 +98,9 @@ export function useOrderCart() {
       return;
     }
 
+    // Drop re-entrant submits (fast double-tap) before the disabled state paints
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
     try {
       // Auto-generate title from items if not provided
@@ -170,6 +180,7 @@ export function useOrderCart() {
       throw error;
     } finally {
       setIsSubmitting(false);
+      submittingRef.current = false;
     }
   }, [cartItems, toast, queryClient, clearCart, user, isSupervisor]);
 

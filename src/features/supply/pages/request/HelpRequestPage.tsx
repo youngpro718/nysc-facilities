@@ -7,7 +7,7 @@
  * 3. Success confirmation with auto-redirect
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoHome } from '@shared/hooks/useHomePath';
 import { format } from 'date-fns';
@@ -104,6 +104,22 @@ export default function HelpRequestPage() {
   // No auto-redirect: let the user read the confirmation and choose
   // where to go (track the request, submit another, or go home).
 
+  // Re-sync when the ?type param CHANGES while already mounted (e.g. a desktop
+  // entry point navigating from /request/help to /request/help?type=setup).
+  // Gated by a ref so it fires only on an actual change — otherwise the in-page
+  // Back button (which leaves the URL param intact) would be re-forced forward.
+  const lastHandledType = useRef(typeParam);
+  useEffect(() => {
+    if (typeParam && typeParam !== lastHandledType.current) {
+      lastHandledType.current = typeParam;
+      const opt = helpOptions.find(o => o.id === typeParam);
+      if (opt) {
+        setSelectedType(opt);
+        setStep(opt.id === 'setup' ? 'setup' : 'describe');
+      }
+    }
+  }, [typeParam]);
+
   const handleTypeSelect = (option: HelpOption) => {
     setSelectedType(option);
     // Use structured form for setup requests
@@ -117,14 +133,18 @@ export default function HelpRequestPage() {
   const handleDescriptionSubmit = async () => {
     if (!selectedType || !description.trim()) return;
 
-    await requestTask.mutateAsync({
-      title: description.slice(0, 100),
-      description: description,
-      task_type: selectedType.id,
-    });
-
-    setSubmittedRequest({ title: description.slice(0, 100) });
-    setStep('success');
+    try {
+      await requestTask.mutateAsync({
+        title: description.slice(0, 100),
+        description: description,
+        task_type: selectedType.id,
+      });
+      setSubmittedRequest({ title: description.slice(0, 100) });
+      setStep('success');
+    } catch {
+      // Error toast is surfaced by the mutation's onError; keep the form open
+      // with the user's input so they can retry.
+    }
   };
 
   const handleSetupSubmit = async (data: SetupRequestData) => {
@@ -161,13 +181,18 @@ export default function HelpRequestPage() {
       dueDate = due.toISOString();
     }
 
-    await requestTask.mutateAsync({
-      title: title.slice(0, 100),
-      description: descriptionParts.join('\n'),
-      task_type: 'setup',
-      to_room_id: data.roomId || undefined,
-      due_date: dueDate,
-    });
+    try {
+      await requestTask.mutateAsync({
+        title: title.slice(0, 100),
+        description: descriptionParts.join('\n'),
+        task_type: 'setup',
+        to_room_id: data.roomId || undefined,
+        due_date: dueDate,
+      });
+    } catch {
+      // Error toast surfaced by the mutation's onError; stay on the form.
+      return;
+    }
 
     setSubmittedRequest({
       title,
