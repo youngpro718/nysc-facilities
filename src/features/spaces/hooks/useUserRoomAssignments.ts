@@ -40,11 +40,17 @@ export const useUserRoomAssignments = (userId?: string) => {
         .order('is_primary', { ascending: false });
 
       if (error) throw error;
-      
-      return (data || []).map(assignment => ({
+
+      const mapped = (data || []).map(assignment => ({
         ...assignment,
         rooms: Array.isArray(assignment.rooms) ? assignment.rooms[0] || null : assignment.rooms
       }));
+
+      // Same room can be linked via occupant_id and profile_id — show it once
+      // (rows are already ordered is_primary first, so the primary is kept).
+      return mapped.filter(
+        (a, i, arr) => arr.findIndex(x => x.room_id === a.room_id) === i
+      );
     },
     enabled: !!userId,
   });

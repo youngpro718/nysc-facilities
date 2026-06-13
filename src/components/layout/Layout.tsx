@@ -196,11 +196,16 @@ function LayoutContent() {
 
               {/* Right utilities */}
               <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                {/* Report Issue — available to every role */}
-                <QuickIssueReportButton variant="outline" size="sm" className="h-8 px-2">
-                  <AlertTriangle className="h-4 w-4 sm:mr-1.5" />
-                  <span className="hidden sm:inline">Report Issue</span>
-                </QuickIssueReportButton>
+                {/* Report Issue — for roles WITHOUT the richer Operations/Issues
+                    page reporting. Admin & facilities_manager report through the
+                    Issues page on desktop and the FAB on mobile, so the header
+                    button (the simple wizard) would be a redundant second flow. */}
+                {!isAdmin && userRole !== 'facilities_manager' && (
+                  <QuickIssueReportButton variant="outline" size="sm" className="h-8 px-2">
+                    <AlertTriangle className="h-4 w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Report Issue</span>
+                  </QuickIssueReportButton>
+                )}
 
                 {/* Order Supplies — everyone except court aides (they fulfill orders) */}
                 {userRole !== 'court_aide' && (

@@ -131,16 +131,24 @@ function buildResult(
   roomAssignments: DetailedRoomAssignment[],
   keyAssignments: DetailedKeyAssignment[]
 ): OccupantAssignments {
+  // A user can be linked to the same room through more than one identity column
+  // (legacy occupant_id row + a profile_id row). Show each room once — keep the
+  // primary row when duplicates exist — so callers don't render the same room
+  // twice (e.g. two identical "Where is it?" cards in the report wizard).
+  const dedupedRooms = [...roomAssignments]
+    .sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+    .filter((room, i, arr) => arr.findIndex(r => r.room_id === room.room_id) === i);
+
   // Find primary room - prioritize is_primary boolean, then primary_office type, else first
-  const primaryRoom = roomAssignments.find(room => room.is_primary) 
-    || roomAssignments.find(room => room.assignment_type === 'primary_office')
-    || roomAssignments[0];
-  
+  const primaryRoom = dedupedRooms.find(room => room.is_primary)
+    || dedupedRooms.find(room => room.assignment_type === 'primary_office')
+    || dedupedRooms[0];
+
   // Separate storage room assignments
-  const storageAssignments = roomAssignments.filter(room => room.is_storage);
+  const storageAssignments = dedupedRooms.filter(room => room.is_storage);
 
   return {
-    roomAssignments,
+    roomAssignments: dedupedRooms,
     keyAssignments,
     primaryRoom,
     storageAssignments
