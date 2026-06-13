@@ -64,9 +64,11 @@ export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRo
       if (error) throw error;
       
       // Transform data to flatten the nested structure
-      return (data || []).map((room: any) => ({
+      return (data || [])
+        .filter((room: any) => room?.room_number != null && String(room.room_number).trim() !== '')
+        .map((room: any) => ({
         id: room.id,
-        room_number: room.room_number,
+        room_number: String(room.room_number),
         name: room.name,
         floor: room.floor ? {
           name: Array.isArray(room.floor) ? room.floor[0]?.name : room.floor.name,
@@ -91,13 +93,14 @@ export function RoomSelector({ value, roomNumber, onChange, disabled, onCreateRo
   const filteredRooms = useMemo(() => {
     if (!searchValue) return rooms;
     const search = searchValue.toLowerCase();
-    return rooms.filter(room => 
-      room.room_number.toLowerCase().includes(search) ||
+    return rooms.filter(room =>
+      room.room_number?.toLowerCase().includes(search) ||
       room.name?.toLowerCase().includes(search) ||
       room.floor?.name?.toLowerCase().includes(search) ||
       room.floor?.building?.name?.toLowerCase().includes(search)
     );
   }, [rooms, searchValue]);
+
 
   // Check if the current roomNumber (legacy) matches any room
   const hasUnlinkedRoomNumber = roomNumber && !value && rooms.length > 0;
