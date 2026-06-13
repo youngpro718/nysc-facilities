@@ -55,6 +55,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
   const [continueWithoutRoom, setContinueWithoutRoom] = useState(false);
   const [locationDescription, setLocationDescription] = useState('');
   const [description, setDescription] = useState('');
+  const [urgency, setUrgency] = useState<'medium' | 'high' | 'critical'>('medium');
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [showRoomPicker, setShowRoomPicker] = useState(false);
   const [roomSearchQuery, setRoomSearchQuery] = useState('');
@@ -180,7 +181,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
           title: autoTitle,
           description: description.trim(),
           issue_type: issueType,
-          priority: 'medium',
+          priority: urgency,
           status: 'open',
           building_id: selectedRoomBuildingId || selectedRoom?.building_id || null,
           floor_id: selectedRoomFloorId || selectedRoom?.floor_id || null,
@@ -512,6 +513,36 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
           {isRecording && (
             <p className="text-xs text-destructive mt-1 animate-pulse">Listening… tap to stop</p>
           )}
+        </div>
+      </section>
+
+      {/* 3b. Urgency — lets a reporter flag a critical event so it can be
+          prioritized and filtered. Defaults to Normal. */}
+      <section className="mb-6">
+        <div className="flex items-center gap-2 mb-2.5">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">How urgent?</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            { value: 'medium', label: 'Normal' },
+            { value: 'high', label: 'Urgent' },
+            { value: 'critical', label: 'Critical' },
+          ] as const).map((opt) => (
+            <Button
+              key={opt.value}
+              type="button"
+              variant={urgency === opt.value ? 'default' : 'outline'}
+              className={cn(
+                "rounded-xl h-11",
+                urgency === opt.value && opt.value === 'critical' && "bg-status-critical hover:bg-status-critical/90 text-white border-transparent",
+                urgency === opt.value && opt.value === 'high' && "bg-status-warning hover:bg-status-warning/90 text-white border-transparent",
+              )}
+              onClick={() => setUrgency(opt.value)}
+            >
+              {opt.value === 'critical' && <AlertCircle className="h-4 w-4 mr-1.5" />}
+              {opt.label}
+            </Button>
+          ))}
         </div>
       </section>
 

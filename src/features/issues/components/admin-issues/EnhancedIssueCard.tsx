@@ -54,6 +54,7 @@ const STATUS_STYLES: Record<string, { label: string; classes: string }> = {
 
 // Solid dot for priority (per project memory)
 const PRIORITY_DOT: Record<string, string> = {
+  critical: "bg-status-critical",
   high: "bg-status-critical",
   medium: "bg-status-warning",
   low: "bg-status-neutral",
@@ -80,7 +81,7 @@ export function EnhancedIssueCard({
   const createdAt = new Date(issue.created_at);
   const ageDays = differenceInDays(new Date(), createdAt);
   const isStale = ageDays >= 7 && issue.status !== "resolved";
-  const isCritical = issue.priority === "high" && issue.status !== "resolved";
+  const isCritical = (issue.priority === "critical" || issue.priority === "high") && issue.status !== "resolved";
 
   const externalTicket = (
     issue as unknown as Record<string, unknown>

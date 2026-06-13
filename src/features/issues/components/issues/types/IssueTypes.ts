@@ -1,6 +1,6 @@
 
 export type IssueStatus = 'open' | 'in_progress' | 'resolved';
-export type IssuePriority = 'low' | 'medium' | 'high';
+export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
 export type FixtureType = 'standard' | 'emergency' | 'motion_sensor';
 export type FixtureStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 export type FixturePosition = 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';

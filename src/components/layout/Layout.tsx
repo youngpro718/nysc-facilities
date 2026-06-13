@@ -16,7 +16,7 @@ import { AppSidebar } from "./components/AppSidebar";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@features/admin/components/admin/NotificationBox";
-import { RefreshCw, Search, Package, AlertTriangle } from "lucide-react";
+import { RefreshCw, Search, Package, AlertTriangle, ClipboardList } from "lucide-react";
 import { QuickIssueReportButton } from "@shared/components/user/QuickIssueReportButton";
 import { GlobalSearchPalette } from "./components/GlobalSearchPalette";
 import { Button } from "@/components/ui/button";
@@ -218,6 +218,22 @@ function LayoutContent() {
                   >
                     <Package className="h-4 w-4 sm:mr-1.5" />
                     <span className="hidden sm:inline">Order Supplies</span>
+                  </Button>
+                )}
+
+                {/* Make a Request — room/event setup help from the court aides.
+                    Court aides fulfill these, so they don't request them. Desktop
+                    parity with the mobile FAB, which was previously the only entry. */}
+                {userRole !== 'court_aide' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => navigate('/request/help')}
+                    title="Make a Request"
+                  >
+                    <ClipboardList className="h-4 w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Make a Request</span>
                   </Button>
                 )}
 

@@ -69,54 +69,28 @@ export default function MaintenanceRequestFormPage() {
     setIsSubmitting(true);
 
     try {
-      if (user?.id) {
-        // Authenticated user submission
-        let roomId = null;
-        if (formData.location) {
-          const { data: room } = await supabase
-            .from('court_rooms')
-            .select('id')
-            .eq('room_number', formData.location)
-            .maybeSingle();
-          
-          if (room) roomId = room.id;
-        }
-
-        const { error: requestError } = await supabase
-          .from('maintenance_requests')
-          .insert({
-            user_id: user.id,
+      // This page is public-only — authenticated users are redirected above to
+      // report through their dashboard. Submissions land in form_submissions and
+      // are turned into a real issue by an admin via the Quick Process flow.
+      const { error } = await supabase
+        .from('form_submissions')
+        .insert({
+          form_type: 'maintenance-request',
+          processing_status: 'pending',
+          extracted_data: {
             title: formData.title,
             description: formData.description,
-            priority: formData.priority,
-            status: 'pending',
-            room_id: roomId,
             work_type: formData.work_type,
-          });
+            location: formData.location,
+            priority: formData.priority,
+            requestor_name: formData.requestor_name,
+            requestor_email: formData.requestor_email,
+            requestor_phone: formData.requestor_phone,
+            public_submission: true,
+          },
+        });
 
-        if (requestError) throw requestError;
-      } else {
-        // Anonymous user submission
-        const { error } = await supabase
-          .from('form_submissions')
-          .insert({
-            form_type: 'maintenance-request',
-            processing_status: 'pending',
-            extracted_data: {
-              title: formData.title,
-              description: formData.description,
-              work_type: formData.work_type,
-              location: formData.location,
-              priority: formData.priority,
-              requestor_name: formData.requestor_name,
-              requestor_email: formData.requestor_email,
-              requestor_phone: formData.requestor_phone,
-              public_submission: true,
-            },
-          });
-        
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       setSubmitted(true);
       toast.success('Issue submitted successfully!', {
