@@ -1,8 +1,17 @@
-import jsPDF from 'jspdf';
+import type JsPDFType from 'jspdf';
 import { getFacilityEmail } from '@features/admin/services/emailConfigService';
 
+// jsPDF is ~385KB — load it only when a form is actually generated, not on
+// page mount. The constructor is cached after the first download.
+let JsPDF: typeof JsPDFType | null = null;
+async function loadJsPDF(): Promise<void> {
+  if (!JsPDF) {
+    JsPDF = (await import('jspdf')).default;
+  }
+}
+
 export class PDFGenerationService {
-  private static addHeader(doc: jsPDF, title: string) {
+  private static addHeader(doc: JsPDFType, title: string) {
     // Header
     doc.setFontSize(20);
     doc.setTextColor(37, 99, 235);
@@ -20,7 +29,7 @@ export class PDFGenerationService {
     doc.line(20, 50, 190, 50);
   }
 
-  private static addFooter(doc: jsPDF, facilityEmail: string = 'facilities@example.com') {
+  private static addFooter(doc: JsPDFType, facilityEmail: string = 'facilities@example.com') {
     const pageHeight = doc.internal.pageSize.height;
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
@@ -28,7 +37,7 @@ export class PDFGenerationService {
     doc.text('All submissions are tracked in the NYSC Facilities system', 105, pageHeight - 10, { align: 'center' });
   }
 
-  private static addField(doc: jsPDF, label: string, yPos: number, required: boolean = true): number {
+  private static addField(doc: JsPDFType, label: string, yPos: number, required: boolean = true): number {
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
     doc.text(`${label}${required ? ' *' : ''}:`, 20, yPos);
@@ -39,7 +48,7 @@ export class PDFGenerationService {
     return yPos + 12;
   }
 
-  private static addTextArea(doc: jsPDF, label: string, yPos: number, lines: number = 3): number {
+  private static addTextArea(doc: JsPDFType, label: string, yPos: number, lines: number = 3): number {
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
     doc.text(`${label} *:`, 20, yPos);
@@ -52,8 +61,8 @@ export class PDFGenerationService {
     return yPos + (lines * 8) + 8;
   }
 
-  static generateKeyElevatorPassForm(): jsPDF {
-    const doc = new jsPDF();
+  static generateKeyElevatorPassForm(): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'Key & Elevator Pass Request Form');
 
     let yPos = 60;
@@ -135,8 +144,8 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generateMajorWorkRequestForm(facilityEmail?: string): jsPDF {
-    const doc = new jsPDF();
+  static generateMajorWorkRequestForm(facilityEmail?: string): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'Major Work Request Form');
 
     let yPos = 60;
@@ -173,8 +182,8 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generateFacilityChangeLogForm(facilityEmail?: string): jsPDF {
-    const doc = new jsPDF();
+  static generateFacilityChangeLogForm(facilityEmail?: string): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'Facility Change Log Form');
 
     let yPos = 60;
@@ -201,8 +210,8 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generateExternalRequestForm(facilityEmail?: string): jsPDF {
-    const doc = new jsPDF();
+  static generateExternalRequestForm(facilityEmail?: string): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'General Request Form');
 
     let yPos = 60;
@@ -237,8 +246,8 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generateElevatorPassForm(facilityEmail: string): jsPDF {
-    const doc = new jsPDF();
+  static generateElevatorPassForm(facilityEmail: string): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'Elevator Pass Request');
 
     let yPos = 60;
@@ -255,8 +264,8 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generateKeyRequestForm(facilityEmail: string): jsPDF {
-    const doc = new jsPDF();
+  static generateKeyRequestForm(facilityEmail: string): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'Key Request');
 
     let yPos = 60;
@@ -287,8 +296,8 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generatePaintingRequestForm(facilityEmail: string): jsPDF {
-    const doc = new jsPDF();
+  static generatePaintingRequestForm(facilityEmail: string): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'Room Painting Request');
 
     let yPos = 60;
@@ -309,8 +318,8 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generateFlooringRequestForm(facilityEmail: string): jsPDF {
-    const doc = new jsPDF();
+  static generateFlooringRequestForm(facilityEmail: string): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'Flooring Request');
 
     let yPos = 60;
@@ -339,8 +348,8 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generateLockDoorknobRequestForm(facilityEmail: string): jsPDF {
-    const doc = new jsPDF();
+  static generateLockDoorknobRequestForm(facilityEmail: string): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'Lock & Doorknob Service');
 
     let yPos = 60;
@@ -382,8 +391,8 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generateRoomModificationRequestForm(facilityEmail: string): jsPDF {
-    const doc = new jsPDF();
+  static generateRoomModificationRequestForm(facilityEmail: string): JsPDFType {
+    const doc = new JsPDF!();
     this.addHeader(doc, 'Room Modification Request');
 
     let yPos = 60;
@@ -406,8 +415,9 @@ export class PDFGenerationService {
   }
 
   static async downloadForm(formType: string) {
+    await loadJsPDF();
     const facilityEmail = await getFacilityEmail();
-    let doc: jsPDF;
+    let doc: JsPDFType;
     let filename: string;
 
     switch (formType) {

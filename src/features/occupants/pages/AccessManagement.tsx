@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, Building2, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,8 +9,13 @@ import { RoomAccessSummary } from "@features/occupants/components/access/RoomAcc
 import { OccupantDepartureView } from "@features/occupants/components/access/OccupantDepartureView";
 
 export default function AccessManagement() {
-  const [activeTab, setActiveTab] = useState<'room' | 'departure'>('room');
-  const [roomId, setRoomId] = useState('');
+  // Deep-linkable from the room wizard ("Assign New Occupant" / "View Full History"):
+  // /occupants?room=<id>&tab=history
+  const [searchParams] = useSearchParams();
+  const initialRoom = searchParams.get('room') ?? '';
+  const initialTab = searchParams.get('tab') === 'departure' ? 'departure' : 'room';
+  const [activeTab, setActiveTab] = useState<'room' | 'departure'>(initialTab);
+  const [roomId, setRoomId] = useState(initialRoom);
   const [occupantId, setOccupantId] = useState('');
 
   return (

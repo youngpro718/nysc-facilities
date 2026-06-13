@@ -17,8 +17,6 @@ import { supabase } from '@/lib/supabase';
 import { 
   Package, 
   AlertTriangle, 
-  TrendingUp, 
-  TrendingDown,
   Plus, 
   Search,
   Filter,
@@ -62,8 +60,6 @@ interface UsageTrend {
   item_name: string;
   category: string;
   monthly_usage: number;
-  trend: 'up' | 'down' | 'stable';
-  percentage_change: number;
 }
 
 export function InventoryManagement() {
@@ -189,14 +185,18 @@ export function InventoryManagement() {
   };
 
   const generateUsageTrends = (items: InventoryItem[]): UsageTrend[] => {
-    // Mock trend data - in real implementation, this would come from historical usage data
-    return items.slice(0, 10).map(item => ({
-      item_name: item.name,
-      category: item.category,
-      monthly_usage: item.monthly_usage,
-      trend: Math.random() > 0.5 ? 'up' : 'down',
-      percentage_change: Math.floor(Math.random() * 30) + 5
-    }));
+    // Real per-item monthly usage, highest first. (Trend direction/percentage
+    // would require historical usage data we don't track yet — omitted rather
+    // than fabricated.)
+    return [...items]
+      .filter(item => (item.monthly_usage ?? 0) > 0)
+      .sort((a, b) => (b.monthly_usage ?? 0) - (a.monthly_usage ?? 0))
+      .slice(0, 10)
+      .map(item => ({
+        item_name: item.name,
+        category: item.category,
+        monthly_usage: item.monthly_usage,
+      }));
   };
 
   const updateStock = async (itemId: string, newStock: number, operation: 'add' | 'subtract' | 'set') => {
@@ -330,7 +330,7 @@ export function InventoryManagement() {
         <TabsList>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           <TabsTrigger value="alerts">Stock Alerts ({stockAlerts.length})</TabsTrigger>
-          <TabsTrigger value="trends">Usage Trends</TabsTrigger>
+          <TabsTrigger value="trends">Monthly Usage</TabsTrigger>
           <TabsTrigger value="reorder">Reorder</TabsTrigger>
         </TabsList>
 
@@ -526,37 +526,29 @@ export function InventoryManagement() {
         <TabsContent value="trends" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Usage Trends - Last 30 Days</CardTitle>
+              <CardTitle>Monthly Usage by Item</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {usageTrends.map((trend, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
+              {usageTrends.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">
+                  No usage recorded yet.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {usageTrends.map((trend, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
                         <div className="font-medium">{trend.item_name}</div>
                         <div className="text-sm text-muted-foreground">{trend.category}</div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <div className="font-medium">{trend.monthly_usage} units</div>
                         <div className="text-sm text-muted-foreground">Monthly usage</div>
                       </div>
-                      <div className={`flex items-center ${
-                        trend.trend === 'up' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
-                      }`}>
-                        {trend.trend === 'up' ? (
-                          <TrendingUp className="h-4 w-4 mr-1" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4 mr-1" />
-                        )}
-                        {trend.percentage_change}%
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -55,6 +55,7 @@ const MyIssues = lazy(() => import("@features/issues/pages/MyIssues"));
 const MySupplyRequests = lazy(() => import("@features/supply/pages/MySupplyRequests"));
 const MyActivity = lazy(() => import("@features/dashboard/pages/MyActivity"));
 const Tasks = lazy(() => import("@features/tasks/pages/Tasks"));
+const AccessManagement = lazy(() => import("@features/occupants/pages/AccessManagement"));
 const SupplyRoom = lazy(() => import("@features/supply/pages/SupplyRoom"));
 const Notifications = lazy(() => import("@features/dashboard/pages/Notifications"));
 const TermSheet = lazy(() => import("@features/court/pages/TermSheet"));
@@ -139,6 +140,12 @@ function AppContent() {
               <ModuleProtectedRoute moduleKey="spaces" moduleName="Spaces">
                 <Spaces />
               </ModuleProtectedRoute>
+            </ProtectedRoute>
+          } />
+          {/* Occupant access management — deep-linked from the room wizard */}
+          <Route path="/occupants" element={
+            <ProtectedRoute requireAdmin>
+              <AccessManagement />
             </ProtectedRoute>
           } />
           {/* Issues now handled by Operations page */}
