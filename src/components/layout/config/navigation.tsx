@@ -66,52 +66,6 @@ export const navigationItems: NavigationItem[] = [
   },
 ];
 
-// Secondary navigation items (for submenu/more section)
-export const secondaryNavigationItems: NavigationItem[] = [
-  {
-    title: 'Term Sheet',
-    href: '/term-sheet',
-    icon: FileText,
-    adminOnly: false,
-    moduleKey: undefined,
-  },
-  {
-    title: 'Routing Rules',
-    href: '/admin/routing-rules',
-    icon: GitFork,
-    adminOnly: true,
-    moduleKey: undefined,
-  },
-  {
-    title: 'Assets',
-    href: '/assets',
-    icon: Package,
-    adminOnly: true,
-    moduleKey: 'inventory',
-    children: [
-      {
-        title: 'Inventory',
-        href: '/inventory',
-        icon: Boxes,
-        adminOnly: true,
-        moduleKey: 'inventory',
-      },
-      {
-        title: 'Supply Requests',
-        href: '/admin/supply-requests',
-        icon: Package,
-        adminOnly: false,
-        moduleKey: 'supply_requests',
-      },
-    ],
-  },
-  {
-    title: 'Term Sheet',
-    href: '/term-sheet',
-    icon: Gavel,
-    adminOnly: false,
-  },
-];
 
 export const userNavigationItems: NavigationItem[] = [
   {
