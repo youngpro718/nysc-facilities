@@ -111,13 +111,13 @@ export function CommandCenter() {
     count: number;
     tone: StatusTone;
     to: string;
-  }> = ([
-    { label: 'Critical issues', count: metrics.issues.critical, tone: 'critical', to: '/operations?tab=issues' },
-    { label: 'Users awaiting approval', count: metrics.users.pending_approval, tone: 'warning', to: '/admin?tab=users' },
-    { label: 'Supply orders to approve', count: metrics.supply.pending_approval, tone: 'warning', to: '/admin/supply-requests' },
-    { label: 'Overdue tasks', count: metrics.tasks.overdue, tone: 'warning', to: '/tasks' },
-    { label: 'Low stock items', count: metrics.supply.low_stock_items, tone: 'info', to: '/inventory' },
-    { label: 'Rooms in maintenance', count: metrics.rooms.maintenance, tone: 'info', to: '/spaces' },
+  }> = [
+    { label: 'Critical issues', count: metrics.issues.critical, tone: 'critical' as StatusTone, to: '/operations?tab=issues' },
+    { label: 'Users awaiting approval', count: metrics.users.pending_approval, tone: 'warning' as StatusTone, to: '/admin?tab=users' },
+    { label: 'Supply orders to approve', count: metrics.supply.pending_approval, tone: 'warning' as StatusTone, to: '/admin/supply-requests' },
+    { label: 'Overdue tasks', count: metrics.tasks.overdue, tone: 'warning' as StatusTone, to: '/tasks' },
+    { label: 'Low stock items', count: metrics.supply.low_stock_items, tone: 'info' as StatusTone, to: '/inventory' },
+    { label: 'Rooms in maintenance', count: metrics.rooms.maintenance, tone: 'info' as StatusTone, to: '/spaces' },
   ].filter(item => item.count > 0);
 
   // ── Quick access (every path verified against the router) ──────────────
