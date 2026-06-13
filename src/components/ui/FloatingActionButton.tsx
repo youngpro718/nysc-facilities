@@ -5,7 +5,7 @@
  * No separate RequestHub page needed — actions launch directly.
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Package, Armchair, HandHelping, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,22 @@ export function FloatingActionButton() {
   const isMobile = useIsMobile();
   const { userRole } = useRolePermissions();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Lock the toggle for the length of the open/close animation. Rapid taps
+  // that out-pace framer-motion's exit can orphan the backdrop (a fixed,
+  // tap-capturing overlay) and make the UI feel stuck. The lock + the
+  // pointer-events gating on the backdrop below prevent that.
+  const toggleLock = useRef(false);
+  const toggleMenu = () => {
+    if (toggleLock.current) return;
+    toggleLock.current = true;
+    setIsOpen(prev => !prev);
+    setTimeout(() => { toggleLock.current = false; }, 280);
+  };
+  const closeAndRun = (fn: () => void) => {
+    setIsOpen(false);
+    fn();
+  };
 
   // Don't show on form pages, login, auth pages, spaces (has its own FAB),
   // or on the destinations the FAB itself navigates to.
@@ -67,26 +83,26 @@ export function FloatingActionButton() {
       id: 'supplies',
       label: 'Order Supplies',
       icon: Package,
-      onClick: () => { setIsOpen(false); navigate('/request/supplies'); },
+      onClick: () => closeAndRun(() => navigate('/request/supplies')),
     },
     {
       id: 'setup',
       label: 'Set Up a Room',
       icon: Armchair,
-      onClick: () => { setIsOpen(false); navigate('/request/help?type=setup'); },
+      onClick: () => closeAndRun(() => navigate('/request/help?type=setup')),
     },
     {
       id: 'help',
       label: 'Request Help',
       icon: HandHelping,
-      onClick: () => { setIsOpen(false); navigate('/request/help'); },
+      onClick: () => closeAndRun(() => navigate('/request/help')),
     },
     // Key requests live in admin key management for admins
     ...(!isAdminish ? [{
       id: 'key',
       label: 'Request a Key',
       icon: KeyRound,
-      onClick: () => { setIsOpen(false); navigate('/my-requests?new=1'); },
+      onClick: () => closeAndRun(() => navigate('/my-requests?new=1')),
     }] : []),
   ];
 
@@ -94,32 +110,35 @@ export function FloatingActionButton() {
     <AnimatePresence>
       {!shouldHide && (
         <>
-          {/* Backdrop */}
-          <AnimatePresence>
+          {/* Backdrop. pointerEvents is animated (not an isOpen-keyed style) so
+              the EXITING node also drops to 'none' immediately — otherwise a
+              backdrop still fading out keeps capturing taps and feels stuck. */}
+          <AnimatePresence initial={false}>
             {isOpen && (
               <motion.div
                 className="fixed inset-0 z-40 bg-black/40 md:hidden"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0, pointerEvents: 'none' }}
+                animate={{ opacity: 1, pointerEvents: 'auto' }}
+                exit={{ opacity: 0, pointerEvents: 'none' }}
                 onClick={() => setIsOpen(false)}
               />
             )}
           </AnimatePresence>
 
           {/* Action items */}
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
             {isOpen && (
               <motion.div
                 className="fixed bottom-44 right-4 z-50 md:hidden flex flex-col gap-3 items-end"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 20, pointerEvents: 'none' }}
+                animate={{ opacity: 1, y: 0, pointerEvents: 'auto' }}
+                exit={{ opacity: 0, y: 20, pointerEvents: 'none' }}
                 transition={{ staggerChildren: 0.05 }}
               >
                 {quickActions.map((action, i) => (
                   <motion.button
                     key={action.id}
+                    type="button"
                     className="flex items-center gap-3 bg-background border border-border rounded-full pl-4 pr-3 py-2.5 shadow-lg touch-manipulation active:scale-95 transition-transform"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0, transition: { delay: i * 0.05 } }}
@@ -159,8 +178,9 @@ export function FloatingActionButton() {
           >
             <Button
               size="icon"
+              type="button"
               className="h-14 w-14 rounded-full shadow-xl bg-primary hover:bg-primary/90 active:scale-95 transition-transform touch-manipulation"
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={toggleMenu}
               aria-label={isOpen ? "Close actions" : "New Request"}
             >
               <motion.div
