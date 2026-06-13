@@ -42,14 +42,22 @@ interface CreateAssignmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  /** Pre-select a person (e.g. when opened from a specific user row). */
+  presetPerson?: PersonnelOption | null;
 }
 
 export function CreateAssignmentDialog({
   open,
   onOpenChange,
   onSuccess,
+  presetPerson = null,
 }: CreateAssignmentDialogProps) {
-  const [selectedPerson, setSelectedPerson] = useState<PersonnelOption | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<PersonnelOption | null>(presetPerson);
+
+  // Keep the selected person in sync when opened for a specific user
+  React.useEffect(() => {
+    if (open && presetPerson) setSelectedPerson(presetPerson);
+  }, [open, presetPerson]);
   const [selectedRoom, setSelectedRoom] = useState("");
   const [assignmentType, setAssignmentType] = useState("work_location");
   const [isPrimary, setIsPrimary] = useState(false);
@@ -238,18 +246,24 @@ export function CreateAssignmentDialog({
 
           <div className="space-y-2">
             <Label htmlFor="person">Person</Label>
-            <Select value={selectedPerson?.id || ""} onValueChange={handlePersonChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select person" />
-              </SelectTrigger>
-              <SelectContent>
-                {personnel?.map((person) => (
-                  <SelectItem key={person.id} value={person.id}>
-                    {person.name} ({person.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {presetPerson ? (
+              <div className="rounded-md border px-3 py-2 text-sm bg-muted/40">
+                {presetPerson.name}{presetPerson.email ? ` (${presetPerson.email})` : ''}
+              </div>
+            ) : (
+              <Select value={selectedPerson?.id || ""} onValueChange={handlePersonChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select person" />
+                </SelectTrigger>
+                <SelectContent>
+                  {personnel?.map((person) => (
+                    <SelectItem key={person.id} value={person.id}>
+                      {person.name} ({person.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-2">

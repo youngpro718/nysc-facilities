@@ -10,12 +10,16 @@ import { Search, UserPlus } from "lucide-react";
 import { UserImportExport } from "@features/admin/components/users/UserImportExport";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminAddUserDialog } from "@features/admin/components/admin/AdminAddUserDialog";
+import { CreateAssignmentDialog } from "@features/occupants/components/room-assignments/CreateAssignmentDialog";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Users as UsersIcon } from "lucide-react";
+import { Users as UsersIcon, MapPin } from "lucide-react";
+
+interface AssignTarget { id: string; name: string; email: string; source_type: 'profile'; }
 
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState("");
   const [addUserOpen, setAddUserOpen] = useState(false);
+  const [assignTarget, setAssignTarget] = useState<AssignTarget | null>(null);
 
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['users'],
@@ -25,7 +29,7 @@ export default function Users() {
         .from('profiles')
         .select(`
           *,
-          occupant_room_assignments:occupant_room_assignments!occupant_room_assignments_occupant_id_fkey(
+          occupant_room_assignments:occupant_room_assignments!occupant_room_assignments_profile_id_fkey(
             id,
             assignment_type,
             is_primary,
@@ -139,6 +143,20 @@ export default function Users() {
                         {user.occupant_room_assignments.length} room{user.occupant_room_assignments.length !== 1 ? 's' : ''}
                       </Badge>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => setAssignTarget({
+                        id: user.id,
+                        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+                        email: user.email,
+                        source_type: 'profile',
+                      })}
+                    >
+                      <MapPin className="h-3.5 w-3.5 mr-1" />
+                      Room
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -154,6 +172,14 @@ export default function Users() {
       <AdminAddUserDialog
         open={addUserOpen}
         onOpenChange={setAddUserOpen}
+        onSuccess={() => refetch()}
+      />
+
+      {/* Admin verify/override of a user's room */}
+      <CreateAssignmentDialog
+        open={!!assignTarget}
+        onOpenChange={(open) => { if (!open) setAssignTarget(null); }}
+        presetPerson={assignTarget}
         onSuccess={() => refetch()}
       />
     </div>

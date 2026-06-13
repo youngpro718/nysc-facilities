@@ -1,56 +1,70 @@
-// @ts-nocheck
-import { useState } from 'react';
-import { logger } from '@/lib/logger';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DoorOpen, Star, MapPin, Loader2, Building2 } from 'lucide-react';
+import { DoorOpen, Star, MapPin, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@features/auth/hooks/useAuth';
-import { useOccupantAssignments } from '@features/occupants/components/occupants/hooks/useOccupantAssignments';
+import { useUserRoomAssignments } from '@features/spaces/hooks/useUserRoomAssignments';
+import { RoomSelector } from '@features/keys/components/keys/lockbox/RoomSelector';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { logger } from '@/lib/logger';
 
+/**
+ * My Room — self-serve room assignment.
+ * A user picks their own room; it is stored immediately (as their own
+ * profile-keyed occupant_room_assignment) and auto-loads into the Report
+ * Issue / Supply Order / Set Up a Room forms. Admins can still view/override
+ * anyone's room from Admin → Users, but it is never required here.
+ */
 export function MyRoomSection() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [hasRequestedRoom, setHasRequestedRoom] = useState(false);
-  
-  const { data: assignments, isLoading } = useOccupantAssignments(user?.id);
+  const { data: rawAssignments = [], isLoading } = useUserRoomAssignments(user?.id);
 
-  const requestRoomMutation = useMutation({
-    mutationFn: async () => {
+  // A user can have both a legacy occupant-keyed row and a profile-keyed row for
+  // the same room; show each room once.
+  const assignments = rawAssignments.filter(
+    (a, i, arr) => arr.findIndex(x => x.room_id === a.room_id) === i,
+  );
+
+  const primary = assignments.find(a => a.is_primary) ?? assignments[0];
+  const currentRoomId = primary?.room_id ?? undefined;
+
+  const setRoom = useMutation({
+    mutationFn: async (roomId: string | null) => {
       if (!user) throw new Error('Not authenticated');
-      
-      const { error } = await supabase
-        .from('staff_tasks')
-        .insert({
-          title: 'Room Assignment Request',
-          description: 'User is requesting to be assigned a room/office location.',
-          task_type: 'general',
-          priority: 'medium',
-          status: 'pending_approval',
-          is_request: true,
-          requested_by: user.id,
-          created_by: user.id,
-        });
-      
-      if (error) throw error;
+      // Replace the user's own work-location row(s). Self-serve writes only
+      // ever touch rows where profile_id = the caller (enforced by RLS).
+      await supabase
+        .from('occupant_room_assignments')
+        .delete()
+        .eq('profile_id', user.id)
+        .eq('assignment_type', 'work_location');
+
+      if (roomId) {
+        const { error } = await supabase
+          .from('occupant_room_assignments')
+          .insert({
+            profile_id: user.id,
+            room_id: roomId,
+            assignment_type: 'work_location',
+            is_primary: true,
+          });
+        if (error) throw error;
+      }
     },
-    onSuccess: () => {
-      toast.success('Room assignment request submitted');
-      setHasRequestedRoom(true);
-      queryClient.invalidateQueries({ queryKey: ['staff_tasks'] });
+    onSuccess: (_data, roomId) => {
+      toast.success(roomId ? 'Room updated' : 'Room cleared');
+      queryClient.invalidateQueries({ queryKey: ['userRoomAssignments', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['occupantAssignments', user?.id] });
     },
     onError: (error: unknown) => {
-      logger.error('Error requesting room:', error);
-      toast.error(getErrorMessage(error) || 'Failed to submit request');
-    }
+      logger.error('Error setting room:', error);
+      toast.error(getErrorMessage(error) || 'Failed to update room');
+    },
   });
-
-  const hasRooms = assignments?.roomDetails && assignments.roomDetails.length > 0;
 
   return (
     <Card>
@@ -62,82 +76,62 @@ export function MyRoomSection() {
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading ? (
+          <Skeleton className="h-14 w-full" />
+        ) : assignments.length > 0 ? (
           <div className="space-y-2">
-            <Skeleton className="h-14 w-full" />
-          </div>
-        ) : hasRooms ? (
-          <div className="space-y-2">
-            {assignments.roomDetails.map((assignment: Record<string, unknown>) => {
-              const room = assignment.rooms;
-              if (!room) return null;
-              
-              return (
-                <div 
-                  key={assignment.room_id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <MapPin className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">
-                          Room {room.room_number || room.name}
-                        </p>
-                        {assignment.is_primary && (
-                          <Badge variant="secondary" className="gap-1 text-xs">
-                            <Star className="h-3 w-3 fill-current" />
-                            Primary
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {room.floors?.name} • {room.floors?.buildings?.name}
+            {assignments.map((a) => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <MapPin className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">
+                        Room {a.rooms?.room_number || a.rooms?.name || '—'}
                       </p>
+                      {a.is_primary && (
+                        <Badge variant="secondary" className="gap-1 text-xs">
+                          <Star className="h-3 w-3 fill-current" />
+                          Primary
+                        </Badge>
+                      )}
                     </div>
+                    {a.rooms?.name && a.rooms?.room_number && (
+                      <p className="text-xs text-muted-foreground">{a.rooms.name}</p>
+                    )}
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="text-center py-4 space-y-3">
+          <div className="text-center py-4 space-y-2">
             <div className="p-3 rounded-full bg-muted w-fit mx-auto">
               <Building2 className="h-6 w-6 text-muted-foreground" />
             </div>
-            <div>
-              <p className="font-medium">No room assigned</p>
-              <p className="text-sm text-muted-foreground">
-                Request a room assignment from your administrator
-              </p>
-            </div>
-            
-            {hasRequestedRoom ? (
-              <Badge variant="secondary" className="gap-1">
-                Request pending
-              </Badge>
-            ) : (
-              <Button 
-                onClick={() => requestRoomMutation.mutate()}
-                disabled={requestRoomMutation.isPending}
-                className="w-full sm:w-auto"
-              >
-                {requestRoomMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <DoorOpen className="h-4 w-4 mr-2" />
-                    Request Room Assignment
-                  </>
-                )}
-              </Button>
-            )}
+            <p className="font-medium">No room set</p>
+            <p className="text-sm text-muted-foreground">
+              Pick your room below — it will be filled in automatically when you report
+              an issue or order supplies.
+            </p>
           </div>
         )}
+
+        {/* Self-serve picker */}
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground">
+            {assignments.length > 0 ? 'Change my room' : 'Set my room'}
+          </p>
+          <RoomSelector
+            value={currentRoomId}
+            onChange={(roomId) => setRoom.mutate(roomId)}
+            disabled={setRoom.isPending}
+          />
+        </div>
       </CardContent>
     </Card>
   );
