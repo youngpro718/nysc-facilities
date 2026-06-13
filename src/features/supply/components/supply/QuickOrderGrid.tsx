@@ -13,8 +13,7 @@ import { useOrderCart } from '@features/supply/hooks/useOrderCart';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useIsMobile } from '@shared/hooks/use-mobile';
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
-
-const ALLOWED_CATEGORIES = ['Office Supplies', 'Furniture', 'Cleaning Supplies', 'Technology', 'Safety Equipment', 'Maintenance Supplies'];
+import { deriveCategories } from '@features/supply/utils/categoryConfig';
 
 export function QuickOrderGrid() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,11 +42,7 @@ export function QuickOrderGrid() {
 
   const filteredItems = useMemo(() => {
     const filtered = (inventoryItems as Record<string, any>[]).filter(item => {
-      // Only show allowed categories
-      const isAllowedCategory = ALLOWED_CATEGORIES.includes(item.inventory_categories?.name || '');
-      if (!isAllowedCategory) return false;
-
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.sku?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -60,6 +55,12 @@ export function QuickOrderGrid() {
     
     return filtered;
   }, [inventoryItems, searchTerm, selectedCategory]);
+
+  // Category tabs reflect only categories that have stock
+  const categories = useMemo(
+    () => deriveCategories(inventoryItems as Record<string, any>[]),
+    [inventoryItems],
+  );
 
   const selectedItem = selectedItemId 
     ? inventoryItems.find((item: any) => item.id === selectedItemId)
@@ -140,7 +141,7 @@ export function QuickOrderGrid() {
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
-                {ALLOWED_CATEGORIES.map(category => (
+                {categories.map(category => (
                   <TabsTrigger key={category} value={category}>
                     {category.replace(' Supplies', '')}
                   </TabsTrigger>

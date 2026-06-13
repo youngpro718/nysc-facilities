@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Star, Plus, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
+import { ItemImage } from './ItemImage';
 
 interface ItemDetailPanelProps {
   item: any;
@@ -37,18 +38,14 @@ export function ItemDetailPanel({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Item Image */}
-      <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-        {item.photo_url ? (
-          <img
-            src={item.photo_url}
-            alt={item.name}
-            className="w-full h-full object-cover rounded-lg"
-          />
-        ) : (
-          <Package className="h-16 w-16 text-muted-foreground opacity-20" />
-        )}
-      </div>
+      {/* Item Image (photo or category placeholder) */}
+      <ItemImage
+        photoUrl={item.photo_url}
+        name={item.name}
+        categoryName={item.inventory_categories?.name}
+        alt={item.name}
+        className="aspect-square w-full mb-4"
+      />
 
       {/* Item Name & Category */}
       <div className="mb-4">

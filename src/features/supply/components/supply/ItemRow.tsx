@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Minus, Plus } from 'lucide-react';
+import { ItemImage } from './ItemImage';
 
 interface ItemRowProps {
   item: any;
@@ -31,6 +32,15 @@ export function ItemRow({
         isSelected ? 'bg-muted/70' : ''
       }`}
     >
+      {/* Thumbnail (photo or category placeholder) */}
+      <ItemImage
+        photoUrl={item.photo_url}
+        name={item.name}
+        categoryName={item.inventory_categories?.name}
+        alt={item.name}
+        className="h-10 w-10 shrink-0"
+      />
+
       {/* Item info */}
       <div className="flex-1 min-w-0">
         <div className="font-medium text-sm truncate flex items-center gap-1.5">

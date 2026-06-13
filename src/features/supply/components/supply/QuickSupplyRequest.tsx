@@ -21,41 +21,7 @@ import { FavoritesStrip } from './FavoritesStrip';
 import { OrderSummaryFooter } from './OrderSummaryFooter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@shared/hooks/use-mobile';
-
-const ALLOWED_CATEGORIES = ['Office Supplies', 'Furniture', 'Cleaning Supplies', 'Technology', 'Safety Equipment', 'Maintenance Supplies'];
-
-const CATEGORY_CONFIG: Record<string, { icon: string; gradient: string; description: string }> = {
-  'Office Supplies': {
-    icon: '📎',
-    gradient: 'from-blue-500/20 to-cyan-500/10',
-    description: 'Pens, paper, staplers & more',
-  },
-  'Furniture': {
-    icon: '🪑',
-    gradient: 'from-amber-500/20 to-orange-500/10',
-    description: 'Desks, chairs, storage',
-  },
-  'Cleaning Supplies': {
-    icon: '🧹',
-    gradient: 'from-green-500/20 to-emerald-500/10',
-    description: 'Cleaners, mops, trash bags',
-  },
-  'Technology': {
-    icon: '💻',
-    gradient: 'from-purple-500/20 to-violet-500/10',
-    description: 'Computers, cables, peripherals',
-  },
-  'Safety Equipment': {
-    icon: '🦺',
-    gradient: 'from-red-500/20 to-rose-500/10',
-    description: 'PPE, first aid, fire safety',
-  },
-  'Maintenance Supplies': {
-    icon: '🔧',
-    gradient: 'from-gray-500/20 to-slate-500/10',
-    description: 'Tools, parts, repair materials',
-  },
-};
+import { getCategoryVisual, deriveCategories } from '@features/supply/utils/categoryConfig';
 
 export function QuickSupplyRequest() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,7 +49,6 @@ export function QuickSupplyRequest() {
   const filteredItems = useMemo(() => {
     return (inventoryItems as Record<string, any>[]).filter((item) => {
       const categoryName = item.inventory_categories?.name || '';
-      if (!ALLOWED_CATEGORIES.includes(categoryName)) return false;
 
       const matchesSearch =
         !searchTerm ||
@@ -97,6 +62,12 @@ export function QuickSupplyRequest() {
       return matchesSearch && matchesCategory;
     });
   }, [inventoryItems, searchTerm, selectedCategory]);
+
+  // Categories that actually have stock (drives the picker — no hardcoded list)
+  const categories = useMemo(
+    () => deriveCategories(inventoryItems as Record<string, any>[]),
+    [inventoryItems],
+  );
 
   // Group items by category for display
   const groupedItems = useMemo(() => {
@@ -196,12 +167,12 @@ export function QuickSupplyRequest() {
           {/* Category Cards - Show when no search/category selected */}
           {showCategoryCards && (
             <div className="grid grid-cols-2 gap-3">
-                {ALLOWED_CATEGORIES.map((category) => {
-                  const config = CATEGORY_CONFIG[category];
+                {categories.map((category) => {
+                  const config = getCategoryVisual(category);
                   const itemCount = (inventoryItems as Record<string, any>[]).filter(
                     (i) => i.inventory_categories?.name === category
                   ).length;
-                  
+
                   return (
                     <button
                       key={category}
@@ -210,10 +181,10 @@ export function QuickSupplyRequest() {
                         "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all",
                         "hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
                         "bg-gradient-to-br",
-                        config?.gradient || 'from-muted to-muted/50'
+                        config.gradient
                       )}
                     >
-                      <span className="text-3xl mb-2 block">{config?.icon || '📦'}</span>
+                      <span className="text-3xl mb-2 block">{config.icon}</span>
                       <h3 className="font-semibold text-sm">{category}</h3>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {config?.description}
@@ -231,7 +202,7 @@ export function QuickSupplyRequest() {
           {selectedCategory && (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">{CATEGORY_CONFIG[selectedCategory]?.icon}</span>
+                <span className="text-2xl">{getCategoryVisual(selectedCategory).icon}</span>
                 <h2 className="font-bold text-lg">{selectedCategory}</h2>
               </div>
               <button
@@ -291,7 +262,7 @@ export function QuickSupplyRequest() {
               <div key={category} className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
-                    <span>{CATEGORY_CONFIG[category]?.icon || '📦'}</span>
+                    <span>{getCategoryVisual(category).icon}</span>
                     {category}
                   </h3>
                   <button
