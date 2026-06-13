@@ -151,6 +151,7 @@ export default function Users() {
                         id: user.id,
                         name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
                         email: user.email,
+                        department: null,
                         source_type: 'profile',
                       })}
                     >
