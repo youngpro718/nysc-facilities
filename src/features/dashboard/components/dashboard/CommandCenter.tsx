@@ -111,7 +111,7 @@ export function CommandCenter() {
     count: number;
     tone: StatusTone;
     to: string;
-  }> = [
+  }> = ([
     { label: 'Critical issues', count: metrics.issues.critical, tone: 'critical', to: '/operations?tab=issues' },
     { label: 'Users awaiting approval', count: metrics.users.pending_approval, tone: 'warning', to: '/admin?tab=users' },
     { label: 'Supply orders to approve', count: metrics.supply.pending_approval, tone: 'warning', to: '/admin/supply-requests' },
