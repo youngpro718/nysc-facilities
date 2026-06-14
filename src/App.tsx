@@ -33,6 +33,7 @@ const VerifyEmail = lazy(() => import("@features/auth/pages/auth/VerifyEmail"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const PendingApproval = lazy(() => import("@features/auth/pages/auth/PendingApproval"));
 const AccountRejected = lazy(() => import("@features/auth/pages/auth/AccountRejected"));
+const AccountSuspended = lazy(() => import("@features/auth/pages/auth/AccountSuspended"));
 const ProfileOnboarding = lazy(() => import("@features/auth/pages/onboarding/ProfileOnboarding"));
 const NotFound = lazy(() => import("@features/auth/pages/NotFound"));
 const VerificationPending = lazy(() => import("@features/auth/pages/VerificationPending"));
@@ -109,6 +110,7 @@ function AppContent() {
         {/* Auth Flow Pages - Outside OnboardingGuard */}
         <Route path="/auth/pending-approval" element={<PendingApproval />} />
         <Route path="/auth/account-rejected" element={<AccountRejected />} />
+        <Route path="/auth/suspended" element={<AccountSuspended />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/reset" element={<ResetPasswordPage />} />
