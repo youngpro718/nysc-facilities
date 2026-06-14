@@ -81,7 +81,7 @@ export function EnhancedIssueCard({
   const createdAt = new Date(issue.created_at);
   const ageDays = differenceInDays(new Date(), createdAt);
   const isStale = ageDays >= 7 && issue.status !== "resolved";
-  const isCritical = (issue.priority === "critical" || issue.priority === "high") && issue.status !== "resolved";
+  const isCritical = ((issue.priority as string) === "critical" || issue.priority === "high") && issue.status !== "resolved";
 
   const externalTicket = (
     issue as unknown as Record<string, unknown>
