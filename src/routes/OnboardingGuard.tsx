@@ -136,6 +136,13 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
+        // Suspended users — blocked regardless of role
+        if (profile?.is_suspended === true) {
+          logger.debug('[OnboardingGuard] User suspended, redirecting to suspended page');
+          navigate('/auth/suspended', { replace: true });
+          return;
+        }
+
         // Check if user was rejected
         if (profile?.verification_status === 'rejected') {
           logger.debug('[OnboardingGuard] User rejected, redirecting to rejected page');
