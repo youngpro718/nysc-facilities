@@ -186,35 +186,25 @@ export const KeysDashboardCard = () => {
         .select('id')
         .is('returned_at', null);
 
-      const { data: pendingRequests, error: requestsError } = await supabase
-        .from('key_requests')
-        .select('id')
-        .eq('status', 'pending');
+      if (totalError || assignedError) throw totalError || assignedError;
 
-      if (totalError || assignedError || requestsError) throw totalError || assignedError || requestsError;
-      
       return {
         total: totalKeys?.length || 0,
         assigned: assignedKeys?.length || 0,
         available: (totalKeys?.length || 0) - (assignedKeys?.length || 0),
-        pendingRequests: pendingRequests?.length || 0
       };
     }
   });
-
-  const hasPending = (keys?.pendingRequests || 0) > 0;
 
   return (
     <ModuleCard
       title="Keys Management"
       icon={<KeyRound className="h-5 w-5 text-purple-500" />}
       count={keys?.total || 0}
-      description={`${keys?.assigned || 0} assigned, ${keys?.available || 0} available${hasPending ? `, ${keys?.pendingRequests} pending requests` : ''}`}
+      description={`${keys?.assigned || 0} assigned, ${keys?.available || 0} available`}
       route="/keys"
       color="purple"
       loading={isLoading}
-      secondaryLabel={hasPending ? `${keys?.pendingRequests} Pending` : undefined}
-      secondaryRoute={hasPending ? "/admin/key-requests" : undefined}
     />
   );
 };

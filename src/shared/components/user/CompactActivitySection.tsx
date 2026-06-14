@@ -59,7 +59,6 @@ interface CompactActivitySectionProps {
   supplyRequests: SupplyRequest[];
   issues: Issue[];
   keysHeld: number;
-  pendingKeyRequests: number;
   userId?: string;
   className?: string;
 }
@@ -68,7 +67,6 @@ export function CompactActivitySection({
   supplyRequests,
   issues,
   keysHeld,
-  pendingKeyRequests,
   userId,
   className,
 }: CompactActivitySectionProps) {
@@ -130,7 +128,7 @@ export function CompactActivitySection({
       
       <CardContent className="pt-0">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-3 h-auto p-1">
+          <TabsList className="w-full grid grid-cols-2 h-auto p-1">
             <TabsTrigger 
               value="supplies" 
               aria-label={`Supplies${activeSupplies.length > 0 ? `, ${activeSupplies.length} active` : ''}`}
@@ -162,19 +160,6 @@ export function CompactActivitySection({
               )}
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="keys"
-              aria-label={`Keys${keysHeld + pendingKeyRequests > 0 ? `, ${keysHeld + pendingKeyRequests} total` : ''}`}
-              className="flex items-center gap-1.5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <Key className="h-4 w-4" />
-              <span className="sr-only sm:not-sr-only">Keys</span>
-              {(keysHeld > 0 || pendingKeyRequests > 0) && (
-                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
-                  {keysHeld + pendingKeyRequests}
-                </Badge>
-              )}
-            </TabsTrigger>
           </TabsList>
 
           {/* Supplies Tab */}
@@ -311,39 +296,6 @@ export function CompactActivitySection({
             )}
           </TabsContent>
 
-          {/* Keys Tab */}
-          <TabsContent value="keys" className="mt-3">
-            <div className="space-y-3">
-              {/* Summary stats */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="border rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-primary">{keysHeld}</div>
-                  <div className="text-xs text-muted-foreground">Keys Held</div>
-                </div>
-                <div className="border rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-amber-500">{pendingKeyRequests}</div>
-                  <div className="text-xs text-muted-foreground">Pending Requests</div>
-                </div>
-              </div>
-              
-              {keysHeld === 0 && pendingKeyRequests === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  <Key className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">No keys assigned</p>
-                </div>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => navigate('/my-keys')}
-                >
-                  View Key Assignments
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              )}
-            </div>
-          </TabsContent>
         </Tabs>
       </CardContent>
     </Card>

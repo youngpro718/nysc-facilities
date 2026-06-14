@@ -18,7 +18,6 @@ const ROUTE_LOADERS: Record<string, Importer> = {
   '/my-activity': () => import('@features/dashboard/pages/MyActivity'),
   '/my-issues': () => import('@features/issues/pages/MyIssues'),
   '/my-supply-requests': () => import('@features/supply/pages/MySupplyRequests'),
-  '/my-requests': () => import('@features/dashboard/pages/MyRequests'),
   '/notifications': () => import('@features/dashboard/pages/Notifications'),
   '/profile': () => import('@features/profile/pages/Profile'),
   '/term-sheet': () => import('@features/court/pages/TermSheet'),

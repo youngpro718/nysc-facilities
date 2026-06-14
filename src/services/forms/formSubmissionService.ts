@@ -1,67 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errorUtils';
-import { submitKeyRequest } from '@features/keys/services/keyRequestService';
 import type {
   FormSubmissionResult,
-  KeyRequestFormData,
   SupplyRequestFormData,
   MaintenanceRequestFormData,
   IssueReportFormData,
   UserProfileRef,
 } from '@features/forms/types/forms';
-
-export async function createKeyRequestFromForm(
-  formData: KeyRequestFormData,
-  userId: string,
-  submissionId: string
-): Promise<FormSubmissionResult> {
-  try {
-    // Try to find or create user profile
-    const userProfile = await findUserByEmail(formData.requestor_email);
-    const targetUserId = userProfile?.id || userId;
-
-    // Find room ID if room number provided
-    let roomId = null;
-    if (formData.room_number) {
-      const { data: room } = await supabase
-        .from('court_rooms')
-        .select('id, room_id')
-        .eq('room_number', formData.room_number)
-        .single();
-      
-      if (room) {
-        roomId = room.room_id;
-      }
-    }
-
-    // Create key request
-    await submitKeyRequest({
-      reason: formData.reason,
-      user_id: targetUserId,
-      request_type: formData.request_type,
-      room_id: roomId || undefined,
-      room_other: formData.room_other || null,
-      quantity: formData.quantity,
-      emergency_contact: formData.emergency_contact || null,
-      email_notifications_enabled: !!formData.requestor_email,
-    });
-
-    // Update form submission with link
-    await supabase
-      .from('form_submissions')
-      .update({
-        linked_request_type: 'key_request',
-        processing_status: 'completed',
-      })
-      .eq('id', submissionId);
-
-    return { success: true };
-  } catch (error) {
-    logger.error('Error creating key request from form:', error);
-    return { success: false, error: getErrorMessage(error) };
-  }
-}
 
 export async function createSupplyRequestFromForm(
   formData: SupplyRequestFormData,

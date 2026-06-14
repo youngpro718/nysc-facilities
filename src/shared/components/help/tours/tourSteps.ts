@@ -240,7 +240,7 @@ export const userDashboardTour: Step[] = [
   },
   {
     target: '[data-tour="quick-actions"]',
-    content: '⚡ Quick Actions: One-click access to common tasks. Request supplies, report facility issues, or request keys without navigating through menus.',
+    content: '⚡ Quick Actions: One-click access to common tasks. Request supplies or report facility issues without navigating through menus.',
     placement: 'bottom',
     disableBeacon: true,
   },

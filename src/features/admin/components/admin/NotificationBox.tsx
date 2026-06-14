@@ -13,12 +13,10 @@ import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesI
 import { supabase } from "@/lib/supabase";
 
 const notificationIcons = {
-  new_key_request: Key,
   new_supply_request: Package,
   new_issue: AlertTriangle,
   issue_status_change: AlertCircle,
   new_key_order: Key,
-  key_request: Key,
   supply_request: Package,
   issue: AlertTriangle,
   maintenance: Wrench,
@@ -120,9 +118,6 @@ export const NotificationBox = () => {
     }
     // Navigate based on notification type
     switch (notification.notification_type) {
-      case 'new_key_request':
-        navigate('/admin/key-requests');
-        break;
       case 'new_supply_request':
         navigate('/admin/supply-requests');
         break;
@@ -171,7 +166,6 @@ export const NotificationBox = () => {
     }
     
     switch (type) {
-      case 'new_key_request':
       case 'new_key_order':
         return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 dark:bg-blue-900/20 dark:text-blue-400';
       case 'new_supply_request':

@@ -66,61 +66,6 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           }
         }
       )
-      // Key request updates
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'key_requests',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          logger.debug('[UserRealtime] Key request updated:', payload);
-          const request = payload.new;
-
-          const statusMessages: Record<string, { message: string; type: 'success' | 'error' | 'info' }> = {
-            approved: { message: 'Your key request has been approved!', type: 'success' },
-            rejected: { message: 'Your key request has been rejected.', type: 'error' },
-            fulfilled: { message: 'Your key is ready for pickup!', type: 'success' },
-          };
-
-          const statusInfo = statusMessages[request.status];
-          if (statusInfo) {
-            toast[statusInfo.type](statusInfo.message, {
-              action: {
-                label: 'View Details',
-                onClick: () => (window.location.href = '/my-requests'),
-              },
-            });
-          }
-        }
-      )
-      // Key order updates
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'key_orders',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          logger.debug('[UserRealtime] Key order updated:', payload);
-          const order = payload.new;
-
-          if (order.status === 'ready_for_pickup') {
-            toast.success('🔑 Your key is ready for pickup!', {
-              description: 'Visit the facilities office with your ID',
-              duration: 8000,
-              action: {
-                label: 'View Order',
-                onClick: () => (window.location.href = '/my-requests'),
-              },
-            });
-          }
-        }
-      )
       // Supply request updates
       .on(
         'postgres_changes',
@@ -146,7 +91,7 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
             toast[statusInfo.type](statusInfo.message, {
               action: {
                 label: 'View Details',
-                onClick: () => (window.location.href = '/my-requests'),
+                onClick: () => (window.location.href = '/my-activity'),
               },
             });
           }

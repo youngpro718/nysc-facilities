@@ -50,7 +50,6 @@ const Operations = lazy(() => import("@features/operations/pages/Operations"));
 const Keys = lazy(() => import("@features/keys/pages/Keys"));
 const KeysKiosk = lazy(() => import("@features/keys/pages/KeysKiosk"));
 const Profile = lazy(() => import("@features/profile/pages/Profile"));
-const MyRequests = lazy(() => import("@features/dashboard/pages/MyRequests"));
 const MyIssues = lazy(() => import("@features/issues/pages/MyIssues"));
 const MySupplyRequests = lazy(() => import("@features/supply/pages/MySupplyRequests"));
 const MyActivity = lazy(() => import("@features/dashboard/pages/MyActivity"));
@@ -71,13 +70,11 @@ const HelpCenter = lazy(() =>
 
 // Admin
 const AdminCenter = lazy(() => import("@features/admin/pages/AdminCenter"));
-const AdminKeyRequests = lazy(() => import("@features/admin/pages/admin/KeyRequests"));
 const AdminSupplyRequests = lazy(() => import("@features/admin/pages/admin/SupplyRequests"));
 const RoutingRules = lazy(() => import("@features/admin/pages/admin/RoutingRules"));
 const FormTemplatesAdmin = lazy(() => import("@features/admin/pages/admin/FormTemplatesAdmin"));
 
 // Forms
-const KeyRequestFormPage = lazy(() => import("@features/forms/pages/forms/KeyRequestFormPage"));
 const MaintenanceRequestFormPage = lazy(() => import("@features/forms/pages/forms/MaintenanceRequestFormPage"));
 const IssueReportFormPage = lazy(() => import("@features/forms/pages/forms/IssueReportFormPage"));
 const PublicForms = lazy(() => import("@features/forms/pages/PublicForms"));
@@ -105,7 +102,6 @@ function AppContent() {
         <Route path="/submit-form" element={<PublicFormSubmission />} />
 
         {/* Public Interactive Form Pages - No Layout, No Auth */}
-        <Route path="/forms/key-request" element={<KeyRequestFormPage />} />
         <Route path="/forms/supply-request" element={<Navigate to="/request/supplies" replace />} />
         <Route path="/forms/maintenance-request" element={<MaintenanceRequestFormPage />} />
         <Route path="/forms/issue-report" element={<IssueReportFormPage />} />
@@ -187,11 +183,6 @@ function AppContent() {
           <Route path="/system-settings" element={<Navigate to="/admin?tab=system" replace />} />
           {/* /users route removed — use /admin instead */}
           <Route path="/users" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/key-requests" element={
-            <ProtectedRoute requireAdmin>
-              <AdminKeyRequests />
-            </ProtectedRoute>
-          } />
           <Route path="/admin/supply-requests" element={
             <ProtectedRoute requireAdmin>
               <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Requests">
@@ -276,11 +267,6 @@ function AppContent() {
             </ProtectedRoute>
           } />
           {/* Legacy routes - keep for backwards compatibility */}
-          <Route path="/my-requests" element={
-            <ProtectedRoute>
-              <MyRequests />
-            </ProtectedRoute>
-          } />
           <Route path="/my-issues" element={
             <ProtectedRoute>
               <MyIssues />

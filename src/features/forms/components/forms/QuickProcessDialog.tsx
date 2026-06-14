@@ -13,11 +13,10 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { FileText } from 'lucide-react';
-import { 
-  createKeyRequestFromForm,
+import {
   createSupplyRequestFromForm,
   createMaintenanceRequestFromForm,
-  createIssueFromForm 
+  createIssueFromForm
 } from '@/services/forms/formSubmissionService';
 
 interface QuickProcessDialogProps {
@@ -38,7 +37,6 @@ export function QuickProcessDialog({ submission, open, onClose }: QuickProcessDi
   const queryClient = useQueryClient();
 
   const formTypes = [
-    { value: 'key_request', label: 'Key & Elevator Pass Request' },
     { value: 'major_work', label: 'Major Work Request' },
     { value: 'facility_change', label: 'Facility Change Log' },
     { value: 'general_request', label: 'General Request' },
@@ -66,15 +64,6 @@ export function QuickProcessDialog({ submission, open, onClose }: QuickProcessDi
 
       let result;
       switch (formType) {
-        case 'key_request':
-          result = await createKeyRequestFromForm({
-            ...baseData,
-            request_type: 'new',
-            reason: notes || 'Submitted via email form',
-            quantity: 1,
-          }, user.id, submission.id);
-          break;
-
         case 'major_work':
           result = await createMaintenanceRequestFromForm({
             ...baseData,

@@ -51,7 +51,6 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
 
           const typeQueryMap: Record<string, string[]> = {
             new_supply_request: ['adminNotifications'],
-            new_key_request: ['adminNotifications'],
             new_issue: ['adminNotifications', 'issues'],
             new_key_order: ['adminNotifications'],
             new_user_pending: ['adminNotifications'],
@@ -76,7 +75,6 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
 
           // Toast
           const icons: Record<string, string> = {
-            new_key_request: '🔑',
             new_supply_request: '📦',
             new_issue: '⚠️',
             new_key_order: '🛒',

@@ -30,7 +30,6 @@ import {
 import { format } from "date-fns";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { useSupplyRequests } from "@features/supply/hooks/useSupplyRequests";
-import { useKeyRequests } from "@features/keys/hooks/useKeyRequests";
 import { useUserIssues } from "@features/dashboard/hooks/useUserIssues";
 import { useStaffTasks } from "@features/tasks/hooks/useStaffTasks";
 import { useOccupantAssignments } from "@features/occupants/components/occupants/hooks/useOccupantAssignments";
@@ -59,13 +58,6 @@ const supplyStatusConfig: Record<string, { icon: LucideIcon; label: string; colo
   cancelled: { icon: XCircle, label: "Cancelled", color: "bg-gray-500" },
 };
 
-const keyStatusConfig: Record<string, { icon: LucideIcon; label: string; color: string }> = {
-  pending: { icon: Clock, label: "Pending Review", color: "bg-yellow-500" },
-  approved: { icon: CheckCircle, label: "Approved", color: "bg-green-500" },
-  rejected: { icon: XCircle, label: "Rejected", color: "bg-red-500" },
-  fulfilled: { icon: Key, label: "Fulfilled", color: "bg-blue-500" },
-};
-
 const issueStatusConfig: Record<string, { icon: LucideIcon; label: string; color: string }> = {
   open: { icon: AlertTriangle, label: "Open", color: "bg-red-500" },
   in_progress: { icon: Wrench, label: "In Progress", color: "bg-yellow-500" },
@@ -88,7 +80,6 @@ export default function MyActivity() {
   
   // Data hooks
   const { data: supplyRequests = [], isLoading: supplyLoading, refetch: refetchSupply } = useSupplyRequests(user?.id);
-  const { data: keyRequests = [], isLoading: keyLoading, refetch: refetchKeys } = useKeyRequests(user?.id);
   const { userIssues: issues = [], isLoading: issuesLoading, refetchIssues } = useUserIssues(user?.id);
   const { tasks: taskRequests = [], isLoading: tasksLoading, refetch: refetchTasks } = useStaffTasks({ userId: user?.id });
 
@@ -97,7 +88,7 @@ export default function MyActivity() {
   };
 
   const handleRefresh = async () => {
-    await Promise.all([refetchSupply(), refetchKeys(), refetchIssues(), refetchTasks()]);
+    await Promise.all([refetchSupply(), refetchIssues(), refetchTasks()]);
   };
 
   const handleIssueCreated = () => {
@@ -107,11 +98,10 @@ export default function MyActivity() {
 
   // Calculate counts for badges
   const activeSupplyCount = supplyRequests.filter(r => !['completed', 'cancelled', 'rejected'].includes(r.status)).length;
-  const activeKeyCount = keyRequests.filter(r => !['fulfilled', 'rejected'].includes(r.status)).length;
   const activeIssueCount = issues.filter(i => !['resolved', 'closed'].includes(i.status)).length;
   const activeTaskCount = taskRequests.filter(t => !['completed', 'cancelled', 'rejected'].includes(t.status)).length;
 
-  const isLoading = supplyLoading || keyLoading || issuesLoading || tasksLoading;
+  const isLoading = supplyLoading || issuesLoading || tasksLoading;
 
   const content = (
     <div className="space-y-4">
@@ -122,7 +112,7 @@ export default function MyActivity() {
       />
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Card 
           className={`cursor-pointer transition-all ${activeTab === 'supplies' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
           onClick={() => handleTabChange('supplies')}
@@ -138,22 +128,7 @@ export default function MyActivity() {
           </CardContent>
         </Card>
 
-        <Card 
-          className={`cursor-pointer transition-all ${activeTab === 'keys' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
-          onClick={() => handleTabChange('keys')}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <Key className="h-5 w-5 text-status-info" />
-              <Badge variant={activeKeyCount > 0 ? "default" : "secondary"}>
-                {activeKeyCount}
-              </Badge>
-            </div>
-            <p className="text-sm font-medium mt-2">Keys</p>
-          </CardContent>
-        </Card>
-
-        <Card 
+        <Card
           className={`cursor-pointer transition-all ${activeTab === 'reported' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
           onClick={() => handleTabChange('reported')}
         >
@@ -186,14 +161,10 @@ export default function MyActivity() {
 
       {/* Tabs Content */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="w-full grid grid-cols-4">
+        <TabsList className="w-full grid grid-cols-3">
           <TabsTrigger value="supplies" className="relative">
             <Package className="h-4 w-4 mr-1" />
             Supplies
-          </TabsTrigger>
-          <TabsTrigger value="keys" className="relative">
-            <Key className="h-4 w-4 mr-1" />
-            Keys
           </TabsTrigger>
           <TabsTrigger value="reported" className="relative">
             <AlertTriangle className="h-4 w-4 mr-1" />
@@ -259,77 +230,6 @@ export default function MyActivity() {
                           variant="ghost" 
                           size="sm"
                           onClick={() => navigate(`/my-supply-requests?id=${request.id}`)}
-                        >
-                          View
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Key Requests Tab */}
-        <TabsContent value="keys" className="mt-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Key Requests</h2>
-            <Button size="sm" onClick={() => navigate('/my-requests?new=1')}>
-              <Plus className="h-4 w-4 mr-1" />
-              New Request
-            </Button>
-          </div>
-          
-          {keyLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}
-            </div>
-          ) : keyRequests.length === 0 ? (
-            <Card className="p-8 text-center">
-              <Key className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-semibold mb-2">No Key Requests</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                You haven't made any key requests yet
-              </p>
-              <Button onClick={() => navigate('/my-requests?new=1')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Request a Key
-              </Button>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {keyRequests.map((request) => {
-                const status = keyStatusConfig[String(request.status)] || keyStatusConfig.pending;
-                const StatusIcon = status.icon;
-                return (
-                  <Card key={request.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium">
-                              {request.request_type === 'new' ? 'New Key' : 
-                               request.request_type === 'replacement' ? 'Replacement Key' : 
-                               request.request_type === 'spare' ? 'Spare Key' :
-                               'Key Request'}
-                            </h3>
-                            <Badge variant="outline" className="text-xs">
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {status.label}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {request.reason || 'No description'}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {request.created_at && format(new Date(request.created_at), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => navigate(`/my-requests?id=${request.id}`)}
                         >
                           View
                         </Button>

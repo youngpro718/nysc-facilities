@@ -12,13 +12,6 @@ import { useFacilityEmail } from '@features/admin/hooks/useFacilityEmail';
 
 const formTemplates = [
   {
-    id: 'key-request',
-    title: 'Key & Elevator Pass Request',
-    description: 'Request secure access keys or elevator passes',
-    icon: FileText,
-    color: 'text-blue-500',
-  },
-  {
     id: 'major-work-request',
     title: 'Major Work Request Form',
     description: 'For significant facility changes - new outlets, flooring, painting',
@@ -42,7 +35,7 @@ const formTemplates = [
 ];
 
 export default function PublicForms() {
-  const [previewFormType, setPreviewFormType] = useState<'key-request' | 'supply-request' | 'maintenance-request' | 'issue-report' | null>(null);
+  const [previewFormType, setPreviewFormType] = useState<'supply-request' | 'maintenance-request' | 'issue-report' | null>(null);
   const { email: facilityEmail } = useFacilityEmail();
 
   const handleDownload = (templateId: string, templateTitle: string) => {
@@ -59,7 +52,7 @@ export default function PublicForms() {
     }
   };
 
-  const handlePreview = (templateId: 'key-request' | 'supply-request' | 'maintenance-request' | 'issue-report') => {
+  const handlePreview = (templateId: 'supply-request' | 'maintenance-request' | 'issue-report') => {
     setPreviewFormType(templateId);
   };
 

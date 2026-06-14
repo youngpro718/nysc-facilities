@@ -140,13 +140,6 @@ export interface IssueFilters {
   dateTo?: string;
 }
 
-/** Filters for querying key requests */
-export interface KeyRequestFilters {
-  status?: string;
-  requesterId?: string;
-  keyId?: string;
-}
-
 /** Filters for querying supply requests */
 export interface SupplyRequestFilters {
   status?: string;
@@ -199,29 +192,6 @@ export interface RoomWithRelations {
   updated_by: string | null;
   building: BuildingRef | null;
   floor: FloorRef | null;
-}
-
-// ============================================================================
-// Key Request Types
-// ============================================================================
-
-/** Key info for joined queries */
-export interface KeyRef {
-  id: string;
-  key_number: string;
-  description: string | null;
-}
-
-/** Key request with relations */
-export interface KeyRequestWithRelations {
-  id: string;
-  status: string;
-  created_at: string;
-  updated_at: string | null;
-  requester: UserRef | null;
-  key: KeyRef | null;
-  room: RoomRef | null;
-  // Add other fields as needed
 }
 
 // ============================================================================

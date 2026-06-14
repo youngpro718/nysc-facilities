@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 interface ActivityItem {
   id: string;
-  type: 'supply_request' | 'key_request' | 'issue' | 'notification';
+  type: 'supply_request' | 'issue' | 'notification';
   title: string;
   status: string;
   timestamp: string;
@@ -37,7 +37,6 @@ interface RecentActivityWidgetProps {
 
 const typeConfig = {
   supply_request: { icon: Package, color: 'text-green-600 dark:text-green-400', label: 'Supply' },
-  key_request: { icon: Key, color: 'text-blue-600 dark:text-blue-400', label: 'Key' },
   issue: { icon: AlertTriangle, color: 'text-orange-600 dark:text-orange-400', label: 'Issue' },
   notification: { icon: Activity, color: 'text-purple-600 dark:text-purple-400', label: 'Update' },
 };

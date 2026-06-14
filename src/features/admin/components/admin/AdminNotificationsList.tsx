@@ -14,12 +14,10 @@ import { useState } from "react";
 import { logger } from "@/lib/logger";
 
 const notificationIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  new_key_request: Key,
   new_supply_request: Package,
   new_issue: AlertTriangle,
   issue_status_change: AlertCircle,
   new_key_order: Key,
-  key_request: Key,
   supply_request: Package,
   issue: AlertTriangle,
   maintenance: Wrench,
@@ -36,7 +34,6 @@ function getRoute(notification: any): string | null {
   const actionUrl = notification?.metadata?.action_url as string | undefined;
   if (actionUrl) return actionUrl;
   switch (notification.notification_type) {
-    case 'new_key_request': return '/admin/key-requests';
     case 'new_supply_request': return '/admin/supply-requests';
     case 'new_issue':
     case 'issue_status_change': return '/admin/issues';

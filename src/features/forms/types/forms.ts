@@ -25,20 +25,6 @@ export interface UserProfileRef {
 }
 
 // ============================================================================
-// Key Request Form Types
-// ============================================================================
-
-export interface KeyRequestFormData {
-  requestor_email?: string;
-  room_number?: string;
-  reason: string;
-  request_type: string;
-  room_other?: string | null;
-  quantity: number;
-  emergency_contact?: string | null;
-}
-
-// ============================================================================
 // Supply Request Form Types
 // ============================================================================
 
@@ -90,8 +76,7 @@ export interface IssueReportFormData {
 // Generic Form Data Union Type
 // ============================================================================
 
-export type FormData = 
-  | KeyRequestFormData 
-  | SupplyRequestFormData 
-  | MaintenanceRequestFormData 
+export type FormData =
+  | SupplyRequestFormData
+  | MaintenanceRequestFormData
   | IssueReportFormData;

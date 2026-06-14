@@ -10,7 +10,7 @@ import { FileText, ClipboardList, Wrench, AlertCircle } from 'lucide-react';
 interface FormPreviewDialogProps {
   open: boolean;
   onClose: () => void;
-  formType: 'elevator-pass-request' | 'key-request' | 'supply-request' | 'maintenance-request' | 'issue-report' | 'painting-request' | 'flooring-request' | 'lock-doorknob-request' | 'room-modification-request' | 'major-work-request' | 'facility-change-log' | 'external-request';
+  formType: 'elevator-pass-request' | 'supply-request' | 'maintenance-request' | 'issue-report' | 'painting-request' | 'flooring-request' | 'lock-doorknob-request' | 'room-modification-request' | 'major-work-request' | 'facility-change-log' | 'external-request';
 }
 
 const formConfigs = {
@@ -21,19 +21,6 @@ const formConfigs = {
     fields: [
       { name: 'requestorName', label: 'Requestor Name', type: 'text', placeholder: 'Full name' },
       { name: 'department', label: 'Department', type: 'text', placeholder: 'Your department' },
-    ],
-  },
-  'key-request': {
-    title: 'Key Request',
-    icon: FileText,
-    color: 'text-indigo-500',
-    fields: [
-      { name: 'requestorName', label: 'Requestor Name', type: 'text', placeholder: 'Full name' },
-      { name: 'department', label: 'Department', type: 'text', placeholder: 'Your department' },
-      { name: 'roomNumber', label: 'Room Number', type: 'text', placeholder: 'e.g., 1000, 1324A' },
-      { name: 'quantity', label: 'Quantity Needed', type: 'number', placeholder: '1' },
-      { name: 'requestType', label: 'Request Type', type: 'select', options: ['Spare', 'Replacement', 'Key Issue'] },
-      { name: 'issueDescription', label: 'Description of Issue (if applicable)', type: 'textarea', placeholder: 'Describe the issue...' },
     ],
   },
   'painting-request': {

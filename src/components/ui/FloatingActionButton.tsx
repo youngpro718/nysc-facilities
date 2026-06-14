@@ -7,7 +7,7 @@
 
 import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Package, Armchair, HandHelping, KeyRound } from 'lucide-react';
+import { Plus, Package, Armchair, HandHelping } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@shared/hooks/use-mobile';
 import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
@@ -74,10 +74,6 @@ export function FloatingActionButton() {
     return null;
   }
 
-  // Admins track these requests in admin pages; /my-requests and /my-activity
-  // are not in their navigation, so don't send them to orphaned destinations.
-  const isAdminish = userRole === 'admin' || userRole === 'system_admin';
-
   const quickActions = [
     {
       id: 'supplies',
@@ -97,13 +93,6 @@ export function FloatingActionButton() {
       icon: HandHelping,
       onClick: () => closeAndRun(() => navigate('/request/help')),
     },
-    // Key requests live in admin key management for admins
-    ...(!isAdminish ? [{
-      id: 'key',
-      label: 'Request a Key',
-      icon: KeyRound,
-      onClick: () => closeAndRun(() => navigate('/my-requests?new=1')),
-    }] : []),
   ];
 
   return (

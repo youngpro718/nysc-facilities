@@ -1,12 +1,11 @@
 // User Dashboard — minimal action-focused portal
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { useNotifications } from "@shared/hooks/useNotifications";
 import { useSupplyRequests } from "@features/supply/hooks/useSupplyRequests";
-import { useKeyRequests } from "@features/keys/hooks/useKeyRequests";
 import { useUserIssues } from "@features/dashboard/hooks/useUserIssues";
 import { NotificationDropdown } from "@shared/components/user/NotificationDropdown";
 import { useUserPersonnelInfo } from "@features/court/hooks/useUserPersonnelInfo";
@@ -16,9 +15,8 @@ import { Button } from "@/components/ui/button";
 import { CompactHeader } from "@shared/components/user/CompactHeader";
 import { PickupAlertBanner } from "@shared/components/user/PickupAlertBanner";
 import { CompactActivitySection } from "@shared/components/user/CompactActivitySection";
-import { KeyRequestDialog } from "@features/supply/components/requests/KeyRequestDialog";
 
-import { Package, Send, Key, ChevronRight } from "lucide-react";
+import { Package, Send, ChevronRight } from "lucide-react";
 import { getDashboardForRole } from "@/routes/roleBasedRouting";
 
 export default function UserDashboard() {
@@ -44,18 +42,15 @@ export default function UserDashboard() {
     refetch: refetchNotifications,
   } = useNotifications(user?.id);
   const { data: supplyRequests = [], refetch: refetchSupplyRequests } = useSupplyRequests(user?.id);
-  const { data: keyRequests = [], refetch: refetchKeyRequests } = useKeyRequests(user?.id);
   const { userIssues = [], refetchIssues } = useUserIssues(user?.id);
   const { data: personnelInfo } = useUserPersonnelInfo(user?.id);
-
-  const [showKeyRequestDialog, setShowKeyRequestDialog] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) navigate("/login");
   }, [isLoading, isAuthenticated, navigate]);
 
   const handleRefresh = async () => {
-    await Promise.all([refetchNotifications(), refetchSupplyRequests(), refetchKeyRequests(), refetchIssues()]);
+    await Promise.all([refetchNotifications(), refetchSupplyRequests(), refetchIssues()]);
   };
 
   const { data: keyAssignments = [] } = useQuery({
@@ -101,7 +96,6 @@ export default function UserDashboard() {
   const readyForPickup = supplyRequests.filter((r) => r.status === "ready").length;
   const activeSupplyCount = supplyRequests.filter((r) => ["submitted", "received", "picking", "in_progress"].includes(r.status)).length;
   const openRequestCount = userIssues.filter((i) => i.status === "open" || i.status === "in_progress").length;
-  const pendingKeyRequests = keyRequests.filter((r) => r.status === "pending").length;
   const keysHeld = keyAssignments.length;
 
   return (
@@ -150,15 +144,7 @@ export default function UserDashboard() {
             onClick={() => navigate("/request/help")}
             prefetchPath="/request/help"
           />
-          <ActionRow
-            icon={Key}
-            label="Request a Key"
-            sub={keysHeld > 0 ? `${keysHeld} key${keysHeld !== 1 ? "s" : ""} held` : undefined}
-            onClick={() => setShowKeyRequestDialog(true)}
-          />
         </div>
-
-        <KeyRequestDialog open={showKeyRequestDialog} onOpenChange={setShowKeyRequestDialog} onSuccess={() => refetchKeyRequests()} />
 
         {/* Activity feed — single chronological list */}
         <div className="pt-2">
@@ -172,7 +158,6 @@ export default function UserDashboard() {
             supplyRequests={supplyRequests}
             issues={userIssues}
             keysHeld={keysHeld}
-            pendingKeyRequests={pendingKeyRequests}
             userId={user.id}
           />
         </div>

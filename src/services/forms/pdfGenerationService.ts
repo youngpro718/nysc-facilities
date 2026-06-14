@@ -264,38 +264,6 @@ export class PDFGenerationService {
     return doc;
   }
 
-  static generateKeyRequestForm(facilityEmail: string): JsPDFType {
-    const doc = new JsPDF!();
-    this.addHeader(doc, 'Key Request');
-
-    let yPos = 60;
-
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Request room keys - Spare, replacement, or key issues.', 20, yPos);
-    yPos += 15;
-
-    yPos = this.addField(doc, 'Requestor Name', yPos);
-    yPos = this.addField(doc, 'Department', yPos);
-    yPos = this.addField(doc, 'Room Number', yPos);
-    yPos = this.addField(doc, 'Quantity Needed', yPos);
-    
-    doc.setFontSize(11);
-    doc.text('Request Type *:', 20, yPos);
-    doc.rect(20, yPos + 2, 5, 5);
-    doc.text('Spare', 28, yPos + 6);
-    doc.rect(70, yPos + 2, 5, 5);
-    doc.text('Replacement', 78, yPos + 6);
-    doc.rect(130, yPos + 2, 5, 5);
-    doc.text('Key Issue', 138, yPos + 6);
-    yPos += 15;
-
-    yPos = this.addTextArea(doc, 'Description of Issue (if applicable)', yPos, 3);
-
-    this.addFooter(doc, facilityEmail);
-    return doc;
-  }
-
   static generatePaintingRequestForm(facilityEmail: string): JsPDFType {
     const doc = new JsPDF!();
     this.addHeader(doc, 'Room Painting Request');
@@ -424,10 +392,6 @@ export class PDFGenerationService {
       case 'elevator-pass-request':
         doc = this.generateElevatorPassForm(facilityEmail);
         filename = 'Elevator_Pass_Request.pdf';
-        break;
-      case 'key-request':
-        doc = this.generateKeyRequestForm(facilityEmail);
-        filename = 'Key_Request.pdf';
         break;
       case 'painting-request':
         doc = this.generatePaintingRequestForm(facilityEmail);

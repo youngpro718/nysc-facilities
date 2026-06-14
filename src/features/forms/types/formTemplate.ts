@@ -50,7 +50,7 @@ export interface PDFConfig {
 export interface FormTemplate {
   id: string;
   template_name: string;
-  template_type: 'key_request' | 'supply_request' | 'maintenance_request' | 'issue_report' | 'custom';
+  template_type: 'supply_request' | 'maintenance_request' | 'issue_report' | 'custom';
   description: string | null;
   version: number;
   is_active: boolean;

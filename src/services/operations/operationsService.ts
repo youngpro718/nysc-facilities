@@ -17,8 +17,6 @@ import type {
   IssueResolution,
   AuditLogEntry,
   RoomWithRelations,
-  KeyRequestFilters,
-  KeyRequestWithRelations,
   SupplyRequestFilters,
   SupplyRequestWithRelations,
 } from '@features/operations/types/operations';
@@ -276,34 +274,6 @@ export const operationsService = {
       return (data || []) as AuditLogEntry[];
     } catch (error) {
       logger.error('[operationsService.getAuditTrail]:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get key requests with optional filters
-   */
-  async getKeyRequests(filters?: KeyRequestFilters): Promise<KeyRequestWithRelations[]> {
-    try {
-      let query = db
-        .from('key_requests')
-        .select(`
-          *,
-          requester:profiles!key_requests_requester_id_fkey(id, first_name, last_name),
-          key:keys(id, key_number, description),
-          room:rooms(id, room_number, room_name)
-        `);
-
-      if (filters?.status) {
-        query = query.eq('status', filters.status);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) handleSupabaseError(error, 'Failed to fetch key requests');
-      return (data || []) as KeyRequestWithRelations[];
-    } catch (error) {
-      logger.error('[operationsService.getKeyRequests]:', error);
       throw error;
     }
   },

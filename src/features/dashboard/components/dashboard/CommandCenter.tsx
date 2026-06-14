@@ -124,7 +124,6 @@ export function CommandCenter() {
   const quickLinks = [
     { label: 'Users', to: '/admin?tab=users', icon: Users },
     { label: 'Supply Requests', to: '/admin/supply-requests', icon: Package },
-    { label: 'Key Requests', to: '/admin/key-requests', icon: KeyRound },
     { label: 'Issues', to: '/operations?tab=issues', icon: AlertTriangle },
     { label: 'Inventory', to: '/inventory', icon: Boxes },
     { label: 'Term Sheet', to: '/term-sheet', icon: Gavel },

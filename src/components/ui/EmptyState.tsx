@@ -88,10 +88,6 @@ export const emptyStates = {
     title: 'No Supply Requests',
     description: "You haven't made any supply requests yet. Request office supplies and materials.",
   },
-  noKeyRequests: {
-    title: 'No Key Requests',
-    description: "You haven't requested any keys yet. Request access to rooms and facilities.",
-  },
   noIssues: {
     title: 'No Issues Reported',
     description: "Everything looks good! Report an issue if you find something that needs attention.",

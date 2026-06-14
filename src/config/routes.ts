@@ -56,13 +56,6 @@ export const routes: Record<string, RouteConfig> = {
     icon: FileText,
     parent: '/dashboard',
   },
-  '/my-requests': {
-    path: '/my-requests',
-    title: 'My Key Requests',
-    breadcrumbLabel: 'Key Requests',
-    icon: FileText,
-    parent: '/my-activity',
-  },
   '/my-supply-requests': {
     path: '/my-supply-requests',
     title: 'My Supply Requests',
@@ -79,13 +72,6 @@ export const routes: Record<string, RouteConfig> = {
   },
   
   // Admin pages
-  '/admin/key-requests': {
-    path: '/admin/key-requests',
-    title: 'Key Requests Management',
-    breadcrumbLabel: 'Key Requests',
-    icon: KeyRound,
-    parent: '/',
-  },
   '/admin/supply-requests': {
     path: '/admin/supply-requests',
     title: 'Supply Requests Management',
