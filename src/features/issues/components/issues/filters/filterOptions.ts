@@ -31,11 +31,12 @@ export const priorityOptions = [
   { value: "critical", label: "Critical" }
 ];
 
+// No 'closed' here: issue_status_enum is open/in_progress/resolved, so a
+// "Closed" filter would always match zero issues.
 export const statusOptions = [
   { value: "open", label: "Open" },
   { value: "in_progress", label: "In Progress" },
-  { value: "resolved", label: "Resolved" },
-  { value: "closed", label: "Closed" }
+  { value: "resolved", label: "Resolved" }
 ];
 
 export const assigneeTypeOptions = [
