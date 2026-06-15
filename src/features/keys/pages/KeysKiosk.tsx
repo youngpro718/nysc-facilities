@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { LockboxSlot, getSlotDisplayTitle, slotHasRoomLink } from "../components/keys/types/LockboxTypes";
+import { LockboxSlot, getSlotDisplayTitle } from "../components/keys/types/LockboxTypes";
 
 type Tab = "find" | "out";
 type Category = "all" | "chambers" | "robing" | "courtroom" | "other";
