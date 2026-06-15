@@ -39,6 +39,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useUserRoomAssignments } from '@features/spaces/hooks/useUserRoomAssignments';
+import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryRoomPicker';
 import type { CartItem } from '@features/supply/hooks/useOrderCart';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -373,11 +374,12 @@ export function OrderSummaryFooter({
                     <MapPin className="h-3 w-3" />
                     Deliver to
                   </Label>
-                  <Input
-                    placeholder="Room 205"
+                  <DeliveryRoomPicker
                     value={deliveryLocation}
-                    onChange={(e) => setDeliveryLocation(e.target.value)}
-                    className="h-10 rounded-xl"
+                    onChange={setDeliveryLocation}
+                    userId={user?.id}
+                    placeholder="Search rooms…"
+                    triggerClassName="h-10 rounded-xl"
                   />
                 </div>
                 <div className="space-y-1.5">
