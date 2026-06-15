@@ -55,6 +55,7 @@ interface TaskCardProps {
   onComplete?: (taskId: string, notes?: string) => void;
   onCancel?: (taskId: string) => void;
   onApprove?: (taskId: string) => void;
+  onApproveAndClaim?: (taskId: string) => void;
   onReject?: (taskId: string, reason: string) => void;
   isLoading?: boolean;
 }
