@@ -82,7 +82,7 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
     defaultValues: {
       title: '',
       description: '',
-      task_type: 'general',
+      task_type: 'move_item',
       quantity: 1,
     },
   });
