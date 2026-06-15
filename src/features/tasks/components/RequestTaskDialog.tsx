@@ -156,9 +156,9 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.entries(TASK_TYPE_LABELS).map(([value, label]) => (
+                      {REQUEST_TASK_TYPES.map((value) => (
                         <SelectItem key={value} value={value}>
-                          {label}
+                          {TASK_TYPE_LABELS[value]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -167,6 +167,33 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                 </FormItem>
               )}
             />
+
+            {taskType === 'move_item' && (
+              <FormField
+                control={form.control}
+                name="move_category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What's being moved? *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pick a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {MOVE_ITEM_CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
