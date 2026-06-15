@@ -191,10 +191,12 @@ export function LockboxView() {
 
       {selectedLockboxId ? (
         <div className="min-h-[300px] max-h-[calc(100vh-350px)] sm:max-h-[calc(100vh-400px)]">
-          <LockboxSearch 
-            slots={slots} 
+          <LockboxSearch
+            slots={slots}
+            allSlots={allSlots}
             onSlotClick={handleSlotClick}
             lockboxName={selectedLockbox?.name}
+            selectedLockboxId={selectedLockboxId}
           />
         </div>
       ) : (
