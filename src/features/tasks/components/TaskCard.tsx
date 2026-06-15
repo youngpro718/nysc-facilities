@@ -115,6 +115,7 @@ export function TaskCard({
   onComplete,
   onCancel,
   onApprove,
+  onApproveAndClaim,
   onReject,
   isLoading,
 }: TaskCardProps) {
