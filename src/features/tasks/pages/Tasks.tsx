@@ -93,6 +93,24 @@ export default function Tasks() {
 
   // Court aides default to "my-tasks" tab, others to "active"
   const isCourtAide = userRole === 'court_aide';
+
+  // Regular users (not court aides, not managers) get the dedicated
+  // "My Requests" view — same component used on /my-activity. This is the
+  // only place their own submitted tasks are surfaced.
+  if (!isCourtAide && !canManageTasks) {
+    return (
+      <div className="space-y-6 p-4 md:p-6">
+        <PageHeader
+          title="My Tasks"
+          description="Track requests you've submitted"
+          icon={ClipboardList}
+          className="mb-0"
+        />
+        <UserTasksTab />
+      </div>
+    );
+  }
+
   const defaultTab = searchParams.get('tab') || (isCourtAide ? 'my-tasks' : 'active');
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [searchQuery, setSearchQuery] = useState("");
