@@ -149,11 +149,11 @@ export function OrderSummaryFooter({
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50 p-3 pb-safe"
+        className="fixed bottom-16 md:bottom-3 left-0 right-0 z-50 p-3 pb-safe"
       >
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <div className={cn(
-            "mx-auto max-w-3xl rounded-2xl border shadow-2xl",
+            "mx-auto max-w-3xl rounded-2xl border-2 border-primary/20 shadow-2xl ring-1 ring-black/5",
             "bg-background/95 backdrop-blur-xl"
           )}>
             {/* Inline Justification for Restricted Items */}
