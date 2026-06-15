@@ -23,6 +23,7 @@ import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { TaskCard } from "@features/tasks/components/TaskCard";
 import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPanel";
+import { UserTasksTab } from "@features/tasks/components/UserTasksTab";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
