@@ -20,7 +20,7 @@ function getStatusConfig(status: string) {
   }
 }
 
-export function LockboxSlotCard({ slot, onClick }: LockboxSlotCardProps) {
+export function LockboxSlotCard({ slot, onClick, lockboxName }: LockboxSlotCardProps) {
   const statusConfig = getStatusConfig(slot.status);
 
   const getStatusBadge = (status: string) => {
