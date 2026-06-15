@@ -234,7 +234,8 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
             />
 
             {(showFromRoom || showToRoom) && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className={`grid ${showFromRoom && showToRoom ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+                {showFromRoom && (
                 <FormField
                   control={form.control}
                   name="from_room_id"
