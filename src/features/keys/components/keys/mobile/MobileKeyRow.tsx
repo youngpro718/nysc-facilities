@@ -1,7 +1,7 @@
 import { Key, Archive, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LockboxSlot, getRoomLinkStatus } from "../types/LockboxTypes";
+import { LockboxSlot, getRoomLinkStatus, getSlotDisplayTitle, slotHasRoomLink } from "../types/LockboxTypes";
 
 export interface MobileSlotRowData extends LockboxSlot {
   lockbox_name?: string;
@@ -141,10 +141,10 @@ export function MobileKeyRow({ slot, onOpen, onPrimaryAction }: MobileKeyRowProp
         {/* Col 2 — Title + room */}
         <div className="min-w-0">
           <div className="font-semibold text-sm leading-snug truncate text-foreground">
-            {slot.label}
+            {getSlotDisplayTitle(slot)}
           </div>
           <div className="text-xs text-muted-foreground truncate mt-0.5">
-            {slot.room_number ? `Room ${slot.room_number}` : "—"}
+            {slotHasRoomLink(slot) ? "Linked to room" : "No room linked"}
           </div>
         </div>
 

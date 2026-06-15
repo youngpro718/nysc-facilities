@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import { LockboxSlot, LockboxWithSlotCount } from "../types/LockboxTypes";
+import { LockboxSlot, LockboxWithSlotCount, getSlotDisplayTitle } from "../types/LockboxTypes";
 import { format } from "date-fns";
 
 interface PrintLockboxReferenceProps {

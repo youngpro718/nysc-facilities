@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LockboxSlot } from "../types/LockboxTypes";
+import { LockboxSlot, getSlotDisplayTitle } from "../types/LockboxTypes";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Edit3, MoreHorizontal, Trash2 } from "lucide-react";
