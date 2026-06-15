@@ -11,11 +11,13 @@ export const useAdminIssues = () => {
     queryKey: ['allIssues'],
     queryFn: async () => {
       try {
+        // The admin dashboard widget displays at most 50 issues. limit(500)
+        // was a leftover from the old admin index and just bloated payloads.
         const { data, error } = await supabase
           .from('issues')
           .select('id, title, description, status, priority, created_at, building_id, seen, issue_type, assigned_to, photos')
           .order('created_at', { ascending: false })
-          .limit(500);
+          .limit(50);
 
         if (error) throw new IssueError(`Failed to fetch all issues: ${error.message}`);
         if (!data) throw new IssueError('No issues data returned');

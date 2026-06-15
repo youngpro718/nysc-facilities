@@ -21,18 +21,39 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
   useEffect(() => {
     if (!userData?.id) return;
 
+    // Coalesce realtime issue changes. Before, every issue UPDATE on the
+    // admin dashboard fanned out into 4 separate invalidations + a refetch,
+    // each turning the top progress bar back on. Now we do a single
+    // predicate-based invalidation and debounce rapid bursts so a 5-issue
+    // status change still costs only one round of refetches.
+    let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+    const invalidateIssueQueries = () => {
+      queryClient.invalidateQueries({
+        predicate: (q) => {
+          const k = q.queryKey[0];
+          return (
+            k === 'allIssues' ||
+            k === 'adminIssues' ||
+            k === 'adminIssueStats' ||
+            k === 'userIssues'
+          );
+        },
+      });
+    };
     const handleIssueChange = () => {
-      if (isAdminDashboard) {
-        void Promise.all([
-          refetchIssues(),
-          queryClient.invalidateQueries({ queryKey: ['allIssues'] }),
-          queryClient.invalidateQueries({ queryKey: ['adminIssues'] }),
-          queryClient.invalidateQueries({ queryKey: ['adminIssueStats'] }),
-        ]);
-        return;
-      }
-
-      refetchIssues();
+      // Same debounce on the non-admin path: standard users subscribe to BOTH
+      // a `created_by` and a `reported_by` filter, and most rows match both
+      // (a user usually creates and reports their own issue), so any UPDATE
+      // used to fire refetchIssues twice. Coalescing to a single refetch.
+      if (pendingTimer) return;
+      pendingTimer = setTimeout(() => {
+        pendingTimer = null;
+        if (isAdminDashboard) {
+          invalidateIssueQueries();
+        } else {
+          refetchIssues();
+        }
+      }, 200);
     };
 
     const subscriptions = isAdminDashboard
@@ -80,6 +101,7 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
         ];
 
     return () => {
+      if (pendingTimer) clearTimeout(pendingTimer);
       subscriptions.forEach(subscription => subscription.unsubscribe());
     };
   }, [isAdminDashboard, queryClient, refetchIssues, userData?.id]);

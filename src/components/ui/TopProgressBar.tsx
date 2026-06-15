@@ -1,14 +1,17 @@
 /**
  * TopProgressBar - YouTube/GitHub-style top progress bar.
  *
- * Animates whenever React Query has any in-flight fetches OR a route
- * transition is happening. Greatly improves perceived performance by
- * giving the user immediate visual feedback that something is loading.
+ * Animates on route transitions, mutations, and INITIAL fetches (queries with
+ * no cached data yet). It deliberately ignores background refetches — the
+ * user already sees the previous data, so polling cycles and realtime
+ * invalidations should not flash the bar. Without this filter, the bar would
+ * pulse every minute as the dashboard's 5-6 polling hooks fire.
  *
  * Behavior contract:
  * - On route change: instantly show + jump to ~25%, then trickle.
- * - While any fetch/mutation in flight: trickle toward 90% (never reaches 100).
+ * - While an initial fetch or mutation is in flight: trickle toward 90%.
  * - When all activity ends: snap to 100%, fade out, reset to 0.
+ * - Background refetches with cached data: SILENT, no bar.
  * - Rapid route changes: do NOT regress progress; reset baseline only if hidden.
  * - Long-running requests: trickle slows asymptotically, never hides early.
  * - Safety net: if visible for more than 30s with no activity, force-hide.
@@ -24,7 +27,13 @@ const HIDE_DELAY_MS = 250;
 const SAFETY_TIMEOUT_MS = 30_000;
 
 export function TopProgressBar() {
-  const fetching = useIsFetching();
+  // Only count queries that have no data yet — i.e. initial loads, not
+  // background refetches. dataUpdateCount === 0 means React Query has never
+  // successfully delivered data for this query, so something is actually
+  // waiting for it. Refetches that already have cached data are silent.
+  const initialFetches = useIsFetching({
+    predicate: (q) => q.state.dataUpdateCount === 0 && q.state.status !== 'error',
+  });
   const mutating = useIsMutating();
   const location = useLocation();
 
@@ -39,7 +48,7 @@ export function TopProgressBar() {
   // it would set progress to 100 just before the trickle takes over.
   const shownRef = useRef(false);
 
-  const active = fetching > 0 || mutating > 0;
+  const active = initialFetches > 0 || mutating > 0;
 
   const clearTrickle = () => {
     if (trickleRef.current) {

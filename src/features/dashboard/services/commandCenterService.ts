@@ -133,12 +133,19 @@ async function getIssueMetrics(): Promise<IssueMetrics> {
   const { data, error } = await supabase.rpc('get_issue_stats');
   if (error) throw error;
 
-  // Calculate average resolution time
+  // Calculate average resolution time over the last 30 days. We round the
+  // floor of the window to the start of TODAY (UTC) so this URL is stable
+  // for the whole day — every refetch reuses the same React Query cache key
+  // instead of churning a new entry every minute (the old `Date.now()`
+  // expression generated a new timestamp per call, defeating dedupe).
+  const todayUtc = new Date();
+  todayUtc.setUTCHours(0, 0, 0, 0);
+  const thirtyDayWindow = new Date(todayUtc.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data: resolvedIssues } = await supabase
     .from('issues')
     .select('created_at, updated_at')
     .eq('status', 'resolved')
-    .gte('updated_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+    .gte('updated_at', thirtyDayWindow)
     .limit(100);
 
   let avg_resolution_time_hours = null;
