@@ -27,6 +27,19 @@ export interface RolePermissions {
   lighting: PermissionLevel | null;
 }
 
+// Module-level in-flight promise dedupe. Five+ components call useRolePermissions
+// at first paint (App.tsx, Tasks, TermSheetBoard, RoomTable, CardFront…). Without
+// this, each instance races to fetch user_roles + profiles before any has
+// written the result to sessionStorage, producing the duplicate REST calls seen
+// in the network log. By sharing a single promise across instances, the first
+// caller's DB round-trip serves everyone — subsequent mounts within the same
+// session then hit the sessionStorage cache as before.
+type InFlightShape = Promise<{
+  role: import('@/config/roles').UserRole | null;
+  profileData: Record<string, unknown> | null;
+}>;
+let inFlightFetch: InFlightShape | null = null;
+
 export function useRolePermissions() {
   const { profile: authProfile, isLoading: authLoading } = useAuth();
   const [userRole, setUserRole] = useState<CourtRole | null>(null);
@@ -241,29 +254,43 @@ export function useRolePermissions() {
         return;
       }
 
-      // OPTIMIZATION: Fetch role and profile in parallel
-      const [roleQuery, profileQuery] = await Promise.all([
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-        supabase
-          .from('profiles')
-          .select(`
-            *,
-            departments(name)
-          `)
-          .eq('id', user.id)
-          .maybeSingle()
-      ]);
-
-      if (roleQuery.error) {
-        logger.warn('[useRolePermissions] Direct user_roles read failed (RLS), trying RPC fallback', roleQuery.error);
+      // OPTIMIZATION: Fetch role and profile in parallel. Share a single
+      // in-flight promise across hook instances so racing first-paint mounts
+      // collapse to one round-trip (see top-of-file comment).
+      if (!inFlightFetch) {
+        inFlightFetch = (async () => {
+          const [roleQuery, profileQuery] = await Promise.all([
+            supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', user.id)
+              .maybeSingle(),
+            supabase
+              .from('profiles')
+              .select(`
+                *,
+                departments(name)
+              `)
+              .eq('id', user.id)
+              .maybeSingle(),
+          ]);
+          if (roleQuery.error) {
+            logger.warn('[useRolePermissions] Direct user_roles read failed (RLS), trying RPC fallback', roleQuery.error);
+          }
+          return {
+            role: (roleQuery.data?.role as CourtRole | null) || null,
+            profileData: profileQuery.data,
+          };
+        })().finally(() => {
+          // Release the lock once settled so retries after a real failure
+          // (or sign-out / sign-in) can re-fetch.
+          inFlightFetch = null;
+        });
       }
 
-      let role = (roleQuery.data?.role as CourtRole | null) || null;
-      const profileData = profileQuery.data;
+      const shared = await inFlightFetch;
+      let role = shared.role;
+      const profileData = shared.profileData;
 
       if (!role) {
         // Fallback to secure RPC that bypasses RLS

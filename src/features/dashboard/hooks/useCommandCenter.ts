@@ -1,58 +1,53 @@
 /**
  * useCommandCenter Hook
- * 
- * Provides real-time system metrics and alerts for the admin command center
+ *
+ * Provides system metrics, recent activity, and alerts for the admin command
+ * center.
+ *
+ * Previously this fired three parallel queries (metrics / activity / alerts),
+ * each on its own 60-second refetchInterval. That meant three independent
+ * interval timers ticking out of phase, three React Query cache keys, and
+ * three separate background-refetch bursts every minute. Collapsed into one
+ * query that fans out via Promise.all — one timer, one cache key, one burst.
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { 
-  getSystemMetrics, 
-  getRecentActivity, 
+import {
+  getSystemMetrics,
+  getRecentActivity,
   getSystemAlerts,
   type SystemMetrics,
   type RecentActivity,
-  type SystemAlert
+  type SystemAlert,
 } from '@features/dashboard/services/commandCenterService';
 
+interface CommandCenterData {
+  metrics: SystemMetrics;
+  activity: RecentActivity[];
+  alerts: SystemAlert[];
+}
+
 export function useCommandCenter() {
-  const metricsQuery = useQuery<SystemMetrics>({
-    queryKey: ['command-center-metrics'],
-    queryFn: getSystemMetrics,
-    staleTime: 30_000, // 30 seconds
-    refetchInterval: 60_000, // Refresh every minute
-  });
-
-  const activityQuery = useQuery<RecentActivity[]>({
-    queryKey: ['command-center-activity'],
-    queryFn: () => getRecentActivity(20),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-  });
-
-  const alertsQuery = useQuery<SystemAlert[]>({
-    queryKey: ['command-center-alerts'],
-    queryFn: getSystemAlerts,
+  const query = useQuery<CommandCenterData>({
+    queryKey: ['command-center'],
+    queryFn: async () => {
+      const [metrics, activity, alerts] = await Promise.all([
+        getSystemMetrics(),
+        getRecentActivity(20),
+        getSystemAlerts(),
+      ]);
+      return { metrics, activity, alerts };
+    },
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
 
   return {
-    metrics: metricsQuery.data,
-    metricsLoading: metricsQuery.isLoading,
-    metricsError: metricsQuery.error,
-    
-    activity: activityQuery.data || [],
-    activityLoading: activityQuery.isLoading,
-    
-    alerts: alertsQuery.data || [],
-    alertsLoading: alertsQuery.isLoading,
-    
-    isLoading: metricsQuery.isLoading || activityQuery.isLoading || alertsQuery.isLoading,
-    
-    refetch: () => {
-      metricsQuery.refetch();
-      activityQuery.refetch();
-      alertsQuery.refetch();
-    },
+    metrics: query.data?.metrics,
+    activity: query.data?.activity || [],
+    alerts: query.data?.alerts || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
   };
 }
