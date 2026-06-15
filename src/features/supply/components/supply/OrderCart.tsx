@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import type { CartItem } from '@features/supply/hooks/useOrderCart';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useDeliveryLocations } from '@features/supply/hooks/useDeliveryLocations';
+import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryRoomPicker';
 import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
 import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
 import {
@@ -246,45 +247,12 @@ export function OrderCart({
                     </span>
                   )}
                 </div>
-                {locationOptions.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {locationOptions.map(opt => {
-                      const active = deliveryLocation === opt.value;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setDeliveryLocation(opt.value)}
-                          className={cn(
-                            'inline-flex items-center gap-1 px-2.5 h-8 rounded-full border text-xs font-medium touch-manipulation transition-colors',
-                            active
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-border bg-background hover:bg-muted'
-                          )}
-                        >
-                          {opt.label}
-                          {opt.isPrimary && (
-                            <span className="text-[9px] opacity-70 ml-0.5">★ home</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                <Input
-                  placeholder={
-                    profile.homeRoomNumber
-                      ? 'Or send to a different room (type a room number)'
-                      : 'Type the room number where this should be delivered'
-                  }
+                <DeliveryRoomPicker
                   value={deliveryLocation}
-                  onChange={(e) => setDeliveryLocation(e.target.value)}
-                  className={cn(
-                    'h-11',
-                    attemptedSubmit && missingLocation && 'border-destructive focus-visible:ring-destructive'
-                  )}
-                  inputMode="text"
-                  aria-invalid={attemptedSubmit && missingLocation}
+                  onChange={setDeliveryLocation}
+                  userId={user?.id}
+                  invalid={attemptedSubmit && missingLocation}
+                  placeholder="Search for a room…"
                 />
                 {attemptedSubmit && missingLocation && (
                   <p className="text-xs text-destructive">
