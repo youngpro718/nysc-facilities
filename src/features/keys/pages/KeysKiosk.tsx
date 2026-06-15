@@ -71,7 +71,7 @@ export default function KeysKiosk() {
   const slotsQuery = useQuery({
     queryKey: ["kiosk-slots"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("lockbox_slots").select("*").order("slot_number");
+      const { data, error } = await supabase.from("lockbox_slots").select("*, room:rooms(id, room_number, name)").order("slot_number");
       if (error) throw error;
       return (data || []) as LockboxSlot[];
     },
