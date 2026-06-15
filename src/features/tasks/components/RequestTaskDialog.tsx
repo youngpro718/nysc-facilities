@@ -41,15 +41,31 @@ import { TASK_TYPE_LABELS } from '@features/tasks/types/staffTasks';
 import type { TaskType } from '@features/tasks/types/staffTasks';
 import { LIMITS } from '@/config';
 
+// Types surfaced to standard users. General is too vague; Maintenance lives in /issues.
+const REQUEST_TASK_TYPES: TaskType[] = ['move_item', 'delivery', 'pickup', 'setup'];
+
+const MOVE_ITEM_CATEGORIES = [
+  'Desk',
+  'Chair',
+  'Locker',
+  'Filing Cabinet',
+  'Boxes / Files',
+  'Other',
+] as const;
+
 const requestTaskSchema = z.object({
   title: z.string().min(1, 'Please describe what you need'),
   description: z.string().optional(),
-  task_type: z.enum(['move_item', 'delivery', 'setup', 'pickup', 'maintenance', 'general']),
+  task_type: z.enum(['move_item', 'delivery', 'setup', 'pickup']),
+  move_category: z.string().optional(),
   inventory_item_id: z.string().optional(),
   from_room_id: z.string().optional(),
   to_room_id: z.string().optional(),
   quantity: z.number().min(1).optional(),
-});
+}).refine(
+  (data) => data.task_type !== 'move_item' || !!data.move_category,
+  { message: 'Pick what you need moved', path: ['move_category'] }
+);
 
 type RequestTaskFormData = z.infer<typeof requestTaskSchema>;
 
@@ -66,7 +82,7 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
     defaultValues: {
       title: '',
       description: '',
-      task_type: 'general',
+      task_type: 'move_item',
       quantity: 1,
     },
   });
@@ -87,8 +103,13 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
   });
 
   const onSubmit = async (data: RequestTaskFormData) => {
+    // Prefix move-item category onto the title so staff see what's being moved at a glance.
+    const finalTitle = data.task_type === 'move_item' && data.move_category
+      ? `Move ${data.move_category}: ${data.title}`
+      : data.title;
+
     await requestTask.mutateAsync({
-      title: data.title,
+      title: finalTitle,
       description: data.description,
       task_type: data.task_type as TaskType,
       inventory_item_id: data.inventory_item_id || undefined,
@@ -101,7 +122,8 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
   };
 
   const taskType = form.watch('task_type');
-  const showLocationFields = ['move_item', 'delivery', 'pickup'].includes(taskType);
+  const showFromRoom = ['move_item', 'pickup'].includes(taskType);
+  const showToRoom = ['move_item', 'delivery'].includes(taskType);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -134,9 +156,9 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.entries(TASK_TYPE_LABELS).map(([value, label]) => (
+                      {REQUEST_TASK_TYPES.map((value) => (
                         <SelectItem key={value} value={value}>
-                          {label}
+                          {TASK_TYPE_LABELS[value]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -145,6 +167,33 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                 </FormItem>
               )}
             />
+
+            {taskType === 'move_item' && (
+              <FormField
+                control={form.control}
+                name="move_category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What's being moved? *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pick a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {MOVE_ITEM_CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
@@ -184,8 +233,9 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
               )}
             />
 
-            {showLocationFields && (
-              <div className="grid grid-cols-2 gap-4">
+            {(showFromRoom || showToRoom) && (
+              <div className={`grid ${showFromRoom && showToRoom ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+                {showFromRoom && (
                 <FormField
                   control={form.control}
                   name="from_room_id"
@@ -213,8 +263,9 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                />)}
 
+                {showToRoom && (
                 <FormField
                   control={form.control}
                   name="to_room_id"
@@ -242,7 +293,7 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                />)}
               </div>
             )}
 

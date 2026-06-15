@@ -1,26 +1,24 @@
-
 import { useForm } from "react-hook-form";
 import { logger } from '@/lib/logger';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
 import { useToast } from "@shared/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { PersonalInfoValues, personalInfoSchema, isValidEmergencyContact } from "../schemas/profileSchema";
+import { PersonalInfoValues, personalInfoSchema, isValidEmergencyContact, JOB_TITLES } from "../schemas/profileSchema";
 
 export function useProfileForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const form = useForm<PersonalInfoValues>({
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
       first_name: "",
       last_name: "",
-      username: "",
       phone: "",
       department: "",
       title: "",
-      bio: "",
+      title_other: "",
       time_zone: "UTC",
       language: "en",
       emergency_contact: {
@@ -65,14 +63,19 @@ export function useProfileForm() {
             };
           }
 
+          // Map stored title onto dropdown: if it matches a preset use it, otherwise treat as "Other".
+          const storedTitle = (profile.title as string | null) || "";
+          const matchesPreset = (JOB_TITLES as readonly string[]).includes(storedTitle);
+          const titleValue = matchesPreset ? storedTitle : (storedTitle ? "Other" : "");
+          const titleOther = matchesPreset || !storedTitle ? "" : storedTitle;
+
           form.reset({
             first_name: profile.first_name || "",
             last_name: profile.last_name || "",
-            username: profile.username || "",
             phone: profile.phone || "",
             department: profile.department || "",
-            title: profile.title || "",
-            bio: profile.bio || "",
+            title: titleValue,
+            title_other: titleOther,
             time_zone: profile.time_zone || "UTC",
             language: profile.language || "en",
             emergency_contact: emergencyContact,
@@ -100,25 +103,22 @@ export function useProfileForm() {
     try {
       setIsLoading(true);
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
+
       if (userError || !user) {
         throw new Error(userError?.message || "No user found");
       }
 
-      // Use UPDATE (not upsert): profile rows are auto-created by the auth
-      // trigger at signup. Calling upsert from a non-admin user runs through
-      // the INSERT RLS policy (admin-only) and fails with code 42501.
-      // The self-update policy (id = auth.uid()) covers this UPDATE path.
+      // Resolve dropdown + "Other" into a single stored title string.
+      const resolvedTitle = data.title === "Other" ? (data.title_other?.trim() || "") : data.title;
+
       const { error } = await supabase
         .from('profiles')
         .update({
           first_name: data.first_name,
           last_name: data.last_name,
-          username: data.username,
           phone: data.phone,
           department: data.department,
-          title: data.title,
-          bio: data.bio,
+          title: resolvedTitle,
           time_zone: data.time_zone,
           language: data.language,
           emergency_contact: data.emergency_contact,
@@ -136,7 +136,7 @@ export function useProfileForm() {
       logger.error('Error updating profile:', error);
       toast({
         title: "Error",
-        description: "Failed to update profile information.",
+        description: error instanceof Error ? error.message : "Failed to update profile information.",
         variant: "destructive",
       });
     } finally {

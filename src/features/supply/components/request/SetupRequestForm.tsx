@@ -11,7 +11,6 @@ import { format } from 'date-fns';
 import {
   ArrowLeft,
   Loader2,
-  Users,
   Calendar,
   Clock,
   MapPin,
@@ -67,7 +66,7 @@ const SETUP_TYPES: { value: SetupType; label: string }[] = [
 ];
 
 // Items court aides are most often asked to bring
-const FURNITURE_ITEMS = ['Tables', 'Chairs', 'Desks', 'Podium', 'Easel'] as const;
+const FURNITURE_ITEMS = ['Tables', 'Chairs', 'Desks'] as const;
 
 export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupRequestFormProps) {
   const { user } = useAuth();
@@ -284,37 +283,7 @@ export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupReques
           </div>
         </div>
 
-        {/* Occasion + headcount side by side */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label>What's the occasion?</Label>
-            <Select value={setupType} onValueChange={(v) => setSetupType(v as SetupType)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SETUP_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              How many people? <span className="text-muted-foreground font-normal">(optional)</span>
-            </Label>
-            <Input
-              type="number"
-              min="1"
-              placeholder="Headcount"
-              value={attendeeCount}
-              onChange={(e) => setAttendeeCount(e.target.value)}
-            />
-          </div>
-        </div>
+        {/* Occasion + headcount removed — kept the form minimal. */}
 
         {/* Arrangement notes */}
         <div className="space-y-2">
