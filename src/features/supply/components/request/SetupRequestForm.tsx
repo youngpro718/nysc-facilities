@@ -11,7 +11,6 @@ import { format } from 'date-fns';
 import {
   ArrowLeft,
   Loader2,
-  Users,
   Calendar,
   Clock,
   MapPin,
@@ -24,13 +23,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/date-picker';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useOccupantAssignments, DetailedRoomAssignment } from '@features/occupants/hooks/useOccupantAssignments';
 
@@ -67,7 +59,7 @@ const SETUP_TYPES: { value: SetupType; label: string }[] = [
 ];
 
 // Items court aides are most often asked to bring
-const FURNITURE_ITEMS = ['Tables', 'Chairs', 'Desks', 'Podium', 'Easel'] as const;
+const FURNITURE_ITEMS = ['Tables', 'Chairs', 'Desks'] as const;
 
 export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupRequestFormProps) {
   const { user } = useAuth();
