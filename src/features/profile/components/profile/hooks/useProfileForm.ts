@@ -140,6 +140,9 @@ export function useProfileForm() {
         title: "Profile Updated",
         description: "Your personal information has been saved.",
       });
+
+      // Refresh dependent caches (e.g. supply "finish your profile" banner).
+      queryClient.invalidateQueries({ queryKey: ['profileCompleteness', user.id] });
     } catch (error) {
       logger.error('Error updating profile:', error);
       toast({
