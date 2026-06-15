@@ -294,9 +294,24 @@ export function TaskCard({
           </div>
 
           {/* Action buttons: full-width row at card bottom on mobile */}
-          {hasActions && (canClaim || canStart || canComplete) && (
+          {hasActions && (canClaim || canStart || canComplete || (needsApproval && onApproveAndClaim)) && (
             <>
               <div className="border-t mt-3 pt-3 flex gap-2">
+                {needsApproval && onApproveAndClaim && (
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => onApproveAndClaim(task.id)}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1.5" />
+                        Approve &amp; Claim
+                      </>
+                    )}
+                  </Button>
+                )}
                 {canClaim && onClaim && (
                   <Button
                     size="sm"
