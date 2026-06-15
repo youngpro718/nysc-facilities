@@ -212,6 +212,35 @@ export function useStaffTasks(options?: {
     },
   });
 
+  // Approve a pending request and claim it in one step (Court Aide flow)
+  const approveAndClaim = useMutation({
+    mutationFn: async (taskId: string) => {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('staff_tasks')
+        .update({
+          status: 'claimed',
+          approved_by: user!.id,
+          approved_at: now,
+          claimed_by: user!.id,
+          claimed_at: now,
+        })
+        .eq('id', taskId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Request approved & claimed');
+      queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to approve request', { description: getErrorMessage(error) });
+    },
+  });
+
   // Start a task
   const startTask = useMutation({
     mutationFn: async (taskId: string) => {
@@ -316,6 +345,7 @@ export function useStaffTasks(options?: {
     createTask,
     requestTask,
     approveTask,
+    approveAndClaim,
     rejectTask,
     claimTask,
     startTask,

@@ -55,6 +55,7 @@ interface TaskCardProps {
   onComplete?: (taskId: string, notes?: string) => void;
   onCancel?: (taskId: string) => void;
   onApprove?: (taskId: string) => void;
+  onApproveAndClaim?: (taskId: string) => void;
   onReject?: (taskId: string, reason: string) => void;
   isLoading?: boolean;
 }
@@ -114,6 +115,7 @@ export function TaskCard({
   onComplete,
   onCancel,
   onApprove,
+  onApproveAndClaim,
   onReject,
   isLoading,
 }: TaskCardProps) {
@@ -144,7 +146,7 @@ export function TaskCard({
   const needsApproval = task.status === 'pending_approval' && task.is_request;
 
   const hasActions = showActions && (
-    (needsApproval && onApprove) ||
+    (needsApproval && (onApprove || onApproveAndClaim)) ||
     (canClaim && onClaim) ||
     (canStart && onStart) ||
     (canComplete && onComplete) ||
@@ -243,23 +245,29 @@ export function TaskCard({
             {/* Approval actions and More menu (non-mobile layout) */}
             {showActions && (
               <div className="flex items-center gap-2 shrink-0">
-                {needsApproval && onApprove && (
+                {needsApproval && (onApprove || onApproveAndClaim) && (
                   <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      onClick={() => onApprove(task.id)}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => setShowRejectDialog(true)}
-                      disabled={isLoading}
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
+                    {onApprove && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onApprove(task.id)}
+                        disabled={isLoading}
+                        title="Approve only"
+                      >
+                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                      </Button>
+                    )}
+                    {onReject && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setShowRejectDialog(true)}
+                        disabled={isLoading}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -286,9 +294,24 @@ export function TaskCard({
           </div>
 
           {/* Action buttons: full-width row at card bottom on mobile */}
-          {hasActions && (canClaim || canStart || canComplete) && (
+          {hasActions && (canClaim || canStart || canComplete || (needsApproval && onApproveAndClaim)) && (
             <>
               <div className="border-t mt-3 pt-3 flex gap-2">
+                {needsApproval && onApproveAndClaim && (
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => onApproveAndClaim(task.id)}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1.5" />
+                        Approve &amp; Claim
+                      </>
+                    )}
+                  </Button>
+                )}
                 {canClaim && onClaim && (
                   <Button
                     size="sm"
