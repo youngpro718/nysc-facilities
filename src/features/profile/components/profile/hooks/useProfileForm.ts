@@ -2,12 +2,14 @@ import { useForm } from "react-hook-form";
 import { logger } from '@/lib/logger';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@shared/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { PersonalInfoValues, personalInfoSchema, isValidEmergencyContact, JOB_TITLES } from "../schemas/profileSchema";
 
 export function useProfileForm() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<PersonalInfoValues>({
