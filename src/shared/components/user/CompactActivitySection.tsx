@@ -162,14 +162,14 @@ export function CompactActivitySection({
             
             <TabsTrigger 
               value="requests"
-              aria-label={`Requests${openRequests.length > 0 ? `, ${openRequests.length} open` : ''}`}
+              aria-label={`Requests${openRequests > 0 ? `, ${openRequests} open` : ''}`}
               className="flex items-center gap-1.5 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               <Send className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only">Requests</span>
-              {openRequests.length > 0 && (
+              {openRequests > 0 && (
                 <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
-                  {openRequests.length}
+                  {openRequests}
                 </Badge>
               )}
             </TabsTrigger>
