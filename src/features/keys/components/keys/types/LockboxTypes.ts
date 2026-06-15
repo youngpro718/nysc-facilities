@@ -63,3 +63,35 @@ export function getRoomLinkStatus(slot: LockboxSlot): RoomLinkStatus {
   }
   return 'no_room';
 }
+
+/**
+ * Resolve the user-facing title for a slot.
+ *
+ * Rule: when a slot is linked to a room, the live room identity ALWAYS wins
+ * over the manually-stored `slot.label` — the label can go stale when a judge
+ * or occupant moves, and staff pulling keys from the box need the current
+ * truth from Spaces, not whatever someone typed when the slot was created.
+ *
+ * - Linked room (joined data present): "Room {room_number} — {name}"
+ * - Linked room (only room_number, room row missing/deleted): falls back to
+ *   stale "Room {room_number}" so we never silently drop the link.
+ * - No room at all: shows the stored label as before.
+ */
+export function getSlotDisplayTitle(slot: LockboxSlot): string {
+  if (slot.room) {
+    const num = slot.room.room_number;
+    const name = slot.room.name?.trim();
+    if (num && name) return `Room ${num} — ${name}`;
+    if (num) return `Room ${num}`;
+    if (name) return name;
+  }
+  if (slot.room_number) {
+    return `Room ${slot.room_number}`;
+  }
+  return slot.label;
+}
+
+/** True when the slot is linked to a room and the room title is authoritative. */
+export function slotHasRoomLink(slot: LockboxSlot): boolean {
+  return Boolean(slot.room_id || slot.room_number);
+}

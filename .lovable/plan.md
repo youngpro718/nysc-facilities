@@ -1,82 +1,45 @@
-## Goals
+## 1. Trim user settings — remove Display, Security, Accessibility
 
-You're testing as a standard user and four things are off:
-1. Requests you submit don't appear in **My Activity** on the dashboard (they do show on the `/my-activity` page).
-2. The request task types are confusing/redundant — let's collapse them.
-3. The Setup form asks for things you don't care about (Easel, Podium, headcount, occasion).
-4. The Profile editor nags you to "finish your profile" and won't save Department; we also need to remove Bio + Username and add a Job Title dropdown.
+`src/features/profile/components/profile/EnhancedUserSettings.tsx`
 
----
+- Drop the **Display**, **Security**, and **Accessibility** tabs and their `TabsTrigger`/`TabsContent` blocks, plus the `DisplayTab`, `SecurityTab`, and `AccessibilityTab` components and their related defaults in the settings state.
+- Collapse the tab bar to **Notifications only**. If Notifications is the only remaining group, render it directly (no `Tabs` wrapper) so the page is a single clean card.
+- Remove the now-unused `Palette`, `Lock`, `Shield`, `Accessibility` icon imports and any helpers only those tabs used.
 
-## 1. Dashboard "My Activity" — show task requests
+No DB changes — these were client-side preference toggles only.
 
-**Problem.** The dashboard widget (`CompactActivitySection`) only renders `supplyRequests` and `issues`. Task requests you make through "Make a Request" live in `staff_tasks` and are never passed in, so they only show on the full `/my-activity` page.
+## 2. Lockbox slots: room link wins over stored label
 
-**Fix.** Pass the user's staff_tasks (where `requested_by = me`) into the widget and render them inside the existing **Requests** tab alongside issues, sorted by `created_at` desc. Tab count includes open task requests. Same card style as issues; status pills use the existing task status labels (Pending Approval, Approved, Claimed, In Progress, Completed).
+User intent: the slot's stored `label` becomes meaningless when the room/judge changes. Whatever the room is currently called in the system (e.g. "Room 1000 — Clerk's Office") is the source of truth.
 
----
+**Scope:** lockbox slot UI only. Keys inventory list is left alone.
 
-## 2. Consolidate request task types
+### Display rule (read side)
+When a slot has `room_id` (or resolvable `room_number`):
+- **Primary line:** the live room identity, formatted `Room {room_number} — {room.name}` (omit the dash if no name).
+- Hide `slot.label` entirely — do not render it as a subtitle.
+- If the room link is missing/broken (deleted room), fall back to `slot.label` and mark it muted/italic as "Unlinked".
+- If no room is linked at all, show `slot.label` as today and the existing "No room" hint.
 
-Today there are six types: Move Item, Delivery, Setup, Pickup, Maintenance, General. My recommendation, given your feedback:
+Files to update:
+- `src/features/keys/components/keys/lockbox/LockboxSlotCard.tsx` — swap the `<h4>{slot.label}</h4>` block for the resolved room title; remove the redundant secondary `Room {room_number}` line when the primary already shows it.
+- `src/features/keys/components/keys/mobile/MobileKeyManagement.tsx` — same substitution wherever a slot row renders `slot.label`.
+- `EditSlotDialog.tsx` / `AddSlotDialog.tsx` / `LockboxSlotCard` detail surfaces — show the resolved room title as the dialog heading; keep a small "Internal label" field admins can still edit but mark it as not shown to staff.
+- Any other slot list (kiosk view if present) — sweep with `rg "slot\\.label"` and apply the same rule.
 
-**Keep four, drop two:**
+### Data fetch
+Slots already carry `room_id` and `room_number`. Extend the slot fetch (likely in `useLockboxSlots`/equivalent — confirm during build) to join `rooms` and select `rooms.name, rooms.room_number`. The resolved title is computed in a small helper `getSlotDisplayTitle(slot)` reused by every surface above, so the rule lives in one place.
 
-| Type | What it covers | Fields |
-|---|---|---|
-| **Move** | Furniture, files/boxes, anything from one room to another | Item category dropdown (Desk, Chair, Locker, Filing Cabinet, Boxes/Files, Other → text), From room, To room, Quantity, Notes |
-| **Delivery** | Drop something off at a room | What's being delivered (text), To room, Notes |
-| **Pickup** | Collect something from a room | What to pick up (text), From room, Notes |
-| **Setup** | Arrange a room for a meeting/event | Room, Date, Time, Furniture quantities (Tables/Chairs/Desks only — see §3), Arrangement notes |
+### Automatic freshness
+Because the title is derived from the live `rooms` row at fetch time, any room rename in Spaces immediately reflects on slots — no migration, no cron, no stored copy to drift.
 
-**Drop:**
-- **General Task** — too vague; everything fits one of the four above.
-- **Maintenance** — already covered by the Issues flow (`/issues`). Reporting a broken thing belongs there, not in task requests.
-
-DB enum stays (`task_type`) so existing records keep working; we just hide General/Maintenance from the request dialog. Admin-created tasks in `CreateTaskDialog` can keep all six for flexibility.
-
----
-
-## 3. Simplify the Setup form
-
-In `SetupRequestForm.tsx`:
-- **Remove** Podium and Easel from the furniture list (keep Tables, Chairs, Desks).
-- **Remove** the attendee/head count field entirely.
-- **Remove** the "What's the occasion?" / setup type dropdown (Meeting/Hearing/Training/Event/Other).
-- **Keep** room, date, time, furniture quantities, and "How should the room be arranged?" notes.
-
----
-
-## 4. Profile editor — fix save + trim fields
-
-**Why save fails.** The "Finish your profile" banner checks specific profile columns (likely `department` + something else). Two things to verify and fix:
-- The save mutation in `useProfileForm` runs an `UPDATE` against `profiles` — confirm the row actually updates (RLS self-update policy is in place per memory) and that the banner's completeness check reads the same column we're writing. If the banner is looking at `title` and we never wrote it, that explains the persistent nag.
-- Add proper toast on success/failure and surface the real Postgres error if `UPDATE` returns zero rows.
-
-**Form changes in `BasicInfoFields.tsx`:**
-- **Remove** Bio textarea.
-- **Remove** Username field (display name = first + last).
-- **Replace** the free-text Job Title input with a **dropdown** of fixed titles. Starter list — confirm and I'll wire it in:
-  - Court Officer
-  - Court Analyst
-  - Court Clerk
-  - Sergeant
-  - Lieutenant
-  - Captain
-  - Major
-  - Management / Supervisor
-  - Other (free-text fallback)
-- **Keep** First Name, Last Name, Department, Phone, Emergency Contact.
-
-Update `personalInfoSchema` to drop `username`/`bio` requirements and to validate `title` against the enum list. Update the "finish your profile" banner check to require: first_name, last_name, department, title.
-
----
-
-## Open question before I build
-
-I need your final job-title list. The starter above is a guess — reply with the exact titles you want in the dropdown (and whether "Other" should remain a free-text escape hatch).
+### Out of scope (per user)
+- Key inventory table, key detail panel, assignments table — unchanged.
+- No edits to `keys.name`.
+- No new "current occupant" lookup; the user clarified the room's own stored name is the authority.
 
 ## Technical notes
 
-- Files touched: `RequestTaskDialog.tsx`, `staffTasks.ts` (label map only, enum unchanged), `SetupRequestForm.tsx`, `BasicInfoFields.tsx`, `profileSchema.ts`, `useProfileForm.ts`, `CompactActivitySection.tsx` + its parent that fetches data (likely `UserDashboard.tsx` — needs a `staff_tasks` query filtered by `requested_by = user.id`), and wherever the "finish your profile" banner lives (to align its completeness check with the new field set).
-- No DB migrations required. Task type enum and profile columns stay as-is; we're only changing what the UI shows and validates.
+- No DB migration. Pure read-side rendering change plus a join in the slot query.
+- Keep `slot.label` writable in the edit dialog so admins retain an internal note, but it stops being a user-facing identifier for linked slots.
+- Add a one-line helper + unit-style sanity check by spot-checking a slot with a renamed room in the preview after the change.

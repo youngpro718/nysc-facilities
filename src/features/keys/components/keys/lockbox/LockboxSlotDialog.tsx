@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LockboxSlot } from "../types/LockboxTypes";
+import { LockboxSlot, getSlotDisplayTitle } from "../types/LockboxTypes";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Edit3, MoreHorizontal, Trash2 } from "lucide-react";
@@ -196,7 +196,7 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
         open={open}
         onOpenChange={onOpenChange}
         size="sm"
-        title={`Slot ${slot.slot_number}: ${slot.label}`}
+        title={`Slot ${slot.slot_number}: ${getSlotDisplayTitle(slot)}`}
         description={lockboxName ? `Lockbox: ${lockboxName}` : undefined}
         headerRight={headerRight}
       >
@@ -265,7 +265,7 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
         title="Delete Slot"
-        description={`Are you sure you want to delete Slot ${slot.slot_number}: "${slot.label}"? This action cannot be undone and will remove all associated activity history.`}
+        description={`Are you sure you want to delete Slot ${slot.slot_number}: "${getSlotDisplayTitle(slot)}"? This action cannot be undone and will remove all associated activity history.`}
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={handleDelete}

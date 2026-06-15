@@ -26,10 +26,12 @@ export function LockboxSearch({ slots, onSlotClick, lockboxName }: LockboxSearch
   const filteredSlots = slots.filter(slot => {
     // Text search
     const searchStr = query.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       slot.label.toLowerCase().includes(searchStr) ||
       String(slot.slot_number).includes(searchStr) ||
-      slot.room_number?.toLowerCase().includes(searchStr);
+      slot.room_number?.toLowerCase().includes(searchStr) ||
+      slot.room?.name?.toLowerCase().includes(searchStr) ||
+      slot.room?.room_number?.toLowerCase().includes(searchStr);
 
     if (!matchesSearch) return false;
 

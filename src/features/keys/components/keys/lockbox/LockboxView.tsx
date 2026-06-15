@@ -75,7 +75,7 @@ export function LockboxView() {
     try {
       const { data, error } = await supabase
         .from('lockbox_slots')
-        .select('*')
+        .select('*, room:rooms(id, room_number, name)')
         .eq('lockbox_id', selectedLockboxId)
         .order('slot_number', { ascending: true });
 

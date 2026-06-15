@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { LockboxSlot } from "../components/keys/types/LockboxTypes";
+import { LockboxSlot, getSlotDisplayTitle } from "../components/keys/types/LockboxTypes";
 
 type Tab = "find" | "out";
 type Category = "all" | "chambers" | "robing" | "courtroom" | "other";
@@ -71,7 +71,7 @@ export default function KeysKiosk() {
   const slotsQuery = useQuery({
     queryKey: ["kiosk-slots"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("lockbox_slots").select("*").order("slot_number");
+      const { data, error } = await supabase.from("lockbox_slots").select("*, room:rooms(id, room_number, name)").order("slot_number");
       if (error) throw error;
       return (data || []) as LockboxSlot[];
     },
@@ -134,6 +134,8 @@ export default function KeysKiosk() {
         s.label.toLowerCase().includes(q) ||
         String(s.slot_number).includes(q) ||
         (s.room_number || "").toLowerCase().includes(q) ||
+        (s.room?.name || "").toLowerCase().includes(q) ||
+        (s.room?.room_number || "").toLowerCase().includes(q) ||
         (s.lockbox_name || "").toLowerCase().includes(q)
       );
     }
@@ -291,11 +293,10 @@ export default function KeysKiosk() {
             <>
               <DialogHeader>
                 <DialogTitle className="text-2xl">
-                  {actionSlot.room_number ? `Room ${actionSlot.room_number}` : actionSlot.label}
+                  {getSlotDisplayTitle(actionSlot)}
                 </DialogTitle>
                 <DialogDescription className="text-base">
                   {actionSlot.lockbox_name} · Slot {actionSlot.slot_number}
-                  {actionSlot.label && actionSlot.room_number ? ` · ${actionSlot.label}` : ""}
                 </DialogDescription>
               </DialogHeader>
 
@@ -437,7 +438,7 @@ function FindTab({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="text-2xl font-bold text-foreground">
-                      {s.room_number ? `Room ${s.room_number}` : s.label}
+                      {getSlotDisplayTitle(s)}
                     </div>
                     <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border", pill.cls)}>
                       {pill.label}
@@ -445,7 +446,6 @@ function FindTab({
                   </div>
                   <div className="text-base text-muted-foreground mt-1">
                     {s.lockbox_name} · Slot {s.slot_number}
-                    {s.room_number && s.label ? ` · ${s.label}` : ""}
                   </div>
                   {isOut && (
                     <div className="text-base text-foreground mt-1">
@@ -489,7 +489,7 @@ function OutTab({ list, onCheckIn }: { list: EnrichedSlot[]; onCheckIn: (s: Enri
         <div key={s.id} className="bg-card border-2 border-amber-500/30 rounded-2xl p-5 flex items-center gap-4">
           <div className="flex-1 min-w-0">
             <div className="text-2xl font-bold text-foreground">
-              {s.room_number ? `Room ${s.room_number}` : s.label}
+              {getSlotDisplayTitle(s)}
             </div>
             <div className="text-base text-muted-foreground">
               {s.lockbox_name} · Slot {s.slot_number}
