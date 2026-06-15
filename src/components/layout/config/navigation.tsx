@@ -246,6 +246,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/keys',
       '/inventory',
       '/tasks',
+      '/term-sheet',
       '', // Separator
       '/profile',
     ];
