@@ -155,7 +155,11 @@ export function useRolePermissions() {
     },
     court_officer: {
       spaces: null,
-      issues: null,
+      // Court officers (Major / security) are on the floor all day and are
+      // usually the first to spot a broken lock, door, or fixture. Granting
+      // 'write' lets them report issues from the header QuickIssueReportButton
+      // and see the items they've filed under /my-issues.
+      issues: 'write',
       occupants: null,
       inventory: null,
       supply_requests: null,

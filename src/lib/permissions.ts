@@ -32,7 +32,7 @@ export const PERMISSIONS = {
 
   // Issue permissions
   'issue.view': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'purchasing', 'court_aide', 'standard'],
-  'issue.create': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'purchasing', 'court_aide', 'standard'],
+  'issue.create': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer', 'purchasing', 'court_aide', 'standard'],
   'issue.assign': ['admin', 'system_admin', 'facilities_manager', 'court_liaison'],
   'issue.resolve': ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_aide'],
   'issue.delete': ['admin', 'system_admin', 'facilities_manager'],
