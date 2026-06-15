@@ -226,9 +226,9 @@ export function OrderSummaryFooter({
                   size="lg"
                   className={cn(
                     "shrink-0 rounded-xl h-12 px-5 gap-2 font-semibold transition-all",
-                    showSuccess 
-                      ? "bg-emerald-500 hover:bg-emerald-500" 
-                      : "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+                    showSuccess
+                      ? "bg-emerald-500 hover:bg-emerald-500"
+                      : ""
                   )}
                   onClick={handleQuickSubmit}
                   disabled={isSubmitting || isQuickSubmitting}
@@ -240,9 +240,8 @@ export function OrderSummaryFooter({
                     </>
                   ) : (
                     <>
-                      <Zap className="h-4 w-4" />
-                      <span className="hidden sm:inline">Quick Order</span>
-                      <span className="sm:hidden">Order</span>
+                      <Send className="h-4 w-4" />
+                      <span>Submit Order</span>
                     </>
                   )}
                 </Button>
@@ -254,8 +253,7 @@ export function OrderSummaryFooter({
                   disabled={isSubmitting}
                 >
                   <Send className="h-4 w-4" />
-                  <span className="hidden sm:inline">Review & Submit</span>
-                  <span className="sm:hidden">Review</span>
+                  <span>Review & Submit</span>
                 </Button>
               )}
             </div>
