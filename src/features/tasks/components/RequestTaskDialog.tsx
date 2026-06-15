@@ -266,6 +266,7 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                 />)}
 
                 {showToRoom && (
+                <FormField
                   control={form.control}
                   name="to_room_id"
                   render={({ field }) => (
@@ -292,7 +293,7 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                />)}
               </div>
             )}
 
