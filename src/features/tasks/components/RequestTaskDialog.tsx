@@ -41,15 +41,31 @@ import { TASK_TYPE_LABELS } from '@features/tasks/types/staffTasks';
 import type { TaskType } from '@features/tasks/types/staffTasks';
 import { LIMITS } from '@/config';
 
+// Types surfaced to standard users. General is too vague; Maintenance lives in /issues.
+const REQUEST_TASK_TYPES: TaskType[] = ['move_item', 'delivery', 'pickup', 'setup'];
+
+const MOVE_ITEM_CATEGORIES = [
+  'Desk',
+  'Chair',
+  'Locker',
+  'Filing Cabinet',
+  'Boxes / Files',
+  'Other',
+] as const;
+
 const requestTaskSchema = z.object({
   title: z.string().min(1, 'Please describe what you need'),
   description: z.string().optional(),
-  task_type: z.enum(['move_item', 'delivery', 'setup', 'pickup', 'maintenance', 'general']),
+  task_type: z.enum(['move_item', 'delivery', 'setup', 'pickup']),
+  move_category: z.string().optional(),
   inventory_item_id: z.string().optional(),
   from_room_id: z.string().optional(),
   to_room_id: z.string().optional(),
   quantity: z.number().min(1).optional(),
-});
+}).refine(
+  (data) => data.task_type !== 'move_item' || !!data.move_category,
+  { message: 'Pick what you need moved', path: ['move_category'] }
+);
 
 type RequestTaskFormData = z.infer<typeof requestTaskSchema>;
 
