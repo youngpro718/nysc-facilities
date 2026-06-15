@@ -58,6 +58,19 @@ export function LockboxView() {
     },
   });
 
+  // Fetch ALL slots across every lockbox — powers the global search
+  const { data: allSlots, refetch: refetchAllSlots } = useQuery({
+    queryKey: ["lockbox-slots-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lockbox_slots')
+        .select('*, room:rooms(id, room_number, name), lockbox:lockboxes(id, name)')
+        .order('slot_number', { ascending: true });
+      if (error) throw error;
+      return (data || []) as (LockboxSlot & { lockbox?: { id: string; name: string } | null })[];
+    },
+  });
+
   // Auto-select first lockbox if none selected
   useEffect(() => {
     if (lockboxes && lockboxes.length > 0 && !selectedLockboxId) {
@@ -91,16 +104,18 @@ export function LockboxView() {
 
   useEffect(() => {
     fetchSlots();
-    
+
     // Set up realtime subscriptions for both lockboxes and slots
     const channel = supabase
       .channel('lockbox_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'lockbox_slots' }, () => {
         fetchSlots();
         refetchLockboxes();
+        refetchAllSlots();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'lockboxes' }, () => {
         refetchLockboxes();
+        refetchAllSlots();
       })
       .subscribe();
 
@@ -110,6 +125,11 @@ export function LockboxView() {
   }, [selectedLockboxId]);
 
   const handleSlotClick = (slot: LockboxSlot) => {
+    // If the slot lives in a different lockbox, jump to it first so the rest
+    // of the UI (header, print, edit) lines up with what the user tapped.
+    if (slot.lockbox_id && slot.lockbox_id !== selectedLockboxId) {
+      setSelectedLockboxId(slot.lockbox_id);
+    }
     setSelectedSlot(slot);
     setDialogOpen(true);
   };
@@ -171,10 +191,12 @@ export function LockboxView() {
 
       {selectedLockboxId ? (
         <div className="min-h-[300px] max-h-[calc(100vh-350px)] sm:max-h-[calc(100vh-400px)]">
-          <LockboxSearch 
-            slots={slots} 
+          <LockboxSearch
+            slots={slots}
+            allSlots={allSlots}
             onSlotClick={handleSlotClick}
             lockboxName={selectedLockbox?.name}
+            selectedLockboxId={selectedLockboxId}
           />
         </div>
       ) : (
