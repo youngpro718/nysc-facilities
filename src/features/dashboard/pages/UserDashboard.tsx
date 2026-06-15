@@ -45,12 +45,28 @@ export default function UserDashboard() {
   const { userIssues = [], refetchIssues } = useUserIssues(user?.id);
   const { data: personnelInfo } = useUserPersonnelInfo(user?.id);
 
+  // Task requests this user submitted (Move/Delivery/Setup/Pickup) — surface on dashboard My Activity.
+  const { data: myTaskRequests = [], refetch: refetchTaskRequests } = useQuery({
+    queryKey: ['my-task-requests', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_tasks')
+        .select('id, title, status, task_type, created_at')
+        .eq('requested_by', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(25);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) navigate("/login");
   }, [isLoading, isAuthenticated, navigate]);
 
   const handleRefresh = async () => {
-    await Promise.all([refetchNotifications(), refetchSupplyRequests(), refetchIssues()]);
+    await Promise.all([refetchNotifications(), refetchSupplyRequests(), refetchIssues(), refetchTaskRequests()]);
   };
 
   const { data: keyAssignments = [] } = useQuery({
@@ -157,6 +173,7 @@ export default function UserDashboard() {
           <CompactActivitySection
             supplyRequests={supplyRequests}
             issues={userIssues}
+            taskRequests={myTaskRequests as any}
             keysHeld={keysHeld}
             userId={user.id}
           />
