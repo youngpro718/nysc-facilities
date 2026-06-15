@@ -30,7 +30,7 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
     const rows = slots.map(slot => `
       <tr>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center;font-weight:600">${esc(String(slot.slot_number))}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid #ddd">${esc(slot.label)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ddd">${esc(getSlotDisplayTitle(slot))}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd">${slot.room_number ? esc(slot.room_number) : '—'}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center">${statusLabel(slot.status)}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center">${slot.quantity > 1 ? slot.quantity : '1'}</td>
