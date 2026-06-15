@@ -345,6 +345,7 @@ export function useStaffTasks(options?: {
     createTask,
     requestTask,
     approveTask,
+    approveAndClaim,
     rejectTask,
     claimTask,
     startTask,
