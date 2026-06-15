@@ -111,6 +111,27 @@ export const routes: Record<string, RouteConfig> = {
     icon: AlertTriangle,
     parent: '/',
   },
+  '/issues': {
+    path: '/issues',
+    title: 'Issues',
+    breadcrumbLabel: 'Issues',
+    icon: AlertTriangle,
+    parent: '/',
+  },
+  '/maintenance': {
+    path: '/maintenance',
+    title: 'Maintenance',
+    breadcrumbLabel: 'Maintenance',
+    icon: Package,
+    parent: '/',
+  },
+  '/lighting': {
+    path: '/lighting',
+    title: 'Lighting',
+    breadcrumbLabel: 'Lighting',
+    icon: AlertTriangle,
+    parent: '/',
+  },
   '/spaces': {
     path: '/spaces',
     title: 'Room Management',
@@ -124,6 +145,12 @@ export const routes: Record<string, RouteConfig> = {
     breadcrumbLabel: 'Keys',
     icon: KeyRound,
     parent: '/',
+  },
+  '/notifications': {
+    path: '/notifications',
+    title: 'Notifications',
+    breadcrumbLabel: 'Notifications',
+    icon: MessageSquare,
   },
   
   // Profile & Settings
