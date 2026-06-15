@@ -156,6 +156,8 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'court_officer') {
     return [
       { title: 'Keys', icon: KeyRound },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
     ];
   }
 
@@ -165,6 +167,8 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Supply Room', icon: Package2 },
       { title: 'Inventory', icon: Boxes },
       { title: 'Tasks', icon: Package },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
     ];
   }
 
