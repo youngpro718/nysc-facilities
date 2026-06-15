@@ -103,8 +103,13 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
   });
 
   const onSubmit = async (data: RequestTaskFormData) => {
+    // Prefix move-item category onto the title so staff see what's being moved at a glance.
+    const finalTitle = data.task_type === 'move_item' && data.move_category
+      ? `Move ${data.move_category}: ${data.title}`
+      : data.title;
+
     await requestTask.mutateAsync({
-      title: data.title,
+      title: finalTitle,
       description: data.description,
       task_type: data.task_type as TaskType,
       inventory_item_id: data.inventory_item_id || undefined,
@@ -117,7 +122,8 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
   };
 
   const taskType = form.watch('task_type');
-  const showLocationFields = ['move_item', 'delivery', 'pickup'].includes(taskType);
+  const showFromRoom = ['move_item', 'pickup'].includes(taskType);
+  const showToRoom = ['move_item', 'delivery'].includes(taskType);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
