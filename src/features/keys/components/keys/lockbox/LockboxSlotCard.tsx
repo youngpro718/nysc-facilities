@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { LockboxSlot, getRoomLinkStatus } from "../types/LockboxTypes";
+import { LockboxSlot, getRoomLinkStatus, getSlotDisplayTitle, slotHasRoomLink } from "../types/LockboxTypes";
 import { Key, AlertTriangle, CheckCircle, Archive, Link2, Link2Off, CircleDashed } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -86,16 +86,14 @@ export function LockboxSlotCard({ slot, onClick }: LockboxSlotCardProps) {
           {slot.slot_number}
         </div>
         <div className="min-w-0">
-          <h4 className="font-semibold text-sm sm:text-base truncate">{slot.label}</h4>
+          <h4 className="font-semibold text-sm sm:text-base truncate">
+            {getSlotDisplayTitle(slot)}
+          </h4>
           <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            {(slot.room_number || slot.room_id) && (
-              <>
-                {getRoomLinkIndicator()}
-                <span className="truncate">Room {slot.room_number || 'Linked'}</span>
-              </>
-            )}
-            {!slot.room_number && !slot.room_id && (
-              <span className="text-muted-foreground/60 italic">No room</span>
+            {slotHasRoomLink(slot) ? (
+              getRoomLinkIndicator()
+            ) : (
+              <span className="text-muted-foreground/60 italic">No room linked</span>
             )}
             {slot.quantity && slot.quantity > 1 && (
               <span className="text-primary font-semibold">
