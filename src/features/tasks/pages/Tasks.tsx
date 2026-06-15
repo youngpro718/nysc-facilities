@@ -86,12 +86,7 @@ function sortTasks(taskList: StaffTask[]): StaffTask[] {
 }
 
 export default function Tasks() {
-  const [searchParams] = useSearchParams();
-  const { user } = useAuth();
   const { userRole, isAdmin: canManageTasks } = useRolePermissions();
-  const isMobile = useIsMobile();
-
-  // Court aides default to "my-tasks" tab, others to "active"
   const isCourtAide = userRole === 'court_aide';
 
   // Regular users (not court aides, not managers) get the dedicated
@@ -110,6 +105,14 @@ export default function Tasks() {
       </div>
     );
   }
+
+  return <TasksManagerView isCourtAide={isCourtAide} canManageTasks={canManageTasks} />;
+}
+
+function TasksManagerView({ isCourtAide, canManageTasks }: { isCourtAide: boolean; canManageTasks: boolean }) {
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const defaultTab = searchParams.get('tab') || (isCourtAide ? 'my-tasks' : 'active');
   const [activeTab, setActiveTab] = useState(defaultTab);
