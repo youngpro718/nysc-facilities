@@ -131,7 +131,7 @@ function AppContent() {
 
           {/* Legacy role-specific dashboards — redirect to new defaults */}
           <Route path="/court-officer-dashboard" element={<Navigate to="/keys" replace />} />
-          <Route path="/court-aide-dashboard" element={<Navigate to="/tasks" replace />} />
+          <Route path="/court-aide-dashboard" element={<Navigate to="/work-center" replace />} />
 
           <Route path="/spaces" element={
             <ProtectedRoute>

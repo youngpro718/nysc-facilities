@@ -41,10 +41,10 @@ export const routes: Record<string, RouteConfig> = {
     breadcrumbLabel: 'Dashboard',
     icon: LayoutDashboard,
   },
-  '/court-aide-dashboard': {
-    path: '/court-aide-dashboard',
-    title: 'Supply Staff Dashboard',
-    breadcrumbLabel: 'Dashboard',
+  '/work-center': {
+    path: '/work-center',
+    title: 'Work Center',
+    breadcrumbLabel: 'Work Center',
     icon: LayoutDashboard,
   },
   
@@ -111,6 +111,27 @@ export const routes: Record<string, RouteConfig> = {
     icon: AlertTriangle,
     parent: '/',
   },
+  '/issues': {
+    path: '/issues',
+    title: 'Issues',
+    breadcrumbLabel: 'Issues',
+    icon: AlertTriangle,
+    parent: '/',
+  },
+  '/maintenance': {
+    path: '/maintenance',
+    title: 'Maintenance',
+    breadcrumbLabel: 'Maintenance',
+    icon: Package,
+    parent: '/',
+  },
+  '/lighting': {
+    path: '/lighting',
+    title: 'Lighting',
+    breadcrumbLabel: 'Lighting',
+    icon: AlertTriangle,
+    parent: '/',
+  },
   '/spaces': {
     path: '/spaces',
     title: 'Room Management',
@@ -124,6 +145,12 @@ export const routes: Record<string, RouteConfig> = {
     breadcrumbLabel: 'Keys',
     icon: KeyRound,
     parent: '/',
+  },
+  '/notifications': {
+    path: '/notifications',
+    title: 'Notifications',
+    breadcrumbLabel: 'Notifications',
+    icon: MessageSquare,
   },
   
   // Profile & Settings
@@ -139,6 +166,20 @@ export const routes: Record<string, RouteConfig> = {
     breadcrumbLabel: 'Admin Center',
     icon: UserCog,
     parent: '/',
+  },
+  '/admin/routing-rules': {
+    path: '/admin/routing-rules',
+    title: 'Form Routing Rules',
+    breadcrumbLabel: 'Routing Rules',
+    icon: Settings,
+    parent: '/admin',
+  },
+  '/admin/form-templates': {
+    path: '/admin/form-templates',
+    title: 'Form Builder',
+    breadcrumbLabel: 'Form Builder',
+    icon: FileText,
+    parent: '/admin',
   },
   '/system-settings': {
     path: '/system-settings',

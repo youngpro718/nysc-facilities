@@ -23,6 +23,7 @@ import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { TaskCard } from "@features/tasks/components/TaskCard";
 import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPanel";
+import { UserTasksTab } from "@features/tasks/components/UserTasksTab";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
@@ -85,13 +86,34 @@ function sortTasks(taskList: StaffTask[]): StaffTask[] {
 }
 
 export default function Tasks() {
+  const { userRole, isAdmin: canManageTasks } = useRolePermissions();
+  const isCourtAide = userRole === 'court_aide';
+
+  // Regular users (not court aides, not managers) get the dedicated
+  // "My Requests" view — same component used on /my-activity. This is the
+  // only place their own submitted tasks are surfaced.
+  if (!isCourtAide && !canManageTasks) {
+    return (
+      <div className="space-y-6 p-4 md:p-6">
+        <PageHeader
+          title="My Tasks"
+          description="Track requests you've submitted"
+          icon={ClipboardList}
+          className="mb-0"
+        />
+        <UserTasksTab />
+      </div>
+    );
+  }
+
+  return <TasksManagerView isCourtAide={isCourtAide} canManageTasks={canManageTasks} />;
+}
+
+function TasksManagerView({ isCourtAide, canManageTasks }: { isCourtAide: boolean; canManageTasks: boolean }) {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { userRole, isAdmin: canManageTasks } = useRolePermissions();
   const isMobile = useIsMobile();
 
-  // Court aides default to "my-tasks" tab, others to "active"
-  const isCourtAide = userRole === 'court_aide';
   const defaultTab = searchParams.get('tab') || (isCourtAide ? 'my-tasks' : 'active');
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,10 +147,13 @@ export default function Tasks() {
   const completedTasks = tasks.filter(t => t.status === 'completed');
   const rejectedTasks = tasks.filter(t => ['rejected', 'cancelled'].includes(t.status));
 
-  // My tasks: tasks claimed by or assigned to current user
+  // My tasks: anything currently on this user's plate — claimed by or assigned
+  // to them in any non-terminal status (pending_approval, approved, claimed,
+  // in_progress). An aide who has a task assigned to them while it's still
+  // pending approval needs to see it without hunting through other tabs.
   const myTasks = tasks.filter(t =>
     (t.claimed_by === user?.id || t.assigned_to === user?.id) &&
-    ['claimed', 'in_progress'].includes(t.status)
+    !['completed', 'cancelled', 'rejected'].includes(t.status)
   );
 
   // Available tasks: approved but not claimed

@@ -156,6 +156,8 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'court_officer') {
     return [
       { title: 'Keys', icon: KeyRound },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
     ];
   }
 
@@ -165,6 +167,8 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Supply Room', icon: Package2 },
       { title: 'Inventory', icon: Boxes },
       { title: 'Tasks', icon: Package },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
     ];
   }
 
@@ -246,6 +250,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/keys',
       '/inventory',
       '/tasks',
+      '/term-sheet',
       '', // Separator
       '/profile',
     ];
@@ -267,6 +272,8 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   if (userRole === 'court_officer') {
     return [
       '/keys',
+      '', // Separator
+      '/profile',
     ];
   }
 
@@ -276,6 +283,8 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/supply-room',
       '/inventory',
       '/tasks',
+      '', // Separator
+      '/profile',
     ];
   }
 
