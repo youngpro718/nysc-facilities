@@ -147,10 +147,13 @@ function TasksManagerView({ isCourtAide, canManageTasks }: { isCourtAide: boolea
   const completedTasks = tasks.filter(t => t.status === 'completed');
   const rejectedTasks = tasks.filter(t => ['rejected', 'cancelled'].includes(t.status));
 
-  // My tasks: tasks claimed by or assigned to current user
+  // My tasks: anything currently on this user's plate — claimed by or assigned
+  // to them in any non-terminal status (pending_approval, approved, claimed,
+  // in_progress). An aide who has a task assigned to them while it's still
+  // pending approval needs to see it without hunting through other tabs.
   const myTasks = tasks.filter(t =>
     (t.claimed_by === user?.id || t.assigned_to === user?.id) &&
-    ['claimed', 'in_progress'].includes(t.status)
+    !['completed', 'cancelled', 'rejected'].includes(t.status)
   );
 
   // Available tasks: approved but not claimed
