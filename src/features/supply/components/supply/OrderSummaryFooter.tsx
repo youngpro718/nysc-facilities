@@ -149,11 +149,11 @@ export function OrderSummaryFooter({
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50 p-3 pb-safe"
+        className="fixed bottom-16 md:bottom-3 left-0 right-0 z-50 p-3 pb-safe"
       >
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <div className={cn(
-            "mx-auto max-w-3xl rounded-2xl border shadow-2xl",
+            "mx-auto max-w-3xl rounded-2xl border-2 border-primary/20 shadow-2xl ring-1 ring-black/5",
             "bg-background/95 backdrop-blur-xl"
           )}>
             {/* Inline Justification for Restricted Items */}
@@ -226,9 +226,9 @@ export function OrderSummaryFooter({
                   size="lg"
                   className={cn(
                     "shrink-0 rounded-xl h-12 px-5 gap-2 font-semibold transition-all",
-                    showSuccess 
-                      ? "bg-emerald-500 hover:bg-emerald-500" 
-                      : "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+                    showSuccess
+                      ? "bg-emerald-500 hover:bg-emerald-500"
+                      : ""
                   )}
                   onClick={handleQuickSubmit}
                   disabled={isSubmitting || isQuickSubmitting}
@@ -240,9 +240,8 @@ export function OrderSummaryFooter({
                     </>
                   ) : (
                     <>
-                      <Zap className="h-4 w-4" />
-                      <span className="hidden sm:inline">Quick Order</span>
-                      <span className="sm:hidden">Order</span>
+                      <Send className="h-4 w-4" />
+                      <span>Submit Order</span>
                     </>
                   )}
                 </Button>
@@ -254,8 +253,7 @@ export function OrderSummaryFooter({
                   disabled={isSubmitting}
                 >
                   <Send className="h-4 w-4" />
-                  <span className="hidden sm:inline">Review & Submit</span>
-                  <span className="sm:hidden">Review</span>
+                  <span>Review & Submit</span>
                 </Button>
               )}
             </div>

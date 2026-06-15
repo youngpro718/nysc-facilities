@@ -36,6 +36,7 @@ interface DeliveryRoomPickerProps {
   placeholder?: string;
   className?: string;
   triggerClassName?: string;
+  modal?: boolean;
 }
 
 function formatRoomLabel(r: { room_number: string; name?: string | null }): string {
@@ -59,6 +60,7 @@ export function DeliveryRoomPicker({
   placeholder = 'Search rooms…',
   className,
   triggerClassName,
+  modal = true,
 }: DeliveryRoomPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -125,13 +127,15 @@ export function DeliveryRoomPicker({
 
   return (
     <div className={cn('space-y-1', className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={modal}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
             aria-invalid={invalid || undefined}
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
             className={cn(
               'w-full justify-between h-11 font-normal',
               !value && 'text-muted-foreground',
@@ -147,10 +151,13 @@ export function DeliveryRoomPicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-[--radix-popover-trigger-width] min-w-[300px] p-0 z-[60]"
+          className="w-[--radix-popover-trigger-width] min-w-[300px] p-0 z-[100]"
           align="start"
           sideOffset={4}
           collisionPadding={8}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          onClick={(e) => e.stopPropagation()}
         >
           <Command shouldFilter={false}>
             <CommandInput
