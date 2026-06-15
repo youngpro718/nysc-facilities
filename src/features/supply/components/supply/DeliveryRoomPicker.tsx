@@ -60,6 +60,7 @@ export function DeliveryRoomPicker({
   placeholder = 'Search rooms…',
   className,
   triggerClassName,
+  modal = true,
 }: DeliveryRoomPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
