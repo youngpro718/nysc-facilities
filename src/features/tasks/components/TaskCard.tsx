@@ -146,7 +146,7 @@ export function TaskCard({
   const needsApproval = task.status === 'pending_approval' && task.is_request;
 
   const hasActions = showActions && (
-    (needsApproval && onApprove) ||
+    (needsApproval && (onApprove || onApproveAndClaim)) ||
     (canClaim && onClaim) ||
     (canStart && onStart) ||
     (canComplete && onComplete) ||
