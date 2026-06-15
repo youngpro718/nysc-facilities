@@ -1,38 +1,50 @@
-# Two fixes for the supply order flow
+## Diagnosis
 
-## 1. "Click the room picker, nothing happens"
+The Court Aide Work Center looks empty, but the database actually has 4 active task requests. Here is the full picture from `staff_tasks`:
 
-**Cause:** `DeliveryRoomPicker` is a Radix Popover, and we're using it *inside* Radix Sheets (`OrderCart` review sheet and `OrderSummaryFooter` review sheet, plus the `EditDeliveryLocationButton` Dialog). Radix Sheet/Dialog is modal — it locks `pointer-events: none` on the body, and Popover's portal content is a sibling of the body, so taps on the popover content (or sometimes the trigger inside the sheet) get swallowed. This is the classic "popover inside a modal does nothing" bug.
+- 4 rows in `pending_approval` (the 4 requests submitted from a user today: chairs to 1000, move desk, file cabinet, event setup)
+- 1 row `completed`
+- 1 row `cancelled`
+- 0 rows in `approved`, `claimed`, or `in_progress`
 
-**Fix in `DeliveryRoomPicker.tsx`:**
-- Add an optional `modal` prop (default `true`) and pass it to `<Popover modal={...}>`. Setting `modal={true}` on the Popover itself makes Radix correctly manage focus + pointer events when nested inside another modal layer.
-- Render `PopoverContent` inside a `Portal` with `onOpenAutoFocus={(e) => e.preventDefault()}` and `onCloseAutoFocus={(e) => e.preventDefault()}` so the parent Sheet doesn't yank focus back and immediately close the popover.
-- Stop click propagation on the trigger Button (`onClick={(e) => e.stopPropagation()}`) so the surrounding sheet/card doesn't intercept the tap.
-- Raise z-index so it always paints above the sheet: `z-[100]` (sheets are `z-50`).
+`TaskWorkQueue.tsx` only queries three buckets:
 
-No callers need to change — they keep using `<DeliveryRoomPicker value=... onChange=... />`.
+- My Tasks → `status in ('claimed','in_progress')` AND (`claimed_by=me` OR `assigned_to=me`)
+- Available → `status = 'approved'`
+- Completed → `status = 'completed'` AND involves me
 
-## 2. "On mobile, I don't see how to submit the order"
+Nothing in the work center ever queries `pending_approval`. And the RLS policy on `staff_tasks` only lets `admin` / `facilities_manager` flip a request from `pending_approval` → `approved`. Court Aides can't approve, and nobody has approved these 4 — so they sit invisible to the aide, and "Available" stays empty.
 
-The mobile flow (`QuickSupplyRequest` → `OrderSummaryFooter`) does show a floating cart bar after you add items, but:
+So the bug isn't "queries broken" — it's a workflow gap. Aides see nothing to do because the approval step is silently blocking everything.
 
-- For ≤3 items with no restricted items, the button reads **"Order"** (a green gradient zap-icon button). Users don't read that as "submit my order" — it looks decorative.
-- The bar sits at `bottom-0`, directly on top of the `BottomTabBar` (also `bottom-0`, `z-40`). The footer is `z-50` so it wins, but the result is a cramped stack where the submit pill visually merges with the tab bar and is easy to miss.
+## Fix
 
-**Fix in `OrderSummaryFooter.tsx`:**
-- Lift the floating bar above the bottom tab bar: change wrapper to `bottom-16 md:bottom-3` (the tab bar is `md:hidden`, ~64px tall) and keep `pb-safe`.
-- Rename the primary CTA so it always reads as a submit action:
-  - Quick path: **"Submit Order"** with the Send icon (drop the "Quick Order"/"Order" wording and Zap icon, or keep Zap but use the word "Submit").
-  - Restricted path keeps **"Request Approval"**.
-  - Many-items path keeps **"Review & Submit"**.
-- Add a thin "Tap to submit ➜" hint label above the cart row on mobile when items > 0, so the action is unmistakable.
-- Make the whole footer card slightly taller (`min-h-[68px]`) and add a subtle ring so it visually separates from the tab bar.
+Make pending requests first-class in the Work Center, and let aides act on them directly.
 
-No state/logic changes — purely presentation + a copy change on the CTA.
+1. **New "Requests" tab in `TaskWorkQueue`** (becomes the 4-tab layout: Requests · My Tasks · Available · Completed; Requests is the default tab when its count > 0).
+   - Fetches `status = 'pending_approval'` via `useStaffTasks({ status: 'pending_approval' })`.
+   - Each row uses `TaskCard` with two actions: **Approve & Claim** (one-tap: sets status `claimed`, claimed_by = me, approved_by = me, approved_at = now) and **Reject** (opens reason prompt, uses existing `rejectTask`).
+   - Empty state: "No new requests".
+   - Badge count on the tab + a small "N new" pill in the card header next to Active / Available.
 
-## Files
+2. **`useStaffTasks` — add an `approveAndClaim` mutation** that performs the combined update in one round trip. Reuses the existing pattern; invalidates `['staff-tasks']`.
 
-- `src/features/supply/components/supply/DeliveryRoomPicker.tsx` — add `modal` prop, portal focus guards, stopPropagation on trigger, bump z-index.
-- `src/features/supply/components/supply/OrderSummaryFooter.tsx` — lift above tab bar, rename CTA to "Submit Order", add hint, visual separation.
+3. **RLS update (migration)** so court_aide can approve+claim a pending request themselves:
+   - Replace the `staff_tasks` UPDATE policy to also allow `has_role('court_aide')` when `status = 'pending_approval'` (currently they're only allowed to touch `approved` / claimed-by-me / assigned-to-me rows).
+   - No grant changes needed — `authenticated` already has UPDATE.
 
-No DB changes. No changes to `OrderCart.tsx` logic — it'll inherit the picker fix automatically.
+4. **Realtime** — `useCourtAideRealtime` already subscribes to `staff_tasks` and invalidates `['staff-tasks']`, so the new tab refreshes automatically. No change.
+
+5. **Minor**: bump the "Active / Available" header pills to also include a "N pending" badge so the aide notices new requests even when they're on another tab.
+
+## Out of scope
+
+- No changes to the request-submission flow (`RequestTaskDialog`) or to the admin approval surface elsewhere — those keep working as-is.
+- No schema changes beyond the one RLS policy swap.
+
+## Files touched
+
+- `src/features/court/components/court-aide/TaskWorkQueue.tsx` — add Requests tab, default-tab logic, approve+claim handler
+- `src/features/tasks/hooks/useStaffTasks.ts` — add `approveAndClaim` mutation
+- `src/features/tasks/components/TaskCard.tsx` — accept an `onApproveAndClaim` action prop (button only renders when handler provided)
+- New migration: `db/migrations/0XX_court_aide_approve_pending_tasks.sql` — update `staff_tasks` UPDATE policy
