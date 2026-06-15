@@ -39,6 +39,7 @@ export function EditDeliveryLocationButton({
   className,
 }: EditDeliveryLocationButtonProps) {
   const { canWrite, canAdmin } = useRolePermissions();
+  const { user } = useAuth();
   const allowed = canWrite('supply_requests') || canAdmin('supply_requests');
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(currentLocation ?? '');
@@ -112,17 +113,11 @@ export function EditDeliveryLocationButton({
 
           <div className="space-y-2 py-2">
             <Label htmlFor="delivery-location">Delivery location</Label>
-            <Input
-              id="delivery-location"
+            <DeliveryRoomPicker
               value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="e.g. Room 927 (111)"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && value.trim() && !mutation.isPending) {
-                  mutation.mutate();
-                }
-              }}
+              onChange={setValue}
+              userId={user?.id}
+              placeholder="Search rooms…"
             />
             {currentLocation && (
               <p className="text-xs text-muted-foreground">
