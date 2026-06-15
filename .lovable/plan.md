@@ -1,40 +1,82 @@
-## What's broken
+## Goals
 
-When you open the room picker on Profile → Settings, typing in the search box (or sometimes just opening the dropdown) crashes with "Something went wrong." The crash, the toast, and the "audit room selection" concern all trace to the **same** room picker component (`RoomSelector`) used both in the lockbox screen and in **My Room** on the profile page.
+You're testing as a standard user and four things are off:
+1. Requests you submit don't appear in **My Activity** on the dashboard (they do show on the `/my-activity` page).
+2. The request task types are confusing/redundant — let's collapse them.
+3. The Setup form asks for things you don't care about (Easel, Podium, headcount, occasion).
+4. The Profile editor nags you to "finish your profile" and won't save Department; we also need to remove Bio + Username and add a Job Title dropdown.
 
-### Root cause
+---
 
-`src/features/keys/components/keys/lockbox/RoomSelector.tsx` line 95 calls:
+## 1. Dashboard "My Activity" — show task requests
 
-```text
-room.room_number.toLowerCase()
-```
+**Problem.** The dashboard widget (`CompactActivitySection`) only renders `supplyRequests` and `issues`. Task requests you make through "Make a Request" live in `staff_tasks` and are never passed in, so they only show on the full `/my-activity` page.
 
-There are **3 rooms in the database with `room_number = NULL`**. As soon as the search filter runs, `null.toLowerCase()` throws, the ErrorBoundary swallows the page, and you see "Something went wrong." Nothing actually got saved — the mutation never ran.
+**Fix.** Pass the user's staff_tasks (where `requested_by = me`) into the widget and render them inside the existing **Requests** tab alongside issues, sorted by `created_at` desc. Tab count includes open task requests. Same card style as issues; status pills use the existing task status labels (Pending Approval, Approved, Claimed, In Progress, Completed).
 
-### Self-serve assignment flow audit (My Room → pick a room)
+---
 
-I checked end-to-end and the back-end side is healthy:
+## 2. Consolidate request task types
 
-- `MyRoomSection` calls `RoomSelector` and on change runs a delete-then-insert against `occupant_room_assignments` scoped to `profile_id = auth.uid()`.
-- RLS policies `ora_self_insert` / `ora_self_delete` already permit a signed-in user to write their own rows (`profile_id = auth.uid()`). No admin role needed.
-- The insert payload (`profile_id`, `room_id`, `assignment_type='work_location'`, `is_primary=true`) matches the schema; all other columns are nullable or defaulted.
-- React Query invalidates `userRoomAssignments` and `occupantAssignments` on success, so the card refreshes.
+Today there are six types: Move Item, Delivery, Setup, Pickup, Maintenance, General. My recommendation, given your feedback:
 
-So the only thing preventing room selection from working is the null-room_number crash in the picker.
+**Keep four, drop two:**
 
-## Fix
+| Type | What it covers | Fields |
+|---|---|---|
+| **Move** | Furniture, files/boxes, anything from one room to another | Item category dropdown (Desk, Chair, Locker, Filing Cabinet, Boxes/Files, Other → text), From room, To room, Quantity, Notes |
+| **Delivery** | Drop something off at a room | What's being delivered (text), To room, Notes |
+| **Pickup** | Collect something from a room | What to pick up (text), From room, Notes |
+| **Setup** | Arrange a room for a meeting/event | Room, Date, Time, Furniture quantities (Tables/Chairs/Desks only — see §3), Arrangement notes |
 
-1. **Harden `RoomSelector`** (`src/features/keys/components/keys/lockbox/RoomSelector.tsx`)
-   - In the query mapping, drop rooms whose `room_number` is null/empty so they can never reach the list (they wouldn't be selectable anyway — display value is the room number).
-   - Defensive `?.toLowerCase()` on every search-filter field, plus a `String(...)` coerce on `room_number`, so a future stray null can't reproduce the crash.
+**Drop:**
+- **General Task** — too vague; everything fits one of the four above.
+- **Maintenance** — already covered by the Issues flow (`/issues`). Reporting a broken thing belongs there, not in task requests.
 
-2. **Verify the room-selection write path still works after the fix** by re-checking the mutation flow in `MyRoomSection` against the RLS policies above. No code changes needed there.
+DB enum stays (`task_type`) so existing records keep working; we just hide General/Maintenance from the request dialog. Admin-created tasks in `CreateTaskDialog` can keep all six for flexibility.
 
-3. **Optional follow-up (flagging only, not changing in this pass):** the 3 rooms with `room_number = NULL` are data hygiene — worth surfacing to admins later, but they're out of scope for "let me pick my room."
+---
 
-### Files touched
+## 3. Simplify the Setup form
 
-- `src/features/keys/components/keys/lockbox/RoomSelector.tsx` — null-safe filtering and list source.
+In `SetupRequestForm.tsx`:
+- **Remove** Podium and Easel from the furniture list (keep Tables, Chairs, Desks).
+- **Remove** the attendee/head count field entirely.
+- **Remove** the "What's the occasion?" / setup type dropdown (Meeting/Hearing/Training/Event/Other).
+- **Keep** room, date, time, furniture quantities, and "How should the room be arranged?" notes.
 
-No DB migrations, no other components affected. The lockbox screen continues to work the same way.
+---
+
+## 4. Profile editor — fix save + trim fields
+
+**Why save fails.** The "Finish your profile" banner checks specific profile columns (likely `department` + something else). Two things to verify and fix:
+- The save mutation in `useProfileForm` runs an `UPDATE` against `profiles` — confirm the row actually updates (RLS self-update policy is in place per memory) and that the banner's completeness check reads the same column we're writing. If the banner is looking at `title` and we never wrote it, that explains the persistent nag.
+- Add proper toast on success/failure and surface the real Postgres error if `UPDATE` returns zero rows.
+
+**Form changes in `BasicInfoFields.tsx`:**
+- **Remove** Bio textarea.
+- **Remove** Username field (display name = first + last).
+- **Replace** the free-text Job Title input with a **dropdown** of fixed titles. Starter list — confirm and I'll wire it in:
+  - Court Officer
+  - Court Analyst
+  - Court Clerk
+  - Sergeant
+  - Lieutenant
+  - Captain
+  - Major
+  - Management / Supervisor
+  - Other (free-text fallback)
+- **Keep** First Name, Last Name, Department, Phone, Emergency Contact.
+
+Update `personalInfoSchema` to drop `username`/`bio` requirements and to validate `title` against the enum list. Update the "finish your profile" banner check to require: first_name, last_name, department, title.
+
+---
+
+## Open question before I build
+
+I need your final job-title list. The starter above is a guess — reply with the exact titles you want in the dropdown (and whether "Other" should remain a free-text escape hatch).
+
+## Technical notes
+
+- Files touched: `RequestTaskDialog.tsx`, `staffTasks.ts` (label map only, enum unchanged), `SetupRequestForm.tsx`, `BasicInfoFields.tsx`, `profileSchema.ts`, `useProfileForm.ts`, `CompactActivitySection.tsx` + its parent that fetches data (likely `UserDashboard.tsx` — needs a `staff_tasks` query filtered by `requested_by = user.id`), and wherever the "finish your profile" banner lives (to align its completeness check with the new field set).
+- No DB migrations required. Task type enum and profile columns stay as-is; we're only changing what the UI shows and validates.
