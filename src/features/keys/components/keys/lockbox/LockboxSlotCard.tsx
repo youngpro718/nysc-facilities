@@ -90,6 +90,12 @@ export function LockboxSlotCard({ slot, onClick, lockboxName }: LockboxSlotCardP
             {getSlotDisplayTitle(slot)}
           </h4>
           <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {lockboxName && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1 font-medium">
+                <Package className="w-3 h-3" />
+                {lockboxName}
+              </Badge>
+            )}
             {slotHasRoomLink(slot) ? (
               getRoomLinkIndicator()
             ) : (
