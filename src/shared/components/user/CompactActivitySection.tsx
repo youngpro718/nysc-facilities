@@ -55,9 +55,18 @@ interface Issue {
   description?: string;
 }
 
+interface TaskRequest {
+  id: string;
+  title: string;
+  status: string;
+  task_type?: string;
+  created_at: string;
+}
+
 interface CompactActivitySectionProps {
   supplyRequests: SupplyRequest[];
   issues: Issue[];
+  taskRequests?: TaskRequest[];
   keysHeld: number;
   userId?: string;
   className?: string;
@@ -66,18 +75,23 @@ interface CompactActivitySectionProps {
 export function CompactActivitySection({
   supplyRequests,
   issues,
+  taskRequests = [],
   keysHeld,
   userId,
   className,
 }: CompactActivitySectionProps) {
   const navigate = useNavigate();
-  
+
   // Calculate counts
   const activeSupplies = supplyRequests.filter(
     r => !['fulfilled', 'rejected', 'cancelled', 'completed'].includes(r.status)
   );
   const readyForPickup = supplyRequests.filter(r => r.status === 'ready');
-  const openRequests = issues.filter(i => i.status === 'open' || i.status === 'in_progress');
+  const openIssues = issues.filter(i => i.status === 'open' || i.status === 'in_progress');
+  const openTaskRequests = taskRequests.filter(
+    t => !['completed', 'cancelled', 'rejected'].includes(t.status)
+  );
+  const openRequests = openIssues.length + openTaskRequests.length;
 
   // Determine default tab based on what needs attention
   const getDefaultTab = () => {
