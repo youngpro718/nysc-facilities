@@ -36,6 +36,7 @@ interface DeliveryRoomPickerProps {
   placeholder?: string;
   className?: string;
   triggerClassName?: string;
+  modal?: boolean;
 }
 
 function formatRoomLabel(r: { room_number: string; name?: string | null }): string {

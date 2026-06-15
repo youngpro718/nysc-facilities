@@ -1,35 +1,38 @@
-# Supply Request: Searchable Room Picker
+# Two fixes for the supply order flow
 
-## Problem
-Today, the delivery location on a supply order is a **free-text input** with a few chip suggestions from the user's assigned/recent rooms. There's no way to search the database for a specific room, so typos and made-up labels slip into orders, and the location can't be cleanly linked back to a real room record. The user wants this to work the way other places in the app already do — search the rooms table, pick the actual room.
+## 1. "Click the room picker, nothing happens"
 
-## Solution
-Reuse the existing search pattern from `RoomSelector` (used by Keys / Lockbox slots) inside the supply order flow, so the delivery location always resolves to a real room.
+**Cause:** `DeliveryRoomPicker` is a Radix Popover, and we're using it *inside* Radix Sheets (`OrderCart` review sheet and `OrderSummaryFooter` review sheet, plus the `EditDeliveryLocationButton` Dialog). Radix Sheet/Dialog is modal — it locks `pointer-events: none` on the body, and Popover's portal content is a sibling of the body, so taps on the popover content (or sometimes the trigger inside the sheet) get swallowed. This is the classic "popover inside a modal does nothing" bug.
 
-### 1. Add a reusable `DeliveryRoomPicker`
-- New component: `src/features/supply/components/supply/DeliveryRoomPicker.tsx`
-- Combobox (Popover + Command), searches the `rooms` table by `room_number`, `name`, floor name, and building name — same fields and pattern as `RoomSelector`.
-- Shows result rows as: **Room number — Name** with a small building/floor sub-line.
-- Pinned section at the top: **Your rooms** (from `useUserRoomAssignments`) and **Recent** (from `useDeliveryLocations`'s recent list), so the one-tap behavior the user already has is preserved.
-- Output: writes a normalized string like `Room 1000 — Clerk's Office` to `delivery_location` (keeps the existing column as-is, no schema change).
+**Fix in `DeliveryRoomPicker.tsx`:**
+- Add an optional `modal` prop (default `true`) and pass it to `<Popover modal={...}>`. Setting `modal={true}` on the Popover itself makes Radix correctly manage focus + pointer events when nested inside another modal layer.
+- Render `PopoverContent` inside a `Portal` with `onOpenAutoFocus={(e) => e.preventDefault()}` and `onCloseAutoFocus={(e) => e.preventDefault()}` so the parent Sheet doesn't yank focus back and immediately close the popover.
+- Stop click propagation on the trigger Button (`onClick={(e) => e.stopPropagation()}`) so the surrounding sheet/card doesn't intercept the tap.
+- Raise z-index so it always paints above the sheet: `z-[100]` (sheets are `z-50`).
 
-### 2. Use it in the order cart
-- `OrderCart.tsx`: replace the chip row + `<Input>` with `<DeliveryRoomPicker />`. Keep the "this isn't your home room" warning and the missing-location hard block.
-- `OrderSummaryFooter.tsx`: same swap, keep prefill from primary assigned room.
+No callers need to change — they keep using `<DeliveryRoomPicker value=... onChange=... />`.
 
-### 3. Use it when staff edits a placed order
-- `EditDeliveryLocationButton.tsx`: replace the dialog's plain `<Input>` with `<DeliveryRoomPicker />` so admins re-route to a real room too.
+## 2. "On mobile, I don't see how to submit the order"
 
-## Out of scope
-- No DB migration. `supply_requests.delivery_location` stays a text column.
-- No change to how requests are submitted, approved, or displayed elsewhere.
-- Not touching the Keys/lockbox naming work from earlier turns.
+The mobile flow (`QuickSupplyRequest` → `OrderSummaryFooter`) does show a floating cart bar after you add items, but:
+
+- For ≤3 items with no restricted items, the button reads **"Order"** (a green gradient zap-icon button). Users don't read that as "submit my order" — it looks decorative.
+- The bar sits at `bottom-0`, directly on top of the `BottomTabBar` (also `bottom-0`, `z-40`). The footer is `z-50` so it wins, but the result is a cramped stack where the submit pill visually merges with the tab bar and is easy to miss.
+
+**Fix in `OrderSummaryFooter.tsx`:**
+- Lift the floating bar above the bottom tab bar: change wrapper to `bottom-16 md:bottom-3` (the tab bar is `md:hidden`, ~64px tall) and keep `pb-safe`.
+- Rename the primary CTA so it always reads as a submit action:
+  - Quick path: **"Submit Order"** with the Send icon (drop the "Quick Order"/"Order" wording and Zap icon, or keep Zap but use the word "Submit").
+  - Restricted path keeps **"Request Approval"**.
+  - Many-items path keeps **"Review & Submit"**.
+- Add a thin "Tap to submit ➜" hint label above the cart row on mobile when items > 0, so the action is unmistakable.
+- Make the whole footer card slightly taller (`min-h-[68px]`) and add a subtle ring so it visually separates from the tab bar.
+
+No state/logic changes — purely presentation + a copy change on the CTA.
 
 ## Files
-- **New:** `src/features/supply/components/supply/DeliveryRoomPicker.tsx`
-- **Edit:** `src/features/supply/components/supply/OrderCart.tsx`
-- **Edit:** `src/features/supply/components/supply/OrderSummaryFooter.tsx`
-- **Edit:** `src/features/supply/components/supply/EditDeliveryLocationButton.tsx`
 
-## Validation
-Open a new supply order on the preview, confirm the room field is a searchable picker, type a room number, pick it, submit, and verify the order shows the selected room. Then as admin, edit an existing order's delivery location through the same picker.
+- `src/features/supply/components/supply/DeliveryRoomPicker.tsx` — add `modal` prop, portal focus guards, stopPropagation on trigger, bump z-index.
+- `src/features/supply/components/supply/OrderSummaryFooter.tsx` — lift above tab bar, rename CTA to "Submit Order", add hint, visual separation.
+
+No DB changes. No changes to `OrderCart.tsx` logic — it'll inherit the picker fix automatically.
