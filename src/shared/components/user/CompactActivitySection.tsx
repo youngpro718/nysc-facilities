@@ -244,70 +244,113 @@ export function CompactActivitySection({
             )}
           </TabsContent>
 
-          {/* Requests Tab */}
+          {/* Requests Tab — issues + task requests, newest first */}
           <TabsContent value="requests" className="mt-3">
-            {issues.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <CheckCircle className="h-10 w-10 mx-auto mb-2 opacity-40 text-green-500" />
-                <p className="text-sm">No active requests</p>
-                <p className="text-xs mt-1">Need something? Make a request from your dashboard.</p>
-              </div>
-            ) : (
-              <ScrollArea className={issues.length > 4 ? "h-[280px]" : undefined}>
-                <div className="space-y-2">
-                  {issues.slice(0, 8).map((issue) => (
-                    <div 
-                      key={issue.id}
-                      className="border rounded-lg p-3 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{issue.title}</p>
-                          {issue.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                              {issue.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <Badge 
-                            variant={issue.status === 'open' ? 'outline' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {issue.status === 'in_progress' ? (
-                              <><Clock className="h-3 w-3 mr-1" />In Progress</>
-                            ) : issue.status === 'open' ? (
-                              'Submitted'
-                            ) : issue.status === 'completed' ? (
-                              <><CheckCircle className="h-3 w-3 mr-1" />Completed</>
-                            ) : (
-                              issue.status
+            {(() => {
+              type Combined = {
+                id: string;
+                title: string;
+                status: string;
+                description?: string;
+                created_at?: string;
+                kind: 'issue' | 'task';
+              };
+              const combined: Combined[] = [
+                ...issues.map((i) => ({
+                  id: `issue-${i.id}`,
+                  title: i.title,
+                  status: i.status,
+                  description: i.description,
+                  created_at: (i as any).created_at,
+                  kind: 'issue' as const,
+                })),
+                ...taskRequests.map((t) => ({
+                  id: `task-${t.id}`,
+                  title: t.title,
+                  status: t.status,
+                  created_at: t.created_at,
+                  kind: 'task' as const,
+                })),
+              ].sort((a, b) => {
+                const at = a.created_at ? new Date(a.created_at).getTime() : 0;
+                const bt = b.created_at ? new Date(b.created_at).getTime() : 0;
+                return bt - at;
+              });
+
+              if (combined.length === 0) {
+                return (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <CheckCircle className="h-10 w-10 mx-auto mb-2 opacity-40 text-green-500" />
+                    <p className="text-sm">No active requests</p>
+                    <p className="text-xs mt-1">Need something? Make a request from your dashboard.</p>
+                  </div>
+                );
+              }
+
+              const renderStatus = (status: string) => {
+                if (status === 'in_progress') return <><Clock className="h-3 w-3 mr-1" />In Progress</>;
+                if (status === 'open') return 'Submitted';
+                if (status === 'completed') return <><CheckCircle className="h-3 w-3 mr-1" />Completed</>;
+                if (status === 'pending_approval') return 'Pending Approval';
+                if (status === 'approved') return 'Approved';
+                if (status === 'claimed') return 'Claimed';
+                return status.replace(/_/g, ' ');
+              };
+
+              return (
+                <ScrollArea className={combined.length > 4 ? "h-[280px]" : undefined}>
+                  <div className="space-y-2">
+                    {combined.slice(0, 8).map((item) => (
+                      <div
+                        key={item.id}
+                        className="border rounded-lg p-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                {item.kind === 'task' ? 'Task' : 'Issue'}
+                              </span>
+                            </div>
+                            <p className="font-medium text-sm truncate">{item.title}</p>
+                            {item.description && (
+                              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                {item.description}
+                              </p>
                             )}
-                          </Badge>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <Badge
+                              variant={item.status === 'open' || item.status === 'pending_approval' ? 'outline' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {renderStatus(item.status)}
+                            </Badge>
+                          </div>
                         </div>
+                        {item.created_at && (
+                          <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                          </p>
+                        )}
                       </div>
-                      {(issue as any).created_at && (
-                        <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatDistanceToNow(new Date((issue as any).created_at), { addSuffix: true })}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                  {issues.length > 8 && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="w-full text-xs"
-                      onClick={() => navigate('/my-activity')}
-                    >
-                      View {issues.length - 8} more requests
-                      <ChevronRight className="h-3 w-3 ml-1" />
-                    </Button>
-                  )}
-                </div>
-              </ScrollArea>
-            )}
+                    ))}
+                    {combined.length > 8 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() => navigate('/my-activity')}
+                      >
+                        View {combined.length - 8} more requests
+                        <ChevronRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    )}
+                  </div>
+                </ScrollArea>
+              );
+            })()}
           </TabsContent>
 
         </Tabs>
