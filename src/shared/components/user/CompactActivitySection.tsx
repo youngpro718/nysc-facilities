@@ -96,7 +96,7 @@ export function CompactActivitySection({
   // Determine default tab based on what needs attention
   const getDefaultTab = () => {
     if (readyForPickup.length > 0) return 'supplies';
-    if (openRequests.length > 0) return 'requests';
+    if (openRequests > 0) return 'requests';
     if (activeSupplies.length > 0) return 'supplies';
     return 'supplies';
   };
