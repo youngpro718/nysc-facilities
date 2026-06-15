@@ -1,50 +1,42 @@
-## Diagnosis
+## Problem
 
-The Court Aide Work Center looks empty, but the database actually has 4 active task requests. Here is the full picture from `staff_tasks`:
+Today the key search only looks inside the currently selected lockbox. If a court officer is on Lockbox A and searches for a key that lives in Lockbox B, they get nothing — they have to know which lockbox to pick first.
 
-- 4 rows in `pending_approval` (the 4 requests submitted from a user today: chairs to 1000, move desk, file cabinet, event setup)
-- 1 row `completed`
-- 1 row `cancelled`
-- 0 rows in `approved`, `claimed`, or `in_progress`
+## Goal
 
-`TaskWorkQueue.tsx` only queries three buckets:
+One search that looks across **every** lockbox, with each result clearly labeled so the officer immediately sees which lockbox (and slot) the key is in. Keep the current per-lockbox view intact for browsing — only the search behavior changes.
 
-- My Tasks → `status in ('claimed','in_progress')` AND (`claimed_by=me` OR `assigned_to=me`)
-- Available → `status = 'approved'`
-- Completed → `status = 'completed'` AND involves me
+## Changes
 
-Nothing in the work center ever queries `pending_approval`. And the RLS policy on `staff_tasks` only lets `admin` / `facilities_manager` flip a request from `pending_approval` → `approved`. Court Aides can't approve, and nobody has approved these 4 — so they sit invisible to the aide, and "Available" stays empty.
+### 1. Fetch slots from all lockboxes (for search)
+In `LockboxView.tsx`, add a second query that loads every slot across every lockbox, joined with its lockbox name and room. This runs alongside the existing per-lockbox fetch so the browse view is unchanged.
 
-So the bug isn't "queries broken" — it's a workflow gap. Aides see nothing to do because the approval step is silently blocking everything.
+```text
+slots (selected lockbox) → grid/browse view (today)
+allSlots (every lockbox) → search results (new)
+```
 
-## Fix
+### 2. Make the search global with clear lockbox labels
+In `LockboxSearch.tsx`:
+- When the search box is empty → show the current selected-lockbox slots (no change to today's behavior).
+- When the user types anything → search across **all** slots from all lockboxes.
+- Each result card gets a prominent badge showing the **lockbox name** (e.g. "📦 Captain's Office") next to the slot number, so it's obvious where the key lives.
+- Results are grouped by lockbox with a small header ("Captain's Office — 3 keys", "Court Officer Desk — 1 key") so officers can scan quickly.
+- A single line above results: "Showing matches from all lockboxes" — so they know the search just widened automatically; nothing to configure.
 
-Make pending requests first-class in the Work Center, and let aides act on them directly.
+### 3. Tap a result → jump to that lockbox
+When a search result is tapped:
+- If the slot belongs to a different lockbox than the one currently selected, automatically switch `selectedLockboxId` to that lockbox so the rest of the UI (header, print, edit) lines up.
+- Then open the existing slot detail dialog as today.
 
-1. **New "Requests" tab in `TaskWorkQueue`** (becomes the 4-tab layout: Requests · My Tasks · Available · Completed; Requests is the default tab when its count > 0).
-   - Fetches `status = 'pending_approval'` via `useStaffTasks({ status: 'pending_approval' })`.
-   - Each row uses `TaskCard` with two actions: **Approve & Claim** (one-tap: sets status `claimed`, claimed_by = me, approved_by = me, approved_at = now) and **Reject** (opens reason prompt, uses existing `rejectTask`).
-   - Empty state: "No new requests".
-   - Badge count on the tab + a small "N new" pill in the card header next to Active / Available.
+This keeps the mental model simple: "I searched, I tapped, now I'm in the right lockbox looking at the right key."
 
-2. **`useStaffTasks` — add an `approveAndClaim` mutation** that performs the combined update in one round trip. Reuses the existing pattern; invalidates `['staff-tasks']`.
-
-3. **RLS update (migration)** so court_aide can approve+claim a pending request themselves:
-   - Replace the `staff_tasks` UPDATE policy to also allow `has_role('court_aide')` when `status = 'pending_approval'` (currently they're only allowed to touch `approved` / claimed-by-me / assigned-to-me rows).
-   - No grant changes needed — `authenticated` already has UPDATE.
-
-4. **Realtime** — `useCourtAideRealtime` already subscribes to `staff_tasks` and invalidates `['staff-tasks']`, so the new tab refreshes automatically. No change.
-
-5. **Minor**: bump the "Active / Available" header pills to also include a "N pending" badge so the aide notices new requests even when they're on another tab.
-
-## Out of scope
-
-- No changes to the request-submission flow (`RequestTaskDialog`) or to the admin approval surface elsewhere — those keep working as-is.
-- No schema changes beyond the one RLS policy swap.
+### Out of scope
+- No DB changes, no RLS changes.
+- No changes to the lockbox selector, slot dialog, or print view beyond the auto-switch above.
+- Room-link filters (Unlinked / No Room) stay scoped to the currently selected lockbox — those are a management tool, not a search tool.
 
 ## Files touched
-
-- `src/features/court/components/court-aide/TaskWorkQueue.tsx` — add Requests tab, default-tab logic, approve+claim handler
-- `src/features/tasks/hooks/useStaffTasks.ts` — add `approveAndClaim` mutation
-- `src/features/tasks/components/TaskCard.tsx` — accept an `onApproveAndClaim` action prop (button only renders when handler provided)
-- New migration: `db/migrations/0XX_court_aide_approve_pending_tasks.sql` — update `staff_tasks` UPDATE policy
+- `src/features/keys/components/keys/lockbox/LockboxView.tsx` — add `allSlots` query, pass to search, handle cross-lockbox tap.
+- `src/features/keys/components/keys/lockbox/LockboxSearch.tsx` — switch to global search when query is non-empty, group by lockbox, show lockbox-name badge on each result.
+- `src/features/keys/components/keys/lockbox/LockboxSlotCard.tsx` — accept an optional `lockboxName` prop to render the badge (small, non-intrusive).
