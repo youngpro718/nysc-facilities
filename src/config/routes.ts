@@ -41,10 +41,10 @@ export const routes: Record<string, RouteConfig> = {
     breadcrumbLabel: 'Dashboard',
     icon: LayoutDashboard,
   },
-  '/court-aide-dashboard': {
-    path: '/court-aide-dashboard',
-    title: 'Supply Staff Dashboard',
-    breadcrumbLabel: 'Dashboard',
+  '/work-center': {
+    path: '/work-center',
+    title: 'Work Center',
+    breadcrumbLabel: 'Work Center',
     icon: LayoutDashboard,
   },
   
