@@ -167,6 +167,20 @@ export const routes: Record<string, RouteConfig> = {
     icon: UserCog,
     parent: '/',
   },
+  '/admin/routing-rules': {
+    path: '/admin/routing-rules',
+    title: 'Form Routing Rules',
+    breadcrumbLabel: 'Routing Rules',
+    icon: Settings,
+    parent: '/admin',
+  },
+  '/admin/form-templates': {
+    path: '/admin/form-templates',
+    title: 'Form Builder',
+    breadcrumbLabel: 'Form Builder',
+    icon: FileText,
+    parent: '/admin',
+  },
   '/system-settings': {
     path: '/system-settings',
     title: 'System Settings',
