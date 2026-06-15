@@ -102,16 +102,17 @@ export function useProfileForm() {
 
     try {
       setIsLoading(true);
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-      if (userError || !user) {
-        throw new Error(userError?.message || "No user found");
+      if (sessionError || !session?.user) {
+        throw new Error(sessionError?.message || "Your session expired. Please sign in again.");
       }
+      const user = session.user;
 
       // Resolve dropdown + "Other" into a single stored title string.
       const resolvedTitle = data.title === "Other" ? (data.title_other?.trim() || "") : data.title;
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from('profiles')
         .update({
           first_name: data.first_name,
@@ -124,18 +125,23 @@ export function useProfileForm() {
           emergency_contact: data.emergency_contact,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select('id, department, title')
+        .maybeSingle();
 
       if (error) throw error;
+      if (!updated) {
+        throw new Error("Profile didn't save. You may not have permission to edit these fields.");
+      }
 
       toast({
         title: "Profile Updated",
-        description: "Your personal information has been updated successfully.",
+        description: "Your personal information has been saved.",
       });
     } catch (error) {
       logger.error('Error updating profile:', error);
       toast({
-        title: "Error",
+        title: "Couldn't save profile",
         description: error instanceof Error ? error.message : "Failed to update profile information.",
         variant: "destructive",
       });
