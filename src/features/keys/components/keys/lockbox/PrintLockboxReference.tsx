@@ -52,7 +52,7 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
           .meta { color: #666; font-size: 13px; margin-bottom: 16px; }
           table { width: 100%; border-collapse: collapse; font-size: 13px; }
           th { background: #f5f5f5; padding: 8px 10px; text-align: left; border-bottom: 2px solid #ccc; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-          th:first-child, th:nth-child(4), th:nth-child(5) { text-align: center; }
+          th:first-child, th:nth-child(5), th:nth-child(6) { text-align: center; }
           .footer { margin-top: 20px; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 8px; }
         </style>
       </head>
