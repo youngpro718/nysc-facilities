@@ -137,11 +137,12 @@ export function BulkAddChambersDialog({
       const rows = toCreate.map((r, i) => ({
         lockbox_id: lockboxId,
         slot_number: existingSlotCount + i + 1,
-        label: `Chambers ${r.room_number}`,
+        label: `Chambers ${r.room_number} — Main Door`,
         room_id: r.id,
         room_number: r.room_number,
         quantity: Math.max(1, quantities[r.id] || 1),
         status: "in_box" as const,
+        key_role: "main_door" as const,
       }));
 
       const { data: inserted, error } = await supabase

@@ -8,6 +8,13 @@ export interface Lockbox {
 
 export type LockboxSlotStatus = 'in_box' | 'checked_out' | 'missing' | 'retired';
 
+export type LockboxSlotKeyRole =
+  | 'main_door'
+  | 'top_lock'
+  | 'bottom_lock'
+  | 'sub_room'
+  | 'other';
+
 export interface LockboxSlot {
   id: string;
   lockbox_id: string;
@@ -18,6 +25,8 @@ export interface LockboxSlot {
   key_id?: string;
   status: LockboxSlotStatus;
   quantity: number;
+  key_role?: LockboxSlotKeyRole | null;
+  sub_room_label?: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -95,3 +104,33 @@ export function getSlotDisplayTitle(slot: LockboxSlot): string {
 export function slotHasRoomLink(slot: LockboxSlot): boolean {
   return Boolean(slot.room_id || slot.room_number);
 }
+
+/** Short human-readable label for a key role, suitable for chips/badges. */
+export function getKeyRoleLabel(role?: LockboxSlotKeyRole | null, subRoomLabel?: string | null): string | null {
+  switch (role) {
+    case 'main_door': return 'Main Door';
+    case 'top_lock': return 'Top Lock';
+    case 'bottom_lock': return 'Bottom Lock';
+    case 'sub_room': return subRoomLabel?.trim() ? `Sub-Room: ${subRoomLabel.trim()}` : 'Sub-Room';
+    case 'other': return 'Other';
+    default: return null;
+  }
+}
+
+/** Tailwind classes for the role chip — keeps each role visually distinct. */
+export function getKeyRoleChipClasses(role?: LockboxSlotKeyRole | null): string {
+  switch (role) {
+    case 'top_lock':
+    case 'bottom_lock':
+      return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800';
+    case 'sub_room':
+      return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800';
+    case 'main_door':
+      return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800';
+    case 'other':
+      return 'bg-muted text-foreground border-border';
+    default:
+      return 'bg-muted text-muted-foreground border-border';
+  }
+}
+

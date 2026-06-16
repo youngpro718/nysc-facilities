@@ -11,6 +11,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
 import { RoomSelector } from "./RoomSelector";
+import { KeyRoleFields } from "./KeyRoleFields";
+import { LockboxSlotKeyRole, getKeyRoleLabel } from "../types/LockboxTypes";
 
 interface AddSlotDialogProps {
   lockboxId: string;
@@ -27,14 +29,36 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
+  const [keyRole, setKeyRole] = useState<LockboxSlotKeyRole | null>(null);
+  const [subRoomLabel, setSubRoomLabel] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  // Build the auto label from room + role; users can still override.
+  const computeAutoLabel = (rNum: string | null, role: LockboxSlotKeyRole | null, sub: string) => {
+    const base = rNum ? `Room ${rNum}` : '';
+    const suffix = getKeyRoleLabel(role, sub);
+    if (base && suffix) return `${base} — ${suffix}`;
+    return base || suffix || '';
+  };
 
   const handleRoomChange = (newRoomId: string | null, newRoomNumber: string | null) => {
     setRoomId(newRoomId);
     setRoomNumber(newRoomNumber);
-    // Auto-fill label if empty
-    if (newRoomNumber && !label.trim()) {
-      setLabel(`Room ${newRoomNumber}`);
+    const auto = computeAutoLabel(newRoomNumber, keyRole, subRoomLabel);
+    if (auto && !label.trim()) setLabel(auto);
+  };
+
+  const handleRoleChange = (role: LockboxSlotKeyRole | null) => {
+    setKeyRole(role);
+    const auto = computeAutoLabel(roomNumber, role, subRoomLabel);
+    if (auto) setLabel(auto);
+  };
+
+  const handleSubRoomChange = (value: string) => {
+    setSubRoomLabel(value);
+    if (keyRole === 'sub_room') {
+      const auto = computeAutoLabel(roomNumber, keyRole, value);
+      if (auto) setLabel(auto);
     }
   };
 
@@ -58,6 +82,8 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
           room_number: roomNumber || null,
           quantity,
           status: 'in_box',
+          key_role: keyRole,
+          sub_room_label: keyRole === 'sub_room' ? (subRoomLabel.trim() || null) : null,
         })
         .select()
         .single();
@@ -82,6 +108,8 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
       setRoomNumber(null);
       setQuantity(1);
       setNotes("");
+      setKeyRole(null);
+      setSubRoomLabel("");
     } catch (error) {
       logger.error('Error adding slot:', error);
       toast.error(getErrorMessage(error) || "Failed to add key slot");
@@ -128,6 +156,15 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
               Link this slot to a room — search by number, judge, or building.
             </p>
           </div>
+
+          <KeyRoleFields
+            keyRole={keyRole}
+            subRoomLabel={subRoomLabel}
+            onKeyRoleChange={handleRoleChange}
+            onSubRoomLabelChange={handleSubRoomChange}
+            disabled={isCreating}
+          />
+
 
           <div className="space-y-2">
             <Label>Key Quantity</Label>

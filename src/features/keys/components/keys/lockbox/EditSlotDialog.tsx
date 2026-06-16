@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, Edit3 } from "lucide-react";
-import { LockboxSlot } from "../types/LockboxTypes";
+import { LockboxSlot, LockboxSlotKeyRole } from "../types/LockboxTypes";
 import { useQuery } from "@tanstack/react-query";
 import { RoomSelector } from "./RoomSelector";
+import { KeyRoleFields } from "./KeyRoleFields";
 
 interface EditSlotDialogProps {
   slot: LockboxSlot | null;
@@ -26,6 +27,8 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [targetLockboxId, setTargetLockboxId] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [keyRole, setKeyRole] = useState<LockboxSlotKeyRole | null>(null);
+  const [subRoomLabel, setSubRoomLabel] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
   const { data: lockboxes } = useQuery({
@@ -49,6 +52,8 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
       setRoomNumber(slot.room_number || null);
       setTargetLockboxId(slot.lockbox_id);
       setQuantity(slot.quantity || 1);
+      setKeyRole(slot.key_role ?? null);
+      setSubRoomLabel(slot.sub_room_label ?? "");
     }
   }, [slot]);
 
@@ -70,6 +75,8 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
         room_id: roomId,
         room_number: roomNumber || null,
         quantity: quantity,
+        key_role: keyRole,
+        sub_room_label: keyRole === 'sub_room' ? (subRoomLabel.trim() || null) : null,
         updated_at: new Date().toISOString()
       };
 
@@ -159,6 +166,14 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
             Link this key slot to a room in the system
           </p>
         </div>
+
+        <KeyRoleFields
+          keyRole={keyRole}
+          subRoomLabel={subRoomLabel}
+          onKeyRoleChange={setKeyRole}
+          onSubRoomLabelChange={setSubRoomLabel}
+          disabled={isUpdating}
+        />
 
         <div className="space-y-2">
           <Label>Number of Keys <span className="text-destructive">*</span></Label>

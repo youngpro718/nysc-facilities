@@ -51,7 +51,7 @@ export function CommandCenter() {
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="flex items-center justify-between gap-3">
           <span>Couldn't load command center metrics.</span>
-          <Button variant="outline" size="sm" onClick={refetch}>
+          <Button variant="outline" size="sm" onClick={() => { refetch(); }}>
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
             Retry
           </Button>
@@ -150,7 +150,7 @@ export function CommandCenter() {
             {metrics.issues.avg_resolution_time_hours ? ` · ${metrics.issues.avg_resolution_time_hours}h avg resolution` : ''}
           </p>
         </div>
-        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={refetch}>
+        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={() => { refetch(); }}>
           <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
           Refresh
         </Button>

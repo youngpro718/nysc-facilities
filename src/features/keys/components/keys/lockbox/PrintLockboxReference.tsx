@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import { LockboxSlot, LockboxWithSlotCount, getSlotDisplayTitle } from "../types/LockboxTypes";
+import { LockboxSlot, LockboxWithSlotCount, getSlotDisplayTitle, getKeyRoleLabel } from "../types/LockboxTypes";
 import { format } from "date-fns";
 
 interface PrintLockboxReferenceProps {
@@ -27,15 +27,19 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
       }
     };
 
-    const rows = slots.map(slot => `
+    const rows = slots.map(slot => {
+      const role = getKeyRoleLabel(slot.key_role, slot.sub_room_label);
+      return `
       <tr>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center;font-weight:600">${esc(String(slot.slot_number))}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd">${esc(getSlotDisplayTitle(slot))}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd">${slot.room_number ? esc(slot.room_number) : '—'}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ddd">${role ? esc(role) : '—'}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center">${statusLabel(slot.status)}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center">${slot.quantity > 1 ? slot.quantity : '1'}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -48,7 +52,7 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
           .meta { color: #666; font-size: 13px; margin-bottom: 16px; }
           table { width: 100%; border-collapse: collapse; font-size: 13px; }
           th { background: #f5f5f5; padding: 8px 10px; text-align: left; border-bottom: 2px solid #ccc; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-          th:first-child, th:nth-child(4), th:nth-child(5) { text-align: center; }
+          th:first-child, th:nth-child(5), th:nth-child(6) { text-align: center; }
           .footer { margin-top: 20px; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 8px; }
         </style>
       </head>
@@ -65,6 +69,7 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
               <th style="width:50px">Slot</th>
               <th>Label</th>
               <th>Room</th>
+              <th>Key Role</th>
               <th style="width:90px">Status</th>
               <th style="width:50px">Qty</th>
             </tr>
