@@ -86,9 +86,23 @@ export function LockboxSlotCard({ slot, onClick, lockboxName }: LockboxSlotCardP
           {slot.slot_number}
         </div>
         <div className="min-w-0">
-          <h4 className="font-semibold text-sm sm:text-base truncate">
-            {getSlotDisplayTitle(slot)}
-          </h4>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <h4 className="font-semibold text-sm sm:text-base truncate">
+              {getSlotDisplayTitle(slot)}
+            </h4>
+            {(() => {
+              const roleLabel = getKeyRoleLabel(slot.key_role, slot.sub_room_label);
+              if (!roleLabel) return null;
+              return (
+                <span className={cn(
+                  "text-[10px] font-semibold px-1.5 py-0.5 rounded border whitespace-nowrap",
+                  getKeyRoleChipClasses(slot.key_role)
+                )}>
+                  {roleLabel}
+                </span>
+              );
+            })()}
+          </div>
           <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {lockboxName && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1 font-medium">
