@@ -29,14 +29,36 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
+  const [keyRole, setKeyRole] = useState<LockboxSlotKeyRole | null>(null);
+  const [subRoomLabel, setSubRoomLabel] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  // Build the auto label from room + role; users can still override.
+  const computeAutoLabel = (rNum: string | null, role: LockboxSlotKeyRole | null, sub: string) => {
+    const base = rNum ? `Room ${rNum}` : '';
+    const suffix = getKeyRoleLabel(role, sub);
+    if (base && suffix) return `${base} — ${suffix}`;
+    return base || suffix || '';
+  };
 
   const handleRoomChange = (newRoomId: string | null, newRoomNumber: string | null) => {
     setRoomId(newRoomId);
     setRoomNumber(newRoomNumber);
-    // Auto-fill label if empty
-    if (newRoomNumber && !label.trim()) {
-      setLabel(`Room ${newRoomNumber}`);
+    const auto = computeAutoLabel(newRoomNumber, keyRole, subRoomLabel);
+    if (auto && !label.trim()) setLabel(auto);
+  };
+
+  const handleRoleChange = (role: LockboxSlotKeyRole | null) => {
+    setKeyRole(role);
+    const auto = computeAutoLabel(roomNumber, role, subRoomLabel);
+    if (auto) setLabel(auto);
+  };
+
+  const handleSubRoomChange = (value: string) => {
+    setSubRoomLabel(value);
+    if (keyRole === 'sub_room') {
+      const auto = computeAutoLabel(roomNumber, keyRole, value);
+      if (auto) setLabel(auto);
     }
   };
 
