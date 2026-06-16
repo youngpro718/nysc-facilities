@@ -75,6 +75,8 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
         room_id: roomId,
         room_number: roomNumber || null,
         quantity: quantity,
+        key_role: keyRole,
+        sub_room_label: keyRole === 'sub_room' ? (subRoomLabel.trim() || null) : null,
         updated_at: new Date().toISOString()
       };
 
