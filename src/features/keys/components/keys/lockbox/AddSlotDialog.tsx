@@ -157,6 +157,15 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
             </p>
           </div>
 
+          <KeyRoleFields
+            keyRole={keyRole}
+            subRoomLabel={subRoomLabel}
+            onKeyRoleChange={handleRoleChange}
+            onSubRoomLabelChange={handleSubRoomChange}
+            disabled={isCreating}
+          />
+
+
           <div className="space-y-2">
             <Label>Key Quantity</Label>
             <Input 
