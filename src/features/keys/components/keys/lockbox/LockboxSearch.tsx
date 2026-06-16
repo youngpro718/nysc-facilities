@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Link2Off, CircleDashed, Package } from "lucide-react";
-import { LockboxSlot, getRoomLinkStatus } from "../types/LockboxTypes";
+import { LockboxSlot, getRoomLinkStatus, getKeyRoleLabel } from "../types/LockboxTypes";
 import { LockboxSlotCard } from "./LockboxSlotCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
