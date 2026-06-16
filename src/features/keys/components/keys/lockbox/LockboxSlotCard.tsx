@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { LockboxSlot, getRoomLinkStatus, getSlotDisplayTitle, slotHasRoomLink } from "../types/LockboxTypes";
+import { LockboxSlot, getRoomLinkStatus, getSlotDisplayTitle, slotHasRoomLink, getKeyRoleLabel, getKeyRoleChipClasses } from "../types/LockboxTypes";
 import { Key, AlertTriangle, CheckCircle, Archive, Link2, Link2Off, CircleDashed, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
