@@ -8,6 +8,13 @@ export interface Lockbox {
 
 export type LockboxSlotStatus = 'in_box' | 'checked_out' | 'missing' | 'retired';
 
+export type LockboxSlotKeyRole =
+  | 'main_door'
+  | 'top_lock'
+  | 'bottom_lock'
+  | 'sub_room'
+  | 'other';
+
 export interface LockboxSlot {
   id: string;
   lockbox_id: string;
@@ -18,6 +25,8 @@ export interface LockboxSlot {
   key_id?: string;
   status: LockboxSlotStatus;
   quantity: number;
+  key_role?: LockboxSlotKeyRole | null;
+  sub_room_label?: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
