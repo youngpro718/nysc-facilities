@@ -150,7 +150,7 @@ export function CommandCenter() {
             {metrics.issues.avg_resolution_time_hours ? ` · ${metrics.issues.avg_resolution_time_hours}h avg resolution` : ''}
           </p>
         </div>
-        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={refetch}>
+        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={() => { refetch(); }}>
           <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
           Refresh
         </Button>
