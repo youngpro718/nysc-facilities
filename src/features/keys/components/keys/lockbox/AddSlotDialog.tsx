@@ -82,6 +82,8 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
           room_number: roomNumber || null,
           quantity,
           status: 'in_box',
+          key_role: keyRole,
+          sub_room_label: keyRole === 'sub_room' ? (subRoomLabel.trim() || null) : null,
         })
         .select()
         .single();
@@ -106,6 +108,8 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
       setRoomNumber(null);
       setQuantity(1);
       setNotes("");
+      setKeyRole(null);
+      setSubRoomLabel("");
     } catch (error) {
       logger.error('Error adding slot:', error);
       toast.error(getErrorMessage(error) || "Failed to add key slot");
