@@ -27,6 +27,8 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
   const [roomNumber, setRoomNumber] = useState<string | null>(null);
   const [targetLockboxId, setTargetLockboxId] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [keyRole, setKeyRole] = useState<LockboxSlotKeyRole | null>(null);
+  const [subRoomLabel, setSubRoomLabel] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
   const { data: lockboxes } = useQuery({
@@ -50,6 +52,8 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
       setRoomNumber(slot.room_number || null);
       setTargetLockboxId(slot.lockbox_id);
       setQuantity(slot.quantity || 1);
+      setKeyRole(slot.key_role ?? null);
+      setSubRoomLabel(slot.sub_room_label ?? "");
     }
   }, [slot]);
 
