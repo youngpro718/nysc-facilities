@@ -167,6 +167,14 @@ export function EditSlotDialog({ slot, open, onOpenChange, onSuccess }: EditSlot
           </p>
         </div>
 
+        <KeyRoleFields
+          keyRole={keyRole}
+          subRoomLabel={subRoomLabel}
+          onKeyRoleChange={setKeyRole}
+          onSubRoomLabelChange={setSubRoomLabel}
+          disabled={isUpdating}
+        />
+
         <div className="space-y-2">
           <Label>Number of Keys <span className="text-destructive">*</span></Label>
           <Input
