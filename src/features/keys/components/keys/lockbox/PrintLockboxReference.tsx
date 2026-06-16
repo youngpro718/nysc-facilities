@@ -27,15 +27,19 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
       }
     };
 
-    const rows = slots.map(slot => `
+    const rows = slots.map(slot => {
+      const role = getKeyRoleLabel(slot.key_role, slot.sub_room_label);
+      return `
       <tr>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center;font-weight:600">${esc(String(slot.slot_number))}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd">${esc(getSlotDisplayTitle(slot))}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd">${slot.room_number ? esc(slot.room_number) : '—'}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ddd">${role ? esc(role) : '—'}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center">${statusLabel(slot.status)}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #ddd;text-align:center">${slot.quantity > 1 ? slot.quantity : '1'}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     printWindow.document.write(`
       <!DOCTYPE html>
