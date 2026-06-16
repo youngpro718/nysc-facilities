@@ -46,13 +46,16 @@ export function LockboxSearch({ slots, allSlots, onSlotClick, lockboxName, selec
     const searchStr = query.toLowerCase();
     const source = allSlots && allSlots.length > 0 ? allSlots : (slots as AllSlotEntry[]);
     return source.filter(slot => {
+      const roleLabel = getKeyRoleLabel(slot.key_role, slot.sub_room_label)?.toLowerCase();
       return (
         slot.label?.toLowerCase().includes(searchStr) ||
         String(slot.slot_number).includes(searchStr) ||
         slot.room_number?.toLowerCase().includes(searchStr) ||
         slot.room?.name?.toLowerCase().includes(searchStr) ||
         slot.room?.room_number?.toLowerCase().includes(searchStr) ||
-        slot.lockbox?.name?.toLowerCase().includes(searchStr)
+        slot.lockbox?.name?.toLowerCase().includes(searchStr) ||
+        slot.sub_room_label?.toLowerCase().includes(searchStr) ||
+        roleLabel?.includes(searchStr)
       );
     });
   }, [isSearching, query, allSlots, slots]);
