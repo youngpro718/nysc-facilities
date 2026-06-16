@@ -11,6 +11,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
 import { RoomSelector } from "./RoomSelector";
+import { KeyRoleFields } from "./KeyRoleFields";
+import { LockboxSlotKeyRole, getKeyRoleLabel } from "../types/LockboxTypes";
 
 interface AddSlotDialogProps {
   lockboxId: string;
