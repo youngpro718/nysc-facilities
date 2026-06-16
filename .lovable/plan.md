@@ -1,61 +1,47 @@
-## Audit summary
+# Lockbox: support top/bottom locks and sub-room keys
 
-Two parallel investigations turned up one critical wiring bug, two real UX gaps on the Tasks page, and a small set of low-severity polish items. Fixing as I go, smallest-impact first.
+## Goal
+A single room (e.g. 1416 MDC) can need several physical keys: top lock, bottom lock, a main-door key, and keys for inner sub-rooms. Today every key is just a free-text label, so they're easy to mix up and impossible to filter. We'll keep today's "one slot = one key" model but add structured fields so each slot clearly says **what** key it is and **which** part of the room it opens.
 
-## Findings & fixes
+## What changes for you
 
-### A. Tasks page — "tasks I created don't appear" (the reported issue)
+1. **New "Key Role" field on every slot** with these options:
+   - Main Door
+   - Top Lock
+   - Bottom Lock
+   - Sub-Room  *(reveals a "Sub-room name" text field, e.g. "Treatment Office")*
+   - Other  *(reveals a free-text "Describe" field)*
 
-**Root cause:** The `/tasks` page has two views — a court-aide layout and an admin/manager layout. Standard users land on the admin layout, which fetches `staff_tasks` with no `created_by` filter. Their own pending/active requests *are* fetched by RLS, but the page has **no tab that surfaces them as "mine"**, so they look like they vanish. The dedicated "My Requests" view (`UserTasksTab`) is wired into `/my-activity` only.
+2. **Room link stays the same.** A slot still points to the parent Room (1416 MDC). The role tells you which lock on that room.
 
-There's also a small bug in the court-aide view: the `My Tasks` bucket is hardcoded to `['claimed', 'in_progress']`, so a task an aide just approved-and-claimed shows up but a task they're assigned to but is still `pending_approval` or `approved` is hidden from their personal tab.
+3. **Auto-label.** When you pick a room + role, the label auto-fills: "Room 1416 MDC — Top Lock", "Room 1416 MDC — Sub-Room: Treatment Office". You can still edit it.
 
-**Fixes (`src/features/tasks/pages/Tasks.tsx`):**
-1. For **non-manager / non-court-aide roles**, render the existing `<UserTasksTab />` instead of the admin layout. Same component used on My Activity, single source of truth — no duplicate code.
-2. For the **court aide** layout, expand `myTasks` to also include tasks where `assigned_to === user.id` regardless of status (still excluding completed/cancelled/rejected). So an aide always sees everything currently on their plate.
-3. Add a tiny "My Submissions" count to the admin layout header so managers can see how many tasks they themselves created — non-blocking, helps them too.
+4. **Visual tags on each slot card.** A small colored chip next to the room name:
+   - 🟦 Top Lock / Bottom Lock
+   - 🟪 Sub-Room: *name*
+   - 🟩 Main Door
+   - ⬜ Other
+   This makes a flat list still scannable when one room has 3–4 slots.
 
-### B. Facilities Manager sidebar — Term Sheet & Profile are dead clicks 🔴
+5. **Search & filter.** The lockbox search will match the role and sub-room name, so typing "treatment" finds the sub-room slot and "top lock" filters across the whole box.
 
-**Root cause:** `getRoleBasedNavigation` (`navigation.tsx:127-141`) emits 11 nav items for `facilities_manager`, but `getNavigationRoutes` (`navigation.tsx:239-252`) emits only 10 — the `'/term-sheet'` entry is missing between `'/tasks'` and the separator. Sidebar maps `routes[i]` to each nav item, so Term Sheet ends up with `''` (no-op), the separator slides to the wrong index, and Profile gets `undefined → ''` too. **Both buttons silently do nothing.**
+6. **Print sheet.** The printed lockbox reference will show the role chip next to each slot.
 
-**Fix (`src/components/layout/config/navigation.tsx`):** Insert `'/term-sheet'` into the facilities_manager routes array between `'/tasks'` and the separator. One-line change, no other side effects.
+## Sub-rooms
+You said sub-rooms are mixed — some exist in Spaces, some don't. To avoid blocking you on cleaning that up, this plan does **not** require sub-rooms to exist as their own Room records. The "Sub-Room" role just stores a name string on the slot. Later, if you want, we can do a separate pass to link those strings to real sub-room records in Spaces.
 
-### C. Stale `/court-aide-dashboard` redirect 🟡
+## Migration / backfill
+- Add two nullable columns to `lockbox_slots`: `key_role` (enum: main_door, top_lock, bottom_lock, sub_room, other) and `sub_room_label` (text).
+- Existing slots stay as-is with `key_role = null` and render as "Unspecified" (no chip) until you edit them. Nothing breaks.
+- A best-effort backfill scans existing labels for "top lock" / "bottom lock" / "main" and pre-fills the role so you don't have to re-tag everything by hand. You can correct anything wrong.
 
-`App.tsx:134` still redirects `/court-aide-dashboard → /tasks`, but court_aide's actual home is `/work-center`. Anyone with the old link lands on the wrong place.
+## Technical details
+- DB migration: add columns + enum, index on `(lockbox_id, room_id, key_role)`, RLS unchanged.
+- Files touched: `LockboxTypes.ts`, `AddSlotDialog.tsx`, `EditSlotDialog.tsx`, `LockboxSlotCard.tsx`, `LockboxSlotDialog.tsx`, `LockboxSearch.tsx`, `PrintLockboxReference.tsx`, `BulkAddChambersDialog.tsx` (default role = Main Door for chambers).
+- `getSlotDisplayTitle` extended to append the role suffix when present.
+- No change to status, checkout flow, or activity logs.
 
-**Fix (`src/App.tsx`):** Update the redirect target to `/work-center`. Also remove the stale `/court-aide-dashboard` row in `routes.ts` (label still says "Supply Staff Dashboard") to avoid confusing breadcrumbs.
-
-### D. Missing routes.ts entries (breadcrumb gaps) ⚠️
-
-These pages exist and render fine, but `src/config/routes.ts` has no metadata for them so breadcrumbs are blank:
-- `/work-center`
-- `/notifications`
-- `/issues`, `/maintenance`, `/lighting` (they redirect into `/operations`, but the breadcrumb shows empty during the redirect)
-- `/admin/routing-rules`, `/admin/form-templates`
-
-**Fix:** Add the seven missing entries to `routes.ts` with labels + parent routes. Cosmetic only, low risk.
-
-### E. Court Officer / Purchasing — Profile unreachable from sidebar ⚠️
-
-Neither role has a Profile entry in their sidebar (`navigation.tsx:155-169`), so the only way in is typing `/profile`. Sign-out is in the footer separately, so accounts still work.
-
-**Fix:** Add a `{ type: 'separator' }` + `{ title: 'Profile', icon: User }` to both arrays, and append `''` + `'/profile'` to their corresponding routes arrays. Mirrors what every other role already has.
-
-## Out of scope (this pass)
-
-- `CompactActivitySection` empty-state polish for the standard user dashboard — flagged as Low. Will revisit if you hit it.
-- `staff_tasks` RLS policy verification against the live DB — the code path is correct; if regular users still see nothing after fix A, that's the next thing to check, but I don't want to touch RLS unless we confirm.
-- Supply fulfillment panel scope — not flagged as broken in the audit, leaving alone.
-
-## Files touched
-
-| File | Change |
-|---|---|
-| `src/features/tasks/pages/Tasks.tsx` | Route standard users to `UserTasksTab`; expand court-aide `myTasks` bucket |
-| `src/components/layout/config/navigation.tsx` | Add `/term-sheet` to facilities_manager routes; add Profile to court_officer + purchasing nav and routes |
-| `src/App.tsx` | Redirect `/court-aide-dashboard` → `/work-center` |
-| `src/config/routes.ts` | Add missing breadcrumb entries; drop stale `/court-aide-dashboard` row |
-
-No DB migrations, no RLS changes.
+## Out of scope (ask separately if wanted)
+- Promoting sub-rooms into real Room records in Spaces.
+- Multiple keys grouped under one parent slot (the "parent + child entries" model).
+- Linking slots to specific `doors` rows.
