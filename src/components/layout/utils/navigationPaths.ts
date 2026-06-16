@@ -31,6 +31,7 @@ const BASE_PATH_MAP: Record<string, string> = {
   // Court officers don't have /my-activity in their nav, so 'Reports' takes
   // them directly to the standalone /my-issues queue.
   'Reports': '/my-issues',
+  'Courtrooms': '/courtrooms',
   'Admin Center': '/admin',
   'Admin Profile': '/admin',
   'Profile': '/profile',
@@ -115,6 +116,7 @@ export function getNavigationDescription(title: string): string {
     'My Requests': 'View your submitted requests',
     'My Issues': 'Track your reported issues',
     'Reports': 'Report and track issues',
+    'Courtrooms': 'Courtroom directory',
     'My Activity': 'Track all your requests',
     'Admin Center': 'Team & user management',
     'Admin Profile': 'Team & user management',

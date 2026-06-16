@@ -152,12 +152,15 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
 
-  // Court Officer (Major / Security) navigation — keys plus a Reports view
-  // so they can file and track issues they see on the floor.
+  // Court Officer (Major / Security) navigation. Keys + Reports for their
+  // primary workflow; Courtrooms + Term Sheet so they can answer "where's
+  // Judge Smith?" / "what's Part 30?" at the front desk.
   if (userRole === 'court_officer') {
     return [
       { title: 'Keys', icon: KeyRound },
       { title: 'Reports', icon: AlertTriangle },
+      { title: 'Courtrooms', icon: Gavel },
+      { title: 'Term Sheet', icon: FileText },
       { type: "separator" },
       { title: 'Profile', icon: User },
     ];
@@ -270,11 +273,14 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
 
-  // Court Officer (Major / Security) routes — keys plus their issue queue
+  // Court Officer (Major / Security) routes — keys + reports + read-only
+  // courtroom directory + the shared Term Sheet view.
   if (userRole === 'court_officer') {
     return [
       '/keys',
       '/my-issues',
+      '/courtrooms',
+      '/term-sheet',
       '', // Separator
       '/profile',
     ];

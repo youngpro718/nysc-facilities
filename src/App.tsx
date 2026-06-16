@@ -59,6 +59,7 @@ const AccessManagement = lazy(() => import("@features/occupants/pages/AccessMana
 const SupplyRoom = lazy(() => import("@features/supply/pages/SupplyRoom"));
 const Notifications = lazy(() => import("@features/dashboard/pages/Notifications"));
 const TermSheet = lazy(() => import("@features/court/pages/TermSheet"));
+const Courtrooms = lazy(() => import("@features/court/pages/Courtrooms"));
 
 // Named exports need destructuring inside the factory
 const InventoryDashboard = lazy(() =>
@@ -282,6 +283,11 @@ function AppContent() {
           <Route path="/term-sheet" element={
             <ProtectedRoute>
               <TermSheet />
+            </ProtectedRoute>
+          } />
+          <Route path="/courtrooms" element={
+            <ProtectedRoute>
+              <Courtrooms />
             </ProtectedRoute>
           } />
           <Route path="/work-center" element={
