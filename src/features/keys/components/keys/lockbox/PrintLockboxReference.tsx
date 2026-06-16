@@ -69,6 +69,7 @@ export function PrintLockboxReference({ lockbox, slots }: PrintLockboxReferenceP
               <th style="width:50px">Slot</th>
               <th>Label</th>
               <th>Room</th>
+              <th>Key Role</th>
               <th style="width:90px">Status</th>
               <th style="width:50px">Qty</th>
             </tr>
