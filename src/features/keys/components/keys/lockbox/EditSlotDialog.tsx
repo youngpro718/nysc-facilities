@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, Edit3 } from "lucide-react";
-import { LockboxSlot } from "../types/LockboxTypes";
+import { LockboxSlot, LockboxSlotKeyRole } from "../types/LockboxTypes";
 import { useQuery } from "@tanstack/react-query";
 import { RoomSelector } from "./RoomSelector";
+import { KeyRoleFields } from "./KeyRoleFields";
 
 interface EditSlotDialogProps {
   slot: LockboxSlot | null;
