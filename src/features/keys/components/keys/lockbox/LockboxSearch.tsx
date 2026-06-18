@@ -121,12 +121,12 @@ export function LockboxSearch({ slots, allSlots, onSlotClick, lockboxName, selec
           >
             Needs attention
             {attentionCount > 0 && (
-              <Badge
-                variant="secondary"
-                className="ml-2 h-5 px-1.5 tabular bg-transparent border border-current/30"
-              >
+              // text-current makes the count inherit the button's text color
+              // (white when active/navy, foreground when outline). Without
+              // this, secondary-foreground stays dark and disappears on navy.
+              <span className="ml-2 inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-sm border border-current/30 px-1.5 text-xs font-medium tabular text-current">
                 {attentionCount}
-              </Badge>
+              </span>
             )}
           </Button>
         )}

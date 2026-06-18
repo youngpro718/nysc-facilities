@@ -85,21 +85,34 @@ function getStatusConfig(status: string): StatusConfig {
   }
 }
 
-// Build the second-line detail string: role · linked / unlinked status.
-function buildSubtitle(slot: LockboxSlot): string {
-  const parts: string[] = [];
+// Renders the second-line detail: role · linked|unlinked.
+// linked is emerald, unlinked is amber — the text color carries the link
+// status at a glance, supplementing (not replacing) the small Link2Off icon
+// in the status badge column.
+function SubtitleLine({ slot }: { slot: LockboxSlot }) {
   const role = getKeyRoleLabel(slot.key_role, slot.sub_room_label);
-  if (role) parts.push(role);
   const linkStatus = getRoomLinkStatus(slot);
-  if (linkStatus === 'linked') parts.push('linked');
-  else if (linkStatus === 'unlinked') parts.push('unlinked');
-  return parts.join(' · ');
+  const hasRole = !!role;
+  const showLink = linkStatus === 'linked' || linkStatus === 'unlinked';
+  if (!hasRole && !showLink) return null;
+
+  return (
+    <div className="text-xs text-muted-foreground truncate mt-0.5 flex items-center gap-1.5">
+      {hasRole && <span className="truncate">{role}</span>}
+      {hasRole && showLink && <span aria-hidden="true">·</span>}
+      {linkStatus === 'linked' && (
+        <span className="font-medium text-emerald-600 dark:text-emerald-400">linked</span>
+      )}
+      {linkStatus === 'unlinked' && (
+        <span className="font-medium text-amber-600 dark:text-amber-400">unlinked</span>
+      )}
+    </div>
+  );
 }
 
 export function LockboxSlotCard({ slot, onClick, lockboxName }: LockboxSlotCardProps) {
   const status = getStatusConfig(slot.status);
   const linkStatus = getRoomLinkStatus(slot);
-  const subtitle = buildSubtitle(slot);
   const paddedSlot = String(slot.slot_number).padStart(3, '0');
 
   // Holder/location column content: depends on operational state. For now
@@ -141,11 +154,7 @@ export function LockboxSlotCard({ slot, onClick, lockboxName }: LockboxSlotCardP
         <div className="font-medium text-sm truncate text-foreground">
           {getSlotDisplayTitle(slot)}
         </div>
-        {subtitle && (
-          <div className="text-xs text-muted-foreground truncate mt-0.5">
-            {subtitle}
-          </div>
-        )}
+        <SubtitleLine slot={slot} />
       </div>
 
       {/* Location / holder column — hidden on small screens */}
