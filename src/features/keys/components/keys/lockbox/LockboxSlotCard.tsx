@@ -1,7 +1,25 @@
-import { Badge } from "@/components/ui/badge";
-import { LockboxSlot, getRoomLinkStatus, getSlotDisplayTitle, slotHasRoomLink, getKeyRoleLabel, getKeyRoleChipClasses } from "../types/LockboxTypes";
-import { Key, AlertTriangle, CheckCircle, Archive, Link2, Link2Off, CircleDashed, Package } from "lucide-react";
+/**
+ * LockboxSlotCard — quiet row layout for the lockbox table.
+ *
+ * Design philosophy: routine keys use a quiet graphite tag. A slim status
+ * rail and warmer exception tags make scanning fast without flooding the
+ * page with green. The "Available" state (90%+ of slots) has no rail, no
+ * tinted background, no colored slot circle — just a slate dot + outlined
+ * "Available" tag. Color is reserved for genuine operational exceptions:
+ *   - Checked out → amber rail + amber dot/tag
+ *   - Missing    → red rail + red dot/tag
+ *   - Retired    → quiet greyscale
+ */
+
+import { Package, Link2Off } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  LockboxSlot,
+  getRoomLinkStatus,
+  getSlotDisplayTitle,
+  getKeyRoleLabel,
+} from "../types/LockboxTypes";
 
 interface LockboxSlotCardProps {
   slot: LockboxSlot;
@@ -10,121 +28,159 @@ interface LockboxSlotCardProps {
   lockboxLocation?: string;
 }
 
-function getStatusConfig(status: string) {
+interface StatusConfig {
+  rail: string;
+  dotClass: string;
+  label: string;
+  tagClass: string;
+  action: string;
+}
+
+function getStatusConfig(status: string): StatusConfig {
   switch (status) {
-    case 'in_box': return { border: 'border-l-green-500', bg: 'bg-green-50/50 dark:bg-green-950/10', label: 'Available' };
-    case 'checked_out': return { border: 'border-l-orange-500', bg: 'bg-orange-50/50 dark:bg-orange-950/10', label: 'Checked Out' };
-    case 'missing': return { border: 'border-l-destructive', bg: 'bg-red-50/50 dark:bg-red-950/10', label: 'Missing' };
-    case 'retired': return { border: 'border-l-muted-foreground/40', bg: 'bg-muted/30', label: 'Retired' };
-    default: return { border: 'border-l-border', bg: '', label: status };
+    case 'in_box':
+      return {
+        rail: '', // no rail for routine state — the "quiet" treatment
+        dotClass: 'bg-slate-400 dark:bg-slate-500',
+        label: 'Available',
+        tagClass: 'border-border text-muted-foreground bg-transparent',
+        action: 'Open',
+      };
+    case 'checked_out':
+      return {
+        rail: 'border-l-2 border-l-amber-500',
+        dotClass: 'bg-amber-500',
+        label: 'Checked out',
+        tagClass:
+          'border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/[0.08]',
+        action: 'Check in',
+      };
+    case 'missing':
+      return {
+        rail: 'border-l-2 border-l-red-500',
+        dotClass: 'bg-red-500',
+        label: 'Missing',
+        tagClass:
+          'border-red-500/40 text-red-700 dark:text-red-300 bg-red-500/[0.08]',
+        action: 'Review',
+      };
+    case 'retired':
+      return {
+        rail: '',
+        dotClass: 'bg-muted-foreground/40',
+        label: 'Retired',
+        tagClass: 'border-border text-muted-foreground bg-transparent',
+        action: 'View',
+      };
+    default:
+      return {
+        rail: '',
+        dotClass: 'bg-muted-foreground/40',
+        label: status,
+        tagClass: 'border-border text-muted-foreground bg-transparent',
+        action: 'View',
+      };
   }
 }
 
+// Build the second-line detail string: role · linked / unlinked status.
+function buildSubtitle(slot: LockboxSlot): string {
+  const parts: string[] = [];
+  const role = getKeyRoleLabel(slot.key_role, slot.sub_room_label);
+  if (role) parts.push(role);
+  const linkStatus = getRoomLinkStatus(slot);
+  if (linkStatus === 'linked') parts.push('linked');
+  else if (linkStatus === 'unlinked') parts.push('unlinked');
+  return parts.join(' · ');
+}
+
 export function LockboxSlotCard({ slot, onClick, lockboxName }: LockboxSlotCardProps) {
-  const statusConfig = getStatusConfig(slot.status);
+  const status = getStatusConfig(slot.status);
+  const linkStatus = getRoomLinkStatus(slot);
+  const subtitle = buildSubtitle(slot);
+  const paddedSlot = String(slot.slot_number).padStart(3, '0');
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'in_box':
-        return <Badge className="bg-green-500 hover:bg-green-600 text-xs"><CheckCircle className="w-3 h-3 mr-1" /> Available</Badge>;
-      case 'checked_out':
-        return <Badge variant="destructive" className="bg-orange-500 hover:bg-orange-600 text-xs"><Key className="w-3 h-3 mr-1" /> Out</Badge>;
-      case 'missing':
-        return <Badge variant="destructive" className="text-xs"><AlertTriangle className="w-3 h-3 mr-1" /> Missing</Badge>;
-      case 'retired':
-        return <Badge variant="secondary" className="text-xs"><Archive className="w-3 h-3 mr-1" /> Retired</Badge>;
-      default:
-        return <Badge variant="outline" className="text-xs">{status}</Badge>;
-    }
-  };
-
-  const roomLinkStatus = getRoomLinkStatus(slot);
-
-  const getRoomLinkIndicator = () => {
-    switch (roomLinkStatus) {
-      case 'linked':
-        return (
-          <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-            <Link2 className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline text-xs">Linked</span>
-          </span>
-        );
-      case 'unlinked':
-        return (
-          <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
-            <Link2Off className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-xs">Unlinked</span>
-          </span>
-        );
-      case 'no_room':
-        return (
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <CircleDashed className="w-3.5 h-3.5 shrink-0" />
-          </span>
-        );
-    }
-  };
+  // Holder/location column content: depends on operational state. For now
+  // we surface what we have — lockbox + slot position for routine state,
+  // the unlinked indicator for unlinked rooms, etc.
+  const holderLine = lockboxName || 'Lockbox';
+  const positionLine = `Position ${paddedSlot}`;
 
   return (
-    <div 
-      className={cn(
-        "flex items-center justify-between p-3 sm:p-4 border rounded-md hover:bg-muted/50 cursor-pointer transition-colors touch-manipulation",
-        "border-l-2",
-        statusConfig.border,
-        statusConfig.bg
-      )}
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onClick(slot)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick(slot);
+        }
+      }}
+      className={cn(
+        'group grid grid-cols-[3rem_minmax(0,1.6fr)_minmax(0,1fr)_auto_auto] items-center gap-3 sm:gap-4',
+        'border-b border-border last:border-b-0',
+        'px-3 sm:px-4 py-3',
+        'hover:bg-accent/40 transition-colors cursor-pointer touch-manipulation',
+        'focus:outline-none focus-visible:bg-accent/50',
+        status.rail,
+      )}
     >
-      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-        <div className={cn(
-          "flex items-center justify-center w-10 h-10 sm:w-10 sm:h-10 rounded-full font-bold text-base sm:text-lg shrink-0",
-          slot.status === 'in_box' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
-          slot.status === 'checked_out' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
-          slot.status === 'missing' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
-          'bg-muted'
-        )}>
-          {slot.slot_number}
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h4 className="font-semibold text-sm sm:text-base truncate">
-              {getSlotDisplayTitle(slot)}
-            </h4>
-            {(() => {
-              const roleLabel = getKeyRoleLabel(slot.key_role, slot.sub_room_label);
-              if (!roleLabel) return null;
-              return (
-                <span className={cn(
-                  "text-[10px] font-semibold px-1.5 py-0.5 rounded border whitespace-nowrap",
-                  getKeyRoleChipClasses(slot.key_role)
-                )}>
-                  {roleLabel}
-                </span>
-              );
-            })()}
-          </div>
-          <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            {lockboxName && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1 font-medium">
-                <Package className="w-3 h-3" />
-                {lockboxName}
-              </Badge>
-            )}
-            {slotHasRoomLink(slot) ? (
-              getRoomLinkIndicator()
-            ) : (
-              <span className="text-muted-foreground/60 italic">No room linked</span>
-            )}
-            {slot.quantity && slot.quantity > 1 && (
-              <span className="text-primary font-semibold">
-                ×{slot.quantity}
-              </span>
-            )}
-          </div>
-        </div>
+      {/* Slot number — quiet mono column, zero-padded */}
+      <div className="font-mono text-xs text-muted-foreground tabular shrink-0">
+        {paddedSlot}
       </div>
-      <div className="flex items-center shrink-0 ml-2">
-        {getStatusBadge(slot.status)}
+
+      {/* Key + subtitle */}
+      <div className="min-w-0">
+        <div className="font-medium text-sm truncate text-foreground">
+          {getSlotDisplayTitle(slot)}
+        </div>
+        {subtitle && (
+          <div className="text-xs text-muted-foreground truncate mt-0.5">
+            {subtitle}
+          </div>
+        )}
+      </div>
+
+      {/* Location / holder column — hidden on small screens */}
+      <div className="hidden sm:block min-w-0 text-xs text-muted-foreground">
+        <div className="truncate">{holderLine}</div>
+        <div className="truncate mt-0.5">{positionLine}</div>
+      </div>
+
+      {/* Status tag — squared, outlined, with a small dot */}
+      <div className="shrink-0">
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-[11px] font-medium',
+            status.tagClass,
+          )}
+        >
+          <span
+            aria-hidden="true"
+            className={cn('h-1.5 w-1.5 rounded-full', status.dotClass)}
+          />
+          {status.label}
+          {linkStatus === 'unlinked' && (
+            <Link2Off className="h-3 w-3 ml-1 text-amber-500" />
+          )}
+        </span>
+      </div>
+
+      {/* Action — quiet outlined button */}
+      <div className="shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 px-3 text-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick(slot);
+          }}
+        >
+          {status.action}
+        </Button>
       </div>
     </div>
   );
