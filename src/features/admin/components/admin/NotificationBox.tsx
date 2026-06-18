@@ -174,7 +174,7 @@ export const NotificationBox = () => {
       case 'issue_status_change':
         return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 dark:bg-red-900/20 dark:text-red-400';
       case 'court_assignment_change':
-        return 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 dark:bg-purple-900/20 dark:text-purple-400';
+        return 'bg-slate-100 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 dark:bg-slate-900/20 dark:text-slate-400';
       default:
         return 'bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400';
     }

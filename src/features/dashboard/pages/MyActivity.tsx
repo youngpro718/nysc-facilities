@@ -52,7 +52,7 @@ const supplyStatusConfig: Record<string, { icon: LucideIcon; label: string; colo
   pending: { icon: Clock, label: "Pending", color: "bg-yellow-500" },
   approved: { icon: CheckCircle, label: "Approved", color: "bg-green-500" },
   in_progress: { icon: Loader2, label: "In Progress", color: "bg-blue-500" },
-  ready: { icon: Package, label: "Ready for Pickup", color: "bg-purple-500" },
+  ready: { icon: Package, label: "Ready for Pickup", color: "bg-slate-500" },
   completed: { icon: CheckCircle, label: "Completed", color: "bg-green-600" },
   rejected: { icon: XCircle, label: "Rejected", color: "bg-red-500" },
   cancelled: { icon: XCircle, label: "Cancelled", color: "bg-gray-500" },

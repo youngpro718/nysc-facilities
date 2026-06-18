@@ -598,7 +598,7 @@ export default function AdminCenter() {
                                         <span className={`h-2 w-2 rounded-full ${
                                           role.color === 'red' ? 'bg-red-500' :
                                           role.color === 'green' ? 'bg-green-500' :
-                                          role.color === 'purple' ? 'bg-purple-500' :
+                                          role.color === 'purple' ? 'bg-slate-500' :
                                           'bg-gray-500'
                                         }`} />
                                         {role.label}
@@ -662,7 +662,7 @@ export default function AdminCenter() {
                                       <span className={`h-2 w-2 rounded-full ${
                                         role.color === 'red' ? 'bg-red-500' :
                                         role.color === 'green' ? 'bg-green-500' :
-                                        role.color === 'purple' ? 'bg-purple-500' :
+                                        role.color === 'purple' ? 'bg-slate-500' :
                                         'bg-gray-500'
                                       }`} />
                                       {role.label}

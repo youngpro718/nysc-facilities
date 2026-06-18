@@ -110,7 +110,7 @@ export const ROOM_STATUS_COLORS: Record<RoomStatus, string> = {
   [RoomStatus.AVAILABLE]: 'bg-green-100 dark:bg-green-900/30 text-green-800',
   [RoomStatus.OCCUPIED]: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800',
   [RoomStatus.MAINTENANCE]: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800',
-  [RoomStatus.RESERVED]: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800',
+  [RoomStatus.RESERVED]: 'bg-slate-100 dark:bg-slate-900/30 text-slate-800',
   [RoomStatus.CLOSED]: 'bg-red-100 dark:bg-red-900/30 text-red-800',
   [RoomStatus.UNDER_CONSTRUCTION]: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800',
 };

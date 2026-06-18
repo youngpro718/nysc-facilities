@@ -38,7 +38,7 @@ interface RecentActivityWidgetProps {
 const typeConfig = {
   supply_request: { icon: Package, color: 'text-green-600 dark:text-green-400', label: 'Supply' },
   issue: { icon: AlertTriangle, color: 'text-orange-600 dark:text-orange-400', label: 'Issue' },
-  notification: { icon: Activity, color: 'text-purple-600 dark:text-purple-400', label: 'Update' },
+  notification: { icon: Activity, color: 'text-slate-600 dark:text-slate-400', label: 'Update' },
 };
 
 const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', icon: unknown }> = {

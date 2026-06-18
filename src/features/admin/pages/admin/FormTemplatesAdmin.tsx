@@ -66,7 +66,7 @@ export default function FormTemplatesAdmin() {
       supply_request: 'bg-green-100 dark:bg-green-900/30 text-green-800',
       maintenance_request: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800',
       issue_report: 'bg-red-100 dark:bg-red-900/30 text-red-800',
-      custom: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800',
+      custom: 'bg-slate-100 dark:bg-slate-900/30 text-slate-800',
     };
     return colors[type] || 'bg-gray-100 dark:bg-gray-800/30 text-gray-800';
   };
@@ -148,7 +148,7 @@ export default function FormTemplatesAdmin() {
             <CardTitle className="text-sm font-medium">Custom Forms</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+            <div className="text-2xl font-bold text-slate-600 dark:text-slate-400">
               {templates?.filter((t) => t.template_type === 'custom').length || 0}
             </div>
           </CardContent>

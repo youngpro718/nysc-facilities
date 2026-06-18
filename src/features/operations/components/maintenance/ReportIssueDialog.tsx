@@ -93,7 +93,7 @@ const ISSUE_TYPES = [
   { id: "MAINTENANCE",label: "Maintenance",     icon: Wrench,       color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30",  border: "border-orange-200 dark:border-orange-800" },
   { id: "CLEANING",   label: "Cleaning",        icon: Sparkles,     color: "text-green-500",  bg: "bg-green-50 dark:bg-green-950/30",    border: "border-green-200 dark:border-green-800" },
   { id: "SAFETY",     label: "Safety",          icon: AlertTriangle,color: "text-red-500",    bg: "bg-red-50 dark:bg-red-950/30",        border: "border-red-200 dark:border-red-800" },
-  { id: "SECURITY",   label: "Security",        icon: ShieldAlert,  color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-950/30",  border: "border-purple-200 dark:border-purple-800" },
+  { id: "SECURITY",   label: "Security",        icon: ShieldAlert,  color: "text-slate-500", bg: "bg-slate-50 dark:bg-slate-950/30",  border: "border-slate-200 dark:border-slate-800" },
   { id: "IT_TECH",    label: "IT / Tech",       icon: Wifi,         color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-950/30",  border: "border-indigo-200 dark:border-indigo-800" },
   { id: "PEST",       label: "Pest Control",    icon: Bug,          color: "text-amber-600",  bg: "bg-amber-50 dark:bg-amber-950/30",    border: "border-amber-200 dark:border-amber-800" },
   { id: "STRUCTURAL", label: "Structural",      icon: Building2,    color: "text-stone-500",  bg: "bg-stone-50 dark:bg-stone-950/30",    border: "border-stone-200 dark:border-stone-800" },

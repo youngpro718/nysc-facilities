@@ -30,7 +30,7 @@ const formTemplates = [
     title: 'General Request Form',
     description: 'For any facility-related request',
     icon: AlertCircle,
-    color: 'text-purple-500',
+    color: 'text-slate-500',
   },
 ];
 
@@ -193,8 +193,8 @@ export default function PublicForms() {
               {/* In-Person Submission */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-purple-500/10">
-                    <FileText className="w-5 h-5 text-purple-500" />
+                  <div className="p-2 rounded-lg bg-slate-500/10">
+                    <FileText className="w-5 h-5 text-slate-500" />
                   </div>
                   <h3 className="font-semibold">Option 3: In Person</h3>
                 </div>

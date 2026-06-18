@@ -89,7 +89,7 @@ export function UserStatsCards({
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <Shield className="h-5 w-5 text-slate-600 dark:text-slate-400" />
             <span className="text-2xl font-bold">{adminCount}</span>
           </div>
           <p className="text-sm font-medium">Admins</p>

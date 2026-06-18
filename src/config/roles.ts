@@ -116,7 +116,7 @@ export function getRoleBadgeClasses(roleValue: UserRole | string | null | undefi
     red: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
     blue: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
     green: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
-    purple: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',
+    purple: 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/20',
     orange: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20',
     amber: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
     gray: 'bg-gray-500/10 text-gray-700 border-gray-500/20',

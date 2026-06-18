@@ -102,7 +102,7 @@ import { getFriendlySupplyStatus, toneClasses } from '@/lib/statusLabels';
 const statusBorder: Record<string, string> = {
   submitted: 'border-l-blue-500',
   received: 'border-l-blue-500',
-  picking: 'border-l-purple-500',
+  picking: 'border-l-slate-500',
   ready: 'border-l-amber-500',
   completed: 'border-l-green-500',
   cancelled: 'border-l-muted-foreground',

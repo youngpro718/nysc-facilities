@@ -64,7 +64,7 @@ const statusConfig: Record<string, { icon: typeof Clock; label: string; border: 
   rejected: { icon: XCircle, label: "Rejected", border: "border-l-destructive" },
   received: { icon: Package, label: "Received", border: "border-l-blue-500" },
   processing: { icon: Clock, label: "Processing", border: "border-l-amber-500" },
-  picking: { icon: Package, label: "Picking", border: "border-l-purple-500" },
+  picking: { icon: Package, label: "Picking", border: "border-l-slate-500" },
   ready: { icon: CheckCircle, label: "Ready for Pickup", border: "border-l-green-500" },
   delivered: { icon: CheckCircle, label: "Delivered", border: "border-l-green-500" },
   completed: { icon: CheckCircle, label: "Completed", border: "border-l-muted-foreground" },

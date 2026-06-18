@@ -32,7 +32,7 @@ const colorClasses = {
   green: 'hover:bg-green-50 dark:hover:bg-green-950/30 dark:bg-green-950/30 hover:border-green-200 dark:hover:border-green-800 dark:border-green-800 dark:hover:bg-green-950',
   orange: 'hover:bg-orange-50 dark:hover:bg-orange-950/30 dark:bg-orange-950/30 hover:border-orange-200 dark:hover:border-orange-800 dark:border-orange-800 dark:hover:bg-orange-950',
   red: 'hover:bg-red-50 dark:hover:bg-red-950/30 dark:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800 dark:border-red-800 dark:hover:bg-red-950',
-  purple: 'hover:bg-purple-50 dark:hover:bg-purple-950/30 dark:bg-purple-950/30 hover:border-purple-200 dark:hover:border-purple-800 dark:border-purple-800 dark:hover:bg-purple-950',
+  purple: 'hover:bg-slate-50 dark:hover:bg-slate-950/30 dark:bg-slate-950/30 hover:border-slate-200 dark:hover:border-slate-800 dark:border-slate-800 dark:hover:bg-slate-950',
 };
 
 const iconColorClasses = {
@@ -40,7 +40,7 @@ const iconColorClasses = {
   green: 'text-green-500',
   orange: 'text-orange-500',
   red: 'text-red-500',
-  purple: 'text-purple-500',
+  purple: 'text-slate-500',
 };
 
 export function QuickActionsWidget({ 

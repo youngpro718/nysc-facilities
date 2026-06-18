@@ -46,7 +46,7 @@ const finishTypeConfig: Record<FinishType, { icon: React.ElementType; label: str
   painting: { icon: Paintbrush, label: "Painting", color: "text-amber-500" },
   carpeting: { icon: SquareStack, label: "Flooring", color: "text-orange-600 dark:text-orange-400" },
   blinds: { icon: Blinds, label: "Blinds", color: "text-blue-500" },
-  furniture: { icon: Armchair, label: "Furniture", color: "text-purple-500" },
+  furniture: { icon: Armchair, label: "Furniture", color: "text-slate-500" },
   other: { icon: Package, label: "Other", color: "text-muted-foreground" },
 };
 

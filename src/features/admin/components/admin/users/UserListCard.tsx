@@ -175,7 +175,7 @@ export function UserListCard({
                             role.color === 'red' ? 'bg-red-500' :
                             role.color === 'blue' ? 'bg-blue-500' :
                             role.color === 'green' ? 'bg-green-500' :
-                            role.color === 'purple' ? 'bg-purple-500' :
+                            role.color === 'purple' ? 'bg-slate-500' :
                             role.color === 'orange' ? 'bg-orange-500' :
                             'bg-gray-500'
                           }`} />

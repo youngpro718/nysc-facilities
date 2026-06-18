@@ -49,7 +49,7 @@ const SPACE_TEMPLATES: SpaceTemplate[] = [
     roomType: RoomTypeEnum.COURTROOM,
     defaultName: 'Courtroom',
     description: 'Court hearing room',
-    color: 'bg-purple-500'
+    color: 'bg-slate-500'
   },
   {
     id: 'storage',

@@ -25,7 +25,7 @@ const CONFIG: Record<string, CategoryVisual> = {
   },
   'Electronics': {
     icon: '🔌',
-    gradient: 'from-purple-500/20 to-violet-500/10',
+    gradient: 'from-slate-500/20 to-slate-500/10',
     description: 'Cables, clocks, devices',
   },
   'Cleaning Supplies': {

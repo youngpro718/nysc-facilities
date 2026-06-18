@@ -49,7 +49,7 @@ const ModuleCard = ({ title, icon, count, status, description, route, color = "p
       case 'blue':
         return 'border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 bg-blue-50 dark:bg-blue-950/30';
       case 'purple':
-        return 'border-purple-200 dark:border-purple-800 hover:border-purple-300 dark:hover:border-purple-700 bg-purple-50 dark:bg-purple-950/30';
+        return 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50 dark:bg-slate-950/30';
       case 'orange':
         return 'border-orange-200 dark:border-orange-800 hover:border-orange-300 dark:hover:border-orange-700 bg-orange-50 dark:bg-orange-950/30';
       default:
@@ -199,7 +199,7 @@ export const KeysDashboardCard = () => {
   return (
     <ModuleCard
       title="Keys Management"
-      icon={<KeyRound className="h-5 w-5 text-purple-500" />}
+      icon={<KeyRound className="h-5 w-5 text-slate-500" />}
       count={keys?.total || 0}
       description={`${keys?.assigned || 0} assigned, ${keys?.available || 0} available`}
       route="/keys"

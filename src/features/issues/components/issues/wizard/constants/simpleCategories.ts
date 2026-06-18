@@ -65,7 +65,7 @@ export const SIMPLE_CATEGORIES: SimpleCategory[] = [
     id: 'other',
     label: 'Other',
     icon: MessageSquare,
-    color: 'text-purple-500',
+    color: 'text-slate-500',
     description: 'Everything else',
     mapsTo: 'GENERAL_REQUESTS'
   }

@@ -27,7 +27,7 @@ const colorClasses = {
   green: 'text-green-600 dark:text-green-400',
   orange: 'text-orange-600 dark:text-orange-400',
   red: 'text-red-600 dark:text-red-400',
-  purple: 'text-purple-600 dark:text-purple-400',
+  purple: 'text-slate-600 dark:text-slate-400',
   gray: 'text-gray-600',
 };
 

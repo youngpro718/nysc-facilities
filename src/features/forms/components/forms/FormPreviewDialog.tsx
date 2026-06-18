@@ -65,7 +65,7 @@ const formConfigs = {
   'room-modification-request': {
     title: 'Room Modification Request',
     icon: Wrench,
-    color: 'text-purple-500',
+    color: 'text-slate-500',
     fields: [
       { name: 'requestorName', label: 'Requestor Name', type: 'text', placeholder: 'Full name' },
       { name: 'department', label: 'Department', type: 'text', placeholder: 'Your department' },
@@ -154,7 +154,7 @@ const formConfigs = {
   'external-request': {
     title: 'General Request Form',
     icon: AlertCircle,
-    color: 'text-purple-500',
+    color: 'text-slate-500',
     fields: [
       { name: 'requestType', label: 'Request Type/Category', type: 'text', placeholder: 'What type of request?' },
       { name: 'description', label: 'Detailed Description', type: 'textarea', placeholder: 'Describe your request in detail...' },

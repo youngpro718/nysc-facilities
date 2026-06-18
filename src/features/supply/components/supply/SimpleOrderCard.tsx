@@ -94,7 +94,7 @@ export function SimpleOrderCard({
       return <Badge variant="outline" className="border-blue-500 text-blue-600 dark:text-blue-400">Picking</Badge>;
     }
     if (order.status === 'received') {
-      return <Badge variant="outline" className="border-purple-500 text-purple-600 dark:text-purple-400">Received</Badge>;
+      return <Badge variant="outline" className="border-slate-500 text-slate-600 dark:text-slate-400">Received</Badge>;
     }
     if (order.status === 'submitted') {
       return <Badge variant="outline" className="border-blue-400 text-blue-500">New</Badge>;

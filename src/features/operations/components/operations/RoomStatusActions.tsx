@@ -68,7 +68,7 @@ const STATUS_CONFIG = {
   [RoomStatus.RESERVED]: {
     label: 'Reserved',
     icon: Clock,
-    color: 'text-purple-500',
+    color: 'text-slate-500',
     variant: 'outline' as const,
   },
 };

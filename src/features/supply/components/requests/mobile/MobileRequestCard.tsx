@@ -65,7 +65,7 @@ export function MobileRequestCard({
       },
       in_progress: { 
         icon: Clock, 
-        color: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20", 
+        color: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/20", 
         label: "In Progress"
       }
     };

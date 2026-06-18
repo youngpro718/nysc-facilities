@@ -11,7 +11,7 @@ export const getRoomTypeColor = (roomType: string | undefined): string => {
     case 'office':
       return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800';
     case 'courtroom':
-      return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800';
+      return 'bg-slate-100 dark:bg-slate-900/30 text-slate-800';
     case 'chamber':
       return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800';
     case 'storage':

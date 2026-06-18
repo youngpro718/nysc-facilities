@@ -41,7 +41,7 @@ const statusConfig = {
   },
   received: {
     label: "Received",
-    color: "bg-purple-100 dark:bg-purple-900/30 text-purple-800 border-purple-200 dark:border-purple-800",
+    color: "bg-slate-100 dark:bg-slate-900/30 text-slate-800 border-slate-200 dark:border-slate-800",
     icon: Package
   },
   ready_for_pickup: { 

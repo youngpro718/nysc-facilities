@@ -129,7 +129,7 @@ export const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
   pending_approval: 'bg-yellow-500',
   approved: 'bg-green-500',
   claimed: 'bg-blue-500',
-  in_progress: 'bg-purple-500',
+  in_progress: 'bg-slate-500',
   completed: 'bg-green-600',
   cancelled: 'bg-gray-500',
   rejected: 'bg-red-500',
