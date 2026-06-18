@@ -29,18 +29,20 @@ const slotNeedsAttention = (slot: LockboxSlot): boolean => {
 };
 
 // Subtle table-style column headers — small caps, muted, no tracking-wider.
-// Layout columns mirror LockboxSlotCard's grid so the rows line up under them.
+// IMPORTANT: this grid template MUST match LockboxSlotCard's exactly, including
+// the fixed widths for the status (7rem) and action (5rem) columns. Without
+// matching widths, "LOCATION / HOLDER" header drifts off the data column below.
 function ColumnHeaders() {
   return (
     <div
-      className="hidden sm:grid grid-cols-[3rem_minmax(0,1.6fr)_minmax(0,1fr)_auto_auto] gap-3 sm:gap-4 px-3 sm:px-4 py-2 border-b border-border bg-muted/20 text-[10px] font-medium text-muted-foreground"
+      className="hidden sm:grid grid-cols-[3rem_minmax(0,1.6fr)_minmax(0,1fr)_7rem_5rem] gap-3 sm:gap-4 px-3 sm:px-4 py-2 border-b border-border bg-muted/20 text-[10px] font-medium text-muted-foreground"
       aria-hidden="true"
     >
       <div>SLOT</div>
       <div>KEY</div>
       <div>LOCATION / HOLDER</div>
       <div>STATUS</div>
-      <div className="w-[3.25rem]" />
+      <div />
     </div>
   );
 }

@@ -41,7 +41,9 @@ function getStatusConfig(status: string): StatusConfig {
     case 'in_box':
       return {
         rail: '', // no rail for routine state — the "quiet" treatment
-        dotClass: 'bg-slate-400 dark:bg-slate-500',
+        // Dot stays green — the one bit of genuine operational signal in the
+        // routine row. Tag itself remains muted/outlined to avoid flooding.
+        dotClass: 'bg-emerald-500',
         label: 'Available',
         tagClass: 'border-border text-muted-foreground bg-transparent',
         action: 'Open',
@@ -118,7 +120,10 @@ export function LockboxSlotCard({ slot, onClick, lockboxName }: LockboxSlotCardP
         }
       }}
       className={cn(
-        'group grid grid-cols-[3rem_minmax(0,1.6fr)_minmax(0,1fr)_auto_auto] items-center gap-3 sm:gap-4',
+        // Fixed-width status and action columns so the column-header row above
+        // aligns 1:1 with these data cells. Without fixed widths, the auto
+        // sizing causes header text to drift over the data.
+        'group grid grid-cols-[3rem_minmax(0,1.6fr)_minmax(0,1fr)_7rem_5rem] items-center gap-3 sm:gap-4',
         'border-b border-border last:border-b-0',
         'px-3 sm:px-4 py-3',
         'hover:bg-accent/40 transition-colors cursor-pointer touch-manipulation',
