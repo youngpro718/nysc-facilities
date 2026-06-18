@@ -50,22 +50,20 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="flex items-center gap-2 min-w-0">
               <div className="relative h-14 w-14 shrink-0">
-                <img src="/nysc-logo-light.webp" alt="NYSC" className="h-full w-full object-contain dark:hidden" />
-                <img src="/nysc-logo-dark.webp" alt="NYSC" className="h-full w-full object-contain hidden dark:block" />
+                <img src="/nysc-logo-dark.webp" alt="NYSC" className="h-full w-full object-contain" />
               </div>
               <span className="text-sm font-semibold truncate text-sidebar-foreground">NYSC Facilities</span>
             </div>
           )}
           {collapsed && (
             <div className="relative h-12 w-12 shrink-0">
-              <img src="/nysc-logo-light.png" alt="NYSC" className="h-full w-full object-contain dark:hidden" />
-              <img src="/nysc-logo-dark.png" alt="NYSC" className="h-full w-full object-contain hidden dark:block" />
+              <img src="/nysc-logo-dark.png" alt="NYSC" className="h-full w-full object-contain" />
             </div>
           )}
           {!collapsed && (
             <button
               onClick={toggleSidebar}
-              className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white/[0.08] hover:text-white"
               aria-label="Collapse sidebar"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -96,10 +94,10 @@ export function AppSidebar() {
                       onPointerEnter={() => prefetchRoute(route)}
                       onFocus={() => prefetchRoute(route)}
                       className={cn(
-                        "flex items-center justify-center w-full h-10 rounded-lg transition-colors",
+                        "flex h-10 w-full items-center justify-center rounded-md transition-colors",
                         active
-                          ? "bg-color-accent/10 text-color-accent"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          ? "bg-white/[0.12] text-white"
+                          : "text-slate-300 hover:bg-white/[0.07] hover:text-white"
                       )}
                     >
                       <Icon className="h-[18px] w-[18px]" />
@@ -119,13 +117,13 @@ export function AppSidebar() {
                 onPointerEnter={() => prefetchRoute(route)}
                 onFocus={() => prefetchRoute(route)}
                 className={cn(
-                  "flex items-center gap-2.5 w-full h-10 px-3 rounded-lg text-sm font-medium transition-colors",
+                  "flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors",
                   active
-                    ? "bg-color-accent/10 text-foreground border-l-2 border-l-color-accent"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    ? "border-l-2 border-l-white bg-white/[0.12] text-white"
+                    : "text-slate-300 hover:bg-white/[0.07] hover:text-white"
                 )}
               >
-                <Icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-color-accent")} />
+                <Icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-white")} />
                 <span className="truncate">{tab.title}</span>
               </button>
             );
@@ -140,7 +138,7 @@ export function AppSidebar() {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => navigate("/help")}
-                  className="flex items-center justify-center w-full h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className="flex h-9 w-full items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-white/[0.07] hover:text-white"
                 >
                   <LifeBuoy className="h-[18px] w-[18px]" />
                 </button>
@@ -150,7 +148,7 @@ export function AppSidebar() {
           ) : (
             <button
               onClick={() => navigate("/help")}
-              className="flex items-center gap-2.5 w-full h-9 px-3 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              className="flex h-9 w-full items-center gap-2.5 rounded-md px-3 text-sm text-slate-300 transition-colors hover:bg-white/[0.07] hover:text-white"
             >
               <LifeBuoy className="h-[18px] w-[18px] shrink-0" />
               <span>Help &amp; Guides</span>
@@ -163,7 +161,7 @@ export function AppSidebar() {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => navigate("/profile")}
-                  className="flex items-center justify-center w-full h-10 rounded-lg hover:bg-accent transition-colors"
+                  className="flex h-10 w-full items-center justify-center rounded-md transition-colors hover:bg-white/[0.07]"
                 >
                   <UserAvatar
                     src={(profile as any)?.avatar_url}
@@ -190,7 +188,7 @@ export function AppSidebar() {
               />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-medium truncate text-sidebar-foreground">{displayName}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{roleLabel}</p>
+                <p className="truncate text-[11px] text-slate-400">{roleLabel}</p>
               </div>
             </div>
           )}
@@ -201,7 +199,7 @@ export function AppSidebar() {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => signOut()}
-                  className="flex items-center justify-center w-full h-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-accent transition-colors"
+                  className="flex h-9 w-full items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-white/[0.07] hover:text-white"
                 >
                   <LogOut className="h-[18px] w-[18px]" />
                 </button>
@@ -211,7 +209,7 @@ export function AppSidebar() {
           ) : (
             <button
               onClick={() => signOut()}
-              className="flex items-center gap-2.5 w-full h-9 px-3 rounded-lg text-sm text-muted-foreground hover:text-destructive hover:bg-accent transition-colors"
+              className="flex h-9 w-full items-center gap-2.5 rounded-md px-3 text-sm text-slate-300 transition-colors hover:bg-white/[0.07] hover:text-white"
             >
               <LogOut className="h-[18px] w-[18px] shrink-0" />
               <span>Sign Out</span>
@@ -226,7 +224,7 @@ export function AppSidebar() {
               <TooltipTrigger asChild>
                 <button
                   onClick={toggleSidebar}
-                  className="flex items-center justify-center w-full h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className="flex h-8 w-full items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-white/[0.07] hover:text-white"
                   aria-label="Expand sidebar"
                 >
                   <ChevronLeft className="h-4 w-4 rotate-180" />

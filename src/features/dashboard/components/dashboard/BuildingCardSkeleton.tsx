@@ -1,32 +1,22 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const BuildingCardSkeleton = () => (
-  <Card className="overflow-hidden">
-    <div className="aspect-video">
-      <Skeleton className="h-full w-full" />
-    </div>
-    <CardHeader className="space-y-2">
-      <Skeleton className="h-5 w-24" />
+  <div className="overflow-hidden rounded-md border bg-card">
+    <div className="flex min-h-[72px] items-center justify-between border-b px-5 py-3.5">
       <div className="space-y-2">
-        <Skeleton className="h-7 w-48" />
-        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-52" />
+        <Skeleton className="h-3 w-40" />
       </div>
-    </CardHeader>
-    <CardContent className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-28 w-full" />
-        ))}
-      </div>
-      <div className="space-y-4">
-        <Skeleton className="h-4 w-32" />
-        <div className="space-y-3">
-          {[1, 2].map((i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
+      <Skeleton className="h-4 w-20" />
+    </div>
+    <Skeleton className="h-[230px] w-full rounded-none sm:h-[260px]" />
+    <div className="grid grid-cols-3 divide-x border-t">
+      {[1, 2, 3].map((item) => (
+        <div key={item} className="space-y-2 px-4 py-4">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-5 w-10" />
         </div>
-      </div>
-    </CardContent>
-  </Card>
+      ))}
+    </div>
+  </div>
 );

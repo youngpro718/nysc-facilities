@@ -15,7 +15,11 @@ export const useAdminIssues = () => {
         // was a leftover from the old admin index and just bloated payloads.
         const { data, error } = await supabase
           .from('issues')
-          .select('id, title, description, status, priority, created_at, building_id, seen, issue_type, assigned_to, photos')
+          .select(`
+            id, title, description, status, priority, created_at,
+            building_id, room_id, seen, issue_type, assigned_to, photos,
+            rooms:room_id (room_number, name)
+          `)
           .order('created_at', { ascending: false })
           .limit(50);
 

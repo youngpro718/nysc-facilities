@@ -34,7 +34,7 @@ const TONE_DOT: Record<StatusTone, string> = {
   operational: 'bg-emerald-500',
   warning: 'bg-amber-500',
   critical: 'bg-red-500',
-  info: 'bg-sky-500',
+  info: 'bg-zinc-400',
 };
 
 export function CommandCenter() {
@@ -140,17 +140,19 @@ export function CommandCenter() {
     type === 'task' ? '/tasks' : '/operations';
 
   return (
-    <div className="space-y-5">
+    <section aria-labelledby="command-center-heading" className="space-y-5 border-t border-border pt-6">
       {/* Section header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Command Center</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 id="command-center-heading" className="text-lg font-semibold tracking-tight">
+            Command center
+          </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {metrics.users.total_users} users · {metrics.court.operational} of {metrics.court.total_rooms} courtrooms operational
             {metrics.issues.avg_resolution_time_hours ? ` · ${metrics.issues.avg_resolution_time_hours}h avg resolution` : ''}
           </p>
         </div>
-        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={() => { refetch(); }}>
+        <Button variant="outline" size="sm" className="h-9 bg-card text-xs" onClick={() => { refetch(); }}>
           <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
           Refresh
         </Button>
@@ -171,7 +173,7 @@ export function CommandCenter() {
           </AlertDescription>
         </Alert>
       ) : warningAlerts.length > 0 && (
-        <Alert className="border-status-warning/30 bg-surface-warning text-surface-warning-foreground">
+        <Alert className="rounded-md border-status-warning/35 bg-surface-warning text-surface-warning-foreground">
           <AlertCircle className="h-4 w-4 text-status-warning" />
           <AlertDescription>
             <strong>{warningAlerts.length} warning{warningAlerts.length !== 1 ? 's' : ''}</strong>
@@ -181,14 +183,14 @@ export function CommandCenter() {
       )}
 
       {/* KPI strip — one container, divider-separated cells */}
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="overflow-hidden rounded-md border bg-card">
         <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-border">
           {kpis.map(kpi => (
             <button
               key={kpi.label}
               type="button"
               onClick={() => navigate(kpi.to)}
-              className="group flex flex-col items-start gap-1 p-4 sm:p-5 text-left transition-colors hover:bg-accent/40 active:scale-[0.99]"
+              className="group flex flex-col items-start gap-1 p-4 text-left transition-colors hover:bg-accent/40 active:translate-y-px sm:p-5"
             >
               <span className="text-xs font-medium text-muted-foreground">
                 {kpi.label}
@@ -206,9 +208,9 @@ export function CommandCenter() {
       </div>
 
       {/* Attention queue + activity timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         {/* Needs attention */}
-        <div className="lg:col-span-2 rounded-xl border bg-card">
+        <div className="rounded-md border bg-card">
           <div className="px-4 py-3 border-b">
             <h3 className="text-sm font-semibold">Needs Attention</h3>
           </div>
@@ -227,7 +229,7 @@ export function CommandCenter() {
                   onClick={() => navigate(item.to)}
                   className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/40 active:scale-[0.995]"
                 >
-                  <span className={`flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-xs font-semibold tabular-nums text-white ${TONE_DOT[item.tone]}`}>
+                  <span className={`flex h-6 min-w-6 items-center justify-center rounded-sm px-1.5 text-xs font-semibold tabular-nums text-white ${TONE_DOT[item.tone]}`}>
                     {item.count}
                   </span>
                   <span className="flex-1 text-sm">{item.label}</span>
@@ -239,7 +241,7 @@ export function CommandCenter() {
         </div>
 
         {/* Recent activity */}
-        <div className="lg:col-span-3 rounded-xl border bg-card">
+        <div className="rounded-md border bg-card">
           <div className="px-4 py-3 border-b">
             <h3 className="text-sm font-semibold">Recent Activity</h3>
           </div>
@@ -266,7 +268,7 @@ export function CommandCenter() {
                     </span>
                   </span>
                   {item.priority && (item.priority === 'high' || item.priority === 'urgent') && (
-                    <span className="mt-0.5 shrink-0 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400">
+                    <span className="mt-0.5 shrink-0 rounded-sm bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400">
                       {item.priority}
                     </span>
                   )}
@@ -278,7 +280,7 @@ export function CommandCenter() {
       </div>
 
       {/* Quick access */}
-      <div>
+      <div className="border-t border-border pt-4">
         <h3 className="mb-2 text-xs font-medium text-muted-foreground">
           Quick Access
         </h3>
@@ -290,7 +292,7 @@ export function CommandCenter() {
                 key={link.to + link.label}
                 type="button"
                 onClick={() => navigate(link.to)}
-                className="group flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2.5 text-left transition-all hover:border-primary/30 hover:bg-accent/40 active:translate-y-px"
+                className="group flex items-center gap-2.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all hover:border-primary/30 hover:bg-accent/40 active:translate-y-px"
               >
                 <Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
                 <span className="flex-1 truncate text-sm font-medium">{link.label}</span>
@@ -300,7 +302,7 @@ export function CommandCenter() {
           })}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -311,14 +313,14 @@ function CommandCenterSkeleton() {
         <Skeleton className="h-6 w-44" />
         <Skeleton className="h-3 w-72" />
       </div>
-      <Skeleton className="h-[120px] rounded-xl" />
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <Skeleton className="lg:col-span-2 h-[280px] rounded-xl" />
-        <Skeleton className="lg:col-span-3 h-[280px] rounded-xl" />
+      <Skeleton className="h-[120px] rounded-md" />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        <Skeleton className="h-[280px] rounded-md" />
+        <Skeleton className="h-[280px] rounded-md" />
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-11 rounded-lg" />
+          <Skeleton key={i} className="h-11 rounded-md" />
         ))}
       </div>
     </div>

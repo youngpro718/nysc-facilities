@@ -1,9 +1,5 @@
 /**
- * AdminGreeting — Formal administrative dashboard header.
- *
- * Was a personalized "Good afternoon, Jack." time-aware greeting; that's
- * consumer-SaaS energy. Replaced with a formal page title + the full date
- * (court convention: every record carries today's date prominently).
+ * Corporate portfolio header for the administrative dashboard.
  */
 
 import { format } from "date-fns";
@@ -19,19 +15,22 @@ export function AdminGreeting({ onRefresh, isLoading }: AdminGreetingProps) {
   const formattedDate = format(new Date(), "EEEE, MMMM d, yyyy");
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center items-start justify-between gap-4">
-      <div className="space-y-1">
-        <h1 className="text-[length:var(--text-page-title)] font-semibold tracking-tight">
-          Administrative Dashboard
+    <div className="flex flex-col items-start justify-between gap-4 border-b border-border pb-5 sm:flex-row sm:items-end">
+      <div>
+        <p className="mb-1 text-xs font-medium text-primary">Facilities portfolio</p>
+        <h1 className="text-[length:var(--text-page-title)] font-semibold tracking-[-0.025em]">
+          Administrative overview
         </h1>
-        <p className="text-sm text-text-secondary tabular">{formattedDate}</p>
+        <p className="mt-1 text-sm text-text-secondary tabular">
+          {formattedDate} · Live operational status by building
+        </p>
       </div>
       {onRefresh && (
-        <Button variant="outline" onClick={onRefresh} disabled={isLoading} size="sm">
+        <Button variant="outline" onClick={onRefresh} disabled={isLoading} size="sm" className="h-9 bg-card">
           <RefreshCw
             className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
           />
-          Refresh
+          Refresh data
         </Button>
       )}
     </div>

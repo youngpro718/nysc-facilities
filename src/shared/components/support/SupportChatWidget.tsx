@@ -103,10 +103,10 @@ export function SupportChatWidget() {
     <>
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-36 md:bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm flex flex-col rounded-2xl border border-border bg-background shadow-2xl overflow-hidden">
+        <div className="fixed bottom-36 right-4 z-50 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-md border border-border bg-background shadow-xl md:bottom-20">
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground">
-            <div className="h-8 w-8 rounded-full bg-primary-foreground/20 flex items-center justify-center shrink-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-primary-foreground/15">
               <Bot className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
@@ -115,7 +115,7 @@ export function SupportChatWidget() {
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="shrink-0 rounded-full p-1 hover:bg-primary-foreground/20 transition-colors"
+              className="shrink-0 rounded-sm p-1 transition-colors hover:bg-primary-foreground/20"
             >
               <X className="h-4 w-4" />
             </button>
@@ -218,10 +218,10 @@ export function SupportChatWidget() {
         onClick={() => setOpen(prev => !prev)}
         className={cn(
           'fixed bottom-36 md:bottom-20 right-4 z-50',
-          'h-12 w-12 rounded-full shadow-lg transition-all duration-200',
+          'h-10 w-10 rounded-md border border-border bg-card shadow-sm transition-colors duration-150',
           'flex items-center justify-center',
-          'bg-primary text-primary-foreground',
-          'hover:scale-110 active:scale-95',
+          'text-muted-foreground hover:border-primary/40 hover:bg-accent hover:text-foreground',
+          'active:translate-y-px',
           open && 'hidden'
         )}
         aria-label="Open support chat"

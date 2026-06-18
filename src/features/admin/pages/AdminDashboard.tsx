@@ -44,7 +44,7 @@ const AdminDashboard = () => {
   const hasBuildings = buildingList.length > 0;
 
   const content = (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="mx-auto max-w-[1500px] space-y-7 sm:space-y-8">
       <AdminGreeting
         onRefresh={refreshData}
         isLoading={isLoading || buildingsLoading}
@@ -52,25 +52,41 @@ const AdminDashboard = () => {
 
       <ProductionSecurityGuard />
 
-      {hasBuildings ? (
-        <BuildingsGrid
-          buildings={buildingList}
-          isLoading={buildingsLoading}
-          issues={issues}
-          activities={activities}
-          onMarkAsSeen={handleMarkAsSeen}
-        />
-      ) : (
-        <div className="flex flex-col items-center justify-center min-h-[240px] gap-3 rounded-lg border border-dashed bg-muted/30 p-8 text-center">
-          <Building2 className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
-          <div className="space-y-1">
-            <p className="font-medium">No buildings found</p>
-            <p className="text-sm text-muted-foreground">
-              Add a building to see facility overviews and live status here.
+      <section aria-labelledby="building-monitors-heading" className="space-y-4">
+        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+          <div>
+            <h2 id="building-monitors-heading" className="text-lg font-semibold tracking-tight">
+              Building monitors
+            </h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Each property shows its latest unresolved issue photo, or the courthouse image when no photo report is active.
             </p>
           </div>
+          <p className="text-xs text-muted-foreground">
+            {buildingList.length} monitored {buildingList.length === 1 ? "property" : "properties"}
+          </p>
         </div>
-      )}
+
+        {hasBuildings ? (
+          <BuildingsGrid
+            buildings={buildingList}
+            isLoading={buildingsLoading}
+            issues={issues}
+            activities={activities}
+            onMarkAsSeen={handleMarkAsSeen}
+          />
+        ) : (
+          <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 rounded-md border border-dashed bg-card p-8 text-center">
+            <Building2 className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+            <div className="space-y-1">
+              <p className="font-medium">No buildings found</p>
+              <p className="text-sm text-muted-foreground">
+                Add a building to see facility overviews and live status here.
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Command Center — alerts and quick actions below building overview */}
       <CommandCenter />

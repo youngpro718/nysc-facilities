@@ -2,42 +2,40 @@
 @import './styles/design-tokens.css';
 @import './styles/ios-compatibility.css';
 @import './styles/mobile-buttons.css';
-/* Display serif for h1/h2/dialog titles — the single biggest "official document" tell */
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
  
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 214 30% 97%;
+    --foreground: 216 32% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 216 32% 16%;
  
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
+    --popover-foreground: 216 32% 16%;
  
-    /* Brand: judicial navy — primary actions, links, focus */
-    --primary: 217 60% 30%;
+    /* Corporate judicial navy — primary actions, links, focus */
+    --primary: 216 58% 35%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary: 215 25% 93%;
+    --secondary-foreground: 216 32% 16%;
 
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
+    --muted: 215 24% 94%;
+    --muted-foreground: 215 14% 42%;
 
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 215 25% 92%;
+    --accent-foreground: 216 32% 16%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 89.1%;
-    --input: 0 0% 89.1%;
-    --ring: 217 60% 38%;
+    --border: 215 22% 84%;
+    --input: 215 22% 84%;
+    --ring: 216 58% 42%;
 
     /* Reduced from 0.5rem — sharper corners read "official document" not "social card". */
     --radius: 0.375rem;
@@ -69,13 +67,13 @@
     --lighting-maintenance-foreground: 0 0% 98%;
 
     /* ── PRD 3.1 — Surface & background tokens ── */
-    --surface: 0 0% 96%;
-    --surface-foreground: 0 0% 3.9%;
-    --sidebar: 0 0% 97%;
-    --sidebar-foreground: 0 0% 3.9%;
-    --sidebar-border: 0 0% 89.1%;
-    --border-subtle: 0 0% 93%;
-    --card-hover: 0 0% 94%;
+    --surface: 0 0% 100%;
+    --surface-foreground: 216 32% 16%;
+    --sidebar: 216 52% 17%;
+    --sidebar-foreground: 210 25% 97%;
+    --sidebar-border: 215 34% 27%;
+    --border-subtle: 215 24% 90%;
+    --card-hover: 215 28% 96%;
 
     /* ── PRD 3.1 — Status colors (border/icon/text only, NOT card fills) ── */
     /* Desaturated court palette — court-appropriate, not retail-bright. */
@@ -98,81 +96,85 @@
     --surface-neutral-foreground: 220 14% 30%;
 
     /* ── PRD 3.1 — Text hierarchy ── */
-    --text-primary: 0 0% 3.9%;
-    --text-secondary: 220 9% 46%;
-    --text-muted: 220 9% 46%;
+    --text-primary: 216 32% 16%;
+    --text-secondary: 215 14% 42%;
+    --text-muted: 215 12% 52%;
 
     /* ── PRD 3.1 — Brand accent (judicial navy; matches --primary) ── */
-    --color-accent: 217 60% 34%;
+    --color-accent: 216 58% 42%;
   }
 
   /* .light — forces light mode CSS variables on any subtree (e.g. login page) */
   .light {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 214 30% 97%;
+    --foreground: 216 32% 16%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 216 32% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 217 60% 30%;
+    --popover-foreground: 216 32% 16%;
+    --primary: 216 58% 35%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --secondary: 215 25% 93%;
+    --secondary-foreground: 216 32% 16%;
+    --muted: 215 24% 94%;
+    --muted-foreground: 215 14% 42%;
+    --accent: 215 25% 92%;
+    --accent-foreground: 216 32% 16%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.1%;
-    --input: 0 0% 89.1%;
-    --ring: 217 60% 38%;
-    --color-accent: 217 60% 34%;
+    --border: 215 22% 84%;
+    --input: 215 22% 84%;
+    --ring: 216 58% 42%;
+    --color-accent: 216 58% 42%;
     --brand-gold: 41 60% 46%;
-    --surface: 0 0% 96%;
-    --surface-foreground: 0 0% 3.9%;
-    --sidebar: 0 0% 97%;
-    --sidebar-foreground: 0 0% 3.9%;
-    --sidebar-border: 0 0% 89.1%;
-    --border-subtle: 0 0% 93%;
-    --card-hover: 0 0% 94%;
-    --text-primary: 0 0% 3.9%;
-    --text-secondary: 220 9% 46%;
-    --text-muted: 220 9% 46%;
+    --surface: 0 0% 100%;
+    --surface-foreground: 216 32% 16%;
+    --sidebar: 216 52% 17%;
+    --sidebar-foreground: 210 25% 97%;
+    --sidebar-border: 215 34% 27%;
+    --border-subtle: 215 24% 90%;
+    --card-hover: 215 28% 96%;
+    --text-primary: 216 32% 16%;
+    --text-secondary: 215 14% 42%;
+    --text-muted: 215 12% 52%;
   }
 
   .dark {
-    /* Deep slate-navy instead of pure black — court terminal, not OLED consumer device. */
-    --background: 222 47% 9%;
-    --foreground: 210 20% 96%;
+    /*
+     * Corporate black palette:
+     * near-black canvas, charcoal hierarchy, platinum actions.
+     * Color is reserved for operational meaning rather than chrome.
+     */
+    color-scheme: dark;
+    --background: 0 0% 3.5%;
+    --foreground: 0 0% 96%;
 
-    --card: 217 33% 14%;
-    --card-foreground: 210 20% 96%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 96%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 20% 96%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 96%;
 
-    /* Judicial navy — toned down from the saturated tech-blue. */
-    --primary: 217 55% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 240 5% 84%;
+    --primary-foreground: 0 0% 7%;
 
-    --secondary: 215 25% 22%;
-    --secondary-foreground: 210 20% 96%;
+    --secondary: 240 5% 12%;
+    --secondary-foreground: 0 0% 96%;
 
-    --muted: 215 25% 18%;
-    --muted-foreground: 215 16% 65%;
+    --muted: 240 4% 9%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 215 25% 22%;
-    --accent-foreground: 210 20% 96%;
+    --accent: 240 4% 14%;
+    --accent-foreground: 0 0% 96%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 215 19% 22%;
-    --input: 215 19% 22%;
-    --ring: 217 55% 55%;
+    --border: 240 5% 17%;
+    --input: 240 4% 20%;
+    --ring: 240 5% 65%;
 
-    --brand-gold: 42 65% 56%;
+    --brand-gold: 40 38% 58%;
 
     /* Status colors for dark mode */
     --success: 142 71% 45%;
@@ -181,7 +183,7 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
     
-    --info: 217 91% 60%;
+    --info: 210 30% 60%;
     --info-foreground: 0 0% 98%;
 
     /* Enhanced lighting status colors for dark mode */
@@ -194,24 +196,24 @@
     --lighting-critical: 0 84% 60%;
     --lighting-critical-foreground: 0 0% 98%;
     
-    --lighting-maintenance: 217 91% 60%;
+    --lighting-maintenance: 210 30% 60%;
     --lighting-maintenance-foreground: 0 0% 98%;
 
-    /* ── PRD 3.1 — Dark mode surface & background tokens (slate-navy family) ── */
-    --surface: 222 45% 11%;
-    --surface-foreground: 210 20% 96%;
-    --sidebar: 222 45% 9%;
-    --sidebar-foreground: 210 20% 96%;
-    --sidebar-border: 215 19% 22%;
-    --border-subtle: 217 19% 18%;
-    --card-hover: 215 28% 19%;
+    /* Dark mode surface hierarchy — black, charcoal, graphite. */
+    --surface: 240 4% 5%;
+    --surface-foreground: 0 0% 96%;
+    --sidebar: 0 0% 3.5%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-border: 240 5% 14%;
+    --border-subtle: 240 4% 12%;
+    --card-hover: 240 4% 10%;
 
     /* ── PRD 3.1 — Status colors ── */
     /* Desaturated court palette — court-appropriate, not retail-bright. */
     --status-critical: 0 65% 45%;
     --status-warning: 28 80% 42%;
     --status-operational: 158 55% 32%;
-    --status-info: 217 55% 42%;
+    --status-info: 210 24% 55%;
     --status-neutral: 220 9% 46%;
 
     /* Soft surface tints (dark mode) — low-saturation overlays on --card. */
@@ -221,18 +223,17 @@
     --surface-warning-foreground: 38 90% 78%;
     --surface-operational: 142 50% 12%;
     --surface-operational-foreground: 142 70% 75%;
-    --surface-info: 217 60% 14%;
-    --surface-info-foreground: 217 90% 80%;
+    --surface-info: 210 12% 13%;
+    --surface-info-foreground: 210 18% 78%;
     --surface-neutral: 220 14% 14%;
     --surface-neutral-foreground: 220 14% 78%;
 
     /* ── PRD 3.1 — Text hierarchy ── */
     --text-primary: 0 0% 96%;
-    --text-secondary: 220 9% 64%;
-    --text-muted: 220 9% 46%;
+    --text-secondary: 0 0% 64%;
+    --text-muted: 0 0% 46%;
 
-    /* ── PRD 3.1 — Brand accent (judicial navy; matches --primary) ── */
-    --color-accent: 215 75% 60%;
+    --color-accent: 240 5% 72%;
   }
 
   /* Theme Variants — applied on top of light/dark, override accent + chrome */
@@ -362,12 +363,6 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
-  }
-
-  /* Display serif on page-title and section-title sizes. h3+ stays sans for UI clarity. */
-  h1, h2 {
-    font-family: var(--font-family-serif);
-    letter-spacing: -0.015em;
   }
 
   h1 {

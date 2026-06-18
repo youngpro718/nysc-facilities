@@ -158,7 +158,7 @@ function LayoutContent() {
       >
         {/* Top header bar — slim, page title + utilities */}
         {!isLoginPage && isAuthenticated && (
-          <header className="bg-surface sticky top-0 z-30 border-b border-border safe-area-top">
+          <header className="sticky top-0 z-30 border-b border-[#294263] bg-[#102848] text-white safe-area-top dark:border-white/[0.09] dark:bg-[#090909]">
             <div className="flex items-center h-11 sm:h-14 px-2 sm:px-4 lg:px-8">
               {/* Sidebar trigger for mobile */}
               <div className="md:hidden mr-2">
@@ -187,7 +187,7 @@ function LayoutContent() {
               </div>
 
               {/* Page title */}
-              <h1 className="text-sm sm:text-lg font-semibold tracking-tight text-foreground truncate">
+              <h1 className="text-sm sm:text-base font-semibold tracking-tight text-white truncate">
                 {getPageTitle()}
               </h1>
 
@@ -201,7 +201,11 @@ function LayoutContent() {
                     Issues page on desktop and the FAB on mobile, so the header
                     button (the simple wizard) would be a redundant second flow. */}
                 {!isAdmin && userRole !== 'facilities_manager' && (
-                  <QuickIssueReportButton variant="outline" size="sm" className="h-8 px-2">
+                  <QuickIssueReportButton
+                    variant="outline"
+                    size="sm"
+                    className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
+                  >
                     <AlertTriangle className="h-4 w-4 sm:mr-1.5" />
                     <span className="hidden sm:inline">Report Issue</span>
                   </QuickIssueReportButton>
@@ -212,7 +216,7 @@ function LayoutContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 px-2"
+                    className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
                     onClick={() => navigate('/request/supplies')}
                     title="Order Supplies"
                   >
@@ -228,7 +232,7 @@ function LayoutContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 px-2"
+                    className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
                     onClick={() => navigate('/request/help')}
                     title="Make a Request"
                   >
@@ -240,30 +244,30 @@ function LayoutContent() {
                 {isAdmin && (
                   <button
                     onClick={() => setSearchOpen(true)}
-                    className="flex items-center justify-center gap-1.5 h-8 w-8 sm:w-auto sm:px-2 rounded-md border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs shrink-0"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-white/15 bg-white/[0.04] text-xs text-white/70 transition-colors hover:bg-white/[0.1] hover:text-white sm:w-auto sm:px-2"
                   >
                     <Search className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                     <span className="hidden lg:inline">Search…</span>
-                    <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                    <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded-sm border border-white/15 bg-white/[0.06] px-1.5 font-mono text-[10px] font-medium text-white/60 lg:inline-flex">
                       <span className="text-xs">⌘</span>K
                     </kbd>
                   </button>
                 )}
 
                 {isAdmin && (
-                  <div data-tour="notification-box">
+                  <div data-tour="notification-box" className="[&_button]:text-white [&_button:hover]:bg-white/[0.1]">
                     <NotificationBox />
                   </div>
                 )}
 
-                <div data-tour="theme-toggle" className="hidden sm:block">
+                <div data-tour="theme-toggle" className="hidden sm:block [&_button]:text-white [&_button:hover]:bg-white/[0.1]">
                   <ThemeToggle />
                 </div>
 
                 {/* Profile Avatar — all roles (needed for My Room / self-service) */}
                 {(
                   <button
-                    className="focus:outline-none p-0.5 rounded-full hover:bg-muted/50 transition-colors shrink-0"
+                    className="shrink-0 rounded-full p-0.5 transition-colors hover:bg-white/[0.1] focus:outline-none"
                     title="Profile"
                     aria-label="Open profile"
                     data-tour="user-avatar"
@@ -284,7 +288,7 @@ function LayoutContent() {
         )}
 
         <main className="flex-1 pb-40 md:pb-0 safe-area-bottom mobile-main-padding">
-          <div className="px-2 sm:px-4 lg:px-8 py-2 sm:py-6">
+          <div className="mx-auto w-full max-w-[1600px] px-3 py-3 sm:px-5 sm:py-6 lg:px-8">
             <Breadcrumb className="mb-2" />
             <AnimatePresence mode="wait">
               <PageTransition key={location.pathname}>

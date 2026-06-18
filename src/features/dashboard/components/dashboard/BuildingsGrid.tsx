@@ -14,6 +14,12 @@ export interface Issue {
   created_at: string;
   seen: boolean;
   status: string;
+  priority?: string;
+  issue_type?: string;
+  rooms?: {
+    room_number?: string;
+    name?: string;
+  } | null;
 }
 
 export interface Activity {
@@ -96,16 +102,18 @@ export function BuildingsGrid({
             return false;
           }) || [];
 
-        // Dynamic photo feature: Use the most recent issue photo if available
-        let dynamicImage = buildingImages[index % buildingImages.length];
+        const fallbackImage = buildingImages[index % buildingImages.length];
+        let dynamicImage = fallbackImage;
         
         // Find the most recent issue with a photo
         const issuesWithPhotos = buildingIssues
           .filter(issue => issue.photos && issue.photos.length > 0)
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        
-        if (issuesWithPhotos.length > 0 && issuesWithPhotos[0].photos && issuesWithPhotos[0].photos.length > 0) {
-          dynamicImage = issuesWithPhotos[0].photos[0];
+
+        const latestPhotoIssue = issuesWithPhotos[0];
+
+        if (latestPhotoIssue?.photos?.[0]) {
+          dynamicImage = latestPhotoIssue.photos[0];
         }
 
         return (
@@ -113,14 +121,15 @@ export function BuildingsGrid({
             key={building.id}
             building={building}
             buildingImage={dynamicImage}
+            fallbackImage={fallbackImage}
             floorCount={floorCount}
             roomCount={roomCount}
             workingFixtures={effectiveWorking}
             totalFixtures={effectiveTotal}
             buildingIssues={buildingIssues}
+            latestPhotoIssue={latestPhotoIssue}
             buildingActivities={buildingActivities}
             _onMarkAsSeen={onMarkAsSeen}
-            index={index}
           />
         );
       })}
