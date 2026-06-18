@@ -203,7 +203,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
         return (
           <Card
             key={request.id}
-            className={`border-l-[3px] ${border} transition-all ${
+            className={`border-l-2 ${border} transition-all ${
               isReadyForPickup ? 'ring-2 ring-warning/50 bg-warning/5' : ''
             }`}
           >

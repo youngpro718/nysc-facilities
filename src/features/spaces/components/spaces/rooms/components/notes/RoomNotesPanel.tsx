@@ -133,7 +133,7 @@ export function RoomNotesPanel({ roomId, compact = false }: RoomNotesPanelProps)
         <ScrollArea className="h-[300px]">
           <div className="space-y-3 pr-2">
             {notes.map((note) => (
-              <div key={note.id} className={`p-3 rounded-r-md border-l-4 ${getSeverityColor(note.severity)}`}>
+              <div key={note.id} className={`p-3 rounded-r-md border-l-2 ${getSeverityColor(note.severity)}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2 flex-1 min-w-0">
                     <div className="mt-0.5 text-muted-foreground">

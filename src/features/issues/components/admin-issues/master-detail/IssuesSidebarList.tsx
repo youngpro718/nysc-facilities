@@ -129,7 +129,7 @@ export function IssuesSidebarList({
                         key={issue.id}
                         onClick={() => onSelect(issue.id)}
                         className={cn(
-                          "w-full text-left px-2.5 py-2 rounded-md border border-transparent border-l-[3px] transition-colors",
+                          "w-full text-left px-2.5 py-2 rounded-md border border-transparent border-l-2 transition-colors",
                           STATUS_LEFT_BORDER[issue.status] || "border-l-border",
                           isSelected
                             ? "bg-accent border-border"

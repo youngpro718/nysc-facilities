@@ -90,7 +90,7 @@ export function EnhancedIssueCard({
   return (
     <Card
       className={cn(
-        "border-l-[3px] transition-all duration-200",
+        "border-l-2 transition-all duration-200",
         leftBorder,
         isSelected && "ring-2 ring-primary",
         isCritical && "shadow-sm"

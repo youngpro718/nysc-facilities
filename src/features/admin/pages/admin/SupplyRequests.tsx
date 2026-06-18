@@ -257,7 +257,7 @@ export default function AdminSupplyRequests() {
             return (
               <Card
                 key={request.id}
-                className={`border-l-[3px] ${config.border} transition-all ${
+                className={`border-l-2 ${config.border} transition-all ${
                   isHighlighted ? 'ring-2 ring-primary' : ''
                 }`}
               >

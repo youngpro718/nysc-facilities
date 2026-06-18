@@ -457,7 +457,7 @@ export function InventoryManagement() {
         <TabsContent value="alerts" className="space-y-4">
           <div className="grid gap-4">
             {stockAlerts.map((alert) => (
-              <Card key={alert.item.id} className={`border-l-4 ${
+              <Card key={alert.item.id} className={`border-l-2 ${
                 alert.alertType === 'out' ? 'border-l-red-500' :
                 alert.alertType === 'critical' ? 'border-l-orange-500' : 'border-l-yellow-500'
               }`}>

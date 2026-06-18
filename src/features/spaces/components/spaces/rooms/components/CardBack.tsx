@@ -483,7 +483,7 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
                     return (
                       <div
                         key={issue.id}
-                        className={`bg-card border border-border border-l-[3px] ${priorityColor} p-3 rounded-md cursor-pointer hover:bg-muted/50 transition-colors`}
+                        className={`bg-card border border-border border-l-2 ${priorityColor} p-3 rounded-md cursor-pointer hover:bg-muted/50 transition-colors`}
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/operations?tab=issues&issue=${issue.id}`);
@@ -566,7 +566,7 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
                     return (
                       <div
                         key={task.id}
-                        className={`bg-card border border-border border-l-[3px] ${priorityColor} p-3 rounded-md`}
+                        className={`bg-card border border-border border-l-2 ${priorityColor} p-3 rounded-md`}
                       >
                         <p className="text-sm font-medium leading-tight line-clamp-2">{task.title}</p>
                         <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">

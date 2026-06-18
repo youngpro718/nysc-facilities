@@ -157,7 +157,7 @@ export function TaskCard({
 
   return (
     <>
-      <Card className={`hover:shadow-md transition-shadow border-l-4 ${borderColor} flex flex-col`}>
+      <Card className={`hover:shadow-md transition-shadow border-l-2 ${borderColor} flex flex-col`}>
         <CardContent className={`flex-1 flex flex-col ${variant === 'compact' ? 'p-3' : 'p-4'}`}>
           {/* Main content area */}
           <div className="flex items-start justify-between gap-3 flex-1">

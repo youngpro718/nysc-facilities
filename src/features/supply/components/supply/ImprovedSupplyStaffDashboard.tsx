@@ -470,7 +470,7 @@ export function ImprovedSupplyStaffDashboard() {
                 : 'Unknown';
               const itemCount = order.supply_request_items?.length || 0;
               return (
-                <Card key={order.id} className="border-l-4 border-l-amber-500">
+                <Card key={order.id}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">

@@ -80,7 +80,7 @@ export function IssueDetailPanel({ issue, onUpdate }: IssueDetailPanelProps) {
     <ScrollArea className="h-full">
       <div className="p-4 sm:p-5 space-y-4">
         {/* Header */}
-        <Card className={cn("border-l-[3px]", leftBorder)}>
+        <Card className={cn("border-l-2", leftBorder)}>
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start gap-3">
               <span

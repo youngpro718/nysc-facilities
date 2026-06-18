@@ -52,7 +52,6 @@ export function InlineItemRow({
         inCart
           ? "bg-primary/5 border-primary/20"
           : "bg-card hover:bg-accent/50",
-        item.requires_justification && "border-l-4 border-l-amber-500",
         compact && "p-2"
       )}
     >

@@ -144,7 +144,7 @@ export function KeyAssignmentList({
               <Card
                 key={a.id}
                 className={cn(
-                  "border-l-[3px] transition-colors",
+                  "border-l-2 transition-colors",
                   isPasskey ? "border-l-primary" : "border-l-border"
                 )}
               >

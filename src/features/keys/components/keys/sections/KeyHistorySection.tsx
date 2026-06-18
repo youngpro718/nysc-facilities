@@ -250,7 +250,7 @@ export function KeyHistorySection() {
               const changes = Object.entries(log.changes || {});
 
               return (
-                <Card key={log.id} className="border-l-[3px] border-l-border">
+                <Card key={log.id}>
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex items-start gap-3">
                       <div

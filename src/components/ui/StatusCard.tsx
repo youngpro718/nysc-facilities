@@ -20,11 +20,11 @@ interface StatusCardProps {
 }
 
 const variantBorderClasses: Record<StatusVariant, string> = {
-  critical: "border-l-[3px] border-l-status-critical",
-  warning: "border-l-[3px] border-l-status-warning",
-  operational: "border-l-[3px] border-l-status-operational",
-  info: "border-l-[3px] border-l-status-info",
-  neutral: "border-l-[3px] border-l-status-neutral",
+  critical: "border-l-2 border-l-status-critical",
+  warning: "border-l-2 border-l-status-warning",
+  operational: "border-l-2 border-l-status-operational",
+  info: "border-l-2 border-l-status-info",
+  neutral: "border-l-2 border-l-status-neutral",
   none: "",
 };
 

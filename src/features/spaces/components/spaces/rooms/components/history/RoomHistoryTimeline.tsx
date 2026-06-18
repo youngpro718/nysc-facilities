@@ -360,7 +360,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
           displayedEvents.map((event) => (
             <div 
               key={event.id} 
-              className={`p-3 rounded-r-md border-l-4 transition-all hover:bg-muted/50 cursor-pointer group ${getSeverityColor(event.severity)}`}
+              className={`p-3 rounded-r-md border-l-2 transition-all hover:bg-muted/50 cursor-pointer group ${getSeverityColor(event.severity)}`}
               onClick={() => handleEventClick(event)}
               role="button"
               tabIndex={0}

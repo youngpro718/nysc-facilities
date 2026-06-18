@@ -98,7 +98,7 @@ export function PendingUsersSection({
       
       <div className="grid gap-4">
         {users.map((user) => (
-          <Card key={user.id} className="border-l-4 border-l-yellow-500">
+          <Card key={user.id}>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">

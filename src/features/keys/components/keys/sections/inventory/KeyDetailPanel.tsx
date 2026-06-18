@@ -69,7 +69,7 @@ export function KeyDetailPanel({
     <div className="h-full overflow-y-auto p-4 sm:p-6">
       <div className="max-w-2xl mx-auto space-y-4">
         {/* Header */}
-        <Card className="border-l-[3px] border-l-primary">
+        <Card>
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">

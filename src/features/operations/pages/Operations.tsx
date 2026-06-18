@@ -283,10 +283,6 @@ export default function Operations() {
         icon={Activity}
         className="mb-0"
       >
-        <Badge variant="secondary" className="text-xs">
-          <Activity className="h-3 w-3 mr-1" />
-          Live
-        </Badge>
         {buildingId && (
           <Button
             variant="outline"

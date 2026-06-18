@@ -74,8 +74,7 @@ export function SupplyItemCard({
         className={cn(
           "group relative rounded-2xl border overflow-hidden transition-all",
           "bg-card hover:shadow-md",
-          inCart && "ring-2 ring-primary/30 bg-primary/5",
-          item.requires_justification && "border-l-4 border-l-amber-500"
+          inCart && "ring-2 ring-primary/30 bg-primary/5"
         )}
       >
         {/* Thumbnail / Visual */}
