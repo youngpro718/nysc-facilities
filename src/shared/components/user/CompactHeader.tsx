@@ -34,12 +34,8 @@ export function CompactHeader({
   const fullName = `${firstName} ${lastName || ''}`.trim();
   const initials = `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
   const today = new Date();
-  const dayOfWeek = format(today, 'EEEE');
-  const formattedDate = format(today, 'MMMM d');
-  
-  // Get time-based greeting
-  const hour = today.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  // Full official-style date; no time-of-day greeting.
+  const formattedDate = format(today, 'EEEE, MMMM d, yyyy');
 
   return (
     <div className="flex items-center gap-3 sm:gap-4">
@@ -50,14 +46,14 @@ export function CompactHeader({
           {initials}
         </AvatarFallback>
       </Avatar>
-      
-      {/* Greeting & Info */}
+
+      {/* Name + date — formal heading, no "Good morning" pleasantry */}
       <div className="flex-1 min-w-0">
         <h1 className="text-lg sm:text-xl font-semibold tracking-tight truncate">
-          {greeting}, {firstName}!
+          {fullName}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          {dayOfWeek}, {formattedDate}
+        <p className="text-sm text-muted-foreground tabular">
+          {formattedDate}
         </p>
         
         {/* Workspace badges - only show on larger screens or if minimal */}

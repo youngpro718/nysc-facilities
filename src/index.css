@@ -2,6 +2,8 @@
 @import './styles/design-tokens.css';
 @import './styles/ios-compatibility.css';
 @import './styles/mobile-buttons.css';
+/* Display serif for h1/h2/dialog titles — the single biggest "official document" tell */
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,7 +39,8 @@
     --input: 0 0% 89.1%;
     --ring: 217 60% 38%;
 
-    --radius: 0.5rem;
+    /* Reduced from 0.5rem — sharper corners read "official document" not "social card". */
+    --radius: 0.375rem;
 
     /* Brand: brass gold — reserved for selective accents (badges, highlights) */
     --brand-gold: 41 60% 46%;
@@ -75,10 +78,11 @@
     --card-hover: 0 0% 94%;
 
     /* ── PRD 3.1 — Status colors (border/icon/text only, NOT card fills) ── */
-    --status-critical: 0 84% 60%;
-    --status-warning: 38 92% 50%;
-    --status-operational: 142 71% 45%;
-    --status-info: 217 91% 60%;
+    /* Desaturated court palette — court-appropriate, not retail-bright. */
+    --status-critical: 0 65% 45%;
+    --status-warning: 28 80% 42%;
+    --status-operational: 158 55% 32%;
+    --status-info: 217 55% 42%;
     --status-neutral: 220 9% 46%;
 
     /* Soft surface tints — for cards/banners/icon backgrounds. Use over --card. */
@@ -138,34 +142,35 @@
   }
 
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
+    /* Deep slate-navy instead of pure black — court terminal, not OLED consumer device. */
+    --background: 222 47% 9%;
+    --foreground: 210 20% 96%;
 
-    --card: 0 0% 11%;
-    --card-foreground: 0 0% 98%;
- 
-    --popover: 0 0% 4%;
-    --popover-foreground: 0 0% 98%;
- 
-    /* Brand: judicial navy, lifted for dark surfaces */
-    --primary: 215 75% 55%;
+    --card: 217 33% 14%;
+    --card-foreground: 210 20% 96%;
+
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 20% 96%;
+
+    /* Judicial navy — toned down from the saturated tech-blue. */
+    --primary: 217 55% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 215 25% 22%;
+    --secondary-foreground: 210 20% 96%;
 
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
+    --muted: 215 25% 18%;
+    --muted-foreground: 215 16% 65%;
 
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 215 25% 22%;
+    --accent-foreground: 210 20% 96%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 17%;
-    --input: 0 0% 14.9%;
-    --ring: 215 75% 58%;
+    --border: 215 19% 22%;
+    --input: 215 19% 22%;
+    --ring: 217 55% 55%;
 
     --brand-gold: 42 65% 56%;
 
@@ -192,20 +197,21 @@
     --lighting-maintenance: 217 91% 60%;
     --lighting-maintenance-foreground: 0 0% 98%;
 
-    /* ── PRD 3.1 — Dark mode surface & background tokens ── */
-    --surface: 0 0% 8%;
-    --surface-foreground: 0 0% 98%;
-    --sidebar: 0 0% 7%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 17%;
-    --border-subtle: 0 0% 12%;
-    --card-hover: 0 0% 14%;
+    /* ── PRD 3.1 — Dark mode surface & background tokens (slate-navy family) ── */
+    --surface: 222 45% 11%;
+    --surface-foreground: 210 20% 96%;
+    --sidebar: 222 45% 9%;
+    --sidebar-foreground: 210 20% 96%;
+    --sidebar-border: 215 19% 22%;
+    --border-subtle: 217 19% 18%;
+    --card-hover: 215 28% 19%;
 
     /* ── PRD 3.1 — Status colors ── */
-    --status-critical: 0 84% 60%;
-    --status-warning: 38 92% 50%;
-    --status-operational: 142 71% 45%;
-    --status-info: 217 91% 60%;
+    /* Desaturated court palette — court-appropriate, not retail-bright. */
+    --status-critical: 0 65% 45%;
+    --status-warning: 28 80% 42%;
+    --status-operational: 158 55% 32%;
+    --status-info: 217 55% 42%;
     --status-neutral: 220 9% 46%;
 
     /* Soft surface tints (dark mode) — low-saturation overlays on --card. */
@@ -357,25 +363,38 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
   }
-  
+
+  /* Display serif on page-title and section-title sizes. h3+ stays sans for UI clarity. */
+  h1, h2 {
+    font-family: var(--font-family-serif);
+    letter-spacing: -0.015em;
+  }
+
   h1 {
     @apply text-3xl lg:text-4xl;
   }
-  
+
   h2 {
     @apply text-2xl lg:text-3xl;
   }
-  
+
   h3 {
     @apply text-xl lg:text-2xl;
   }
-  
+
   h4 {
     @apply text-lg lg:text-xl;
   }
-  
+
   p {
     @apply leading-normal;
+  }
+
+  /* Tabular numerics on tables and any element opted-in with .tabular. Numbers no longer wobble in columns. */
+  table,
+  .tabular,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
   }
 }
 

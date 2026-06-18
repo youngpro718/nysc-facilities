@@ -49,6 +49,8 @@
 
   /* Typography */
   --font-family-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Serif for display headings only — page titles, dialog titles. Court-corporate signal. */
+  --font-family-serif: 'Source Serif 4', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
 
   /* Font sizes (legacy compat) */
   --font-size-xs: 0.75rem;
