@@ -63,7 +63,7 @@ export function FavoritesStrip({
               {inCart ? (
                 <>
                   <button
-                    className="p-0.5 rounded-full touch-manipulation active:scale-90"
+                    className="p-0.5 rounded-full touch-manipulation"
                     onClick={() => onDecrement(item)}
                   >
                     <Minus className="h-3.5 w-3.5" />
@@ -72,7 +72,7 @@ export function FavoritesStrip({
                     {quantity}
                   </span>
                   <button
-                    className="p-0.5 rounded-full touch-manipulation active:scale-90"
+                    className="p-0.5 rounded-full touch-manipulation"
                     onClick={() => onIncrement(item)}
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -80,7 +80,7 @@ export function FavoritesStrip({
                 </>
               ) : (
                 <button
-                  className="flex items-center gap-1 touch-manipulation active:scale-95"
+                  className="flex items-center gap-1 touch-manipulation"
                   onClick={() => onAdd(item)}
                 >
                   <Plus className="h-3 w-3" />

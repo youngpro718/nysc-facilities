@@ -140,7 +140,7 @@ export function SupportChatWidget() {
                     : <User className="h-3.5 w-3.5 text-muted-foreground" />}
                 </div>
                 <div className={cn(
-                  'rounded-2xl px-3 py-2 text-sm leading-relaxed max-w-[85%]',
+                  'rounded-md px-3 py-2 text-sm leading-relaxed max-w-[85%]',
                   msg.role === 'assistant'
                     ? 'bg-muted text-foreground rounded-tl-sm'
                     : 'bg-primary text-primary-foreground rounded-tr-sm'
@@ -168,7 +168,7 @@ export function SupportChatWidget() {
                 <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <Bot className="h-3.5 w-3.5 text-primary" />
                 </div>
-                <div className="bg-muted rounded-2xl rounded-tl-sm px-3 py-2">
+                <div className="bg-muted rounded-md rounded-tl-sm px-3 py-2">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               </div>

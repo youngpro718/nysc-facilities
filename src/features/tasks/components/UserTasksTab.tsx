@@ -116,7 +116,7 @@ function TaskRequestCard({ task, variant = 'default', onCancel }: TaskRequestCar
   const statusColor = TASK_STATUS_COLORS[task.status] || 'bg-gray-500';
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="transition-shadow">
       <CardContent className={variant === 'compact' ? 'p-3' : 'p-4'}>
         <div className="flex items-start justify-between">
           <div className="flex-1">

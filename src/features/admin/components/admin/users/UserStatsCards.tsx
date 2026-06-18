@@ -27,7 +27,7 @@ export function UserStatsCards({
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
       <Card 
-        className={`cursor-pointer transition-all hover:shadow-md ${
+        className={`cursor-pointer transition-all ${
           activeFilter === 'all' 
             ? 'ring-2 ring-primary bg-primary/5' 
             : 'hover:bg-accent'

@@ -101,7 +101,7 @@ export default function VerificationPending() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
+        <div className="bg-white rounded-md border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
           <div className="flex flex-col items-center text-center gap-3">
             <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
               <CheckCircle className="h-6 w-6 text-emerald-600" />
@@ -115,7 +115,7 @@ export default function VerificationPending() {
           </div>
 
           {userEmail && (
-            <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+            <div className="rounded-md bg-slate-50 border border-slate-100 p-3">
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-slate-400 shrink-0" />
                 <div className="min-w-0">
@@ -130,7 +130,7 @@ export default function VerificationPending() {
             <Button
               onClick={handleResendEmail}
               disabled={isResending}
-              className="w-full h-10 rounded-xl text-sm font-medium"
+              className="w-full h-10 rounded-md text-sm font-medium"
               variant="outline"
             >
               {isResending ? (
@@ -143,7 +143,7 @@ export default function VerificationPending() {
             <Button
               onClick={handleCheckStatus}
               variant="outline"
-              className="w-full h-10 rounded-xl text-sm font-medium"
+              className="w-full h-10 rounded-md text-sm font-medium"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Check Status
@@ -152,7 +152,7 @@ export default function VerificationPending() {
             <Button
               onClick={handleSignOut}
               variant="ghost"
-              className="w-full h-10 rounded-xl text-sm text-slate-500 hover:text-slate-700"
+              className="w-full h-10 rounded-md text-sm text-slate-500 hover:text-slate-700"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Return to Login

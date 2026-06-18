@@ -72,7 +72,7 @@ export default function Keys() {
           <Button
             variant="default"
             size="lg"
-            className="shrink-0 h-12 rounded-xl gap-2 shadow-sm"
+            className="shrink-0 h-12 rounded-md gap-2 shadow-sm"
             onClick={() => navigate("/keys/kiosk")}
           >
             <Monitor className="h-5 w-5" />

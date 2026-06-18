@@ -116,7 +116,7 @@ export function LocationStep({ form, assignedRooms }: LocationStepProps) {
                     <Label
                       htmlFor={`assigned-room-${room.room_id}`}
                       className={cn(
-                        "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer",
+                        "flex items-center gap-3 p-4 rounded-md border-2 cursor-pointer",
                         "transition-all duration-200",
                         "hover:border-primary/30 hover:bg-primary/5 hover:scale-[1.01]",
                         "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10",

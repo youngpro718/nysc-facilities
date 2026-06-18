@@ -16,7 +16,7 @@ export function MobileKeySearch({ value, onChange }: MobileKeySearchProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search room, key name, or box/slot…"
-        className="pl-10 pr-12 h-12 bg-card border-border rounded-xl"
+        className="pl-10 pr-12 h-12 bg-card border-border rounded-md"
       />
       <Button
         variant="ghost"

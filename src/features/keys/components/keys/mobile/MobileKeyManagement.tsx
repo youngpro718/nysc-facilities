@@ -273,7 +273,7 @@ export function MobileKeyManagement() {
         {canManageKeys && (
           <Button
             variant="outline"
-            className="w-full h-12 rounded-xl border-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 mb-4"
+            className="w-full h-12 rounded-md border-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 mb-4"
             onClick={() => setCreateKeyOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />

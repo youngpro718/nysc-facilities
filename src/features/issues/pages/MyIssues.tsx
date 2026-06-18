@@ -161,7 +161,7 @@ export default function MyIssues() {
             return (
               <Card 
                 key={issue.id} 
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className="cursor-pointer transition-shadow"
                 onClick={() => handleViewDetails(issue.id)}
               >
                 <CardHeader className="pb-3">

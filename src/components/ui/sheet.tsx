@@ -15,7 +15,7 @@ const SheetClose = SheetPrimitive.Close
 const SheetPortal = SheetPrimitive.Portal
 
 const sheetVariants = cva(
-  "fixed z-[100] gap-3 sm:gap-4 bg-background p-3 sm:p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+  "fixed z-[100] gap-3 sm:gap-4 bg-background p-3 sm:p-6 transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
   {
     variants: {
       side: {

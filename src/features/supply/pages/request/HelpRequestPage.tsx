@@ -240,7 +240,7 @@ export default function HelpRequestPage() {
               <button
                 key={option.id}
                 onClick={() => handleTypeSelect(option)}
-                className="flex items-center gap-4 p-4 rounded-xl border-2 border-border hover:border-primary/50 hover:bg-accent/50 transition-all text-left w-full"
+                className="flex items-center gap-4 p-4 rounded-md border-2 border-border hover:border-primary/50 hover:bg-accent/50 transition-all text-left w-full"
               >
                 <div className="p-3 rounded-full bg-primary/10 text-primary">
                   <Icon className="h-5 w-5" />

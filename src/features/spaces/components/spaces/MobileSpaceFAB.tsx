@@ -49,7 +49,7 @@ export function MobileSpaceFAB({
         >
           <Button
             size="lg"
-            className="h-14 w-14 rounded-full shadow-lg group active:scale-95 transition-transform touch-manipulation bg-courthouse-accent hover:bg-courthouse-accent/90 text-white"
+            className="h-14 w-14 rounded-full group transition-transform touch-manipulation bg-courthouse-accent hover:bg-courthouse-accent/90 text-white"
             onClick={() => setIsOpen(true)}
             aria-label="Add new room or space"
           >

@@ -84,7 +84,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[48px] touch-target touch-manipulation",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                  "active:scale-95 transition-transform duration-100",
+                  "transition-transform duration-100",
                   isActive
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -123,7 +123,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                 "flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[48px] touch-target touch-manipulation",
                 "text-muted-foreground hover:text-foreground",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                "active:scale-95 transition-transform duration-100"
+                "transition-transform duration-100"
               )}
               aria-label="More options"
             >

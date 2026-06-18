@@ -116,7 +116,7 @@ export const MaintenanceCalendar = () => {
         </CardHeader>
         <CardContent>
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2 rounded-xl border border-slate-200/80 bg-slate-50/60 p-2 dark:border-slate-800 dark:bg-slate-900/60">
+          <div className="grid grid-cols-7 gap-2 rounded-md border border-slate-200/80 bg-slate-50/60 p-2 dark:border-slate-800 dark:bg-slate-900/60">
             {/* Day headers */}
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
               <div key={day} className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground py-2">
@@ -143,7 +143,7 @@ export const MaintenanceCalendar = () => {
                     setSelectedDate(day);
                     setSelectedSchedule(null);
                   }}
-                  className={`min-h-[112px] rounded-xl border p-2.5 cursor-pointer transition-colors ${
+                  className={`min-h-[112px] rounded-md border p-2.5 cursor-pointer transition-colors ${
                     isSelected
                       ? "bg-primary/10 border-primary ring-2 ring-primary/20"
                       : isToday
@@ -231,7 +231,7 @@ export const MaintenanceCalendar = () => {
                     <div
                       key={schedule.id}
                       onClick={() => setSelectedSchedule(isActive ? null : schedule)}
-                      className={`rounded-xl border p-3 cursor-pointer transition-colors ${
+                      className={`rounded-md border p-3 cursor-pointer transition-colors ${
                         isActive ? "border-primary bg-primary/5" : "border-slate-200/80 hover:bg-muted/40 dark:border-slate-800"
                       }`}
                     >

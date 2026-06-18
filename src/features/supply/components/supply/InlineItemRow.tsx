@@ -47,7 +47,7 @@ export function InlineItemRow({
   return (
     <div
       className={cn(
-        "rounded-xl border transition-all",
+        "rounded-md border transition-all",
         "flex flex-col gap-1.5 p-2.5 sm:flex-row sm:items-center sm:gap-3 sm:p-3",
         inCart
           ? "bg-primary/5 border-primary/20"
@@ -122,7 +122,7 @@ export function InlineItemRow({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full touch-manipulation active:scale-95"
+              className="h-7 w-7 rounded-full touch-manipulation"
               onClick={(e) => {
                 e.stopPropagation();
                 onDecrement();
@@ -136,7 +136,7 @@ export function InlineItemRow({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full touch-manipulation active:scale-95"
+              className="h-7 w-7 rounded-full touch-manipulation"
               onClick={(e) => {
                 e.stopPropagation();
                 onIncrement();
@@ -149,7 +149,7 @@ export function InlineItemRow({
           <Button
             variant="secondary"
             size="sm"
-            className="h-7 px-2.5 shrink-0 touch-manipulation active:scale-[0.98] transition-transform text-xs font-medium rounded-full"
+            className="h-7 px-2.5 shrink-0 touch-manipulation transition-transform text-xs font-medium rounded-full"
             onClick={(e) => {
               e.stopPropagation();
               onAdd();
@@ -161,7 +161,7 @@ export function InlineItemRow({
         )}
         {onToggleFavorite && (
           <button
-            className="shrink-0 h-7 w-7 flex items-center justify-center rounded-full border bg-card active:scale-90 transition-transform touch-manipulation"
+            className="shrink-0 h-7 w-7 flex items-center justify-center rounded-full border bg-card transition-transform touch-manipulation"
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite();
@@ -252,7 +252,7 @@ export function InlineItemRow({
 
             {/* Image — full width, shorter aspect ratio */}
             <div className="px-5 shrink-0">
-              <div className="w-full rounded-xl overflow-hidden bg-muted" style={{ maxHeight: '180px' }}>
+              <div className="w-full rounded-md overflow-hidden bg-muted" style={{ maxHeight: '180px' }}>
                 <img
                   src={item.photo_url || getGenericItemImage(item.name)}
                   alt={item.name}
@@ -272,7 +272,7 @@ export function InlineItemRow({
                 </h3>
                 {onToggleFavorite && (
                   <button
-                    className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full border bg-card active:scale-90 transition-transform touch-manipulation"
+                    className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full border bg-card transition-transform touch-manipulation"
                     onClick={(e) => {
                       e.stopPropagation();
                       onToggleFavorite();
@@ -330,11 +330,11 @@ export function InlineItemRow({
             {/* Action bar */}
             <div className="px-5 pt-2 pb-4">
               {inCart ? (
-                <div className="flex items-center justify-between bg-muted/50 rounded-xl px-3 py-2">
+                <div className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-11 w-11 rounded-full touch-manipulation active:scale-95"
+                    className="h-11 w-11 rounded-full touch-manipulation"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDecrement();
@@ -353,7 +353,7 @@ export function InlineItemRow({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-11 w-11 rounded-full touch-manipulation active:scale-95"
+                    className="h-11 w-11 rounded-full touch-manipulation"
                     onClick={(e) => {
                       e.stopPropagation();
                       onIncrement();
@@ -364,7 +364,7 @@ export function InlineItemRow({
                 </div>
               ) : (
                 <Button
-                  className="w-full h-12 rounded-xl text-base font-semibold touch-manipulation active:scale-[0.98]"
+                  className="w-full h-12 rounded-md text-base font-semibold touch-manipulation"
                   onClick={(e) => {
                     e.stopPropagation();
                     onAdd();

@@ -290,7 +290,7 @@ export const StorageRoomsPanel = () => {
               <Card 
                 key={room.id} 
                 className={cn(
-                  "transition-all cursor-pointer hover:shadow-md",
+                  "transition-all cursor-pointer",
                   room.outOfStockItems > 0 && "border-destructive/30",
                   room.lowStockItems > 0 && room.outOfStockItems === 0 && "border-amber-400/30"
                 )}

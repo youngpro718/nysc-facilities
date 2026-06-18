@@ -16,7 +16,7 @@ export const CardView = ({ issues, onIssueSelect }: CardViewProps) => {
         <div 
           key={issue.id} 
           onClick={() => onIssueSelect(issue.id)}
-          className="cursor-pointer transition-transform hover:scale-[1.01] active:scale-[0.99]"
+          className="cursor-pointer transition-transform hover:scale-[1.01]"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {

@@ -192,7 +192,7 @@ export function OrderCart({
                         )}
                       </div>
                       <button
-                        className="p-2 -m-1 rounded-full text-muted-foreground hover:text-destructive active:scale-90 transition-all touch-manipulation"
+                        className="p-2 -m-1 rounded-full text-muted-foreground hover:text-destructive transition-all touch-manipulation"
                         onClick={() => onRemove(item.item_id)}
                         aria-label="Remove item"
                       >
@@ -203,7 +203,7 @@ export function OrderCart({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-11 w-11 rounded-full touch-manipulation active:scale-95"
+                        className="h-11 w-11 rounded-full touch-manipulation"
                         onClick={() => {
                           if (item.quantity <= 1) onRemove(item.item_id);
                           else onUpdateQuantity(item.item_id, item.quantity - 1);
@@ -223,7 +223,7 @@ export function OrderCart({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-11 w-11 rounded-full touch-manipulation active:scale-95"
+                        className="h-11 w-11 rounded-full touch-manipulation"
                         onClick={() => onUpdateQuantity(item.item_id, item.quantity + 1)}
                         aria-label="Increase"
                       >

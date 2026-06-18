@@ -64,7 +64,7 @@ const LoginPage = () => {
 
         {/* Form card — frosted glass */}
         <motion.div
-          className="light login-card rounded-2xl p-6 sm:p-8"
+          className="light login-card rounded-md p-6 sm:p-8"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}

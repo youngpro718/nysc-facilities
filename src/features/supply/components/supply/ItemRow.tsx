@@ -65,7 +65,7 @@ export function ItemRow({
           <Button
             size="sm"
             variant="ghost"
-            className="h-9 w-9 p-0 touch-manipulation active:scale-95"
+            className="h-9 w-9 p-0 touch-manipulation"
             onClick={onDecrement}
           >
             <Minus className="h-3.5 w-3.5" />
@@ -74,7 +74,7 @@ export function ItemRow({
           <Button
             size="sm"
             variant="ghost"
-            className="h-9 w-9 p-0 touch-manipulation active:scale-95"
+            className="h-9 w-9 p-0 touch-manipulation"
             onClick={onIncrement}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -84,7 +84,7 @@ export function ItemRow({
         <Button
           size="sm"
           variant="default"
-          className="flex-shrink-0 min-h-[44px] touch-manipulation active:scale-95"
+          className="flex-shrink-0 min-h-[44px] touch-manipulation"
           onClick={(e) => {
             e.stopPropagation();
             onAddToCart();

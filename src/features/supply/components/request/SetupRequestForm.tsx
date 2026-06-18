@@ -166,7 +166,7 @@ export function SetupRequestForm({ onSubmit, onBack, isSubmitting }: SetupReques
             <Armchair className="h-4 w-4 text-muted-foreground" />
             What do you need brought in?
           </Label>
-          <div className="rounded-xl border divide-y">
+          <div className="rounded-md border divide-y">
             {FURNITURE_ITEMS.map(item => {
               const qty = quantities[item] ?? 0;
               return (

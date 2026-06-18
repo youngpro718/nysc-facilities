@@ -69,7 +69,7 @@ export function MaintenanceTab({
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+            <div className="rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300">In progress</p>
@@ -79,7 +79,7 @@ export function MaintenanceTab({
                 <Clock className="h-6 w-6 text-amber-500" />
               </div>
             </div>
-            <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/20">
+            <div className="rounded-md border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-blue-700 dark:text-blue-300">Scheduled</p>
@@ -89,7 +89,7 @@ export function MaintenanceTab({
                 <Calendar className="h-6 w-6 text-blue-500" />
               </div>
             </div>
-            <div className="rounded-xl border border-red-200 bg-red-50/70 p-4 dark:border-red-900 dark:bg-red-950/20">
+            <div className="rounded-md border border-red-200 bg-red-50/70 p-4 dark:border-red-900 dark:bg-red-950/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-red-700 dark:text-red-300">Urgent queue</p>
@@ -99,7 +99,7 @@ export function MaintenanceTab({
                 <AlertTriangle className="h-6 w-6 text-red-500" />
               </div>
             </div>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
+            <div className="rounded-md border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Completed</p>

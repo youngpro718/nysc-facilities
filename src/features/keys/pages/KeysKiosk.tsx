@@ -210,7 +210,7 @@ export default function KeysKiosk() {
       <div className="shrink-0 border-b bg-card">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
               <KeyRound className="h-7 w-7 text-primary" />
             </div>
             <div>
@@ -221,7 +221,7 @@ export default function KeysKiosk() {
           <Button
             variant="outline"
             size="lg"
-            className="h-14 px-6 text-base rounded-xl"
+            className="h-14 px-6 text-base rounded-md"
             onClick={() => navigate("/keys")}
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
@@ -234,9 +234,9 @@ export default function KeysKiosk() {
           <button
             onClick={() => setTab("find")}
             className={cn(
-              "h-20 rounded-2xl border-2 flex items-center justify-center gap-3 text-xl font-semibold transition-all active:scale-[0.98]",
+              "h-20 rounded-md border-2 flex items-center justify-center gap-3 text-xl font-semibold transition-all",
               tab === "find"
-                ? "bg-primary text-primary-foreground border-primary shadow-lg"
+                ? "bg-primary text-primary-foreground border-primary"
                 : "bg-card text-foreground border-border hover:border-primary/50"
             )}
           >
@@ -246,9 +246,9 @@ export default function KeysKiosk() {
           <button
             onClick={() => setTab("out")}
             className={cn(
-              "h-20 rounded-2xl border-2 flex items-center justify-center gap-3 text-xl font-semibold transition-all active:scale-[0.98] relative",
+              "h-20 rounded-md border-2 flex items-center justify-center gap-3 text-xl font-semibold transition-all relative",
               tab === "out"
-                ? "bg-primary text-primary-foreground border-primary shadow-lg"
+                ? "bg-primary text-primary-foreground border-primary"
                 : "bg-card text-foreground border-border hover:border-primary/50"
             )}
           >
@@ -302,7 +302,7 @@ export default function KeysKiosk() {
 
               {actionSlot.status === "checked_out" ? (
                 <div className="space-y-4 py-2">
-                  <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-4 text-base">
+                  <div className="rounded-md bg-amber-500/10 border border-amber-500/30 p-4 text-base">
                     <div className="font-semibold text-foreground">Currently with</div>
                     <div className="text-xl font-bold text-foreground">{actionSlot.checked_out_to || "Unknown"}</div>
                     <div className="text-sm text-muted-foreground mt-1">{timeAgo(actionSlot.checked_out_at)}</div>
@@ -377,7 +377,7 @@ function FindTab({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search room number, key label, or lockbox…"
-          className="h-20 pl-16 pr-16 text-2xl rounded-2xl border-2"
+          className="h-20 pl-16 pr-16 text-2xl rounded-md border-2"
         />
         {query && (
           <Button
@@ -399,7 +399,7 @@ function FindTab({
               key={c.id}
               onClick={() => setCategory(c.id)}
               className={cn(
-                "h-12 px-5 rounded-full border-2 text-base font-semibold transition-all active:scale-[0.97] flex items-center gap-2",
+                "h-12 px-5 rounded-full border-2 text-base font-semibold transition-all flex items-center gap-2",
                 active
                   ? "bg-primary text-primary-foreground border-primary shadow"
                   : "bg-card text-foreground border-border hover:border-primary/50"
@@ -433,7 +433,7 @@ function FindTab({
               <button
                 key={s.id}
                 onClick={() => onAction(s)}
-                className="w-full text-left bg-card border-2 border-border hover:border-primary/50 rounded-2xl p-5 transition-all active:scale-[0.99] flex items-center gap-4"
+                className="w-full text-left bg-card border-2 border-border hover:border-primary/50 rounded-md p-5 transition-all flex items-center gap-4"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
@@ -455,7 +455,7 @@ function FindTab({
                   )}
                 </div>
                 <div className={cn(
-                  "shrink-0 h-14 px-5 rounded-xl flex items-center gap-2 font-semibold text-base",
+                  "shrink-0 h-14 px-5 rounded-md flex items-center gap-2 font-semibold text-base",
                   isAvail ? "bg-primary text-primary-foreground" :
                   isOut ? "bg-green-600 text-white" :
                   "bg-muted text-muted-foreground"
@@ -486,7 +486,7 @@ function OutTab({ list, onCheckIn }: { list: EnrichedSlot[]; onCheckIn: (s: Enri
   return (
     <div className="max-w-4xl mx-auto space-y-3">
       {list.map((s) => (
-        <div key={s.id} className="bg-card border-2 border-amber-500/30 rounded-2xl p-5 flex items-center gap-4">
+        <div key={s.id} className="bg-card border-2 border-amber-500/30 rounded-md p-5 flex items-center gap-4">
           <div className="flex-1 min-w-0">
             <div className="text-2xl font-bold text-foreground">
               {getSlotDisplayTitle(s)}
@@ -501,7 +501,7 @@ function OutTab({ list, onCheckIn }: { list: EnrichedSlot[]; onCheckIn: (s: Enri
           </div>
           <Button
             size="lg"
-            className="h-16 px-6 text-base rounded-xl bg-green-600 hover:bg-green-700 text-white"
+            className="h-16 px-6 text-base rounded-md bg-green-600 hover:bg-green-700 text-white"
             onClick={() => onCheckIn(s)}
           >
             <LogIn className="h-5 w-5 mr-2" />

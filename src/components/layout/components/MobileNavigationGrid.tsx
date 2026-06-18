@@ -57,8 +57,8 @@ export const MobileNavigationGrid: React.FC<MobileNavigationGridProps> = ({
               onFocus={() => prefetchRoute(item.path)}
               onTouchStart={() => prefetchRoute(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
-                "active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                "flex flex-col items-center justify-center gap-2 p-4 rounded-md border-2 transition-all duration-200",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                 "min-h-[88px] touch-manipulation",
                 isActive
                   ? "border-primary bg-primary/5 text-primary shadow-sm"
@@ -105,7 +105,7 @@ export const MobileNavigationGrid: React.FC<MobileNavigationGridProps> = ({
         <Button
           onClick={handleSignOut}
           variant="destructive"
-          className="w-full h-12 text-base touch-manipulation active:scale-[0.98]"
+          className="w-full h-12 text-base touch-manipulation"
         >
           <LogOut className="mr-2 h-5 w-5" />
           Sign Out

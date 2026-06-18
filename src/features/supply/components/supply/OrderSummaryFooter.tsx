@@ -153,7 +153,7 @@ export function OrderSummaryFooter({
       >
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <div className={cn(
-            "mx-auto max-w-3xl rounded-2xl border-2 border-primary/20 shadow-2xl ring-1 ring-black/5",
+            "mx-auto max-w-3xl rounded-md border-2 border-primary/20 shadow-2xl ring-1 ring-black/5",
             "bg-background/95 backdrop-blur-xl"
           )}>
             {/* Inline Justification for Restricted Items */}
@@ -185,7 +185,7 @@ export function OrderSummaryFooter({
                 <button className="flex items-center gap-3 flex-1 min-w-0 text-left group">
                   <div className="relative">
                     <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                      "w-12 h-12 rounded-md flex items-center justify-center transition-colors",
                       "bg-primary/10 group-hover:bg-primary/20"
                     )}>
                       <ShoppingCart className="h-5 w-5 text-primary" />
@@ -213,7 +213,7 @@ export function OrderSummaryFooter({
               {hasRestrictedItems ? (
                 <Button
                   size="lg"
-                  className="shrink-0 rounded-xl h-12 px-5 gap-2 font-semibold"
+                  className="shrink-0 rounded-md h-12 px-5 gap-2 font-semibold"
                   onClick={handleFullSubmit}
                   disabled={isSubmitting || !justification.trim()}
                 >
@@ -225,7 +225,7 @@ export function OrderSummaryFooter({
                 <Button
                   size="lg"
                   className={cn(
-                    "shrink-0 rounded-xl h-12 px-5 gap-2 font-semibold transition-all",
+                    "shrink-0 rounded-md h-12 px-5 gap-2 font-semibold transition-all",
                     showSuccess
                       ? "bg-emerald-500 hover:bg-emerald-500"
                       : ""
@@ -248,7 +248,7 @@ export function OrderSummaryFooter({
               ) : (
                 <Button
                   size="lg"
-                  className="shrink-0 rounded-xl h-12 px-5 gap-2 font-semibold"
+                  className="shrink-0 rounded-md h-12 px-5 gap-2 font-semibold"
                   onClick={() => setIsOpen(true)}
                   disabled={isSubmitting}
                 >
@@ -265,7 +265,7 @@ export function OrderSummaryFooter({
                 <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
               </div>
               <SheetTitle className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
                   <ShoppingCart className="h-5 w-5 text-primary" />
                 </div>
                 <div>
@@ -284,7 +284,7 @@ export function OrderSummaryFooter({
                   key={item.item_id}
                   layout
                   className={cn(
-                    "rounded-xl border p-3",
+                    "rounded-md border p-3",
                     item.requires_justification 
                       ? "bg-amber-500/5 border-amber-500/30" 
                       : "bg-muted/30"
@@ -349,7 +349,7 @@ export function OrderSummaryFooter({
             {/* Order Options */}
             <div className="border-t pt-4 space-y-4 -mx-6 px-6">
               {hasRestrictedItems && (
-                <div className="space-y-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                <div className="space-y-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-md">
                   <Label className="text-sm flex items-center gap-2 text-amber-700 dark:text-amber-400">
                     <AlertTriangle className="h-4 w-4" />
                     Justification Required
@@ -377,13 +377,13 @@ export function OrderSummaryFooter({
                     onChange={setDeliveryLocation}
                     userId={user?.id}
                     placeholder="Search rooms…"
-                    triggerClassName="h-10 rounded-xl"
+                    triggerClassName="h-10 rounded-md"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Priority</Label>
                   <Select value={priority} onValueChange={setPriority}>
-                    <SelectTrigger className="h-10 rounded-xl">
+                    <SelectTrigger className="h-10 rounded-md">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -400,14 +400,14 @@ export function OrderSummaryFooter({
             <SheetFooter className="flex-row gap-3 pt-4 -mx-6 px-6 pb-safe">
               <Button
                 variant="outline"
-                className="flex-1 h-12 rounded-xl"
+                className="flex-1 h-12 rounded-md"
                 onClick={onClear}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Clear
               </Button>
               <Button
-                className="flex-1 h-12 rounded-xl font-semibold"
+                className="flex-1 h-12 rounded-md font-semibold"
                 onClick={handleFullSubmit}
                 disabled={isSubmitting || (hasRestrictedItems && !justification.trim())}
               >

@@ -61,8 +61,8 @@ export function MobileKeyStatusChips({
             key={c.key}
             onClick={() => onChange(c.key)}
             className={cn(
-              "flex items-center gap-2 shrink-0 h-11 px-4 rounded-xl border bg-card transition-all",
-              "touch-manipulation active:scale-[0.97]",
+              "flex items-center gap-2 shrink-0 h-11 px-4 rounded-md border bg-card transition-all",
+              "touch-manipulation",
               isActive
                 ? cn("ring-2 ring-offset-0", c.ring)
                 : "border-border text-foreground",
@@ -86,7 +86,7 @@ export function MobileKeyStatusChips({
       <Button
         variant="outline"
         size="icon"
-        className="h-11 w-11 shrink-0 rounded-xl"
+        className="h-11 w-11 shrink-0 rounded-md"
         onClick={onOpenFilters}
         aria-label="Filters"
       >

@@ -59,7 +59,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
   // is unreliable inside Drawer/portal contexts and causes the CardBack to bleed through mirrored.
   if (variant === 'panel') {
     return (
-      <Card className="relative h-full w-full max-w-none group overflow-hidden cursor-default shadow-md">
+      <Card className="relative h-full w-full max-w-none group overflow-hidden cursor-default">
         <CardContent className="p-0 h-full overflow-y-auto">
           {isFlipped ? (
             <CardBack room={displayRoom} onFlip={handleFlip} onDelete={onDelete} />
@@ -88,7 +88,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
     <Card
       className={`relative h-[320px] group overflow-hidden cursor-default transition-all duration-200 ease-out ${isHovered
           ? 'shadow-2xl shadow-black/20 dark:shadow-black/40'
-          : 'shadow-md hover:shadow-lg'
+          : 'shadow-md'
         }`}
       onMouseEnter={() => { setIsHovered(true); }}
       onMouseLeave={() => { setIsHovered(false); }}

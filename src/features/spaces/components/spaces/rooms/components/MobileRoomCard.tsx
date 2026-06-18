@@ -87,7 +87,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
 
   return (
     <>
-      <div className="relative overflow-hidden rounded-xl">
+      <div className="relative overflow-hidden rounded-md">
         {/* Swipe Action Buttons (revealed on swipe) */}
         {canManageSpaces && (
         <motion.div 

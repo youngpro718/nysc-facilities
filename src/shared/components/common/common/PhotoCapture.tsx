@@ -132,8 +132,8 @@ export function PhotoCapture({
         <label className="cursor-pointer block">
           <div
             className={cn(
-              "flex items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors",
-              "text-sm text-muted-foreground touch-manipulation active:scale-[0.98]",
+              "flex items-center justify-center gap-2 rounded-md border-2 border-dashed transition-colors",
+              "text-sm text-muted-foreground touch-manipulation",
               compact
                 ? "py-3 px-4"
                 : "py-6 px-4 flex-col",

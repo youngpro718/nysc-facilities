@@ -65,7 +65,7 @@ function CustomDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg">
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md">
           <div className="max-h-60 overflow-auto p-1">
             {options.length === 0 ? (
               <div className="px-3 py-2 text-sm text-muted-foreground">
@@ -220,7 +220,7 @@ export function EnhancedLocationStep({ form, assignedRooms }: EnhancedLocationSt
                     <Label
                       htmlFor={`assigned-room-${room.room_id}`}
                       className={cn(
-                        "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer",
+                        "flex items-center gap-3 p-4 rounded-md border-2 cursor-pointer",
                         "transition-all duration-200",
                         "hover:border-primary/30 hover:bg-primary/5 hover:scale-[1.01]",
                         "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10",

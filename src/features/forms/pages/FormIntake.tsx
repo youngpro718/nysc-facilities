@@ -330,7 +330,7 @@ export default function FormIntake() {
 
       {selectedCourtReport && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-background border rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-background border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
               <h2 className="text-xl font-bold">Court Report Details</h2>
               <Button variant="ghost" onClick={() => setSelectedCourtReport(null)}>

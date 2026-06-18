@@ -56,7 +56,7 @@ export const BuildingStats = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div 
-              className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg cursor-pointer transform hover:scale-[1.02]"
+              className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent cursor-pointer transform hover:scale-[1.02]"
               onClick={handleBuildingOverviewClick}
             >
       <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -89,7 +89,7 @@ export const BuildingStats = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div 
-              className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg cursor-pointer transform hover:scale-[1.02]"
+              className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent cursor-pointer transform hover:scale-[1.02]"
               onClick={handleIssuesClick}
             >
       <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -120,7 +120,7 @@ export const BuildingStats = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div 
-              className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg cursor-pointer transform hover:scale-[1.02]"
+              className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent cursor-pointer transform hover:scale-[1.02]"
               onClick={handleLightingClick}
             >
       <div className="flex items-center gap-1.5 text-muted-foreground">

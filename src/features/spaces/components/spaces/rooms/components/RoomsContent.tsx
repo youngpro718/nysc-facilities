@@ -34,7 +34,7 @@ export function RoomsContent({
         {isMobile ? (
           <div className="space-y-3 px-4">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-[100px] rounded-xl" />
+              <Skeleton key={i} className="h-[100px] rounded-md" />
             ))}
           </div>
         ) : (

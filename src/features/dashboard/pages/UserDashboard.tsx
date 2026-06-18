@@ -118,7 +118,7 @@ export default function UserDashboard() {
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
       <div className="max-w-lg mx-auto space-y-6 pb-24 px-4 sm:px-0">
         {/* Header: greeting card with subtle gradient + notifications */}
-        <div className="rounded-2xl border border-border bg-card p-4 pt-5">
+        <div className="rounded-md border border-border bg-card p-4 pt-5">
           <div className="flex items-start justify-between gap-3">
             <CompactHeader
               firstName={firstName}
@@ -211,7 +211,7 @@ function ActionRow({
       onClick={onClick}
       onPointerEnter={handlePrefetch}
       onFocus={handlePrefetch}
-      className={`flex items-center gap-4 w-full rounded-xl px-5 py-4 text-left transition-colors touch-manipulation
+      className={`flex items-center gap-4 w-full rounded-md px-5 py-4 text-left transition-colors touch-manipulation
         ${accent
           ? "bg-primary text-primary-foreground hover:bg-primary/90"
           : "bg-card border border-border hover:bg-accent text-foreground"

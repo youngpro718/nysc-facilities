@@ -208,7 +208,7 @@ export const MaintenanceScheduleList = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+      <div className="flex flex-col gap-3 rounded-md border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/60">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">{scheduleCount} schedules</Badge>
           <Badge variant={urgentCount > 0 ? "destructive" : "secondary"}>

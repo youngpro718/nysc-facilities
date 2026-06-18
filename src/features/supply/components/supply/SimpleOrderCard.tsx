@@ -110,7 +110,7 @@ export function SimpleOrderCard({
     : order.supply_request_items?.slice(0, 3);
 
   return (
-    <Card className={cn('hover:shadow-md transition-all', urgencyClass)}>
+    <Card className={cn('transition-all', urgencyClass)}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg flex items-center gap-2">

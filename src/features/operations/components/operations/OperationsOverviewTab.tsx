@@ -155,7 +155,7 @@ export function OperationsOverviewTab({
             {summaryCards.map((card) => {
               const Icon = card.icon;
               return (
-                <div key={card.label} className={`rounded-xl border p-4 ${card.classes}`}>
+                <div key={card.label} className={`rounded-md border p-4 ${card.classes}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <p className="text-xs font-medium uppercase tracking-wide opacity-80">{card.label}</p>
@@ -219,7 +219,7 @@ export function OperationsOverviewTab({
                         key={issue.id}
                         type="button"
                         onClick={() => onIssueSelect(issue.id)}
-                        className="w-full rounded-xl border border-slate-200 bg-background p-4 text-left transition-colors hover:bg-muted/40 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700"
+                        className="w-full rounded-md border border-slate-200 bg-background p-4 text-left transition-colors hover:bg-muted/40 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700"
                       >
                         <div className="flex items-start gap-3">
                           {photo && (
@@ -275,21 +275,21 @@ export function OperationsOverviewTab({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+              <div className="flex items-center justify-between rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
                 <div>
                   <p className="text-sm font-medium text-amber-700 dark:text-amber-300">In progress</p>
                   <p className="text-3xl font-semibold text-foreground">{enhancedMetrics.maintenanceInProgress}</p>
                 </div>
                 <Clock className="h-7 w-7 text-amber-500" />
               </div>
-              <div className="flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/20">
+              <div className="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/20">
                 <div>
                   <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Scheduled</p>
                   <p className="text-3xl font-semibold text-foreground">{enhancedMetrics.maintenanceScheduled}</p>
                 </div>
                 <Calendar className="h-7 w-7 text-blue-500" />
               </div>
-              <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
+              <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
                 <div>
                   <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Resolved today</p>
                   <p className="text-3xl font-semibold text-foreground">{enhancedMetrics.resolvedToday}</p>

@@ -21,7 +21,7 @@ export function MobileKeyBoxOverview({
   onSelect,
 }: MobileKeyBoxOverviewProps) {
   return (
-    <div className="rounded-2xl border bg-card p-4 space-y-3">
+    <div className="rounded-md border bg-card p-4 space-y-3">
       <h3 className="text-sm font-semibold">Key Box Overview</h3>
       <ScrollArea className="w-full">
         <div className="flex gap-3 pb-2">
@@ -33,8 +33,8 @@ export function MobileKeyBoxOverview({
                 key={b.id}
                 onClick={() => onSelect(b.id)}
                 className={cn(
-                  "shrink-0 w-[148px] rounded-xl border bg-background p-3 text-left transition-all",
-                  "touch-manipulation active:scale-[0.98]",
+                  "shrink-0 w-[148px] rounded-md border bg-background p-3 text-left transition-all",
+                  "touch-manipulation",
                   isActive
                     ? "ring-2 ring-primary border-primary"
                     : "border-border",
@@ -61,8 +61,8 @@ export function MobileKeyBoxOverview({
           <button
             onClick={() => onSelect(null)}
             className={cn(
-              "shrink-0 w-[120px] rounded-xl border bg-background p-3 text-left transition-all flex flex-col justify-between",
-              "touch-manipulation active:scale-[0.98]",
+              "shrink-0 w-[120px] rounded-md border bg-background p-3 text-left transition-all flex flex-col justify-between",
+              "touch-manipulation",
               selectedId === null
                 ? "ring-2 ring-primary border-primary"
                 : "border-border",

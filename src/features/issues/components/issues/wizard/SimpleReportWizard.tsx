@@ -289,8 +289,8 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
                 className={cn(
-                  "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-                  "touch-manipulation active:scale-[0.97] min-h-[90px]",
+                  "flex flex-col items-center gap-2 p-4 rounded-md border-2 transition-all",
+                  "touch-manipulation min-h-[90px]",
                   active
                     ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                     : "border-border bg-card hover:border-primary/40 hover:bg-accent/30"
@@ -318,11 +318,11 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
         <SectionHeader step={2} label="Where is it?" done={hasLocation} />
 
         {isLoadingRooms ? (
-          <Skeleton className="h-14 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-md" />
         ) : roomSelectedViaSearch && selectedSearchedRoom ? (
           /* Room selected via live search — show confirmation card */
           <div className="space-y-2">
-            <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-primary bg-primary/5">
+            <div className="flex items-center gap-3 p-3 rounded-md border-2 border-primary bg-primary/5">
               <div className="p-2 rounded-lg bg-primary/10">
                 <MapPin className="h-4 w-4 text-primary" />
               </div>
@@ -366,8 +366,8 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
                     type="button"
                     onClick={() => { setSelectedRoomId(rid); setRoomSelectedViaSearch(false); setShowRoomPicker(false); }}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left",
-                      "touch-manipulation active:scale-[0.99]",
+                      "flex items-center gap-3 p-3 rounded-md border-2 transition-all text-left",
+                      "touch-manipulation",
                       active
                         ? "border-primary bg-primary/5"
                         : "border-border bg-card hover:border-primary/40"
@@ -402,13 +402,13 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
                 placeholder="Type a room number…"
                 value={roomSearchQuery}
                 onChange={(e) => setRoomSearchQuery(e.target.value)}
-                className="pl-10 min-h-[48px] rounded-xl"
+                className="pl-10 min-h-[48px] rounded-md"
                 autoFocus
               />
             </div>
 
             {roomSearchQuery.trim() && (
-              <div className="border rounded-xl overflow-hidden">
+              <div className="border rounded-md overflow-hidden">
                 <ScrollArea className="max-h-[200px]">
                   {roomsSearchLoading ? (
                     <div className="flex items-center justify-center py-8">
@@ -454,7 +454,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
                   placeholder="e.g., 5th floor hallway near elevator"
                   value={locationDescription}
                   onChange={(e) => setLocationDescription(e.target.value)}
-                  className="min-h-[48px] rounded-xl"
+                  className="min-h-[48px] rounded-md"
                 />
               </div>
             )}
@@ -495,7 +495,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What happened? When did you notice it?"
-            className="min-h-[120px] pr-14 rounded-xl resize-none"
+            className="min-h-[120px] pr-14 rounded-md resize-none"
           />
           <Button
             type="button"
@@ -533,7 +533,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
               type="button"
               variant={urgency === opt.value ? 'default' : 'outline'}
               className={cn(
-                "rounded-xl h-11",
+                "rounded-md h-11",
                 urgency === opt.value && opt.value === 'critical' && "bg-status-critical hover:bg-status-critical/90 text-white border-transparent",
                 urgency === opt.value && opt.value === 'high' && "bg-status-warning hover:bg-status-warning/90 text-white border-transparent",
               )}
@@ -579,7 +579,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
             <Button
               onClick={handleSubmit}
               disabled={!canSubmit || createIssueMutation.isPending}
-              className="flex-1 min-h-[48px] text-[15px] font-semibold rounded-xl"
+              className="flex-1 min-h-[48px] text-[15px] font-semibold rounded-md"
             >
               {createIssueMutation.isPending ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting…</>

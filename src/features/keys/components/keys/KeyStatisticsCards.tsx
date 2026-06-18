@@ -14,7 +14,7 @@ export function KeyStatisticsCards({ keyStats, isLoading }: KeyStatisticsCardsPr
     return (
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         {Array(4).fill(0).map((_, i) => (
-          <Skeleton key={i} className="h-[110px] rounded-xl" />
+          <Skeleton key={i} className="h-[110px] rounded-md" />
         ))}
       </div>
     );

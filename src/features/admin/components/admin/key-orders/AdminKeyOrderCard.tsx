@@ -141,7 +141,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyO
   };
 
   return (
-    <Card className="transition-all duration-200 hover:shadow-md">
+    <Card className="transition-all duration-200">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">

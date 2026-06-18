@@ -160,7 +160,7 @@ export function MobileIssueCard({
         }
       ]}
       onCardClick={onViewDetails}
-      className="hover:shadow-md transition-shadow"
+      className="transition-shadow"
     >
       <div className="space-y-4">
         {/* Progress Bar */}

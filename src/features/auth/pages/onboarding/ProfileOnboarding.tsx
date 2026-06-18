@@ -136,7 +136,7 @@ export default function ProfileOnboarding() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
+        <div className="bg-white rounded-md border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
           <div className="text-center">
             <h1 className="text-lg font-semibold text-slate-900">Complete Your Profile</h1>
             <p className="text-sm text-slate-500 mt-1">
@@ -147,7 +147,7 @@ export default function ProfileOnboarding() {
           </div>
 
           {requestedRole && (
-            <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2">
+            <div className="rounded-md bg-slate-50 border border-slate-200 p-4 space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Your first focus
               </p>
@@ -176,7 +176,7 @@ export default function ProfileOnboarding() {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
-                  className="h-10 rounded-xl text-sm"
+                  className="h-10 rounded-md text-sm"
                   autoComplete="given-name"
                 />
               </div>
@@ -192,7 +192,7 @@ export default function ProfileOnboarding() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
-                  className="h-10 rounded-xl text-sm"
+                  className="h-10 rounded-md text-sm"
                   autoComplete="family-name"
                 />
               </div>
@@ -206,7 +206,7 @@ export default function ProfileOnboarding() {
                 placeholder="Facilities Manager"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="h-10 rounded-xl text-sm"
+                className="h-10 rounded-md text-sm"
                 autoComplete="organization-title"
               />
             </div>
@@ -219,13 +219,13 @@ export default function ProfileOnboarding() {
                 placeholder="Facilities"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className="h-10 rounded-xl text-sm"
+                className="h-10 rounded-md text-sm"
                 autoComplete="organization"
               />
             </div>
 
             {error && (
-              <Alert variant="destructive" className="rounded-xl">
+              <Alert variant="destructive" className="rounded-md">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-sm">{error}</AlertDescription>
               </Alert>
@@ -233,7 +233,7 @@ export default function ProfileOnboarding() {
 
             <Button
               type="submit"
-              className="w-full h-10 rounded-xl text-sm font-medium"
+              className="w-full h-10 rounded-md text-sm font-medium"
               disabled={loading}
             >
               {loading ? 'Saving...' : 'Save & Continue'}

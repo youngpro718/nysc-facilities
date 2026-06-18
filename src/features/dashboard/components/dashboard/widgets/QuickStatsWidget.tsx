@@ -49,7 +49,7 @@ export function QuickStatsWidget({ stats, columns = 4, className }: QuickStatsWi
             key={index}
             className={cn(
               "transition-all",
-              stat.onClick && "cursor-pointer hover:shadow-md"
+              stat.onClick && "cursor-pointer"
             )}
             onClick={stat.onClick}
           >

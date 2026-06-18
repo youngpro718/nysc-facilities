@@ -99,7 +99,7 @@ export function MobileSearchBar({
 
       {/* Search Suggestions/Recent Searches Dropdown */}
       {shouldShowDropdown && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md shadow-lg">
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md">
           {value.length === 0 && recentSearches.length > 0 && (
             <div className="p-3">
               <div className="flex items-center justify-between mb-2">

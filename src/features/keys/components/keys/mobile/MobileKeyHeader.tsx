@@ -38,7 +38,7 @@ export function MobileKeyHeader() {
 
       <Button
         size="lg"
-        className="w-full h-14 rounded-2xl text-base gap-2 shadow-sm"
+        className="w-full h-14 rounded-md text-base gap-2 shadow-sm"
         onClick={() => navigate("/keys/kiosk")}
       >
         <Monitor className="h-5 w-5" />

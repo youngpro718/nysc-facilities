@@ -126,7 +126,7 @@ export function RoomPreviewCard({
       <CardContent className="p-6 space-y-6">
         {/* Template Header */}
         <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-2xl ${templateColor} text-white`}>
+          <div className={`p-3 rounded-md ${templateColor} text-white`}>
             <Icon className="h-7 w-7" />
           </div>
           <div className="flex-1">

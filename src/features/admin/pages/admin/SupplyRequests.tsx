@@ -148,7 +148,7 @@ export default function AdminSupplyRequests() {
       >
         <Button
           onClick={() => navigate('/request/supplies')}
-          className="touch-target min-h-[44px] active:scale-95 transition-transform"
+          className="touch-target min-h-[44px] transition-transform"
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
           Order Supplies

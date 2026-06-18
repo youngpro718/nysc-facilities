@@ -128,7 +128,7 @@ export function FloatingActionButton() {
                   <motion.button
                     key={action.id}
                     type="button"
-                    className="flex items-center gap-3 bg-background border border-border rounded-full pl-4 pr-3 py-2.5 shadow-lg touch-manipulation active:scale-95 transition-transform"
+                    className="flex items-center gap-3 bg-background border border-border rounded-full pl-4 pr-3 py-2.5 touch-manipulation transition-transform"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0, transition: { delay: i * 0.05 } }}
                     exit={{ opacity: 0, x: 20 }}
@@ -146,7 +146,7 @@ export function FloatingActionButton() {
                   size="sm"
                   label="Report Issue"
                   showIcon={true}
-                  className="rounded-full pl-4 pr-3 py-2.5 h-auto shadow-lg border-border"
+                  className="rounded-full pl-4 pr-3 py-2.5 h-auto border-border"
                 />
               </motion.div>
             )}
@@ -168,7 +168,7 @@ export function FloatingActionButton() {
             <Button
               size="icon"
               type="button"
-              className="h-14 w-14 rounded-full shadow-xl bg-primary hover:bg-primary/90 active:scale-95 transition-transform touch-manipulation"
+              className="h-14 w-14 rounded-full shadow-xl bg-primary hover:bg-primary/90 transition-transform touch-manipulation"
               onClick={toggleMenu}
               aria-label={isOpen ? "Close actions" : "New Request"}
             >

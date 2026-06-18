@@ -71,7 +71,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center space-y-4">
-                <div className="bg-white p-6 rounded-lg shadow-lg">
+                <div className="bg-white p-6 rounded-lg">
                   <QRCodeSVG
                     id="public-forms-qr"
                     value={publicFormsUrl}
@@ -109,7 +109,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
                 </div>
 
                 <div className="flex justify-center">
-                  <div className="bg-white p-8 rounded-2xl shadow-2xl border-4 border-blue-600">
+                  <div className="bg-white p-8 rounded-md shadow-2xl border-4 border-blue-600">
                     <QRCodeSVG
                       value={publicFormsUrl}
                       size={300}
@@ -153,7 +153,7 @@ export function QRCodeGenerator({ open, onClose }: QRCodeGeneratorProps) {
                   </div>
 
                   <div className="flex justify-center">
-                    <div className="bg-white p-8 rounded-2xl shadow-2xl border-4 border-blue-600">
+                    <div className="bg-white p-8 rounded-md shadow-2xl border-4 border-blue-600">
                       <QRCodeSVG
                         value={publicFormsUrl}
                         size={300}

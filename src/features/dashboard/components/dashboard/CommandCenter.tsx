@@ -227,7 +227,7 @@ export function CommandCenter() {
                   key={item.label}
                   type="button"
                   onClick={() => navigate(item.to)}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/40 active:scale-[0.995]"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/40"
                 >
                   <span className={`flex h-6 min-w-6 items-center justify-center rounded-sm px-1.5 text-xs font-semibold tabular-nums text-white ${TONE_DOT[item.tone]}`}>
                     {item.count}

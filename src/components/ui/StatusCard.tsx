@@ -67,8 +67,8 @@ export function StatusCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-3 sm:p-5 transition-all duration-150 ease-in-out",
-        "hover:shadow-md hover:-translate-y-px hover:border-border/80",
+        "rounded-md border border-border bg-card p-3 sm:p-5 transition-all duration-150 ease-in-out",
+        "hover:-translate-y-px hover:border-border/80",
         "active:translate-y-0",
         variantBorderClasses[statusVariant],
         variantBgClasses[statusVariant],

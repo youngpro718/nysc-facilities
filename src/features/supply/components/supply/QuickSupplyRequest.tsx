@@ -131,7 +131,7 @@ export function QuickSupplyRequest() {
       {/* Search Bar - Hero style */}
       <div className="shrink-0 bg-background pb-3 space-y-3">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent rounded-2xl -z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent rounded-md -z-10" />
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             placeholder="What do you need?"
@@ -139,7 +139,7 @@ export function QuickSupplyRequest() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className={cn(
               "pl-12 border-0 bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary/20",
-              isMobile ? "h-12 rounded-2xl text-base" : "h-11 rounded-xl"
+              isMobile ? "h-12 rounded-md text-base" : "h-11 rounded-md"
             )}
           />
           {searchTerm && (
@@ -178,8 +178,8 @@ export function QuickSupplyRequest() {
                       key={category}
                       onClick={() => setSelectedCategory(category)}
                       className={cn(
-                        "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all",
-                        "hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
+                        "group relative overflow-hidden rounded-md border p-4 text-left transition-all",
+                        "hover:scale-[1.02]",
                         "bg-gradient-to-br",
                         config.gradient
                       )}
@@ -219,7 +219,7 @@ export function QuickSupplyRequest() {
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+                <Skeleton key={i} className="h-32 w-full rounded-md" />
               ))}
             </div>
           ) : filteredItems.length === 0 ? (

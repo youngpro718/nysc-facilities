@@ -59,7 +59,7 @@ const ModuleCard = ({ title, icon, count, status, description, route, color = "p
 
   return (
     <Card 
-      className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${getColorClasses(color)}`}
+      className={`cursor-pointer transition-all duration-200 hover:scale-105 ${getColorClasses(color)}`}
       onClick={() => navigate(route)}
     >
       <CardHeader className="pb-3">

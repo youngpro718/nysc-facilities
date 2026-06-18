@@ -116,7 +116,7 @@ export default function MySupplyRequests() {
 
             <Button
               onClick={() => navigate('/request/supplies')}
-              className="flex-1 sm:flex-none touch-target min-h-[44px] active:scale-95 transition-transform"
+              className="flex-1 sm:flex-none touch-target min-h-[44px] transition-transform"
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
               Order Supplies

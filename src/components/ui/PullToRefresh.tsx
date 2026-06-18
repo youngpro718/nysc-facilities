@@ -39,7 +39,7 @@ export function PullToRefresh({
             transform: `translate(-50%, ${Math.min(pullDistance, threshold)}px)`
           }}
         >
-          <div className="bg-background/95 backdrop-blur-sm border rounded-full p-3 shadow-lg">
+          <div className="bg-background/95 backdrop-blur-sm border rounded-full p-3">
             <RefreshCw 
               className={cn(
                 "h-5 w-5 text-primary transition-transform",

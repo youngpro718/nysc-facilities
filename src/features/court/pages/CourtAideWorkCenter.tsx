@@ -32,22 +32,25 @@ export default function CourtAideWorkCenter() {
   const firstName = profile?.first_name || 'there';
   const today = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
-    month: 'short',
+    weekday: 'long',
+    month: 'long',
     day: 'numeric',
+    year: 'numeric',
   });
 
   return (
     <div className="space-y-6 pb-6 px-3 sm:px-0">
-      {/* Operations header — no avatar/room/department; this is a work surface, not a profile */}
-      <div className="flex items-start justify-between gap-3">
+      {/* Operations header — matches AdminGreeting's eyebrow + overview + date pattern.
+          No personal first-name addressing; this is a work surface, not a profile. */}
+      <div className="flex flex-col items-start justify-between gap-4 border-b border-border pb-5 sm:flex-row sm:items-end">
         <div>
-          <p className="text-xs text-muted-foreground font-medium">
-            Court Aide · Work Center
-          </p>
-          <h1 className="text-2xl font-bold text-foreground mt-1">
-            {firstName ? `${firstName}'s shift` : 'Work Center'}
+          <p className="mb-1 text-xs font-medium text-primary">Court aide</p>
+          <h1 className="text-[length:var(--text-page-title)] font-semibold tracking-[-0.025em]">
+            Work center
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{today}</p>
+          <p className="mt-1 text-sm text-text-secondary tabular">
+            {today} · Today's tasks, supplies, and alerts
+          </p>
         </div>
         <NotificationDropdown
           notifications={notifications as any}

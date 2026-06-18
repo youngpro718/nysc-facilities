@@ -160,7 +160,7 @@ function CourtroomCard({ entry, onOpen }: { entry: CourtroomEntry; onOpen: () =>
 
   return (
     <Card
-      className="hover:shadow-md transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-primary"
+      className="transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-primary"
       onClick={onOpen}
       role="button"
       tabIndex={0}

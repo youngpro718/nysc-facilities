@@ -68,7 +68,7 @@ export function LockboxSlotCard({ slot, onClick, lockboxName }: LockboxSlotCardP
   return (
     <div 
       className={cn(
-        "flex items-center justify-between p-3 sm:p-4 border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors active:scale-[0.99] touch-manipulation",
+        "flex items-center justify-between p-3 sm:p-4 border rounded-md hover:bg-muted/50 cursor-pointer transition-colors touch-manipulation",
         "border-l-2",
         statusConfig.border,
         statusConfig.bg

@@ -31,7 +31,7 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
 
   return (
     <Card
-      className={`cursor-pointer hover:shadow-lg transition-shadow ${
+      className={`cursor-pointer transition-shadow ${
         onClick ? 'hover:border-primary' : ''
       }`}
       onClick={handleClick}

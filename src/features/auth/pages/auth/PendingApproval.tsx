@@ -100,7 +100,7 @@ export default function PendingApproval() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
+        <div className="bg-white rounded-md border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
           <div className="flex flex-col items-center text-center gap-3">
             <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
               <Clock className="h-6 w-6 text-amber-600" />
@@ -113,7 +113,7 @@ export default function PendingApproval() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1.5">
+          <div className="rounded-md bg-slate-50 border border-slate-100 p-3 space-y-1.5">
             <p className="text-xs font-medium text-slate-600">What happens next</p>
             <ul className="text-xs text-slate-500 space-y-1">
               <li>An administrator will review your account details</li>
@@ -123,7 +123,7 @@ export default function PendingApproval() {
           </div>
 
           {requestedRoleLabel && (
-            <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 space-y-1.5">
+            <div className="rounded-md bg-blue-50 border border-blue-100 p-3 space-y-1.5">
               <p className="text-xs font-medium text-blue-900">Requested access</p>
               <p className="text-xs text-blue-700">{requestedRoleLabel}</p>
               <ul className="text-xs text-blue-700 space-y-1">
@@ -167,7 +167,7 @@ export default function PendingApproval() {
           )}
 
           {(profile?.first_name || user?.email) && (
-            <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1">
+            <div className="rounded-md bg-slate-50 border border-slate-100 p-3 space-y-1">
               <p className="text-xs font-medium text-slate-600">Your information</p>
               <div className="text-xs text-slate-500 space-y-0.5">
                 {profile?.first_name && <p>{profile.first_name} {profile.last_name}</p>}
@@ -181,7 +181,7 @@ export default function PendingApproval() {
               onClick={checkApprovalStatus}
               disabled={checking}
               variant="outline"
-              className="w-full h-10 rounded-xl text-sm font-medium"
+              className="w-full h-10 rounded-md text-sm font-medium"
             >
               {checking ? (
                 <><RefreshCw className="h-4 w-4 animate-spin mr-2" />Checking...</>
@@ -193,7 +193,7 @@ export default function PendingApproval() {
             <Button
               onClick={handleSignOut}
               variant="ghost"
-              className="w-full h-10 rounded-xl text-sm text-slate-500 hover:text-slate-700"
+              className="w-full h-10 rounded-md text-sm text-slate-500 hover:text-slate-700"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out

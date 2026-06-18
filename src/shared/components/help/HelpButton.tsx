@@ -31,7 +31,7 @@ export function HelpButton() {
             size="icon"
             variant="outline"
             className={cn(
-              'h-12 w-12 rounded-full shadow-lg border-2',
+              'h-12 w-12 rounded-full border-2',
               'bg-card hover:bg-primary hover:text-primary-foreground',
               'transition-all duration-200 hover:scale-110',
               hasTour && 'border-primary/50'

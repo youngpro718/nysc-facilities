@@ -27,7 +27,7 @@ export function PersonalInfoForm() {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full sm:w-auto h-11 touch-manipulation active:scale-[0.98]"
+          className="w-full sm:w-auto h-11 touch-manipulation"
         >
           {isLoading ? "Saving..." : "Save Changes"}
         </Button>

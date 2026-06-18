@@ -264,7 +264,7 @@ export function IssuesTab({
       {/* Bulk Action Bar */}
       {selectedIssues.length > 0 && (
         <div className="sticky bottom-4 z-10 mx-auto w-fit">
-          <div className="flex items-center gap-3 bg-background border shadow-lg rounded-full px-4 py-2">
+          <div className="flex items-center gap-3 bg-background border rounded-full px-4 py-2">
             <span className="text-sm font-medium">{selectedIssues.length} selected</span>
             <div className="h-4 w-px bg-border" />
             <Button

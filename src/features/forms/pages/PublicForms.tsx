@@ -92,7 +92,7 @@ export default function PublicForms() {
             {formTemplates.map((template) => {
               const Icon = template.icon;
               return (
-                <Card key={template.id} className="hover:shadow-lg transition-shadow">
+                <Card key={template.id} className="transition-shadow">
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <div className={`p-3 rounded-lg bg-muted`}>

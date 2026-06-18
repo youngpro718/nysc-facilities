@@ -120,7 +120,7 @@ export function ProfileHeader() {
           firstName={profile?.first_name || 'U'}
           lastName={profile?.last_name || ''}
           size="xl"
-          className="ring-2 ring-primary/20 shadow-lg"
+          className="ring-2 ring-primary/20"
         />
         <label 
           htmlFor="avatar-upload" 

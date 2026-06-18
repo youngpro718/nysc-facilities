@@ -122,7 +122,7 @@ export function MobileKeyRow({ slot, onOpen, onPrimaryAction }: MobileKeyRowProp
     tone === "checked_out" && (slot.checked_out_to || checkedAt);
 
   return (
-    <div className="rounded-2xl border bg-card overflow-hidden">
+    <div className="rounded-md border bg-card overflow-hidden">
       <button
         type="button"
         className="w-full grid grid-cols-[48px_1fr_auto_auto] items-center gap-3 p-3 text-left"

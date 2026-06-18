@@ -114,7 +114,7 @@ export default function MyActivity() {
       {/* Stats Overview */}
       <div className="grid grid-cols-3 gap-3">
         <Card 
-          className={`cursor-pointer transition-all ${activeTab === 'supplies' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+          className={`cursor-pointer transition-all ${activeTab === 'supplies' ? 'ring-2 ring-primary' : 'hover:bg-accent/40'}`}
           onClick={() => handleTabChange('supplies')}
         >
           <CardContent className="p-4">
@@ -129,7 +129,7 @@ export default function MyActivity() {
         </Card>
 
         <Card
-          className={`cursor-pointer transition-all ${activeTab === 'reported' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+          className={`cursor-pointer transition-all ${activeTab === 'reported' ? 'ring-2 ring-primary' : 'hover:bg-accent/40'}`}
           onClick={() => handleTabChange('reported')}
         >
           <CardContent className="p-4">
@@ -144,7 +144,7 @@ export default function MyActivity() {
         </Card>
 
         <Card 
-          className={`cursor-pointer transition-all ${activeTab === 'requests' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+          className={`cursor-pointer transition-all ${activeTab === 'requests' ? 'ring-2 ring-primary' : 'hover:bg-accent/40'}`}
           onClick={() => handleTabChange('requests')}
         >
           <CardContent className="p-4">
@@ -208,7 +208,7 @@ export default function MyActivity() {
                 const status = supplyStatusConfig[String(request.status)] || supplyStatusConfig.pending;
                 const StatusIcon = status.icon;
                 return (
-                  <Card key={request.id} className="hover:shadow-md transition-shadow">
+                  <Card key={request.id} className="transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -274,7 +274,7 @@ export default function MyActivity() {
                 const status = issueStatusConfig[String(issue.status)] || issueStatusConfig.open;
                 const StatusIcon = status.icon;
                 return (
-                  <Card key={issue.id} className="hover:shadow-md transition-shadow">
+                  <Card key={issue.id} className="transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">

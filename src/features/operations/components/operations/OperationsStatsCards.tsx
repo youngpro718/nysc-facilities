@@ -54,7 +54,7 @@ export function OperationsStatsCards({ metrics, isLoading }: OperationsStatsCard
     <>
       {/* Main Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Issues</CardTitle>
             <div className="relative">
@@ -77,7 +77,7 @@ export function OperationsStatsCards({ metrics, isLoading }: OperationsStatsCard
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Progress</CardTitle>
             <Clock className="h-4 w-4 text-orange-500" />
@@ -94,7 +94,7 @@ export function OperationsStatsCards({ metrics, isLoading }: OperationsStatsCard
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Resolved Today</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />

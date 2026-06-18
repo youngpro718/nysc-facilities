@@ -72,8 +72,8 @@ export function SupplyItemCard({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className={cn(
-          "group relative rounded-2xl border overflow-hidden transition-all",
-          "bg-card hover:shadow-md",
+          "group relative rounded-md border overflow-hidden transition-all",
+          "bg-card",
           inCart && "ring-2 ring-primary/30 bg-primary/5"
         )}
       >
@@ -99,7 +99,7 @@ export function SupplyItemCard({
               className={cn(
                 "absolute top-2 right-2 p-1.5 rounded-full transition-all",
                 "bg-background/80 backdrop-blur-sm hover:bg-background",
-                "active:scale-90"
+                ""
               )}
             >
               <Star
@@ -179,7 +179,7 @@ export function SupplyItemCard({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="flex items-center justify-between bg-muted/50 rounded-xl px-1 py-0.5"
+                  className="flex items-center justify-between bg-muted/50 rounded-md px-1 py-0.5"
                 >
                   <Button
                     variant="ghost"
@@ -218,7 +218,7 @@ export function SupplyItemCard({
                     variant="secondary"
                     size="sm"
                     className={cn(
-                      "w-full h-9 rounded-xl font-medium transition-all",
+                      "w-full h-9 rounded-md font-medium transition-all",
                       justAdded && "bg-emerald-500 text-white"
                     )}
                     onClick={(e) => {
@@ -257,7 +257,7 @@ export function SupplyItemCard({
 
             {/* Hero Image */}
             <div className="px-5 shrink-0">
-              <div className="w-full rounded-2xl overflow-hidden bg-muted aspect-[16/9]">
+              <div className="w-full rounded-md overflow-hidden bg-muted aspect-[16/9]">
                 <img
                   src={item.photo_url || getGenericItemImage(item.name)}
                   alt={item.name}
@@ -278,7 +278,7 @@ export function SupplyItemCard({
                   <button
                     className={cn(
                       "shrink-0 h-11 w-11 flex items-center justify-center rounded-full transition-all",
-                      "active:scale-90",
+                      "",
                       isFavorite 
                         ? "bg-yellow-400/20" 
                         : "bg-muted hover:bg-muted-foreground/10"
@@ -328,7 +328,7 @@ export function SupplyItemCard({
             {/* Action bar */}
             <div className="px-5 pt-4 pb-6">
               {inCart ? (
-                <div className="flex items-center justify-between bg-muted rounded-2xl px-4 py-3">
+                <div className="flex items-center justify-between bg-muted rounded-md px-4 py-3">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -357,7 +357,7 @@ export function SupplyItemCard({
               ) : (
                 <Button
                   size="lg"
-                  className="w-full h-14 rounded-2xl text-base font-semibold"
+                  className="w-full h-14 rounded-md text-base font-semibold"
                   onClick={handleAdd}
                   disabled={stockStatus === 'out-of-stock'}
                 >
