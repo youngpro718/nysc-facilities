@@ -18,8 +18,8 @@ export function ImportSection({ isImporting, onImport }: ImportSectionProps) {
           <h3 className="text-lg font-semibold">Import Database</h3>
           <p className="text-sm text-muted-foreground">
             Update the database by uploading an Excel file. The file structure should match the exported format.
-            <span className="block mt-1 text-yellow-600 dark:text-yellow-400">
-              ⚠️ This will update existing records if they share the same ID.
+            <span className="block mt-1 text-status-warning">
+              Note: this will update existing records if they share the same ID.
             </span>
           </p>
           <Button

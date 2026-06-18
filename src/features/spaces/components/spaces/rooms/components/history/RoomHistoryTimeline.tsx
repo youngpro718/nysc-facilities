@@ -326,15 +326,15 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
       <div className="grid grid-cols-3 gap-2">
         <div className="text-center p-2 bg-muted/30 rounded-md border">
           <div className="text-sm font-bold text-green-600 dark:text-green-400">{quickFixes}</div>
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Quick Fixes</div>
+          <div className="text-xs text-muted-foreground">Quick Fixes</div>
         </div>
         <div className="text-center p-2 bg-muted/30 rounded-md border">
           <div className="text-sm font-bold text-orange-600 dark:text-orange-400">{ongoingIssues}</div>
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Ongoing</div>
+          <div className="text-xs text-muted-foreground">Ongoing</div>
         </div>
         <div className="text-center p-2 bg-muted/30 rounded-md border">
           <div className="text-sm font-bold text-blue-600 dark:text-blue-400">{recentIssues}</div>
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">This Month</div>
+          <div className="text-xs text-muted-foreground">This Month</div>
         </div>
       </div>
 

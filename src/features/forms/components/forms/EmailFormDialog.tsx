@@ -55,7 +55,7 @@ export function EmailFormDialog({ open, onClose }: EmailFormDialogProps) {
         `${greeting}${customPart}You've been sent a form to complete for NYSC Facilities.\n\n` +
         `📋 Form: ${selectedForm.name}\n\n` +
         `🔗 Click here to fill out the form online:\n${formLink}\n\n` +
-        `✨ Benefits of the online form:\n` +
+        `Benefits of the online form:\n` +
         `• No download required - fill it out directly in your browser\n` +
         `• Mobile-friendly and easy to use\n` +
         `• Instant submission - no need to email back\n` +

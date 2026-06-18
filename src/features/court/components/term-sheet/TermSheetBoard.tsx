@@ -917,7 +917,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         >
           <div className="flex items-center gap-2">
             <Phone className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold uppercase tracking-wider">Court Administration Directory</span>
+            <span className="text-xs font-semibold">Court Administration Directory</span>
           </div>
           <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${showStaffHeader ? 'rotate-90' : ''}`} />
         </button>
@@ -1036,13 +1036,13 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                   <thead>
                     <tr className="border-b bg-muted/50">
                       {isAdmin && <th className="w-6 px-1" />}
-                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Part</th>
-                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Justice</th>
-                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Room</th>
-                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px] hidden sm:table-cell">Tel</th>
-                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px] hidden md:table-cell">Fax</th>
-                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Sgt.</th>
-                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Clerks</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground text-[10px]">Part</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground text-[10px]">Justice</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground text-[10px]">Room</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground text-[10px] hidden sm:table-cell">Tel</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground text-[10px] hidden md:table-cell">Fax</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground text-[10px]">Sgt.</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-muted-foreground text-[10px]">Clerks</th>
                       {isAdmin && <th className="px-2 py-2.5 w-10" />}
                     </tr>
                   </thead>

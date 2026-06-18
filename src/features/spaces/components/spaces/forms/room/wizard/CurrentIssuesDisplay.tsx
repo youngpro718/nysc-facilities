@@ -77,7 +77,7 @@ export function CurrentIssuesDisplay({ roomId }: CurrentIssuesDisplayProps) {
           <div className="text-center py-8">
             <CheckCircle2 className="h-12 w-12 text-success mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              No current issues • Great job! 🎉
+              No current issues reported for this room.
             </p>
           </div>
         ) : (

@@ -79,7 +79,7 @@ export function StatusCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1 min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+          <p className="text-xs font-medium text-text-secondary">
             {title}
           </p>
           <p className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">

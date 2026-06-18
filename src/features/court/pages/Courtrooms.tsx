@@ -485,7 +485,7 @@ function CourtroomDetailDialog({ entry, open, onOpenChange }: {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Accessibility className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Accessibility</span>
+                <span className="text-xs text-muted-foreground">Accessibility</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {activeAccessibility.map(f => (
@@ -515,7 +515,7 @@ function CourtroomDetailDialog({ entry, open, onOpenChange }: {
           {/* Notes */}
           {entry.notes && (
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Notes</p>
+              <p className="text-xs text-muted-foreground mb-1">Notes</p>
               <p className="text-sm whitespace-pre-line">{entry.notes}</p>
             </div>
           )}

@@ -25,7 +25,6 @@ import { SimpleOrderCard } from './SimpleOrderCard';
 import { OrderTableView } from './OrderTableView';
 import { SupplyViewToggle, SupplyViewMode } from './SupplyViewToggle';
 import { PartialFulfillmentDialog } from './PartialFulfillmentDialog';
-import { LiveIndicator } from '@shared/components/common/common/LiveIndicator';
 import { InventoryManagementTab } from './InventoryManagementTab';
 import { LowStockPanel } from '@features/inventory/components/inventory/LowStockPanel';
 import { staffCompletePickup, approveSupplyRequest, rejectSupplyRequest } from '@features/supply/services/unifiedSupplyService';
@@ -37,7 +36,6 @@ export function ImprovedSupplyStaffDashboard() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Record<string, unknown> | null>(null);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('new');
   const [completedLastUpdated, setCompletedLastUpdated] = useState(new Date());
@@ -170,7 +168,6 @@ export function ImprovedSupplyStaffDashboard() {
         throw error;
       }
 
-      setLastUpdated(new Date());
       return data || [];
     },
     // refetchInterval disabled
@@ -337,13 +334,6 @@ export function ImprovedSupplyStaffDashboard() {
               <p className="text-muted-foreground">
                 Fulfill supply requests and manage inventory
               </p>
-              <LiveIndicator
-                lastUpdated={lastUpdated}
-                onRefresh={handleRefresh}
-                isRefreshing={isFetching}
-                autoRefreshInterval={30}
-                showRefreshButton={false}
-              />
             </div>
           </div>
           <Button

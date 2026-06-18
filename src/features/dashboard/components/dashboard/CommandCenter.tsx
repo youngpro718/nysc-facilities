@@ -190,7 +190,7 @@ export function CommandCenter() {
               onClick={() => navigate(kpi.to)}
               className="group flex flex-col items-start gap-1 p-4 sm:p-5 text-left transition-colors hover:bg-accent/40 active:scale-[0.99]"
             >
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <span className="text-xs font-medium text-muted-foreground">
                 {kpi.label}
               </span>
               <span className="text-2xl sm:text-3xl font-semibold tabular-nums tracking-tight">
@@ -279,7 +279,7 @@ export function CommandCenter() {
 
       {/* Quick access */}
       <div>
-        <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="mb-2 text-xs font-medium text-muted-foreground">
           Quick Access
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

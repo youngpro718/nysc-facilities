@@ -41,7 +41,7 @@ export default function CourtAideWorkCenter() {
       {/* Operations header — no avatar/room/department; this is a work surface, not a profile */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+          <p className="text-xs text-muted-foreground font-medium">
             Court Aide · Work Center
           </p>
           <h1 className="text-2xl font-bold text-foreground mt-1">

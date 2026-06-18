@@ -118,7 +118,7 @@ export default function UserDashboard() {
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
       <div className="max-w-lg mx-auto space-y-6 pb-24 px-4 sm:px-0">
         {/* Header: greeting card with subtle gradient + notifications */}
-        <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/8 via-primary/3 to-background p-4 pt-5">
+        <div className="rounded-2xl border border-border bg-card p-4 pt-5">
           <div className="flex items-start justify-between gap-3">
             <CompactHeader
               firstName={firstName}
@@ -165,7 +165,7 @@ export default function UserDashboard() {
         {/* Activity feed — single chronological list */}
         <div className="pt-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">My Activity</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground">My Activity</h2>
             <Button variant="link" size="sm" className="text-xs h-auto p-0" onClick={() => navigate("/my-activity")}>
               View all <ChevronRight className="h-3 w-3 ml-0.5" />
             </Button>

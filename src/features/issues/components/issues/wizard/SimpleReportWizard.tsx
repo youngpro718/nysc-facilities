@@ -520,7 +520,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
           prioritized and filtered. Defaults to Normal. */}
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-2.5">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">How urgent?</span>
+          <span className="text-xs font-medium text-muted-foreground">How urgent?</span>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {([
@@ -549,7 +549,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
       {/* 4. Photos — optional, after description */}
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-2.5">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Photos</span>
+          <span className="text-xs font-medium text-muted-foreground">Photos</span>
           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Optional</Badge>
         </div>
         <PhotoCapture

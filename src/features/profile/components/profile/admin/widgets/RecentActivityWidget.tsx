@@ -75,7 +75,6 @@ export function RecentActivityWidget({ activities }: RecentActivityWidgetProps) 
             <Activity className="h-5 w-5" />
             Recent System Activity
           </h2>
-          <Badge variant="outline">Live</Badge>
         </div>
         
         <div className="space-y-2 max-h-48 overflow-y-auto">

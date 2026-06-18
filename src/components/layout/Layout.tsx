@@ -129,7 +129,7 @@ function LayoutContent() {
       {!isLoginPage && isAuthenticated && permissionError && (
         <div className="bg-destructive text-destructive-foreground px-4 py-3 text-center text-sm font-medium">
           <div className="flex items-center justify-center gap-2">
-            <span>⚠️ {permissionError}</span>
+            <span>{permissionError}</span>
             <Button
               variant="outline"
               size="sm"

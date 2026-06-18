@@ -9,31 +9,31 @@ import type { Step } from 'react-joyride';
 export const adminDashboardTour: Step[] = [
   {
     target: 'body',
-    content: '👋 Welcome to the Admin Dashboard! This is your command center for managing the entire NYSC facility. This tour will show you the key features and how to navigate efficiently.',
+    content: 'Welcome to the Admin Dashboard! This is your command center for managing the entire NYSC facility. This tour will show you the key features and how to navigate efficiently.',
     placement: 'center',
     disableBeacon: true,
   },
   {
     target: '[data-tour="nav-bar"]',
-    content: '📍 Navigation Sidebar: Click any icon to access different modules. Your available modules are based on your admin role. The sidebar collapses on smaller screens to save space.',
+    content: 'Navigation Sidebar: Click any icon to access different modules. Your available modules are based on your admin role. The sidebar collapses on smaller screens to save space.',
     placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '[data-tour="notification-box"]',
-    content: '🔔 Notifications: Real-time alerts appear here. A red badge shows unread count. Click to see pending approvals, critical issues, and system updates.',
+    content: 'Notifications: Real-time alerts appear here. A red badge shows unread count. Click to see pending approvals, critical issues, and system updates.',
     placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '[data-tour="theme-toggle"]',
-    content: '🌓 Theme Toggle: Switch between light and dark mode. Your preference is saved automatically and syncs across devices.',
+    content: 'Theme Toggle: Switch between light and dark mode. Your preference is saved automatically and syncs across devices.',
     placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '[data-tour="user-avatar"]',
-    content: '👤 Profile Menu: Access your profile settings, view your role, and sign out. You can update your contact info and notification preferences here.',
+    content: 'Profile Menu: Access your profile settings, view your role, and sign out. You can update your contact info and notification preferences here.',
     placement: 'bottom',
     disableBeacon: true,
   },
@@ -234,19 +234,19 @@ export const accessAssignmentsTour: Step[] = [
 export const userDashboardTour: Step[] = [
   {
     target: 'body',
-    content: '👋 Welcome to your Dashboard! This is your personal hub for submitting requests and tracking everything you need. Let\'s explore the key features.',
+    content: 'Welcome to your Dashboard! This is your personal hub for submitting requests and tracking everything you need. Let\'s explore the key features.',
     placement: 'center',
     disableBeacon: true,
   },
   {
     target: '[data-tour="quick-actions"]',
-    content: '⚡ Quick Actions: One-click access to common tasks. Request supplies or report facility issues without navigating through menus.',
+    content: 'Quick Actions: One-click access to common tasks. Request supplies or report facility issues without navigating through menus.',
     placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '[data-tour="my-requests"]',
-    content: '📋 My Requests: Track all your pending requests in one place. Click any request card to view details, add notes, or check status updates.',
+    content: 'My Requests: Track all your pending requests in one place. Click any request card to view details, add notes, or check status updates.',
     placement: 'top',
     disableBeacon: true,
   },
@@ -276,19 +276,19 @@ export const tasksTour: Step[] = [
 export const supplyRoomTour: Step[] = [
   {
     target: 'body',
-    content: '📦 Welcome to the Supply Room! This is where you fulfill supply requests from court staff. This tour will show you the complete workflow from receiving orders to delivery.',
+    content: 'Welcome to the Supply Room! This is where you fulfill supply requests from court staff. This tour will show you the complete workflow from receiving orders to delivery.',
     placement: 'center',
     disableBeacon: true,
   },
   {
     target: '[data-tour="supply-orders"]',
-    content: '📋 Pending Orders: Approved supply requests appear here. Click "Accept Order" to claim one and start fulfilling it. Orders are assigned to you once accepted.',
+    content: 'Pending Orders: Approved supply requests appear here. Click "Accept Order" to claim one and start fulfilling it. Orders are assigned to you once accepted.',
     placement: 'top',
     disableBeacon: true,
   },
   {
     target: '[data-tour="supply-status"]',
-    content: '🔄 Status Workflow: Update status as you work through each step:\n1️⃣ Picking - Gathering items\n2️⃣ Ready - Items ready for pickup\n3️⃣ Completed - Delivered to requester',
+    content: 'Status Workflow: Update status as you work through each step:\n1️⃣ Picking - Gathering items\n2️⃣ Ready - Items ready for pickup\n3️⃣ Completed - Delivered to requester',
     placement: 'top',
     disableBeacon: true,
   },
