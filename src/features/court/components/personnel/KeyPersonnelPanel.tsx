@@ -156,7 +156,7 @@ export function KeyPersonnelPanel({ canEdit }: { canEdit: boolean }) {
           form.role === "judge" ? form.courtAttorney.trim() || null : null,
         is_active: true,
         is_available_for_assignment: true,
-        ...(form.role === "judge" ? { judge_status: "active" } : {}),
+        ...(form.role === "judge" ? { judge_status: "active" as const } : {}),
       };
 
       return saveKeyPersonnel(payload, editingPerson?.id);
