@@ -122,7 +122,7 @@ export function SecureForm({
           <h2 className="text-xl font-semibold text-foreground">{title}</h2>
         </div>
         {title.toLowerCase().includes('sign in') && (
-          <p className="text-sm text-muted-foreground">Sign in to continue</p>
+          <p className="text-sm text-slate-600">Sign in to continue</p>
         )}
       </div>
 

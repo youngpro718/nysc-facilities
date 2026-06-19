@@ -32,7 +32,6 @@ export default function CourtAideWorkCenter() {
   const firstName = profile?.first_name || 'there';
   const today = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
-    weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric',
