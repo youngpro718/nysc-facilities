@@ -18,7 +18,7 @@ import { useFavoriteItems } from '@features/supply/hooks/useFavoriteItems';
 import { useOrderCart } from '@features/supply/hooks/useOrderCart';
 import { SupplyItemCard } from './SupplyItemCard';
 import { FavoritesStrip } from './FavoritesStrip';
-import { OrderSummaryFooter } from './OrderSummaryFooter';
+import { OrderCart } from './OrderCart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@shared/hooks/use-mobile';
 import { getCategoryVisual, deriveCategories } from '@features/supply/utils/categoryConfig';
@@ -40,7 +40,6 @@ export function QuickSupplyRequest() {
     submitOrder,
     totalItems,
     isSubmitting,
-    hasRestrictedItems,
     submittedOrder,
     resetSubmittedOrder,
   } = useOrderCart();
@@ -302,8 +301,8 @@ export function QuickSupplyRequest() {
         </div>
       </div>
 
-      {/* Sticky Footer */}
-      <OrderSummaryFooter
+      {/* One cart flow on every viewport: explicit location, review, then submit. */}
+      <OrderCart
         items={cartItems}
         totalItems={totalItems}
         onRemove={removeItem}
@@ -311,7 +310,6 @@ export function QuickSupplyRequest() {
         onSubmit={submitOrder}
         onClear={clearCart}
         isSubmitting={isSubmitting}
-        hasRestrictedItems={hasRestrictedItems}
       />
     </div>
   );

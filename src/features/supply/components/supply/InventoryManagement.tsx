@@ -88,47 +88,7 @@ export function InventoryManagement() {
         .order('name');
 
       if (inventoryError) {
-        // If inventory_items table doesn't exist, create mock data
-        const mockData = [
-          {
-            id: '1',
-            name: 'Ballpoint Pens (Blue)',
-            description: 'Standard blue ballpoint pens',
-            category: 'Office Supplies',
-            current_stock: 150,
-            minimum_threshold: 50,
-            maximum_stock: 500,
-            unit_cost: 0.75,
-            supplier: 'Office Depot',
-            storage_location: 'Shelf A1',
-            last_restocked: new Date().toISOString(),
-            monthly_usage: 45,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          {
-            id: '2',
-            name: 'Copy Paper (8.5x11)',
-            description: 'White copy paper, 500 sheets per ream',
-            category: 'Office Supplies',
-            current_stock: 25,
-            minimum_threshold: 10,
-            maximum_stock: 100,
-            unit_cost: 4.99,
-            supplier: 'Staples',
-            storage_location: 'Storage Room B',
-            last_restocked: new Date().toISOString(),
-            monthly_usage: 30,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ];
-        setInventory(mockData);
-        const alerts = generateStockAlerts(mockData);
-        setStockAlerts(alerts);
-        const trends = generateUsageTrends(mockData);
-        setUsageTrends(trends);
-        return;
+        throw inventoryError;
       }
       
       // Map DB column names to component interface
@@ -144,11 +104,10 @@ export function InventoryManagement() {
       setInventory(mapped);
       
       // Generate stock alerts
-      const alerts = generateStockAlerts(inventoryData || []);
+      const alerts = generateStockAlerts(mapped);
       setStockAlerts(alerts);
       
-      // Generate usage trends (mock data for now)
-      const trends = generateUsageTrends(inventoryData || []);
+      const trends = generateUsageTrends(mapped);
       setUsageTrends(trends);
       
     } catch (error) {

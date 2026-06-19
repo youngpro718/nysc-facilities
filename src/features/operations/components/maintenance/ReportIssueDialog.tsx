@@ -123,6 +123,45 @@ const reportIssueSchema = z.object({
   recurring_issue: z.boolean(),
   needs_immediate_attention: z.boolean(),
   additional_notes: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.space_type === "room" || data.space_type === "courtroom") {
+    if (!data.room_id?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["room_id"],
+        message: "Select the room or courtroom where the issue is located",
+      });
+    }
+    return;
+  }
+
+  if (data.space_type === "hallway" || data.space_type === "door" || data.space_type === "building") {
+    if (!data.building_id?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["building_id"],
+        message: "Select the building where the issue is located",
+      });
+    }
+    if ((data.space_type === "hallway" || data.space_type === "door") && !data.space_name?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["space_name"],
+        message: data.space_type === "door"
+          ? "Identify the door or entrance"
+          : "Describe the hallway location",
+      });
+    }
+    return;
+  }
+
+  if (!data.space_name?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["space_name"],
+      message: "Describe where the issue is located",
+    });
+  }
 });
 
 type FormData = z.infer<typeof reportIssueSchema>;
@@ -138,6 +177,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
 
   const form = useForm<FormData>({
     resolver: zodResolver(reportIssueSchema),
+    mode: "onChange",
     defaultValues: {
       title: "",
       description: "",
@@ -216,17 +256,23 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
   const handleRoomSelect = (room: RoomResult) => {
     setSelectedRoom(room);
     setRoomSearch("");
-    form.setValue("room_id", room.id);
-    form.setValue("floor_id", room.floor_id || "");
-    form.setValue("building_id", room.floors?.building_id || "");
-    form.setValue("space_name", room.room_number);
+    form.setValue("room_id", room.id, { shouldValidate: true });
+    form.setValue("floor_id", room.floor_id || "", { shouldValidate: true });
+    form.setValue("building_id", room.floors?.building_id || "", { shouldValidate: true });
+    form.setValue("space_name", room.room_number, { shouldValidate: true });
+    const issueType = form.getValues("issue_type");
+    if (!form.getValues("title") && issueType) {
+      const typeLabel = ISSUE_TYPES.find((type) => type.id === issueType)?.label || issueType;
+      form.setValue("title", `${typeLabel} Issue – ${room.room_number}`, { shouldValidate: true });
+    }
   };
 
   const clearRoom = () => {
     setSelectedRoom(null);
-    form.setValue("room_id", "");
-    form.setValue("floor_id", "");
-    form.setValue("space_name", "");
+    form.setValue("room_id", "", { shouldValidate: true });
+    form.setValue("floor_id", "", { shouldValidate: true });
+    form.setValue("building_id", "", { shouldValidate: true });
+    form.setValue("space_name", "", { shouldValidate: true });
   };
 
   // Auto-generate title when issue_type + room are both set
@@ -260,6 +306,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
         room_id: data.room_id || null,
         floor_id: data.floor_id || null,
         building_id: data.building_id || null,
+        location_description: data.room_id ? null : data.space_name?.trim() || null,
         assigned_to: (data.assigned_to && data.assigned_to !== "unassigned") ? data.assigned_to : null,
         reported_by: user?.id || null,
         photos: selectedPhotos.length > 0 ? selectedPhotos : null,
@@ -270,6 +317,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["issues"] }),
         queryClient.invalidateQueries({ queryKey: ["adminIssues"] }),
+        queryClient.invalidateQueries({ queryKey: ["adminIssueStats"] }),
         queryClient.invalidateQueries({ queryKey: ["maintenance-issues"] }),
         queryClient.invalidateQueries({ queryKey: ["court-issues"] }),
         queryClient.invalidateQueries({ queryKey: ["interactive-operations"] }),
@@ -400,6 +448,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                         })}
                       </div>
                       <FormMessage />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -505,6 +554,9 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                 {/* Room search (when space_type = room or courtroom) */}
                 {(spaceType === "room" || spaceType === "courtroom") && (
                   <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Room or courtroom <span className="text-destructive">*</span>
+                    </p>
                     {selectedRoom ? (
                       <div className="flex items-center justify-between p-2.5 bg-primary/10 border border-primary/20 rounded-lg">
                         <div className="flex items-center gap-2 text-sm">
@@ -560,6 +612,11 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                         )}
                       </>
                     )}
+                    {form.formState.errors.room_id?.message && (
+                      <p className="text-sm font-medium text-destructive">
+                        {form.formState.errors.room_id.message}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -571,8 +628,8 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                       name="building_id"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">Building</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <FormLabel className="text-xs text-muted-foreground">Building <span className="text-destructive">*</span></FormLabel>
+                          <Select onValueChange={(value) => field.onChange(value)} value={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Select building" /></SelectTrigger></FormControl>
                             <SelectContent>
                               {buildings.map((b) => (
@@ -580,6 +637,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                               ))}
                             </SelectContent>
                           </Select>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -588,10 +646,14 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                       name="space_name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">Location detail (optional)</FormLabel>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Location detail
+                            {(spaceType === "hallway" || spaceType === "door") && <span className="text-destructive"> *</span>}
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="e.g. 2nd floor hallway near stairwell B" {...field} />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -605,10 +667,11 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                     name="space_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs text-muted-foreground">Location description</FormLabel>
+                        <FormLabel className="text-xs text-muted-foreground">Location description <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input placeholder="Describe where the issue is located" {...field} />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -727,7 +790,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
             </Button>
             <Button
               type="submit"
-              disabled={form.formState.isSubmitting || uploading}
+              disabled={form.formState.isSubmitting || uploading || !form.formState.isValid}
               size="lg"
               className="min-w-[140px]"
             >

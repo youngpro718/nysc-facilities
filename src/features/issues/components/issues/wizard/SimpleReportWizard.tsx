@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { logger } from '@/lib/logger';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -74,16 +74,6 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
 
   const getRoomId = (room: RoomAssignment): string => room.room_id || room.id || '';
   const getRoomNumber = (room: RoomAssignment): string => room.room_number || room.room_name || 'Unknown';
-
-  // Auto-select primary room
-  useEffect(() => {
-    if (hasAssignedRooms) {
-      const primary = assignedRooms.find(r => r.is_primary)
-        || assignedRooms.find(r => r.assignment_type === 'primary_office')
-        || assignedRooms[0];
-      if (primary) setSelectedRoomId(getRoomId(primary));
-    }
-  }, [assignedRooms, hasAssignedRooms]);
 
   const selectedRoom = assignedRooms?.find(r => getRoomId(r) === selectedRoomId);
   const selectedCategoryData = SIMPLE_CATEGORIES.find(c => c.id === selectedCategory);
@@ -202,6 +192,7 @@ export function SimpleReportWizard({ onSuccess, onCancel, assignedRooms, isLoadi
       queryClient.invalidateQueries({ queryKey: ['court-issues'] });
       queryClient.invalidateQueries({ queryKey: ['building-level-issues'] });
       queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
+      queryClient.invalidateQueries({ queryKey: ['adminIssueStats'] });
       onSuccess?.();
     },
     onError: (error: unknown) => {

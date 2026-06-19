@@ -41,7 +41,7 @@ export function useProfileForm() {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('*, departments(name)')
           .eq('id', user.id)
           .single();
 
@@ -66,7 +66,10 @@ export function useProfileForm() {
           }
 
           // Map stored title onto dropdown: if it matches a preset use it, otherwise treat as "Other".
-          const storedTitle = (profile.title as string | null) || "";
+          const rawStoredTitle = (profile.title as string | null) || "";
+          const storedTitle = rawStoredTitle.trim().toLowerCase() === "facilites liaison"
+            ? "Facilities Liaison"
+            : rawStoredTitle;
           const matchesPreset = (JOB_TITLES as readonly string[]).includes(storedTitle);
           const titleValue = matchesPreset ? storedTitle : (storedTitle ? "Other" : "");
           const titleOther = matchesPreset || !storedTitle ? "" : storedTitle;
@@ -75,7 +78,7 @@ export function useProfileForm() {
             first_name: profile.first_name || "",
             last_name: profile.last_name || "",
             phone: profile.phone || "",
-            department: profile.department || "",
+            department: profile.department || profile.departments?.name || "",
             title: titleValue,
             title_other: titleOther,
             time_zone: profile.time_zone || "UTC",

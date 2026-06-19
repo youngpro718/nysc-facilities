@@ -10,6 +10,7 @@ export const JOB_TITLES = [
   "Lieutenant",
   "Captain",
   "Major",
+  "Facilities Liaison",
   "Management / Supervisor",
   "Other",
 ] as const;

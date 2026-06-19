@@ -11,7 +11,9 @@ export interface UserProfile {
   access_level?: 'none' | 'read' | 'write' | 'admin'; // Legacy - being phased out
   role?: UserRole | string; // NEW: The actual role from user_roles table
   avatar_url?: string;
+  department?: string;
   department_id?: string;
+  departments?: { name?: string | null } | null;
   title?: string;
   phone?: string;
   emergency_contact?: {

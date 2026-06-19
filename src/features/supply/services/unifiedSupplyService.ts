@@ -18,7 +18,7 @@ export interface SubmitOrderPayload {
   justification: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   requested_delivery_date?: string | null;
-  delivery_location?: string;
+  delivery_location: string;
   items: SubmitOrderItem[];
 }
 
@@ -152,6 +152,11 @@ export async function getFulfillmentLog(requestId: string) {
  * Automatically determines if approval is required based on item flags
  */
 export async function submitSupplyOrder(payload: SubmitOrderPayload) {
+  const deliveryLocation = payload.delivery_location.trim();
+  if (!deliveryLocation) {
+    throw new Error('Delivery location is required.');
+  }
+
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     throw new Error('Authentication required. Please refresh and try again.');
@@ -197,7 +202,7 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
       : payload.justification,
     priority: payload.priority,
     requested_delivery_date: payload.requested_delivery_date || null,
-    delivery_location: payload.delivery_location || '',
+    delivery_location: deliveryLocation,
     status: approvalRequired ? 'pending_approval' : 'submitted',
     approval_notes: approvalReason,
   };

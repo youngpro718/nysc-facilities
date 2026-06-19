@@ -237,7 +237,7 @@ export default function Operations() {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const resolvedToday = allIssues?.filter(issue => {
-      const resolvedDate = new Date(issue.created_at);
+      const resolvedDate = new Date(issue.updated_at || issue.created_at);
       return issue.status === 'resolved' && resolvedDate >= todayStart;
     }).length || 0;
 

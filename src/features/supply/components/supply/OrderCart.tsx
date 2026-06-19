@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -17,18 +17,17 @@ import {
 import { cn } from '@/lib/utils';
 import type { CartItem } from '@features/supply/hooks/useOrderCart';
 import { useAuth } from '@features/auth/hooks/useAuth';
-import { useDeliveryLocations } from '@features/supply/hooks/useDeliveryLocations';
 import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryRoomPicker';
 import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
 import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface OrderCartProps {
   items: CartItem[];
@@ -63,20 +62,13 @@ export function OrderCart({
   isSubmitting,
 }: OrderCartProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const { user } = useAuth();
-  const { options: locationOptions, defaultLocation } = useDeliveryLocations(user?.id);
   const profile = useProfileCompleteness(user?.id);
 
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [priority, setPriority] = useState<'medium' | 'high' | 'urgent'>('medium');
   const [reason, setReason] = useState<string>('Standard supply request');
   const [neededBy, setNeededBy] = useState<string>('');
-
-  // Pre-fill delivery location once when defaults arrive / sheet opens
-  useEffect(() => {
-    if (!deliveryLocation && defaultLocation) setDeliveryLocation(defaultLocation);
-  }, [defaultLocation, deliveryLocation]);
 
   const restrictedItems = useMemo(
     () => items.filter(i => i.requires_justification),
@@ -101,7 +93,6 @@ export function OrderCart({
       : null;
 
   const handleSubmit = async () => {
-    setAttemptedSubmit(true);
     if (missingLocation) return; // hard-block: need a delivery location
     await onSubmit({
       priority,
@@ -109,40 +100,39 @@ export function OrderCart({
       justification: reason,
       requested_delivery_date: neededBy || undefined,
     });
-    setAttemptedSubmit(false);
     setIsOpen(false);
   };
 
+  if (totalItems === 0) {
+    return null;
+  }
+
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
         <Button
-          className="fixed bottom-24 inset-x-3 h-12 rounded-full shadow-xl z-50 touch-manipulation pb-safe flex items-center justify-center gap-2 text-sm font-semibold"
-          disabled={totalItems === 0}
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-24 right-4 h-12 px-5 rounded-full shadow-xl z-50 touch-manipulation pb-safe inline-flex items-center gap-2 text-sm font-semibold w-auto"
         >
           <ShoppingCart className="h-4 w-4" />
-          <span>
-            {totalItems === 0
-              ? 'Cart is empty'
-              : `Review ${totalItems} item${totalItems === 1 ? '' : 's'}`}
-          </span>
+          <span>{`Review ${totalItems} item${totalItems === 1 ? '' : 's'}`}</span>
         </Button>
-      </SheetTrigger>
-      <SheetContent
-        side="bottom"
-        className="h-[92dvh] flex flex-col p-0 rounded-t-2xl"
+      </DialogTrigger>
+      <DialogContent
+        className="!grid-cols-none flex flex-col p-0 gap-0 sm:max-w-[520px] max-h-[85vh] overflow-hidden"
       >
-        <SheetHeader className="px-4 pt-4 pb-2 shrink-0 border-b">
-          <SheetTitle className="text-base">Review your order</SheetTitle>
-          <SheetDescription className="text-xs">
+        <DialogHeader className="px-4 pt-4 pb-3 shrink-0 border-b text-left">
+          <DialogTitle className="text-base">Review your order</DialogTitle>
+          <DialogDescription className="text-xs">
             {items.length === 0
               ? 'Your cart is empty'
               : `${items.length} item${items.length !== 1 ? 's' : ''} • ${totalItems} total`}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 pb-32">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-8">
               <ShoppingCart className="h-10 w-10 text-muted-foreground opacity-50 mb-2" />
@@ -182,6 +172,9 @@ export function OrderCart({
                         <div className="font-medium text-sm break-words">
                           {item.item_name}
                         </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {item.item_unit || 'each'}
+                        </div>
                         {item.requires_justification && (
                           <Badge
                             variant="outline"
@@ -212,14 +205,9 @@ export function OrderCart({
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-base tabular-nums min-w-[2ch] text-center">
-                          {item.quantity}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {item.item_unit || 'units'}
-                        </span>
-                      </div>
+                      <span className="font-semibold text-base tabular-nums min-w-[2ch] text-center">
+                        {item.quantity}
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -251,10 +239,10 @@ export function OrderCart({
                   value={deliveryLocation}
                   onChange={setDeliveryLocation}
                   userId={user?.id}
-                  invalid={attemptedSubmit && missingLocation}
+                  invalid={missingLocation}
                   placeholder="Search for a room…"
                 />
-                {attemptedSubmit && missingLocation && (
+                {missingLocation && (
                   <p className="text-xs text-destructive">
                     A delivery location is required so staff knows where to bring your order.
                   </p>
@@ -353,14 +341,14 @@ export function OrderCart({
           )}
         </div>
 
-        {/* Sticky submit bar */}
+        {/* Footer — pinned at bottom of modal */}
         {items.length > 0 && (
-          <div className="absolute bottom-0 inset-x-0 p-3 pb-safe border-t bg-background/95 backdrop-blur space-y-1.5">
+          <div className="shrink-0 p-3 border-t bg-background">
             <Button
               type="button"
               onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="w-full h-12 text-sm font-semibold"
+              disabled={isSubmitting || missingLocation}
+              className="w-full h-11 text-sm font-semibold"
             >
               <Send className="h-4 w-4 mr-2" />
               {isSubmitting
@@ -373,7 +361,7 @@ export function OrderCart({
             </Button>
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

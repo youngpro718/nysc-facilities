@@ -170,6 +170,7 @@ export function AdminQuickReportDialog({ open, onOpenChange }: AdminQuickReportD
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['issues'] }),
         queryClient.invalidateQueries({ queryKey: ['adminIssues'] }),
+        queryClient.invalidateQueries({ queryKey: ['adminIssueStats'] }),
         queryClient.invalidateQueries({ queryKey: ['interactive-operations'] }),
       ]);
 

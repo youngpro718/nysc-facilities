@@ -116,7 +116,7 @@ export const useAdminIssuesData = (page = 0) => {
   });
 
   // Separate stats query — server aggregates counts, avoids sending rows to client
-  const { data: issueStats = defaultStats } = useQuery({
+  const { data: issueStats = defaultStats, refetch: refetchStats } = useQuery({
     queryKey: ['adminIssueStats'],
     queryFn: async (): Promise<IssueStats> => {
       try {
@@ -155,7 +155,7 @@ export const useAdminIssuesData = (page = 0) => {
     criticalIssues,
     issueStats,
     isLoading,
-    refreshData: refetch,
+    refreshData: () => Promise.all([refetch(), refetchStats()]),
   };
 };
 

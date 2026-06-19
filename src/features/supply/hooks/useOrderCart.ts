@@ -98,6 +98,16 @@ export function useOrderCart() {
       return;
     }
 
+    const deliveryLocation = options?.delivery_location?.trim();
+    if (!deliveryLocation) {
+      toast({
+        title: 'Delivery location required',
+        description: 'Select where the supply room should deliver this order.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Drop re-entrant submits (fast double-tap) before the disabled state paints
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -112,7 +122,7 @@ export function useOrderCart() {
         description: options?.description || '',
         justification: options?.justification || 'Standard supply request',
         priority: (options?.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
-        delivery_location: options?.delivery_location || '',
+        delivery_location: deliveryLocation,
         requested_delivery_date: options?.requested_delivery_date || null,
         items: cartItems.map(item => ({
           item_id: item.item_id,

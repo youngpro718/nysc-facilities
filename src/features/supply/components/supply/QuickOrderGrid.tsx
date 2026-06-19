@@ -8,7 +8,6 @@ import { CompactItemList } from './CompactItemList';
 import { ItemDetailPanel } from './ItemDetailPanel';
 import { FavoritesTab } from './FavoritesTab';
 import { OrderCart } from './OrderCart';
-import { OrderSummaryFooter } from './OrderSummaryFooter';
 import { useOrderCart } from '@features/supply/hooks/useOrderCart';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useIsMobile } from '@shared/hooks/use-mobile';
@@ -35,7 +34,6 @@ export function QuickOrderGrid() {
     submitOrder,
     totalItems,
     isSubmitting,
-    hasRestrictedItems,
     submittedOrder,
     resetSubmittedOrder,
   } = useOrderCart();
@@ -253,29 +251,16 @@ export function QuickOrderGrid() {
         </ResponsiveDialog>
       )}
 
-      {/* Order Summary / Cart */}
-      {isMobile ? (
-        <OrderCart
-          items={cartItems}
-          totalItems={totalItems}
-          onRemove={removeItem}
-          onUpdateQuantity={updateQuantity}
-          onSubmit={submitOrder}
-          onClear={clearCart}
-          isSubmitting={isSubmitting}
-        />
-      ) : (
-        <OrderSummaryFooter
-          items={cartItems}
-          totalItems={totalItems}
-          onRemove={removeItem}
-          onUpdateQuantity={updateQuantity}
-          onSubmit={submitOrder}
-          onClear={clearCart}
-          isSubmitting={isSubmitting}
-          hasRestrictedItems={hasRestrictedItems}
-        />
-      )}
+      {/* One cart flow on every viewport: explicit location, review, then submit. */}
+      <OrderCart
+        items={cartItems}
+        totalItems={totalItems}
+        onRemove={removeItem}
+        onUpdateQuantity={updateQuantity}
+        onSubmit={submitOrder}
+        onClear={clearCart}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }

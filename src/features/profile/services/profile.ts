@@ -43,6 +43,8 @@ export interface Profile {
   theme?: string | null;
   phone?: string | null;
   department?: string | null;
+  department_id?: string | null;
+  departments?: { name?: string | null } | null;
   title?: string | null;
   first_name?: string | null;
   last_name?: string | null;
@@ -71,7 +73,7 @@ export async function getMyProfile(): Promise<Profile> {
   
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, departments(name)')
     .eq('id', user.id)
     .single();
   

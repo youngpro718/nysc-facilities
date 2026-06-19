@@ -93,6 +93,10 @@ export function ProfileHeader() {
 
   const displayName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'User';
   const hasCompleteName = profile?.first_name && profile?.last_name;
+  const departmentName = profile?.department?.trim() || profile?.departments?.name?.trim();
+  const displayTitle = profile?.title?.trim().toLowerCase() === 'facilites liaison'
+    ? 'Facilities Liaison'
+    : profile?.title;
 
   const getRoleBadgeVariant = (role: string | null) => {
     switch (role) {
@@ -164,7 +168,7 @@ export function ProfileHeader() {
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">
-              <strong>Department:</strong> {((profile as Record<string, unknown>))?.department || profile?.department_id || (
+              <strong>Department:</strong> {departmentName || (
                 <span className="text-muted-foreground italic">Not specified</span>
               )}
             </span>
@@ -173,7 +177,7 @@ export function ProfileHeader() {
           <div className="flex items-center gap-2">
             <Briefcase className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">
-              <strong>Title:</strong> {profile?.title || (
+              <strong>Title:</strong> {displayTitle || (
                 <span className="text-muted-foreground italic">Not specified</span>
               )}
             </span>
