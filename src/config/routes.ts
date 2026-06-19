@@ -5,7 +5,6 @@ import {
   KeyRound, 
   Package, 
   Package2,
-  Gavel,
   FileText,
   MessageSquare,
   User,
@@ -200,8 +199,8 @@ export const routes: Record<string, RouteConfig> = {
   // Public pages
   '/term-sheet': {
     path: '/term-sheet',
-    title: 'Criminal Term Sheet',
-    breadcrumbLabel: 'Term Sheet',
+    title: 'Court Operations',
+    breadcrumbLabel: 'Court Operations',
     icon: FileText,
     parent: '/dashboard',
   },

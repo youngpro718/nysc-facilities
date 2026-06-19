@@ -6,7 +6,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/core/supabaseClient';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -98,6 +98,7 @@ export function useStaffTasks(options?: {
     onSuccess: () => {
       toast.success('Task created successfully');
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['room-planned-tasks'] });
     },
     onError: (error: unknown) => {
       toast.error('Failed to create task', { description: getErrorMessage(error) });
@@ -304,6 +305,7 @@ export function useStaffTasks(options?: {
     onSuccess: () => {
       toast.success('Task completed');
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['room-planned-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
     },
     onError: (error: unknown) => {
@@ -329,6 +331,7 @@ export function useStaffTasks(options?: {
     onSuccess: () => {
       toast.success('Task cancelled');
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['room-planned-tasks'] });
     },
     onError: (error: unknown) => {
       toast.error('Failed to cancel task', { description: getErrorMessage(error) });

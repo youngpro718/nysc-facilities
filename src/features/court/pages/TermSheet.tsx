@@ -1,5 +1,8 @@
 import { TermSheetBoard } from "@features/court/components/term-sheet/TermSheetBoard";
+import { KeyPersonnelPanel } from "@features/court/components/personnel/KeyPersonnelPanel";
 import { useAuth } from "@features/auth/hooks/useAuth";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileTextIcon, PersonIcon } from "@radix-ui/react-icons";
 
 /**
  * Term Sheet Page
@@ -15,9 +18,9 @@ export default function TermSheet() {
     <div className="space-y-4 pb-20 md:pb-8">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Criminal Term Sheet</h1>
+          <h1 className="text-2xl font-semibold">Court Operations</h1>
           <p className="text-sm text-muted-foreground">
-            Current court assignments and personnel
+            Current assignments and the personnel needed to run them
           </p>
         </div>
         {!canEdit && (
@@ -27,7 +30,26 @@ export default function TermSheet() {
         )}
       </div>
 
-      <TermSheetBoard isAdmin={canEdit} />
+      <Tabs defaultValue="assignments" className="space-y-4">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="assignments" className="gap-2">
+            <FileTextIcon className="h-4 w-4" />
+            Term assignments
+          </TabsTrigger>
+          <TabsTrigger value="personnel" className="gap-2">
+            <PersonIcon className="h-4 w-4" />
+            Key personnel
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="assignments" className="mt-0">
+          <TermSheetBoard isAdmin={canEdit} />
+        </TabsContent>
+
+        <TabsContent value="personnel" className="mt-0">
+          <KeyPersonnelPanel canEdit={canEdit} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
