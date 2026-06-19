@@ -74,7 +74,7 @@ const LoginPage = () => {
 
         {/* Security notice */}
         <motion.p
-          className="text-center text-[11px] text-slate-500"
+          className="text-center text-[11px] text-slate-300"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.4 }}
@@ -85,13 +85,13 @@ const LoginPage = () => {
 
       {/* Footer */}
       <motion.p
-        className="mt-10 text-[10px] text-slate-500/60 text-center"
+        className="mt-10 text-[10px] text-slate-400 text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.5 }}
       >
         v{APP_INFO.version} &nbsp;·&nbsp; {APP_INFO.creator.name} &nbsp;·&nbsp;{' '}
-        <a href={APP_INFO.support.emailHref} className="underline hover:text-slate-300 transition-colors">
+        <a href={APP_INFO.support.emailHref} className="underline hover:text-slate-200 transition-colors">
           {APP_INFO.support.email}
         </a>
       </motion.p>
