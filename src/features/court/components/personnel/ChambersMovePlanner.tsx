@@ -228,6 +228,14 @@ export function ChambersMovePlanner({
       queryClient.invalidateQueries({ queryKey: ["court-personnel"] });
       queryClient.invalidateQueries({ queryKey: ["chamber-rooms"] });
       queryClient.invalidateQueries({ queryKey: ["enhanced-room-data"] });
+      // The chambers move ties back into maintenance_schedules + staff_tasks;
+      // refresh those so the linked DCAS work and officer coverage rows
+      // update their status without a manual reload.
+      queryClient.invalidateQueries({ queryKey: ["maintenance-schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["maintenance-calendar"] });
+      queryClient.invalidateQueries({ queryKey: ["maintenance-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-dcas-handoffs"] });
+      queryClient.invalidateQueries({ queryKey: ["staff-tasks"] });
       setCompletingPlan(null);
       toast({
         title: "Chambers move completed",

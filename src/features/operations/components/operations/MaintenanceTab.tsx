@@ -18,6 +18,7 @@ import {
 import { MaintenanceScheduleList } from "@features/operations/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@features/operations/components/maintenance/MaintenanceIssuesList";
 import { MaintenanceCalendar } from "@features/operations/components/maintenance/MaintenanceCalendar";
+import { PendingDcasHandoffPanel } from "@features/operations/components/maintenance/PendingDcasHandoffPanel";
 
 interface MaintenanceTabProps {
   maintenanceData: unknown[];
@@ -72,7 +73,7 @@ export function MaintenanceTab({
             <div className="rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300">In progress</p>
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-300">In progress</p>
                   <p className="text-3xl font-semibold text-foreground">{enhancedMetrics.maintenanceInProgress}</p>
                   <p className="text-xs text-amber-700/80 dark:text-amber-300/80">Tasks currently being worked</p>
                 </div>
@@ -82,7 +83,7 @@ export function MaintenanceTab({
             <div className="rounded-md border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-blue-700 dark:text-blue-300">Scheduled</p>
+                  <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Scheduled</p>
                   <p className="text-3xl font-semibold text-foreground">{enhancedMetrics.maintenanceScheduled}</p>
                   <p className="text-xs text-blue-700/80 dark:text-blue-300/80">Upcoming planned work</p>
                 </div>
@@ -92,7 +93,7 @@ export function MaintenanceTab({
             <div className="rounded-md border border-red-200 bg-red-50/70 p-4 dark:border-red-900 dark:bg-red-950/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-red-700 dark:text-red-300">Urgent queue</p>
+                  <p className="text-xs font-medium text-red-700 dark:text-red-300">Urgent queue</p>
                   <p className="text-3xl font-semibold text-foreground">{urgentCount}</p>
                   <p className="text-xs text-red-700/80 dark:text-red-300/80">Critical or high-priority maintenance items</p>
                 </div>
@@ -102,7 +103,7 @@ export function MaintenanceTab({
             <div className="rounded-md border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Completed</p>
+                  <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Completed</p>
                   <p className="text-3xl font-semibold text-foreground">{completedCount}</p>
                   <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80">Resolved maintenance issues</p>
                 </div>
@@ -112,6 +113,10 @@ export function MaintenanceTab({
           </div>
         </CardContent>
       </Card>
+
+      {/* DCAS handoff — the single dashboard surface answering
+          "what have I scheduled that I still need to tell DCAS about?" */}
+      <PendingDcasHandoffPanel />
 
       {/* Calendar — full width */}
       <MaintenanceCalendar />
