@@ -121,7 +121,7 @@ export default function PublicForms() {
                       </Button>
                     </div>
                     <Badge variant="secondary" className="text-xs w-full justify-center">
-                      Tracked in system
+                      Submit below to get logged
                     </Badge>
                   </CardContent>
                 </Card>

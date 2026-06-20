@@ -312,7 +312,7 @@ export function HelpCenter() {
               </li>
               <li className="flex gap-2">
                 <span className="text-primary font-bold">•</span>
-                <span><strong>Stale data?</strong> Navigate away and back. Do NOT hard-refresh — the app manages its own cache.</span>
+                <span><strong>Stale data?</strong> Switch to another page and back — most lists refresh automatically when you return.</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-primary font-bold">•</span>

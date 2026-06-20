@@ -113,6 +113,10 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
     if (refetchIssues) {
       await refetchIssues();
     }
+    // Command center renders its own query (metrics/alerts/activity) — one
+    // visible "Refresh data" action should refresh the whole page, not just
+    // the building cards above it.
+    await queryClient.invalidateQueries({ queryKey: ['command-center'] });
   };
 
   return {

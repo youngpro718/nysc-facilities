@@ -141,7 +141,7 @@ export function CommandCenter() {
 
   return (
     <section aria-labelledby="command-center-heading" className="space-y-5 border-t border-border pt-6">
-      {/* Section header */}
+      {/* Section header — refreshed by the page-level "Refresh data" button above */}
       <div className="flex items-end justify-between gap-4">
         <div>
           <h2 id="command-center-heading" className="text-lg font-semibold tracking-tight">
@@ -152,10 +152,6 @@ export function CommandCenter() {
             {metrics.issues.avg_resolution_time_hours ? ` · ${metrics.issues.avg_resolution_time_hours}h avg resolution` : ''}
           </p>
         </div>
-        <Button variant="outline" size="sm" className="h-9 bg-card text-xs" onClick={() => { refetch(); }}>
-          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-          Refresh
-        </Button>
       </div>
 
       {/* Critical / warning banner */}
