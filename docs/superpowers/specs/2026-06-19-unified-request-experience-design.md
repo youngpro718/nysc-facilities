@@ -1,44 +1,87 @@
-# Unified Request Experience — Design
+# Court Aide Request Experience — Design
 
 **Date:** 2026-06-19
 **Status:** Approved for implementation planning
+**Replaces an earlier draft of this spec dated the same day; scope was narrowed from "all requests" to "Court Aide requests only" after the team-boundary discussion.**
 
 ## Background
 
-The app today has four request flows (Supply Order, Help Request, Setup-a-Room, Report Issue) that share intent but disagree on conventions: each has its own form shell, its own validation feel, its own success state, its own destination after submit, and its own status vocabulary. The result is that a user submitting more than one type of request has to learn four interaction patterns and check three different pages to see what happened.
+Two different teams fulfill what the app today calls "requests":
 
-This spec covers three changes that, together, make the four flows feel like one app without rebuilding any of them. It does **not** cover the longer-term single front door modal (Approach 4 in the parent brainstorm), which is deferred until these three prove the unified pattern.
+| Team | What they fulfill | Where the work goes |
+|---|---|---|
+| **Court Aides** | Supply orders + bring/move/deliver/setup tasks | `supply_requests`, `staff_tasks` → Work Center |
+| **Facilities (DCAS / maintenance)** | Building issues — broken doors, electrical, HVAC, plumbing, lighting, pest, structural, cleaning | `issues` → Operations |
+
+The app's surface today mostly ignores this boundary. A user has four entry points (`Order Supplies`, `Make a Request`, `Set up a Room`, `Report Issue`) that **look** like four members of one family but actually split across two completely different fulfillment teams. The result: Court Aide work and Facilities work compete for visual space in the same nav, the same FAB, the same `/my-activity` tabs, even though they have nothing operational in common.
+
+This spec covers three changes that align the **Court Aide request side** with how the Work Center already groups the work. **It does not touch Issues.** Facilities-side consistency is a separate (smaller) effort.
 
 ## Goals
 
-1. **A user who submits one request type recognises the other three** — same submit, same toast, same place to find the result, same vocabulary describing what's happening.
-2. **One inbox** — a single page where the user sees every request they have ever submitted, regardless of type.
-3. **One status vocabulary** — the requester sees the same four (occasionally five) labels regardless of the internal state machine.
+1. **One Court Aide surface.** `/supplies` becomes the front door to both supply orders and court-aide tasks. Two tabs in one page: `Order Supplies` (today's catalog) and `Make a Request` (help / setup / delivery). Same nav slot, same team.
+2. **One Court Aide inbox.** `/my-requests` shows every supply order and court-aide task the user has submitted, in one list. Issues stay on `/my-issues` (or a focused Operations filter), unchanged.
+3. **One Court Aide status vocabulary.** Supplies and court-aide tasks share five user-facing labels. Issues keep their own labels because they go through a different team with different SLAs.
 
 ## Non-goals
 
-- A unified intake modal with type-picking step. Deferred.
-- Changes to the internal state machines on `supply_requests`, `issues`, `staff_tasks`. The translation is in a UI helper.
-- Changes to admin / supply-staff / court-aide surfaces. They keep their existing detailed labels (`picking`, `ready`, `partial`, etc.).
+- **Issues are explicitly out of scope.** No merging issues into the Court Aide inbox. No remapping issue statuses into Court Aide vocabulary. No new entry points that conflate the two teams. The Report Issue button stays where it is and behaves as it does today.
+- A single intake modal that asks "what do you need?" up front. Deferred.
+- Changes to the internal state machines on `supply_requests` or `staff_tasks`. Translation is a UI helper.
+- Changes to Work Center, Supply Room, or any staff-facing fulfillment surface.
 - Renaming or restructuring DB tables. None required.
 - Touching the public-form PDF workflow.
+- Sidebar consolidation of `Issues` / `Maintenance` / `Lighting` (they're all Operations tabs). Separate small spec.
 
 ---
 
-## Piece 1 — One success state
+## Piece 1 — `/supplies` becomes the Court Aide front door
+
+### What ships today
+
+- `/request/supplies` shows only the catalog.
+- `/request/help` shows the type-picker for tasks.
+- `/request/help?type=setup` is the setup form.
+- Each is a separate page with its own header chrome and its own success state.
+
+### What we ship
+
+- The route `/supplies` replaces `/request/supplies` as the canonical entry. Legacy `/request/supplies` redirects in.
+- The page has two tabs at the top: `Order Supplies` and `Make a Request`.
+- `Order Supplies` tab renders today's catalog flow, unchanged — the existing cart pill, the centered review modal, the pack-equivalent line. No interaction changes.
+- `Make a Request` tab renders today's four-button picker (`Set up a room` / `Bring me something` / `Move something` / `Something else`). Each button still opens its existing form, but the success state changes (Piece 2).
+- Sidebar nav item renamed to **`Supplies & Requests`**, single nav slot for the Court Aide surface.
+- Header buttons (today: `Order Supplies` + `Make a Request`) collapse to a single dropdown trigger labeled **`+ Court Aide`** with two items that route to `/supplies?tab=order` and `/supplies?tab=request`. The existing two buttons can stay as a transitional skin if the dropdown reads awkward — pick at implementation.
+
+### Files touched
+
+- New: `src/features/supply/pages/CourtAideRequests.tsx` — the tabbed page; calls into the existing catalog and request components without modifying their internals.
+- `src/App.tsx` — register `/supplies`, redirect `/request/supplies` and `/request/help` to it with the right `?tab` and `?type` preserved.
+- `src/components/layout/Layout.tsx` (or the sidebar component) — rename the nav item.
+- `src/components/layout/Header.tsx` (or wherever the header CTAs live) — collapse to the dropdown.
+
+### Edge cases
+
+- A deep link to `/request/help?type=setup` still works (becomes `/supplies?tab=request&type=setup`) and lands directly on the setup form.
+- The FAB on mobile keeps its existing 4 actions and routes to the same destinations — no UX change there, the visual is fine.
+- Issues' "Report Issue" button does **not** appear on `/supplies`. Different team.
+
+---
+
+## Piece 2 — One success state (Court Aide only)
 
 ### What ships today
 
 | Flow | After submit |
 |---|---|
-| Supply Order | In-place modal success: green check, `Order submitted!`, `Track my orders` + `Place another order` buttons |
+| Supply Order | In-place success view inside the cart modal: `Order submitted!`, `Track my orders` + `Place another order` buttons |
 | Help Request | Full-page interstitial replaces the form: `Request Submitted!`, `Track in Tasks` + `Submit Another Request` + `Done` |
-| Setup-a-Room | Same full-page interstitial as Help, with a quick summary of what was submitted |
+| Setup-a-Room | Same full-page interstitial, with a quick summary of what was submitted |
 | Report Issue | Toast at corner, dialog closes |
 
 ### What we ship
 
-Every successful submit produces **the same artefact**: a Sonner toast with this shape:
+Supply Order and the three task flows (help / setup / move) emit **the same toast** and close the modal / leave the page in place:
 
 ```
 ✓ Request #2026-06-19-014 submitted
@@ -46,61 +89,70 @@ Every successful submit produces **the same artefact**: a Sonner toast with this
 ```
 
 - Toast auto-dismisses after 6 seconds.
-- The modal / dialog / cart sheet closes immediately on success — no celebration screen.
-- The page underneath stays where the user was (the catalog, the dashboard, the operations table), so they can keep working.
-- The `View →` link routes to `/my-requests?focus={request_id}` which scrolls the row into view and highlights it for ~3 seconds.
+- The cart modal closes immediately on success. The page underneath stays on the catalog with an empty cart — the user can keep working.
+- The task forms (`HelpRequestPage`, `SetupRequestForm`) navigate back to `/supplies?tab=request` and show the same toast.
+- The `View →` link routes to `/my-requests?focus={request_id}`, which scrolls the row into view and highlights it for ~3 seconds.
+
+**Report Issue is unchanged.** Its toast remains its own; its dialog closes; its destination remains the Operations page. Different team.
 
 ### Files touched
 
-- `src/features/supply/components/supply/OrderCart.tsx` — drop the post-submit success branch and the `Place another order` / `Track my orders` buttons; emit the toast and close the modal.
+- New: `src/shared/utils/requestToast.ts` — one helper, `requestSubmittedToast({ id, type })`, used by the three Court Aide flows. (Issue forms do not import it.)
+- `src/features/supply/components/supply/OrderCart.tsx` — drop the post-submit success branch; emit the toast and close the modal.
 - `src/features/supply/hooks/useOrderCart.ts` — `submittedOrder` state and `resetSubmittedOrder` go away.
-- `src/features/supply/pages/request/HelpRequestPage.tsx` (and the setup variant) — replace the full-page success view with `navigate('/my-requests')` + toast.
+- `src/features/supply/pages/request/HelpRequestPage.tsx` — replace the full-page success view with `navigate('/my-requests')` + toast.
+- `src/features/supply/components/request/SetupRequestForm.tsx` — same.
 - `src/features/supply/components/supply/QuickOrderGrid.tsx`, `QuickSupplyRequest.tsx` — drop their consumption of `submittedOrder`.
-- `src/features/issues/components/issues/wizard/SimpleReportWizard.tsx`, `src/features/operations/components/maintenance/ReportIssueDialog.tsx`, `src/features/issues/components/issues/admin/AdminQuickReportDialog.tsx` — toast text aligned to the standard format.
-- New: `src/shared/utils/requestToast.ts` — one helper, `requestSubmittedToast({ id, type })`, used by all four flows.
 
 ### Edge cases
 
-- Supply order needing approval: same toast, different verb. `Request #… sent for approval. View →`. Still routes to `/my-requests` (it shows as `Submitted` until approved — see Piece 3).
+- Supply order needing approval: same toast shape, label changes to `Request #… sent for approval. View →`.
 - Submit fails after client-side validation passes (e.g. RLS reject): toast turns red, no redirect, user stays on the form.
 - The cart sheet closes; the catalog page underneath retains the empty cart state.
 
 ---
 
-## Piece 2 — `/my-requests`, the single inbox
+## Piece 3 — `/my-requests`, the Court Aide inbox
 
 ### What ships today
 
-`/my-activity` exists with three tabs (`Supplies` / `Reported` / `Requests`). Each tab is a separate query, shown as a separate list. Help / setup tasks land in `/tasks`. Issues land in `/operations?tab=issues`. The user has no single place to answer "what have I asked facilities for, and what state is each in?"
+`/my-activity` shows three tabs (`Supplies` / `Reported` / `Requests`). `Reported` is issues. The page mixes two teams' work into one tabbed view, which the team boundary makes confusing.
 
 ### What we ship
 
-A new route `/my-requests` that renders one chronological list of every request the signed-in user has submitted, regardless of type. The page replaces `/my-activity` (legacy route redirects in).
+A new route `/my-requests` that renders one chronological list of **only** Court Aide work: supply orders + court-aide tasks the user submitted.
+
+Issues stay where they are:
+- `/my-issues` continues to exist (legacy) and renders only the user's reported issues. We can rename it `/my-reports` later if useful; out of scope here.
+- The dashboard can surface a small `Recent issues you reported` card with a `See all` link; not required by this spec.
+
+`/my-activity` redirects to `/my-requests`. The `Reported` tab is no longer accessible through the unified inbox — users find their issues at `/my-issues` instead.
 
 #### List view
 
 - One row per record, sorted by submitted date descending.
 - Row layout: `{type chip} {title} · {room or location} · {short id} — {status pill} · {relative time}`
-- Type chip examples: `📦 Supply` · `🛠️ Issue` · `🪑 Setup` · `🚚 Delivery` · `🙋 Help` · `❓ Other`
-- For `staff_tasks` rows, the type chip is derived from `staff_tasks.task_type` (`setup` → `🪑 Setup`, `delivery` → `🚚 Delivery`, `help` → `🙋 Help`, otherwise `❓ Other`). Supply and Issue derive trivially from their source table.
-- Filter chips at the top: `All` · `Open` · `Done`. Type filter is optional via a secondary row of chips matching the type chips.
-- Empty state: short copy + a CTA to the request modal.
+- Type chips: `📦 Supply` · `🪑 Setup` · `🚚 Delivery` · `🙋 Help`
+- For `staff_tasks` rows the chip is derived from `staff_tasks.task_type` (`setup` → `🪑 Setup`, `delivery` → `🚚 Delivery`, otherwise `🙋 Help`). Supply rows are always `📦 Supply`.
+- Filter chips at the top: `All` · `Open` · `Done`. A secondary row filters by type chip.
+- Empty state: short copy + a CTA opening the request modal.
 
 #### Detail view
 
-- Tap a row to open a side drawer (desktop) or a full-screen page (mobile) with the type-specific body.
-- The detail body **reuses the existing detail components** per type (supply order detail, issue detail, etc.). No new detail UIs in this spec.
+- Tap a row to open a side drawer (desktop) or full-screen page (mobile) with the type-specific body.
+- The detail body reuses existing per-type detail components.
 - Header is uniform: title, type chip, status pill, submitted-at, deliver-to / location.
 
 #### Data sources
 
-The list pulls from three existing queries and merges them client-side:
+The list pulls from two existing queries and merges them client-side:
 
 - `supply_requests` filtered to `requester_id = auth.uid()`
-- `issues` filtered to `reported_by = auth.uid()`
-- `staff_tasks` filtered to `created_by = auth.uid()` (this captures Help / Setup / Delivery)
+- `staff_tasks` filtered to `created_by = auth.uid()`
 
-Each query is a typed projection onto a common `MyRequestRow` shape: `{ id, type, title, location_label, status_internal, created_at }`. Merging happens in a `useMyRequests()` hook with React Query — three queries, one combined result. Pagination is "show last 50, plus a 'View older' link" — most users won't have more than 20.
+Each projects onto a common `MyRequestRow` shape: `{ id, type, title, location_label, status_internal, created_at }`. Merging happens in a `useMyRequests()` hook with React Query.
+
+Pagination: show the most recent 50, plus a `View older` link. Most users have under 20 lifetime.
 
 ### Files touched
 
@@ -108,81 +160,83 @@ Each query is a typed projection onto a common `MyRequestRow` shape: `{ id, type
 - New: `src/features/dashboard/hooks/useMyRequests.ts` — merged query.
 - New: `src/features/dashboard/components/MyRequestRow.tsx` — uniform row.
 - New: `src/features/dashboard/components/MyRequestDetailDrawer.tsx` — uniform header + slot for type-specific body.
-- `src/App.tsx` — add `/my-requests` route; redirect `/my-activity` and `/my-supply-requests` and `/my-issues` to it.
-- `src/components/layout/Layout.tsx` (or wherever the nav lives) — sidebar item renamed to `My Requests`.
-- The legacy `/my-activity` page component is removed once its consumers are migrated.
+- `src/App.tsx` — register `/my-requests`; redirect `/my-activity`, `/my-supply-requests` to it. `/my-issues` is left in place.
+- `src/components/layout/Layout.tsx` (sidebar) — `My Activity` is renamed `My Requests`.
+- Legacy `MyActivity` page component is removed once its consumers are migrated.
 
 ### Edge cases
 
-- A request the user submitted on someone else's behalf (court liaison / admin): out of scope. `/my-requests` is strictly "things I submitted". Liaisons keep their existing fulfillment surfaces.
-- Realtime updates: subscribe via the existing realtime provider to invalidate `useMyRequests` on insert / update of any of the three source tables for `auth.uid()`. Realtime is sub-second when connected; the 5-second target in Verification is the worst-case fallback.
-- Deep link with `?focus={id}`: scroll-into-view + 3-second highlight ring; ignored silently if the id is not in the list (e.g. requester is staring at the inbox from a different account).
+- Requests submitted on someone else's behalf (court liaison / admin): out of scope. `/my-requests` is strictly "things I personally submitted."
+- Realtime updates: subscribe via the existing realtime provider to invalidate `useMyRequests` on insert / update of `supply_requests` and `staff_tasks` for `auth.uid()`. Realtime is sub-second when connected; the 5-second target in Verification is the worst-case fallback.
+- Deep link with `?focus={id}`: scroll into view + 3-second highlight ring; ignored silently if id is not in the list.
 
 ---
 
-## Piece 3 — One status vocabulary
+## Piece 4 — One status vocabulary (Court Aide only)
 
 ### What ships today
 
-Each request type has its own internal state machine and renders its own labels to the user. `supply_requests.status` enumerates `submitted` / `pending_approval` / `approved` / `picking` / `ready` / `fulfilled` / `partial`. `issues.status` is `open` / `in_progress` / `resolved`. `staff_tasks.status` is some variant of `pending` / `claimed` / `in_progress` / `done`. The user sees all of these raw.
+`supply_requests.status` enumerates `submitted` / `pending_approval` / `approved` / `picking` / `ready` / `fulfilled` / `partial` / `cancelled`. `staff_tasks.status` is `pending` / `claimed` / `in_progress` / `done` / `rejected`. Users see raw values.
 
 ### What we ship
 
-A pure UI translation layer. The internal columns stay as they are. The requester only ever sees one of four labels (occasionally five):
+A pure UI translation layer. Internal columns unchanged. The requester sees one of five labels:
 
-| User-facing label | Tone | Maps from (supply) | Maps from (issue) | Maps from (task) |
-|---|---|---|---|---|
-| **Submitted** | neutral | `submitted`, `pending_approval` | `open` | `pending` |
-| **Approved** | info | `approved` | — | — |
-| **In progress** | active | `picking`, `ready` | `in_progress`, `assigned` | `claimed`, `in_progress` |
-| **Done** | success | `fulfilled`, `partial`, `delivered` | `resolved` | `done`, `completed` |
-| **Declined** | warning | `rejected`, `cancelled` | `closed_invalid` | `rejected` |
+| User-facing label | Tone | Supply maps from | Task maps from |
+|---|---|---|---|
+| **Submitted** | neutral | `submitted`, `pending_approval` | `pending` |
+| **Approved** | info | `approved` | — |
+| **In progress** | active | `picking`, `ready` | `claimed`, `in_progress` |
+| **Done** | success | `fulfilled`, `partial`, `delivered` | `done`, `completed` |
+| **Declined** | warning | `rejected`, `cancelled` | `rejected` |
 
 Notes:
-
-- `partial` is `Done` with a small line in the detail view: `Some items were not available — see notes.` It is not its own user-facing status.
-- `Approved` only exists for supply orders. Other types skip it.
-- `Declined` is terminal. The detail view should show a reason if one was provided.
+- `partial` is `Done` with a small line in the detail view: `Some items were not available — see notes.` Not its own user-facing status.
+- `Approved` only exists for supply orders. Tasks skip it.
+- `Declined` is terminal. The detail view shows a reason if one was provided.
+- **Issues do not use this helper.** They keep their own three-state labels (`Open` / `In Progress` / `Resolved`) on their own surfaces.
 
 ### Files touched
 
-- New: `src/shared/utils/userFacingStatus.ts` — exports `formatStatusForUser(record): { label, tone }` and a TypeScript union of the five labels.
+- New: `src/shared/utils/courtAideStatus.ts` — exports `formatStatusForUser(record): { label, tone }` and a TypeScript union of the five labels.
 - `src/features/dashboard/components/MyRequestRow.tsx` — consumes the helper.
 - `src/features/dashboard/components/MyRequestDetailDrawer.tsx` — consumes the helper.
-- `src/features/dashboard/pages/Notifications.tsx` — notification copy switches to `Your supply order #… is now: In progress` etc. via the helper.
-- Toast copy (Piece 1) consumes the helper for the submit verb.
+- `src/features/dashboard/pages/Notifications.tsx` — Court Aide notification copy switches to `Your supply order #… is now: In progress` etc. via the helper. Issue notifications use their own copy as today.
+- Toast copy (Piece 2) consumes the helper for the verb (`Submitted` vs `Sent for approval`).
 
 ### Edge cases
 
-- An issue moved from `resolved` back to `in_progress`: helper just reflects the current value; we don't track the transition.
-- A supply order that was approved, then declined later: helper returns `Declined`; the row's "approved" history is visible in the detail view, not the list.
+- A supply order that was approved, then declined later: helper returns `Declined`; "approved" history is visible in detail, not list.
 - Unknown internal value (data drift): helper falls back to `Submitted` and logs a warning. Never renders the raw value.
 
 ---
 
 ## Verification
 
-- Each of the four submit flows produces the identical toast shape (visual diff before / after).
-- `/my-requests` loads with at least one row of every type for a seeded user and renders the four-label vocabulary.
-- Legacy `/my-activity`, `/my-supply-requests`, `/my-issues` URLs redirect with their existing query params preserved.
+- Sidebar shows one `Supplies & Requests` item; the page renders two tabs and switches without a full reload.
+- Both Court Aide flows (Order, Make a Request) produce the same toast shape after submit and the page does not switch to a full-page success view.
+- `/my-requests` loads with at least one row of each Court Aide type for a seeded user and renders the five-label vocabulary correctly.
+- Issues do **not** appear in `/my-requests`. They remain at `/my-issues` and `/operations?tab=issues`, with their own three labels.
+- Legacy `/my-activity`, `/my-supply-requests`, `/request/supplies`, `/request/help` URLs redirect with their existing query params preserved.
 - A `partial` supply fulfillment shows as `Done` in the row and surfaces the partial note in detail.
-- Submitting a supply order then closing the modal lands the user on the catalog with an empty cart and a visible toast.
 - Realtime: a second tab submitting on the same account causes the inbox to update within 5 seconds without a hard refresh.
 
 ## Rollout
 
-1. Ship Piece 3 first — it has no UI surface of its own and no risk; the helper exists and is wired into the existing surfaces. This puts the vocabulary in the user's eyes immediately.
-2. Ship Piece 1 second — change the four success states. Sonner is already in the app; no new dependency.
-3. Ship Piece 2 last — the inbox depends on the helper and on the toast linking to a stable URL. Delivering it without 1 and 3 leaves dead ends.
+1. **Piece 4 first** — the vocabulary helper has no UI of its own. Wire it into the existing Notifications surface and the helper sits ready for the surfaces that come next. Zero risk.
+2. **Piece 3 second** — the `/my-requests` inbox. Builds on the Piece 4 helper. Establishes the URL the Piece 2 toast will link to.
+3. **Piece 2 third** — the success-state alignment. Now the `View →` link has a stable destination. Touches three flows; Sonner is already in the app.
+4. **Piece 1 last** — the `/supplies` tabbed front door and the sidebar / header rename. Smallest-feeling but most visible change; ship once the rest of the surface is consistent.
 
 ## Out of scope
 
-- Email-channel notifications for status changes.
-- Mobile push notifications.
+- Anything touching the Issues / Operations surface.
+- Email or push notifications for status changes.
 - An export-my-requests action.
-- Letting the user re-submit a previous request as a new one ("Reorder").
+- "Reorder" affordance for previous supply orders.
 - A "draft" state for incomplete requests.
+- Sidebar consolidation of `Issues` / `Maintenance` / `Lighting` into one `Operations` nav item.
 
 ## Open questions
 
-None at draft time. If implementation reveals a fifth user-facing label is unavoidable, raise it at the planning stage rather than expanding silently here.
+None at draft time.
