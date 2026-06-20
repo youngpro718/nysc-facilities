@@ -87,6 +87,7 @@ export function QuickSupplyRequest() {
         unit: item.unit,
         sku: item.sku,
         requires_justification: item.requires_justification,
+        pack_size: item.pack_size ?? null,
       },
       1
     );

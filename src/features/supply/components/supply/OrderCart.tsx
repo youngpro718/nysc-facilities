@@ -20,6 +20,7 @@ import { useAuth } from '@features/auth/hooks/useAuth';
 import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryRoomPicker';
 import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
 import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
+import { formatPackEquivalent } from '@features/supply/utils/packEquivalent';
 import {
   Dialog,
   DialogContent,
@@ -218,6 +219,11 @@ export function OrderCart({
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
+                    {item.pack_size && item.quantity % item.pack_size === 0 && (
+                      <div className="text-[11px] text-muted-foreground text-right">
+                        {formatPackEquivalent(item.quantity, item.item_unit, item.pack_size)}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

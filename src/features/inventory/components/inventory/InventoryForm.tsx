@@ -27,6 +27,8 @@ const inventorySchema = z.object({
   category_id: z.string().optional(),
   description: z.string().optional(),
   unit: z.string().optional(),
+  pack_size: z.number().int().positive().nullable().optional(),
+  packaging_note: z.string().optional(),
   location_details: z.string().optional(),
   status: z.enum(["available", "low_stock", "out_of_stock"]).optional(),
 });
@@ -55,6 +57,8 @@ export function InventoryForm({
       category_id: initialData?.category_id || undefined,
       description: initialData?.description || "",
       unit: initialData?.unit || "",
+      pack_size: initialData?.pack_size ?? null,
+      packaging_note: initialData?.packaging_note || "",
       location_details: initialData?.location_details || "",
       status: initialData?.status || "available",
     },
@@ -174,9 +178,9 @@ export function InventoryForm({
             name="unit"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Unit</FormLabel>
+                <FormLabel>Smallest unit</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="e.g., pieces, boxes" />
+                  <Input {...field} placeholder="e.g., battery, pen, sheet" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -185,12 +189,53 @@ export function InventoryForm({
 
           <FormField
             control={form.control}
+            name="pack_size"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Pack size (optional)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(e.target.value ? Number(e.target.value) : null)
+                    }
+                    placeholder="e.g., 4 batteries per pack"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
             name="location_details"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Location Details</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="e.g., Shelf A1" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="packaging_note"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Packaging note (admin-only)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="e.g., 1 case = 24 boxes × 8 packs"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

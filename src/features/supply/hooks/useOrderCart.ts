@@ -14,6 +14,7 @@ export interface CartItem {
   item_unit?: string;
   item_sku?: string;
   requires_justification?: boolean;
+  pack_size?: number | null;
 }
 
 export function useOrderCart() {
@@ -33,7 +34,7 @@ export function useOrderCart() {
   // Supervisors (court_officer, cmc, admin) bypass restricted item approval
   const isSupervisor = ['court_officer', 'court_liaison', 'admin'].includes(profile?.role || '');
 
-  const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string; requires_justification?: boolean }, quantity: number = 1) => {
+  const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string; requires_justification?: boolean; pack_size?: number | null }, quantity: number = 1) => {
     setCartItems(prev => {
       const existingIndex = prev.findIndex(i => i.item_id === item.id);
       if (existingIndex >= 0) {
@@ -50,6 +51,7 @@ export function useOrderCart() {
         item_unit: item.unit,
         item_sku: item.sku,
         requires_justification: item.requires_justification,
+        pack_size: item.pack_size ?? null,
       }];
     });
   }, []);

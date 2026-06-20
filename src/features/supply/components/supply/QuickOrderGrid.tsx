@@ -78,6 +78,7 @@ export function QuickOrderGrid() {
       unit: item.unit as string,
       sku: item.sku as string,
       requires_justification: item.requires_justification,
+      pack_size: item.pack_size ?? null,
     }, quantity);
   };
 
