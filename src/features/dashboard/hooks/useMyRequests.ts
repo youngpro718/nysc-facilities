@@ -10,6 +10,9 @@ export interface SupplyRow {
   status: string;
   created_at: string;
   description?: string | null;
+  priority?: string | null;
+  requested_delivery_date?: string | null;
+  approval_notes?: string | null;
 }
 
 export interface TaskRow {
@@ -70,7 +73,9 @@ export function useMyRequests() {
       const [supplyRes, taskRes] = await Promise.all([
         supabase
           .from('supply_requests')
-          .select('id, requester_id, delivery_location, status, created_at, description')
+          .select(
+            'id, requester_id, delivery_location, status, created_at, description, priority, requested_delivery_date, approval_notes',
+          )
           .eq('requester_id', user!.id)
           .order('created_at', { ascending: false })
           .limit(50),

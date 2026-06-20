@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { getFriendlySupplyStatus, getFriendlyTaskStatus, toneClasses } from '@/lib/statusLabels';
 import { RequestDetailBody } from './RequestDetailBody';
+import { SupplyDetailBody } from './SupplyDetailBody';
 import type { MyRequestRow, TaskRow, SupplyRow } from '@features/dashboard/hooks/useMyRequests';
 
 interface Props {
@@ -35,30 +36,10 @@ export function MyRequestDetailDrawer({ row, onOpenChange }: Props) {
           {row.type === 'request' ? (
             <RequestDetailBody task={row.raw as TaskRow} />
           ) : (
-            <SupplyDetailStub supply={row.raw as SupplyRow} />
+            <SupplyDetailBody supply={row.raw as SupplyRow} />
           )}
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-function SupplyDetailStub({ supply }: { supply: SupplyRow }) {
-  return (
-    <div className="p-4 space-y-3 text-sm">
-      <div>
-        <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Deliver to</div>
-        <div>{supply.delivery_location || 'Not specified'}</div>
-      </div>
-      {supply.description && (
-        <div>
-          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Notes</div>
-          <div className="whitespace-pre-wrap">{supply.description}</div>
-        </div>
-      )}
-      <div className="text-xs text-muted-foreground italic pt-2 border-t">
-        Full supply detail panel can be plugged in here in a follow-up.
-      </div>
-    </div>
   );
 }
