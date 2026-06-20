@@ -21,7 +21,7 @@ const OPEN_SUPPLY = new Set([
   'packing',
   'ready',
 ]);
-const OPEN_TASK = new Set(['pending', 'claimed', 'in_progress']);
+const OPEN_TASK = new Set(['pending', 'pending_approval', 'approved', 'claimed', 'in_progress']);
 
 function isOpen(row: MyRequestRow): boolean {
   return row.type === 'supply'

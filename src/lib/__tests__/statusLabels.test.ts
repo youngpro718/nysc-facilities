@@ -48,9 +48,16 @@ describe('statusLabels', () => {
 });
 
 describe('getFriendlyTaskStatus', () => {
-  it('maps pending to Sent / pending', () => {
+  it('maps pending and pending_approval to Sent / pending', () => {
     expect(getFriendlyTaskStatus('pending').label).toBe('Sent');
     expect(getFriendlyTaskStatus('pending').tone).toBe('pending');
+    expect(getFriendlyTaskStatus('pending_approval').label).toBe('Sent');
+    expect(getFriendlyTaskStatus('pending_approval').tone).toBe('pending');
+  });
+
+  it('maps approved to Approved / progress', () => {
+    expect(getFriendlyTaskStatus('approved').label).toBe('Approved');
+    expect(getFriendlyTaskStatus('approved').tone).toBe('progress');
   });
 
   it('maps claimed and in_progress to Being worked on / progress', () => {

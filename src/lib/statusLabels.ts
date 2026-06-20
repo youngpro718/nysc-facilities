@@ -72,6 +72,8 @@ const KEY_MAP: Record<string, FriendlyStatus> = {
 // Court Aide task workflow (Make a Request) --------------------------------
 const TASK_MAP: Record<string, FriendlyStatus> = {
   pending: { label: 'Sent', tone: 'pending', description: 'Your request was received and is waiting for a court aide.' },
+  pending_approval: { label: 'Sent', tone: 'pending', description: 'Your request was received and is waiting for a court aide.' },
+  approved: { label: 'Approved', tone: 'progress', description: 'A court aide accepted this — work starts when timing allows.' },
   claimed: { label: 'Being worked on', tone: 'progress', description: 'A court aide is on it.' },
   in_progress: { label: 'Being worked on', tone: 'progress', description: 'A court aide is on it.' },
   done: { label: 'Done', tone: 'done', description: 'Handled.' },

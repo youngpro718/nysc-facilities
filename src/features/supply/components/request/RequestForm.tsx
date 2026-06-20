@@ -31,13 +31,24 @@ export function RequestForm() {
   const submit = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error('Not signed in');
+      const description = what.trim();
+      // staff_tasks.title is NOT NULL — derive from the first ~60 chars of the
+      // description so the row is well-formed for existing fulfillment surfaces
+      // (Tasks page, Work Center, notifications) without asking the user for a
+      // separate title. is_request + requested_by + status = pending_approval
+      // make the existing admin-notification trigger fire.
+      const title =
+        description.length > 60 ? description.slice(0, 60).trimEnd() + '…' : description;
       const { data, error } = await supabase
         .from('staff_tasks')
         .insert({
+          title,
           created_by: user.id,
+          requested_by: user.id,
+          is_request: true,
           room_id: where.trim() || null,
-          description: what.trim(),
-          status: 'pending',
+          description,
+          status: 'pending_approval',
           task_type: 'request',
           timing_preference: timing,
           requested_for_at:
