@@ -142,7 +142,7 @@ export default function MaintenanceRequestFormPage() {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => window.location.href = '/public-forms'}
+                  onClick={() => window.location.reload()}
                 >
                   Submit Another Form
                 </Button>
@@ -167,10 +167,10 @@ export default function MaintenanceRequestFormPage() {
           <Button
             variant="ghost"
             className="mb-2 text-primary-foreground hover:bg-primary-foreground/20"
-            onClick={() => window.location.href = '/public-forms'}
+            onClick={() => window.location.href = '/'}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Forms
+            Back
           </Button>
           <h1 className="text-3xl font-bold">NYSC Facilities Hub</h1>
           <p className="text-lg opacity-90 mt-1">Report an Issue</p>
@@ -333,7 +333,7 @@ export default function MaintenanceRequestFormPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => window.location.href = '/public-forms'}
+                onClick={() => window.location.href = '/'}
                 className="flex-1"
               >
                 Cancel

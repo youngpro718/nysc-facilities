@@ -78,8 +78,6 @@ const FormTemplatesAdmin = lazy(() => import("@features/admin/pages/admin/FormTe
 // Forms
 const MaintenanceRequestFormPage = lazy(() => import("@features/forms/pages/forms/MaintenanceRequestFormPage"));
 const IssueReportFormPage = lazy(() => import("@features/forms/pages/forms/IssueReportFormPage"));
-const PublicForms = lazy(() => import("@features/forms/pages/PublicForms"));
-const PublicFormSubmission = lazy(() => import("@features/forms/pages/PublicFormSubmission"));
 
 // Supply request flows
 const CourtAideRequests = lazy(() => import("@features/supply/pages/CourtAideRequests"));
@@ -97,9 +95,6 @@ function AppContent() {
   return (
     <Suspense fallback={<RouteSkeleton />}>
       <Routes>
-        {/* Public Routes - No Authentication Required */}
-        <Route path="/public-forms" element={<PublicForms />} />
-        <Route path="/submit-form" element={<PublicFormSubmission />} />
 
         {/* Public Interactive Form Pages - No Layout, No Auth */}
         <Route path="/forms/supply-request" element={<Navigate to="/supplies?tab=order" replace />} />

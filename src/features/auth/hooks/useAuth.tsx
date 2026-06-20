@@ -388,8 +388,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             '/login',
             '/verification-pending',
             '/install',
-            '/public-forms',
-            '/submit-form',
             '/auth/pending-approval',
             '/auth/account-rejected',
             '/forms/key-request',

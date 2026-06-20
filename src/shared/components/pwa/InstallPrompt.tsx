@@ -21,8 +21,6 @@ export function InstallPrompt() {
     '/auth',
     '/onboarding',
     '/verification-pending',
-    '/public-forms',
-    '/submit-form',
     '/forms',
   ];
   const isQuietRoute = quietRoutes.some((path) => location.pathname.startsWith(path));
