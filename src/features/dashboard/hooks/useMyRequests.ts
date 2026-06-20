@@ -13,12 +13,14 @@ export interface SupplyRow {
   priority?: string | null;
   requested_delivery_date?: string | null;
   approval_notes?: string | null;
+  display_id?: string | null;
 }
 
 export interface TaskRow {
   id: string;
   created_by: string;
-  room_id: string | null;
+  from_room_id: string | null;
+  to_room_id: string | null;
   description: string;
   status: string;
   created_at: string;
@@ -27,19 +29,39 @@ export interface TaskRow {
   requested_for_at?: string | null;
 }
 
+export interface KeyRequestRow {
+  id: string;
+  user_id: string;
+  request_type: string;
+  room_id: string | null;
+  room_other: string | null;
+  reason: string;
+  quantity: number;
+  status: string;
+  created_at: string;
+  admin_notes?: string | null;
+  rejection_reason?: string | null;
+  fulfillment_notes?: string | null;
+}
+
 export interface MyRequestRow {
   id: string;
-  type: 'supply' | 'request';
+  type: 'supply' | 'request' | 'key';
   title: string;
   location_label: string | null;
   status_internal: string;
   created_at: string;
-  raw: SupplyRow | TaskRow;
+  display_id?: string | null;
+  raw: SupplyRow | TaskRow | KeyRequestRow;
 }
 
 const truncate = (s: string, n = 60) => (s.length <= n ? s : s.slice(0, n).trimEnd() + '…');
 
-export function mergeRows(supplies: SupplyRow[], tasks: TaskRow[]): MyRequestRow[] {
+export function mergeRows(
+  supplies: SupplyRow[],
+  tasks: TaskRow[],
+  keyRequests: KeyRequestRow[] = [],
+): MyRequestRow[] {
   const supplyRows: MyRequestRow[] = supplies.map((s) => ({
     id: s.id,
     type: 'supply',
@@ -47,18 +69,28 @@ export function mergeRows(supplies: SupplyRow[], tasks: TaskRow[]): MyRequestRow
     location_label: s.delivery_location,
     status_internal: s.status,
     created_at: s.created_at,
+    display_id: s.display_id,
     raw: s,
   }));
   const taskRows: MyRequestRow[] = tasks.map((t) => ({
     id: t.id,
     type: 'request',
     title: truncate(t.description || 'Request'),
-    location_label: t.room_id,
+    location_label: t.from_room_id ?? t.to_room_id,
     status_internal: t.status,
     created_at: t.created_at,
     raw: t,
   }));
-  return [...supplyRows, ...taskRows].sort(
+  const keyRows: MyRequestRow[] = keyRequests.map((request) => ({
+    id: request.id,
+    type: 'key',
+    title: `${request.request_type.replace(/_/g, ' ')} key request`,
+    location_label: request.room_other || request.room_id,
+    status_internal: request.status,
+    created_at: request.created_at,
+    raw: request,
+  }));
+  return [...supplyRows, ...taskRows, ...keyRows].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 }
@@ -81,14 +113,19 @@ export function useMyRequests() {
           .limit(50),
         supabase
           .from('staff_tasks')
-          .select('id, created_by, room_id, description, status, created_at, task_type, timing_preference, requested_for_at')
+          .select('id, created_by, from_room_id, to_room_id, description, status, created_at, task_type, timing_preference, requested_for_at')
           .eq('created_by', user!.id)
           .order('created_at', { ascending: false })
           .limit(50),
       ]);
       if (supplyRes.error) throw supplyRes.error;
       if (taskRes.error) throw taskRes.error;
-      return mergeRows((supplyRes.data ?? []) as SupplyRow[], (taskRes.data ?? []) as TaskRow[]);
+      // NOTE: the key-request workflow (and the key_requests table) was removed.
+      // Querying it here used to throw and break this whole page.
+      return mergeRows(
+        (supplyRes.data ?? []) as SupplyRow[],
+        (taskRes.data ?? []) as TaskRow[],
+      );
     },
   });
 }

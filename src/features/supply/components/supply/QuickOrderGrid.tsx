@@ -33,6 +33,7 @@ export function QuickOrderGrid() {
     submitOrder,
     totalItems,
     isSubmitting,
+    requiresOrderCode,
   } = useOrderCart();
 
   const filteredItems = useMemo(() => {
@@ -76,6 +77,7 @@ export function QuickOrderGrid() {
       sku: item.sku as string,
       requires_justification: item.requires_justification,
       pack_size: item.pack_size ?? null,
+      order_code_threshold: item.order_code_threshold ?? null,
     }, quantity);
   };
 
@@ -249,6 +251,7 @@ export function QuickOrderGrid() {
         onSubmit={submitOrder}
         onClear={clearCart}
         isSubmitting={isSubmitting}
+        requiresOrderCode={requiresOrderCode}
       />
     </div>
   );

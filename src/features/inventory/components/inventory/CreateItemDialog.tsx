@@ -19,6 +19,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { invalidateInventoryStockQueries } from "@features/inventory/utils/invalidation";
+import { describePackaging, buildPackagingNote, pluralize } from "@features/inventory/utils/packaging";
 
 type Category = {
   id: string;
@@ -45,6 +46,11 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
     quantity: "",
     minimum_quantity: "",
     unit: "",
+    pack_size: "",
+    pack_label: "",
+    case_label: "",
+    case_size: "",
+    order_code_threshold: "",
     category_id: "",
     storage_room_id: "",
     location_details: "",
@@ -93,11 +99,23 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
           quantity: parseInt(data.quantity) || 0,
           minimum_quantity: parseInt(data.minimum_quantity) || 0,
           unit: data.unit || null,
+          pack_size: data.pack_size ? parseInt(data.pack_size) : null,
+          pack_label: data.pack_label || null,
+          case_label: data.case_label || null,
+          case_size: data.case_size ? parseInt(data.case_size) : null,
+          order_code_threshold: data.order_code_threshold ? parseInt(data.order_code_threshold) : null,
+          packaging_note: buildPackagingNote({
+            unit: data.unit,
+            pack_label: data.pack_label,
+            pack_size: data.pack_size ? parseInt(data.pack_size) : null,
+            case_label: data.case_label,
+            case_size: data.case_size ? parseInt(data.case_size) : null,
+          }),
           category_id: data.category_id || null,
           storage_room_id: data.storage_room_id || null,
           location_details: data.location_details || null,
           preferred_vendor: data.preferred_vendor || null,
-          vendor_sku: data.vendor_sku || null,
+          sku: data.vendor_sku || null,
           notes: data.notes || null,
           status: "active",
         });
@@ -152,6 +170,11 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
       quantity: "",
       minimum_quantity: "",
       unit: "",
+      pack_size: "",
+      pack_label: "",
+      case_label: "",
+      case_size: "",
+      order_code_threshold: "",
       category_id: "",
       storage_room_id: "",
       location_details: "",
@@ -161,6 +184,19 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
     });
     onOpenChange(false);
   };
+
+  const unitWord = formData.unit.trim() || "unit";
+  const packWord = formData.pack_label.trim() || "pack";
+  const caseWord = formData.case_label.trim() || "case";
+  const unitPlural = pluralize(unitWord);
+  const packPlural = pluralize(packWord);
+  const packagingPreview = describePackaging({
+    unit: formData.unit,
+    pack_label: formData.pack_label,
+    pack_size: formData.pack_size ? Number(formData.pack_size) : null,
+    case_label: formData.case_label,
+    case_size: formData.case_size ? Number(formData.case_size) : null,
+  });
 
   return (
     <ModalFrame
@@ -186,13 +222,92 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="unit">Unit</Label>
+                <Label htmlFor="unit">Smallest unit</Label>
                 <Input
                   id="unit"
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  placeholder="e.g., pieces, boxes, kg"
+                  placeholder="e.g., battery, pen, sheet, ream"
                 />
+              </div>
+            </div>
+
+            {/* Packaging ladder: single -> pack -> case. Powers the order buttons + "= 1 box" hints. */}
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+              <div>
+                <p className="text-sm font-medium">Packaging</p>
+                <p className="text-xs text-muted-foreground">
+                  Quantity is counted in <strong>{unitPlural}</strong>. Define a {packWord} and {caseWord} so
+                  people can order by the {packWord} or {caseWord} instead of counting.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pack_label">Middle tier name</Label>
+                  <Input
+                    id="pack_label"
+                    value={formData.pack_label}
+                    onChange={(e) => setFormData({ ...formData, pack_label: e.target.value })}
+                    placeholder="e.g., pack, box"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pack_size">{unitPlural} per {packWord}</Label>
+                  <Input
+                    id="pack_size"
+                    type="number"
+                    min="1"
+                    value={formData.pack_size}
+                    onChange={(e) => setFormData({ ...formData, pack_size: e.target.value })}
+                    placeholder="e.g., 4"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="case_label">Top tier name</Label>
+                  <Input
+                    id="case_label"
+                    value={formData.case_label}
+                    onChange={(e) => setFormData({ ...formData, case_label: e.target.value })}
+                    placeholder="e.g., case"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="case_size">{packPlural} per {caseWord}</Label>
+                  <Input
+                    id="case_size"
+                    type="number"
+                    min="1"
+                    value={formData.case_size}
+                    onChange={(e) => setFormData({ ...formData, case_size: e.target.value })}
+                    placeholder="e.g., 26"
+                  />
+                </div>
+              </div>
+
+              {packagingPreview && (
+                <p className="text-xs font-medium text-foreground/80">{packagingPreview}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="order_code_threshold">Require access code above</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  id="order_code_threshold"
+                  type="number"
+                  min="1"
+                  className="max-w-[140px]"
+                  value={formData.order_code_threshold}
+                  onChange={(e) => setFormData({ ...formData, order_code_threshold: e.target.value })}
+                  placeholder="e.g., 24"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {unitPlural} — larger orders ask the person for their personal code. Leave blank for no limit.
+                </span>
               </div>
             </div>
 

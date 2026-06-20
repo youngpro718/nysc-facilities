@@ -1,6 +1,6 @@
 import { Calendar, MapPin, MessageSquare } from 'lucide-react';
-import { format } from 'date-fns';
 import type { TaskRow } from '@features/dashboard/hooks/useMyRequests';
+import { formatDateTime } from '@/lib/dateTime';
 
 interface Props {
   task: TaskRow;
@@ -16,7 +16,7 @@ export function RequestDetailBody({ task }: Props) {
   const timing = task.timing_preference || 'anytime';
   const timingLabel = TIMING_LABEL[timing] || 'Anytime';
   const specificAt = task.requested_for_at
-    ? format(new Date(task.requested_for_at), 'EEE MMM d, h:mm a')
+    ? formatDateTime(task.requested_for_at)
     : null;
 
   return (
@@ -25,7 +25,7 @@ export function RequestDetailBody({ task }: Props) {
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
           <MapPin className="h-3.5 w-3.5" /> Where
         </div>
-        <div className="text-sm">{task.room_id || 'No room recorded'}</div>
+        <div className="text-sm">{task.from_room_id || task.to_room_id || 'No room recorded'}</div>
       </section>
       <section>
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">

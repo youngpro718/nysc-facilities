@@ -16,6 +16,7 @@ export interface CartItem {
   item_sku?: string;
   requires_justification?: boolean;
   pack_size?: number | null;
+  order_code_threshold?: number | null;
 }
 
 export function useOrderCart() {
@@ -34,7 +35,7 @@ export function useOrderCart() {
   // Supervisors (court_officer, cmc, admin) bypass restricted item approval
   const isSupervisor = ['court_officer', 'court_liaison', 'admin'].includes(profile?.role || '');
 
-  const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string; requires_justification?: boolean; pack_size?: number | null }, quantity: number = 1) => {
+  const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string; requires_justification?: boolean; pack_size?: number | null; order_code_threshold?: number | null }, quantity: number = 1) => {
     setCartItems(prev => {
       const existingIndex = prev.findIndex(i => i.item_id === item.id);
       if (existingIndex >= 0) {
@@ -52,6 +53,7 @@ export function useOrderCart() {
         item_sku: item.sku,
         requires_justification: item.requires_justification,
         pack_size: item.pack_size ?? null,
+        order_code_threshold: item.order_code_threshold ?? null,
       }];
     });
   }, []);
@@ -180,6 +182,11 @@ export function useOrderCart() {
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const hasRestrictedItems = !isSupervisor && cartItems.some(item => item.requires_justification === true);
+  // Lines above their per-item threshold need the orderer's personal access code.
+  // Supervisors are exempt (same bypass as restricted-item approval).
+  const requiresOrderCode = !isSupervisor && cartItems.some(
+    item => item.order_code_threshold != null && item.quantity > item.order_code_threshold,
+  );
 
   return {
     cartItems,
@@ -191,5 +198,6 @@ export function useOrderCart() {
     totalItems,
     isSubmitting,
     hasRestrictedItems,
+    requiresOrderCode,
   };
 }

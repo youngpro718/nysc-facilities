@@ -214,13 +214,11 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     return [
       '/', // Admin Dashboard
       '/spaces',
-      '/issues',
-      '/maintenance',
-      '/lighting',
+      '/operations', // Operations tab (Issues/Maintenance/Lighting consolidated)
       '/keys',
       '/inventory',
       '/tasks',
-      '/term-sheet',
+      '/term-sheet', // Court Operations
       '',          // separator placeholder
       '/admin',
     ];
@@ -231,9 +229,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     return [
       '/', // Facilities Dashboard
       '/spaces',
-      '/issues',
-      '/maintenance',
-      '/lighting',
+      '/operations', // Operations tab (Issues/Maintenance/Lighting consolidated)
       '/keys',
       '/inventory',
       '/tasks',

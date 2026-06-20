@@ -22,11 +22,12 @@ const OPEN_SUPPLY = new Set([
   'ready',
 ]);
 const OPEN_TASK = new Set(['pending', 'pending_approval', 'approved', 'claimed', 'in_progress']);
+const OPEN_KEY = new Set(['pending', 'approved', 'ready']);
 
 function isOpen(row: MyRequestRow): boolean {
-  return row.type === 'supply'
-    ? OPEN_SUPPLY.has(row.status_internal)
-    : OPEN_TASK.has(row.status_internal);
+  if (row.type === 'supply') return OPEN_SUPPLY.has(row.status_internal);
+  if (row.type === 'key') return OPEN_KEY.has(row.status_internal);
+  return OPEN_TASK.has(row.status_internal);
 }
 
 export default function MyRequests() {
@@ -66,7 +67,7 @@ export default function MyRequests() {
     <div className="max-w-3xl mx-auto py-6 px-4 space-y-4">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">My Requests</h1>
-        <p className="text-sm text-muted-foreground">Everything you've asked the court aides for.</p>
+        <p className="text-sm text-muted-foreground">Supply orders and service requests in one place.</p>
       </header>
 
       <div className="flex flex-wrap items-center gap-2">

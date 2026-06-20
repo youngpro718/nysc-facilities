@@ -3,6 +3,7 @@ import { Star, Plus, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { ItemImage } from './ItemImage';
+import { describePackaging, describeQuantity, quickAddSteps } from '@features/inventory/utils/packaging';
 
 interface ItemDetailPanelProps {
   item: any;
@@ -19,7 +20,7 @@ export function ItemDetailPanel({
   onToggleFavorite,
   onAddToCart,
 }: ItemDetailPanelProps) {
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
 
   if (!item) {
     return (
@@ -35,6 +36,16 @@ export function ItemDetailPanel({
   const stockLevel = item.quantity || 0;
   const isLowStock = stockLevel > 0 && stockLevel <= 10;
   const isOutOfStock = stockLevel === 0;
+
+  const pkg = {
+    unit: item.unit,
+    pack_label: item.pack_label,
+    pack_size: item.pack_size,
+    case_label: item.case_label,
+    case_size: item.case_size,
+  };
+  const packagingText = describePackaging(pkg);
+  const packSteps = quickAddSteps(pkg).filter((s) => s.singles > 1);
 
   return (
     <div className="h-full flex flex-col">
@@ -60,6 +71,9 @@ export function ItemDetailPanel({
             <Badge variant="destructive" className="text-xs">Unavailable</Badge>
           )}
         </div>
+        {packagingText && (
+          <p className="text-xs text-muted-foreground mt-2">{packagingText}</p>
+        )}
       </div>
 
       {/* Description */}
@@ -94,22 +108,48 @@ export function ItemDetailPanel({
           {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
         </Button>
 
+        {packSteps.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 min-w-[72px]"
+              onClick={() => setQuantity((q) => q + 1)}
+            >
+              +1 {item.unit || 'unit'}
+            </Button>
+            {packSteps.map((s) => (
+              <Button
+                key={s.label}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 min-w-[72px]"
+                onClick={() => setQuantity((q) => q + s.singles)}
+              >
+                +{s.label}
+              </Button>
+            ))}
+          </div>
+        )}
+
         <div className="flex gap-2">
           <div className="flex items-center border rounded-md">
             <Button
               variant="ghost"
               size="sm"
               className="h-9 px-2"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              onClick={() => setQuantity(Math.max(0, quantity - 1))}
             >
               -
             </Button>
             <input
               type="number"
               value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => setQuantity(Math.max(0, parseInt(e.target.value) || 0))}
               className="w-12 text-center border-0 bg-transparent text-sm focus:outline-none"
-              min="1"
+              min="0"
             />
             <Button
               variant="ghost"
@@ -123,18 +163,17 @@ export function ItemDetailPanel({
           <Button
             className="flex-1"
             onClick={() => onAddToCart(quantity)}
-            disabled={isOutOfStock}
+            disabled={isOutOfStock || quantity < 1}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add to Cart
           </Button>
         </div>
 
-        {cartQuantity > 0 && (
-          <p className="text-xs text-center text-muted-foreground">
-            {cartQuantity} in cart
-          </p>
-        )}
+        <p className="text-xs text-center text-muted-foreground">
+          {quantity > 0 ? `Ordering ${describeQuantity(quantity, pkg)}` : 'Tap a quantity, pack, or case'}
+          {cartQuantity > 0 && ` · ${cartQuantity} in cart`}
+        </p>
       </div>
     </div>
   );

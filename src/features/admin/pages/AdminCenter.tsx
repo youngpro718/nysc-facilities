@@ -1,4 +1,5 @@
-import { ChevronLeft, Users, AlertCircle, Search, RefreshCw, MoreVertical, Mail, UserX, UserCheck, Clock, Unlock, CheckCircle, Ban, Trash2, Settings } from 'lucide-react';
+import { ChevronLeft, Users, AlertCircle, Search, RefreshCw, MoreVertical, Mail, UserX, UserCheck, Clock, Unlock, CheckCircle, Ban, Trash2, Settings, KeyRound } from 'lucide-react';
+import { setSupplyOrderCode } from '@features/supply/services/supplyOrderCode';
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
@@ -202,10 +203,13 @@ export default function AdminCenter() {
       if (rolesError) throw rolesError;
 
       const roleMap = new Map(userRoles?.map(r => [r.user_id, r.role]) || []);
-      const usersWithRoles = (profiles || []).map(profile => ({
-        ...profile,
-        role: roleMap.get(profile.id) as UserRole || 'standard',
-      }));
+      const hiddenTestEmails = new Set(['testaide@gmail.com', 'testaid@gmail.com']);
+      const usersWithRoles = (profiles || [])
+        .filter((profile) => !hiddenTestEmails.has(profile.email?.trim().toLowerCase() || ''))
+        .map(profile => ({
+          ...profile,
+          role: roleMap.get(profile.id) as UserRole || 'standard',
+        }));
 
       setUsers(usersWithRoles);
     } catch (error) {
@@ -302,6 +306,17 @@ export default function AdminCenter() {
       toast.error(`❌ Failed to reject ${userName}`, { id: 'reject-user' });
     } finally {
       setUpdatingUserId(null);
+    }
+  };
+
+  const handleSetOrderCode = async (userId: string, userName: string) => {
+    const code = window.prompt(`Set supply order code for ${userName}.\nLeave blank to remove their code.`);
+    if (code === null) return; // cancelled
+    try {
+      await setSupplyOrderCode(userId, code.trim() || null);
+      toast.success(code.trim() ? `Order code set for ${userName}` : `Order code removed for ${userName}`);
+    } catch (e) {
+      toast.error(`Failed to set code: ${(e as Error)?.message || String(e)}`);
     }
   };
 
@@ -700,6 +715,10 @@ export default function AdminCenter() {
                             <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.email).then(() => toast.success('Email copied'))}>
                               <Mail className="h-4 w-4 mr-2" />
                               Copy Email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSetOrderCode(user.id, `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email)}>
+                              <KeyRound className="h-4 w-4 mr-2" />
+                              Set order code
                             </DropdownMenuItem>
                             {!isCurrentUser && (
                               <>

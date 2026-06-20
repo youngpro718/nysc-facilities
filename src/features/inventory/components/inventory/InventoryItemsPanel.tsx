@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 import { QUERY_CONFIG } from '@/config';
@@ -37,11 +37,17 @@ type InventoryItem = {
   quantity: number;
   minimum_quantity: number;
   unit: string;
+  pack_size: number | null;
+  packaging_note: string | null;
+  pack_label: string | null;
+  case_label: string | null;
+  case_size: number | null;
+  order_code_threshold: number | null;
   status: string;
   location_details: string;
   photo_url: string;
   preferred_vendor: string;
-  vendor_sku: string;
+  sku: string | null;
   notes: string;
   category_id: string;
   storage_room_id: string;
@@ -66,6 +72,14 @@ export const InventoryItemsPanel = () => {
   const canEdit = canWriteFeature('inventory');
   const canDelete = canAdminFeature('inventory');
   const [searchQuery, setSearchQuery] = useState("");
+  // Debounced value that actually drives the query. Typing updates `searchQuery`
+  // (and the input) instantly, but the query key only changes after a short pause,
+  // so we don't fire a request — or remount the panel — on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -116,7 +130,7 @@ export const InventoryItemsPanel = () => {
   const roomsById = useMemo(() => new Map((rooms ?? []).map(r => [r.id, r])), [rooms]);
 
   const { data, isLoading, isError, error } = useQuery<{ items: InventoryItem[]; total: number }>({
-    queryKey: ["inventory-items", searchQuery, page, pageSize, selectedCategory, selectedRoom, sortKey, sortDir],
+    queryKey: ["inventory-items", debouncedSearch, page, pageSize, selectedCategory, selectedRoom, sortKey, sortDir],
     queryFn: async () => {
       // Single round trip with relational selects + count + pagination
       const from = (page - 1) * pageSize;
@@ -127,8 +141,12 @@ export const InventoryItemsPanel = () => {
         .select("*", { count: "exact" })
         .range(from, to);
 
-      if (searchQuery) {
-        query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      if (debouncedSearch) {
+        // Quote the value so names with PostgREST-special chars — ( ) , — don't break
+        // the or() filter (e.g. "Batteries (AA)" was returning zero results). Strip any
+        // stray quotes/backslashes first so they can't escape the quoted value.
+        const safe = debouncedSearch.replace(/["\\]/g, " ").trim();
+        query = query.or(`name.ilike."%${safe}%",description.ilike."%${safe}%"`);
       }
 
       if (selectedCategory && selectedCategory !== "all") {
@@ -155,6 +173,9 @@ export const InventoryItemsPanel = () => {
     retry: 2,
     staleTime: 3 * 60 * 1000,
     gcTime: QUERY_CONFIG.gc.short,
+    // Keep showing the previous results while the next page/search loads, so the
+    // panel (and the focused search box) never unmounts mid-typing.
+    placeholderData: keepPreviousData,
   });
 
   const items = data?.items ?? [];
@@ -164,7 +185,7 @@ export const InventoryItemsPanel = () => {
   // Reset to first page when search changes
   useEffect(() => {
     setPage(1);
-  }, [searchQuery]);
+  }, [debouncedSearch]);
 
   // Also reset when filters or sort change
   useEffect(() => {
@@ -226,8 +247,12 @@ export const InventoryItemsPanel = () => {
         .select("*")
         .range(0, 9999);
 
-      if (searchQuery) {
-        query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      if (debouncedSearch) {
+        // Quote the value so names with PostgREST-special chars — ( ) , — don't break
+        // the or() filter (e.g. "Batteries (AA)" was returning zero results). Strip any
+        // stray quotes/backslashes first so they can't escape the quoted value.
+        const safe = debouncedSearch.replace(/["\\]/g, " ").trim();
+        query = query.or(`name.ilike."%${safe}%",description.ilike."%${safe}%"`);
       }
       if (selectedCategory) {
         query = query.eq("category_id", selectedCategory);
@@ -476,7 +501,7 @@ export const InventoryItemsPanel = () => {
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Package className="h-4 w-4" />
-                          Quantity: {item.quantity} {item.unit && `(${item.unit})`}
+                          Quantity: {item.quantity} {item.unit && `(${item.unit})`}{item.pack_size ? ` · ${item.pack_size}/pack` : ""}
                         </div>
                         {item.minimum_quantity > 0 && (
                           <div className="flex items-center gap-1">

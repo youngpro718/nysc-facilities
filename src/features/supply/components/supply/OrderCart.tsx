@@ -21,6 +21,7 @@ import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryR
 import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
 import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
 import { formatPackEquivalent } from '@features/supply/utils/packEquivalent';
+import { verifySupplyOrderCode } from '@features/supply/services/supplyOrderCode';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ interface OrderCartProps {
   onSubmit: (options?: Record<string, unknown>) => Promise<unknown>;
   onClear: () => void;
   isSubmitting: boolean;
+  requiresOrderCode?: boolean;
 }
 
 const REASON_CHIPS = [
@@ -61,8 +63,12 @@ export function OrderCart({
   onSubmit,
   onClear,
   isSubmitting,
+  requiresOrderCode = false,
 }: OrderCartProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [orderCode, setOrderCode] = useState('');
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [verifyingCode, setVerifyingCode] = useState(false);
   const { user } = useAuth();
   const profile = useProfileCompleteness(user?.id);
 
@@ -95,12 +101,38 @@ export function OrderCart({
 
   const handleSubmit = async () => {
     if (missingLocation) return; // hard-block: need a delivery location
+
+    // Large orders (a line over its per-item limit) need the orderer's personal
+    // access code. Verified server-side; no human approval wait.
+    if (requiresOrderCode) {
+      const code = orderCode.trim();
+      if (!code) {
+        setCodeError('Enter your access code to place this larger order.');
+        return;
+      }
+      setVerifyingCode(true);
+      try {
+        const ok = await verifySupplyOrderCode(code);
+        if (!ok) {
+          setCodeError('That code was not recognized. Ask an admin if you need access for large orders.');
+          return;
+        }
+      } catch {
+        setCodeError('Could not verify the code right now. Please try again.');
+        return;
+      } finally {
+        setVerifyingCode(false);
+      }
+      setCodeError(null);
+    }
+
     await onSubmit({
       priority,
       delivery_location: trimmedLocation,
       justification: reason,
       requested_delivery_date: neededBy || undefined,
     });
+    setOrderCode('');
     setIsOpen(false);
   };
 
@@ -146,8 +178,8 @@ export function OrderCart({
               {/* Profile completeness banner — shows when department/home room missing */}
               <ProfileIncompleteBanner />
 
-              {/* Approval notice (if needed) */}
-              {needsApproval && (
+              {/* Approval notice (if needed) — hidden when the access-code path applies */}
+              {needsApproval && !requiresOrderCode && (
                 <div className="flex gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div className="text-xs">
@@ -349,21 +381,49 @@ export function OrderCart({
 
         {/* Footer — pinned at bottom of modal */}
         {items.length > 0 && (
-          <div className="shrink-0 p-3 border-t bg-background">
+          <div className="shrink-0 p-3 border-t bg-background space-y-2">
+            {requiresOrderCode && (
+              <div className="space-y-1.5 rounded-lg border border-primary/30 bg-primary/5 p-2.5">
+                <Label htmlFor="order-code" className="text-xs font-medium">
+                  Access code required
+                </Label>
+                <Input
+                  id="order-code"
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={orderCode}
+                  onChange={(e) => { setOrderCode(e.target.value); if (codeError) setCodeError(null); }}
+                  placeholder="Enter your personal code"
+                  className="h-10"
+                />
+                {codeError ? (
+                  <p className="text-xs text-destructive">{codeError}</p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    This order is above the limit for an item. Your code authorizes it instantly — no waiting on approval.
+                  </p>
+                )}
+              </div>
+            )}
             <Button
               type="button"
               onClick={handleSubmit}
-              disabled={isSubmitting || missingLocation}
+              disabled={isSubmitting || verifyingCode || missingLocation}
               className="w-full h-11 text-sm font-semibold"
             >
               <Send className="h-4 w-4 mr-2" />
               {isSubmitting
                 ? 'Submitting…'
-                : missingLocation
-                  ? 'Add a delivery location to submit'
-                  : needsApproval
-                    ? `Send ${totalItems} item${totalItems === 1 ? '' : 's'} for approval`
-                    : `Submit order (${totalItems} item${totalItems === 1 ? '' : 's'})`}
+                : verifyingCode
+                  ? 'Checking code…'
+                  : missingLocation
+                    ? 'Add a delivery location to submit'
+                    : requiresOrderCode
+                      ? `Authorize & submit (${totalItems} item${totalItems === 1 ? '' : 's'})`
+                      : needsApproval
+                        ? `Send ${totalItems} item${totalItems === 1 ? '' : 's'} for approval`
+                        : `Submit order (${totalItems} item${totalItems === 1 ? '' : 's'})`}
             </Button>
           </div>
         )}
