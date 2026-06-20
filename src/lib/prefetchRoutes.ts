@@ -25,7 +25,7 @@ const ROUTE_LOADERS: Record<string, Importer> = {
   '/operations': () => import('@features/operations/pages/Operations'),
   '/tasks': () => import('@features/tasks/pages/Tasks'),
   '/supply-room': () => import('@features/supply/pages/SupplyRoom'),
-  '/request/supplies': () => import('@features/supply/pages/request/SupplyOrderPage'),
+  '/supplies': () => import('@features/supply/pages/CourtAideRequests'),
 };
 
 const prefetched = new Set<string>();

@@ -149,16 +149,16 @@ export default function UserDashboard() {
             icon={Package}
             label="Order Supplies"
             sub={activeSupplyCount > 0 ? `${activeSupplyCount} in progress` : undefined}
-            onClick={() => navigate("/request/supplies")}
-            prefetchPath="/request/supplies"
+            onClick={() => navigate("/supplies?tab=order")}
+            prefetchPath="/supplies"
             accent
           />
           <ActionRow
             icon={Send}
             label="Make a Request"
             sub={openRequestCount > 0 ? `${openRequestCount} active` : "Move, deliver, set up & more"}
-            onClick={() => navigate("/request/help")}
-            prefetchPath="/request/help"
+            onClick={() => navigate("/supplies?tab=request")}
+            prefetchPath="/supplies"
           />
         </div>
 

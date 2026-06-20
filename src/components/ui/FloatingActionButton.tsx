@@ -7,7 +7,7 @@
 
 import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Package, Armchair, HandHelping } from 'lucide-react';
+import { Plus, Package, HandHelping } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@shared/hooks/use-mobile';
 import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
@@ -44,7 +44,7 @@ export function FloatingActionButton() {
     '/login',
     '/auth/',
     '/onboarding/',
-    '/request/',
+    '/supplies',
     '/spaces',
     '/operations',
     '/issues',
@@ -79,19 +79,13 @@ export function FloatingActionButton() {
       id: 'supplies',
       label: 'Order Supplies',
       icon: Package,
-      onClick: () => closeAndRun(() => navigate('/request/supplies')),
+      onClick: () => closeAndRun(() => navigate('/supplies?tab=order')),
     },
     {
-      id: 'setup',
-      label: 'Set Up a Room',
-      icon: Armchair,
-      onClick: () => closeAndRun(() => navigate('/request/help?type=setup')),
-    },
-    {
-      id: 'help',
-      label: 'Request Help',
+      id: 'request',
+      label: 'Make a Request',
       icon: HandHelping,
-      onClick: () => closeAndRun(() => navigate('/request/help')),
+      onClick: () => closeAndRun(() => navigate('/supplies?tab=request')),
     },
   ];
 

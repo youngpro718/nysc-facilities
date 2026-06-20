@@ -82,8 +82,7 @@ const PublicForms = lazy(() => import("@features/forms/pages/PublicForms"));
 const PublicFormSubmission = lazy(() => import("@features/forms/pages/PublicFormSubmission"));
 
 // Supply request flows
-const HelpRequestPage = lazy(() => import("@features/supply/pages/request/HelpRequestPage"));
-const SupplyOrderPage = lazy(() => import("@features/supply/pages/request/SupplyOrderPage"));
+const CourtAideRequests = lazy(() => import("@features/supply/pages/CourtAideRequests"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -103,7 +102,7 @@ function AppContent() {
         <Route path="/submit-form" element={<PublicFormSubmission />} />
 
         {/* Public Interactive Form Pages - No Layout, No Auth */}
-        <Route path="/forms/supply-request" element={<Navigate to="/request/supplies" replace />} />
+        <Route path="/forms/supply-request" element={<Navigate to="/supplies?tab=order" replace />} />
         <Route path="/forms/maintenance-request" element={<MaintenanceRequestFormPage />} />
         <Route path="/forms/issue-report" element={<IssueReportFormPage />} />
 
@@ -241,18 +240,17 @@ function AppContent() {
           <Route path="lighting" element={<Navigate to="/operations?tab=lighting" replace />} />
 
           {/* User Routes */}
-          {/* /request redirects to dashboard — quick actions are inline via FAB */}
-          <Route path="/request" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/request/help" element={
+          {/* Court Aide front door: catalog + request form, two tabs */}
+          <Route path="/supplies" element={
             <ProtectedRoute>
-              <HelpRequestPage />
+              <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supplies & Requests">
+                <CourtAideRequests />
+              </ModuleProtectedRoute>
             </ProtectedRoute>
           } />
-          <Route path="/request/supplies" element={
-            <ProtectedRoute>
-              <SupplyOrderPage />
-            </ProtectedRoute>
-          } />
+          <Route path="/request" element={<Navigate to="/supplies" replace />} />
+          <Route path="/request/help" element={<Navigate to="/supplies?tab=request" replace />} />
+          <Route path="/request/supplies" element={<Navigate to="/supplies?tab=order" replace />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <UserDashboard />
