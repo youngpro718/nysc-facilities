@@ -3,9 +3,9 @@ import {
   getFriendlySupplyStatus,
   getFriendlyIssueStatus,
   getFriendlyKeyStatus,
+  getFriendlyTaskStatus,
   toneClasses,
 } from '../statusLabels';
-import { getFriendlyTaskStatus } from '../statusLabels';
 
 describe('statusLabels', () => {
   it('maps known supply statuses to friendly labels', () => {
