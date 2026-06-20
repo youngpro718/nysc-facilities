@@ -52,8 +52,7 @@ const Keys = lazy(() => import("@features/keys/pages/Keys"));
 const KeysKiosk = lazy(() => import("@features/keys/pages/KeysKiosk"));
 const Profile = lazy(() => import("@features/profile/pages/Profile"));
 const MyIssues = lazy(() => import("@features/issues/pages/MyIssues"));
-const MySupplyRequests = lazy(() => import("@features/supply/pages/MySupplyRequests"));
-const MyActivity = lazy(() => import("@features/dashboard/pages/MyActivity"));
+const MyRequests = lazy(() => import("@features/dashboard/pages/MyRequests"));
 const Tasks = lazy(() => import("@features/tasks/pages/Tasks"));
 const AccessManagement = lazy(() => import("@features/occupants/pages/AccessManagement"));
 const SupplyRoom = lazy(() => import("@features/supply/pages/SupplyRoom"));
@@ -217,12 +216,8 @@ function AppContent() {
               <Tasks />
             </ProtectedRoute>
           } />
-          <Route path="/my-supply-requests" element={
-            <ProtectedRoute>
-              <MySupplyRequests />
-            </ProtectedRoute>
-          } />
-          <Route path="/supply-requests" element={<Navigate to="/my-supply-requests" replace />} />
+          <Route path="/my-supply-requests" element={<Navigate to="/my-requests?type=supply" replace />} />
+          <Route path="/supply-requests" element={<Navigate to="/my-requests?type=supply" replace />} />
           <Route path="/supply-room" element={
             <ProtectedRoute>
               <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Room">
@@ -263,12 +258,13 @@ function AppContent() {
               <UserDashboard />
             </ProtectedRoute>
           } />
-          {/* Unified My Activity page */}
-          <Route path="/my-activity" element={
+          {/* Unified court-aide request inbox */}
+          <Route path="/my-requests" element={
             <ProtectedRoute>
-              <MyActivity />
+              <MyRequests />
             </ProtectedRoute>
           } />
+          <Route path="/my-activity" element={<Navigate to="/my-requests" replace />} />
           {/* Legacy routes - keep for backwards compatibility */}
           <Route path="/my-issues" element={
             <ProtectedRoute>
