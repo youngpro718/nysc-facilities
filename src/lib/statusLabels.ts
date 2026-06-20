@@ -69,6 +69,17 @@ const KEY_MAP: Record<string, FriendlyStatus> = {
   cancelled: { label: 'Cancelled', tone: 'cancelled', description: 'This request was cancelled.' },
 };
 
+// Court Aide task workflow (Make a Request) --------------------------------
+const TASK_MAP: Record<string, FriendlyStatus> = {
+  pending: { label: 'Sent', tone: 'pending', description: 'Your request was received and is waiting for a court aide.' },
+  claimed: { label: 'Being worked on', tone: 'progress', description: 'A court aide is on it.' },
+  in_progress: { label: 'Being worked on', tone: 'progress', description: 'A court aide is on it.' },
+  done: { label: 'Done', tone: 'done', description: 'Handled.' },
+  completed: { label: 'Done', tone: 'done', description: 'Handled.' },
+  rejected: { label: 'Not handled', tone: 'attention', description: 'A court aide could not handle this request. See notes for details.' },
+  cancelled: { label: 'Cancelled', tone: 'cancelled', description: 'This request was cancelled.' },
+};
+
 const FALLBACK: FriendlyStatus = {
   label: 'Updated',
   tone: 'progress',
@@ -88,6 +99,11 @@ export function getFriendlyIssueStatus(status?: string | null): FriendlyStatus {
 export function getFriendlyKeyStatus(status?: string | null): FriendlyStatus {
   if (!status) return FALLBACK;
   return KEY_MAP[status] ?? { ...FALLBACK, label: humanize(status) };
+}
+
+export function getFriendlyTaskStatus(status?: string | null): FriendlyStatus {
+  if (!status) return FALLBACK;
+  return TASK_MAP[status] ?? { ...FALLBACK, label: humanize(status) };
 }
 
 function humanize(s: string): string {
