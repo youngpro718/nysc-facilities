@@ -145,7 +145,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Term Sheet', icon: FileText },
       { title: 'Supply Room', icon: Package2 },
-      { title: 'My Activity', icon: FileText },
+      { title: 'My Requests', icon: FileText },
       { title: 'Notifications', icon: MessageSquare },
       { type: "separator" },
       { title: 'Profile', icon: User },
@@ -191,7 +191,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   // Standard user navigation - actions are on dashboard, no separate request page needed
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
-    { title: 'My Activity', icon: FileText },
+    { title: 'My Requests', icon: FileText },
     { title: 'Term Sheet', icon: FileText },
     { title: 'Notifications', icon: MessageSquare },
     { type: "separator" },

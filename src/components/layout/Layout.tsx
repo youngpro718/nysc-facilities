@@ -211,34 +211,32 @@ function LayoutContent() {
                   </QuickIssueReportButton>
                 )}
 
-                {/* Order Supplies — everyone except court aides (they fulfill orders) */}
+                {/* Court Aide front door — supply orders + requests live on one page.
+                    Two buttons remain for muscle memory but both route to the same
+                    page on different tabs. Court aides fulfill, so they're hidden. */}
                 {userRole !== 'court_aide' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
-                    onClick={() => navigate('/request/supplies')}
-                    title="Order Supplies"
-                  >
-                    <Package className="h-4 w-4 sm:mr-1.5" />
-                    <span className="hidden sm:inline">Order Supplies</span>
-                  </Button>
-                )}
-
-                {/* Make a Request — room/event setup help from the court aides.
-                    Court aides fulfill these, so they don't request them. Desktop
-                    parity with the mobile FAB, which was previously the only entry. */}
-                {userRole !== 'court_aide' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
-                    onClick={() => navigate('/request/help')}
-                    title="Make a Request"
-                  >
-                    <ClipboardList className="h-4 w-4 sm:mr-1.5" />
-                    <span className="hidden sm:inline">Make a Request</span>
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
+                      onClick={() => navigate('/supplies?tab=order')}
+                      title="Order Supplies"
+                    >
+                      <Package className="h-4 w-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Order Supplies</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
+                      onClick={() => navigate('/supplies?tab=request')}
+                      title="Make a Request"
+                    >
+                      <ClipboardList className="h-4 w-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Make a Request</span>
+                    </Button>
+                  </>
                 )}
 
                 {isAdmin && (

@@ -11,7 +11,6 @@
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, Package, Sparkles, Grid3X3 } from 'lucide-react';
-import { OrderConfirmation } from './OrderConfirmation';
 import { cn } from '@/lib/utils';
 import { useInventoryItems } from '@features/inventory/hooks/useInventoryItems';
 import { useFavoriteItems } from '@features/supply/hooks/useFavoriteItems';
@@ -40,8 +39,6 @@ export function QuickSupplyRequest() {
     submitOrder,
     totalItems,
     isSubmitting,
-    submittedOrder,
-    resetSubmittedOrder,
   } = useOrderCart();
 
   // Filter items based on search and category
@@ -116,15 +113,6 @@ export function QuickSupplyRequest() {
   };
 
   const showCategoryCards = !searchTerm && !selectedCategory;
-
-  if (submittedOrder) {
-    return (
-      <OrderConfirmation
-        order={submittedOrder}
-        onPlaceAnother={resetSubmittedOrder}
-      />
-    );
-  }
 
   return (
     <div className="flex flex-col h-full overflow-x-hidden">

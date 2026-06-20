@@ -141,7 +141,7 @@ export default function UserDashboard() {
 
 
         {/* Pickup Alert */}
-        <PickupAlertBanner count={readyForPickup} onClick={() => navigate("/my-activity")} />
+        <PickupAlertBanner count={readyForPickup} onClick={() => navigate("/my-requests")} />
 
         {/* Primary Actions — 3 large vertical buttons */}
         <div className="space-y-3" data-tour="quick-actions">
@@ -149,24 +149,24 @@ export default function UserDashboard() {
             icon={Package}
             label="Order Supplies"
             sub={activeSupplyCount > 0 ? `${activeSupplyCount} in progress` : undefined}
-            onClick={() => navigate("/request/supplies")}
-            prefetchPath="/request/supplies"
+            onClick={() => navigate("/supplies?tab=order")}
+            prefetchPath="/supplies"
             accent
           />
           <ActionRow
             icon={Send}
             label="Make a Request"
             sub={openRequestCount > 0 ? `${openRequestCount} active` : "Move, deliver, set up & more"}
-            onClick={() => navigate("/request/help")}
-            prefetchPath="/request/help"
+            onClick={() => navigate("/supplies?tab=request")}
+            prefetchPath="/supplies"
           />
         </div>
 
         {/* Activity feed — single chronological list */}
         <div className="pt-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-muted-foreground">My Activity</h2>
-            <Button variant="link" size="sm" className="text-xs h-auto p-0" onClick={() => navigate("/my-activity")}>
+            <h2 className="text-sm font-semibold text-muted-foreground">My Requests</h2>
+            <Button variant="link" size="sm" className="text-xs h-auto p-0" onClick={() => navigate("/my-requests")}>
               View all <ChevronRight className="h-3 w-3 ml-0.5" />
             </Button>
           </div>

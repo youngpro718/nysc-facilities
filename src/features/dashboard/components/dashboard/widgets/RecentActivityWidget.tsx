@@ -55,7 +55,7 @@ export function RecentActivityWidget({
   activities, 
   maxItems = 5,
   showViewAll = true,
-  viewAllPath = '/my-activity',
+  viewAllPath = '/my-requests',
   className 
 }: RecentActivityWidgetProps) {
   const navigate = useNavigate();

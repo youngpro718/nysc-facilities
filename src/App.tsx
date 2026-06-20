@@ -52,8 +52,7 @@ const Keys = lazy(() => import("@features/keys/pages/Keys"));
 const KeysKiosk = lazy(() => import("@features/keys/pages/KeysKiosk"));
 const Profile = lazy(() => import("@features/profile/pages/Profile"));
 const MyIssues = lazy(() => import("@features/issues/pages/MyIssues"));
-const MySupplyRequests = lazy(() => import("@features/supply/pages/MySupplyRequests"));
-const MyActivity = lazy(() => import("@features/dashboard/pages/MyActivity"));
+const MyRequests = lazy(() => import("@features/dashboard/pages/MyRequests"));
 const Tasks = lazy(() => import("@features/tasks/pages/Tasks"));
 const AccessManagement = lazy(() => import("@features/occupants/pages/AccessManagement"));
 const SupplyRoom = lazy(() => import("@features/supply/pages/SupplyRoom"));
@@ -83,8 +82,7 @@ const PublicForms = lazy(() => import("@features/forms/pages/PublicForms"));
 const PublicFormSubmission = lazy(() => import("@features/forms/pages/PublicFormSubmission"));
 
 // Supply request flows
-const HelpRequestPage = lazy(() => import("@features/supply/pages/request/HelpRequestPage"));
-const SupplyOrderPage = lazy(() => import("@features/supply/pages/request/SupplyOrderPage"));
+const CourtAideRequests = lazy(() => import("@features/supply/pages/CourtAideRequests"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -104,7 +102,7 @@ function AppContent() {
         <Route path="/submit-form" element={<PublicFormSubmission />} />
 
         {/* Public Interactive Form Pages - No Layout, No Auth */}
-        <Route path="/forms/supply-request" element={<Navigate to="/request/supplies" replace />} />
+        <Route path="/forms/supply-request" element={<Navigate to="/supplies?tab=order" replace />} />
         <Route path="/forms/maintenance-request" element={<MaintenanceRequestFormPage />} />
         <Route path="/forms/issue-report" element={<IssueReportFormPage />} />
 
@@ -217,12 +215,8 @@ function AppContent() {
               <Tasks />
             </ProtectedRoute>
           } />
-          <Route path="/my-supply-requests" element={
-            <ProtectedRoute>
-              <MySupplyRequests />
-            </ProtectedRoute>
-          } />
-          <Route path="/supply-requests" element={<Navigate to="/my-supply-requests" replace />} />
+          <Route path="/my-supply-requests" element={<Navigate to="/my-requests?type=supply" replace />} />
+          <Route path="/supply-requests" element={<Navigate to="/my-requests?type=supply" replace />} />
           <Route path="/supply-room" element={
             <ProtectedRoute>
               <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Room">
@@ -246,29 +240,29 @@ function AppContent() {
           <Route path="lighting" element={<Navigate to="/operations?tab=lighting" replace />} />
 
           {/* User Routes */}
-          {/* /request redirects to dashboard — quick actions are inline via FAB */}
-          <Route path="/request" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/request/help" element={
+          {/* Court Aide front door: catalog + request form, two tabs */}
+          <Route path="/supplies" element={
             <ProtectedRoute>
-              <HelpRequestPage />
+              <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supplies & Requests">
+                <CourtAideRequests />
+              </ModuleProtectedRoute>
             </ProtectedRoute>
           } />
-          <Route path="/request/supplies" element={
-            <ProtectedRoute>
-              <SupplyOrderPage />
-            </ProtectedRoute>
-          } />
+          <Route path="/request" element={<Navigate to="/supplies" replace />} />
+          <Route path="/request/help" element={<Navigate to="/supplies?tab=request" replace />} />
+          <Route path="/request/supplies" element={<Navigate to="/supplies?tab=order" replace />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <UserDashboard />
             </ProtectedRoute>
           } />
-          {/* Unified My Activity page */}
-          <Route path="/my-activity" element={
+          {/* Unified court-aide request inbox */}
+          <Route path="/my-requests" element={
             <ProtectedRoute>
-              <MyActivity />
+              <MyRequests />
             </ProtectedRoute>
           } />
+          <Route path="/my-activity" element={<Navigate to="/my-requests" replace />} />
           {/* Legacy routes - keep for backwards compatibility */}
           <Route path="/my-issues" element={
             <ProtectedRoute>

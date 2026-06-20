@@ -6,6 +6,7 @@ import { useToast } from '@shared/hooks/use-toast';
 import { useGenerateReceipt } from '@features/supply/hooks/useSupplyReceipts';
 import { createReceiptData } from '@/lib/receiptUtils';
 import { useAuth } from '@features/auth/hooks/useAuth';
+import { requestSubmittedToast, requestFailedToast } from '@shared/utils/requestToast';
 
 export interface CartItem {
   item_id: string;
@@ -25,7 +26,6 @@ export function useOrderCart() {
   // flips immediately, so the second call is dropped and no duplicate order
   // is created.
   const submittingRef = useRef(false);
-  const [submittedOrder, setSubmittedOrder] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { mutateAsync: generateReceipt } = useGenerateReceipt();
@@ -149,56 +149,34 @@ export function useOrderCart() {
         }
       }
 
-      toast({
-        title: result?.approval_required ? 'Sent for approval' : 'Order submitted',
-        description: result?.approval_required && !isSupervisor
-          ? (result?.approval_reason
-              ? `${result.approval_reason}. A supervisor will review it shortly.`
-              : 'A supervisor will review your order shortly.')
-          : "Your order was submitted. We'll notify you when it's ready.",
-      });
+      if (result?.request?.id) {
+        requestSubmittedToast({
+          id: result.request.id,
+          type: 'supply',
+          needsApproval: !!result?.approval_required,
+        });
+      }
 
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['my-requests'] });
       // Also invalidate the recent-locations cache so the new location appears next time
       queryClient.invalidateQueries({ queryKey: ['supplyRecentDeliveryLocations'] });
       clearCart();
 
-      // Store the submitted order for the confirmation screen — include items + meta
-      if (result?.request) {
-        setSubmittedOrder({
-          ...result.request,
-          approval_required: result?.approval_required,
-          approval_reason: result?.approval_reason,
-          delivery_location: payload.delivery_location,
-          priority: payload.priority,
-          items: cartItems.map(i => ({
-            item_name: i.item_name,
-            quantity: i.quantity,
-            item_unit: i.item_unit,
-          })),
-        });
-      }
-
       return result;
     } catch (error: any) {
-      const message = error?.message || 'Failed to submit order';
-      toast({
-        title: 'Submission Failed',
-        description: message.includes('row-level security') || message.includes('Permission')
+      const raw = error?.message || 'Failed to submit order';
+      const message =
+        raw.includes('row-level security') || raw.includes('Permission')
           ? 'Permission error. Please try logging in again.'
-          : message,
-        variant: 'destructive',
-      });
+          : raw;
+      requestFailedToast(message);
       throw error;
     } finally {
       setIsSubmitting(false);
       submittingRef.current = false;
     }
   }, [cartItems, toast, queryClient, clearCart, user, isSupervisor]);
-
-  const resetSubmittedOrder = useCallback(() => {
-    setSubmittedOrder(null);
-  }, []);
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const hasRestrictedItems = !isSupervisor && cartItems.some(item => item.requires_justification === true);
@@ -213,7 +191,5 @@ export function useOrderCart() {
     totalItems,
     isSubmitting,
     hasRestrictedItems,
-    submittedOrder,
-    resetSubmittedOrder,
   };
 }

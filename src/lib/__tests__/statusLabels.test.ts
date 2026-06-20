@@ -3,6 +3,7 @@ import {
   getFriendlySupplyStatus,
   getFriendlyIssueStatus,
   getFriendlyKeyStatus,
+  getFriendlyTaskStatus,
   toneClasses,
 } from '../statusLabels';
 
@@ -43,5 +44,40 @@ describe('statusLabels', () => {
     for (const t of tones) {
       expect(toneClasses(t).length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('getFriendlyTaskStatus', () => {
+  it('maps pending to Sent / pending', () => {
+    expect(getFriendlyTaskStatus('pending').label).toBe('Sent');
+    expect(getFriendlyTaskStatus('pending').tone).toBe('pending');
+  });
+
+  it('maps claimed and in_progress to Being worked on / progress', () => {
+    expect(getFriendlyTaskStatus('claimed').label).toBe('Being worked on');
+    expect(getFriendlyTaskStatus('claimed').tone).toBe('progress');
+    expect(getFriendlyTaskStatus('in_progress').label).toBe('Being worked on');
+  });
+
+  it('maps done and completed to Done / done', () => {
+    expect(getFriendlyTaskStatus('done').label).toBe('Done');
+    expect(getFriendlyTaskStatus('completed').label).toBe('Done');
+    expect(getFriendlyTaskStatus('done').tone).toBe('done');
+  });
+
+  it('maps rejected to Not handled / attention', () => {
+    expect(getFriendlyTaskStatus('rejected').label).toBe('Not handled');
+    expect(getFriendlyTaskStatus('rejected').tone).toBe('attention');
+  });
+
+  it('falls back to humanised label and progress tone for unknown', () => {
+    const r = getFriendlyTaskStatus('weird_state');
+    expect(r.label).toBe('Weird State');
+    expect(r.tone).toBe('progress');
+  });
+
+  it('returns fallback for null / undefined', () => {
+    expect(getFriendlyTaskStatus(null).label).toBe('Updated');
+    expect(getFriendlyTaskStatus(undefined).label).toBe('Updated');
   });
 });

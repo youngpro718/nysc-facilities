@@ -15,9 +15,8 @@ type Importer = () => Promise<unknown>;
 const ROUTE_LOADERS: Record<string, Importer> = {
   '/': () => import('@features/dashboard/pages/UserDashboard'),
   '/dashboard': () => import('@features/dashboard/pages/UserDashboard'),
-  '/my-activity': () => import('@features/dashboard/pages/MyActivity'),
+  '/my-requests': () => import('@features/dashboard/pages/MyRequests'),
   '/my-issues': () => import('@features/issues/pages/MyIssues'),
-  '/my-supply-requests': () => import('@features/supply/pages/MySupplyRequests'),
   '/notifications': () => import('@features/dashboard/pages/Notifications'),
   '/profile': () => import('@features/profile/pages/Profile'),
   '/term-sheet': () => import('@features/court/pages/TermSheet'),
@@ -26,7 +25,7 @@ const ROUTE_LOADERS: Record<string, Importer> = {
   '/operations': () => import('@features/operations/pages/Operations'),
   '/tasks': () => import('@features/tasks/pages/Tasks'),
   '/supply-room': () => import('@features/supply/pages/SupplyRoom'),
-  '/request/supplies': () => import('@features/supply/pages/request/SupplyOrderPage'),
+  '/supplies': () => import('@features/supply/pages/CourtAideRequests'),
 };
 
 const prefetched = new Set<string>();

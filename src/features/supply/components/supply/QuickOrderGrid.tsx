@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { OrderConfirmation } from './OrderConfirmation';
 import { useInventoryItems } from '@features/inventory/hooks/useInventoryItems';
 import { useFavoriteItems } from '@features/supply/hooks/useFavoriteItems';
 import { CompactItemList } from './CompactItemList';
@@ -34,8 +33,6 @@ export function QuickOrderGrid() {
     submitOrder,
     totalItems,
     isSubmitting,
-    submittedOrder,
-    resetSubmittedOrder,
   } = useOrderCart();
 
   const filteredItems = useMemo(() => {
@@ -103,15 +100,6 @@ export function QuickOrderGrid() {
   const handleToggleFavorite = async (itemId: string) => {
     await toggleFavorite(itemId);
   };
-
-  if (submittedOrder) {
-    return (
-      <OrderConfirmation
-        order={submittedOrder}
-        onPlaceAnother={resetSubmittedOrder}
-      />
-    );
-  }
 
   return (
     <div className="space-y-4">
