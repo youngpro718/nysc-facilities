@@ -7,15 +7,14 @@ const BASE_PATH_MAP: Record<string, string> = {
   // 'Spaces' is the section that contains rooms.
   'Spaces': '/spaces',
   'Rooms': '/spaces', // legacy label, kept as alias
-  'New Request': '/request',
-  // Issues / Maintenance / Lighting are first-class siblings.
-  // Each resolves to the Operations page with the correct tab pre-selected.
-  'Issues': '/issues',
-  'Maintenance': '/maintenance',
-  'Lighting': '/lighting',
-  // Legacy aliases for the old consolidated "Operations" entry.
-  'Operations': '/issues',
-  'Building Issues': '/issues',
+  'New Request': '/supplies',
+  // Issues, Maintenance, and Lighting are tabs inside Operations.
+  // The legacy nav labels keep working as path aliases.
+  'Operations': '/operations',
+  'Issues': '/operations?tab=issues',
+  'Maintenance': '/operations?tab=maintenance',
+  'Lighting': '/operations?tab=lighting',
+  'Building Issues': '/operations?tab=issues',
   'Personnel': '/occupants',
   'Occupants': '/occupants', // legacy label, kept as alias
   'Inventory': '/inventory',

@@ -44,22 +44,8 @@ export const navigationItems: NavigationItem[] = [
     moduleKey: 'spaces',
   },
   {
-    title: 'Issues',
-    href: '/issues',
-    icon: AlertTriangle,
-    adminOnly: false,
-    moduleKey: 'operations',
-  },
-  {
-    title: 'Maintenance',
-    href: '/maintenance',
-    icon: Package,
-    adminOnly: false,
-    moduleKey: 'operations',
-  },
-  {
-    title: 'Lighting',
-    href: '/lighting',
+    title: 'Operations',
+    href: '/operations',
     icon: AlertTriangle,
     adminOnly: false,
     moduleKey: 'operations',
@@ -111,9 +97,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Spaces', icon: Building2 },
-      { title: 'Issues', icon: AlertTriangle },
-      { title: 'Maintenance', icon: Package },
-      { title: 'Lighting', icon: AlertTriangle },
+      { title: 'Operations', icon: AlertTriangle },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Tasks', icon: Package },
@@ -128,9 +112,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Spaces', icon: Building2 },
-      { title: 'Issues', icon: AlertTriangle },
-      { title: 'Maintenance', icon: Package },
-      { title: 'Lighting', icon: AlertTriangle },
+      { title: 'Operations', icon: AlertTriangle },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
       { title: 'Tasks', icon: Package },
@@ -204,7 +186,7 @@ export function getAdminNavigation(): NavigationTab[] {
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'Spaces', icon: Building2 },
-    { title: 'Issues', icon: AlertTriangle },
+    { title: 'Operations', icon: AlertTriangle },
     { type: "separator" },
     { title: 'Admin Center', icon: UserCog },
   ];
@@ -215,7 +197,7 @@ export const adminNavigation: NavigationTab[] = getAdminNavigation();
 
 export const userNavigation: NavigationTab[] = [
   { title: 'Dashboard', icon: LayoutDashboard },
-  { title: 'My Activity', icon: FileText },
+  { title: 'My Requests', icon: FileText },
   { title: 'Term Sheet', icon: FileText },
   { type: "separator" },
   { title: 'Profile', icon: User },
