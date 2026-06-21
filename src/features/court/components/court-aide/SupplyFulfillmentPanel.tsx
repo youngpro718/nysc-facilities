@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Package, User, Clock, CheckCircle, PackageCheck, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/dateTime';
 import { toast } from 'sonner';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -211,7 +211,7 @@ export function SupplyFulfillmentPanel() {
             {/* Time */}
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              {format(new Date(request.created_at), 'MMM d, h:mm a')}
+              {formatDateTime(request.created_at)}
             </div>
           </div>
 

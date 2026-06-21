@@ -60,6 +60,8 @@ import {
 interface ReportIssueDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mode?: "staff" | "requester";
+  onSuccess?: () => void;
 }
 
 interface RoomResult {
@@ -109,8 +111,8 @@ const PRIORITY_OPTIONS = [
 ] as const;
 
 const reportIssueSchema = z.object({
-  title: z.string().min(1, "Issue title is required"),
-  description: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().min(1, "Describe what is happening"),
   issue_type: z.string().min(1, "Please select an issue type"),
   priority: z.enum(["low", "medium", "high", "critical"]),
   space_type: z.enum(["courtroom", "room", "hallway", "door", "building", "other"]),
@@ -166,7 +168,12 @@ const reportIssueSchema = z.object({
 
 type FormData = z.infer<typeof reportIssueSchema>;
 
-export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps) => {
+export const ReportIssueDialog = ({
+  open,
+  onOpenChange,
+  mode = "staff",
+  onSuccess,
+}: ReportIssueDialogProps) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
@@ -240,7 +247,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       if (error) throw error;
       return data || [];
     },
-    enabled: open,
+    enabled: open && mode === "staff",
     staleTime: 10 * 60 * 1000,
   });
 
@@ -293,21 +300,27 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
 
   const onSubmit = async (data: FormData) => {
     try {
+      const typeLabel = ISSUE_TYPES.find((type) => type.id === data.issue_type)?.label || data.issue_type;
+      const locationLabel = selectedRoom?.room_number || data.space_name?.trim();
+      const submittedTitle = data.title?.trim()
+        || `${typeLabel} Issue${locationLabel ? ` – ${locationLabel}` : ""}`;
       const { error } = await supabase.from("issues").insert({
-        title: data.title,
+        title: submittedTitle,
         description: [
           data.description,
+          data.recurring_issue ? "Recurring issue" : null,
           data.additional_notes ? `Additional notes: ${data.additional_notes}` : null,
           data.reported_by_name ? `Reported by: ${data.reported_by_name}` : null,
         ].filter(Boolean).join("\n\n") || null,
         issue_type: data.issue_type,
-        priority: data.priority,
+        priority: data.needs_immediate_attention ? "critical" : data.priority,
         status: "open",
         room_id: data.room_id || null,
         floor_id: data.floor_id || null,
         building_id: data.building_id || null,
         location_description: data.room_id ? null : data.space_name?.trim() || null,
         assigned_to: (data.assigned_to && data.assigned_to !== "unassigned") ? data.assigned_to : null,
+        created_by: user?.id || null,
         reported_by: user?.id || null,
         photos: selectedPhotos.length > 0 ? selectedPhotos : null,
       });
@@ -324,13 +337,14 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       ]);
 
       setShowSuccess(true);
+      onSuccess?.();
       setTimeout(() => {
         resetForm();
         onOpenChange(false);
         setShowSuccess(false);
       }, 1200);
 
-      toast.success("Issue reported successfully", { description: data.title });
+      toast.success("Issue reported successfully", { description: submittedTitle });
     } catch (err) {
       logger.error("Error reporting issue:", err);
       toast.error("Failed to report issue", { description: "Please try again." });
@@ -362,7 +376,9 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       open={open}
       onOpenChange={handleClose}
       title="Report a Building Issue"
-      description="Log an issue reported to you. Fill in as much detail as possible for the maintenance team."
+      description={mode === "staff"
+        ? "Log an issue reported to you. Fill in as much detail as possible for the maintenance team."
+        : "Tell the facilities team what happened and where to find it."}
       size="xl"
     >
       <Form {...form}>
@@ -372,25 +388,26 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
             {/* ── LEFT COLUMN: Issue Details ── */}
             <div className="space-y-5">
 
-              {/* Title */}
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-semibold">Issue Title <span className="text-destructive">*</span></FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g. Broken light fixture in Courtroom 3"
-                        className="text-base"
-                        autoFocus
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {mode === "staff" && (
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-semibold">Issue Title</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Generated automatically if left blank"
+                          className="text-base"
+                          autoFocus
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {/* Description */}
               <FormField
@@ -431,6 +448,8 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                                 form.setValue("issue_type", type.id, { shouldValidate: true });
                                 autoGenerateTitle(type.id);
                               }}
+                              aria-pressed={isSelected}
+                              aria-label={`${type.label} issue category`}
                               className={cn(
                                 "flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all text-center",
                                 "hover:border-primary/40 hover:bg-accent/40",
@@ -448,7 +467,6 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                         })}
                       </div>
                       <FormMessage />
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -463,6 +481,8 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                       key={p.id}
                       type="button"
                       onClick={() => form.setValue("priority", p.id, { shouldValidate: true })}
+                      aria-pressed={selectedPriority === p.id}
+                      aria-label={`${p.label} priority: ${p.description}`}
                       className={cn(
                         "flex flex-col gap-1 p-3 rounded-lg border-2 text-left transition-all",
                         "hover:border-primary/40",
@@ -567,7 +587,14 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{selectedRoom.floors.buildings.name}</Badge>
                           )}
                         </div>
-                        <Button variant="ghost" size="sm" type="button" onClick={clearRoom} className="h-6 w-6 p-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          onClick={clearRoom}
+                          className="h-6 w-6 p-0"
+                          aria-label={`Clear selected room ${selectedRoom.room_number}`}
+                        >
                           <X className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -580,6 +607,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                             value={roomSearch}
                             onChange={(e) => setRoomSearch(e.target.value)}
                             className="pl-9 text-sm"
+                            aria-label="Search room number or name"
                           />
                         </div>
                         {roomSearch && (
@@ -678,61 +706,60 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                 )}
               </div>
 
-              <Separator />
+              {mode === "staff" && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-sm font-semibold flex items-center gap-1.5 mb-3">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      Reporter
+                    </p>
+                    <FormField
+                      control={form.control}
+                      name="reported_by_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">Reported by (name or position)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Judge Williams, Clerk on duty, Anonymous" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              {/* Reporter */}
-              <div>
-                <p className="text-sm font-semibold flex items-center gap-1.5 mb-3">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  Reporter
-                </p>
-                <FormField
-                  control={form.control}
-                  name="reported_by_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">Reported by (name or position)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Judge Williams, Clerk on duty, Anonymous" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <Separator />
-
-              {/* Assignment */}
-              <div>
-                <p className="text-sm font-semibold mb-3">Assign To</p>
-                <FormField
-                  control={form.control}
-                  name="assigned_to"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">Assign to staff member (optional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Unassigned" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="unassigned">Unassigned</SelectItem>
-                          {staffList.map((s) => (
-                            <SelectItem key={s.id} value={s.id}>
-                              {[s.first_name, s.last_name].filter(Boolean).join(" ") || s.email || s.id}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <Separator />
+                  <Separator />
+                  <div>
+                    <p className="text-sm font-semibold mb-3">Assign To</p>
+                    <FormField
+                      control={form.control}
+                      name="assigned_to"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">Assign to staff member (optional)</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Unassigned" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="unassigned">Unassigned</SelectItem>
+                              {staffList.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>
+                                  {[s.first_name, s.last_name].filter(Boolean).join(" ") || s.email || s.id}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <Separator />
+                </>
+              )}
 
               {/* Additional Notes */}
               <FormField
@@ -772,6 +799,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                     onChange={handlePhotoUpload}
                     disabled={uploading}
                     className="hidden"
+                    aria-label="Attach issue photos"
                   />
                 </label>
                 {selectedPhotos.length > 0 && (

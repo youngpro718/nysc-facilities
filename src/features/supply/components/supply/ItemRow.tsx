@@ -24,6 +24,10 @@ export function ItemRow({
   const stockLevel = item.quantity || 0;
   const isLowStock = stockLevel > 0 && stockLevel <= 10;
   const isOutOfStock = stockLevel === 0;
+  const unitLabel = item.unit || 'item';
+  const packagingLabel = item.pack_size
+    ? `${item.pack_size} ${unitLabel}${item.pack_size === 1 ? '' : 's'} per ${item.pack_label || 'pack'}`
+    : unitLabel;
 
   return (
     <div
@@ -55,7 +59,7 @@ export function ItemRow({
           )}
         </div>
         <div className="text-xs text-muted-foreground">
-          {item.inventory_categories?.name || item.unit || 'Supply'}
+          {[item.inventory_categories?.name, packagingLabel].filter(Boolean).join(' · ')}
         </div>
       </div>
 
@@ -67,6 +71,7 @@ export function ItemRow({
             variant="ghost"
             className="h-9 w-9 p-0 touch-manipulation"
             onClick={onDecrement}
+            aria-label={`Decrease ${item.name}`}
           >
             <Minus className="h-3.5 w-3.5" />
           </Button>
@@ -76,6 +81,7 @@ export function ItemRow({
             variant="ghost"
             className="h-9 w-9 p-0 touch-manipulation"
             onClick={onIncrement}
+            aria-label={`Increase ${item.name}`}
           >
             <Plus className="h-3.5 w-3.5" />
           </Button>
@@ -90,6 +96,7 @@ export function ItemRow({
             onAddToCart();
           }}
           disabled={isOutOfStock}
+          aria-label={isOutOfStock ? `${item.name} is out of stock` : `Add ${item.name}`}
         >
           {isOutOfStock ? 'Out' : 'Add'}
         </Button>

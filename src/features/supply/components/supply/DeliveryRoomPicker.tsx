@@ -30,10 +30,11 @@ interface RoomRow {
 
 interface DeliveryRoomPickerProps {
   value: string;
-  onChange: (label: string) => void;
+  onChange: (label: string, roomId?: string) => void;
   userId?: string;
   invalid?: boolean;
   placeholder?: string;
+  ariaLabel?: string;
   className?: string;
   triggerClassName?: string;
   modal?: boolean;
@@ -58,6 +59,7 @@ export function DeliveryRoomPicker({
   userId,
   invalid,
   placeholder = 'Search rooms…',
+  ariaLabel = 'Room',
   className,
   triggerClassName,
   modal = true,
@@ -119,11 +121,29 @@ export function DeliveryRoomPicker({
     );
   }, [rooms, search]);
 
-  const selectLabel = (label: string) => {
-    onChange(label);
+  const selectLabel = (label: string, roomId?: string) => {
+    onChange(label, roomId);
     setOpen(false);
     setSearch('');
   };
+
+  const assignedRoomIds = useMemo(
+    () => new Set(assignedRooms.map((room) => room.id)),
+    [assignedRooms],
+  );
+
+  const assignedLabels = useMemo(
+    () => new Set(assignedRooms.map(formatRoomLabel)),
+    [assignedRooms],
+  );
+
+  const uniqueRecentOptions = useMemo(
+    () => recentOptions.filter((option, index, all) => {
+      if (assignedLabels.has(option.label)) return false;
+      return all.findIndex((candidate) => candidate.label === option.label) === index;
+    }),
+    [assignedLabels, recentOptions],
+  );
 
   return (
     <div className={cn('space-y-1', className)}>
@@ -134,6 +154,7 @@ export function DeliveryRoomPicker({
             role="combobox"
             aria-expanded={open}
             aria-invalid={invalid || undefined}
+            aria-label={ariaLabel}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
             className={cn(
@@ -150,8 +171,11 @@ export function DeliveryRoomPicker({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
+        {/* pointer-events-auto: inside a modal Dialog, Radix sets body { pointer-events: none },
+            which the portaled popover inherits and becomes unclickable. Re-enabling it on the
+            content keeps the room search + list usable. */}
         <PopoverContent
-          className="w-[--radix-popover-trigger-width] min-w-[300px] p-0 z-[100]"
+          className="w-[--radix-popover-trigger-width] min-w-[300px] p-0 z-[100] pointer-events-auto"
           align="start"
           sideOffset={4}
           collisionPadding={8}
@@ -179,7 +203,7 @@ export function DeliveryRoomPicker({
                         <CommandItem
                           key={`assigned-${r.id}`}
                           value={`assigned-${r.id}`}
-                          onSelect={() => selectLabel(label)}
+                          onSelect={() => selectLabel(label, r.id)}
                         >
                           <Star className="mr-2 h-3.5 w-3.5 text-amber-500" />
                           <span className="flex-1 truncate">{label}</span>
@@ -192,26 +216,29 @@ export function DeliveryRoomPicker({
                 </>
               )}
 
-              {recentOptions.length > 0 && !search && (
+              {uniqueRecentOptions.length > 0 && !search && (
                 <>
                   <CommandGroup heading="Recent">
-                    {recentOptions.map(opt => (
-                      <CommandItem
-                        key={`recent-${opt.value}`}
-                        value={`recent-${opt.value}`}
-                        onSelect={() => selectLabel(opt.label)}
-                      >
-                        <span className="flex-1 truncate text-muted-foreground">{opt.label}</span>
-                        {value === opt.label && <Check className="ml-2 h-4 w-4" />}
-                      </CommandItem>
-                    ))}
+                    {uniqueRecentOptions.map((opt) => {
+                      const matchedRoom = rooms.find((room) => formatRoomLabel(room) === opt.label);
+                      return (
+                        <CommandItem
+                          key={`recent-${opt.value}`}
+                          value={`recent-${opt.value}`}
+                          onSelect={() => selectLabel(opt.label, matchedRoom?.id)}
+                        >
+                          <span className="flex-1 truncate text-muted-foreground">{opt.label}</span>
+                          {value === opt.label && <Check className="ml-2 h-4 w-4" />}
+                        </CommandItem>
+                      );
+                    })}
                   </CommandGroup>
                   <CommandSeparator />
                 </>
               )}
 
               <CommandGroup heading={search ? 'Matches' : 'All rooms'}>
-                {filtered.slice(0, 50).map(room => {
+                {filtered.filter((room) => !assignedRoomIds.has(room.id) || !!search).slice(0, 50).map(room => {
                   const label = formatRoomLabel(room);
                   const sub = room.floor
                     ? [room.floor.building?.name, room.floor.name].filter(Boolean).join(' · ')
@@ -220,7 +247,7 @@ export function DeliveryRoomPicker({
                     <CommandItem
                       key={room.id}
                       value={room.id}
-                      onSelect={() => selectLabel(label)}
+                      onSelect={() => selectLabel(label, room.id)}
                     >
                       <div className="flex flex-col flex-1 min-w-0">
                         <span className="truncate text-sm">{label}</span>

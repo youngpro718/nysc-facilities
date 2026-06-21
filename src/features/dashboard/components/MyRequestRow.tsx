@@ -1,7 +1,8 @@
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNowStrict } from 'date-fns';
-import { Package, HandHelping } from 'lucide-react';
-import { getFriendlySupplyStatus, getFriendlyTaskStatus, toneClasses } from '@/lib/statusLabels';
+import { Package, HandHelping, KeyRound } from 'lucide-react';
+import { getFriendlyKeyStatus, getFriendlySupplyStatus, getFriendlyTaskStatus, toneClasses } from '@/lib/statusLabels';
+import { formatRelativeTime } from '@/lib/dateTime';
+import { formatRequestId } from '@/lib/requestIds';
 import type { MyRequestRow as Row } from '@features/dashboard/hooks/useMyRequests';
 
 interface Props {
@@ -11,15 +12,16 @@ interface Props {
 }
 
 export function MyRequestRow({ row, onClick, highlighted }: Props) {
-  const friendly =
-    row.type === 'supply'
-      ? getFriendlySupplyStatus(row.status_internal)
+  const friendly = row.type === 'supply'
+    ? getFriendlySupplyStatus(row.status_internal)
+    : row.type === 'key'
+      ? getFriendlyKeyStatus(row.status_internal)
       : getFriendlyTaskStatus(row.status_internal);
 
-  const TypeIcon = row.type === 'supply' ? Package : HandHelping;
-  const typeLabel = row.type === 'supply' ? 'Supply' : 'Request';
-  const shortId = `#${row.id.slice(0, 8).toUpperCase()}`;
-  const relative = formatDistanceToNowStrict(new Date(row.created_at), { addSuffix: true });
+  const TypeIcon = row.type === 'supply' ? Package : row.type === 'key' ? KeyRound : HandHelping;
+  const typeLabel = row.type === 'supply' ? 'Supply' : row.type === 'key' ? 'Key' : 'Request';
+  const shortId = `#${formatRequestId(row.id, row.display_id)}`;
+  const relative = formatRelativeTime(row.created_at);
 
   return (
     <button

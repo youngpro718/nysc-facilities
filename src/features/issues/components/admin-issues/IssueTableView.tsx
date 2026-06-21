@@ -87,6 +87,7 @@ export function IssueTableView({
               <Checkbox
                 checked={selectedIssues.length === issues.length && issues.length > 0}
                 onCheckedChange={handleSelectAll}
+                aria-label="Select all issues"
               />
             </TableHead>
             <TableHead className="min-w-[260px]">Title</TableHead>
@@ -108,6 +109,7 @@ export function IssueTableView({
                 <Checkbox
                   checked={selectedIssues.includes(issue.id)}
                   onCheckedChange={(checked) => handleSelectIssue(issue.id, checked as boolean)}
+                  aria-label={`Select ${issue.title}`}
                 />
               </TableCell>
 
@@ -203,6 +205,7 @@ export function IssueTableView({
                     className="h-8 w-8 p-0"
                     onClick={() => onIssueSelect?.(issue.id)}
                     title="View issue details"
+                    aria-label={`View details for ${issue.title}`}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>

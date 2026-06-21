@@ -1,8 +1,8 @@
-// Enabled Modules — user-level feature flag management
-import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@shared/hooks/use-toast';
+import { useAuth } from '@features/auth/hooks/useAuth';
 
 export interface EnabledModules {
   spaces: boolean;
@@ -15,8 +15,7 @@ export interface EnabledModules {
   court_operations: boolean;
   operations: boolean;
 }
-
-const DEFAULT_MODULES: EnabledModules = {
+export const DEFAULT_MODULES: EnabledModules = {
   spaces: true,
   issues: true,
   occupants: true,
@@ -28,154 +27,92 @@ const DEFAULT_MODULES: EnabledModules = {
   operations: true,
 };
 
+async function loadEnabledModules(userId: string): Promise<EnabledModules> {
+  const systemDefaults: Partial<EnabledModules> = {};
+  const { data: sysMods } = await supabase
+    .from('system_modules' as never)
+    .select('id, enabled');
+
+  if (Array.isArray(sysMods)) {
+    sysMods.forEach((module: { id: string; enabled: boolean }) => {
+      if (module.id in DEFAULT_MODULES && typeof module.enabled === 'boolean') {
+        systemDefaults[module.id as keyof EnabledModules] = module.enabled;
+      }
+    });
+  }
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('enabled_modules')
+    .eq('id', userId)
+    .single();
+
+  if (error) throw error;
+
+  const profileModules: Partial<EnabledModules> = {};
+  if (profile?.enabled_modules && typeof profile.enabled_modules === 'object') {
+    const modules = profile.enabled_modules as Record<string, unknown>;
+    Object.keys(DEFAULT_MODULES).forEach((key) => {
+      if (typeof modules[key] === 'boolean') {
+        profileModules[key as keyof EnabledModules] = modules[key] as boolean;
+      }
+    });
+  }
+
+  return { ...DEFAULT_MODULES, ...systemDefaults, ...profileModules };
+}
+
 export function useEnabledModules() {
-  const [enabledModules, setEnabledModules] = useState<EnabledModules>(DEFAULT_MODULES);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  
-  // Dev-only bypass to quickly explore the app without toggling modules in DB
-  // Set VITE_DISABLE_MODULE_GATES=true in .env.local and restart Vite
-  const DISABLE_GATES = import.meta.env.DEV && import.meta.env.VITE_DISABLE_MODULE_GATES === 'true';
+  const disableGates = import.meta.env.DEV && import.meta.env.VITE_DISABLE_MODULE_GATES === 'true';
+  const queryKey = ['enabled-modules', user?.id] as const;
 
-  const fetchEnabledModules = async () => {
-    if (DISABLE_GATES) {
-      // Immediately use defaults and skip network
-      setEnabledModules(DEFAULT_MODULES);
-      setLoading(false);
-      return;
-    }
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const query = useQuery({
+    queryKey,
+    enabled: !!user?.id && !disableGates,
+    queryFn: () => loadEnabledModules(user!.id),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
 
-      // Load system-level module defaults from catalog (if available)
-      const systemDefaults: Partial<EnabledModules> = {};
-      try {
-        const { data: sysMods } = await supabase
-          .from('system_modules' as any)
-          .select('id, enabled');
-        if (sysMods && Array.isArray(sysMods)) {
-          (sysMods as any[]).forEach((m: any) => {
-            const key = m.id as keyof EnabledModules;
-            if (key in DEFAULT_MODULES && typeof m.enabled === 'boolean') {
-              systemDefaults[key] = m.enabled;
-            }
-          });
-        }
-      } catch (error) {
-        // ignore and fall back to hardcoded defaults
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select(`
-          enabled_modules,
-          departments(name)
-        `)
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        logger.error('Error fetching enabled modules:', error);
-        return;
-      }
-
-      let finalModules = { ...DEFAULT_MODULES, ...systemDefaults };
-      
-      if (profile?.enabled_modules && typeof profile.enabled_modules === 'object') {
-        const modules = profile.enabled_modules as Record<string, boolean>;
-        const validModules: Partial<EnabledModules> = {};
-        
-        // Only include valid module keys
-        Object.keys(DEFAULT_MODULES).forEach(key => {
-          if (key in modules && typeof modules[key] === 'boolean') {
-            validModules[key as keyof EnabledModules] = modules[key];
-          }
-        });
-        
-        finalModules = { ...DEFAULT_MODULES, ...systemDefaults, ...validModules };
-      }
-      
-      // Module access is now controlled by role permissions, not department names
-      
-      setEnabledModules(finalModules);
-    } catch (error) {
-      logger.error('Error in fetchEnabledModules:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const enabledModules = disableGates ? DEFAULT_MODULES : query.data ?? DEFAULT_MODULES;
 
   const updateEnabledModules = async (modules: Partial<EnabledModules>) => {
-    try {
-      const updatedModules = { ...enabledModules, ...modules };
-      if (DISABLE_GATES) {
-        // Local-only update in dev bypass mode
-        setEnabledModules(updatedModules);
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({ enabled_modules: updatedModules })
-        .eq('id', user.id);
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to update module preferences",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setEnabledModules(updatedModules);
-      toast({
-        title: "Success",
-        description: "Module preferences updated successfully",
-      });
-    } catch (error) {
-      logger.error('Error updating modules:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update module preferences",
-        variant: "destructive",
-      });
+    if (!user?.id) return;
+    const updatedModules = { ...enabledModules, ...modules };
+    if (disableGates) {
+      queryClient.setQueryData(queryKey, updatedModules);
+      return;
     }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ enabled_modules: updatedModules })
+      .eq('id', user.id);
+
+    if (error) {
+      logger.error('Error updating enabled modules:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update module preferences',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    queryClient.setQueryData(queryKey, updatedModules);
+    toast({ title: 'Success', description: 'Module preferences updated successfully' });
   };
 
-  const resetToDefaults = async () => {
-    // Pull latest system defaults and reset profile to those
-    const systemDefaults: Partial<EnabledModules> = {};
-    try {
-      const { data: sysMods } = await supabase
-        .from('system_modules' as any)
-        .select('id, enabled');
-      if (sysMods && Array.isArray(sysMods)) {
-        (sysMods as any[]).forEach((m: any) => {
-          const key = m.id as keyof EnabledModules;
-          if (key in DEFAULT_MODULES && typeof m.enabled === 'boolean') {
-            systemDefaults[key] = m.enabled;
-          }
-        });
-      }
-    } catch (error) {
-      // ignore, fall back to hardcoded defaults
-    }
-    await updateEnabledModules({ ...DEFAULT_MODULES, ...systemDefaults });
-  };
-
-  useEffect(() => {
-    fetchEnabledModules();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [DISABLE_GATES]);
+  const resetToDefaults = async () => updateEnabledModules(DEFAULT_MODULES);
 
   return {
     enabledModules,
-    loading,
+    loading: !disableGates && query.isPending,
     updateEnabledModules,
     resetToDefaults,
   };

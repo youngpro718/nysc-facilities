@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { format, formatDistanceToNow, isPast, isWithinInterval, addHours, isFuture } from 'date-fns';
+import { isPast, isWithinInterval, addHours, isFuture } from 'date-fns';
 import {
   Clock,
   CheckCircle,
@@ -45,6 +45,7 @@ import {
   TASK_STATUS_LABELS,
   TASK_STATUS_COLORS
 } from '@features/tasks/types/staffTasks';
+import { formatDateTime } from '@/lib/dateTime';
 
 interface TaskCardProps {
   task: StaffTask;
@@ -84,7 +85,7 @@ function DueDateDisplay({ dueDate, status }: { dueDate: string; status: StaffTas
     return (
       <div className="flex items-center gap-1 text-xs text-red-500 font-medium">
         <AlertCircle className="h-3 w-3" />
-        <span>Overdue · {format(date, 'MMM d, h:mm a')}</span>
+        <span>Overdue · {formatDateTime(date)}</span>
       </div>
     );
   }
@@ -93,7 +94,7 @@ function DueDateDisplay({ dueDate, status }: { dueDate: string; status: StaffTas
     return (
       <div className="flex items-center gap-1 text-xs text-amber-500 font-medium">
         <Calendar className="h-3 w-3" />
-        <span>Due soon · {format(date, 'MMM d, h:mm a')}</span>
+        <span>Due soon · {formatDateTime(date)}</span>
       </div>
     );
   }
@@ -101,7 +102,7 @@ function DueDateDisplay({ dueDate, status }: { dueDate: string; status: StaffTas
   return (
     <div className="flex items-center gap-1 text-xs text-muted-foreground">
       <Calendar className="h-3 w-3" />
-      <span>Due {format(date, 'MMM d, h:mm a')}</span>
+      <span>Due {formatDateTime(date)}</span>
     </div>
   );
 }
@@ -153,7 +154,7 @@ export function TaskCard({
     (onCancel && task.status !== 'completed' && task.status !== 'cancelled')
   );
 
-  const timeAgo = formatDistanceToNow(new Date(task.created_at), { addSuffix: true });
+  const createdAt = formatDateTime(task.created_at);
 
   return (
     <>
@@ -229,7 +230,7 @@ export function TaskCard({
                 )}
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {timeAgo}
+                  {createdAt}
                 </span>
               </div>
 
@@ -254,6 +255,7 @@ export function TaskCard({
                         onClick={() => onApprove(task.id)}
                         disabled={isLoading}
                         title="Approve only"
+                        aria-label={`Approve ${task.title}`}
                       >
                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
                       </Button>
@@ -264,6 +266,7 @@ export function TaskCard({
                         variant="destructive"
                         onClick={() => setShowRejectDialog(true)}
                         disabled={isLoading}
+                        aria-label={`Reject ${task.title}`}
                       >
                         <XCircle className="h-4 w-4" />
                       </Button>
@@ -275,7 +278,7 @@ export function TaskCard({
                 {(onCancel && task.status !== 'completed' && task.status !== 'cancelled') && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" aria-label={`More actions for ${task.title}`}>
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -381,8 +384,9 @@ export function TaskCard({
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Completion Notes (optional)</Label>
+              <Label htmlFor={`completion-notes-${task.id}`}>Completion Notes (optional)</Label>
               <Textarea
+                id={`completion-notes-${task.id}`}
                 value={completionNotes}
                 onChange={(e) => setCompletionNotes(e.target.value)}
                 placeholder="Add any notes about the completed task..."
@@ -410,8 +414,9 @@ export function TaskCard({
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Reason for rejection</Label>
+              <Label htmlFor={`rejection-reason-${task.id}`}>Reason for rejection</Label>
               <Textarea
+                id={`rejection-reason-${task.id}`}
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 placeholder="Explain why this request is being rejected..."

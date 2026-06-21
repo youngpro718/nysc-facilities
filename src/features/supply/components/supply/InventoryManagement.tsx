@@ -30,7 +30,7 @@ import {
   XCircle,
   Info
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { getStockStatus, needsAttention } from '@features/inventory/utils/stockStatus';
 
 interface InventoryItem {
   id: string;
@@ -124,15 +124,21 @@ export function InventoryManagement() {
 
   const generateStockAlerts = (items: InventoryItem[]): StockAlert[] => {
     return items
-      .filter(item => item.current_stock <= item.minimum_threshold)
+      .filter(item => needsAttention({
+        quantity: item.current_stock,
+        minimum_quantity: item.minimum_threshold,
+      }))
       .map(item => {
         const daysUntilEmpty = item.monthly_usage > 0 
           ? Math.floor((item.current_stock / item.monthly_usage) * 30)
           : 999;
         
-        let alertType: 'low' | 'critical' | 'out' = 'low';
-        if (item.current_stock === 0) alertType = 'out';
-        else if (item.current_stock <= item.minimum_threshold * 0.5) alertType = 'critical';
+        const stockStatus = getStockStatus({
+          quantity: item.current_stock,
+          minimum_quantity: item.minimum_threshold,
+        });
+        const alertType: 'low' | 'critical' | 'out' =
+          stockStatus === 'out' ? 'out' : stockStatus === 'critical' ? 'critical' : 'low';
         
         return {
           item,
@@ -178,11 +184,12 @@ export function InventoryManagement() {
       if (error) throw error;
 
       // Update local state
-      setInventory(prev => prev.map(i => 
+      const nextInventory = inventory.map(i =>
         i.id === itemId 
           ? { ...i, current_stock: updatedStock, updated_at: new Date().toISOString() }
           : i
-      ));
+      );
+      setInventory(nextInventory);
 
       toast({
         title: "Stock Updated",
@@ -190,7 +197,7 @@ export function InventoryManagement() {
       });
 
       // Refresh alerts
-      const alerts = generateStockAlerts(inventory);
+      const alerts = generateStockAlerts(nextInventory);
       setStockAlerts(alerts);
 
     } catch (error) {
@@ -280,7 +287,7 @@ export function InventoryManagement() {
             <li>Track inventory changes and transactions</li>
           </ul>
           <p className="text-xs text-muted-foreground mt-2">
-            💡 Tip: Inventory is automatically deducted when orders are marked as "Ready for Pickup"
+            Inventory is automatically deducted when orders are marked as "Ready for Pickup."
           </p>
         </AlertDescription>
       </Alert>

@@ -21,7 +21,6 @@ import {
   ArrowRight,
   RefreshCw,
   CheckCircle2,
-  KeyRound,
   Boxes,
   Settings2,
   ChevronRight,
@@ -62,6 +61,10 @@ export function CommandCenter() {
 
   const criticalAlerts = alerts.filter(a => a.severity === 'critical');
   const warningAlerts = alerts.filter(a => a.severity === 'warning');
+  const primaryCriticalAlert = criticalAlerts[0];
+  const criticalAlertTarget = primaryCriticalAlert?.id === 'supply-sla-breached'
+    ? '/supply-room'
+    : '/operations?tab=issues';
 
   // ── KPI strip ───────────────────────────────────────────────────────────
   const kpis: Array<{
@@ -91,7 +94,11 @@ export function CommandCenter() {
       label: 'Supply Requests',
       value: metrics.supply.total_requests,
       sub: `${metrics.supply.pending_approval} awaiting approval`,
-      tone: metrics.supply.pending_approval > 0 ? 'warning' : 'operational',
+      tone: metrics.supply.sla_breached > 0
+        ? 'critical'
+        : metrics.supply.pending_approval > 0 || metrics.supply.sla_warning > 0
+          ? 'warning'
+          : 'operational',
       to: '/admin/supply-requests',
     },
     {
@@ -115,6 +122,8 @@ export function CommandCenter() {
     { label: 'Critical issues', count: metrics.issues.critical, tone: 'critical' as StatusTone, to: '/operations?tab=issues' },
     { label: 'Users awaiting approval', count: metrics.users.pending_approval, tone: 'warning' as StatusTone, to: '/admin?tab=users' },
     { label: 'Supply orders to approve', count: metrics.supply.pending_approval, tone: 'warning' as StatusTone, to: '/admin/supply-requests' },
+    { label: 'Supply orders past SLA', count: metrics.supply.sla_breached, tone: 'critical' as StatusTone, to: '/supply-room' },
+    { label: 'Supply orders aging', count: metrics.supply.sla_warning, tone: 'warning' as StatusTone, to: '/supply-room' },
     { label: 'Overdue tasks', count: metrics.tasks.overdue, tone: 'warning' as StatusTone, to: '/tasks' },
     { label: 'Low stock items', count: metrics.supply.low_stock_items, tone: 'info' as StatusTone, to: '/inventory' },
     { label: 'Rooms in maintenance', count: metrics.rooms.maintenance, tone: 'info' as StatusTone, to: '/spaces' },
@@ -161,9 +170,9 @@ export function CommandCenter() {
           <AlertDescription className="flex items-center justify-between gap-3">
             <span>
               <strong>{criticalAlerts.length} critical alert{criticalAlerts.length !== 1 ? 's' : ''}</strong>
-              <span className="block text-sm mt-0.5">{criticalAlerts[0].message}</span>
+              <span className="block text-sm mt-0.5">{primaryCriticalAlert.message}</span>
             </span>
-            <Button variant="destructive" size="sm" onClick={() => navigate('/operations?tab=issues')}>
+            <Button variant="destructive" size="sm" onClick={() => navigate(criticalAlertTarget)}>
               Review
             </Button>
           </AlertDescription>

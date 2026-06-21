@@ -42,7 +42,7 @@ import type { TaskType, TaskPriority } from '@features/tasks/types/staffTasks';
 import { LIMITS } from '@/config';
 
 const createTaskSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().trim().min(1, 'Title is required'),
   description: z.string().optional(),
   task_type: z.enum(['move_item', 'delivery', 'setup', 'pickup', 'maintenance', 'general']),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
@@ -202,7 +202,7 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="task_type"
@@ -315,7 +315,7 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
             )}
 
             {showLocationFields && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="from_room_id"
@@ -383,7 +383,7 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
                 <FormItem>
                   <FormLabel>Due Date (optional)</FormLabel>
                   <FormControl>
-                    <Input type="datetime-local" {...field} />
+                    <Input type="datetime-local" min={new Date().toISOString().slice(0, 16)} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

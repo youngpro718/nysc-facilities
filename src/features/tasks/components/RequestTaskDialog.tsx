@@ -54,7 +54,7 @@ const MOVE_ITEM_CATEGORIES = [
 ] as const;
 
 const requestTaskSchema = z.object({
-  title: z.string().min(1, 'Please describe what you need'),
+  title: z.string().trim().min(1, 'Please describe what you need'),
   description: z.string().optional(),
   task_type: z.enum(['move_item', 'delivery', 'setup', 'pickup']),
   move_category: z.string().optional(),
@@ -234,7 +234,7 @@ export function RequestTaskDialog({ trigger }: RequestTaskDialogProps) {
             />
 
             {(showFromRoom || showToRoom) && (
-              <div className={`grid ${showFromRoom && showToRoom ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+              <div className={`grid ${showFromRoom && showToRoom ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-4`}>
                 {showFromRoom && (
                 <FormField
                   control={form.control}

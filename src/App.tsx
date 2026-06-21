@@ -75,10 +75,6 @@ const AdminSupplyRequests = lazy(() => import("@features/admin/pages/admin/Suppl
 const RoutingRules = lazy(() => import("@features/admin/pages/admin/RoutingRules"));
 const FormTemplatesAdmin = lazy(() => import("@features/admin/pages/admin/FormTemplatesAdmin"));
 
-// Forms
-const MaintenanceRequestFormPage = lazy(() => import("@features/forms/pages/forms/MaintenanceRequestFormPage"));
-const IssueReportFormPage = lazy(() => import("@features/forms/pages/forms/IssueReportFormPage"));
-
 // Supply request flows
 const CourtAideRequests = lazy(() => import("@features/supply/pages/CourtAideRequests"));
 
@@ -95,11 +91,6 @@ function AppContent() {
   return (
     <Suspense fallback={<RouteSkeleton />}>
       <Routes>
-
-        {/* Public Interactive Form Pages - No Layout, No Auth */}
-        <Route path="/forms/supply-request" element={<Navigate to="/supplies?tab=order" replace />} />
-        <Route path="/forms/maintenance-request" element={<MaintenanceRequestFormPage />} />
-        <Route path="/forms/issue-report" element={<IssueReportFormPage />} />
 
         {/* Auth Flow Pages - Outside OnboardingGuard */}
         <Route path="/auth/pending-approval" element={<PendingApproval />} />

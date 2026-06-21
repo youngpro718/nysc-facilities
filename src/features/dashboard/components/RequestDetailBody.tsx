@@ -4,6 +4,7 @@ import { formatDateTime } from '@/lib/dateTime';
 
 interface Props {
   task: TaskRow;
+  locationLabel?: string | null;
 }
 
 const TIMING_LABEL: Record<string, string> = {
@@ -12,7 +13,7 @@ const TIMING_LABEL: Record<string, string> = {
   specific_time: 'By a specific time',
 };
 
-export function RequestDetailBody({ task }: Props) {
+export function RequestDetailBody({ task, locationLabel }: Props) {
   const timing = task.timing_preference || 'anytime';
   const timingLabel = TIMING_LABEL[timing] || 'Anytime';
   const specificAt = task.requested_for_at
@@ -25,7 +26,7 @@ export function RequestDetailBody({ task }: Props) {
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
           <MapPin className="h-3.5 w-3.5" /> Where
         </div>
-        <div className="text-sm">{task.from_room_id || task.to_room_id || 'No room recorded'}</div>
+        <div className="text-sm">{locationLabel || 'No room recorded'}</div>
       </section>
       <section>
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">

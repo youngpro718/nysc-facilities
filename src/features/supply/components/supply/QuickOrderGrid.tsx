@@ -107,8 +107,10 @@ export function QuickOrderGrid() {
     <div className="space-y-4">
       {/* Search Bar */}
       <div className="relative">
+        <label htmlFor="supply-search" className="sr-only">Search supply items</label>
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
+          id="supply-search"
           placeholder="Search items..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -120,15 +122,15 @@ export function QuickOrderGrid() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="all">All Items</TabsTrigger>
-          <TabsTrigger value="favorites">⭐ Favorites</TabsTrigger>
+          <TabsTrigger value="favorites">Favorites</TabsTrigger>
         </TabsList>
 
         {/* All Items Tab */}
         <TabsContent value="all" className="mt-4">
           {/* Category Filters */}
-          <div className="mb-4">
+          <div className="mb-4 overflow-x-auto pb-1">
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-              <TabsList>
+              <TabsList className="w-max min-w-full justify-start">
                 <TabsTrigger value="all">All</TabsTrigger>
                 {categories.map(category => (
                   <TabsTrigger key={category} value={category}>

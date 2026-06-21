@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { NavigationTab, Tab } from "../types";
 import { useAuth } from "@features/auth/hooks/useAuth";
@@ -18,7 +18,6 @@ interface BottomTabBarProps {
 
 export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMobileMenu }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { isAdmin, profile } = useAuth();
   const isAdminTier = isAdminRole(profile?.role);
   const { data: supplyCounts } = useSupplyPendingCounts();
@@ -52,11 +51,6 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
     return 0;
   };
 
-  const handleNav = (title: string) => {
-    const path = getNavigationPath(title, isAdminTier);
-    if (path) navigate(path);
-  };
-
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 md:hidden safe-area-bottom"
@@ -75,9 +69,9 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
             const badgeCount = getBadgeCount(item.title);
 
             return (
-              <button
+              <Link
                 key={item.title}
-                onClick={() => handleNav(item.title)}
+                to={path}
                 onPointerEnter={() => prefetchRoute(path)}
                 onFocus={() => prefetchRoute(path)}
                 onTouchStart={() => prefetchRoute(path)}
@@ -112,7 +106,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
                 )}>
                   {({ 'Access & Assignments': 'Access', 'Court Operations': 'Courts', 'System Settings': 'Settings' } as Record<string, string>)[item.title] || item.title}
                 </span>
-              </button>
+              </Link>
             );
           })}
 
@@ -138,4 +132,3 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMo
     </nav>
   );
 };
-

@@ -259,7 +259,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Basic Information</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Item Name *</Label>
                 <Input
@@ -267,6 +267,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter item name"
+                  required
                 />
               </div>
 
@@ -291,7 +292,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="pack_label">Middle tier name</Label>
                   <Input
@@ -314,7 +315,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="case_label">Top tier name</Label>
                   <Input
@@ -376,7 +377,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Quantity & Category</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="quantity">Current Quantity</Label>
                 <Input
@@ -408,7 +409,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
                 value={formData.category_id}
                 onValueChange={(value) => setFormData({ ...formData, category_id: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Inventory category">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -432,7 +433,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
                 value={formData.storage_room_id}
                 onValueChange={(value) => setFormData({ ...formData, storage_room_id: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Storage room">
                   <SelectValue placeholder="Select a storage room" />
                 </SelectTrigger>
                 <SelectContent>

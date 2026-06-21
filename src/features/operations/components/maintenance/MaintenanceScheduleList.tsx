@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, MapPin, User, Clock, AlertCircle, Search, Edit, Trash2 } from "lucide-react";
+import { Calendar, MapPin, Clock, AlertCircle, Search, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
 type MaintenanceSchedule = {
@@ -30,7 +30,6 @@ type MaintenanceSchedule = {
   assigned_to?: string | null;
   actual_start_date?: string | null;
   actual_end_date?: string | null;
-  rooms?: { name: string, room_number: string | null } | null;
 };
 
 export const MaintenanceScheduleList = () => {
@@ -41,15 +40,12 @@ export const MaintenanceScheduleList = () => {
   const [editingSchedule, setEditingSchedule] = useState<MaintenanceSchedule | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: schedules, isLoading, refetch } = useQuery({
+  const { data: schedules, isLoading, isError, error: schedulesError, refetch } = useQuery({
     queryKey: ["maintenance-schedules", statusFilter, typeFilter],
     queryFn: async () => {
       let query = supabase
         .from("maintenance_schedules")
-        .select(`
-          *,
-          rooms:space_id ( name, room_number )
-        `)
+        .select("*")
         .order("scheduled_start_date", { ascending: true });
 
       if (statusFilter !== "all") {
@@ -89,7 +85,7 @@ export const MaintenanceScheduleList = () => {
   const updateStatus = async (id: string, newStatus: string) => {
     const updates: Record<string, unknown> = { status: newStatus };
 
-    if (newStatus === "in_progress" && !schedules?.find(s => s.id === id)?.scheduled_start_date) {
+    if (newStatus === "in_progress" && !schedules?.find(s => s.id === id)?.actual_start_date) {
       updates.actual_start_date = new Date().toISOString();
     }
     if (newStatus === "completed") {
@@ -190,6 +186,23 @@ export const MaintenanceScheduleList = () => {
     );
   }
 
+  if (isError) {
+    return (
+      <Card className="border-destructive/30">
+        <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+          <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+          <h3 className="font-semibold">Could not load scheduled maintenance</h3>
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">
+            {schedulesError instanceof Error ? schedulesError.message : 'Please try again.'}
+          </p>
+          <Button className="mt-4" variant="outline" onClick={() => refetch()}>
+            Try again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Filter schedules by search query
   const filteredSchedules = schedules?.filter(schedule => {
     if (!searchQuery.trim()) return true;
@@ -219,6 +232,7 @@ export const MaintenanceScheduleList = () => {
           <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            aria-label="Search maintenance schedules"
             placeholder="Search maintenance..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -226,7 +240,7 @@ export const MaintenanceScheduleList = () => {
           />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48" aria-label="Filter maintenance by status">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -239,7 +253,7 @@ export const MaintenanceScheduleList = () => {
           </Select>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48" aria-label="Filter maintenance by type">
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
@@ -274,12 +288,7 @@ export const MaintenanceScheduleList = () => {
                   </div>
                   <CardTitle className="text-lg">{schedule.title}</CardTitle>
                   <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    {schedule.rooms ? (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        Room: {schedule.rooms.name}{schedule.rooms.room_number ? ` (${schedule.rooms.room_number})` : ''}
-                      </div>
-                    ) : schedule.space_name ? (
+                    {schedule.space_name ? (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
                         Room: {schedule.space_name}
@@ -300,6 +309,7 @@ export const MaintenanceScheduleList = () => {
                     variant="ghost"
                     onClick={() => setEditingSchedule(schedule)}
                     className="h-8 w-8 p-0"
+                    aria-label={`Edit ${schedule.title}`}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -308,6 +318,7 @@ export const MaintenanceScheduleList = () => {
                     variant="ghost"
                     onClick={() => setDeletingId(schedule.id)}
                     className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    aria-label={`Delete ${schedule.title}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -422,7 +433,7 @@ export const MaintenanceScheduleList = () => {
       >
         {editingSchedule && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Title *</Label>
                 <Input
@@ -439,7 +450,7 @@ export const MaintenanceScheduleList = () => {
                   value={editingSchedule.maintenance_type}
                   onValueChange={(value) => setEditingSchedule({ ...editingSchedule, maintenance_type: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Maintenance type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -466,14 +477,14 @@ export const MaintenanceScheduleList = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={editingSchedule.status}
                   onValueChange={(value) => setEditingSchedule({ ...editingSchedule, status: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Maintenance status">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -492,7 +503,7 @@ export const MaintenanceScheduleList = () => {
                   value={editingSchedule.priority}
                   onValueChange={(value) => setEditingSchedule({ ...editingSchedule, priority: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Maintenance priority">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -519,7 +530,9 @@ export const MaintenanceScheduleList = () => {
         )}
         <div className="flex justify-end gap-2 pt-4">
           <Button variant="outline" onClick={() => setEditingSchedule(null)}>Cancel</Button>
-          <Button onClick={saveSchedule}>Save Changes</Button>
+          <Button onClick={saveSchedule} disabled={!editingSchedule?.title.trim()}>
+            Save Changes
+          </Button>
         </div>
       </ModalFrame>
     </div>

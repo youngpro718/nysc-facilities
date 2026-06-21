@@ -32,6 +32,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
     notes: "",
     special_instructions: "",
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Get rooms for space selection
   const { data: rooms } = useQuery({
@@ -44,6 +45,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
       if (error) throw error;
       return data;
     },
+    enabled: open,
   });
 
   // Mutation for creating maintenance schedule
@@ -98,6 +100,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
         notes: "",
         special_instructions: "",
       });
+      setValidationErrors({});
       onOpenChange(false);
     },
     onError: (error) => {
@@ -112,7 +115,30 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors: Record<string, string> = {};
+    if (!formData.title.trim()) errors.title = "Enter a maintenance title.";
+    if (!formData.maintenance_type) errors.maintenance_type = "Select a maintenance type.";
+    if (!formData.space_name.trim()) errors.space_name = "Select or enter a location.";
+    if (!formData.scheduled_start_date) errors.scheduled_start_date = "Choose a start date.";
+    if (
+      formData.scheduled_start_date &&
+      formData.scheduled_end_date &&
+      new Date(formData.scheduled_end_date) < new Date(formData.scheduled_start_date)
+    ) {
+      errors.scheduled_end_date = "End date must be after the start date.";
+    }
+    setValidationErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     createMaintenance.mutate(formData);
+  };
+
+  const clearError = (field: string) => {
+    setValidationErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
   };
 
   return (
@@ -123,25 +149,36 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
       title="Schedule Maintenance"
     >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="title">Title *</Label>
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, title: e.target.value }));
+                  clearError("title");
+                }}
                 placeholder="e.g., Room 201 Painting"
                 required
+                aria-invalid={!!validationErrors.title}
+                aria-describedby={validationErrors.title ? "maintenance-title-error" : undefined}
               />
+              {validationErrors.title && (
+                <p id="maintenance-title-error" className="text-sm text-destructive">{validationErrors.title}</p>
+              )}
             </div>
 
             <div>
               <Label htmlFor="maintenance_type">Maintenance Type *</Label>
               <Select 
                 value={formData.maintenance_type} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, maintenance_type: value }))}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, maintenance_type: value }));
+                  clearError("maintenance_type");
+                }}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Maintenance type" aria-invalid={!!validationErrors.maintenance_type}>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -154,6 +191,9 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                   <SelectItem value="general">General</SelectItem>
                 </SelectContent>
               </Select>
+              {validationErrors.maintenance_type && (
+                <p className="text-sm text-destructive">{validationErrors.maintenance_type}</p>
+              )}
             </div>
           </div>
 
@@ -167,14 +207,22 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="space_type">Room Type</Label>
               <Select 
                 value={formData.space_type} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, space_type: value }))}
+                onValueChange={(value) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    space_type: value,
+                    space_id: "",
+                    space_name: "",
+                  }));
+                  clearError("space_name");
+                }}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Room type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -199,9 +247,10 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                       space_id: value,
                       space_name: selected?.room_number || value
                     }));
+                    clearError("space_name");
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label={`Select ${formData.space_type}`} aria-invalid={!!validationErrors.space_name}>
                     <SelectValue placeholder={`Select ${formData.space_type}`} />
                   </SelectTrigger>
                   <SelectContent>
@@ -216,24 +265,39 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                 <Input
                   id="space_name"
                   value={formData.space_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, space_name: e.target.value }))}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, space_name: e.target.value }));
+                    clearError("space_name");
+                  }}
                   placeholder="Enter space identifier"
                   required
+                  aria-invalid={!!validationErrors.space_name}
                 />
+              )}
+              {validationErrors.space_name && (
+                <p className="text-sm text-destructive">{validationErrors.space_name}</p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="scheduled_start_date">Start Date *</Label>
               <Input
                 id="scheduled_start_date"
                 type="datetime-local"
                 value={formData.scheduled_start_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, scheduled_start_date: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, scheduled_start_date: e.target.value }));
+                  clearError("scheduled_start_date");
+                }}
                 required
+                aria-invalid={!!validationErrors.scheduled_start_date}
+                min={new Date().toISOString().slice(0, 16)}
               />
+              {validationErrors.scheduled_start_date && (
+                <p className="text-sm text-destructive">{validationErrors.scheduled_start_date}</p>
+              )}
             </div>
 
             <div>
@@ -242,19 +306,27 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                 id="scheduled_end_date"
                 type="datetime-local"
                 value={formData.scheduled_end_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, scheduled_end_date: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, scheduled_end_date: e.target.value }));
+                  clearError("scheduled_end_date");
+                }}
+                min={formData.scheduled_start_date || undefined}
+                aria-invalid={!!validationErrors.scheduled_end_date}
               />
+              {validationErrors.scheduled_end_date && (
+                <p className="text-sm text-destructive">{validationErrors.scheduled_end_date}</p>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="priority">Priority</Label>
               <Select 
                 value={formData.priority} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Maintenance priority">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -272,7 +344,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                 value={formData.impact_level} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, impact_level: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Maintenance impact level">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

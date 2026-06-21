@@ -1,5 +1,5 @@
 import { History } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/dateTime";
 
 interface BuildingActivitiesProps {
   activities: any[];
@@ -28,7 +28,7 @@ export const BuildingActivities = ({ activities }: BuildingActivitiesProps) => {
                 </p>
               </div>
               <span className="shrink-0 text-xs text-muted-foreground">
-                {format(new Date(activity.created_at), "MMM d, h:mm a")}
+                {formatDateTime(activity.created_at)}
               </span>
             </div>
           </div>

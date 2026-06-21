@@ -217,7 +217,12 @@ export const NotificationBox = () => {
       }}
     >
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="relative"
+          aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+        >
           <Bell className={`h-5 w-5 ${(unreadCount > 0 || showCriticalPulse) ? 'text-red-600 dark:text-red-400' : ''}`} />
           {showCriticalPulse && (
             <>

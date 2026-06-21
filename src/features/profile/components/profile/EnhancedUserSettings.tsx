@@ -96,13 +96,19 @@ interface SettingsRowProps {
 }
 
 function SettingsRow({ label, description, checked, onCheckedChange }: SettingsRowProps) {
+  const id = React.useId();
   return (
     <div className="flex items-center justify-between">
       <div className="space-y-0.5">
-        <Label>{label}</Label>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <Label htmlFor={id}>{label}</Label>
+        <p id={`${id}-description`} className="text-sm text-muted-foreground">{description}</p>
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch
+        id={id}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        aria-describedby={`${id}-description`}
+      />
     </div>
   );
 }
@@ -209,12 +215,12 @@ export function EnhancedUserSettings() {
           <Separator />
 
           <div className="space-y-2">
-            <Label>Notification Frequency</Label>
+            <Label htmlFor="notification-frequency">Notification Frequency</Label>
             <Select
               value={settings.notification_frequency}
               onValueChange={v => updateSetting('notification_frequency', v as UserSettings['notification_frequency'])}
             >
-              <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
+              <SelectTrigger id="notification-frequency" className="mt-2" aria-label="Notification frequency"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="immediate">Immediate</SelectItem>
                 <SelectItem value="daily">Daily Digest</SelectItem>

@@ -1,5 +1,4 @@
-import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { SimpleReportWizard } from "./wizard/SimpleReportWizard";
+import { ReportIssueDialog } from "@features/operations/components/maintenance/ReportIssueDialog";
 import type { UserAssignment } from "@/types/dashboard";
 
 export interface IssueDialogProps {
@@ -9,21 +8,13 @@ export interface IssueDialogProps {
   assignedRooms?: UserAssignment[];
 }
 
-export function IssueDialog({ open, onOpenChange, onSuccess, assignedRooms }: IssueDialogProps) {
+export function IssueDialog({ open, onOpenChange, onSuccess }: IssueDialogProps) {
   return (
-    <ResponsiveDialog 
-      open={open} 
+    <ReportIssueDialog
+      open={open}
       onOpenChange={onOpenChange}
-      title=""
-    >
-      <SimpleReportWizard 
-        onSuccess={() => {
-          onSuccess?.();
-          onOpenChange(false);
-        }}
-        onCancel={() => onOpenChange(false)}
-        assignedRooms={assignedRooms}
-      />
-    </ResponsiveDialog>
+      mode="requester"
+      onSuccess={onSuccess}
+    />
   );
 }

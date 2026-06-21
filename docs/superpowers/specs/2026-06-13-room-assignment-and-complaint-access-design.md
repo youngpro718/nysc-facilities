@@ -28,7 +28,7 @@ Current data: 14 assignments — 8 `occupant_id`, 6 `personnel_profile_id`,
 The form hooks (`useUserRoomAssignments`, `useOccupantAssignments`) already query
 all three identity columns, and every form already auto-loads the user's primary
 room and lets them pick a different one for that request:
-- Report Issue: `QuickIssueReportButton` passes `roomAssignments` → `SimpleReportWizard` (auto-selects primary, has room search).
+- Report Issue: `QuickIssueReportButton` opens the shared requester-mode `ReportIssueDialog`.
 - Supply Order: `OrderSummaryFooter` pre-fills `deliveryLocation` from room assignments.
 - Set Up a Room: `SetupRequestForm` auto-selects primary, dropdown + manual entry.
 
@@ -75,7 +75,7 @@ override; it is never required for the self-serve path to work.
 No new auto-load code. After Parts 1–2 produce `profile_id` rows, verify live that
 each form pre-fills the user's room and still allows choosing a different room for
 that one request:
-- Report Issue (`SimpleReportWizard`)
+- Report Issue (`ReportIssueDialog`, requester mode)
 - Supply Order (`OrderSummaryFooter`)
 - Set Up a Room (`SetupRequestForm`)
 Fix any wiring gap found (e.g. a hook variant returning the wrong shape).

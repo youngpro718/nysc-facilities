@@ -5,15 +5,13 @@ import { Plus, AlertCircle, CheckCircle, Settings, ArrowUpCircle } from "lucide-
 import { format } from "date-fns";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { useUserIssues } from "@features/dashboard/hooks/useUserIssues";
-import { useOccupantAssignments } from "@features/occupants/components/occupants/hooks/useOccupantAssignments";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SimpleReportWizard } from "@features/issues/components/issues/wizard/SimpleReportWizard";
-import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { ReportIssueDialog } from "@features/operations/components/maintenance/ReportIssueDialog";
 import { MobileIssueCard } from "@features/issues/components/issues/mobile/MobileIssueCard";
 import { UserIssueDetailDialog } from "@features/issues/components/issues/UserIssueDetailDialog";
 import { DataState } from "@/ui/DataState";
@@ -56,7 +54,6 @@ export default function MyIssues() {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const { user } = useAuth();
   const { userIssues: issues = [], isLoading, refetchIssues } = useUserIssues(user?.id);
-  const { data: occupantData, isLoading: isLoadingRooms } = useOccupantAssignments(user?.id || '');
   const isMobile = useIsMobile();
 
   // Auto-open wizard if ?new=1 in URL
@@ -112,15 +109,12 @@ export default function MyIssues() {
         </Button>
       </PageHeader>
 
-      {/* Always use ResponsiveDialog + SimpleReportWizard for both mobile and desktop */}
-      <ResponsiveDialog open={showIssueWizard} onOpenChange={setShowIssueWizard} title="">
-        <SimpleReportWizard
-          onSuccess={handleIssueCreated}
-          onCancel={() => setShowIssueWizard(false)}
-          assignedRooms={occupantData?.roomDetails || []}
-          isLoadingRooms={isLoadingRooms}
-        />
-      </ResponsiveDialog>
+      <ReportIssueDialog
+        open={showIssueWizard}
+        onOpenChange={setShowIssueWizard}
+        mode="requester"
+        onSuccess={handleIssueCreated}
+      />
 
       <DataState
         data={issues}

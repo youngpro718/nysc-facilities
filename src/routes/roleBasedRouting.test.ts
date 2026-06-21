@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDashboardForRole } from '@/routes/roleBasedRouting';
+import { getDashboardForRole, hasModuleAccess } from '@/routes/roleBasedRouting';
 import { getNavigationRoutes } from '@/components/layout/config/navigation';
 import type { RolePermissions } from '@features/auth/hooks/useRolePermissions';
 
@@ -28,5 +28,17 @@ describe('purchasing route mapping', () => {
 
     expect(routes).toContain('/inventory');
     expect(routes).not.toContain('/purchasing-dashboard');
+  });
+});
+
+describe('module role gates', () => {
+  it('blocks standard users from direct navigation to privileged catalogs', () => {
+    expect(hasModuleAccess('standard', 'keys')).toBe(false);
+    expect(hasModuleAccess('standard', 'inventory')).toBe(false);
+  });
+
+  it('allows designated fulfillment roles into their working catalogs', () => {
+    expect(hasModuleAccess('court_officer', 'keys')).toBe(true);
+    expect(hasModuleAccess('court_aide', 'inventory')).toBe(true);
   });
 });

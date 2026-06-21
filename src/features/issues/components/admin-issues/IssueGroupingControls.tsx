@@ -81,7 +81,7 @@ export function IssueGroupingControls({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80" align="end">
+          <PopoverContent className="w-80 pointer-events-auto" align="end">
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Status</label>

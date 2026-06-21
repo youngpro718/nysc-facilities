@@ -20,6 +20,7 @@ import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { useIsMobile } from "@/shared/hooks/use-mobile";
 import { MobileKeyManagement } from "@features/keys/components/keys/mobile/MobileKeyManagement";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { KeyRequestsSection } from "@features/keys/components/requests/KeyRequestsSection";
 
 export default function Keys() {
   const { canAdmin } = useRolePermissions();
@@ -27,7 +28,7 @@ export default function Keys() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ["lockbox", "inventory", "assignments", "history", "elevator-passes", "manage"];
+  const validTabs = ["lockbox", "inventory", "requests", "assignments", "history", "elevator-passes", "manage"];
   const requestedTab = searchParams.get("tab") ?? "lockbox";
   const activeTab = validTabs.includes(requestedTab) ? requestedTab : "lockbox";
   const handleTabChange = (value: string) => {
@@ -96,7 +97,7 @@ export default function Keys() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 min-h-0 flex flex-col mt-4 sm:mt-6">
         <div className="shrink-0 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="inline-flex sm:grid sm:w-full sm:grid-cols-6 bg-muted min-w-max sm:min-w-0 h-10 sm:h-10" data-tour="keys-tabs">
+          <TabsList className={`inline-flex sm:grid sm:w-full ${canManageKeys ? 'sm:grid-cols-7' : 'sm:grid-cols-6'} bg-muted min-w-max sm:min-w-0 h-10 sm:h-10`} data-tour="keys-tabs">
             <TabsTrigger
               value="lockbox"
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
@@ -110,6 +111,13 @@ export default function Keys() {
             >
               <Package className="h-4 w-4 flex-shrink-0" />
               <span className="text-xs sm:text-sm">Keys</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="requests"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 touch-manipulation"
+            >
+              <KeyRound className="h-4 w-4 flex-shrink-0" />
+              <span className="text-xs sm:text-sm">Requests</span>
             </TabsTrigger>
             <TabsTrigger
               value="assignments"
@@ -151,6 +159,10 @@ export default function Keys() {
         <TabsContent value="inventory" className="flex-1 min-h-0 overflow-y-auto space-y-6 mt-4">
           <KeyInventorySection />
           <KeyOrderSection />
+        </TabsContent>
+
+        <TabsContent value="requests" className="flex-1 min-h-0 overflow-y-auto space-y-4 mt-4">
+          <KeyRequestsSection />
         </TabsContent>
 
         <TabsContent value="assignments" className="flex-1 min-h-0 overflow-y-auto space-y-4 mt-4">

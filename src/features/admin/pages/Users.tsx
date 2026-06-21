@@ -15,6 +15,9 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Users as UsersIcon, MapPin } from "lucide-react";
 
 interface AssignTarget { id: string; name: string; email: string; department: string | null; source_type: 'profile'; }
+const HIDDEN_TEST_EMAILS = new Set(['testaide@gmail.com', 'testaid@gmail.com']);
+const withoutKnownTestUsers = <T extends { email?: string | null }>(profiles: T[]) =>
+  profiles.filter((profile) => !HIDDEN_TEST_EMAILS.has(profile.email?.trim().toLowerCase() || ''));
 
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -47,9 +50,11 @@ export default function Users() {
           .order('created_at', { ascending: false });
 
         if (fallbackError) throw fallbackError;
-        return (fallbackData || []).map(p => ({ ...p, occupant_room_assignments: [] }));
+        return withoutKnownTestUsers(
+          (fallbackData || []).map(p => ({ ...p, occupant_room_assignments: [] })),
+        );
       }
-      return data;
+      return withoutKnownTestUsers(data || []);
     }
   });
 

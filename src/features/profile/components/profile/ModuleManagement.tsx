@@ -69,6 +69,7 @@ export function ModuleManagement() {
       {ENFORCED_MODULES.map((module) => {
         const Icon = module.icon;
         const enabled = enabledByKey.get(module.key) ?? true;
+        const switchId = `module-${module.key}`;
 
         return (
           <div
@@ -80,8 +81,8 @@ export function ModuleManagement() {
                 <Icon className={`h-4 w-4 ${enabled ? "text-primary" : "text-muted-foreground"}`} />
               </div>
               <div className="min-w-0">
-                <Label className="text-sm font-medium">{module.title}</Label>
-                <p className="text-sm text-muted-foreground truncate">{module.description}</p>
+                <Label htmlFor={switchId} className="text-sm font-medium">{module.title}</Label>
+                <p id={`${switchId}-description`} className="text-sm text-muted-foreground truncate">{module.description}</p>
               </div>
             </div>
             {!enabled && (
@@ -90,10 +91,12 @@ export function ModuleManagement() {
               </Badge>
             )}
             <Switch
+              id={switchId}
               className="shrink-0"
               checked={enabled}
               onCheckedChange={(checked) => toggleModule({ moduleId: module.key, enabled: checked })}
               disabled={isTogglingModule}
+              aria-describedby={`${switchId}-description`}
             />
           </div>
         );

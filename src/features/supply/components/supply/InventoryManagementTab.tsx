@@ -17,6 +17,11 @@ import {
 import { supabase } from '@/lib/supabase';
 import { InventoryActivityLog } from './InventoryActivityLog';
 import { InventoryAdjustmentDialog } from './InventoryAdjustmentDialog';
+import {
+  getStockStatus as getInventoryStockStatus,
+  isLowStock,
+  isOutOfStock,
+} from '@features/inventory/utils/stockStatus';
 
 interface InventoryItem {
   id: string;
@@ -66,10 +71,9 @@ export function InventoryManagementTab() {
 
     // Filter by stock level - FIXED LOGIC
     if (filterView === 'low') {
-      // Low stock = BELOW minimum (not at minimum)
-      return item.quantity > 0 && item.quantity < item.minimum_quantity;
+      return isLowStock(item);
     } else if (filterView === 'out') {
-      return item.quantity === 0;
+      return isOutOfStock(item);
     }
 
     return true;
@@ -77,15 +81,12 @@ export function InventoryManagementTab() {
 
   // Calculate stats - FIXED LOGIC
   const totalItems = items?.length || 0;
-  // Low stock = BELOW minimum (not at or below)
-  const lowStockItems = items?.filter(i => i.quantity > 0 && i.quantity < i.minimum_quantity).length || 0;
-  const outOfStockItems = items?.filter(i => i.quantity === 0).length || 0;
+  const lowStockItems = items?.filter(isLowStock).length || 0;
+  const outOfStockItems = items?.filter(isOutOfStock).length || 0;
 
   const getStockStatus = (item: InventoryItem) => {
-    if (item.quantity === 0) return 'out';
-    // FIXED: Low stock only if BELOW minimum, not at minimum
-    if (item.quantity < item.minimum_quantity) return 'low';
-    return 'good';
+    const status = getInventoryStockStatus(item);
+    return status === 'ok' ? 'good' : status === 'critical' ? 'low' : status;
   };
 
   const getStockBadge = (item: InventoryItem) => {

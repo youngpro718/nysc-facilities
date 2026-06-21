@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
 import { Calendar, MapPin, Package } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { SupplyRow } from '@features/dashboard/hooks/useMyRequests';
+import { formatDate } from '@/lib/dateTime';
 
 interface Props {
   supply: SupplyRow & {
@@ -43,7 +43,7 @@ export function SupplyDetailBody({ supply }: Props) {
   const priority = supply.priority?.toLowerCase();
   const showPriority = priority && priority !== 'medium' && priority !== 'normal';
   const neededBy = supply.requested_delivery_date
-    ? format(new Date(supply.requested_delivery_date), 'EEE MMM d')
+    ? formatDate(supply.requested_delivery_date)
     : null;
 
   return (

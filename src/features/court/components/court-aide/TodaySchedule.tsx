@@ -15,6 +15,7 @@ import { Loader2, Calendar, Clock, MapPin, User } from 'lucide-react';
 import { format, parseISO, startOfDay, endOfDay, addDays, isToday } from 'date-fns';
 import { TASK_PRIORITY_COLORS, TASK_TYPE_LABELS } from '@features/tasks/types/staffTasks';
 import type { TaskPriority, TaskType } from '@features/tasks/types/staffTasks';
+import { formatDate } from '@/lib/dateTime';
 
 interface ScheduledTask {
   id: string;
@@ -91,7 +92,7 @@ export function TodaySchedule() {
   const renderTask = (task: ScheduledTask) => {
     const dueTime = task.due_date ? format(parseISO(task.due_date), 'h:mm a') : null;
     const dueDay = task.due_date && !isToday(parseISO(task.due_date))
-      ? format(parseISO(task.due_date), 'EEE, MMM d')
+      ? formatDate(parseISO(task.due_date))
       : null;
 
     return (
@@ -154,7 +155,7 @@ export function TodaySchedule() {
             Schedule
           </CardTitle>
           <Badge variant="outline">
-            {format(today, 'EEE, MMM d')}
+            {formatDate(today)}
           </Badge>
         </div>
       </CardHeader>

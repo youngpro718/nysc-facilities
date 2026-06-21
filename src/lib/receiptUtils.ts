@@ -19,6 +19,7 @@ interface RequestProfile {
 
 interface SupplyRequestInput {
   id: string;
+  display_id?: string | null;
   title?: string;
   status?: string;
   priority?: string;
@@ -66,6 +67,7 @@ export function createReceiptData(
     generatedAt: new Date().toISOString(),
     request: {
       id: request.id,
+      displayId: request.display_id,
       title: request.title || 'Supply Request',
       status: request.status || 'pending',
       priority: request.priority || 'medium',

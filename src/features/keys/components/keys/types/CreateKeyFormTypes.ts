@@ -17,21 +17,21 @@ export const keyFormSchema = z.object({
   spareKeys: z.number()
     .min(0, "Spare keys cannot be negative")
     .default(0),
-}).refine((data) => {
-  // Require building for non-elevator-card entries
-  if (!data.isElevatorCard) {
-    if (!data.buildingId || data.buildingId === "") return false;
+}).superRefine((data, ctx) => {
+  if (data.isElevatorCard) return;
+  if (!data.buildingId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["buildingId"], message: "Select a building" });
   }
-  // For non-passkeys, require floor and door/room based on keyScope
-  if (!data.isPasskey && !data.isElevatorCard) {
-    if (!data.floorId || data.floorId === "") return false;
-    if (data.keyScope === "door" && (!data.doorId || data.doorId === "")) return false;
-    if ((data.keyScope === "room" || data.keyScope === "room_door") && (!data.roomId || data.roomId === "")) return false;
+  if (data.isPasskey) return;
+  if (!data.floorId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["floorId"], message: "Select a floor" });
   }
-  return true;
-}, {
-  message: "Please fill in all required location fields",
-  path: ["buildingId"]
+  if (data.keyScope === "door" && !data.doorId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["doorId"], message: "Select a door" });
+  }
+  if ((data.keyScope === "room" || data.keyScope === "room_door") && !data.roomId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["roomId"], message: "Select a room" });
+  }
 });
 
 export interface CreateKeyFormProps {

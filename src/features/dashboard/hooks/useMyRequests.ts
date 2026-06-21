@@ -61,6 +61,7 @@ export function mergeRows(
   supplies: SupplyRow[],
   tasks: TaskRow[],
   keyRequests: KeyRequestRow[] = [],
+  roomLabels: Map<string, string> = new Map(),
 ): MyRequestRow[] {
   const supplyRows: MyRequestRow[] = supplies.map((s) => ({
     id: s.id,
@@ -76,7 +77,10 @@ export function mergeRows(
     id: t.id,
     type: 'request',
     title: truncate(t.description || 'Request'),
-    location_label: t.from_room_id ?? t.to_room_id,
+    location_label: (() => {
+      const roomId = t.from_room_id ?? t.to_room_id;
+      return roomId ? roomLabels.get(roomId) ?? roomId : null;
+    })(),
     status_internal: t.status,
     created_at: t.created_at,
     raw: t,
@@ -85,7 +89,8 @@ export function mergeRows(
     id: request.id,
     type: 'key',
     title: `${request.request_type.replace(/_/g, ' ')} key request`,
-    location_label: request.room_other || request.room_id,
+    location_label: request.room_other
+      || (request.room_id ? roomLabels.get(request.room_id) ?? request.room_id : null),
     status_internal: request.status,
     created_at: request.created_at,
     raw: request,
@@ -120,12 +125,25 @@ export function useMyRequests() {
       ]);
       if (supplyRes.error) throw supplyRes.error;
       if (taskRes.error) throw taskRes.error;
-      // NOTE: the key-request workflow (and the key_requests table) was removed.
-      // Querying it here used to throw and break this whole page.
-      return mergeRows(
-        (supplyRes.data ?? []) as SupplyRow[],
-        (taskRes.data ?? []) as TaskRow[],
+      const tasks = (taskRes.data ?? []) as TaskRow[];
+
+      // Resolve service-request room ids to readable labels ("Room 1022 · Court Reporter").
+      const roomIds = Array.from(
+        new Set(tasks.flatMap((t) => [t.from_room_id, t.to_room_id]).filter(Boolean) as string[]),
       );
+      const roomLabels = new Map<string, string>();
+      if (roomIds.length > 0) {
+        const { data: rooms } = await supabase
+          .from('rooms')
+          .select('id, name, room_number')
+          .in('id', roomIds);
+        for (const r of (rooms ?? []) as Array<{ id: string; name: string | null; room_number: string | null }>) {
+          const label = [r.room_number ? `Room ${r.room_number}` : null, r.name].filter(Boolean).join(' · ');
+          if (label) roomLabels.set(r.id, label);
+        }
+      }
+
+      return mergeRows((supplyRes.data ?? []) as SupplyRow[], tasks, [], roomLabels);
     },
   });
 }

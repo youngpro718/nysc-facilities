@@ -205,8 +205,7 @@ export const InventoryDashboard = () => {
                 className="flex items-center gap-1.5 px-2 py-2"
               >
                 {tab.icon}
-                <span className="hidden md:inline text-sm">{tab.label}</span>
-                <span className="inline md:hidden text-xs">{tab.shortLabel}</span>
+                <span className="text-xs md:text-sm">{tab.label}</span>
                 {tab.badge !== undefined && (
                   <Badge
                     variant={tab.badgeVariant || "secondary"}

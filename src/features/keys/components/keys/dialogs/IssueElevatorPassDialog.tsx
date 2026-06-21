@@ -78,10 +78,11 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
     const run = async () => {
       const q = occupantQuery.trim();
       if (!q) { setOccupantOptions([]); return; }
+      const safeQuery = q.replace(/["\\]/g, " ").trim();
       const { data, error } = await supabase
         .from("occupants")
         .select("id,first_name,last_name,email,department")
-        .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`)
+        .or(`first_name.ilike."%${safeQuery}%",last_name.ilike."%${safeQuery}%",email.ilike."%${safeQuery}%"`)
         .limit(10);
       if (error) {
         logger.error('Error searching occupants:', error);
@@ -164,12 +165,18 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <ModalFrame title="Issue Elevator Pass" description="Record a new elevator pass issuance" size="md">
-        <div className="space-y-4">
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSubmit();
+          }}
+        >
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Recipient Type</Label>
+              <Label htmlFor="elevator-recipient-type">Recipient Type</Label>
               <Select value={recipientType} onValueChange={(v) => setRecipientType(v as RecipientType)}>
-                <SelectTrigger>
+                <SelectTrigger id="elevator-recipient-type" aria-label="Recipient type">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -193,8 +200,9 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
 
           {recipientType === "occupant" ? (
             <div className="space-y-2">
-              <Label>Personnel</Label>
+              <Label htmlFor="elevator-personnel-search">Personnel</Label>
               <Input
+                id="elevator-personnel-search"
                 placeholder="Search by name or email"
                 value={occupantQuery}
                 onChange={(e) => setOccupantQuery(e.target.value)}
@@ -202,13 +210,15 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
               {occupantOptions.length > 0 && (
                 <div className="border rounded-md max-h-40 overflow-auto text-sm">
                   {occupantOptions.map(o => (
-                    <div
+                    <button
+                      type="button"
                       key={o.id}
-                      className={`px-3 py-2 cursor-pointer hover:bg-muted ${occupantId === o.id ? 'bg-muted' : ''}`}
+                      className={`block w-full px-3 py-2 text-left cursor-pointer hover:bg-muted ${occupantId === o.id ? 'bg-muted' : ''}`}
                       onClick={() => { setOccupantId(o.id); setOccupantQuery(`${o.first_name} ${o.last_name} (${o.email || ''})`); }}
+                      aria-pressed={occupantId === o.id}
                     >
                       {o.first_name} {o.last_name} {o.email ? `• ${o.email}` : ''}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -221,42 +231,50 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <Label>Recipient Name</Label>
+                <Label htmlFor="elevator-recipient-name">Recipient Name</Label>
                 <Input
+                  id="elevator-recipient-name"
                   placeholder="e.g., District Attorney Office, Judge Smith, etc."
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   disabled={recipientType === "security"}
+                  required
                 />
               </div>
               <div>
-                <Label>Email (optional)</Label>
-                <Input type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} />
+                <Label htmlFor="elevator-recipient-email">Email (optional)</Label>
+                <Input id="elevator-recipient-email" type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} />
               </div>
             </div>
           )}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Expected Return (optional)</Label>
-              <Input type="datetime-local" value={expectedReturnAt} onChange={(e) => setExpectedReturnAt(e.target.value)} />
+              <Label htmlFor="elevator-return-at">Expected Return (optional)</Label>
+              <Input
+                id="elevator-return-at"
+                type="datetime-local"
+                value={expectedReturnAt}
+                onChange={(e) => setExpectedReturnAt(e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
+              />
             </div>
             <div>
-              <Label>Reason (optional)</Label>
-              <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g., temporary access" />
+              <Label htmlFor="elevator-reason">Reason (optional)</Label>
+              <Input id="elevator-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g., temporary access" />
             </div>
           </div>
 
           <div>
-            <Label>Notes (optional)</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any details to record" />
+            <Label htmlFor="elevator-notes">Notes (optional)</Label>
+            <Textarea id="elevator-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any details to record" />
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={!canSubmit || loading}>{loading ? 'Issuing…' : 'Issue Pass'}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={!canSubmit || loading}>{loading ? 'Issuing…' : 'Issue Pass'}</Button>
           </div>
-        </div>
+        </form>
       </ModalFrame>
     </Dialog>
   );

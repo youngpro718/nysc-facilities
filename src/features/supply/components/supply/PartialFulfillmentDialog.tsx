@@ -21,6 +21,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { formatRequestId } from '@/lib/requestIds';
 import { toast } from '@shared/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@features/auth/hooks/useAuth';
@@ -125,7 +126,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
             p_quantity_change: -item.quantity_fulfilled,
             p_transaction_type: 'fulfilled',
             p_reference_id: order.id,
-            p_notes: `Order #${order.id.slice(0, 8)} - ${item.quantity_fulfilled}/${item.quantity_requested} fulfilled`,
+            p_notes: `Order #${formatRequestId(order.id, order.display_id)} - ${item.quantity_fulfilled}/${item.quantity_requested} fulfilled`,
           });
         }
       }
@@ -180,7 +181,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
       title={
         <span className="flex items-center gap-2">
           <Package className="h-5 w-5" />
-          Fulfill Order #{order.id.slice(0, 8).toUpperCase()}
+          Fulfill Order #{formatRequestId(order.id, order.display_id)}
         </span>
       }
     >

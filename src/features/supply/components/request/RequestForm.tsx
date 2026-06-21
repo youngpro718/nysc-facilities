@@ -19,11 +19,12 @@ export function RequestForm() {
   const queryClient = useQueryClient();
 
   const [where, setWhere] = useState('');
+  const [whereRoomId, setWhereRoomId] = useState('');
   const [what, setWhat] = useState('');
   const [timing, setTiming] = useState<Timing>('anytime');
   const [specificAt, setSpecificAt] = useState('');
 
-  const whereMissing = !where.trim();
+  const whereMissing = !where.trim() || !whereRoomId;
   const whatMissing = what.trim().length < 10;
   const specificMissing = timing === 'specific_time' && !specificAt;
   const canSubmit = !whereMissing && !whatMissing && !specificMissing;
@@ -46,7 +47,7 @@ export function RequestForm() {
           created_by: user.id,
           requested_by: user.id,
           is_request: true,
-          room_id: where.trim() || null,
+          from_room_id: whereRoomId,
           description,
           status: 'pending_approval',
           task_type: 'request',
@@ -62,6 +63,7 @@ export function RequestForm() {
     onSuccess: (data) => {
       requestSubmittedToast({ id: data.id, type: 'request' });
       setWhere('');
+      setWhereRoomId('');
       setWhat('');
       setTiming('anytime');
       setSpecificAt('');
@@ -86,11 +88,18 @@ export function RequestForm() {
         </Label>
         <DeliveryRoomPicker
           value={where}
-          onChange={setWhere}
+          onChange={(label, roomId) => {
+            setWhere(label);
+            setWhereRoomId(roomId || '');
+          }}
           userId={user?.id}
           invalid={whereMissing && submit.isError}
           placeholder="Search for a room…"
+          ariaLabel="Request location"
         />
+        <p className="text-xs text-muted-foreground">
+          Choose the room where the work is needed.
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -102,12 +111,15 @@ export function RequestForm() {
           onChange={(e) => setWhat(e.target.value)}
           placeholder="e.g., Lateral file cabinet on the east wall is busted — replace with another lateral."
           rows={5}
+          required
+          minLength={10}
+          aria-describedby="request-description-help"
         />
-        {what.length > 0 && whatMissing && (
-          <p className="text-xs text-muted-foreground">
-            A few more words help the court aide know what you need.
-          </p>
-        )}
+        <p id="request-description-help" className="text-xs text-muted-foreground">
+          {what.length > 0 && whatMissing
+            ? 'A few more words help the court aide know what you need.'
+            : 'Include what is broken, missing, moving, or needed.'}
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -141,6 +153,9 @@ export function RequestForm() {
             value={specificAt}
             onChange={(e) => setSpecificAt(e.target.value)}
             className="max-w-xs"
+            min={new Date().toISOString().slice(0, 16)}
+            aria-label="Requested completion date and time"
+            required
           />
         )}
       </div>

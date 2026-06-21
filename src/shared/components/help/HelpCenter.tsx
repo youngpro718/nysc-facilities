@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { APP_INFO, APP_COPYRIGHT } from '@/lib/appInfo';
 import {
   Play, BookOpen, Building2, AlertTriangle, Gavel, KeyRound,
@@ -8,7 +7,6 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,7 +14,6 @@ import { useTour } from './TourProvider';
 import { allTours } from './tours/tourSteps';
 import { guideSections } from './guides/guideData';
 
-import { HelpContentViewer } from '@/features/help/components/HelpContentViewer';
 import { useRolePermissions } from '@/features/auth/hooks/useRolePermissions';
 import { getToursForRole } from './tours/roleTourMapping';
 import { cn } from '@/lib/utils';
@@ -59,7 +56,6 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export function HelpCenter() {
-  const navigate = useNavigate();
   const { startTourForRoute } = useTour();
   const { userRole } = useRolePermissions();
   const [search, setSearch] = useState('');
@@ -102,17 +98,11 @@ export function HelpCenter() {
         </p>
       </div>
 
-      <Tabs defaultValue="guides" className="space-y-6">
+      <Tabs defaultValue="faq" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="guides">Help Articles</TabsTrigger>
           <TabsTrigger value="tours">Interactive Tours</TabsTrigger>
-          <TabsTrigger value="faq">FAQ</TabsTrigger>
+          <TabsTrigger value="faq">Guides &amp; FAQ</TabsTrigger>
         </TabsList>
-
-        {/* Help Articles Tab (Database-backed) */}
-        <TabsContent value="guides" className="space-y-4">
-          <HelpContentViewer showSearch />
-        </TabsContent>
 
         {/* Interactive Tours Tab */}
         <TabsContent value="tours" className="space-y-6">
@@ -309,10 +299,6 @@ export function HelpCenter() {
               <li className="flex gap-2">
                 <span className="text-primary font-bold">•</span>
                 <span><strong>Mobile:</strong> The app works on tablets and phones. Most views are optimized for touch interaction.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-primary font-bold">•</span>
-                <span><strong>Stale data?</strong> Switch to another page and back — most lists refresh automatically when you return.</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-primary font-bold">•</span>

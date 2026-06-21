@@ -441,7 +441,7 @@ export default function AdminCenter() {
     return (
       <div className="space-y-4 pb-20 px-3 sm:px-0">
         <div className="flex items-center gap-2 pt-2">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/', { replace: true })} className="h-9 w-9">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/', { replace: true })} className="h-9 w-9" aria-label="Back to dashboard">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-xl font-semibold">Admin Center</h1>
@@ -504,6 +504,7 @@ export default function AdminCenter() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                aria-label="Search users by name or email"
                 placeholder="Search by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -511,7 +512,7 @@ export default function AdminCenter() {
               />
             </div>
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
-              <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectTrigger className="w-full sm:w-[160px]" aria-label="Filter users">
                 <SelectValue placeholder="Filter" />
               </SelectTrigger>
               <SelectContent>
@@ -603,7 +604,7 @@ export default function AdminCenter() {
                                 onValueChange={(v) => setPendingRoleSelections(prev => ({ ...prev, [user.id]: v as UserRole }))}
                                 disabled={isUpdating}
                               >
-                                <SelectTrigger className="h-8 w-[140px] text-sm">
+                                <SelectTrigger className="h-8 w-[140px] text-sm" aria-label={`Assign role to ${getUserDisplayName(user)}`}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -667,7 +668,7 @@ export default function AdminCenter() {
                               onValueChange={(v) => handleChangeRole(user.id, v as UserRole)}
                               disabled={isUpdating}
                             >
-                              <SelectTrigger className="h-7 w-[130px] text-xs">
+                              <SelectTrigger className="h-7 w-[130px] text-xs" aria-label={`Change role for ${getUserDisplayName(user)}`}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -703,7 +704,12 @@ export default function AdminCenter() {
                       {!isPending && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 flex-shrink-0"
+                              aria-label={`Actions for ${getUserDisplayName(user)}`}
+                            >
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

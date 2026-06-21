@@ -141,6 +141,7 @@ export function ItemDetailPanel({
               size="sm"
               className="h-9 px-2"
               onClick={() => setQuantity(Math.max(0, quantity - 1))}
+              aria-label={`Decrease ${item.name}`}
             >
               -
             </Button>
@@ -150,12 +151,14 @@ export function ItemDetailPanel({
               onChange={(e) => setQuantity(Math.max(0, parseInt(e.target.value) || 0))}
               className="w-12 text-center border-0 bg-transparent text-sm focus:outline-none"
               min="0"
+              aria-label={`Quantity of ${item.name}`}
             />
             <Button
               variant="ghost"
               size="sm"
               className="h-9 px-2"
               onClick={() => setQuantity(quantity + 1)}
+              aria-label={`Increase ${item.name}`}
             >
               +
             </Button>

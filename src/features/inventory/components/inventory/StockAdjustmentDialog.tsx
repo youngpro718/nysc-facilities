@@ -44,7 +44,8 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
   const adjustStockMutation = useMutation({
     mutationFn: async () => {
       const adjustmentQuantity = parseInt(quantity);
-      if (isNaN(adjustmentQuantity) || adjustmentQuantity <= 0) {
+      const minimumAllowed = adjustmentType === "adjustment" ? 0 : 1;
+      if (isNaN(adjustmentQuantity) || adjustmentQuantity < minimumAllowed) {
         throw new Error("Please enter a valid quantity");
       }
 
@@ -175,12 +176,12 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
 
           {/* Adjustment Type */}
           <div className="space-y-2">
-            <Label>Adjustment Type</Label>
+            <Label htmlFor="stock-adjustment-type">Adjustment Type</Label>
             <Select
               value={adjustmentType}
               onValueChange={(value: "add" | "remove" | "adjustment") => setAdjustmentType(value)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="stock-adjustment-type" aria-label="Adjustment type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -217,7 +218,7 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="Enter quantity"
-              min="0"
+              min={adjustmentType === "adjustment" ? "0" : "1"}
               required
             />
           </div>

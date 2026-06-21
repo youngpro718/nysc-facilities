@@ -8,6 +8,7 @@
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { needsAttention } from '@/features/inventory/utils/stockStatus';
+import { getSupplyAgeDays, getSupplySlaLevel } from '@/lib/supplySla';
 
 // ============================================================================
 // TYPES
@@ -44,6 +45,9 @@ export interface SupplyMetrics {
   ready: number;
   completed_today: number;
   low_stock_items: number;
+  sla_warning: number;
+  sla_breached: number;
+  oldest_open_days: number;
 }
 
 export interface TaskMetrics {
@@ -191,6 +195,9 @@ async function getSupplyMetrics(): Promise<SupplyMetrics> {
   
   // Calculate low stock items using centralized helper
   const lowStockItems = (allItems || []).filter(needsAttention);
+  const openRequests = requestList.filter((request) =>
+    !['completed', 'fulfilled', 'rejected', 'cancelled'].includes(request.status),
+  );
 
   return {
     total_requests: requestList.length,
@@ -202,6 +209,12 @@ async function getSupplyMetrics(): Promise<SupplyMetrics> {
       r.status === 'completed' && r.created_at?.startsWith(today)
     ).length,
     low_stock_items: lowStockItems.length,
+    sla_warning: openRequests.filter((request) => getSupplySlaLevel(request.status, request.created_at) === 'warning').length,
+    sla_breached: openRequests.filter((request) => getSupplySlaLevel(request.status, request.created_at) === 'critical').length,
+    oldest_open_days: openRequests.reduce(
+      (oldest, request) => Math.max(oldest, getSupplyAgeDays(request.created_at)),
+      0,
+    ),
   };
 }
 
@@ -399,6 +412,28 @@ export async function getSystemAlerts(): Promise<SystemAlert[]> {
       category: 'system',
       title: 'Pending Supply Approvals',
       message: `${metrics.supply.pending_approval} supply requests awaiting approval`,
+      timestamp: new Date().toISOString(),
+      acknowledged: false,
+    });
+  }
+
+  if (metrics.supply.sla_breached > 0) {
+    alerts.push({
+      id: 'supply-sla-breached',
+      severity: 'critical',
+      category: 'system',
+      title: 'Supply Orders Past SLA',
+      message: `${metrics.supply.sla_breached} open supply ${metrics.supply.sla_breached === 1 ? 'order is' : 'orders are'} more than 30 days old`,
+      timestamp: new Date().toISOString(),
+      acknowledged: false,
+    });
+  } else if (metrics.supply.sla_warning > 0) {
+    alerts.push({
+      id: 'supply-sla-warning',
+      severity: 'warning',
+      category: 'system',
+      title: 'Supply Orders Aging',
+      message: `${metrics.supply.sla_warning} open supply ${metrics.supply.sla_warning === 1 ? 'order has' : 'orders have'} waited more than 5 days`,
       timestamp: new Date().toISOString(),
       acknowledged: false,
     });

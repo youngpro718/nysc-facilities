@@ -194,6 +194,7 @@ export function BulkAddChambersDialog({
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
+              aria-label="Search chambers"
               className="pl-8"
               placeholder="Search by room number or judge name…"
               value={search}
@@ -202,8 +203,9 @@ export function BulkAddChambersDialog({
             />
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Default qty</Label>
+            <Label htmlFor="bulk-chambers-default-quantity" className="text-xs whitespace-nowrap">Default qty</Label>
             <Input
+              id="bulk-chambers-default-quantity"
               type="number"
               min={1}
               max={10}
@@ -265,6 +267,7 @@ export function BulkAddChambersDialog({
                       onCheckedChange={(v) =>
                         setSelected((p) => ({ ...p, [r.id]: !!v }))
                       }
+                      aria-label={`Select chambers ${r.room_number}`}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -289,8 +292,9 @@ export function BulkAddChambersDialog({
                       )}
                     </div>
                     <div className="flex items-center gap-1">
-                      <Label className="text-xs text-muted-foreground">Keys</Label>
+                      <Label htmlFor={`bulk-chambers-quantity-${r.id}`} className="text-xs text-muted-foreground">Keys</Label>
                       <Input
+                        id={`bulk-chambers-quantity-${r.id}`}
                         type="number"
                         min={1}
                         max={10}

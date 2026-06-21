@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 import { AlertTriangle } from 'lucide-react';
-import { SimpleReportWizard } from '@features/issues/components/issues/wizard/SimpleReportWizard';
-import { useOccupantAssignments } from '@features/occupants/hooks/useOccupantAssignments';
-import { useAuth } from '@features/auth/hooks/useAuth';
+import { ReportIssueDialog } from '@features/operations/components/maintenance/ReportIssueDialog';
 
 interface QuickIssueReportButtonProps {
   variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'destructive';
@@ -24,8 +21,6 @@ export function QuickIssueReportButton({
   children,
 }: QuickIssueReportButtonProps) {
   const [showWizard, setShowWizard] = useState(false);
-  const { user } = useAuth();
-  const { data: occupantData, isLoading: isLoadingRooms } = useOccupantAssignments(user?.id || '');
 
   return (
     <>
@@ -43,14 +38,11 @@ export function QuickIssueReportButton({
         )}
       </Button>
 
-      <ResponsiveDialog open={showWizard} onOpenChange={setShowWizard} title="">
-        <SimpleReportWizard
-          onSuccess={() => setShowWizard(false)}
-          onCancel={() => setShowWizard(false)}
-          assignedRooms={occupantData?.roomAssignments || []}
-          isLoadingRooms={isLoadingRooms}
-        />
-      </ResponsiveDialog>
+      <ReportIssueDialog
+        open={showWizard}
+        onOpenChange={setShowWizard}
+        mode="requester"
+      />
     </>
   );
 }

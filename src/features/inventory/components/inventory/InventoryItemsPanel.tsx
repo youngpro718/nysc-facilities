@@ -254,10 +254,10 @@ export const InventoryItemsPanel = () => {
         const safe = debouncedSearch.replace(/["\\]/g, " ").trim();
         query = query.or(`name.ilike."%${safe}%",description.ilike."%${safe}%"`);
       }
-      if (selectedCategory) {
+      if (selectedCategory && selectedCategory !== "all") {
         query = query.eq("category_id", selectedCategory);
       }
-      if (selectedRoom) {
+      if (selectedRoom && selectedRoom !== "all") {
         query = query.eq("storage_room_id", selectedRoom);
       }
       query = query.order(sortKey, { ascending: sortDir === "asc" });
@@ -360,6 +360,7 @@ export const InventoryItemsPanel = () => {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1 || isLoading}
             className="touch-target"
+            aria-label="Previous inventory page"
           >
             <span className="hidden sm:inline">Prev</span>
             <span className="sm:hidden">←</span>
@@ -373,6 +374,7 @@ export const InventoryItemsPanel = () => {
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages || isLoading}
             className="touch-target"
+            aria-label="Next inventory page"
           >
             <span className="hidden sm:inline">Next</span>
             <span className="sm:hidden">→</span>
@@ -386,7 +388,7 @@ export const InventoryItemsPanel = () => {
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Category</label>
             <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v)}>
-              <SelectTrigger className="h-9 bg-background z-50">
+              <SelectTrigger className="h-9 bg-background z-50" aria-label="Filter by category">
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent className="bg-background z-50">
@@ -400,7 +402,7 @@ export const InventoryItemsPanel = () => {
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Room</label>
             <Select value={selectedRoom} onValueChange={(v) => setSelectedRoom(v)}>
-              <SelectTrigger className="h-9 bg-background z-50">
+              <SelectTrigger className="h-9 bg-background z-50" aria-label="Filter by room">
                 <SelectValue placeholder="All rooms" />
               </SelectTrigger>
               <SelectContent className="bg-background z-50">
@@ -415,7 +417,7 @@ export const InventoryItemsPanel = () => {
             <label className="mb-1 block text-xs text-muted-foreground">Sort</label>
             <div className="flex gap-2">
               <Select value={sortKey} onValueChange={(v) => setSortKey(v as typeof sortKey)}>
-                <SelectTrigger className="h-9 flex-1 bg-background z-50">
+                <SelectTrigger className="h-9 flex-1 bg-background z-50" aria-label="Sort inventory by">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
@@ -425,7 +427,7 @@ export const InventoryItemsPanel = () => {
                 </SelectContent>
               </Select>
               <Select value={sortDir} onValueChange={(v) => setSortDir(v as typeof sortDir)}>
-                <SelectTrigger className="h-9 w-20 bg-background z-50">
+                <SelectTrigger className="h-9 w-20 bg-background z-50" aria-label="Inventory sort direction">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
@@ -473,7 +475,7 @@ export const InventoryItemsPanel = () => {
             return (
               <Card key={item.id}>
                 <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
                     {/* Photo thumbnail */}
                     <img 
                       src={item.photo_url || getGenericItemImage(item.name)} 
@@ -482,9 +484,9 @@ export const InventoryItemsPanel = () => {
                       className="w-16 h-16 object-cover rounded border"
                     />
                     
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-3">
-                        <CardTitle className="text-lg">{item.name}</CardTitle>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <CardTitle className="text-lg break-words">{item.name}</CardTitle>
                         <Badge className={stockStatus.color}>
                           {stockStatus.label}
                         </Badge>
@@ -498,7 +500,7 @@ export const InventoryItemsPanel = () => {
                           );
                         })()}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Package className="h-4 w-4" />
                           Quantity: {item.quantity} {item.unit && `(${item.unit})`}{item.pack_size ? ` · ${item.pack_size}/pack` : ""}
@@ -522,12 +524,13 @@ export const InventoryItemsPanel = () => {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                       {canEdit && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleStockAdjustment(item)}
+                          aria-label={`Adjust stock for ${item.name}`}
                         >
                           Adjust Stock
                         </Button>
@@ -538,6 +541,7 @@ export const InventoryItemsPanel = () => {
                           variant="outline"
                           onClick={() => handlePhotoUpload(item)}
                           title="Upload photo"
+                          aria-label={`Upload photo for ${item.name}`}
                         >
                           <Camera className="h-4 w-4" />
                         </Button>
@@ -547,6 +551,7 @@ export const InventoryItemsPanel = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleEdit(item)}
+                          aria-label={`Edit ${item.name}`}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -557,6 +562,7 @@ export const InventoryItemsPanel = () => {
                           variant="outline"
                           onClick={() => handleDelete(item)}
                           className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          aria-label={`Delete ${item.name}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -632,14 +638,12 @@ export const InventoryItemsPanel = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteItemId) {
-                  deleteItemMutation.mutate(deleteItemId.id);
-                  setDeleteItemId(null);
-                }
-              }}
+              onClick={() => deleteItemId && deleteItemMutation.mutate(deleteItemId.id, {
+                onSuccess: () => setDeleteItemId(null),
+              })}
+              disabled={deleteItemMutation.isPending}
             >
-              Delete
+              {deleteItemMutation.isPending ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

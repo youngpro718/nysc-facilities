@@ -143,7 +143,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
         name="buildingId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Building</FormLabel>
+            <FormLabel>Building *</FormLabel>
             <Select
               onValueChange={handleBuildingChange}
               value={field.value}
@@ -179,7 +179,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
             name="floorId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Floor</FormLabel>
+                <FormLabel>Floor *</FormLabel>
                 <Select
                   onValueChange={handleFloorChange}
                   value={field.value}
@@ -209,7 +209,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
               name="doorId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Door</FormLabel>
+                  <FormLabel>Door *</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
@@ -221,11 +221,15 @@ export function LocationFields({ form }: LocationFieldsProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {doors?.map((door) => (
-                        <SelectItem key={door.id} value={door.id}>
-                          {door.name}
-                        </SelectItem>
-                      ))}
+                      {doors?.length ? doors.map((door) => (
+                          <SelectItem key={door.id} value={door.id}>
+                            {door.name}
+                          </SelectItem>
+                        )) : (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">
+                            No active doors are configured for this floor.
+                          </div>
+                        )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -241,7 +245,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {keyScope === "room_door" ? "Room (for door access)" : "Room"}
+                    {keyScope === "room_door" ? "Room (for door access) *" : "Room *"}
                   </FormLabel>
                   <Select
                     onValueChange={field.onChange}
@@ -254,11 +258,15 @@ export function LocationFields({ form }: LocationFieldsProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {rooms?.map((room) => (
-                        <SelectItem key={room.id} value={room.id}>
-                          {room.name} ({room.room_number})
-                        </SelectItem>
-                      ))}
+                      {rooms?.length ? rooms.map((room) => (
+                          <SelectItem key={room.id} value={room.id}>
+                            {room.name} ({room.room_number})
+                          </SelectItem>
+                        )) : (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">
+                            No active rooms are configured for this floor.
+                          </div>
+                        )}
                     </SelectContent>
                   </Select>
                   <FormDescription>

@@ -206,6 +206,14 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const [editingStaff, setEditingStaff] = useState(false);
   interface StaffRow { id: string; title: string; name: string; phone: string; room: string; sort_order: number }
   const [editStaffRows, setEditStaffRows] = useState<StaffRow[]>([]);
+  const cleanStaffName = (name: string) => name.replace(/\s*\*+\s*$/, '').replace(/\s+-\s+/g, '-').trim();
+  const formatStaffLocation = (location: string) => {
+    const value = location.trim();
+    if (/^\d+(st|nd|rd|th)\s+fl\.?$/i.test(value)) {
+      return value.replace(/\s+fl\.?$/i, ' Floor').replace(/^(\d+)(ST|ND|RD|TH)/i, (_, floor, suffix) => `${floor}${suffix.toLowerCase()}`);
+    }
+    return /^\d+[A-Z]?$/i.test(value) ? `Room ${value}` : value;
+  };
 
   const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -399,7 +407,11 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
 
   // ── Save staff edits ───────────────────────────────────────────────────────
   const enterStaffEditMode = () => {
-    setEditStaffRows(adminStaff.map(s => ({ ...s })));
+    setEditStaffRows(adminStaff.map(s => ({
+      ...s,
+      name: cleanStaffName(s.name),
+      room: formatStaffLocation(s.room),
+    })));
     setEditingStaff(true);
   };
 
@@ -407,7 +419,12 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     mutationFn: async () => {
       for (const row of editStaffRows) {
         const { data, error } = await supabase.from('court_admin_staff')
-          .update({ title: row.title, name: row.name, phone: row.phone, room: row.room })
+          .update({
+            title: row.title.trim(),
+            name: cleanStaffName(row.name),
+            phone: row.phone.trim(),
+            room: row.room.trim(),
+          })
           .eq('id', row.id)
           .select('id');
         if (error) throw error;
@@ -937,7 +954,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                         <th className="px-2 py-1 text-left text-[10px] font-semibold text-muted-foreground">Title</th>
                         <th className="px-2 py-1 text-left text-[10px] font-semibold text-muted-foreground">Name</th>
                         <th className="px-2 py-1 text-left text-[10px] font-semibold text-muted-foreground">Phone</th>
-                        <th className="px-2 py-1 text-left text-[10px] font-semibold text-muted-foreground">Room</th>
+                        <th className="px-2 py-1 text-left text-[10px] font-semibold text-muted-foreground">Location</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -968,18 +985,18 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                       <th className="px-3 py-1.5 text-left font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Title</th>
                       <th className="px-3 py-1.5 text-left font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Name</th>
                       <th className="px-3 py-1.5 text-left font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Phone</th>
-                      <th className="px-3 py-1.5 text-left font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Room</th>
+                      <th className="px-3 py-1.5 text-left font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Location</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {adminStaff.map((s) => (
                       <tr key={s.id} className="hover:bg-muted/20">
                         <td className="px-3 py-1.5 font-medium text-muted-foreground">{s.title}</td>
-                        <td className="px-3 py-1.5 font-medium">{s.name}</td>
+                        <td className="px-3 py-1.5 font-medium">{cleanStaffName(s.name)}</td>
                         <td className="px-3 py-1.5 text-primary font-mono tabular-nums">
                           <a href={`tel:${s.phone}`} className="hover:underline">{s.phone}</a>
                         </td>
-                        <td className="px-3 py-1.5 text-muted-foreground">{s.room}</td>
+                        <td className="px-3 py-1.5 text-muted-foreground">{formatStaffLocation(s.room)}</td>
                       </tr>
                     ))}
                   </tbody>

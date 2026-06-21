@@ -32,13 +32,13 @@ export function KeyRoleFields({
 }: KeyRoleFieldsProps) {
   return (
     <div className="space-y-2">
-      <Label>Key Role</Label>
+      <Label htmlFor="lockbox-key-role">Key Role</Label>
       <Select
         value={keyRole ?? NONE_VALUE}
         onValueChange={(v) => onKeyRoleChange(v === NONE_VALUE ? null : (v as LockboxSlotKeyRole))}
         disabled={disabled}
       >
-        <SelectTrigger>
+        <SelectTrigger id="lockbox-key-role" aria-label="Key role">
           <SelectValue placeholder="Unspecified" />
         </SelectTrigger>
         <SelectContent className={selectZIndex}>
@@ -54,8 +54,9 @@ export function KeyRoleFields({
 
       {keyRole === 'sub_room' && (
         <div className="pt-1">
-          <Label className="text-xs">Sub-Room Name</Label>
+          <Label htmlFor="lockbox-sub-room-name" className="text-xs">Sub-Room Name</Label>
           <Input
+            id="lockbox-sub-room-name"
             placeholder="e.g. Treatment Office"
             value={subRoomLabel}
             onChange={(e) => onSubRoomLabelChange(e.target.value)}

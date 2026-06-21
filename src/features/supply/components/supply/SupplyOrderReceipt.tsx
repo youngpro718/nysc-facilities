@@ -4,7 +4,8 @@ import { Separator } from '@/components/ui/separator';
 import { Receipt, Download, Printer, Mail } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { ReceiptData } from '@features/supply/types/receipt';
-import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/dateTime';
+import { formatRequestId } from '@/lib/requestIds';
 
 interface SupplyOrderReceiptProps {
   receiptData: ReceiptData;
@@ -19,10 +20,6 @@ export function SupplyOrderReceipt({
   onDownload, 
   onEmail 
 }: SupplyOrderReceiptProps) {
-  const formatDate = (date: string) => {
-    return format(new Date(date), 'MMM dd, yyyy h:mm a');
-  };
-
   const getReceiptTitle = () => {
     switch (receiptData.receiptType) {
       case 'confirmation':
@@ -86,7 +83,7 @@ export function SupplyOrderReceipt({
           </div>
           <p className="text-sm font-mono font-bold">{receiptData.receiptNumber}</p>
           <p className="text-xs text-muted-foreground">
-            {formatDate(receiptData.generatedAt)}
+            {formatDateTime(receiptData.generatedAt)}
           </p>
         </div>
       </div>
@@ -108,7 +105,9 @@ export function SupplyOrderReceipt({
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Request ID:</span>
-              <span className="text-sm font-mono">{receiptData.request.id.slice(0, 8)}</span>
+              <span className="text-sm font-mono">
+                {formatRequestId(receiptData.request.id, receiptData.request.displayId)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Title:</span>

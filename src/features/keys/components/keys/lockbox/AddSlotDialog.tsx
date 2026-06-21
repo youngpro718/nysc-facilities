@@ -134,8 +134,9 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Label <span className="text-destructive">*</span></Label>
+            <Label htmlFor="lockbox-slot-label">Label <span className="text-destructive">*</span></Label>
             <Input 
+              id="lockbox-slot-label"
               placeholder="e.g. Courtroom 401 Main" 
               value={label} 
               onChange={(e) => setLabel(e.target.value)}
@@ -151,6 +152,7 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
               onChange={handleRoomChange}
               disabled={isCreating}
               zIndexClass="z-[120]"
+              ariaLabel="Key slot room"
             />
             <p className="text-xs text-muted-foreground">
               Link this slot to a room — search by number, judge, or building.
@@ -167,8 +169,9 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
 
 
           <div className="space-y-2">
-            <Label>Key Quantity</Label>
+            <Label htmlFor="lockbox-key-quantity">Key Quantity</Label>
             <Input 
+              id="lockbox-key-quantity"
               type="number" 
               min={1} 
               max={10}
@@ -179,8 +182,9 @@ export function AddSlotDialog({ lockboxId, lockboxName, existingSlotCount, open,
           </div>
 
           <div className="space-y-2">
-            <Label>Notes (Optional)</Label>
+            <Label htmlFor="lockbox-slot-notes">Notes (Optional)</Label>
             <Textarea 
+              id="lockbox-slot-notes"
               placeholder="Any additional details about this key..." 
               value={notes} 
               onChange={(e) => setNotes(e.target.value)}

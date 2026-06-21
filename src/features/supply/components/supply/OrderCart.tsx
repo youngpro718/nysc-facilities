@@ -146,7 +146,10 @@ export function OrderCart({
         <Button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-24 right-4 h-12 px-5 rounded-full shadow-xl z-50 touch-manipulation pb-safe inline-flex items-center gap-2 text-sm font-semibold w-auto"
+          className={cn(
+            "fixed bottom-24 right-4 h-12 px-5 rounded-full shadow-xl z-40 touch-manipulation pb-safe inline-flex items-center gap-2 text-sm font-semibold w-auto",
+            isOpen && "invisible pointer-events-none",
+          )}
         >
           <ShoppingCart className="h-4 w-4" />
           <span>{`Review ${totalItems} item${totalItems === 1 ? '' : 's'}`}</span>
@@ -279,6 +282,7 @@ export function OrderCart({
                   userId={user?.id}
                   invalid={missingLocation}
                   placeholder="Search for a room…"
+                  ariaLabel="Delivery room"
                 />
                 {missingLocation && (
                   <p className="text-xs text-destructive">
@@ -313,6 +317,7 @@ export function OrderCart({
                                 : 'border-primary bg-primary text-primary-foreground'
                             : 'border-border bg-background hover:bg-muted'
                         )}
+                        aria-pressed={active}
                       >
                         {p.label}
                       </button>
@@ -338,6 +343,7 @@ export function OrderCart({
                             ? 'border-primary bg-primary text-primary-foreground'
                             : 'border-border bg-background hover:bg-muted'
                         )}
+                        aria-pressed={active}
                       >
                         {chip.label}
                       </button>
@@ -356,15 +362,17 @@ export function OrderCart({
 
               {/* Needed by */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium flex items-center gap-1.5">
+                <Label htmlFor="supply-needed-by" className="text-xs font-medium flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5" />
                   Needed by (optional)
                 </Label>
                 <Input
+                  id="supply-needed-by"
                   type="date"
                   value={neededBy}
                   onChange={(e) => setNeededBy(e.target.value)}
                   className="h-11"
+                  min={new Date().toISOString().slice(0, 10)}
                 />
               </div>
 

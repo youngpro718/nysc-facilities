@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isFacilitiesManager, setIsFacilitiesManager] = useState(false);
   const hasCompletedInitialAuth = useRef(false);
   const isFetchingProfile = useRef(false);
+  const profileFetchPromise = useRef<Promise<{ isAdmin: boolean; profile: UserProfile | null }> | null>(null);
   const navigate = useNavigate();
 
   // Refresh session function
@@ -280,6 +281,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    const fetchProfileOnce = async (userId: string) => {
+      if (profileFetchPromise.current) {
+        return profileFetchPromise.current;
+      }
+
+      isFetchingProfile.current = true;
+      const request = authService.fetchUserProfile(userId);
+      profileFetchPromise.current = request;
+
+      try {
+        return await request;
+      } finally {
+        if (profileFetchPromise.current === request) {
+          profileFetchPromise.current = null;
+          isFetchingProfile.current = false;
+        }
+      }
+    };
+
     const handleRedirect = (
       userData: { isAdmin: boolean; profile: UserProfile | null },
       isExplicitSignIn: boolean = false
@@ -340,18 +360,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(currentSession);
           setUser(currentSession.user);
 
-          if (isFetchingProfile.current) {
-            logger.debug('Profile fetch already in progress, skipping duplicate');
-            return;
-          }
-
-          isFetchingProfile.current = true;
           let userData: { isAdmin: boolean; profile: UserProfile | null };
           try {
-            userData = await authService.fetchUserProfile(currentSession.user.id);
+            userData = await fetchProfileOnce(currentSession.user.id);
           } catch (fetchError) {
             logger.error('[useAuth.initializeAuth] Profile fetch failed after retries', fetchError);
-            isFetchingProfile.current = false;
             if (mounted) {
               toast.error("Couldn't verify your account", {
                 description: 'Network issue — please refresh or sign in again.',
@@ -361,8 +374,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // so an admin is never silently routed as 'standard'.
             return;
           }
-          isFetchingProfile.current = false;
-
           if (!mounted) return;
 
           setIsAdmin(userData.isAdmin);
@@ -390,9 +401,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             '/install',
             '/auth/pending-approval',
             '/auth/account-rejected',
-            '/forms/key-request',
-            '/forms/maintenance-request',
-            '/forms/issue-report',
           ]);
 
           if (!publicPaths.has(currentPath)) {
@@ -454,14 +462,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           try {
-            if (isFetchingProfile.current) {
-              logger.debug('Profile fetch in progress, skipping');
-              return;
-            }
-
-            isFetchingProfile.current = true;
-            const userData = await authService.fetchUserProfile(newSession.user.id);
-            isFetchingProfile.current = false;
+            const userData = await fetchProfileOnce(newSession.user.id);
 
             if (!mounted) return;
 
@@ -474,7 +475,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               handleRedirect(userData, true);
             }
           } catch (error) {
-            isFetchingProfile.current = false;
             logger.error('Error fetching user data after sign in', error);
             if (mounted) {
               toast.error("Couldn't verify your account", {
@@ -486,6 +486,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })();
       } else if (event === 'SIGNED_OUT') {
         isFetchingProfile.current = false;
+        profileFetchPromise.current = null;
         setSession(null);
         setUser(null);
         setProfile(null);

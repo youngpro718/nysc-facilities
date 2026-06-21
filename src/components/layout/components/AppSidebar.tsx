@@ -1,11 +1,11 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { getRoleBasedNavigation, getNavigationRoutes } from "@/components/layout/config/navigation";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import { ChevronLeft, LogOut, HelpCircle, LifeBuoy } from "lucide-react";
+import { ChevronLeft, LogOut, LifeBuoy } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { prefetchRoute } from "@/lib/prefetchRoutes";
 import { isNavRouteActive } from "@/components/layout/utils/navigationPaths";
@@ -15,8 +15,7 @@ export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const navigate = useNavigate();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const { permissions, userRole, profile } = useRolePermissions();
 
   const navReady = !!userRole;
@@ -89,10 +88,11 @@ export function AppSidebar() {
               return (
                 <Tooltip key={tab.title}>
                   <TooltipTrigger asChild>
-                    <button
-                      onClick={() => route && navigate(route)}
+                    <NavLink
+                      to={route}
                       onPointerEnter={() => prefetchRoute(route)}
                       onFocus={() => prefetchRoute(route)}
+                      aria-label={tab.title}
                       className={cn(
                         "flex h-10 w-full items-center justify-center rounded-md transition-colors",
                         active
@@ -101,7 +101,7 @@ export function AppSidebar() {
                       )}
                     >
                       <Icon className="h-[18px] w-[18px]" />
-                    </button>
+                    </NavLink>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={8}>
                     {tab.title}
@@ -111,9 +111,9 @@ export function AppSidebar() {
             }
 
             return (
-              <button
+              <NavLink
                 key={tab.title}
-                onClick={() => route && navigate(route)}
+                to={route}
                 onPointerEnter={() => prefetchRoute(route)}
                 onFocus={() => prefetchRoute(route)}
                 className={cn(
@@ -125,7 +125,7 @@ export function AppSidebar() {
               >
                 <Icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-white")} />
                 <span className="truncate">{tab.title}</span>
-              </button>
+              </NavLink>
             );
           })}
         </nav>
@@ -136,31 +136,31 @@ export function AppSidebar() {
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  onClick={() => navigate("/help")}
+                <NavLink
+                  to="/help"
                   className="flex h-9 w-full items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-white/[0.07] hover:text-white"
                 >
                   <LifeBuoy className="h-[18px] w-[18px]" />
-                </button>
+                </NavLink>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={8}>Help &amp; Guides</TooltipContent>
             </Tooltip>
           ) : (
-            <button
-              onClick={() => navigate("/help")}
+            <NavLink
+              to="/help"
               className="flex h-9 w-full items-center gap-2.5 rounded-md px-3 text-sm text-slate-300 transition-colors hover:bg-white/[0.07] hover:text-white"
             >
               <LifeBuoy className="h-[18px] w-[18px] shrink-0" />
               <span>Help &amp; Guides</span>
-            </button>
+            </NavLink>
           )}
 
           {/* User info */}
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  onClick={() => navigate("/profile")}
+                <NavLink
+                  to="/profile"
                   className="flex h-10 w-full items-center justify-center rounded-md transition-colors hover:bg-white/[0.07]"
                 >
                   <UserAvatar
@@ -170,7 +170,7 @@ export function AppSidebar() {
                     className="h-8 w-8"
                     showFallbackIcon
                   />
-                </button>
+                </NavLink>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={8}>
                 <p>{displayName}</p>
@@ -178,7 +178,7 @@ export function AppSidebar() {
               </TooltipContent>
             </Tooltip>
           ) : (
-            <div className="flex items-center gap-2.5 px-3 py-1.5">
+            <NavLink to="/profile" className="flex items-center gap-2.5 rounded-md px-3 py-1.5 hover:bg-white/[0.07]">
               <UserAvatar
                 src={(profile as any)?.avatar_url}
                 firstName={firstName}
@@ -190,7 +190,7 @@ export function AppSidebar() {
                 <p className="text-[13px] font-medium truncate text-sidebar-foreground">{displayName}</p>
                 <p className="truncate text-[11px] text-slate-400">{roleLabel}</p>
               </div>
-            </div>
+            </NavLink>
           )}
 
           {/* Sign out */}

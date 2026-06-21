@@ -39,7 +39,7 @@ export function BasicKeyFields({ form }: BasicKeyFieldsProps) {
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Key Name</FormLabel>
+            <FormLabel>Key Name *</FormLabel>
             <FormControl>
               <Input placeholder="Enter key name" {...field} />
             </FormControl>
@@ -53,7 +53,7 @@ export function BasicKeyFields({ form }: BasicKeyFieldsProps) {
         name="type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Key Type</FormLabel>
+            <FormLabel>Key Type *</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger>

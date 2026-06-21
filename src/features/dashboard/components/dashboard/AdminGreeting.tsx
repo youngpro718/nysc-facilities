@@ -9,9 +9,10 @@ import { RefreshCw } from "lucide-react";
 interface AdminGreetingProps {
   onRefresh?: () => void;
   isLoading?: boolean;
+  lastRefreshedAt?: Date;
 }
 
-export function AdminGreeting({ onRefresh, isLoading }: AdminGreetingProps) {
+export function AdminGreeting({ onRefresh, isLoading, lastRefreshedAt }: AdminGreetingProps) {
   const formattedDate = format(new Date(), "EEEE, MMMM d, yyyy");
 
   return (
@@ -26,12 +27,19 @@ export function AdminGreeting({ onRefresh, isLoading }: AdminGreetingProps) {
         </p>
       </div>
       {onRefresh && (
-        <Button variant="outline" onClick={onRefresh} disabled={isLoading} size="sm" className="h-9 bg-card">
-          <RefreshCw
-            className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
-          />
-          Refresh data
-        </Button>
+        <div className="flex flex-col items-end gap-1.5">
+          <Button variant="outline" onClick={onRefresh} disabled={isLoading} size="sm" className="h-9 bg-card">
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+            />
+            Refresh data
+          </Button>
+          {lastRefreshedAt && (
+            <span className="text-[11px] text-muted-foreground">
+              Last refreshed {format(lastRefreshedAt, "h:mm:ss a")}
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

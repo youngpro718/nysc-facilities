@@ -67,7 +67,7 @@ const baseSpaceSchema = z.object({
 const roomSchema = baseSpaceSchema.extend({
   type: z.literal("room"),
   roomType: z.nativeEnum(RoomTypeEnum),
-  roomNumber: z.string().optional(),
+  roomNumber: z.string().trim().min(1, "Room number is required"),
   currentFunction: z.string().optional(),
   isStorage: z.boolean().optional(),
   phoneNumber: z.string().optional(),

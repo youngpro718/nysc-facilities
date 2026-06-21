@@ -89,9 +89,8 @@ if (needsProfile) {
 
 ---
 
-### **5. Public Route Protection** ✅
+### **5. Authentication Route Protection** ✅
 - [x] Public `/auth/*` routes remain accessible
-- [x] Public `/forms/*` routes remain accessible
 - [x] OnboardingGuard only wraps protected areas
 - [x] Login page accessible without authentication
 
@@ -100,8 +99,6 @@ if (needsProfile) {
 - `/auth/verify` - Email verification
 - `/auth/mfa` - MFA setup
 - `/onboarding/profile` - Profile completion
-- `/forms/*` - Public form submissions
-- `/public-forms` - Public forms listing
 
 **Protected Routes:**
 - All routes within `<Layout />` component
@@ -253,10 +250,9 @@ GROUP BY role;
    - [ ] Attempt unauthorized route access
    - [ ] Confirm permission checks work
 
-5. **Public Routes:**
+5. **Authentication Routes:**
    - [ ] Access `/login` without authentication
-   - [ ] Access `/forms/*` without authentication
-   - [ ] Verify public forms work correctly
+   - [ ] Verify authenticated application routes redirect to login
 
 ---
 

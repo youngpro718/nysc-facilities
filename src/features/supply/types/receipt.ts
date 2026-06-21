@@ -4,6 +4,7 @@ export interface ReceiptData {
   generatedAt: string;
   request: {
     id: string;
+    displayId?: string | null;
     title: string;
     status: string;
     priority: string;

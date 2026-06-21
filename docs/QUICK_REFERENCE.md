@@ -60,15 +60,6 @@
 /inventory .................. Inventory Management
 ```
 
-### Public Routes (No Login Required)
-```
-/public-forms ............... Public Form Directory
-/forms/key-request .......... Key Request Form
-/request/supplies ........... Supply Request Form
-/forms/maintenance-request .. Maintenance Request Form
-/forms/issue-report ......... Issue Report Form
-```
-
 ### Legacy Redirects
 ```
 /occupants → /access-assignments
@@ -180,4 +171,3 @@ When building loading or navigation surfaces, prefer these primitives instead of
 ---
 
 **Last Updated:** April 2026
-

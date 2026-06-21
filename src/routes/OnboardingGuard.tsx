@@ -57,7 +57,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
       try {
         // Don't check if we're already on an auth/onboarding page
         const currentPath = window.location.pathname;
-        const publicPaths = ['/auth/', '/onboarding/', '/login', '/forms/', '/verification-pending'];
+        const publicPaths = ['/auth/', '/onboarding/', '/login', '/verification-pending'];
         if (publicPaths.some(path => currentPath.startsWith(path))) {
           if (mounted) setChecking(false);
           isCheckingRef.current = false;

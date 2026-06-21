@@ -9,8 +9,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Package, CheckCircle, Truck, AlertTriangle, Clock } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { EditDeliveryLocationButton } from './EditDeliveryLocationButton';
+import { formatDateTime } from '@/lib/dateTime';
+import { formatRequestId } from '@/lib/requestIds';
 
 interface OrderTableViewProps {
   orders: any[];
@@ -149,7 +150,7 @@ export function OrderTableView({
             const department = order.profiles?.department || 'N/A';
             const location = order.delivery_location || 'Not specified';
             const itemCount = order.supply_request_items?.length || 0;
-            const timeAgo = formatDistanceToNow(new Date(order.created_at), { addSuffix: false });
+            const submittedAt = formatDateTime(order.created_at);
 
             return (
               <TableRow 
@@ -158,7 +159,7 @@ export function OrderTableView({
                 onClick={() => onFulfill(order)}
               >
                 <TableCell className="font-mono text-sm">
-                  {order.id.slice(0, 8).toUpperCase()}
+                  {formatRequestId(order.id, order.display_id)}
                 </TableCell>
                 <TableCell className="font-medium">{requesterName}</TableCell>
                 <TableCell className="hidden md:table-cell text-muted-foreground">
@@ -182,7 +183,7 @@ export function OrderTableView({
                 <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {timeAgo}
+                    {submittedAt}
                   </div>
                 </TableCell>
                 <TableCell className="text-right">

@@ -9,6 +9,7 @@ import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { LoadingSkeleton } from "@shared/components/common/common/LoadingSkeleton";
 import type { BuildingWithLighting } from "@/utils/dashboardUtils";
+import { useState } from "react";
 
 const AdminDashboard = () => {
   const {
@@ -22,6 +23,12 @@ const AdminDashboard = () => {
     isAdmin,
   } = useDashboardData(true);
   const isMobile = useIsMobile();
+  const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date());
+
+  const handleRefresh = async () => {
+    await refreshData();
+    setLastRefreshedAt(new Date());
+  };
 
   if (isLoading || buildingsLoading) {
     return (
@@ -46,8 +53,9 @@ const AdminDashboard = () => {
   const content = (
     <div className="mx-auto max-w-[1500px] space-y-7 sm:space-y-8">
       <AdminGreeting
-        onRefresh={refreshData}
+        onRefresh={handleRefresh}
         isLoading={isLoading || buildingsLoading}
+        lastRefreshedAt={lastRefreshedAt}
       />
 
       <ProductionSecurityGuard />
@@ -94,7 +102,7 @@ const AdminDashboard = () => {
   );
 
   if (isMobile) {
-    return <PullToRefresh onRefresh={refreshData}>{content}</PullToRefresh>;
+    return <PullToRefresh onRefresh={handleRefresh}>{content}</PullToRefresh>;
   }
   return content;
 };

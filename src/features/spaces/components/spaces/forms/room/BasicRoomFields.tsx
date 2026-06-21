@@ -16,18 +16,18 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Basic Information</CardTitle>
+        <CardTitle>Room Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <FormField
             control={form.control}
-            name="name"
+            name="roomNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>Room Number *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter room name" {...field} />
+                  <Input placeholder="e.g. 101A" required {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -36,43 +36,29 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
 
           <FormField
             control={form.control}
-            name="roomNumber"
+            name="roomType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Room Number</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. 101A" {...field} />
-                </FormControl>
+                <FormLabel>Room Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select room type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.values(RoomTypeEnum).map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="roomType"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Room Type</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select room type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {Object.values(RoomTypeEnum).map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}

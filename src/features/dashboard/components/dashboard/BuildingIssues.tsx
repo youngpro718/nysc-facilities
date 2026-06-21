@@ -1,5 +1,5 @@
 import { AlertCircle } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/dateTime";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
@@ -76,7 +76,7 @@ export const BuildingIssues = ({ issues, onMarkAsSeen }: BuildingIssuesProps) =>
                   )}
                 </div>
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {format(new Date(issue.created_at), "MMM d, h:mm a")}
+                  {formatDateTime(issue.created_at)}
                 </span>
               </div>
             </div>
@@ -85,4 +85,4 @@ export const BuildingIssues = ({ issues, onMarkAsSeen }: BuildingIssuesProps) =>
       </ScrollArea>
     </div>
   );
-}; 
+};

@@ -1,5 +1,5 @@
 // User Dashboard — minimal action-focused portal
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -16,13 +16,15 @@ import { CompactHeader } from "@shared/components/user/CompactHeader";
 import { PickupAlertBanner } from "@shared/components/user/PickupAlertBanner";
 import { CompactActivitySection } from "@shared/components/user/CompactActivitySection";
 
-import { Package, Send, ChevronRight } from "lucide-react";
+import { Package, Send, ChevronRight, KeyRound } from "lucide-react";
 import { getDashboardForRole } from "@/routes/roleBasedRouting";
+import { KeyRequestDialog } from "@features/keys/components/requests/KeyRequestDialog";
 
 export default function UserDashboard() {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [keyRequestOpen, setKeyRequestOpen] = useState(false);
 
   // Redirect non-standard roles (admin, court_officer, etc.) to their own dashboard
   useEffect(() => {
@@ -160,6 +162,12 @@ export default function UserDashboard() {
             onClick={() => navigate("/supplies?tab=request")}
             prefetchPath="/supplies"
           />
+          <ActionRow
+            icon={KeyRound}
+            label="Request a Key"
+            sub="New, replacement, spare, or temporary access"
+            onClick={() => setKeyRequestOpen(true)}
+          />
         </div>
 
         {/* Activity feed — single chronological list */}
@@ -180,6 +188,7 @@ export default function UserDashboard() {
         </div>
       </div>
 
+      <KeyRequestDialog open={keyRequestOpen} onOpenChange={setKeyRequestOpen} />
     </PullToRefresh>
   );
 }
@@ -226,4 +235,3 @@ function ActionRow({
     </button>
   );
 }
-

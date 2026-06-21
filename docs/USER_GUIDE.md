@@ -18,10 +18,9 @@
 10. [Court Operations](#10-court-operations)
 11. [Tasks & Supply Room](#11-tasks--supply-room)
 12. [User Dashboard & My Activity](#12-user-dashboard--my-activity)
-13. [Public Forms](#13-public-forms)
-14. [Admin Center & System Settings](#14-admin-center--system-settings)
-15. [Profile & Settings](#15-profile--settings)
-16. [FYIs & Tips](#16-fyis--tips)
+13. [Admin Center & System Settings](#13-admin-center--system-settings)
+14. [Profile & Settings](#14-profile--settings)
+15. [FYIs & Tips](#15-fyis--tips)
 
 ---
 
@@ -369,7 +368,7 @@ A unified view of everything you've submitted:
 5. Submit — it goes to admin for approval
 
 ### How to Report an Issue
-1. From your dashboard, click **"Report Issue"** (or go to `/forms/issue-report`)
+1. From your dashboard, click **"Report Issue"**
 2. Select issue type and location
 3. Describe the problem
 4. Submit — it appears in the Operations Center for admin review
@@ -378,26 +377,7 @@ A unified view of everything you've submitted:
 
 ---
 
-## 13. Public Forms
-
-**Route:** `/public-forms`  
-**Access:** No login required
-
-A directory of forms that can be submitted without authentication.
-
-### Available Forms
-| Form | Route | Purpose |
-|------|-------|---------|
-| Key Request | `/forms/key-request` | Request a physical key |
-| Supply Request | `/request/supplies` | Order supplies |
-| Maintenance Request | `/forms/maintenance-request` | Report maintenance need |
-| Issue Report | `/forms/issue-report` | Report a facility problem |
-
-**FYI:** These forms are designed for walk-up use (e.g., a kiosk or shared link). Submissions are routed to the appropriate admin queue.
-
----
-
-## 14. Admin Center & System Settings
+## 13. Admin Center & System Settings
 
 ### Admin Center
 **Route:** `/admin`  
@@ -436,7 +416,7 @@ View and manage system notifications.
 
 ---
 
-## 15. Profile & Settings
+## 14. Profile & Settings
 
 **Route:** `/profile`  
 **Access:** All authenticated users
@@ -451,7 +431,7 @@ Your personal profile and app settings.
 
 ---
 
-## 16. FYIs & Tips
+## 15. FYIs & Tips
 
 ### General
 - **Auto-save** — Most forms and status changes save automatically. You'll see a toast notification confirming the save.
@@ -523,15 +503,6 @@ Your personal profile and app settings.
 | `/profile` | Profile & Settings |
 | `/term-sheet` | Criminal Term Sheet |
 
-### Public Routes (No Login)
-| Route | Page |
-|-------|------|
-| `/public-forms` | Form Directory |
-| `/forms/key-request` | Key Request Form |
-| `/forms/maintenance-request` | Maintenance Request Form |
-| `/forms/issue-report` | Issue Report Form |
-| `/request/supplies` | Supply Request Form |
-
 ### Legacy Redirects
 | Old Route | Redirects To |
 |-----------|-------------|
@@ -542,4 +513,3 @@ Your personal profile and app settings.
 | `/supplies` | `/tasks` |
 | `/supply-requests` | `/my-activity` |
 | `/settings` | `/profile?tab=settings` |
-| `/forms/supply-request` | `/request/supplies` |
