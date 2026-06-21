@@ -182,10 +182,10 @@ export function useOrderCart() {
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const hasRestrictedItems = !isSupervisor && cartItems.some(item => item.requires_justification === true);
-  // Lines above their per-item threshold need the orderer's personal access code.
+  // Lines at or above their per-item threshold need the orderer's personal access code.
   // Supervisors are exempt (same bypass as restricted-item approval).
   const requiresOrderCode = !isSupervisor && cartItems.some(
-    item => item.order_code_threshold != null && item.quantity > item.order_code_threshold,
+    item => item.order_code_threshold != null && item.quantity >= item.order_code_threshold,
   );
 
   return {

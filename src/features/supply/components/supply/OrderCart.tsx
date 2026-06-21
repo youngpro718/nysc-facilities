@@ -409,7 +409,7 @@ export function OrderCart({
                   <p className="text-xs text-destructive">{codeError}</p>
                 ) : (
                   <p className="text-[11px] text-muted-foreground">
-                    This order is above the limit for an item. Your code authorizes it instantly — no waiting on approval.
+                    This order meets or exceeds the limit for an item. Your code authorizes it instantly — no waiting on approval.
                   </p>
                 )}
               </div>
