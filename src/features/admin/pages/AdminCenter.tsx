@@ -1,5 +1,4 @@
 import { ChevronLeft, Users, AlertCircle, Search, RefreshCw, MoreVertical, Mail, UserX, UserCheck, Clock, Unlock, CheckCircle, Ban, Trash2, Settings, KeyRound } from 'lucide-react';
-import { setSupplyOrderCode } from '@features/supply/services/supplyOrderCode';
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
@@ -50,6 +49,7 @@ interface UserProfile {
   created_at: string;
   role?: UserRole;
   requested_role?: string | null;
+  bypass_supply_order_code?: boolean;
 }
 
 function SystemSettingsContent() {
@@ -309,14 +309,19 @@ export default function AdminCenter() {
     }
   };
 
-  const handleSetOrderCode = async (userId: string, userName: string) => {
-    const code = window.prompt(`Set supply order code for ${userName}.\nLeave blank to remove their code.`);
-    if (code === null) return; // cancelled
+  const handleToggleCodeBypass = async (userId: string, userName: string, nextValue: boolean) => {
     try {
-      await setSupplyOrderCode(userId, code.trim() || null);
-      toast.success(code.trim() ? `Order code set for ${userName}` : `Order code removed for ${userName}`);
+      const { error } = await supabase.rpc('admin_set_supply_code_bypass', {
+        p_user_id: userId,
+        p_bypass: nextValue,
+      });
+      if (error) throw error;
+      toast.success(nextValue
+        ? `${userName} can now order without entering their code`
+        : `${userName} will be prompted for their code on large orders`);
+      await loadUsers(true);
     } catch (e) {
-      toast.error(`Failed to set code: ${(e as Error)?.message || String(e)}`);
+      toast.error(`Failed to update bypass: ${(e as Error)?.message || String(e)}`);
     }
   };
 
@@ -722,9 +727,17 @@ export default function AdminCenter() {
                               <Mail className="h-4 w-4 mr-2" />
                               Copy Email
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSetOrderCode(user.id, `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email)}>
+                            <DropdownMenuItem
+                              onClick={() => handleToggleCodeBypass(
+                                user.id,
+                                `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+                                !user.bypass_supply_order_code,
+                              )}
+                            >
                               <KeyRound className="h-4 w-4 mr-2" />
-                              Set order code
+                              {user.bypass_supply_order_code
+                                ? 'Require code prompt'
+                                : 'Allow without code prompt'}
                             </DropdownMenuItem>
                             {!isCurrentUser && (
                               <>

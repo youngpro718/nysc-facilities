@@ -1,7 +1,7 @@
 import { Star, Plus, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFavoriteItems } from '@features/supply/hooks/useFavoriteItems';
-import { useInventoryItems } from '@features/inventory/hooks/useInventoryItems';
+import { useCatalogItems } from '@features/supply/hooks/useCatalogItems';
 import { useIsMobile } from '@shared/hooks/use-mobile';
 import type { CartItem } from '@features/supply/hooks/useOrderCart';
 
@@ -19,7 +19,7 @@ export function FavoritesStrip({
   onDecrement,
 }: FavoritesStripProps) {
   const { favorites, isLoading: favoritesLoading } = useFavoriteItems();
-  const { data: inventoryItems = [], isLoading: itemsLoading } = useInventoryItems();
+  const { data: inventoryItems = [], isLoading: itemsLoading } = useCatalogItems();
   const isMobile = useIsMobile();
 
   // Get favorite items with their full details

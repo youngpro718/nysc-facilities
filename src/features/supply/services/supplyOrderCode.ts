@@ -1,33 +1,32 @@
 import { supabase } from '@/lib/supabase';
 
 /**
- * Per-person supply "order codes". A code authorizes (and tags) large orders
- * without a human approval wait. The plaintext code never leaves the server —
- * verification happens in a SECURITY DEFINER RPC that returns only a boolean.
+ * Per-person supply order codes (4-digit). The code is generated server-side,
+ * stored in plain text, and shown to its owner on their profile page. When
+ * someone tries to order more than an item's `order_code_threshold`, the cart
+ * prompts for this code; submitting the right code authorizes the order as
+ * the requester's own (no supervisor wait).
+ *
+ * Migration: 081_supply_order_codes_per_user.sql
  */
 
-/** Verify the current user's order code. Returns true on match. */
+/** Fetch the current user's code, generating one on first call. */
+export async function getMySupplyOrderCode(): Promise<string> {
+  const { data, error } = await supabase.rpc('get_my_supply_order_code');
+  if (error) throw error;
+  return data as string;
+}
+
+/** Rotate the current user's code. Returns the new code. */
+export async function regenerateMySupplyOrderCode(): Promise<string> {
+  const { data, error } = await supabase.rpc('regenerate_my_supply_order_code');
+  if (error) throw error;
+  return data as string;
+}
+
+/** Verify a code against the current user's row. Used by the cart at submit. */
 export async function verifySupplyOrderCode(code: string): Promise<boolean> {
   const { data, error } = await supabase.rpc('verify_supply_order_code', { p_code: code });
-  if (error) throw error;
-  return data === true;
-}
-
-/** Admin-only: set (or clear, with null/'') a person's order code. */
-export async function setSupplyOrderCode(userId: string, code: string | null): Promise<void> {
-  const { error } = await supabase.rpc('set_supply_order_code', {
-    p_user_id: userId,
-    p_code: code ?? '',
-  });
-  if (error) throw error;
-}
-
-/** Whether a user currently has an order code set (defaults to current user). */
-export async function hasSupplyOrderCode(userId?: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc(
-    'has_supply_order_code',
-    userId ? { p_user_id: userId } : {},
-  );
   if (error) throw error;
   return data === true;
 }

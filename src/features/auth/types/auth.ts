@@ -25,6 +25,8 @@ export interface UserProfile {
   onboarding_completed?: boolean;
   onboarding_skipped?: boolean;
   onboarding_completed_at?: string;
+  /** Admin-toggled: when true, skip the supply order code prompt at the cart. */
+  bypass_supply_order_code?: boolean;
 }
 
 export interface UserSignupData {

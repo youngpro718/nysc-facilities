@@ -75,21 +75,46 @@ export async function listKeyRequestsForStaff(): Promise<StaffKeyRequest[]> {
 export async function updateKeyRequestStatus(
   id: string,
   status: 'approved' | 'rejected' | 'ready' | 'fulfilled',
+  options?: { rejectionReason?: string; adminNotes?: string },
 ): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
+  const now = new Date().toISOString();
   const updates: Record<string, unknown> = {
     status,
-    last_status_change: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    last_status_change: now,
+    updated_at: now,
   };
   if (status === 'approved') {
     updates.approved_by = user?.id ?? null;
-    updates.approved_at = new Date().toISOString();
+    updates.approved_at = now;
   }
   if (status === 'rejected') {
     updates.rejected_by = user?.id ?? null;
-    updates.rejected_at = new Date().toISOString();
+    updates.rejected_at = now;
+    if (options?.rejectionReason) {
+      updates.rejection_reason = options.rejectionReason;
+    }
+  }
+  if (options?.adminNotes) {
+    updates.admin_notes = options.adminNotes;
   }
   const { error } = await supabase.from('key_requests').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+/**
+ * Requester self-cancel. RLS only permits this while status='pending', so we
+ * only attempt it from that state — surfaced as a normal status update.
+ */
+export async function cancelKeyRequest(id: string): Promise<void> {
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from('key_requests')
+    .update({
+      status: 'cancelled',
+      last_status_change: now,
+      updated_at: now,
+    })
+    .eq('id', id);
   if (error) throw error;
 }

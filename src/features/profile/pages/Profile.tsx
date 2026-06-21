@@ -1,6 +1,7 @@
 import { User, ChevronLeft, Settings2, ArrowRight, Shield, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@features/profile/components/profile/PersonalInfoForm";
+import { MySupplyOrderCode } from "@features/profile/components/profile/MySupplyOrderCode";
 import { ProfileHeader } from "@features/profile/components/profile/ProfileHeader";
 import { MobileProfileHeader } from "@features/profile/components/profile/mobile/MobileProfileHeader";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,7 @@ export default function Profile() {
             <Card className="p-4">
               <PersonalInfoForm />
             </Card>
+            <MySupplyOrderCode />
           </TabsContent>
           
           <TabsContent value="settings" className="mt-4 animate-in fade-in-50 duration-200">
@@ -149,6 +151,8 @@ export default function Profile() {
               <PersonalInfoForm />
             </div>
           </Card>
+
+          <MySupplyOrderCode />
         </TabsContent>
         
         <TabsContent value="settings" className="mt-6">

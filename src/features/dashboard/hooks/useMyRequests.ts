@@ -107,7 +107,7 @@ export function useMyRequests() {
     enabled: !!user?.id,
     staleTime: 30_000,
     queryFn: async (): Promise<MyRequestRow[]> => {
-      const [supplyRes, taskRes] = await Promise.all([
+      const [supplyRes, taskRes, keyRes] = await Promise.all([
         supabase
           .from('supply_requests')
           .select(
@@ -122,14 +122,32 @@ export function useMyRequests() {
           .eq('created_by', user!.id)
           .order('created_at', { ascending: false })
           .limit(50),
+        // key_requests may not exist on older deployments; tolerate the
+        // missing-table error so the rest of My Requests keeps rendering.
+        supabase
+          .from('key_requests')
+          .select('id, user_id, request_type, room_id, room_other, reason, quantity, status, created_at, admin_notes, rejection_reason, fulfillment_notes')
+          .eq('user_id', user!.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
       ]);
       if (supplyRes.error) throw supplyRes.error;
       if (taskRes.error) throw taskRes.error;
       const tasks = (taskRes.data ?? []) as TaskRow[];
 
-      // Resolve service-request room ids to readable labels ("Room 1022 · Court Reporter").
+      const keyRequests: KeyRequestRow[] = keyRes.error
+        ? []
+        : ((keyRes.data ?? []) as KeyRequestRow[]);
+
+      // Resolve room ids (from staff tasks AND key requests) to readable
+      // labels ("Room 1022 · Court Reporter") in a single query.
       const roomIds = Array.from(
-        new Set(tasks.flatMap((t) => [t.from_room_id, t.to_room_id]).filter(Boolean) as string[]),
+        new Set(
+          [
+            ...tasks.flatMap((t) => [t.from_room_id, t.to_room_id]),
+            ...keyRequests.map((k) => k.room_id),
+          ].filter(Boolean) as string[],
+        ),
       );
       const roomLabels = new Map<string, string>();
       if (roomIds.length > 0) {
@@ -143,7 +161,7 @@ export function useMyRequests() {
         }
       }
 
-      return mergeRows((supplyRes.data ?? []) as SupplyRow[], tasks, [], roomLabels);
+      return mergeRows((supplyRes.data ?? []) as SupplyRow[], tasks, keyRequests, roomLabels);
     },
   });
 }
@@ -163,6 +181,11 @@ export function useMyRequestsRealtime() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'staff_tasks', filter: `created_by=eq.${user.id}` },
+        () => queryClient.invalidateQueries({ queryKey: ['my-requests', user.id] }),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'key_requests', filter: `user_id=eq.${user.id}` },
         () => queryClient.invalidateQueries({ queryKey: ['my-requests', user.id] }),
       )
       .subscribe();

@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Check, KeyRound, Loader2, RefreshCw, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { formatDateTime } from '@/lib/dateTime';
 import {
   listKeyRequestsForStaff,
@@ -11,23 +15,56 @@ import {
   type StaffKeyRequest,
 } from '@features/keys/services/keyRequestService';
 
+type Decision = 'approved' | 'rejected' | 'ready' | 'fulfilled';
+
 export function KeyRequestsSection() {
   const queryClient = useQueryClient();
+  const [rejectTarget, setRejectTarget] = useState<StaffKeyRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
   const { data: requests = [], isLoading, isError, error, refetch } = useQuery<StaffKeyRequest[]>({
     queryKey: ['key-requests', 'staff'],
     queryFn: listKeyRequestsForStaff,
     retry: false,
   });
 
-  const updateStatus = async (id: string, status: 'approved' | 'rejected' | 'ready' | 'fulfilled') => {
+  const updateStatus = async (
+    id: string,
+    status: Decision,
+    options?: { rejectionReason?: string },
+  ) => {
     try {
-      await updateKeyRequestStatus(id, status);
+      await updateKeyRequestStatus(id, status, options);
     } catch {
       toast.error('Could not update the key request.');
-      return;
+      return false;
     }
     await queryClient.invalidateQueries({ queryKey: ['key-requests'] });
+    await queryClient.invalidateQueries({ queryKey: ['my-requests'] });
     toast.success(`Key request marked ${status}.`);
+    return true;
+  };
+
+  const openReject = (request: StaffKeyRequest) => {
+    setRejectTarget(request);
+    setRejectReason('');
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectTarget) return;
+    if (!rejectReason.trim()) {
+      toast.error('Add a brief reason so the requester knows what happened.');
+      return;
+    }
+    setRejectSubmitting(true);
+    const ok = await updateStatus(rejectTarget.id, 'rejected', {
+      rejectionReason: rejectReason.trim(),
+    });
+    setRejectSubmitting(false);
+    if (ok) {
+      setRejectTarget(null);
+      setRejectReason('');
+    }
   };
 
   if (isLoading) {
@@ -93,6 +130,11 @@ export function KeyRequestsSection() {
                   {location} · {request.quantity} key{request.quantity === 1 ? '' : 's'} · {formatDateTime(request.created_at)}
                 </p>
                 <p className="mt-2 text-sm">{request.reason}</p>
+                {request.rejection_reason && (
+                  <p className="mt-2 rounded-md border border-destructive/30 bg-destructive/5 p-2 text-sm">
+                    <span className="font-medium">Rejected: </span>{request.rejection_reason}
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 {request.status === 'pending' && (
@@ -101,7 +143,7 @@ export function KeyRequestsSection() {
                       <Check className="mr-1.5 h-4 w-4" />
                       Approve
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => updateStatus(request.id, 'rejected')}>
+                    <Button size="sm" variant="outline" onClick={() => openReject(request)}>
                       <X className="mr-1.5 h-4 w-4" />
                       Reject
                     </Button>
@@ -118,6 +160,59 @@ export function KeyRequestsSection() {
           </Card>
         );
       })}
+
+      <ModalFrame
+        open={!!rejectTarget}
+        onOpenChange={(next) => {
+          if (!next) {
+            setRejectTarget(null);
+            setRejectReason('');
+          }
+        }}
+        title="Reject key request"
+        description="Add a short reason — the requester will see this on their copy."
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="key-reject-reason">Reason</Label>
+            <Textarea
+              id="key-reject-reason"
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+              placeholder="e.g. Replacement key already issued last week."
+              rows={4}
+              autoFocus
+            />
+          </div>
+          <div className="flex justify-end gap-2 border-t pt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setRejectTarget(null);
+                setRejectReason('');
+              }}
+              disabled={rejectSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleRejectSubmit}
+              disabled={rejectSubmitting || !rejectReason.trim()}
+            >
+              {rejectSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <X className="mr-2 h-4 w-4" />
+              )}
+              Reject request
+            </Button>
+          </div>
+        </div>
+      </ModalFrame>
     </div>
   );
 }

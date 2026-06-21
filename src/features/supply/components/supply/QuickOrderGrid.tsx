@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { useInventoryItems } from '@features/inventory/hooks/useInventoryItems';
+import { useCatalogItems } from '@features/supply/hooks/useCatalogItems';
 import { useFavoriteItems } from '@features/supply/hooks/useFavoriteItems';
 import { CompactItemList } from './CompactItemList';
 import { ItemDetailPanel } from './ItemDetailPanel';
@@ -21,7 +21,7 @@ export function QuickOrderGrid() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   
   const isMobile = useIsMobile();
-  const { data: inventoryItems = [], isLoading } = useInventoryItems();
+  const { data: inventoryItems = [], isLoading } = useCatalogItems();
   const { favorites, isFavorite, toggleFavorite } = useFavoriteItems();
   
   const {

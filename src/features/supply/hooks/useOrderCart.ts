@@ -1,7 +1,17 @@
 import { useState, useCallback, useRef } from 'react';
 import { logger } from '@/lib/logger';
 import { useQueryClient } from '@tanstack/react-query';
-import { submitSupplyOrder } from '@features/supply/services/unifiedSupplyService';
+import { submitSupplyOrder, revalidateCatalogStock } from '@features/supply/services/unifiedSupplyService';
+
+// Sentinel error type for the submit-time stock check. Thrown so the normal
+// finally-block cleanup runs (reset isSubmitting + ref), but caught in the
+// generic error branch as a no-op so it doesn't get masked by the RLS toast.
+class StockUnavailableError extends Error {
+  constructor() {
+    super('Some items are no longer available');
+    this.name = 'StockUnavailableError';
+  }
+}
 import { useToast } from '@shared/hooks/use-toast';
 import { useGenerateReceipt } from '@features/supply/hooks/useSupplyReceipts';
 import { createReceiptData } from '@/lib/receiptUtils';
@@ -32,8 +42,14 @@ export function useOrderCart() {
   const { mutateAsync: generateReceipt } = useGenerateReceipt();
   const { user, profile } = useAuth();
 
-  // Supervisors (court_officer, cmc, admin) bypass restricted item approval
+  // Supervisors (court_officer, court_liaison, admin) bypass the
+  // "requires_justification" approval gate (they don't need to approve their
+  // own orders).
   const isSupervisor = ['court_officer', 'court_liaison', 'admin'].includes(profile?.role || '');
+  // Per-user opt-in (admin-toggled) to skip the code prompt entirely. Set on
+  // the profile via the admin user menu. The user's code still exists for
+  // someone ordering on their behalf.
+  const bypassOrderCode = profile?.bypass_supply_order_code === true;
 
   const addItem = useCallback((item: { id: string; name: string; unit?: string; sku?: string; requires_justification?: boolean; pack_size?: number | null; order_code_threshold?: number | null }, quantity: number = 1) => {
     setCartItems(prev => {
@@ -117,6 +133,23 @@ export function useOrderCart() {
     submittingRef.current = true;
     setIsSubmitting(true);
     try {
+      // Re-check stock right before submit — the catalog page could be minutes
+      // old and another requester may have drained the shelf in the meantime.
+      const outOfStockIds = await revalidateCatalogStock(cartItems.map(i => i.item_id));
+      if (outOfStockIds.length > 0) {
+        const affectedNames = outOfStockIds
+          .map(id => cartItems.find(c => c.item_id === id)?.item_name)
+          .filter((n): n is string => !!n);
+        toast({
+          title: 'Some items are no longer available',
+          description: affectedNames.length > 0
+            ? affectedNames.join(', ')
+            : 'Please remove unavailable items and try again.',
+          variant: 'destructive',
+        });
+        throw new StockUnavailableError();
+      }
+
       // Auto-generate title from items if not provided
       const autoTitle = options?.title ||
         `Request for ${cartItems.slice(0, 3).map(i => i.item_name).join(', ')}${cartItems.length > 3 ? '...' : ''}`;
@@ -167,6 +200,11 @@ export function useOrderCart() {
 
       return result;
     } catch (error: any) {
+      // Submit-time stock rejection already showed its own toast; don't
+      // double-toast or mask it with the generic RLS copy below.
+      if (error instanceof StockUnavailableError) {
+        throw error;
+      }
       const raw = error?.message || 'Failed to submit order';
       const message =
         raw.includes('row-level security') || raw.includes('Permission')
@@ -182,9 +220,9 @@ export function useOrderCart() {
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const hasRestrictedItems = !isSupervisor && cartItems.some(item => item.requires_justification === true);
-  // Lines at or above their per-item threshold need the orderer's personal access code.
-  // Supervisors are exempt (same bypass as restricted-item approval).
-  const requiresOrderCode = !isSupervisor && cartItems.some(
+  // Lines at or above their per-item threshold need the orderer's personal
+  // access code, unless this user has the admin-set bypass flag.
+  const requiresOrderCode = !bypassOrderCode && cartItems.some(
     item => item.order_code_threshold != null && item.quantity >= item.order_code_threshold,
   );
 

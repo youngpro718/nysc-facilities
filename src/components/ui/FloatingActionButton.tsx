@@ -13,7 +13,6 @@ import { useIsMobile } from '@shared/hooks/use-mobile';
 import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuickIssueReportButton } from '@shared/components/user/QuickIssueReportButton';
-import { KeyRequestDialog } from '@features/keys/components/requests/KeyRequestDialog';
 
 export function FloatingActionButton() {
   const navigate = useNavigate();
@@ -21,7 +20,6 @@ export function FloatingActionButton() {
   const isMobile = useIsMobile();
   const { userRole } = useRolePermissions();
   const [isOpen, setIsOpen] = useState(false);
-  const [keyRequestOpen, setKeyRequestOpen] = useState(false);
 
   // Lock the toggle for the length of the open/close animation. Rapid taps
   // that out-pace framer-motion's exit can orphan the backdrop (a fixed,
@@ -92,7 +90,7 @@ export function FloatingActionButton() {
       id: 'key',
       label: 'Request a Key',
       icon: KeyRound,
-      onClick: () => closeAndRun(() => setKeyRequestOpen(true)),
+      onClick: () => closeAndRun(() => navigate('/keys/request')),
     },
   ];
 
@@ -183,7 +181,6 @@ export function FloatingActionButton() {
           </motion.div>
         </>
       )}
-      <KeyRequestDialog open={keyRequestOpen} onOpenChange={setKeyRequestOpen} />
     </AnimatePresence>
   );
 }

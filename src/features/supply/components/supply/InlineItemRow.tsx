@@ -9,13 +9,15 @@ import {
 } from '@/components/ui/sheet';
 import { getGenericItemImage } from '@/utils/inventoryImages';
 
+type StockStatus = 'in_stock' | 'low' | 'out';
+
 interface InlineItemRowProps {
   item: {
     id: string;
     name: string;
     sku?: string;
     unit?: string;
-    quantity?: number;
+    stockStatus?: StockStatus;
     categoryName?: string;
     requires_justification?: boolean;
     photo_url?: string | null;
@@ -43,6 +45,9 @@ export function InlineItemRow({
   const inCart = cartQuantity > 0;
   const [nameExpanded, setNameExpanded] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const stockStatus: StockStatus = item.stockStatus ?? 'in_stock';
+  const isOutOfStock = stockStatus === 'out';
+  const isLowStock = stockStatus === 'low';
 
   return (
     <div
@@ -52,7 +57,8 @@ export function InlineItemRow({
         inCart
           ? "bg-primary/5 border-primary/20"
           : "bg-card hover:bg-accent/50",
-        compact && "p-2"
+        compact && "p-2",
+        isOutOfStock && "opacity-60"
       )}
     >
       {/* Mobile: Row 1 — Name + Star (top-right) */}
@@ -80,9 +86,22 @@ export function InlineItemRow({
                 {item.sku}
               </span>
             )}
-            <span className="text-[10px] text-muted-foreground">
-              {(item.quantity ?? 0) > 0 ? `${item.quantity} ${item.unit || 'units'} avail` : 'Low Stock'}
-            </span>
+            {isOutOfStock && (
+              <Badge
+                variant="outline"
+                className="text-[10px] px-1.5 py-0 h-4 text-red-700 dark:text-red-400 border-red-500/40 bg-red-500/10"
+              >
+                Out of stock
+              </Badge>
+            )}
+            {isLowStock && (
+              <Badge
+                variant="outline"
+                className="text-[10px] px-1.5 py-0 h-4 text-muted-foreground"
+              >
+                Limited stock
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -99,9 +118,19 @@ export function InlineItemRow({
       {/* Desktop: Additional metadata */}
       {!compact && (
         <div className="hidden sm:flex items-center gap-2 shrink-0">
-          <span className="text-xs text-muted-foreground">
-            {(item.quantity ?? 0) > 0 ? `Stock: ${item.quantity} ${item.unit || 'units'}` : 'Low Stock'}
-          </span>
+          {isOutOfStock && (
+            <Badge
+              variant="outline"
+              className="text-xs text-red-700 dark:text-red-400 border-red-500/40 bg-red-500/10"
+            >
+              Out of stock
+            </Badge>
+          )}
+          {isLowStock && (
+            <Badge variant="outline" className="text-xs text-muted-foreground">
+              Limited stock
+            </Badge>
+          )}
           {item.categoryName && (
             <Badge variant="secondary" className="text-xs">
               {item.categoryName}
@@ -154,9 +183,15 @@ export function InlineItemRow({
               e.stopPropagation();
               onAdd();
             }}
+            disabled={isOutOfStock}
+            aria-label={
+              isOutOfStock
+                ? `${item.name} is out of stock — request a reorder from facilities`
+                : `Add ${item.name}`
+            }
           >
             <Plus className="h-3 w-3 mr-0.5" />
-            Add
+            {isOutOfStock ? 'Out' : 'Add'}
           </Button>
         )}
         {onToggleFavorite && (
@@ -234,9 +269,15 @@ export function InlineItemRow({
               e.stopPropagation();
               onAdd();
             }}
+            disabled={isOutOfStock}
+            aria-label={
+              isOutOfStock
+                ? `${item.name} is out of stock — request a reorder from facilities`
+                : `Add ${item.name}`
+            }
           >
             <Plus className="h-4 w-4 mr-1" />
-            Add
+            {isOutOfStock ? 'Out of stock' : 'Add'}
           </Button>
         )}
       </div>
@@ -300,17 +341,19 @@ export function InlineItemRow({
                     {item.categoryName}
                   </Badge>
                 )}
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-xs",
-                    (item.quantity ?? 0) > 0
-                      ? "text-green-600 border-green-500/30"
-                      : "text-amber-600 border-amber-500/30"
-                  )}
-                >
-                  {(item.quantity ?? 0) > 0 ? `${item.quantity} ${item.unit || 'units'} in stock` : 'Low Stock'}
-                </Badge>
+                {isOutOfStock && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs text-red-700 dark:text-red-400 border-red-500/40 bg-red-500/10"
+                  >
+                    Out of stock
+                  </Badge>
+                )}
+                {isLowStock && (
+                  <Badge variant="outline" className="text-xs text-muted-foreground">
+                    Limited stock
+                  </Badge>
+                )}
                 {item.requires_justification && (
                   <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
                     <AlertTriangle className="h-3 w-3 mr-1" />
@@ -318,6 +361,22 @@ export function InlineItemRow({
                   </Badge>
                 )}
               </div>
+
+              {/* Out-of-stock banner */}
+              {isOutOfStock && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-400"
+                >
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div className="space-y-0.5">
+                    <p className="font-semibold leading-tight">This item is out of stock.</p>
+                    <p className="text-xs leading-snug">
+                      Please contact facilities to request a reorder.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Description */}
               {item.description && (
@@ -364,14 +423,31 @@ export function InlineItemRow({
                 </div>
               ) : (
                 <Button
-                  className="w-full h-12 rounded-md text-base font-semibold touch-manipulation"
+                  className={cn(
+                    "w-full rounded-md font-semibold touch-manipulation",
+                    isOutOfStock
+                      ? "h-auto py-3 text-sm whitespace-normal leading-tight"
+                      : "h-12 text-base"
+                  )}
                   onClick={(e) => {
                     e.stopPropagation();
                     onAdd();
                   }}
+                  disabled={isOutOfStock}
+                  aria-label={
+                    isOutOfStock
+                      ? `${item.name} is out of stock — request a reorder from facilities`
+                      : `Add ${item.name} to cart`
+                  }
                 >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add to Cart
+                  {isOutOfStock ? (
+                    'Out of stock — request reorder from facilities'
+                  ) : (
+                    <>
+                      <Plus className="h-5 w-5 mr-2" />
+                      Add to Cart
+                    </>
+                  )}
                 </Button>
               )}
             </div>

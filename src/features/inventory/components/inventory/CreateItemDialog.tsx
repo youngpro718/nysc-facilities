@@ -6,6 +6,7 @@ import { QUERY_KEYS } from '@/lib/queryKeys';
 import { ModalFrame } from "@shared/components/common/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,7 +20,6 @@ import { useToast } from "@shared/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { invalidateInventoryStockQueries } from "@features/inventory/utils/invalidation";
-import { describePackaging, buildPackagingNote, pluralize } from "@features/inventory/utils/packaging";
 
 type Category = {
   id: string;
@@ -51,6 +51,8 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
     case_label: "",
     case_size: "",
     order_code_threshold: "",
+    requires_justification: false,
+    packaging_note: "",
     category_id: "",
     storage_room_id: "",
     location_details: "",
@@ -98,19 +100,11 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
           description: data.description || null,
           quantity: parseInt(data.quantity) || 0,
           minimum_quantity: parseInt(data.minimum_quantity) || 0,
-          unit: data.unit || null,
           pack_size: data.pack_size ? parseInt(data.pack_size) : null,
-          pack_label: data.pack_label || null,
-          case_label: data.case_label || null,
           case_size: data.case_size ? parseInt(data.case_size) : null,
           order_code_threshold: data.order_code_threshold ? parseInt(data.order_code_threshold) : null,
-          packaging_note: buildPackagingNote({
-            unit: data.unit,
-            pack_label: data.pack_label,
-            pack_size: data.pack_size ? parseInt(data.pack_size) : null,
-            case_label: data.case_label,
-            case_size: data.case_size ? parseInt(data.case_size) : null,
-          }),
+          requires_justification: data.requires_justification,
+          packaging_note: data.packaging_note.trim() || null,
           category_id: data.category_id || null,
           storage_room_id: data.storage_room_id || null,
           location_details: data.location_details || null,
@@ -175,6 +169,8 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
       case_label: "",
       case_size: "",
       order_code_threshold: "",
+      requires_justification: false,
+      packaging_note: "",
       category_id: "",
       storage_room_id: "",
       location_details: "",
@@ -184,19 +180,6 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
     });
     onOpenChange(false);
   };
-
-  const unitWord = formData.unit.trim() || "unit";
-  const packWord = formData.pack_label.trim() || "pack";
-  const caseWord = formData.case_label.trim() || "case";
-  const unitPlural = pluralize(unitWord);
-  const packPlural = pluralize(packWord);
-  const packagingPreview = describePackaging({
-    unit: formData.unit,
-    pack_label: formData.pack_label,
-    pack_size: formData.pack_size ? Number(formData.pack_size) : null,
-    case_label: formData.case_label,
-    case_size: formData.case_size ? Number(formData.case_size) : null,
-  });
 
   return (
     <ModalFrame
@@ -210,51 +193,24 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Basic Information</h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Item Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter item name"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="unit">Smallest unit</Label>
-                <Input
-                  id="unit"
-                  value={formData.unit}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  placeholder="e.g., battery, pen, sheet, ream"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Item Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter item name"
+                required
+              />
             </div>
 
-            {/* Packaging ladder: single -> pack -> case. Powers the order buttons + "= 1 box" hints. */}
+            {/* Packaging — counts only, no label naming. Auto-falls back to "units"/"pack"/"case" in displays. */}
             <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-              <div>
-                <p className="text-sm font-medium">Packaging</p>
-                <p className="text-xs text-muted-foreground">
-                  Quantity is counted in <strong>{unitPlural}</strong>. Define a {packWord} and {caseWord} so
-                  people can order by the {packWord} or {caseWord} instead of counting.
-                </p>
-              </div>
+              <p className="text-sm font-medium">Packaging</p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pack_label">Middle tier name</Label>
-                  <Input
-                    id="pack_label"
-                    value={formData.pack_label}
-                    onChange={(e) => setFormData({ ...formData, pack_label: e.target.value })}
-                    placeholder="e.g., pack, box"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pack_size">{unitPlural} per {packWord}</Label>
+                  <Label htmlFor="pack_size">Units per pack</Label>
                   <Input
                     id="pack_size"
                     type="number"
@@ -264,20 +220,8 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
                     placeholder="e.g., 4"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="case_label">Top tier name</Label>
-                  <Input
-                    id="case_label"
-                    value={formData.case_label}
-                    onChange={(e) => setFormData({ ...formData, case_label: e.target.value })}
-                    placeholder="e.g., case"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="case_size">{packPlural} per {caseWord}</Label>
+                  <Label htmlFor="case_size">Packs per case</Label>
                   <Input
                     id="case_size"
                     type="number"
@@ -289,26 +233,59 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
                 </div>
               </div>
 
-              {packagingPreview && (
-                <p className="text-xs font-medium text-foreground/80">{packagingPreview}</p>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="packaging_note">What's in one item? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Input
+                  id="packaging_note"
+                  value={formData.packaging_note}
+                  onChange={(e) => setFormData({ ...formData, packaging_note: e.target.value })}
+                  placeholder="e.g., pack of 3, single sheet, 12-pack"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Free text shown to people ordering, so they know what they get for one.
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="order_code_threshold">Require access code above</Label>
-              <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  id="order_code_threshold"
-                  type="number"
-                  min="1"
-                  className="max-w-[140px]"
-                  value={formData.order_code_threshold}
-                  onChange={(e) => setFormData({ ...formData, order_code_threshold: e.target.value })}
-                  placeholder="e.g., 24"
+            {/* Order controls — both gates together so the access code field can't be missed */}
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+              <p className="text-sm font-medium">Order controls</p>
+
+              <div className="space-y-2">
+                <Label htmlFor="order_code_threshold">Require an access code above</Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    id="order_code_threshold"
+                    type="number"
+                    min="1"
+                    className="max-w-[140px]"
+                    value={formData.order_code_threshold}
+                    onChange={(e) => setFormData({ ...formData, order_code_threshold: e.target.value })}
+                    placeholder="e.g., 4"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    units — larger orders prompt the person for their personal code. Leave blank for no limit.
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="requires_justification"
+                  checked={formData.requires_justification}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, requires_justification: checked === true })
+                  }
+                  className="mt-0.5"
                 />
-                <span className="text-sm text-muted-foreground">
-                  {unitPlural} — larger orders ask the person for their personal code. Leave blank for no limit.
-                </span>
+                <div className="space-y-0.5">
+                  <Label htmlFor="requires_justification" className="cursor-pointer">
+                    Requires supervisor approval
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Every order for this item routes to a supervisor for approval before fulfillment, regardless of quantity.
+                  </p>
+                </div>
               </div>
             </div>
 

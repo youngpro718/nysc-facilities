@@ -77,15 +77,16 @@ export function OrderCart({
   const [reason, setReason] = useState<string>('Standard supply request');
   const [neededBy, setNeededBy] = useState<string>('');
 
+  // Approval is item-driven: any item marked "Requires supervisor approval"
+  // (requires_justification flag, editable in the inventory item form) routes
+  // the whole order to pending_approval. Per-item quantity gating uses the
+  // access-code path (order_code_threshold), not approval.
   const restrictedItems = useMemo(
     () => items.filter(i => i.requires_justification),
     [items]
   );
   const hasRestrictedItems = restrictedItems.length > 0;
-  const totalQty = items.reduce((s, i) => s + i.quantity, 0);
-  const maxLineQty = items.reduce((m, i) => Math.max(m, i.quantity), 0);
-  const highQuantity = maxLineQty >= 25 || totalQty >= 50;
-  const needsApproval = hasRestrictedItems || highQuantity;
+  const needsApproval = hasRestrictedItems;
   const trimmedLocation = deliveryLocation.trim();
   const missingLocation = trimmedLocation.length === 0;
   const isDifferentFromHome =
@@ -94,10 +95,8 @@ export function OrderCart({
     trimmedLocation.toLowerCase() !== profile.homeRoomNumber.toLowerCase();
 
   const approvalReason = hasRestrictedItems
-    ? `Contains ${restrictedItems.length === 1 ? '' : restrictedItems.length + ' '}restricted item${restrictedItems.length === 1 ? '' : 's'}: ${restrictedItems.map(i => i.item_name).join(', ')}`
-    : highQuantity
-      ? `High quantity (${totalQty} units total)`
-      : null;
+    ? `Contains ${restrictedItems.length === 1 ? '' : restrictedItems.length + ' '}item${restrictedItems.length === 1 ? '' : 's'} that need supervisor approval: ${restrictedItems.map(i => i.item_name).join(', ')}`
+    : null;
 
   const handleSubmit = async () => {
     if (missingLocation) return; // hard-block: need a delivery location

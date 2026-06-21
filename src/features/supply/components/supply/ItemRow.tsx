@@ -21,9 +21,12 @@ export function ItemRow({
   onIncrement,
   onDecrement,
 }: ItemRowProps) {
-  const stockLevel = item.quantity || 0;
-  const isLowStock = stockLevel > 0 && stockLevel <= 10;
-  const isOutOfStock = stockLevel === 0;
+  const stockStatus: 'in_stock' | 'low' | 'out' =
+    (item.stockStatus as 'in_stock' | 'low' | 'out' | undefined) ??
+    (item.stock_status as 'in_stock' | 'low' | 'out' | undefined) ??
+    'in_stock';
+  const isLowStock = stockStatus === 'low';
+  const isOutOfStock = stockStatus === 'out';
   const unitLabel = item.unit || 'item';
   const packagingLabel = item.pack_size
     ? `${item.pack_size} ${unitLabel}${item.pack_size === 1 ? '' : 's'} per ${item.pack_label || 'pack'}`

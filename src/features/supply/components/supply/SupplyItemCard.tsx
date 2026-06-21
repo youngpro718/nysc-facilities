@@ -20,13 +20,15 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { getGenericItemImage } from '@/utils/inventoryImages';
 
+export type StockStatus = 'in_stock' | 'low' | 'out';
+
 interface SupplyItemCardProps {
   item: {
     id: string;
     name: string;
     sku?: string;
     unit?: string;
-    quantity?: number;
+    stockStatus?: StockStatus;
     categoryName?: string;
     requires_justification?: boolean;
     photo_url?: string | null;
@@ -53,11 +55,9 @@ export function SupplyItemCard({
   const [detailOpen, setDetailOpen] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
 
-  const stockStatus = (item.quantity ?? 0) > 10 
-    ? 'in-stock' 
-    : (item.quantity ?? 0) > 0 
-      ? 'low-stock' 
-      : 'out-of-stock';
+  const stockStatus: StockStatus = item.stockStatus ?? 'in_stock';
+  const isOutOfStock = stockStatus === 'out';
+  const isLowStock = stockStatus === 'low';
 
   const handleAdd = () => {
     onAdd();
@@ -86,9 +86,12 @@ export function SupplyItemCard({
             src={item.photo_url || getGenericItemImage(item.name)}
             alt={item.name}
             loading="lazy"
-            className="w-full h-full object-cover"
+            className={cn(
+              "w-full h-full object-cover transition-all",
+              isOutOfStock && "grayscale opacity-50"
+            )}
           />
-          
+
           {/* Favorite button */}
           {onToggleFavorite && (
             <button
@@ -111,18 +114,6 @@ export function SupplyItemCard({
                 )}
               />
             </button>
-          )}
-
-          {/* Unavailable indicator */}
-          {stockStatus === 'out-of-stock' && (
-            <div className="absolute bottom-2 left-2">
-              <Badge
-                variant="secondary"
-                className="text-[10px] font-medium backdrop-blur-sm bg-red-500/20 text-red-700 dark:text-red-400"
-              >
-                Unavailable
-              </Badge>
-            </div>
           )}
 
           {/* Cart quantity badge */}
@@ -159,10 +150,28 @@ export function SupplyItemCard({
             )}
           </div>
 
+          {/* Stock status inline note (body, not corner badge) */}
+          {isOutOfStock && (
+            <div
+              role="status"
+              className="flex items-start gap-1.5 rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1.5 text-[11px] font-medium text-red-700 dark:text-red-400"
+            >
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span className="leading-tight">
+                Out of stock — contact facilities to request a reorder
+              </span>
+            </div>
+          )}
+          {isLowStock && (
+            <p className="text-[10px] text-muted-foreground italic">
+              Limited stock
+            </p>
+          )}
+
           {/* Requires approval badge */}
           {item.requires_justification && (
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className="text-[10px] text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1"
             >
               <AlertTriangle className="h-3 w-3" />
@@ -219,15 +228,23 @@ export function SupplyItemCard({
                     size="sm"
                     className={cn(
                       "w-full h-9 rounded-md font-medium transition-all",
-                      justAdded && "bg-emerald-500 text-white"
+                      justAdded && "bg-emerald-500 text-white",
+                      isOutOfStock && "text-[11px] leading-tight whitespace-normal h-auto py-1.5"
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAdd();
                     }}
-                    disabled={stockStatus === 'out-of-stock'}
+                    disabled={isOutOfStock}
+                    aria-label={
+                      isOutOfStock
+                        ? `${item.name} is out of stock — request a reorder from facilities`
+                        : `Add ${item.name}`
+                    }
                   >
-                    {justAdded ? (
+                    {isOutOfStock ? (
+                      'Out of stock — request reorder from facilities'
+                    ) : justAdded ? (
                       <>
                         <Check className="h-4 w-4 mr-1" />
                         Added!
@@ -304,9 +321,9 @@ export function SupplyItemCard({
                     {item.categoryName}
                   </Badge>
                 )}
-                {stockStatus === 'out-of-stock' && (
-                  <Badge variant="destructive" className="text-xs">
-                    Unavailable
+                {isLowStock && (
+                  <Badge variant="outline" className="text-xs text-muted-foreground">
+                    Limited stock
                   </Badge>
                 )}
                 {item.requires_justification && (
@@ -316,6 +333,22 @@ export function SupplyItemCard({
                   </Badge>
                 )}
               </div>
+
+              {/* Prominent out-of-stock banner */}
+              {isOutOfStock && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-400"
+                >
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div className="space-y-0.5">
+                    <p className="font-semibold leading-tight">This item is out of stock.</p>
+                    <p className="text-xs leading-snug">
+                      Please contact facilities to request a reorder.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Description */}
               {item.description && (
@@ -357,12 +390,26 @@ export function SupplyItemCard({
               ) : (
                 <Button
                   size="lg"
-                  className="w-full h-14 rounded-md text-base font-semibold"
+                  className={cn(
+                    "w-full rounded-md font-semibold",
+                    isOutOfStock ? "h-auto py-3 text-sm whitespace-normal leading-tight" : "h-14 text-base"
+                  )}
                   onClick={handleAdd}
-                  disabled={stockStatus === 'out-of-stock'}
+                  disabled={isOutOfStock}
+                  aria-label={
+                    isOutOfStock
+                      ? `${item.name} is out of stock — request a reorder from facilities`
+                      : `Add ${item.name} to order`
+                  }
                 >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add to Order
+                  {isOutOfStock ? (
+                    'Out of stock — request reorder from facilities'
+                  ) : (
+                    <>
+                      <Plus className="h-5 w-5 mr-2" />
+                      Add to Order
+                    </>
+                  )}
                 </Button>
               )}
             </div>

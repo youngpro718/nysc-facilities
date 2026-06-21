@@ -120,6 +120,11 @@ export async function getSupplyRequests(userId?: string) {
 
 /**
  * Fetch inventory items
+ *
+ * ADMIN-FACING. Returns full rows including raw quantity, minimum_quantity, etc.
+ * For the user-facing supply catalog (browse / order), call getCatalogItems()
+ * instead — it reads from the inventory_catalog view which derives a
+ * stock_status string and never returns the raw count.
  */
 export async function getInventoryItems() {
   const { data, error } = await supabase
@@ -128,6 +133,61 @@ export async function getInventoryItems() {
     .order('name');
   if (error) throw error;
   return data;
+}
+
+/**
+ * Fetch the catalog for a non-admin user.
+ *
+ * Reads from the inventory_catalog view (migration 080). The view exposes
+ * everything the cart needs (name, sku, packaging, order_code_threshold) plus
+ * a derived stock_status: 'in_stock' | 'low' | 'out'. The raw `quantity`
+ * column is NOT exposed — that's intentional, so stock numbers don't leak
+ * into toasts, cards, or any other user-facing surface.
+ */
+export type CatalogStockStatus = 'in_stock' | 'low' | 'out';
+
+export interface CatalogItem {
+  id: string;
+  name: string;
+  sku: string | null;
+  unit: string | null;
+  category_id: string | null;
+  photo_url: string | null;
+  requires_justification: boolean;
+  order_code_threshold: number | null;
+  pack_size: number | null;
+  pack_label: string | null;
+  case_size: number | null;
+  case_label: string | null;
+  packaging_note: string | null;
+  stock_status: CatalogStockStatus;
+  // Joined from inventory_categories
+  inventory_categories?: { id: string; name: string } | null;
+}
+
+export async function getCatalogItems(): Promise<CatalogItem[]> {
+  const { data, error } = await supabase
+    .from('inventory_catalog')
+    .select('*, inventory_categories(id, name)')
+    .order('name');
+  if (error) throw error;
+  return (data || []) as CatalogItem[];
+}
+
+/**
+ * Re-check stock status for a set of catalog items at submit time.
+ * Returns the ids that are currently out of stock.
+ */
+export async function revalidateCatalogStock(itemIds: string[]): Promise<string[]> {
+  if (itemIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('inventory_catalog')
+    .select('id, stock_status')
+    .in('id', itemIds);
+  if (error) throw error;
+  return (data || [])
+    .filter((row: { stock_status: CatalogStockStatus }) => row.stock_status === 'out')
+    .map((row: { id: string }) => row.id);
 }
 
 /**
@@ -162,7 +222,9 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     throw new Error('Authentication required. Please refresh and try again.');
   }
 
-  // Fetch inventory details to check approval requirements
+  // Approval is item-driven: any item flagged requires_justification routes
+  // the order to pending_approval. Per-item quantity gating happens via the
+  // access-code path (order_code_threshold) on the client, not here.
   const itemIds = Array.from(new Set(payload.items.map(i => i.item_id)));
   const { data: inv, error: invErr } = await supabase
     .from('inventory_items')
@@ -177,21 +239,12 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     requires_justification: i.requires_justification ?? false,
   }));
 
-  // Quantity guard: any single line >=25 OR total >=50 routes to approval
-  const LINE_QTY_THRESHOLD = 25;
-  const TOTAL_QTY_THRESHOLD = 50;
-  const totalQty = payload.items.reduce((s, i) => s + (i.quantity_requested || 0), 0);
-  const maxLineQty = payload.items.reduce((m, i) => Math.max(m, i.quantity_requested || 0), 0);
-  const highQuantity = maxLineQty >= LINE_QTY_THRESHOLD || totalQty >= TOTAL_QTY_THRESHOLD;
-
   const restrictedItems = liteItems.filter(i => i.requires_justification);
-  const approvalRequired = restrictedItems.length > 0 || highQuantity;
+  const approvalRequired = restrictedItems.length > 0;
 
   const approvalReason = restrictedItems.length > 0
-    ? `Contains restricted item${restrictedItems.length > 1 ? 's' : ''}: ${restrictedItems.map(i => i.name).join(', ')}`
-    : highQuantity
-      ? `High quantity (${totalQty} total, max line ${maxLineQty})`
-      : null;
+    ? `Contains item${restrictedItems.length > 1 ? 's' : ''} needing supervisor approval: ${restrictedItems.map(i => i.name).join(', ')}`
+    : null;
 
   const insertData: Record<string, unknown> = {
     requester_id: session.user.id,

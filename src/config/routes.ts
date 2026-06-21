@@ -145,6 +145,13 @@ export const routes: Record<string, RouteConfig> = {
     icon: KeyRound,
     parent: '/',
   },
+  '/keys/request': {
+    path: '/keys/request',
+    title: 'Request a Key',
+    breadcrumbLabel: 'Request a Key',
+    icon: KeyRound,
+    parent: '/keys',
+  },
   '/notifications': {
     path: '/notifications',
     title: 'Notifications',

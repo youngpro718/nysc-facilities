@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { Star, Plus, Package } from 'lucide-react';
+import { Star, Plus, Package, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { ItemImage } from './ItemImage';
 import { describePackaging, describeQuantity, quickAddSteps } from '@features/inventory/utils/packaging';
+
+type StockStatus = 'in_stock' | 'low' | 'out';
 
 interface ItemDetailPanelProps {
   item: any;
@@ -33,9 +35,12 @@ export function ItemDetailPanel({
     );
   }
 
-  const stockLevel = item.quantity || 0;
-  const isLowStock = stockLevel > 0 && stockLevel <= 10;
-  const isOutOfStock = stockLevel === 0;
+  const stockStatus: StockStatus =
+    (item.stockStatus as StockStatus | undefined) ??
+    (item.stock_status as StockStatus | undefined) ??
+    'in_stock';
+  const isLowStock = stockStatus === 'low';
+  const isOutOfStock = stockStatus === 'out';
 
   const pkg = {
     unit: item.unit,
@@ -49,13 +54,29 @@ export function ItemDetailPanel({
 
   return (
     <div className="h-full flex flex-col">
+      {/* Prominent out-of-stock banner */}
+      {isOutOfStock && (
+        <div
+          role="alert"
+          className="mb-4 flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-400"
+        >
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <div className="space-y-0.5">
+            <p className="font-semibold leading-tight">This item is out of stock.</p>
+            <p className="text-xs leading-snug">
+              Contact facilities to request a reorder.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Item Image (photo or category placeholder) */}
       <ItemImage
         photoUrl={item.photo_url}
         name={item.name}
         categoryName={item.inventory_categories?.name}
         alt={item.name}
-        className="aspect-square w-full mb-4"
+        className={`aspect-square w-full mb-4 ${isOutOfStock ? 'grayscale opacity-50' : ''}`}
       />
 
       {/* Item Name & Category */}
@@ -67,8 +88,10 @@ export function ItemDetailPanel({
               {item.inventory_categories.name}
             </Badge>
           )}
-          {isOutOfStock && (
-            <Badge variant="destructive" className="text-xs">Unavailable</Badge>
+          {isLowStock && (
+            <Badge variant="outline" className="text-xs text-muted-foreground">
+              Limited stock
+            </Badge>
           )}
         </div>
         {packagingText && (
@@ -134,6 +157,12 @@ export function ItemDetailPanel({
           </div>
         )}
 
+        {isLowStock && (
+          <p className="text-xs text-muted-foreground italic">
+            Limited stock — orders may be partially fulfilled.
+          </p>
+        )}
+
         <div className="flex gap-2">
           <div className="flex items-center border rounded-md">
             <Button
@@ -167,9 +196,14 @@ export function ItemDetailPanel({
             className="flex-1"
             onClick={() => onAddToCart(quantity)}
             disabled={isOutOfStock || quantity < 1}
+            aria-label={
+              isOutOfStock
+                ? `${item.name} is out of stock — request a reorder from facilities`
+                : `Add ${item.name} to cart`
+            }
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add to Cart
+            {isOutOfStock ? 'Out of stock' : 'Add to Cart'}
           </Button>
         </div>
 

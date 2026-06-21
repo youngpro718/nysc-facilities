@@ -12,7 +12,7 @@ import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, Package, Sparkles, Grid3X3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useInventoryItems } from '@features/inventory/hooks/useInventoryItems';
+import { useCatalogItems } from '@features/supply/hooks/useCatalogItems';
 import { useFavoriteItems } from '@features/supply/hooks/useFavoriteItems';
 import { useOrderCart } from '@features/supply/hooks/useOrderCart';
 import { SupplyItemCard } from './SupplyItemCard';
@@ -27,7 +27,7 @@ export function QuickSupplyRequest() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
-  const { data: inventoryItems = [], isLoading } = useInventoryItems();
+  const { data: inventoryItems = [], isLoading } = useCatalogItems();
   const { isFavorite, toggleFavorite } = useFavoriteItems();
 
   const {
@@ -85,6 +85,7 @@ export function QuickSupplyRequest() {
         sku: item.sku,
         requires_justification: item.requires_justification,
         pack_size: item.pack_size ?? null,
+        order_code_threshold: item.order_code_threshold ?? null,
       },
       1
     );
@@ -229,7 +230,7 @@ export function QuickSupplyRequest() {
                     name: item.name,
                     sku: item.sku,
                     unit: item.unit,
-                    quantity: item.quantity,
+                    stockStatus: item.stock_status,
                     categoryName: item.inventory_categories?.name,
                     requires_justification: item.requires_justification,
                     photo_url: item.photo_url,
@@ -269,7 +270,7 @@ export function QuickSupplyRequest() {
                         name: item.name,
                         sku: item.sku,
                         unit: item.unit,
-                        quantity: item.quantity,
+                        stockStatus: item.stock_status,
                         categoryName: item.inventory_categories?.name,
                         requires_justification: item.requires_justification,
                         photo_url: item.photo_url,

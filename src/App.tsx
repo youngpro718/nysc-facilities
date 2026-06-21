@@ -50,6 +50,7 @@ const Operations = lazy(() => import("@features/operations/pages/Operations"));
 
 const Keys = lazy(() => import("@features/keys/pages/Keys"));
 const KeysKiosk = lazy(() => import("@features/keys/pages/KeysKiosk"));
+const KeyRequestPage = lazy(() => import("@features/keys/pages/KeyRequestPage"));
 const Profile = lazy(() => import("@features/profile/pages/Profile"));
 const MyIssues = lazy(() => import("@features/issues/pages/MyIssues"));
 const MyRequests = lazy(() => import("@features/dashboard/pages/MyRequests"));
@@ -158,6 +159,14 @@ function AppContent() {
               <ModuleProtectedRoute moduleKey="keys" moduleName="Keys Management">
                 <KeysKiosk />
               </ModuleProtectedRoute>
+            </ProtectedRoute>
+          } />
+          {/* User-facing key request form. Intentionally NOT gated by the
+              keys module — non-admin users still need to be able to request a
+              key even when they can't see the management page. */}
+          <Route path="/keys/request" element={
+            <ProtectedRoute>
+              <KeyRequestPage />
             </ProtectedRoute>
           } />
           {/* Admin Center - Team & User Management */}
