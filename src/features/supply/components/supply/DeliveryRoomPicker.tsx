@@ -62,7 +62,7 @@ export function DeliveryRoomPicker({
   ariaLabel = 'Room',
   className,
   triggerClassName,
-  modal = true,
+  modal = false,
 }: DeliveryRoomPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -155,8 +155,6 @@ export function DeliveryRoomPicker({
             aria-expanded={open}
             aria-invalid={invalid || undefined}
             aria-label={ariaLabel}
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
             className={cn(
               'w-full justify-between h-11 font-normal',
               !value && 'text-muted-foreground',
