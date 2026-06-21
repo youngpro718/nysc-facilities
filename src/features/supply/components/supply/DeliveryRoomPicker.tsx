@@ -173,7 +173,7 @@ export function DeliveryRoomPicker({
             which the portaled popover inherits and becomes unclickable. Re-enabling it on the
             content keeps the room search + list usable. */}
         <PopoverContent
-          className="w-[--radix-popover-trigger-width] min-w-[300px] p-0 z-[100] pointer-events-auto"
+          className="w-[--radix-popover-trigger-width] min-w-[300px] p-0 z-[120] pointer-events-auto"
           align="start"
           sideOffset={4}
           collisionPadding={8}
