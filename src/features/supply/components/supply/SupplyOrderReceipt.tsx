@@ -178,24 +178,24 @@ export function SupplyOrderReceipt({
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Submitted:</span>
-            <span className="font-medium">{formatDate(receiptData.timeline.submitted)}</span>
+            <span className="font-medium">{formatDateTime(receiptData.timeline.submitted)}</span>
           </div>
           {receiptData.timeline.approved && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Approved:</span>
-              <span className="font-medium">{formatDate(receiptData.timeline.approved)}</span>
+              <span className="font-medium">{formatDateTime(receiptData.timeline.approved)}</span>
             </div>
           )}
           {receiptData.timeline.ready && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Ready for Pickup:</span>
-              <span className="font-medium">{formatDate(receiptData.timeline.ready)}</span>
+              <span className="font-medium">{formatDateTime(receiptData.timeline.ready)}</span>
             </div>
           )}
           {receiptData.timeline.completed && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Completed:</span>
-              <span className="font-medium">{formatDate(receiptData.timeline.completed)}</span>
+              <span className="font-medium">{formatDateTime(receiptData.timeline.completed)}</span>
             </div>
           )}
         </div>
