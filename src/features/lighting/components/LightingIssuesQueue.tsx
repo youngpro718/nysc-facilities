@@ -137,9 +137,12 @@ export function LightingIssuesQueue() {
               const reporter = [issue.reporter?.first_name, issue.reporter?.last_name].filter(Boolean).join(' ')
                 || issue.reporter?.email
                 || 'Unknown';
-              const location = issue.room?.room_number
+              const baseLocation = issue.room?.room_number
                 ? `Room ${issue.room.room_number}${issue.room.name ? ` — ${issue.room.name}` : ''}`
                 : issue.location_description || 'Location not specified';
+              const location = issue.fixture?.name
+                ? `${baseLocation} · Fixture ${issue.fixture.name}`
+                : baseLocation;
               const status = STATUS_BADGE[issue.status] || { label: issue.status, variant: 'outline' as const };
               const priority = PRIORITY_BADGE[issue.priority];
               const bulbLabel = issue.bulb_type ? BULB_LABEL[issue.bulb_type] : '';
