@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Lightbulb, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryRoomPicker';
+import { useSpaceFixtures } from '@features/lighting/hooks/useLightingData';
 import {
   submitLightingIssue,
   type LightingBulbType,
@@ -65,9 +66,17 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
   const [mode, setMode] = useState<Mode>('pick');
   const [roomId, setRoomId] = useState<string | null>(null);
   const [roomLabel, setRoomLabel] = useState('');
+  const [fixtureId, setFixtureId] = useState<string>('__unsure__');
   const [otherLocation, setOtherLocation] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const { data: roomFixtures = [] } = useSpaceFixtures(roomId ?? '', 'room');
+
+  // Reset fixture selection when room changes
+  useEffect(() => {
+    setFixtureId('__unsure__');
+  }, [roomId]);
 
   const canSubmit = useMemo(() => {
     if (mode === 'pick') return !!roomId;
@@ -93,6 +102,7 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
         description: synthesizedDescription,
         room_id: mode === 'pick' ? roomId : null,
         location_description: mode === 'pick' ? null : otherLocation.trim(),
+        fixture_id: mode === 'pick' && fixtureId !== '__unsure__' ? fixtureId : null,
         bulb_type: bulbType,
         ceiling_access: ceilingAccess,
       });
@@ -108,6 +118,7 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
       setMode('pick');
       setRoomId(null);
       setRoomLabel('');
+      setFixtureId('__unsure__');
       setOtherLocation('');
       setDescription('');
       onSuccess?.();
@@ -145,6 +156,28 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
             placeholder="Search for a room…"
             ariaLabel="Room"
           />
+          {roomId && roomFixtures.length > 0 && (
+            <div className="space-y-1 pt-2">
+              <Label htmlFor="lighting-fixture">Which fixture? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Select value={fixtureId} onValueChange={setFixtureId}>
+                <SelectTrigger id="lighting-fixture" aria-label="Fixture"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__unsure__">Not sure / whole room</SelectItem>
+                  {roomFixtures.map((f) => {
+                    const statusLabel =
+                      f.status === 'non_functional' ? ' · currently out'
+                      : f.status === 'maintenance_needed' ? ' · needs maintenance'
+                      : '';
+                    return (
+                      <SelectItem key={f.id} value={f.id}>
+                        Fixture {f.name}{statusLabel}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => { setMode('other'); setRoomId(null); setRoomLabel(''); }}
