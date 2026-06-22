@@ -81,7 +81,8 @@ export function CreateSpaceDialog() {
     },
     onError: (error) => {
       const errorMessage = getErrorMessage(error) || "Failed to create space";
-      toast.error(errorMessage);
+      // Surface the real cause (RLS, validation, duplicate room number, etc.)
+      toast.error(errorMessage, { duration: 8000 });
     },
   });
 

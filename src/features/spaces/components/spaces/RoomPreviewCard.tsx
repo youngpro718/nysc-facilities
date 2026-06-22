@@ -80,20 +80,12 @@ export function RoomPreviewCard({
     gcTime: QUERY_CONFIG.gc.long,
   });
 
-  // Regenerate room number when floor/building selection actually changes
+  // Regenerate room number only when the user hasn't customized it.
+  // Once the user types anything, we never overwrite — even when floor/building changes.
   useEffect(() => {
-    const floorChanged = floorId !== prevFloorId.current;
-    const buildingChanged = buildingId !== prevBuildingId.current;
     prevFloorId.current = floorId;
     prevBuildingId.current = buildingId;
-
-    // Skip if user manually edited, unless they changed floor/building
-    if (hasManuallyEditedNumber.current && !floorChanged && !buildingChanged) return;
-
-    // Reset manual edit flag when floor/building changes
-    if (floorChanged || buildingChanged) {
-      hasManuallyEditedNumber.current = false;
-    }
+    if (hasManuallyEditedNumber.current) return;
 
     const regenerateRoomNumber = async () => {
       if (floorId && buildingId) {
