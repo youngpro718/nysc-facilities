@@ -48,6 +48,7 @@ export interface LightingIssueRecord {
 export interface StaffLightingIssue extends LightingIssueRecord {
   reporter?: { first_name: string | null; last_name: string | null; email: string } | null;
   room?: { room_number: string | null; name: string | null } | null;
+  fixture?: { name: string | null } | null;
 }
 
 /**
@@ -81,7 +82,8 @@ export async function listLightingIssuesForStaff(): Promise<StaffLightingIssue[]
       resolution_notes, reported_at, resolved_at, created_at, updated_at,
       bulb_type, ceiling_access,
       reporter:profiles!reported_by(first_name, last_name, email),
-      room:rooms(room_number, name)
+      room:rooms(room_number, name),
+      fixture:lighting_fixtures(name)
     `)
     .order('reported_at', { ascending: false });
   if (error) throw error;
