@@ -13,7 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
 import { RoomFormSchema, type RoomFormData, ConnectionDirections } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
-import { RoomEditWizard } from "./forms/room/wizard/RoomEditWizard";
+import { SimplifiedRoomEditor } from "./forms/room/SimplifiedRoomEditor";
 import { storageService } from "@shared/utils/storage";
 import { STORAGE_BUCKETS } from '@/config';
 import { 
@@ -173,9 +173,9 @@ export function EditSpaceDialog({
       );
     }
     
-    // Use the progressive wizard for room editing
+    // Simplified mobile-first editor: Essentials + collapsible "More details"
     return (
-      <RoomEditWizard
+      <SimplifiedRoomEditor
         form={form}
         onSubmit={handleSubmit}
         isPending={editSpaceMutation.isPending}
