@@ -156,6 +156,28 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
             placeholder="Search for a room…"
             ariaLabel="Room"
           />
+          {roomId && roomFixtures.length > 0 && (
+            <div className="space-y-1 pt-2">
+              <Label htmlFor="lighting-fixture">Which fixture? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Select value={fixtureId} onValueChange={setFixtureId}>
+                <SelectTrigger id="lighting-fixture" aria-label="Fixture"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__unsure__">Not sure / whole room</SelectItem>
+                  {roomFixtures.map((f) => {
+                    const statusLabel =
+                      f.status === 'non_functional' ? ' · currently out'
+                      : f.status === 'maintenance_needed' ? ' · needs maintenance'
+                      : '';
+                    return (
+                      <SelectItem key={f.id} value={f.id}>
+                        Fixture {f.name}{statusLabel}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => { setMode('other'); setRoomId(null); setRoomLabel(''); }}
