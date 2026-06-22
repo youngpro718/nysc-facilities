@@ -153,8 +153,21 @@ export function LightingRoomsTable() {
                         {r.floor_name ?? '—'}
                         {r.building_name && <span className="ml-1">· {r.building_name}</span>}
                       </td>
-                      <td className="px-2 py-2 align-middle">
-                        <Select
+                      <td className="px-2 py-2 align-middle text-xs">
+                        {r.fixture_count === 0 ? (
+                          <span className="text-muted-foreground">None tracked</span>
+                        ) : (
+                          <span>
+                            <span className="font-medium text-foreground">{r.fixture_count}</span>
+                            {r.out_count > 0 && (
+                              <span className="ml-1 text-red-700">· {r.out_count} out</span>
+                            )}
+                            {r.maintenance_count > 0 && (
+                              <span className="ml-1 text-amber-700">· {r.maintenance_count} maint.</span>
+                            )}
+                          </span>
+                        )}
+                      </td>
                           value={bulb}
                           onValueChange={(v) => save(r, { bulb_type: v as RoomBulbType, led_converted: v === 'led' || (led && v !== 'unknown') })}
                         >
