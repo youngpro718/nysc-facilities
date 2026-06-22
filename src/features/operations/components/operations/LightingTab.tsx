@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Plus, Lightbulb } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RefreshCw, Plus, Lightbulb, Map, ListTodo } from 'lucide-react';
 import { LightingStatsBar } from '../lighting/LightingStatsBar';
 import { LightingFixtureTable } from '../lighting/LightingFixtureTable';
 import { useLightingQueue } from '@/features/lighting/hooks/useLightingData';
 import { LightingIssuesQueue } from '@features/lighting/components/LightingIssuesQueue';
+import { LightingCoverageView } from '@features/lighting/components/LightingCoverageView';
+import { LightingRoomsTable } from '@features/lighting/components/LightingRoomsTable';
 
 interface LightingTabProps {
   buildingId?: string;
@@ -14,7 +17,8 @@ interface LightingTabProps {
 
 export function LightingTab({ buildingId, onRefresh }: LightingTabProps) {
   const [needsElectricianFilter, setNeedsElectricianFilter] = useState(false);
-  
+  const [subTab, setSubTab] = useState<'issues' | 'coverage' | 'rooms'>('issues');
+
   const { data: lightingIssues = [], isLoading, refetch } = useLightingQueue(buildingId);
 
   // Calculate stats
@@ -60,44 +64,60 @@ export function LightingTab({ buildingId, onRefresh }: LightingTabProps) {
         </div>
       </div>
 
-      {/* User-reported lighting issues queue — top of the page so the
-          Facility Coordinator sees it first when they land on this tab. */}
-      <LightingIssuesQueue />
+      <Tabs value={subTab} onValueChange={(v) => setSubTab(v as typeof subTab)} className="w-full">
+        <TabsList>
+          <TabsTrigger value="issues" className="gap-1.5">
+            <ListTodo className="h-4 w-4" /> Issues
+          </TabsTrigger>
+          <TabsTrigger value="coverage" className="gap-1.5">
+            <Lightbulb className="h-4 w-4" /> Coverage
+          </TabsTrigger>
+          <TabsTrigger value="rooms" className="gap-1.5">
+            <Map className="h-4 w-4" /> Rooms
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Stats Bar */}
-      <LightingStatsBar stats={stats} isLoading={isLoading} />
+        <TabsContent value="issues" className="mt-4 space-y-6">
+          {/* User-reported queue first — the FC's daily inbox */}
+          <LightingIssuesQueue />
 
-      {/* Filter Toggle */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant={needsElectricianFilter ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setNeedsElectricianFilter(!needsElectricianFilter)}
-        >
-          {needsElectricianFilter ? 'Showing: ' : 'Filter: '}Needs Electrician
-          {needsElectricianFilter && ` (${stats.needsElectrician})`}
-        </Button>
-        {needsElectricianFilter && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setNeedsElectricianFilter(false)}
-          >
-            Clear Filter
-          </Button>
-        )}
-      </div>
+          <LightingStatsBar stats={stats} isLoading={isLoading} />
 
-      {/* Fixture Table */}
-      <Card>
-        <CardContent className="p-0">
-          <LightingFixtureTable
-            fixtures={filteredIssues}
-            isLoading={isLoading}
-            onRefresh={handleRefresh}
-          />
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={needsElectricianFilter ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setNeedsElectricianFilter(!needsElectricianFilter)}
+            >
+              {needsElectricianFilter ? 'Showing: ' : 'Filter: '}Needs Electrician
+              {needsElectricianFilter && ` (${stats.needsElectrician})`}
+            </Button>
+            {needsElectricianFilter && (
+              <Button variant="ghost" size="sm" onClick={() => setNeedsElectricianFilter(false)}>
+                Clear Filter
+              </Button>
+            )}
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <LightingFixtureTable
+                fixtures={filteredIssues}
+                isLoading={isLoading}
+                onRefresh={handleRefresh}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="coverage" className="mt-4">
+          <LightingCoverageView />
+        </TabsContent>
+
+        <TabsContent value="rooms" className="mt-4">
+          <LightingRoomsTable />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
