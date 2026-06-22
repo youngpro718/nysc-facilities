@@ -168,6 +168,8 @@ export function LightingRoomsTable() {
                           </span>
                         )}
                       </td>
+                      <td className="px-2 py-2 align-middle">
+                        <Select
                           value={bulb}
                           onValueChange={(v) => save(r, { bulb_type: v as RoomBulbType, led_converted: v === 'led' || (led && v !== 'unknown') })}
                         >
