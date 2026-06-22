@@ -1,122 +1,79 @@
-## What you reported
+## Audit findings — Lighting + Spaces
 
-1. **Mobile quick-create errors on certain room types** (e.g. utility room) even though desktop works.
-2. **Room number gets overwritten when you change the floor** during quick-create.
-3. **Too many room types in the picker** — most aren't used in real life.
-4. **Edit screen is overwhelming** — too many fields/options, especially on a phone.
-5. **General room photo upload doesn't work** on non-courtroom rooms (photo never appears).
-6. **Lighting management is too shallow** — no fixture count per room, no way to label/track individual fixtures, no history of repeat issues per fixture.
+I went through the lighting code end-to-end (DB schema, RLS, services, hooks, and the new RoomFixturesPanel/editor) and cross-referenced it against the rooms tables. Here is what I found and what I want to fix. Nothing else outside lighting is being touched.
 
-Below is a focused plan to address each one. The work is grouped so each piece is independently shippable.
+### 1. RLS gap — Court Officers can't actually use the new fixtures panel
+- `lighting_fixtures` write policy uses `is_privileged()`, which only includes `admin / system_admin / facilities_manager / cmc / court_liaison`.
+- Migration 057 explicitly says Court Officers should manage lighting (walkthroughs + fixtures) via `is_building_staff()`.
+- Result: a Court Officer opening the new editor and tapping **Add fixture** or changing a status will get a silent RLS rejection.
+- **Fix:** new migration that replaces the `lighting_fixtures` write policy with `is_building_staff()` (admin, system_admin, facilities_manager, court_officer) plus keeps cmc/court_liaison via a second policy if still needed. Read policy unchanged.
 
----
+### 2. Reporters still can't pick a specific fixture when reporting an issue
+- We added A1/A2/A3 labels to fixtures, but `LightingIssueForm` never lets the reporter choose one. The whole point of labeling was to tie reports to a fixture.
+- **Fix:** after a room is picked in the report form, show a fixture picker populated from `useSpaceFixtures(roomId, 'room')`:
+  - Default option: "Not sure / whole room"
+  - Then `A1`, `A2`, `A3`… with their current status next to them ("A2 · was out 3 days ago")
+  - Selected value is sent as `fixture_id` (already supported in `submitLightingIssue`).
+- Auto-bumps `times_scanned` so the repeat-offender badge is fed from real reports, not just walkthroughs.
 
-## Part 1 — Quick-create on mobile (bugs)
+### 3. Room lighting profile is missing the data we promised
+- `room_lighting_profiles` has no `fixture_count` column (the plan said we'd add it). Rather than store-and-drift, derive it.
+- **Fix:** create a SQL view `room_lighting_profile_summary` that joins `room_lighting_profiles` to a `COUNT(*)` over `lighting_fixtures` per `space_id`, plus counts by status (functional / out / maintenance_needed). Use it in `LightingRoomsTable` so admins finally see "Room 510 — 4 fixtures, 1 out" at a glance.
 
-**1a. Fix "utility room" / storage template error**
-Quick-create sends `storageType: 'general'` for utility/filing rooms, but the discriminated schema also requires `status` to default and `storageCapacity` to be valid. The mutation likely fails on Zod validation for one of those fields when the template defaults are stale.
+### 4. Editor fixture panel is too shallow
+Currently each fixture only exposes status + delete. Real-life triage needs:
+- `bulb_count` (a fluorescent fixture is often 2–4 tubes, not 1)
+- `ballast_issue` and `requires_electrician` toggles (these already exist on the table and drive the repeat-offender heuristic, but the UI never sets them)
+- `notes`
+- **Fix:** expand each row into a collapsible "Details" with these three controls. Keep the row compact by default (label + status + repeat badge).
 
-- Trace the exact error (capture toast + console) by reproducing in the sandbox.
-- Make `storageType`, `storageCapacity`, and `storageNotes` always optional/nullable in `createSpaceSchema` for the `room` variant, and stop sending `as any` casts from `QuickSpaceTemplates`.
-- Add a clearer error toast that shows the validation message (today it's swallowed by `getErrorMessage` returning generic text).
+### 5. Issues queue doesn't show which fixture
+`LightingIssuesQueue` only shows the room. When a report comes in tagged to A2, the FC can't see it.
+- **Fix:** join `lighting_fixtures(name)` on `fixture_id` in `listLightingIssuesForStaff`, and render `"Room 510 · Fixture A2"` when present.
 
-**1b. Stop room number from changing when floor changes**
-Per existing memory rule (Room Number Input Integrity), manual entries must win. In `RoomPreviewCard.tsx` the smart-number regenerator currently resets `hasManuallyEditedNumber` whenever floor/building changes — that's why a typed number gets wiped.
+### 6. Small correctness fixes in the new panel
+- `nextLabel` doesn't handle deletions cleanly (it does, actually — uses Set lookup — but I'll add a unit-safe sort so labels stay numeric, e.g. A10 doesn't sort between A1 and A2 visually). Already using `numeric: true` — keep as is, just confirmed.
+- `handleStatusChange` always sends `ballast_issue: false` and `requires_electrician: false`, which silently *clears* those flags every time someone toggles status. Fix: only send fields the user actually changed (use the mutation with a true patch, not a reset).
+- `handleDelete` uses `confirm()`; on iOS PWA this is jarring. Replace with the existing `AlertDialog` component used elsewhere in the project.
 
-- Only regenerate the number when (a) the user hasn't touched it AND (b) the current value is still the previously-suggested value. If the user typed anything custom, never overwrite — even across floor changes.
-- When the user does change the floor and the number is still auto-generated, regenerate silently; otherwise leave the typed value alone and show a small "Suggest new number" link they can tap if they want.
+### Technical details
 
----
+**Migration (1 file):**
+```sql
+-- replace privileged write policy with building-staff write policy
+DROP POLICY lighting_fixtures_privileged_all ON public.lighting_fixtures;
+CREATE POLICY lighting_fixtures_building_staff_write
+  ON public.lighting_fixtures FOR ALL TO authenticated
+  USING (is_building_staff()) WITH CHECK (is_building_staff());
 
-## Part 2 — Trim the room-type list
+-- summary view for admin table
+CREATE OR REPLACE VIEW public.room_lighting_profile_summary
+WITH (security_invoker=on) AS
+SELECT
+  r.id AS room_id,
+  rlp.bulb_type, rlp.ceiling_access, rlp.led_converted, rlp.notes,
+  COUNT(lf.id)                                          AS fixture_count,
+  COUNT(lf.id) FILTER (WHERE lf.status='functional')    AS functional_count,
+  COUNT(lf.id) FILTER (WHERE lf.status='non_functional') AS out_count,
+  COUNT(lf.id) FILTER (WHERE lf.status='maintenance_needed') AS maintenance_count
+FROM public.rooms r
+LEFT JOIN public.room_lighting_profiles rlp ON rlp.room_id = r.id
+LEFT JOIN public.lighting_fixtures lf ON lf.space_id = r.id AND lf.space_type='room'
+GROUP BY r.id, rlp.bulb_type, rlp.ceiling_access, rlp.led_converted, rlp.notes;
 
-Keep only the types staff actually use day-to-day. Proposed shortlist (everything else stays in the DB enum so historical rooms aren't broken, but is hidden from the picker):
+GRANT SELECT ON public.room_lighting_profile_summary TO authenticated;
+```
 
-Visible in the create/edit dropdown:
-- Courtroom
-- Judges' Chambers
-- Jury Room
-- Office (general)
-- Conference Room
-- Break Room
-- Filing / Records Room (merged label)
-- Utility / Storage Room (merged label)
-- IT Room
+**Frontend (focused edits, no rewrites):**
+- `src/features/lighting/components/LightingIssueForm.tsx` — add fixture picker block.
+- `src/features/lighting/components/RoomFixturesPanel.tsx` — collapsible details (bulb count, ballast, notes), AlertDialog delete, surgical status patch.
+- `src/features/lighting/components/LightingIssuesQueue.tsx` — show fixture label.
+- `src/features/lighting/services/lightingIssueService.ts` — extend select to include `fixture:lighting_fixtures(name)`.
+- `src/features/lighting/services/roomLightingProfileService.ts` + `LightingRoomsTable.tsx` — read the new view and show fixture counts.
 
-Hidden by default (still selectable via an "Other / advanced" expandable section):
-- Chamber, Robing Room, Male/Female Locker Room, Stake Holder, Administrative Office, Laboratory, Conference (legacy duplicate)
+### Out of scope (call out, not touching)
+- Bulk fixture creation / import — not asked for.
+- Walkthrough flow changes — the existing walkthrough UI is unaffected and still wired to `space_id` correctly.
+- The 2 stale rows that have `room_id` set but no `space_id` (DB inspection confirmed only 2 of 155 fixtures). I can clean these up in the same migration if you want — say the word.
 
-Implementation:
-- Add a `VISIBLE_ROOM_TYPES` constant; `BasicRoomFields` and `QuickSpaceTemplates` filter against it.
-- Edit screen shows the current type even if it's "hidden," so legacy rooms still display correctly.
-
-I'll confirm the exact shortlist with you before shipping.
-
----
-
-## Part 3 — Simplify the edit screen
-
-The current edit uses a 7-step wizard (Core Identity → Capacity → Occupancy → Issues → Photos → Maintenance → Finishes). On mobile this is heavy.
-
-Proposal:
-- **Default view = "Essentials" only:** Room number, name, type, floor, phone, description, status. One screen, no wizard.
-- **"More details" expandable section** below it for: capacity, occupancy, photos, maintenance, finishes. Each is a collapsible card so people only open what they need.
-- Keep the wizard available on desktop for power users via an "Advanced editor" link, but it's no longer the default.
-- For courtrooms, automatically expand Capacity (juror/spectator) and Photos since they matter there.
-
----
-
-## Part 4 — Fix non-courtroom photo upload
-
-`GeneralRoomPhotoUpload` gates the uploader on `roomId && isAuthenticated`. In the create flow there is no room ID yet, so the uploader never shows — that matches what you saw.
-
-Fixes:
-- During **create**, photos should be buffered locally and uploaded right after the room insert succeeds (same pattern courtroom photos use).
-- During **edit**, verify the `room-photos` storage bucket exists (the `roomPhotos` constant points at it) and that RLS lets the user upload to `<roomId>/`. If the bucket is missing, create it via migration with proper policies.
-- Add a visible upload progress + error toast so failures aren't silent.
-
-You also asked whether to keep the feature for offices at all. I'd recommend keeping it but making it optional/collapsed — useful for documenting damage, layout, before/after photos.
-
----
-
-## Part 5 — Lighting: fixture count + per-fixture tracking
-
-Today `room_lighting_profiles` only stores bulb type and ceiling access. `lighting_fixtures` exists as a richer table but isn't wired into the per-room UI you've been using.
-
-Proposed model:
-- **Per-room summary:** add `fixture_count` (integer) to `room_lighting_profiles` so admins can record "this office has 4 fixtures" quickly.
-- **Per-fixture detail (optional drill-down):** use the existing `lighting_fixtures` table. From the room's lighting panel, show a list like:
-  - Fixture A1 — LED — OK
-  - Fixture A2 — LED — Out (reported 3 times in 90 days)
-  - Fixture A3 — Fluorescent — Ballast issue
-- Each fixture row links to its issue history (already tracked in `lighting_issues`), with a "repeat offender" badge when ≥3 issues in the last 90 days.
-- When a user reports a lighting issue, let them pick which fixture (A1, A2…) instead of just "the room." Default to "Not sure" so it stays one-tap fast.
-
-UI flow:
-1. Open a room's lighting card → see fixture count + a small grid of fixture chips.
-2. Tap a chip → see that fixture's status, bulb type, and issue history.
-3. "Report issue" prefilled with that fixture.
-
-I'll confirm naming convention (A1/A2 vs. "Front-left / Back-right") with you before building.
-
----
-
-## Technical notes
-
-- New migration: add `fixture_count` to `room_lighting_profiles`; add `position_label` (text) to `lighting_fixtures` and a `room_id` index if missing. Include GRANTs for `authenticated` + `service_role` and RLS policies (read = authenticated, write = admin/facilities_manager).
-- New migration: relax `createSpaceSchema` storage fields (frontend-only — no DB change needed; just code).
-- Frontend: new `RoomTypePicker` shared component used by both quick-create and the edit form so the shortlist stays in one place.
-- Frontend: refactor `EditSpaceDialog` to default to a single-screen "Essentials" form; existing `RoomEditWizard` becomes opt-in.
-- Frontend: rework `GeneralRoomPhotoUpload` to support pre-save buffering.
-- Frontend: new `RoomFixturesPanel` inside the lighting module, plus an "Assign fixture" select on the lighting issue report form.
-
----
-
-## Suggested order
-
-1. Bug fixes (Part 1) + photo upload fix (Part 4) — quick wins.
-2. Trim room-type list (Part 2) — small, high-impact.
-3. Edit screen simplification (Part 3).
-4. Lighting fixture tracking (Part 5) — biggest piece, build last.
-
-Want me to proceed with all five, or start with just the bug fixes + room-type trim first so you can sanity-check the direction?
+OK to proceed with all six fixes?
