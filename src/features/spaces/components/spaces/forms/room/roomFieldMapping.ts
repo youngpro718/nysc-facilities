@@ -110,7 +110,7 @@ export function formToDbRoom(formData: RoomFormData): Partial<DatabaseRoom> {
     capacity_size_category: formData.capacitySizeCategory ? capacitySizeCategoryToString(formData.capacitySizeCategory) : "medium",
     temporary_storage_use: formData.temporaryStorageUse || false,
     courtroom_photos: formData.courtroom_photos || null,
-    general_photos: formData.generalPhotos || [],
+    general_photos: (formData.generalPhotos || []).filter((p): p is { url: string; caption?: string | null; uploadedAt?: string | null } => !!p?.url),
     position: formData.position ? { x: formData.position.x || 0, y: formData.position.y || 0 } : { x: 0, y: 0 },
     size: formData.size ? { width: formData.size.width || 150, height: formData.size.height || 100 } : { width: 150, height: 100 },
     rotation: formData.rotation || 0,
