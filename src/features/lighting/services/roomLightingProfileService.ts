@@ -34,11 +34,15 @@ export interface RoomWithProfile {
     notes: string | null;
     updated_at: string | null;
   } | null;
+  fixture_count: number;
+  functional_count: number;
+  out_count: number;
+  maintenance_count: number;
 }
 
 /**
  * Every room (active, with a room_number) joined with its lighting profile if
- * one exists. Powers the Rooms management table + Coverage rollups.
+ * one exists, plus per-room fixture counts from the summary view.
  */
 export async function listRoomsWithLightingProfiles(): Promise<RoomWithProfile[]> {
   const { data: rooms, error: roomsErr } = await supabase
@@ -59,12 +63,19 @@ export async function listRoomsWithLightingProfiles(): Promise<RoomWithProfile[]
     .select('room_id, bulb_type, ceiling_access, led_converted, notes, updated_at');
   if (profilesErr) throw profilesErr;
 
+  const { data: summary, error: summaryErr } = await supabase
+    .from('room_lighting_profile_summary')
+    .select('room_id, fixture_count, functional_count, out_count, maintenance_count');
+  if (summaryErr) throw summaryErr;
+
   const profileMap = new Map((profiles || []).map((p: any) => [p.room_id, p]));
+  const summaryMap = new Map((summary || []).map((s: any) => [s.room_id, s]));
 
   return (rooms || []).map((r: any) => {
     const floor = Array.isArray(r.floor) ? r.floor[0] : r.floor;
     const building = floor ? (Array.isArray(floor.building) ? floor.building[0] : floor.building) : null;
     const profile = profileMap.get(r.id) || null;
+    const s = summaryMap.get(r.id);
     return {
       id: r.id,
       room_number: r.room_number,
@@ -74,6 +85,10 @@ export async function listRoomsWithLightingProfiles(): Promise<RoomWithProfile[]
       building_id: building?.id ?? null,
       building_name: building?.name ?? null,
       profile,
+      fixture_count: Number(s?.fixture_count ?? 0),
+      functional_count: Number(s?.functional_count ?? 0),
+      out_count: Number(s?.out_count ?? 0),
+      maintenance_count: Number(s?.maintenance_count ?? 0),
     } as RoomWithProfile;
   });
 }
