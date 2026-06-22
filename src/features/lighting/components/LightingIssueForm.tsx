@@ -102,6 +102,7 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
         description: synthesizedDescription,
         room_id: mode === 'pick' ? roomId : null,
         location_description: mode === 'pick' ? null : otherLocation.trim(),
+        fixture_id: mode === 'pick' && fixtureId !== '__unsure__' ? fixtureId : null,
         bulb_type: bulbType,
         ceiling_access: ceilingAccess,
       });
@@ -117,6 +118,7 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
       setMode('pick');
       setRoomId(null);
       setRoomLabel('');
+      setFixtureId('__unsure__');
       setOtherLocation('');
       setDescription('');
       onSuccess?.();
