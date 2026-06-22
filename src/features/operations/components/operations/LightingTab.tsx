@@ -5,6 +5,7 @@ import { RefreshCw, Plus, Lightbulb } from 'lucide-react';
 import { LightingStatsBar } from '../lighting/LightingStatsBar';
 import { LightingFixtureTable } from '../lighting/LightingFixtureTable';
 import { useLightingQueue } from '@/features/lighting/hooks/useLightingData';
+import { LightingIssuesQueue } from '@features/lighting/components/LightingIssuesQueue';
 
 interface LightingTabProps {
   buildingId?: string;
@@ -58,6 +59,10 @@ export function LightingTab({ buildingId, onRefresh }: LightingTabProps) {
           </Button>
         </div>
       </div>
+
+      {/* User-reported lighting issues queue — top of the page so the
+          Facility Coordinator sees it first when they land on this tab. */}
+      <LightingIssuesQueue />
 
       {/* Stats Bar */}
       <LightingStatsBar stats={stats} isLoading={isLoading} />

@@ -51,6 +51,7 @@ const Operations = lazy(() => import("@features/operations/pages/Operations"));
 const Keys = lazy(() => import("@features/keys/pages/Keys"));
 const KeysKiosk = lazy(() => import("@features/keys/pages/KeysKiosk"));
 const KeyRequestPage = lazy(() => import("@features/keys/pages/KeyRequestPage"));
+const LightingReportPage = lazy(() => import("@features/lighting/pages/LightingReportPage"));
 const Profile = lazy(() => import("@features/profile/pages/Profile"));
 const MyIssues = lazy(() => import("@features/issues/pages/MyIssues"));
 const MyRequests = lazy(() => import("@features/dashboard/pages/MyRequests"));
@@ -167,6 +168,11 @@ function AppContent() {
           <Route path="/keys/request" element={
             <ProtectedRoute>
               <KeyRequestPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/lighting/report" element={
+            <ProtectedRoute>
+              <LightingReportPage />
             </ProtectedRoute>
           } />
           {/* Admin Center - Team & User Management */}

@@ -16,7 +16,7 @@ import { AppSidebar } from "./components/AppSidebar";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@features/admin/components/admin/NotificationBox";
-import { RefreshCw, Search, Package, AlertTriangle, ClipboardList, KeyRound } from "lucide-react";
+import { RefreshCw, Search, Package, AlertTriangle, ClipboardList, KeyRound, Lightbulb } from "lucide-react";
 import { QuickIssueReportButton } from "@shared/components/user/QuickIssueReportButton";
 import { GlobalSearchPalette } from "./components/GlobalSearchPalette";
 import { Button } from "@/components/ui/button";
@@ -245,6 +245,16 @@ function LayoutContent() {
                     >
                       <KeyRound className="h-4 w-4 sm:mr-1.5" />
                       <span className="hidden sm:inline">Request a Key</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
+                      onClick={() => navigate('/lighting/report')}
+                      title="Report Lighting"
+                    >
+                      <Lightbulb className="h-4 w-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Report Lighting</span>
                     </Button>
                   </>
                 )}
