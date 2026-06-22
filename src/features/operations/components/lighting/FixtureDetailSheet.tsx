@@ -33,7 +33,10 @@ interface FixtureDetailSheetProps {
 }
 
 export function FixtureDetailSheet({ fixture, open, onOpenChange, onUpdate }: FixtureDetailSheetProps) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isFacilitiesManager } = useAuth();
+  // The Facility Coordinator (facilities_manager) is the role that actually
+  // resolves lighting work, so they get the same edit access as an admin.
+  const canEditStatus = isAdmin || isFacilitiesManager;
   const [status, setStatus] = useState<LightStatus>(fixture.status);
   const [notes, setNotes] = useState(fixture.notes || '');
   const [isEditing, setIsEditing] = useState(false);
@@ -167,8 +170,8 @@ export function FixtureDetailSheet({ fixture, open, onOpenChange, onUpdate }: Fi
             </div>
           </div>
 
-          {/* Admin Update Form */}
-          {isAdmin && (
+          {/* Status Update Form (admin + facilities coordinator) */}
+          {canEditStatus && (
             <>
               <Separator />
               <div className="space-y-4">

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RefreshCw, Plus, Lightbulb, Map, ListTodo } from 'lucide-react';
+import { RefreshCw, Lightbulb, Map, ListTodo } from 'lucide-react';
 import { LightingStatsBar } from '../lighting/LightingStatsBar';
 import { LightingFixtureTable } from '../lighting/LightingFixtureTable';
 import { useLightingQueue } from '@/features/lighting/hooks/useLightingData';
@@ -57,10 +57,8 @@ export function LightingTab({ buildingId, onRefresh }: LightingTabProps) {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button size="sm" disabled>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Fixture
-          </Button>
+          {/* Fixtures are added per-room from the room editor (which carries the
+              required space/floor/building context) — no standalone add here. */}
         </div>
       </div>
 
