@@ -1,4 +1,5 @@
-import { ChevronLeft, Users, AlertCircle, Search, RefreshCw, MoreVertical, Mail, UserX, UserCheck, Clock, Unlock, CheckCircle, Ban, Trash2, Settings, KeyRound } from 'lucide-react';
+import { ChevronLeft, Users, AlertCircle, Search, RefreshCw, MoreVertical, Mail, UserX, UserCheck, Clock, Unlock, CheckCircle, Ban, Trash2, Settings, KeyRound, UsersRound } from 'lucide-react';
+import { SetSupervisorDialog } from '@features/admin/components/SetSupervisorDialog';
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
@@ -50,6 +51,7 @@ interface UserProfile {
   role?: UserRole;
   requested_role?: string | null;
   bypass_supply_order_code?: boolean;
+  supervisor_id?: string | null;
 }
 
 function SystemSettingsContent() {
@@ -308,6 +310,8 @@ export default function AdminCenter() {
       setUpdatingUserId(null);
     }
   };
+
+  const [supervisorTarget, setSupervisorTarget] = useState<{ id: string; name: string; current: string | null } | null>(null);
 
   const handleToggleCodeBypass = async (userId: string, userName: string, nextValue: boolean) => {
     try {
@@ -739,6 +743,16 @@ export default function AdminCenter() {
                                 ? 'Require code prompt'
                                 : 'Allow without code prompt'}
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setSupervisorTarget({
+                                id: user.id,
+                                name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+                                current: user.supervisor_id ?? null,
+                              })}
+                            >
+                              <UsersRound className="h-4 w-4 mr-2" />
+                              {user.supervisor_id ? 'Change supervisor' : 'Set supervisor'}
+                            </DropdownMenuItem>
                             {!isCurrentUser && (
                               <>
                                 <DropdownMenuSeparator />
@@ -775,6 +789,16 @@ export default function AdminCenter() {
         </TabsContent>
       </Tabs>
       {confirmDeleteDialog}
+      {supervisorTarget && (
+        <SetSupervisorDialog
+          open={!!supervisorTarget}
+          onOpenChange={(open) => { if (!open) setSupervisorTarget(null); }}
+          userId={supervisorTarget.id}
+          userLabel={supervisorTarget.name}
+          currentSupervisorId={supervisorTarget.current}
+          onSaved={() => loadUsers(true)}
+        />
+      )}
     </div>
   );
 }
