@@ -37,6 +37,7 @@ export interface DatabaseRoom {
     judge_view?: string[];
     audience_view?: string[];
   };
+  general_photos?: Array<{ url: string; caption?: string | null; uploadedAt?: string | null }>;
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
@@ -79,6 +80,7 @@ export function dbToFormRoom(dbRoom: Partial<DatabaseRoom>, roomId?: string): Pa
     capacitySizeCategory: dbRoom.capacity_size_category ? stringToCapacitySizeCategory(dbRoom.capacity_size_category) : CapacitySizeCategoryEnum.MEDIUM,
     temporaryStorageUse: dbRoom.temporary_storage_use || false,
     courtroom_photos: dbRoom.courtroom_photos || null,
+    generalPhotos: dbRoom.general_photos || [],
     connections: [], // This would need to be fetched separately
     position: dbRoom.position || { x: 0, y: 0 },
     size: dbRoom.size || { width: 150, height: 100 },
@@ -108,6 +110,7 @@ export function formToDbRoom(formData: RoomFormData): Partial<DatabaseRoom> {
     capacity_size_category: formData.capacitySizeCategory ? capacitySizeCategoryToString(formData.capacitySizeCategory) : "medium",
     temporary_storage_use: formData.temporaryStorageUse || false,
     courtroom_photos: formData.courtroom_photos || null,
+    general_photos: formData.generalPhotos || [],
     position: formData.position ? { x: formData.position.x || 0, y: formData.position.y || 0 } : { x: 0, y: 0 },
     size: formData.size ? { width: formData.size.width || 150, height: formData.size.height || 100 } : { width: 150, height: 100 },
     rotation: formData.rotation || 0,

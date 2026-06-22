@@ -1,10 +1,12 @@
-
+import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { RoomTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
+import { Button } from "@/components/ui/button";
+import { RoomTypeEnum } from "../../rooms/types/roomEnums";
+import { VISIBLE_ROOM_TYPES, ADVANCED_ROOM_TYPES, formatRoomTypeLabel } from "../../rooms/types/visibleRoomTypes";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -13,6 +15,10 @@ interface BasicRoomFieldsProps {
 }
 
 export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
+  const currentType = form.watch("roomType");
+  const currentIsAdvanced = currentType && ADVANCED_ROOM_TYPES.includes(currentType as RoomTypeEnum);
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(!!currentIsAdvanced);
+
   return (
     <Card>
       <CardHeader>
@@ -47,13 +53,34 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {Object.values(RoomTypeEnum).map((type) => (
+                    {VISIBLE_ROOM_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        {formatRoomTypeLabel(type)}
                       </SelectItem>
                     ))}
+                    {showAdvanced && (
+                      <>
+                        <SelectSeparator />
+                        {ADVANCED_ROOM_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {formatRoomTypeLabel(type)}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
+                {!showAdvanced && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="px-0 h-auto text-xs"
+                    onClick={() => setShowAdvanced(true)}
+                  >
+                    Show more room types
+                  </Button>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -67,10 +94,10 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
             <FormItem>
               <FormLabel>Phone Number</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="e.g. (555) 123-4567" 
-                  {...field} 
-                  value={field.value || ''} 
+                <Input
+                  placeholder="e.g. (555) 123-4567"
+                  {...field}
+                  value={field.value || ''}
                 />
               </FormControl>
               <FormMessage />
@@ -85,10 +112,10 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Enter room description" 
-                  {...field} 
-                  value={field.value || ''} 
+                <Textarea
+                  placeholder="Enter room description"
+                  {...field}
+                  value={field.value || ''}
                   className="min-h-[100px]"
                 />
               </FormControl>
