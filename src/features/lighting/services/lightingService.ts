@@ -106,6 +106,7 @@ export interface UpdateFixtureStatusPayload {
   notes?: string;
   ballast_issue?: boolean;
   requires_electrician?: boolean;
+  bulb_count?: number;
   resolved_at?: string;
 }
 
