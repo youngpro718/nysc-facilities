@@ -53,6 +53,7 @@ type InventoryItem = {
   storage_room_id: string;
   created_at: string;
   updated_at: string;
+  requires_justification: boolean | null;
 };
 
 type InventoryCategory = {
