@@ -8,34 +8,30 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@features/auth/hooks/useAuth';
-import { useOccupantAssignments } from '@features/occupants/hooks/useOccupantAssignments';
 import { submitKeyRequest } from '@features/keys/services/keyRequestService';
+import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryRoomPicker';
 import { supabase } from '@/lib/supabase';
 
 export type KeyRequestType = 'new' | 'spare' | 'replacement' | 'temporary';
 
 interface KeyRequestFormProps {
-  /**
-   * Called after a successful submit. Use this to close a dialog or navigate
-   * away. The form itself only resets local state.
-   */
+  /** Called after a successful submit. Use this to close a dialog or navigate. */
   onSuccess?: () => void;
-  /**
-   * Called when the user clicks the secondary "Cancel" button. If omitted the
-   * button is hidden — page contexts (vs. dialog) typically don't need it.
-   */
+  /** Called when the user clicks the secondary "Cancel" button. */
   onCancel?: () => void;
   /** Visual variant — page uses a fuller layout, dialog stays compact. */
   variant?: 'page' | 'dialog';
 }
 
+type Mode = 'pick' | 'other';
+
 export function KeyRequestForm({ onSuccess, onCancel, variant = 'dialog' }: KeyRequestFormProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: assignments } = useOccupantAssignments(user?.id || '');
-  const rooms = assignments?.roomAssignments ?? [];
   const [requestType, setRequestType] = useState<KeyRequestType>('new');
-  const [roomId, setRoomId] = useState('');
+  const [mode, setMode] = useState<Mode>('pick');
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomLabel, setRoomLabel] = useState('');
   const [otherLocation, setOtherLocation] = useState('');
   const [reason, setReason] = useState('');
   const [quantity, setQuantity] = useState('1');
@@ -53,28 +49,17 @@ export function KeyRequestForm({ onSuccess, onCancel, variant = 'dialog' }: KeyR
     },
   });
 
-  const selectedRoom = useMemo(
-    () => rooms.find((room) => room.room_id === roomId),
-    [roomId, rooms],
-  );
-
-  const reset = () => {
-    setRequestType('new');
-    setRoomId('');
-    setOtherLocation('');
-    setReason('');
-    setQuantity('1');
-    setContact('');
-  };
+  const canSubmit = useMemo(() => {
+    if (mode === 'pick') return !!roomId;
+    return otherLocation.trim().length > 0 && reason.trim().length > 0;
+  }, [mode, roomId, otherLocation, reason]);
 
   const handleSubmit = async () => {
     if (!user?.id) return;
-    if (!roomId && !otherLocation.trim()) {
-      toast.error('Choose a room or describe the key location.');
-      return;
-    }
-    if (!reason.trim()) {
-      toast.error('Tell the key office why the key is needed.');
+    if (!canSubmit) {
+      toast.error(mode === 'pick'
+        ? 'Pick a room.'
+        : 'Describe the location and why the key is needed.');
       return;
     }
 
@@ -83,18 +68,31 @@ export function KeyRequestForm({ onSuccess, onCancel, variant = 'dialog' }: KeyR
       await submitKeyRequest({
         user_id: user.id,
         request_type: requestType,
-        room_id: roomId || null,
-        room_other: roomId ? null : otherLocation.trim(),
-        reason: reason.trim(),
-        quantity: Math.max(1, Number.parseInt(quantity, 10) || 1),
+        room_id: mode === 'pick' ? roomId : null,
+        room_other: mode === 'pick' ? null : otherLocation.trim(),
+        // Database NOT NULL constraint on reason — synthesize a default when the
+        // user picked a room from the list (the room itself IS the reason).
+        reason: mode === 'pick'
+          ? `Key for ${roomLabel || 'selected room'}`
+          : reason.trim(),
+        quantity: Math.max(1, Math.min(10, Number.parseInt(quantity, 10) || 1)),
         emergency_contact: contact.trim() || null,
       });
       await queryClient.invalidateQueries({ queryKey: ['key-requests', user.id] });
+      await queryClient.invalidateQueries({ queryKey: ['key-requests-pending-count'] });
       await queryClient.invalidateQueries({ queryKey: ['my-requests', user.id] });
       toast.success('Key request sent', {
-        description: 'The key office will review it shortly. You can track it under My Requests.',
+        description: 'The Facility Coordinator will review it shortly.',
       });
-      reset();
+      // Reset
+      setRequestType('new');
+      setMode('pick');
+      setRoomId(null);
+      setRoomLabel('');
+      setOtherLocation('');
+      setReason('');
+      setQuantity('1');
+      setContact('');
       onSuccess?.();
     } catch {
       toast.error('Could not submit the key request.');
@@ -111,7 +109,7 @@ export function KeyRequestForm({ onSuccess, onCancel, variant = 'dialog' }: KeyR
           <div>
             <p className="font-medium">Key requests are temporarily unavailable.</p>
             <p className="text-muted-foreground">
-              The database update for this workflow has not been deployed yet. Contact the facilities key office directly.
+              The database update for this workflow has not been deployed yet. Contact the Facility Coordinator directly.
             </p>
           </div>
         </div>
@@ -130,60 +128,71 @@ export function KeyRequestForm({ onSuccess, onCancel, variant = 'dialog' }: KeyR
         </Select>
       </div>
 
-      {rooms.length > 0 && (
+      {mode === 'pick' ? (
         <div className="space-y-2">
-          <Label htmlFor="key-request-room">Assigned room</Label>
-          <Select
-            value={roomId || '__other__'}
-            onValueChange={(value) => setRoomId(value === '__other__' ? '' : value)}
-          >
-            <SelectTrigger id="key-request-room" aria-label="Assigned room">
-              <SelectValue placeholder="Choose a room" />
-            </SelectTrigger>
-            <SelectContent>
-              {rooms.map((room) => (
-                <SelectItem key={room.room_id} value={room.room_id}>
-                  Room {room.room_number || room.room_name}
-                </SelectItem>
-              ))}
-              <SelectItem value="__other__">Different location</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {!roomId && (
-        <div className="space-y-2">
-          <Label htmlFor="key-location">Key location</Label>
-          <Input
-            id="key-location"
-            value={otherLocation}
-            onChange={(event) => setOtherLocation(event.target.value)}
-            placeholder="Room, door, cabinet, or area"
+          <Label>Key location</Label>
+          <DeliveryRoomPicker
+            value={roomLabel}
+            onChange={(label, id) => {
+              setRoomLabel(label);
+              setRoomId(id || null);
+            }}
+            userId={user?.id}
+            placeholder="Search for a room…"
+            ariaLabel="Key location"
           />
+          <button
+            type="button"
+            onClick={() => {
+              setMode('other');
+              setRoomId(null);
+              setRoomLabel('');
+            }}
+            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Can't find it? Describe a different location instead
+          </button>
         </div>
-      )}
+      ) : (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="key-other-location">Describe the location</Label>
+            <Input
+              id="key-other-location"
+              value={otherLocation}
+              onChange={(event) => setOtherLocation(event.target.value)}
+              placeholder="Door, cabinet, storage area, etc."
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setMode('pick');
+                setOtherLocation('');
+                setReason('');
+              }}
+              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Pick a room from the list instead
+            </button>
+          </div>
 
-      {selectedRoom && (
-        <p className="text-xs text-muted-foreground">
-          Requesting access for Room {selectedRoom.room_number || selectedRoom.room_name}.
-        </p>
+          <div className="space-y-2">
+            <Label htmlFor="key-reason">Why is this key needed?</Label>
+            <Textarea
+              id="key-reason"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="A short description so the Facility Coordinator knows the context."
+              rows={variant === 'page' ? 4 : 3}
+            />
+          </div>
+        </>
       )}
-
-      <div className="space-y-2">
-        <Label htmlFor="key-reason">Why is this key needed?</Label>
-        <Textarea
-          id="key-reason"
-          value={reason}
-          onChange={(event) => setReason(event.target.value)}
-          placeholder="Describe the access need and who will use the key."
-          rows={variant === 'page' ? 5 : 4}
-        />
-      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="key-quantity">Quantity</Label>
+          <Label htmlFor="key-quantity">How many keys?</Label>
           <Input
             id="key-quantity"
             type="number"
@@ -194,12 +203,12 @@ export function KeyRequestForm({ onSuccess, onCancel, variant = 'dialog' }: KeyR
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="key-contact">Contact number</Label>
+          <Label htmlFor="key-contact">Contact number <span className="text-muted-foreground font-normal">(optional)</span></Label>
           <Input
             id="key-contact"
             value={contact}
             onChange={(event) => setContact(event.target.value)}
-            placeholder="Optional"
+            placeholder="Best phone to reach you"
           />
         </div>
       </div>
@@ -213,7 +222,7 @@ export function KeyRequestForm({ onSuccess, onCancel, variant = 'dialog' }: KeyR
         <Button
           type="button"
           onClick={handleSubmit}
-          disabled={submitting || keyRequestsUnavailable}
+          disabled={submitting || keyRequestsUnavailable || !canSubmit}
         >
           {submitting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

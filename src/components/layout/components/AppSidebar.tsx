@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { useKeyRequestsPendingCount } from "@features/keys/hooks/useKeyRequestsPendingCount";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@features/auth/hooks/useAuth";
@@ -35,6 +36,10 @@ export function AppSidebar() {
 
   const isActive = (route: string) =>
     isNavRouteActive(route, location.pathname, location.search);
+
+  // Pending key-request count — RLS scopes to what this user can see, so this
+  // is the Facility Coordinator queue for FM/admin and ~0 for everyone else.
+  const { data: pendingKeyRequests = 0 } = useKeyRequestsPendingCount();
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -84,6 +89,8 @@ export function AppSidebar() {
             const active = isActive(route);
             const Icon = tab.icon;
 
+            const showKeysBadge = tab.title === 'Keys' && pendingKeyRequests > 0;
+
             if (collapsed) {
               return (
                 <Tooltip key={tab.title}>
@@ -92,19 +99,28 @@ export function AppSidebar() {
                       to={route}
                       onPointerEnter={() => prefetchRoute(route)}
                       onFocus={() => prefetchRoute(route)}
-                      aria-label={tab.title}
+                      aria-label={
+                        showKeysBadge
+                          ? `${tab.title} — ${pendingKeyRequests} pending`
+                          : tab.title
+                      }
                       className={cn(
-                        "flex h-10 w-full items-center justify-center rounded-md transition-colors",
+                        "relative flex h-10 w-full items-center justify-center rounded-md transition-colors",
                         active
                           ? "bg-white/[0.12] text-white"
                           : "text-slate-300 hover:bg-white/[0.07] hover:text-white"
                       )}
                     >
                       <Icon className="h-[18px] w-[18px]" />
+                      {showKeysBadge && (
+                        <span className="absolute top-1 right-1 inline-flex h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                      )}
                     </NavLink>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={8}>
-                    {tab.title}
+                    {showKeysBadge
+                      ? `${tab.title} — ${pendingKeyRequests} pending`
+                      : tab.title}
                   </TooltipContent>
                 </Tooltip>
               );
@@ -125,6 +141,11 @@ export function AppSidebar() {
               >
                 <Icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-white")} />
                 <span className="truncate">{tab.title}</span>
+                {showKeysBadge && (
+                  <span className="ml-auto inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-amber-400/20 px-1.5 py-0.5 text-xs font-semibold text-amber-200 shadow-[0_0_8px_rgba(251,191,36,0.3)] ring-1 ring-amber-400/40">
+                    {pendingKeyRequests}
+                  </span>
+                )}
               </NavLink>
             );
           })}
