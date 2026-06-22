@@ -10,10 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { ModalFrame } from '@shared/components/common/common/ModalFrame';
 import { formatDateTime } from '@/lib/dateTime';
 import {
+  countPriorReportsInRoom,
   listLightingIssuesForStaff,
   updateLightingIssueStatus,
   type StaffLightingIssue,
 } from '@features/lighting/services/lightingIssueService';
+import { supabase } from '@/lib/supabase';
 
 const STATUS_BADGE: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   open: { label: 'Open', variant: 'destructive' },
@@ -27,6 +29,20 @@ const PRIORITY_BADGE: Record<string, { label: string; className: string }> = {
   low: { label: 'Low', className: 'border-muted-foreground/30 bg-muted/40 text-muted-foreground' },
 };
 
+const BULB_LABEL: Record<string, string> = {
+  led: 'LED',
+  fluorescent: 'Fluorescent',
+  screw_in: 'Screw-in',
+  unknown: '',
+};
+
+const CEILING_LABEL: Record<string, string> = {
+  normal: '',
+  high: 'High ceiling',
+  hard_to_reach: 'Needs lift',
+  unknown: '',
+};
+
 export function LightingIssuesQueue() {
   const queryClient = useQueryClient();
   const [resolveTarget, setResolveTarget] = useState<StaffLightingIssue | null>(null);
@@ -37,6 +53,27 @@ export function LightingIssuesQueue() {
     queryKey: ['lighting-issues', 'staff'],
     queryFn: listLightingIssuesForStaff,
     retry: false,
+  });
+
+  // Prior-report counts per room (last 90 days, excluding the issue itself).
+  // One bulk fetch keyed off the set of rooms in the queue.
+  const roomIds = Array.from(new Set(issues.map((i) => i.room_id).filter(Boolean))) as string[];
+  const { data: priorMap = {} } = useQuery<Record<string, number>>({
+    queryKey: ['lighting-issues', 'prior-counts', roomIds.sort().join(',')],
+    enabled: roomIds.length > 0,
+    queryFn: async () => {
+      const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+      const { data } = await supabase
+        .from('lighting_issues')
+        .select('room_id, id')
+        .in('room_id', roomIds)
+        .gte('reported_at', since);
+      const counts: Record<string, number> = {};
+      (data ?? []).forEach((row: { room_id: string }) => {
+        counts[row.room_id] = (counts[row.room_id] ?? 0) + 1;
+      });
+      return counts;
+    },
   });
 
   const openCount = issues.filter((i) => i.status !== 'resolved').length;
@@ -105,6 +142,10 @@ export function LightingIssuesQueue() {
                 : issue.location_description || 'Location not specified';
               const status = STATUS_BADGE[issue.status] || { label: issue.status, variant: 'outline' as const };
               const priority = PRIORITY_BADGE[issue.priority];
+              const bulbLabel = issue.bulb_type ? BULB_LABEL[issue.bulb_type] : '';
+              const ceilingLabel = issue.ceiling_access ? CEILING_LABEL[issue.ceiling_access] : '';
+              // Subtract 1 because the issue itself is in the count.
+              const priorCount = issue.room_id ? Math.max(0, (priorMap[issue.room_id] ?? 0) - 1) : 0;
               return (
                 <div key={issue.id} className="rounded-md border p-3 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
@@ -116,6 +157,13 @@ export function LightingIssuesQueue() {
                       </span>
                     )}
                     <Badge variant="outline" className="capitalize">{issue.issue_type.replace('_', ' ')}</Badge>
+                    {bulbLabel && <Badge variant="outline">{bulbLabel}</Badge>}
+                    {ceilingLabel && <Badge variant="outline" className="border-amber-500/40 text-amber-300">{ceilingLabel}</Badge>}
+                    {priorCount > 0 && (
+                      <Badge variant="outline" className="border-red-500/40 text-red-300">
+                        {priorCount} prior in 90d
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm">{issue.description}</p>
                   <p className="text-xs text-muted-foreground">

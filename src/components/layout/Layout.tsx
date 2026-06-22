@@ -16,7 +16,15 @@ import { AppSidebar } from "./components/AppSidebar";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@features/admin/components/admin/NotificationBox";
-import { RefreshCw, Search, Package, AlertTriangle, ClipboardList, KeyRound, Lightbulb } from "lucide-react";
+import { RefreshCw, Search, Package, AlertTriangle, ClipboardList, KeyRound, Lightbulb, Plus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { QuickIssueReportButton } from "@shared/components/user/QuickIssueReportButton";
 import { GlobalSearchPalette } from "./components/GlobalSearchPalette";
 import { Button } from "@/components/ui/button";
@@ -211,52 +219,43 @@ function LayoutContent() {
                   </QuickIssueReportButton>
                 )}
 
-                {/* Court Aide front door — supply orders + requests live on one page.
-                    Two buttons remain for muscle memory but both route to the same
-                    page on different tabs. Court aides fulfill, so they're hidden. */}
+                {/* Single "+ New" entry point in the header — keeps the bar
+                    uncluttered as more request types come online. Court aides
+                    fulfill orders, so they don't need the menu. */}
                 {userRole !== 'court_aide' && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
-                      onClick={() => navigate('/supplies?tab=order')}
-                      title="Order Supplies"
-                    >
-                      <Package className="h-4 w-4 sm:mr-1.5" />
-                      <span className="hidden sm:inline">Order Supplies</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
-                      onClick={() => navigate('/supplies?tab=request')}
-                      title="Make a Request"
-                    >
-                      <ClipboardList className="h-4 w-4 sm:mr-1.5" />
-                      <span className="hidden sm:inline">Make a Request</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
-                      onClick={() => navigate('/keys/request')}
-                      title="Request a Key"
-                    >
-                      <KeyRound className="h-4 w-4 sm:mr-1.5" />
-                      <span className="hidden sm:inline">Request a Key</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 border-white/15 bg-white/[0.04] px-2 text-white hover:bg-white/[0.1] hover:text-white"
-                      onClick={() => navigate('/lighting/report')}
-                      title="Report Lighting"
-                    >
-                      <Lightbulb className="h-4 w-4 sm:mr-1.5" />
-                      <span className="hidden sm:inline">Report Lighting</span>
-                    </Button>
-                  </>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 border-white/15 bg-white/[0.04] px-2.5 text-white hover:bg-white/[0.1] hover:text-white"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">New</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>Start something new</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/supplies?tab=order')}>
+                        <Package className="mr-2 h-4 w-4" />
+                        Order Supplies
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/supplies?tab=request')}>
+                        <ClipboardList className="mr-2 h-4 w-4" />
+                        Make a Request
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/keys/request')}>
+                        <KeyRound className="mr-2 h-4 w-4" />
+                        Request a Key
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/lighting/report')}>
+                        <Lightbulb className="mr-2 h-4 w-4" />
+                        Report Lighting
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
 
                 {isAdmin && (

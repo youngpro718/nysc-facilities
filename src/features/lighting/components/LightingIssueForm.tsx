@@ -11,6 +11,8 @@ import { useAuth } from '@features/auth/hooks/useAuth';
 import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryRoomPicker';
 import {
   submitLightingIssue,
+  type LightingBulbType,
+  type LightingCeilingAccess,
   type LightingIssuePriority,
   type LightingIssueType,
 } from '@features/lighting/services/lightingIssueService';
@@ -38,12 +40,28 @@ const PRIORITY_OPTIONS: { value: LightingIssuePriority; label: string }[] = [
   { value: 'high', label: 'High — affecting safety or work' },
 ];
 
+const BULB_OPTIONS: { value: LightingBulbType; label: string }[] = [
+  { value: 'unknown', label: "I'm not sure" },
+  { value: 'led', label: 'LED' },
+  { value: 'fluorescent', label: 'Fluorescent (long tube)' },
+  { value: 'screw_in', label: 'Regular screw-in bulb' },
+];
+
+const CEILING_OPTIONS: { value: LightingCeilingAccess; label: string }[] = [
+  { value: 'unknown', label: "I'm not sure" },
+  { value: 'normal', label: 'Normal height' },
+  { value: 'high', label: 'High ceiling' },
+  { value: 'hard_to_reach', label: 'Hard to reach (needs lift)' },
+];
+
 export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: LightingIssueFormProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [issueType, setIssueType] = useState<LightingIssueType>('out');
   const [priority, setPriority] = useState<LightingIssuePriority>('medium');
+  const [bulbType, setBulbType] = useState<LightingBulbType>('unknown');
+  const [ceilingAccess, setCeilingAccess] = useState<LightingCeilingAccess>('unknown');
   const [mode, setMode] = useState<Mode>('pick');
   const [roomId, setRoomId] = useState<string | null>(null);
   const [roomLabel, setRoomLabel] = useState('');
@@ -75,6 +93,8 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
         description: synthesizedDescription,
         room_id: mode === 'pick' ? roomId : null,
         location_description: mode === 'pick' ? null : otherLocation.trim(),
+        bulb_type: bulbType,
+        ceiling_access: ceilingAccess,
       });
       await queryClient.invalidateQueries({ queryKey: ['lighting-issues-open-count'] });
       await queryClient.invalidateQueries({ queryKey: ['lighting-issues', 'staff'] });
@@ -83,6 +103,8 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
       });
       setIssueType('out');
       setPriority('medium');
+      setBulbType('unknown');
+      setCeilingAccess('unknown');
       setMode('pick');
       setRoomId(null);
       setRoomLabel('');
@@ -151,12 +173,37 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
         </div>
       )}
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="lighting-priority">Priority</Label>
+          <Select value={priority} onValueChange={(v) => setPriority(v as LightingIssuePriority)}>
+            <SelectTrigger id="lighting-priority" aria-label="Priority"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PRIORITY_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="lighting-bulb">What kind of bulb? <span className="text-muted-foreground font-normal">(if you know)</span></Label>
+          <Select value={bulbType} onValueChange={(v) => setBulbType(v as LightingBulbType)}>
+            <SelectTrigger id="lighting-bulb" aria-label="Bulb type"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {BULB_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="space-y-2">
-        <Label htmlFor="lighting-priority">Priority</Label>
-        <Select value={priority} onValueChange={(v) => setPriority(v as LightingIssuePriority)}>
-          <SelectTrigger id="lighting-priority" aria-label="Priority"><SelectValue /></SelectTrigger>
+        <Label htmlFor="lighting-ceiling">Ceiling height <span className="text-muted-foreground font-normal">(helps us bring the right gear)</span></Label>
+        <Select value={ceilingAccess} onValueChange={(v) => setCeilingAccess(v as LightingCeilingAccess)}>
+          <SelectTrigger id="lighting-ceiling" aria-label="Ceiling access"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {PRIORITY_OPTIONS.map((opt) => (
+            {CEILING_OPTIONS.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
             ))}
           </SelectContent>
