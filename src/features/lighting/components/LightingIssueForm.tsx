@@ -66,9 +66,17 @@ export function LightingIssueForm({ onSuccess, onCancel, variant = 'dialog' }: L
   const [mode, setMode] = useState<Mode>('pick');
   const [roomId, setRoomId] = useState<string | null>(null);
   const [roomLabel, setRoomLabel] = useState('');
+  const [fixtureId, setFixtureId] = useState<string>('__unsure__');
   const [otherLocation, setOtherLocation] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const { data: roomFixtures = [] } = useSpaceFixtures(roomId ?? '', 'room');
+
+  // Reset fixture selection when room changes
+  useEffect(() => {
+    setFixtureId('__unsure__');
+  }, [roomId]);
 
   const canSubmit = useMemo(() => {
     if (mode === 'pick') return !!roomId;
