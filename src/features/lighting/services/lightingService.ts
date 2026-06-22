@@ -398,12 +398,13 @@ export async function completeWalkthrough(walkthroughId: string) {
  */
 export async function updateFixtureStatus(fixtureId: string, payload: UpdateFixtureStatusPayload) {
   try {
-    const updateData: Partial<LightingFixture> = {
-      status: payload.status,
-      notes: payload.notes,
-      ballast_issue: payload.ballast_issue ?? false,
-      requires_electrician: payload.requires_electrician ?? false,
-    };
+    // Only send fields the caller actually provided so we don't silently
+    // clear ballast_issue / requires_electrician / notes when toggling status.
+    const updateData: Partial<LightingFixture> = { status: payload.status };
+    if (payload.notes !== undefined) updateData.notes = payload.notes;
+    if (payload.ballast_issue !== undefined) updateData.ballast_issue = payload.ballast_issue;
+    if (payload.requires_electrician !== undefined) updateData.requires_electrician = payload.requires_electrician;
+    if (payload.bulb_count !== undefined) updateData.bulb_count = payload.bulb_count;
 
     if (payload.status === 'functional' && payload.resolved_at) {
       updateData.replaced_date = payload.resolved_at;
