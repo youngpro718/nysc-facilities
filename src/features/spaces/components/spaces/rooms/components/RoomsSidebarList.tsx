@@ -111,6 +111,13 @@ export function RoomsSidebarList({
                           null;
 
                         const assignment = assignmentsByRoomId?.get(room.id);
+                        // Build "Part 30 • Justice Smith" for courtrooms, or
+                        // "<name or type> • <floor>" for everything else so the
+                        // floor is visible without clicking into the room.
+                        const baseSecondary =
+                          room.name && room.name !== room.room_number
+                            ? room.name
+                            : room.room_type.replace(/_/g, " ");
                         const secondary =
                           room.room_type === "courtroom" && assignment
                             ? [
@@ -119,9 +126,9 @@ export function RoomsSidebarList({
                               ]
                                 .filter(Boolean)
                                 .join(" • ")
-                            : room.name && room.name !== room.room_number
-                            ? room.name
-                            : room.room_type.replace(/_/g, " ");
+                            : [baseSecondary, room.floor?.name]
+                                .filter(Boolean)
+                                .join(" • ");
 
                         return (
                           <li key={room.id}>

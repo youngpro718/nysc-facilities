@@ -19,6 +19,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Briefcase, GavelIcon, Warehouse, Users, User, Building } from "lucide-react";
 
+interface BuildingOption { id: string; name: string }
+interface FloorOption { id: string; name: string; buildingId: string }
+
 interface MobileFilterBarProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -29,6 +32,12 @@ interface MobileFilterBarProps {
   onRefresh: () => void;
   roomTypeFilter: string;
   onRoomTypeFilterChange: (value: string) => void;
+  buildings?: BuildingOption[];
+  floors?: FloorOption[];
+  selectedBuildingId?: string;
+  selectedFloorId?: string;
+  onBuildingChange?: (id: string) => void;
+  onFloorChange?: (id: string) => void;
 }
 
 const quickFilters = [
@@ -36,8 +45,9 @@ const quickFilters = [
   { key: "courtroom", label: "Court", icon: GavelIcon },
   { key: "chamber", label: "Chamber", icon: Building },
   { key: "storage", label: "Storage", icon: Warehouse },
-  { key: "male_locker_room", label: "Male", icon: User },
-  { key: "female_locker_room", label: "Female", icon: Users },
+  // Labels say "Locker" so they don't read as gender filters of people.
+  { key: "male_locker_room", label: "Men's Locker", icon: User },
+  { key: "female_locker_room", label: "Women's Locker", icon: Users },
 ];
 
 export function MobileFilterBar({
@@ -50,9 +60,24 @@ export function MobileFilterBar({
   onRefresh,
   roomTypeFilter,
   onRoomTypeFilterChange,
+  buildings,
+  floors,
+  selectedBuildingId = "all",
+  selectedFloorId = "all",
+  onBuildingChange,
+  onFloorChange,
 }: MobileFilterBarProps) {
   const [isQuickFiltersOpen, setIsQuickFiltersOpen] = useState(false);
-  const activeFilterCount = [statusFilter !== "all", roomTypeFilter !== ""].filter(Boolean).length;
+  const activeFilterCount = [
+    statusFilter !== "all",
+    roomTypeFilter !== "",
+    selectedBuildingId !== "all",
+    selectedFloorId !== "all",
+  ].filter(Boolean).length;
+  // Floors narrow to the selected building so the picker isn't an unscoped 17-item list.
+  const visibleFloors = (floors ?? []).filter(
+    (f) => selectedBuildingId === "all" || f.buildingId === selectedBuildingId,
+  );
 
   const handleQuickFilter = (roomType: string) => {
     onRoomTypeFilterChange(roomType === roomTypeFilter ? "" : roomType);
@@ -61,6 +86,8 @@ export function MobileFilterBar({
   const clearAllFilters = () => {
     onStatusFilterChange("all");
     onRoomTypeFilterChange("");
+    onBuildingChange?.("all");
+    onFloorChange?.("all");
   };
 
   return (
@@ -110,6 +137,44 @@ export function MobileFilterBar({
                   <SheetDescription>Refine your search results</SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
+                  {onBuildingChange && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Building</label>
+                      <Select
+                        value={selectedBuildingId}
+                        onValueChange={(v) => {
+                          onBuildingChange(v);
+                          if (v !== selectedBuildingId) onFloorChange?.("all");
+                        }}
+                      >
+                        <SelectTrigger className="w-full h-11">
+                          <SelectValue placeholder="All buildings" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All buildings</SelectItem>
+                          {(buildings ?? []).map((b) => (
+                            <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {onFloorChange && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Floor</label>
+                      <Select value={selectedFloorId} onValueChange={onFloorChange}>
+                        <SelectTrigger className="w-full h-11">
+                          <SelectValue placeholder="All floors" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All floors</SelectItem>
+                          {visibleFloors.map((f) => (
+                            <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Status</label>
                     <Select value={statusFilter} onValueChange={onStatusFilterChange}>

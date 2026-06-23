@@ -5,6 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+export interface BuildingOption { id: string; name: string }
+export interface FloorOption { id: string; name: string; buildingId: string }
+
 interface FilterBarProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -15,6 +18,14 @@ interface FilterBarProps {
   onRefresh: () => void;
   roomTypeFilter: string;
   onRoomTypeFilterChange: (value: string) => void;
+  /** Building+floor filters are optional so callers that don't yet wire them in
+      keep working. Both ids use "all" as the no-filter sentinel. */
+  buildings?: BuildingOption[];
+  floors?: FloorOption[];
+  selectedBuildingId?: string;
+  selectedFloorId?: string;
+  onBuildingChange?: (id: string) => void;
+  onFloorChange?: (id: string) => void;
 }
 
 export function FilterBar({
@@ -27,7 +38,17 @@ export function FilterBar({
   onRefresh,
   roomTypeFilter,
   onRoomTypeFilterChange,
+  buildings,
+  floors,
+  selectedBuildingId = "all",
+  selectedFloorId = "all",
+  onBuildingChange,
+  onFloorChange,
 }: FilterBarProps) {
+  // Floors narrow to the selected building so the picker isn't an unscoped 17-item list.
+  const visibleFloors = (floors ?? []).filter(
+    (f) => selectedBuildingId === "all" || f.buildingId === selectedBuildingId,
+  );
   const handleQuickFilter = (roomType: string) => {
     onRoomTypeFilterChange(roomType);
   };
@@ -48,6 +69,36 @@ export function FilterBar({
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
+        {onBuildingChange && (
+          <Select value={selectedBuildingId} onValueChange={(v) => {
+            onBuildingChange(v);
+            // Clear floor when building changes — old floor likely belongs to a different building
+            if (v !== selectedBuildingId) onFloorChange?.("all");
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All buildings" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All buildings</SelectItem>
+              {(buildings ?? []).map((b) => (
+                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {onFloorChange && (
+          <Select value={selectedFloorId} onValueChange={onFloorChange}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="All floors" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All floors</SelectItem>
+              {visibleFloors.map((f) => (
+                <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />

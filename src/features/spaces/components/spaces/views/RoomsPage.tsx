@@ -97,6 +97,51 @@ const RoomsPage = () => {
     next.delete('pick');
     setSearchParams(next, { replace: true });
   };
+
+  // Setters used by the filter bar Building/Floor dropdowns. "all" clears the param.
+  const setBuildingParam = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === 'all') next.delete('building');
+    else next.set('building', id);
+    next.delete('pick');
+    setSearchParams(next, { replace: true });
+  };
+  const setFloorParam = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === 'all') next.delete('floor');
+    else next.set('floor', id);
+    next.delete('pick');
+    setSearchParams(next, { replace: true });
+  };
+
+  // Derive building + floor option lists from the loaded rooms so the selectors
+  // only show buildings/floors that actually have rooms. Both are deduped by id.
+  const buildingOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    (rooms ?? []).forEach((r) => {
+      const id = r.floor?.building?.id;
+      const name = r.floor?.building?.name;
+      if (id && name && !seen.has(id)) seen.set(id, name);
+    });
+    return Array.from(seen, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [rooms]);
+
+  const floorOptions = useMemo(() => {
+    const seen = new Map<string, { name: string; buildingId: string }>();
+    (rooms ?? []).forEach((r) => {
+      const id = r.floor_id;
+      const name = r.floor?.name;
+      const buildingId = r.floor?.building?.id;
+      if (id && name && buildingId && !seen.has(id)) {
+        seen.set(id, { name, buildingId });
+      }
+    });
+    return Array.from(seen, ([id, v]) => ({ id, name: v.name, buildingId: v.buildingId })).sort(
+      (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }),
+    );
+  }, [rooms]);
   // Sync selection with URL query parameter
   useEffect(() => {
     const list = filteredAndSortedRooms ?? [];
@@ -220,6 +265,12 @@ const RoomsPage = () => {
               roomTypeFilter={roomTypeFilter}
               onRoomTypeFilterChange={setRoomTypeFilter}
               onRefresh={handleRefresh}
+              buildings={buildingOptions}
+              floors={floorOptions}
+              selectedBuildingId={urlBuildingId || 'all'}
+              selectedFloorId={urlFloorId || 'all'}
+              onBuildingChange={setBuildingParam}
+              onFloorChange={setFloorParam}
             />
           ) : (
             <FilterBar
@@ -232,6 +283,12 @@ const RoomsPage = () => {
               roomTypeFilter={roomTypeFilter}
               onRoomTypeFilterChange={setRoomTypeFilter}
               onRefresh={handleRefresh}
+              buildings={buildingOptions}
+              floors={floorOptions}
+              selectedBuildingId={urlBuildingId || 'all'}
+              selectedFloorId={urlFloorId || 'all'}
+              onBuildingChange={setBuildingParam}
+              onFloorChange={setFloorParam}
             />
           )}
         </div>
