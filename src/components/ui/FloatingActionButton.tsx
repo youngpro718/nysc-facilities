@@ -32,9 +32,16 @@ export function FloatingActionButton() {
     setIsOpen(prev => !prev);
     setTimeout(() => { toggleLock.current = false; }, 280);
   };
+  // CLOSE_ANIMATION_MS must match the action menu's exit animation
+  // (opacity + x slide, ~200ms default). Tapping an action navigates to a
+  // path in `hiddenPaths`, which unmounts the entire FAB on the next
+  // render — and because the outer AnimatePresence wraps a Fragment (not a
+  // motion component), that unmount happens instantly and cuts off the
+  // exit animation. Delaying `fn` lets the close play out cleanly first.
+  const CLOSE_ANIMATION_MS = 220;
   const closeAndRun = (fn: () => void) => {
     setIsOpen(false);
-    fn();
+    window.setTimeout(fn, CLOSE_ANIMATION_MS);
   };
 
   // Don't show on form pages, login, auth pages, spaces (has its own FAB),
@@ -139,7 +146,12 @@ export function FloatingActionButton() {
                     </div>
                   </motion.button>
                 ))}
-                {/* Report Issue uses the existing QuickIssueReportButton */}
+                {/* Report Issue uses the existing QuickIssueReportButton.
+                    Don't close the FAB menu on tap here — QuickIssueReportButton
+                    owns the dialog state, and an immediate close would unmount
+                    it before the dialog can render. The dialog opens above
+                    the menu (z-50 portal); the user dismisses both naturally
+                    when they're done. */}
                 <QuickIssueReportButton
                   variant="outline"
                   size="sm"

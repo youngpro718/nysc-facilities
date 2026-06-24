@@ -12,7 +12,7 @@ interface QuickIssueReportButtonProps {
   children?: React.ReactNode;
 }
 
-export function QuickIssueReportButton({ 
+export function QuickIssueReportButton({
   variant = 'default',
   size = 'default',
   className = '',
