@@ -74,7 +74,9 @@ export default function ProfileOnboarding() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Update profile
+      // Update profile + mark onboarding complete. Saving the timestamp makes
+      // it easy to spot users who blew past the form quickly vs took their time.
+      const now = new Date().toISOString();
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -82,7 +84,9 @@ export default function ProfileOnboarding() {
           last_name: lastName.trim(),
           title: title.trim() || null,
           department: department.trim() || null,
-          updated_at: new Date().toISOString(),
+          onboarding_completed: true,
+          onboarding_completed_at: now,
+          updated_at: now,
         })
         .eq('id', user.id);
 

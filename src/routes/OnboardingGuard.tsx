@@ -118,10 +118,16 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           return;
         }
 
-        // Check required profile fields
-        const needsProfile = !profile?.first_name || !profile?.last_name;
-        if (needsProfile) {
-          logger.debug('[OnboardingGuard] Profile incomplete, redirecting to onboarding');
+        // Onboarding gate. ProfileOnboarding sets onboarding_completed=true
+        // after the user submits first+last+optional title/department. The
+        // fallback name check covers any historical row that somehow has
+        // first_name+last_name set but never got the column flipped — we
+        // backfilled at migration 090 but defending here keeps the guard
+        // resilient if someone re-creates a user via SQL.
+        const hasName = !!profile?.first_name && !!profile?.last_name;
+        const onboardingComplete = profile?.onboarding_completed === true || hasName;
+        if (!onboardingComplete) {
+          logger.debug('[OnboardingGuard] Onboarding not completed, redirecting to onboarding');
           navigate('/onboarding/profile', { replace: true });
           return;
         }

@@ -257,15 +257,6 @@ export async function getProfilesNeedingOnboarding(): Promise<Profile[]> {
   return data as Profile[];
 }
 
-/**
- * Mark user as onboarded (requires coordinator role)
- * @param userId - The user ID to mark as onboarded
- * @returns The updated profile
- * @throws Error if not authorized or update fails
- */
-export async function markUserAsOnboarded(userId: string): Promise<Profile> {
-  return updateProfile(userId, { onboarded: true });
-}
 
 /**
  * Enforce MFA for a user (requires coordinator role)
