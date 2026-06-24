@@ -241,12 +241,15 @@ function AppContent() {
           <Route path="lighting" element={<Navigate to="/operations?tab=lighting" replace />} />
 
           {/* User Routes */}
-          {/* Court Aide front door: catalog + request form, two tabs */}
+          {/* Supply order front door (catalog + request form). Open to any
+              authenticated user — they each see their own catalog + cart and
+              can only insert supply_requests rows for themselves (RLS:
+              requester_id = auth.uid()). The supply_requests module gate
+              still protects /supply-room (fulfiller dashboard) and
+              /admin/supply-requests (admin processing). */}
           <Route path="/supplies" element={
             <ProtectedRoute>
-              <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supplies & Requests">
-                <CourtAideRequests />
-              </ModuleProtectedRoute>
+              <CourtAideRequests />
             </ProtectedRoute>
           } />
           <Route path="/request" element={<Navigate to="/supplies" replace />} />
