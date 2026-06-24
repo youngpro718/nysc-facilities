@@ -9,9 +9,25 @@ import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { LoadingSkeleton } from "@shared/components/common/common/LoadingSkeleton";
 import type { BuildingWithLighting } from "@/utils/dashboardUtils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { getDashboardForRole, isAdminRole } from "@/routes/roleBasedRouting";
 
 const AdminDashboard = () => {
+  // Dev-mode role preview: a real admin previewing a non-admin role still
+  // passes the route's requireAdmin gate (it checks the REAL role), but the
+  // effective role from useRolePermissions reflects the preview. Forward them
+  // so previewing actually shows what the previewed role would see.
+  const navigate = useNavigate();
+  const { userRole: effectiveRole, loading: roleLoading } = useRolePermissions();
+  useEffect(() => {
+    if (roleLoading || !effectiveRole) return;
+    if (!isAdminRole(effectiveRole)) {
+      navigate(getDashboardForRole(effectiveRole), { replace: true });
+    }
+  }, [effectiveRole, roleLoading, navigate]);
+
   const {
     buildings,
     buildingsLoading,

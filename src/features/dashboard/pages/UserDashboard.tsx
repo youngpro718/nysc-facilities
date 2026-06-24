@@ -18,6 +18,7 @@ import { CompactActivitySection } from "@shared/components/user/CompactActivityS
 
 import { Package, Send, ChevronRight, KeyRound } from "lucide-react";
 import { getDashboardForRole } from "@/routes/roleBasedRouting";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { KeyRequestDialog } from "@features/keys/components/requests/KeyRequestDialog";
 
 export default function UserDashboard() {
@@ -26,14 +27,17 @@ export default function UserDashboard() {
   const isMobile = useIsMobile();
   const [keyRequestOpen, setKeyRequestOpen] = useState(false);
 
-  // Redirect non-standard roles (admin, court_officer, etc.) to their own dashboard
+  // Redirect non-standard roles to their own dashboard. Uses the EFFECTIVE
+  // role (from useRolePermissions) instead of profile.role so a real admin
+  // previewing 'standard' via DevMode stays on this page instead of bouncing
+  // back to the admin dashboard the moment they switch.
+  const { userRole: effectiveRole, loading: effectiveRoleLoading } = useRolePermissions();
   useEffect(() => {
-    if (isLoading) return;
-    const role = profile?.role;
-    if (!role || role === "standard") return;
-    const target = getDashboardForRole(role);
+    if (isLoading || effectiveRoleLoading) return;
+    if (!effectiveRole || effectiveRole === "standard") return;
+    const target = getDashboardForRole(effectiveRole);
     if (target && target !== "/dashboard") navigate(target, { replace: true });
-  }, [isLoading, profile?.role, navigate]);
+  }, [isLoading, effectiveRoleLoading, effectiveRole, navigate]);
 
   const {
     notifications = [],
