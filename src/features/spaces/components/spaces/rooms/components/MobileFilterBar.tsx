@@ -142,10 +142,7 @@ export function MobileFilterBar({
                       <label className="text-sm font-medium">Building</label>
                       <Select
                         value={selectedBuildingId}
-                        onValueChange={(v) => {
-                          onBuildingChange(v);
-                          if (v !== selectedBuildingId) onFloorChange?.("all");
-                        }}
+                        onValueChange={onBuildingChange}
                       >
                         <SelectTrigger className="w-full h-11">
                           <SelectValue placeholder="All buildings" />

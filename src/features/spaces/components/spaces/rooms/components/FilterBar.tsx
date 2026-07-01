@@ -3,7 +3,6 @@ import { Search, RefreshCw, Briefcase, GavelIcon, Warehouse, Users, User, Buildi
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 export interface BuildingOption { id: string; name: string }
 export interface FloorOption { id: string; name: string; buildingId: string }
@@ -58,8 +57,8 @@ export function FilterBar({
 
   return (
     <div className="space-y-2" data-tour="building-selector">
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
+        <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
@@ -70,11 +69,7 @@ export function FilterBar({
           />
         </div>
         {onBuildingChange && (
-          <Select value={selectedBuildingId} onValueChange={(v) => {
-            onBuildingChange(v);
-            // Clear floor when building changes — old floor likely belongs to a different building
-            if (v !== selectedBuildingId) onFloorChange?.("all");
-          }}>
+          <Select value={selectedBuildingId} onValueChange={onBuildingChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All buildings" />
             </SelectTrigger>
@@ -123,7 +118,7 @@ export function FilterBar({
             <SelectItem value="created_at_desc">Recently Added</SelectItem>
           </SelectContent>
         </Select>
-        
+
         <Button variant="outline" size="icon" onClick={onRefresh}>
           <RefreshCw className="h-4 w-4" />
         </Button>

@@ -82,36 +82,51 @@ const RoomsPage = () => {
     roomTypeFilter,
   });
 
+  // All URL-param setters below use the functional updater form of setSearchParams
+  // (prev => next) rather than closing over the `searchParams` value from render scope.
+  // Two setSearchParams calls fired back-to-back in the same handler (e.g. "clear all
+  // filters", or building-change clearing the floor param) would otherwise each build
+  // their URLSearchParams from the same stale snapshot, so the second call silently
+  // overwrote the first instead of composing with it.
   const clearBuildingScope = () => {
-    const next = new URLSearchParams(searchParams);
-    next.delete('building');
-    next.delete('floor');
-    next.delete('pick');
-    setSearchParams(next, { replace: true });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('building');
+      next.delete('floor');
+      next.delete('pick');
+      return next;
+    }, { replace: true });
   };
 
   const selectFloorScope = (floorId: string | null) => {
-    const next = new URLSearchParams(searchParams);
-    if (floorId) next.set('floor', floorId);
-    else next.delete('floor');
-    next.delete('pick');
-    setSearchParams(next, { replace: true });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (floorId) next.set('floor', floorId);
+      else next.delete('floor');
+      next.delete('pick');
+      return next;
+    }, { replace: true });
   };
 
   // Setters used by the filter bar Building/Floor dropdowns. "all" clears the param.
   const setBuildingParam = (id: string) => {
-    const next = new URLSearchParams(searchParams);
-    if (id === 'all') next.delete('building');
-    else next.set('building', id);
-    next.delete('pick');
-    setSearchParams(next, { replace: true });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id === 'all') next.delete('building');
+      else next.set('building', id);
+      next.delete('floor');
+      next.delete('pick');
+      return next;
+    }, { replace: true });
   };
   const setFloorParam = (id: string) => {
-    const next = new URLSearchParams(searchParams);
-    if (id === 'all') next.delete('floor');
-    else next.set('floor', id);
-    next.delete('pick');
-    setSearchParams(next, { replace: true });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id === 'all') next.delete('floor');
+      else next.set('floor', id);
+      next.delete('pick');
+      return next;
+    }, { replace: true });
   };
 
   // Derive building + floor option lists from the loaded rooms so the selectors

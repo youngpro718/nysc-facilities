@@ -3,15 +3,18 @@
  *
  * Built for court officers (Major / front desk) so they can answer
  * "where's Judge Smith?" / "what's Part 30?" / "is Room 1130 in service?"
- * at a glance. Read-only by design: there are no actions, no edit dialogs,
- * no drag-and-drop. Data comes from court_assignments (scoped to the
- * current term via getCurrentTermId) joined with court_rooms for
+ * at a glance. Read-only for court officers by design: no edit dialogs,
+ * no drag-and-drop. The one exception is the bunting flag — admins,
+ * system admins, and the court liaison (the roles that already have write
+ * access to court_rooms) can toggle it here so the directory stays the
+ * single place officers check. Data comes from court_assignments (scoped
+ * to the current term via getCurrentTermId) joined with court_rooms for
  * operational status.
  */
 
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, MapPin, Gavel, Phone, Users, AlertCircle, Image as ImageIcon, ChevronLeft, ChevronRight, Accessibility, Armchair } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, MapPin, Gavel, Phone, Users, AlertCircle, Image as ImageIcon, ChevronLeft, ChevronRight, Accessibility, Armchair, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { getCurrentTermId } from '@features/court/utils/currentTerm';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,6 +26,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
 import { QUERY_CONFIG } from '@/config';
+import { usePermissions } from '@shared/hooks/usePermissions';
+import { useToast } from '@shared/hooks/use-toast';
 
 interface AccessibilityFeatures {
   wheelchair_accessible?: boolean;
@@ -49,6 +54,8 @@ interface CourtroomEntry {
   spectator_capacity: number | null;
   accessibility_features: AccessibilityFeatures | null;
   notes: string | null;
+  // Whether the room currently has bunting (table skirting) set up
+  has_bunting: boolean;
   // Photos from rooms.courtroom_photos (jsonb, already-resolved URLs)
   judge_view_photos: string[];
   audience_view_photos: string[];
@@ -102,7 +109,7 @@ async function fetchCourtroomDirectory(): Promise<CourtroomEntry[]> {
     const [courtRoomsRes, roomsRes] = await Promise.all([
       supabase
         .from('court_rooms')
-        .select('room_id, courtroom_number, operational_status, maintenance_status, maintenance_notes, temporary_location, juror_capacity, spectator_capacity, accessibility_features, notes')
+        .select('room_id, courtroom_number, operational_status, maintenance_status, maintenance_notes, temporary_location, juror_capacity, spectator_capacity, accessibility_features, notes, has_bunting')
         .in('room_id', roomIds),
       supabase
         .from('rooms')
@@ -146,6 +153,7 @@ async function fetchCourtroomDirectory(): Promise<CourtroomEntry[]> {
       spectator_capacity: (cr.spectator_capacity as number | null) ?? null,
       accessibility_features: (cr.accessibility_features as AccessibilityFeatures | null) ?? null,
       notes: (cr.notes as string | null) ?? null,
+      has_bunting: !!cr.has_bunting,
       judge_view_photos: asArray(photos.judge_view),
       audience_view_photos: asArray(photos.audience_view),
     };
@@ -160,7 +168,10 @@ function CourtroomCard({ entry, onOpen }: { entry: CourtroomEntry; onOpen: () =>
 
   return (
     <Card
-      className="transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-primary"
+      className={cn(
+        'transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-primary',
+        entry.has_bunting && 'ring-2 ring-[hsl(var(--brand-gold))] animate-gold-glow',
+      )}
       onClick={onOpen}
       role="button"
       tabIndex={0}
@@ -184,9 +195,20 @@ function CourtroomCard({ entry, onOpen }: { entry: CourtroomEntry; onOpen: () =>
               )}
             </div>
           </div>
-          <Badge variant="outline" className={`text-[10px] px-2 py-0 h-5 ${tone}`}>
-            {label}
-          </Badge>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {entry.has_bunting && (
+              <Badge
+                variant="outline"
+                className="text-[10px] px-2 py-0 h-5 border-[hsl(var(--brand-gold))]/40 bg-[hsl(var(--brand-gold))]/10 text-[hsl(var(--brand-gold))]"
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                Bunting
+              </Badge>
+            )}
+            <Badge variant="outline" className={`text-[10px] px-2 py-0 h-5 ${tone}`}>
+              {label}
+            </Badge>
+          </div>
         </div>
 
         {/* Justice */}
@@ -263,10 +285,13 @@ function CourtroomCard({ entry, onOpen }: { entry: CourtroomEntry; onOpen: () =>
   );
 }
 
-function CourtroomDetailDialog({ entry, open, onOpenChange }: {
+function CourtroomDetailDialog({ entry, open, onOpenChange, canManageBunting, onToggleBunting, isTogglingBunting }: {
   entry: CourtroomEntry | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  canManageBunting: boolean;
+  onToggleBunting: (entry: CourtroomEntry) => void;
+  isTogglingBunting: boolean;
 }) {
   const [activeView, setActiveView] = useState<'judge' | 'audience'>('judge');
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -312,6 +337,15 @@ function CourtroomDetailDialog({ entry, open, onOpenChange }: {
             <Badge variant="outline" className={`text-[10px] px-2 py-0 h-5 ${statusTone}`}>
               {statusLabel}
             </Badge>
+            {entry.has_bunting && (
+              <Badge
+                variant="outline"
+                className="text-[10px] px-2 py-0 h-5 border-[hsl(var(--brand-gold))]/40 bg-[hsl(var(--brand-gold))]/10 text-[hsl(var(--brand-gold))]"
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                Bunting
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -519,6 +553,25 @@ function CourtroomDetailDialog({ entry, open, onOpenChange }: {
               <p className="text-sm whitespace-pre-line">{entry.notes}</p>
             </div>
           )}
+
+          {/* Bunting toggle — only for roles with write access to court_rooms */}
+          {canManageBunting && (
+            <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Sparkles className={cn('h-4 w-4', entry.has_bunting ? 'text-[hsl(var(--brand-gold))]' : 'text-muted-foreground')} />
+                <span>Bunting set up in this room</span>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant={entry.has_bunting ? 'default' : 'outline'}
+                disabled={isTogglingBunting}
+                onClick={() => onToggleBunting(entry)}
+              >
+                {entry.has_bunting ? 'Mark removed' : 'Mark has bunting'}
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -528,11 +581,38 @@ function CourtroomDetailDialog({ entry, open, onOpenChange }: {
 export default function Courtrooms() {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { role } = usePermissions();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Matches the DB's is_court_operations_manager() RLS policy on court_rooms:
+  // only these roles can actually write to the table.
+  const canManageBunting = role === 'admin' || role === 'system_admin' || role === 'court_liaison';
 
   const { data: entries = [], isLoading, error } = useQuery<CourtroomEntry[]>({
     queryKey: ['courtroom-directory'],
     queryFn: fetchCourtroomDirectory,
     staleTime: QUERY_CONFIG.stale.medium,
+  });
+
+  const toggleBuntingMutation = useMutation({
+    mutationFn: async (entry: CourtroomEntry) => {
+      const { error } = await supabase
+        .from('court_rooms')
+        .update({ has_bunting: !entry.has_bunting })
+        .eq('room_id', entry.room_id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courtroom-directory'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update bunting status. Please try again.',
+        variant: 'destructive',
+      });
+    },
   });
 
   const selectedEntry = selectedId
@@ -543,13 +623,18 @@ export default function Courtrooms() {
   // walk up to the desk asking for.
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return entries;
-    return entries.filter(e =>
-      (e.part || '').toLowerCase().includes(q) ||
-      (e.justice || '').toLowerCase().includes(q) ||
-      (e.room_number || '').toLowerCase().includes(q)
-    );
+    const matches = q
+      ? entries.filter(e =>
+          (e.part || '').toLowerCase().includes(q) ||
+          (e.justice || '').toLowerCase().includes(q) ||
+          (e.room_number || '').toLowerCase().includes(q)
+        )
+      : entries;
+    // Bunting-flagged rooms surface first so they're impossible to miss.
+    return [...matches].sort((a, b) => Number(b.has_bunting) - Number(a.has_bunting));
   }, [entries, query]);
+
+  const buntingCount = useMemo(() => entries.filter(e => e.has_bunting).length, [entries]);
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-6 space-y-5">
@@ -588,9 +673,17 @@ export default function Courtrooms() {
         </Card>
       ) : (
         <>
-          <p className="text-xs text-muted-foreground">
-            {filtered.length} courtroom{filtered.length === 1 ? '' : 's'}
-            {query && ` matching "${query}"`}
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+            <span>
+              {filtered.length} courtroom{filtered.length === 1 ? '' : 's'}
+              {query && ` matching "${query}"`}
+            </span>
+            {buntingCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-[hsl(var(--brand-gold))]">
+                <Sparkles className="h-3 w-3" />
+                {buntingCount} with bunting
+              </span>
+            )}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.map((entry) => (
@@ -608,6 +701,9 @@ export default function Courtrooms() {
         entry={selectedEntry}
         open={selectedId !== null}
         onOpenChange={(o) => { if (!o) setSelectedId(null); }}
+        canManageBunting={canManageBunting}
+        onToggleBunting={(e) => toggleBuntingMutation.mutate(e)}
+        isTogglingBunting={toggleBuntingMutation.isPending}
       />
     </div>
   );
