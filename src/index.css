@@ -502,6 +502,11 @@
   .animate-blue-glow {
     animation: blue-glow 2.2s ease-in-out infinite;
   }
+
+  /* Subtle animated gold glow for bunting-flagged courtrooms */
+  .animate-gold-glow {
+    animation: gold-glow 2.2s ease-in-out infinite;
+  }
 }
 
 @keyframes scale-in {
@@ -561,9 +566,16 @@
   50% { box-shadow: 0 0 18px rgba(168, 85, 247, 0.6); }
 }
 
+/* Keyframes for subtle gold glow (bunting flagged) */
+@keyframes gold-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(197, 154, 63, 0); }
+  50% { box-shadow: 0 0 18px rgba(197, 154, 63, 0.65); }
+}
+
 /* Animated glow utility classes */
 .animate-yellow-glow { animation: yellow-glow 2.2s ease-in-out infinite; }
 .animate-purple-glow { animation: purple-glow 2.2s ease-in-out infinite; }
+.animate-gold-glow { animation: gold-glow 2.2s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -580,6 +592,7 @@
   .animate-blue-glow,
   .animate-yellow-glow,
   .animate-purple-glow,
+  .animate-gold-glow,
   .animate-pulse,
   .animate-bounce {
     animation: none !important;

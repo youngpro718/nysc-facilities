@@ -73,9 +73,12 @@ export function useRoomFilters({
         case 'name_desc':
           return b.name.localeCompare(a.name);
         case 'created_desc':
+        case 'created_at_desc':
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case 'created_asc':
           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'updated_at_desc':
+          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
         case 'room_number_asc':
           return (a.room_number || '').localeCompare(b.room_number || '');
         case 'room_number_desc':
