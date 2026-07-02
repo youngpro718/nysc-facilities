@@ -203,8 +203,8 @@ export function KeyPersonnelPanel({ canEdit }: { canEdit: boolean }) {
 
   return (
     <div className="space-y-4">
-      <ChambersMovePlanner personnel={personnel} canEdit={canEdit} />
-
+      {/* The directory is the standing record that feeds the term sheet, so it
+          leads; the move planner below is the occasional-change tool. */}
       <section className="overflow-hidden rounded-md border border-border bg-card">
       <div className="grid gap-5 border-b border-border bg-muted/20 px-4 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:px-6">
         <div>
@@ -465,6 +465,8 @@ export function KeyPersonnelPanel({ canEdit }: { canEdit: boolean }) {
         </form>
         </ModalFrame>
       </section>
+
+      <ChambersMovePlanner personnel={personnel} canEdit={canEdit} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@shared/hooks/use-mobile';
-import { Loader2, GripVertical, AlertTriangle, Calendar, ChevronLeft, ChevronRight, Plus, Phone } from "lucide-react";
+import { Loader2, GripVertical, AlertTriangle, Calendar, ChevronLeft, ChevronRight, Plus, Phone, Megaphone } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -186,6 +186,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const [pdfLoading, setPdfLoading] = useState(false);
   const [previewIssueId, setPreviewIssueId] = useState<string | null>(null);
   const [editingAssignment, setEditingAssignment] = useState<EditableAssignment | null>(null);
+  const [notifying, setNotifying] = useState(false);
   const { toast } = useToast();
   const { personnel } = useCourtPersonnel();
   const queryClient = useQueryClient();
@@ -757,6 +758,25 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     );
   }
 
+  // "It goes out to everyone": after finishing a round of term edits, the
+  // editor pushes one notification to every user rather than each edit
+  // spamming the building. The RPC enforces the same editor-role gate as RLS.
+  const notifyEveryone = async () => {
+    setNotifying(true);
+    const { data, error } = await supabase.rpc('broadcast_term_update', {
+      p_title: 'Term sheet updated',
+      p_message: currentTerm?.name
+        ? `${currentTerm.name} has been updated. Open the term sheet for the latest assignments.`
+        : 'Court assignments have changed. Open the term sheet for the latest.',
+    });
+    setNotifying(false);
+    if (error) {
+      toast({ title: 'Could not notify everyone', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Everyone notified', description: `Update sent to ${data} ${data === 1 ? 'person' : 'people'}.` });
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header Bar */}
@@ -788,6 +808,23 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
             <Button variant="outline" size="sm" className="h-8 text-xs px-2" onClick={() => setAddPartOpen(true)}>
               <Plus className="h-3.5 w-3.5 mr-1" />
               Add Part
+            </Button>
+          )}
+          {isAdmin && selectedTermId && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs px-2"
+              disabled={notifying}
+              onClick={notifyEveryone}
+              title="Send a notification to every user that the term sheet changed"
+            >
+              {notifying ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+              ) : (
+                <Megaphone className="h-3.5 w-3.5 mr-1" />
+              )}
+              Notify everyone
             </Button>
           )}
           <div className="relative">

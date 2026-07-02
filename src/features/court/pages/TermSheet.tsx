@@ -3,6 +3,7 @@ import { KeyPersonnelPanel } from "@features/court/components/personnel/KeyPerso
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileTextIcon, PersonIcon } from "@radix-ui/react-icons";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 /**
  * Term Sheet Page
@@ -16,19 +17,17 @@ export default function TermSheet() {
 
   return (
     <div className="space-y-4 pb-20 md:pb-8">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Court Operations</h1>
-          <p className="text-sm text-muted-foreground">
-            Current assignments and the personnel needed to run them
-          </p>
-        </div>
+      <PageHeader
+        title="Court Operations"
+        description="Current assignments and the personnel needed to run them"
+        className="mb-0"
+      >
         {!canEdit && (
           <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
             Read-only
           </span>
         )}
-      </div>
+      </PageHeader>
 
       <Tabs defaultValue="assignments" className="space-y-4">
         <TabsList className="grid w-full max-w-md grid-cols-2">

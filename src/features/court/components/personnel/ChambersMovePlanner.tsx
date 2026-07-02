@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
+import { supabase } from "@/lib/supabase";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -91,6 +92,7 @@ export function ChambersMovePlanner({
   const [editingPlan, setEditingPlan] = useState<ChambersMovePlan | null>(null);
   const [completingPlan, setCompletingPlan] = useState<ChambersMovePlan | null>(null);
   const [cancellingPlan, setCancellingPlan] = useState<ChambersMovePlan | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -114,8 +116,16 @@ export function ChambersMovePlanner({
   );
 
   const currentPlans = plans.filter((plan) => plan.status === "scheduled");
+  // Finished plans age out after two weeks — this panel is for planning, not a
+  // permanent archive. Completed moves already live on in the personnel/room
+  // records they updated.
+  const historyCutoff = subDays(new Date(), 14);
   const recentPlans = plans
-    .filter((plan) => plan.status !== "scheduled")
+    .filter((plan) => {
+      if (plan.status === "scheduled") return false;
+      const finishedAt = plan.completed_at || plan.cancelled_at || plan.created_at;
+      return new Date(finishedAt) >= historyCutoff;
+    })
     .slice(0, 3);
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -221,8 +231,18 @@ export function ChambersMovePlanner({
   });
 
   const completePlan = useMutation({
-    mutationFn: completeChambersMovePlan,
-    onSuccess: () => {
+    mutationFn: async (plan: ChambersMovePlan) => {
+      await completeChambersMovePlan(plan.id);
+      // "It goes out to everyone": completing a move is the moment the
+      // directory actually changes, so notify all users. Best-effort — the
+      // move itself already succeeded, so a notification failure only logs.
+      const { error: broadcastError } = await supabase.rpc("broadcast_term_update", {
+        p_title: "Chambers assignments updated",
+        p_message: `${plan.title} is complete — the personnel directory and room records now show the new locations.`,
+      });
+      return { notified: !broadcastError };
+    },
+    onSuccess: ({ notified }) => {
       queryClient.invalidateQueries({ queryKey: ["chambers-move-plans"] });
       queryClient.invalidateQueries({ queryKey: ["key-personnel"] });
       queryClient.invalidateQueries({ queryKey: ["court-personnel"] });
@@ -239,7 +259,9 @@ export function ChambersMovePlanner({
       setCompletingPlan(null);
       toast({
         title: "Chambers move completed",
-        description: "Personnel and room records now show the new assignments.",
+        description: notified
+          ? "Personnel and room records are updated, and everyone has been notified."
+          : "Personnel and room records now show the new assignments.",
       });
     },
     onError: (error: Error) => {
@@ -301,7 +323,15 @@ export function ChambersMovePlanner({
         </div>
       ) : (
         <div className="divide-y divide-border">
-          {[...currentPlans, ...recentPlans].map((plan) => {
+          {currentPlans.length === 0 && (
+            <div className="px-4 py-4 md:px-6">
+              <p className="text-sm font-medium">No chambers moves scheduled</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Current occupancy will stay unchanged until a planned move is completed.
+              </p>
+            </div>
+          )}
+          {[...currentPlans, ...(showHistory ? recentPlans : [])].map((plan) => {
             const isDue = plan.effective_date <= today;
             return (
               <div key={plan.id} className="px-4 py-4 md:px-6">
@@ -401,6 +431,20 @@ export function ChambersMovePlanner({
               </div>
             );
           })}
+          {/* Finished plans live behind this footer toggle so the panel goes
+              quiet once a move is done instead of pinning it on screen. They
+              age out entirely after 14 days. */}
+          {recentPlans.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowHistory((current) => !current)}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground md:px-6"
+            >
+              <ClockIcon className="h-3.5 w-3.5" />
+              Recent history ({recentPlans.length})
+              <span className="ml-auto">{showHistory ? "Hide" : "Show"}</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -622,14 +666,15 @@ export function ChambersMovePlanner({
             <AlertDialogTitle>Complete this chambers move?</AlertDialogTitle>
             <AlertDialogDescription>
               This will update the personnel directory and room names to the new
-              assignments. The plan remains in history after completion.
+              assignments, and notify everyone that chambers have changed. The plan
+              stays under Recent history for two weeks, then clears out.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep scheduled</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
-                completingPlan && completePlan.mutate(completingPlan.id)
+                completingPlan && completePlan.mutate(completingPlan)
               }
             >
               Complete move
