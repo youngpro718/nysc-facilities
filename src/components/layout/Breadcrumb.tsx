@@ -7,11 +7,9 @@ import {
   BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { getBreadcrumbTrail } from '@/config/routes';
-import { usePermissions } from '@shared/hooks/usePermissions';
 import { useGoHome } from '@shared/hooks/useHomePath';
 
 interface BreadcrumbProps {
@@ -26,7 +24,6 @@ interface BreadcrumbProps {
 export function Breadcrumb({ className }: BreadcrumbProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin } = usePermissions();
   const goHome = useGoHome();
 
   const trail = getBreadcrumbTrail(location.pathname);
@@ -61,36 +58,26 @@ export function Breadcrumb({ className }: BreadcrumbProps) {
         </Button>
       </div>
 
-      {/* Desktop: Full breadcrumb trail */}
-      <div className={`hidden md:block mb-4 ${className}`}>
+      {/* Desktop: parent links only. The page itself is named right below by
+          PageHeader (and in the app top bar), so repeating it here made the
+          same title appear three times on every screen. */}
+      <div className={`hidden md:block mb-1.5 ${className}`}>
         <ShadcnBreadcrumb>
-          <BreadcrumbList>
-            {trail.map((route, index) => {
-              const isLast = index === trail.length - 1;
-              const Icon = route.icon;
-
-              return (
-                <Fragment key={route.path}>
-                  <BreadcrumbItem>
-                    {isLast ? (
-                      <BreadcrumbPage className="flex items-center gap-2">
-                        {Icon && <Icon className="h-4 w-4" />}
-                        {route.breadcrumbLabel}
-                      </BreadcrumbPage>
-                    ) : (
-                      <BreadcrumbLink
-                        onClick={() => navigate(route.path)}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        {index === 0 && <Home className="h-4 w-4" />}
-                        {route.breadcrumbLabel}
-                      </BreadcrumbLink>
-                    )}
-                  </BreadcrumbItem>
-                  {!isLast && <BreadcrumbSeparator />}
-                </Fragment>
-              );
-            })}
+          <BreadcrumbList className="text-xs">
+            {trail.slice(0, -1).map((route, index) => (
+              <Fragment key={route.path}>
+                <BreadcrumbItem>
+                  <BreadcrumbLink
+                    onClick={() => navigate(route.path)}
+                    className="flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {index === 0 && <Home className="h-3.5 w-3.5" />}
+                    {route.breadcrumbLabel}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+              </Fragment>
+            ))}
           </BreadcrumbList>
         </ShadcnBreadcrumb>
       </div>

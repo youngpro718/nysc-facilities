@@ -362,7 +362,7 @@ const RoomsPage = () => {
           <ResizablePanel defaultSize={72}>
             <div className="h-full min-h-0 overflow-y-auto p-6 flex items-start justify-center">
               {panelRoom ? (
-                <div className="w-full max-w-2xl space-y-3">
+                <div className="w-full max-w-4xl space-y-3">
                   {panelAssignment && (
                     <CourtroomAssignmentHeader assignment={panelAssignment} />
                   )}

@@ -1,6 +1,5 @@
 
-import { StatusCard } from "@/components/ui/StatusCard";
-import { Database, Package2, Users, List } from "lucide-react";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KeyData } from "./types/KeyTypes";
 
@@ -11,13 +10,7 @@ interface KeyStatisticsCardsProps {
 
 export function KeyStatisticsCards({ keyStats, isLoading }: KeyStatisticsCardsProps) {
   if (isLoading) {
-    return (
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-        {Array(4).fill(0).map((_, i) => (
-          <Skeleton key={i} className="h-[110px] rounded-md" />
-        ))}
-      </div>
-    );
+    return <Skeleton className="h-12 rounded-md" />;
   }
 
   const stats = {
@@ -30,35 +23,18 @@ export function KeyStatisticsCards({ keyStats, isLoading }: KeyStatisticsCardsPr
   const lowAvailability = stats.totalStock > 0 && stats.available / stats.totalStock < 0.2;
 
   return (
-    <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-      <StatusCard
-        statusVariant="neutral"
-        title="Total Keys"
-        value={stats.totalKeys}
-        subLabel="Key types registered"
-        icon={Database}
-      />
-      <StatusCard
-        statusVariant="info"
-        title="Total Stock"
-        value={stats.totalStock}
-        subLabel="Physical keys"
-        icon={Package2}
-      />
-      <StatusCard
-        statusVariant={stats.assigned > 0 ? "info" : "neutral"}
-        title="Assigned"
-        value={stats.assigned}
-        subLabel="Currently issued"
-        icon={Users}
-      />
-      <StatusCard
-        statusVariant={lowAvailability ? "warning" : "operational"}
-        title="Available"
-        value={stats.available}
-        subLabel={lowAvailability ? "Low availability" : "Ready to assign"}
-        icon={List}
-      />
-    </div>
+    <StatStrip
+      items={[
+        { label: "key types", value: stats.totalKeys, tone: "neutral" },
+        { label: "physical keys", value: stats.totalStock, tone: "info" },
+        { label: "assigned", value: stats.assigned, tone: stats.assigned > 0 ? "info" : "neutral" },
+        {
+          label: "available",
+          value: stats.available,
+          sub: lowAvailability ? "low availability" : "ready to assign",
+          tone: lowAvailability ? "warning" : "operational",
+        },
+      ]}
+    />
   );
 }

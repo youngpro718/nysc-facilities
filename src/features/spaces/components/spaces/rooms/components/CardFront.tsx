@@ -147,7 +147,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Icon className={`h-4 w-4 ${palette.text}`} />
-                      <span className={`text-xs font-semibold uppercase tracking-wide ${palette.text}`}>{palette.label}</span>
+                      <span className={`text-xs font-semibold ${palette.text}`}>{palette.label}</span>
                     </div>
                     {hasIssues && (
                       <span className={`text-3xl sm:text-4xl font-bold ${palette.text}`}>{health.openCount}</span>
@@ -218,9 +218,10 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
             </div>
           )}
 
-          {/* Room Notes / Known Issues */}
+          {/* Room notes — neutral surface: notes are secondary context, so they
+              shouldn't out-shout the health banner above (color ranks by importance) */}
           <div
-            className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 relative"
+            className="bg-card border border-border rounded-lg p-3 relative"
             onClick={(e) => e.stopPropagation()}
           >
             <RoomNotesPanel roomId={room.id} compact />

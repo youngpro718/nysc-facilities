@@ -4,49 +4,45 @@ import { cn } from "@/lib/utils";
 interface PageHeaderProps {
   title: string;
   description?: string;
+  /** Kept for API compatibility; the slim header no longer renders an icon box. */
   icon?: LucideIcon;
   children?: React.ReactNode;
   className?: string;
 }
 
 /**
- * Unified page header used across the app for consistent vertical rhythm,
- * typography, and optional icon framing. Place inside <PageContainer /> or
- * a feature container.
+ * Unified page header used across the app.
+ *
+ * Deliberately slim: one row with the title, an inline muted description
+ * (wide screens only), and page actions on the right. The app chrome already
+ * names the page in the top bar and the breadcrumb names its parents, so a
+ * tall hero block here would be the third title on screen.
  */
 export function PageHeader({
   title,
   description,
-  icon: Icon,
   children,
   className,
 }: PageHeaderProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6",
+        "flex items-center justify-between gap-3 mb-4 min-h-9",
         className,
       )}
     >
-      <div className="flex items-center gap-3 min-w-0">
-        {Icon && (
-          <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-            <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-          </div>
+      <div className="flex items-baseline gap-2.5 min-w-0">
+        <h1 className="text-lg sm:text-xl font-semibold tracking-tight truncate shrink-0">
+          {title}
+        </h1>
+        {description && (
+          <p className="hidden lg:block text-sm text-muted-foreground truncate min-w-0">
+            {description}
+          </p>
         )}
-        <div className="space-y-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight truncate">
-            {title}
-          </h1>
-          {description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {description}
-            </p>
-          )}
-        </div>
       </div>
       {children && (
-        <div className="flex flex-wrap items-center gap-2 md:shrink-0">
+        <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
           {children}
         </div>
       )}

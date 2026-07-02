@@ -8,6 +8,7 @@ import {
 } from '@features/dashboard/hooks/useMyRequests';
 import { MyRequestRow as RowComponent } from '@features/dashboard/components/MyRequestRow';
 import { MyRequestDetailDrawer } from '@features/dashboard/components/MyRequestDetailDrawer';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 type Filter = 'all' | 'open' | 'done';
 type TypeFilter = 'all' | 'supply' | 'request';
@@ -65,10 +66,11 @@ export default function MyRequests() {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4 space-y-4">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">My Requests</h1>
-        <p className="text-sm text-muted-foreground">Supply orders and service requests in one place.</p>
-      </header>
+      <PageHeader
+        title="My Requests"
+        description="Supply orders and service requests in one place"
+        className="mb-0"
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         {(['all', 'open', 'done'] as Filter[]).map((f) => (

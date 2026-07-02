@@ -8,8 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  AlertTriangle, 
+import {
   ArrowRight,
   Calendar,
   Clock,
@@ -50,41 +49,6 @@ export function OperationsOverviewTab({
 }: OperationsOverviewTabProps) {
   const criticalPreview = criticalIssues.slice(0, 5);
 
-  const summaryCards = [
-    {
-      label: "Critical attention",
-      value: enhancedMetrics.criticalCount,
-      detail: enhancedMetrics.criticalCount > 0 ? "Needs action now" : "No critical blockers",
-      icon: AlertTriangle,
-      classes: "border-red-200/80 bg-red-50/70 text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-300",
-      iconClasses: "text-red-500",
-    },
-    {
-      label: "Active queue",
-      value: enhancedMetrics.activeIssues,
-      detail: `${enhancedMetrics.inProgress} already in progress`,
-      icon: AlertCircle,
-      classes: "border-amber-200/80 bg-amber-50/70 text-amber-700 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-300",
-      iconClasses: "text-amber-500",
-    },
-    {
-      label: "Maintenance active",
-      value: enhancedMetrics.maintenanceInProgress,
-      detail: `${enhancedMetrics.maintenanceScheduled} scheduled next`,
-      icon: Wrench,
-      classes: "border-blue-200/80 bg-blue-50/70 text-blue-700 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-300",
-      iconClasses: "text-blue-500",
-    },
-    {
-      label: "Resolved today",
-      value: enhancedMetrics.resolvedToday,
-      detail: enhancedMetrics.resolvedToday > 0 ? "Daily throughput improving" : "No resolutions yet today",
-      icon: CheckCircle,
-      classes: "border-emerald-200/80 bg-emerald-50/70 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300",
-      iconClasses: "text-emerald-500",
-    },
-  ];
-
   const getPriorityClasses = (priority: string) => {
     switch (String(priority || "").toLowerCase()) {
       case "critical":
@@ -116,60 +80,9 @@ export function OperationsOverviewTab({
 
   return (
     <div className="space-y-6">
-      {/* Snapshot card — full width */}
-      <Card className="border-slate-200/80 bg-card shadow-sm dark:border-slate-800">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle>Operations snapshot</CardTitle>
-              {enhancedMetrics.criticalCount > 0 && (
-                <Badge variant="destructive">{enhancedMetrics.criticalCount} critical</Badge>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={onCreateIssue} size="sm">
-                <AlertTriangle className="mr-2 h-4 w-4" />
-                Report issue
-              </Button>
-              <Button onClick={onScheduleMaintenance} variant="outline" size="sm">
-                <Calendar className="mr-2 h-4 w-4" />
-                Schedule work
-              </Button>
-              <Button onClick={() => onTabChange('issues')} variant="ghost" size="sm">
-                <AlertCircle className="mr-2 h-4 w-4" />
-                Issues
-              </Button>
-              <Button onClick={() => onTabChange('maintenance')} variant="ghost" size="sm">
-                <Wrench className="mr-2 h-4 w-4" />
-                Maintenance
-              </Button>
-              <Button onClick={onRefresh} variant="ghost" size="sm">
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {summaryCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <div key={card.label} className={`rounded-md border p-4 ${card.classes}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium uppercase tracking-wide opacity-80">{card.label}</p>
-                      <p className="text-3xl font-semibold text-foreground">{card.value}</p>
-                      <p className="text-xs opacity-80">{card.detail}</p>
-                    </div>
-                    <Icon className={`h-5 w-5 ${card.iconClasses}`} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      {/* The metrics strip and page actions live at the page level (Operations.tsx)
+          — this tab used to repeat both in an "Operations snapshot" card, so the
+          same four numbers appeared twice on one screen. */}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.8fr_1fr]">
@@ -274,32 +187,34 @@ export function OperationsOverviewTab({
                 Maintenance
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
-                <div>
-                  <p className="text-sm font-medium text-amber-700 dark:text-amber-300">In progress</p>
-                  <p className="text-3xl font-semibold text-foreground">{enhancedMetrics.maintenanceInProgress}</p>
+            <CardContent className="space-y-1">
+              <div className="divide-y divide-border">
+                <div className="flex items-center justify-between py-2.5 text-sm">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4 text-amber-500" />
+                    In progress
+                  </span>
+                  <span className="font-semibold tabular-nums">{enhancedMetrics.maintenanceInProgress}</span>
                 </div>
-                <Clock className="h-7 w-7 text-amber-500" />
-              </div>
-              <div className="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/20">
-                <div>
-                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Scheduled</p>
-                  <p className="text-3xl font-semibold text-foreground">{enhancedMetrics.maintenanceScheduled}</p>
+                <div className="flex items-center justify-between py-2.5 text-sm">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4 text-blue-500" />
+                    Scheduled
+                  </span>
+                  <span className="font-semibold tabular-nums">{enhancedMetrics.maintenanceScheduled}</span>
                 </div>
-                <Calendar className="h-7 w-7 text-blue-500" />
-              </div>
-              <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
-                <div>
-                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Resolved today</p>
-                  <p className="text-3xl font-semibold text-foreground">{enhancedMetrics.resolvedToday}</p>
+                <div className="flex items-center justify-between py-2.5 text-sm">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle className="h-4 w-4 text-emerald-500" />
+                    Resolved today
+                  </span>
+                  <span className="font-semibold tabular-nums">{enhancedMetrics.resolvedToday}</span>
                 </div>
-                <CheckCircle className="h-7 w-7 text-emerald-500" />
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-between"
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between !mt-3"
                 onClick={() => onTabChange('maintenance')}
               >
                 View maintenance

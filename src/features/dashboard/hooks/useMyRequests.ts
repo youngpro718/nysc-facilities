@@ -62,11 +62,14 @@ export function mergeRows(
   tasks: TaskRow[],
   keyRequests: KeyRequestRow[] = [],
   roomLabels: Map<string, string> = new Map(),
+  supplyItemSummaries: Map<string, string> = new Map(),
 ): MyRequestRow[] {
   const supplyRows: MyRequestRow[] = supplies.map((s) => ({
     id: s.id,
     type: 'supply',
-    title: s.description?.trim() || 'Supply order',
+    // Lead with what was actually ordered; the order id is metadata, not the headline.
+    title:
+      supplyItemSummaries.get(s.id) || s.description?.trim() || 'Supply order',
     location_label: s.delivery_location,
     status_internal: s.status,
     created_at: s.created_at,
@@ -161,7 +164,35 @@ export function useMyRequests() {
         }
       }
 
-      return mergeRows((supplyRes.data ?? []) as SupplyRow[], tasks, keyRequests, roomLabels);
+      // Summarize what each supply order contains ("Batteries (AA) ×4, Pens ×2 +3 more")
+      // so rows lead with content instead of a bare "Supply order" + id.
+      const supplies = (supplyRes.data ?? []) as SupplyRow[];
+      const supplyItemSummaries = new Map<string, string>();
+      if (supplies.length > 0) {
+        const { data: lineItems } = await supabase
+          .from('supply_request_items')
+          .select('request_id, quantity_requested, inventory_items(name)')
+          .in('request_id', supplies.map((s) => s.id));
+        const byRequest = new Map<string, string[]>();
+        for (const li of (lineItems ?? []) as Array<{
+          request_id: string;
+          quantity_requested: number | null;
+          inventory_items: { name: string | null } | null;
+        }>) {
+          const name = li.inventory_items?.name;
+          if (!name) continue;
+          const list = byRequest.get(li.request_id) ?? [];
+          list.push(li.quantity_requested && li.quantity_requested > 1 ? `${name} ×${li.quantity_requested}` : name);
+          byRequest.set(li.request_id, list);
+        }
+        for (const [requestId, names] of byRequest) {
+          const shown = names.slice(0, 2).join(', ');
+          const extra = names.length - 2;
+          supplyItemSummaries.set(requestId, extra > 0 ? `${shown} +${extra} more` : shown);
+        }
+      }
+
+      return mergeRows(supplies, tasks, keyRequests, roomLabels, supplyItemSummaries);
     },
   });
 }

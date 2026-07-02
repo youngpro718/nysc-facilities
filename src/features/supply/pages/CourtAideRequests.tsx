@@ -2,6 +2,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSearchParams } from 'react-router-dom';
 import { QuickOrderGrid } from '@features/supply/components/supply/QuickOrderGrid';
 import { RequestForm } from '@features/supply/components/request/RequestForm';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function CourtAideRequests() {
   const [params, setParams] = useSearchParams();
@@ -9,12 +10,10 @@ export default function CourtAideRequests() {
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4">
-      <header className="mb-4 space-y-1">
-        <h1 className="text-2xl font-semibold">Supplies &amp; Requests</h1>
-        <p className="text-sm text-muted-foreground">
-          Order supplies from the stockroom, or make a request to the court aides.
-        </p>
-      </header>
+      <PageHeader
+        title="Supplies & Requests"
+        description="Order supplies from the stockroom, or make a request to the court aides"
+      />
       <Tabs
         value={tab}
         onValueChange={(v) =>

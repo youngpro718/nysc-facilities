@@ -112,7 +112,7 @@ export function AppSidebar() {
                       className={cn(
                         "relative flex h-10 w-full items-center justify-center rounded-md transition-colors",
                         active
-                          ? "bg-white/[0.12] text-white"
+                          ? "bg-white/[0.12] text-white shadow-[inset_2px_0_0_hsl(var(--brand-gold))]"
                           : "text-slate-300 hover:bg-white/[0.07] hover:text-white"
                       )}
                     >
@@ -140,7 +140,7 @@ export function AppSidebar() {
                 className={cn(
                   "flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors",
                   active
-                    ? "border-l-2 border-l-white bg-white/[0.12] text-white"
+                    ? "border-l-2 border-l-[hsl(var(--brand-gold))] bg-white/[0.12] text-white"
                     : "text-slate-300 hover:bg-white/[0.07] hover:text-white"
                 )}
               >

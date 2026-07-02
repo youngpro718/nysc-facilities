@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusCard } from "@/components/ui/StatusCard";
+import { StatStrip } from "@/components/ui/StatStrip";
 import {
   AlertTriangle,
   Wrench,
@@ -315,44 +315,41 @@ export default function Operations() {
 
 
 
-      {/* KPI Stats */}
+      {/* KPI Stats — one compact strip; the tab content below carries the detail */}
       {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array(4).fill(0).map((_, i) => (
-            <Skeleton key={i} className="h-[110px] rounded-md" />
-          ))}
-        </div>
+        <Skeleton className="h-12 rounded-md" />
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatusCard
-            statusVariant={enhancedMetrics.criticalCount > 0 ? "critical" : enhancedMetrics.activeIssues > 0 ? "warning" : "operational"}
-            title="Active Issues"
-            value={enhancedMetrics.activeIssues}
-            subLabel={`${enhancedMetrics.criticalCount} critical`}
-            icon={AlertCircle}
-          />
-          <StatusCard
-            statusVariant="info"
-            title="In Progress"
-            value={enhancedMetrics.inProgress}
-            subLabel={`${enhancedMetrics.maintenanceInProgress} maintenance`}
-            icon={Clock}
-          />
-          <StatusCard
-            statusVariant="operational"
-            title="Resolved Today"
-            value={enhancedMetrics.resolvedToday}
-            subLabel="Completed today"
-            icon={CheckCircle}
-          />
-          <StatusCard
-            statusVariant={enhancedMetrics.totalMaintenanceItems > 0 ? "warning" : "operational"}
-            title="Maintenance Queue"
-            value={enhancedMetrics.totalMaintenanceItems}
-            subLabel={`${enhancedMetrics.maintenanceScheduled} scheduled · ${enhancedMetrics.maintenanceInProgress} active`}
-            icon={Wrench}
-          />
-        </div>
+        <StatStrip
+          items={[
+            {
+              label: "active issues",
+              value: enhancedMetrics.activeIssues,
+              sub: `${enhancedMetrics.criticalCount} critical`,
+              tone:
+                enhancedMetrics.criticalCount > 0
+                  ? "critical"
+                  : enhancedMetrics.activeIssues > 0
+                    ? "warning"
+                    : "operational",
+            },
+            {
+              label: "in progress",
+              value: enhancedMetrics.inProgress,
+              tone: "info",
+            },
+            {
+              label: "resolved today",
+              value: enhancedMetrics.resolvedToday,
+              tone: "operational",
+            },
+            {
+              label: "maintenance queued",
+              value: enhancedMetrics.totalMaintenanceItems,
+              sub: `${enhancedMetrics.maintenanceScheduled} scheduled · ${enhancedMetrics.maintenanceInProgress} active`,
+              tone: enhancedMetrics.totalMaintenanceItems > 0 ? "warning" : "neutral",
+            },
+          ]}
+        />
       )}
       </div>
 

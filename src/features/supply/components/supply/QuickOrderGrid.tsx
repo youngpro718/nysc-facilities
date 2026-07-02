@@ -58,9 +58,13 @@ export function QuickOrderGrid() {
     [inventoryItems],
   );
 
-  const selectedItem = selectedItemId 
+  // Desktop: never leave the detail panel empty — fall back to the first
+  // visible item until the user picks one. Mobile keeps null so the detail
+  // modal only opens on an explicit tap.
+  const explicitItem = selectedItemId
     ? inventoryItems.find((item: any) => item.id === selectedItemId)
     : null;
+  const selectedItem = explicitItem ?? (!isMobile ? filteredItems[0] ?? null : null);
 
   const handleSelectItem = (itemId: string) => {
     setSelectedItemId(itemId);
