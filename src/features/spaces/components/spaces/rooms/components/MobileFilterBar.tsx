@@ -86,8 +86,9 @@ export function MobileFilterBar({
   const clearAllFilters = () => {
     onStatusFilterChange("all");
     onRoomTypeFilterChange("");
+    // Clearing the building also clears the floor in the same URL update; a second
+    // onFloorChange call here would rebuild from stale params and undo it.
     onBuildingChange?.("all");
-    onFloorChange?.("all");
   };
 
   return (
@@ -131,7 +132,7 @@ export function MobileFilterBar({
                   <Filter className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="h-[50dvh]">
+              <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle>Advanced Filters</SheetTitle>
                   <SheetDescription>Refine your search results</SheetDescription>
@@ -140,10 +141,8 @@ export function MobileFilterBar({
                   {onBuildingChange && (
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Building</label>
-                      <Select
-                        value={selectedBuildingId}
-                        onValueChange={onBuildingChange}
-                      >
+                      {/* onBuildingChange also resets the floor (single URL update in RoomsPage) */}
+                      <Select value={selectedBuildingId} onValueChange={onBuildingChange}>
                         <SelectTrigger className="w-full h-11">
                           <SelectValue placeholder="All buildings" />
                         </SelectTrigger>

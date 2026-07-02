@@ -36,16 +36,15 @@ import { useCourtAssignmentsMap } from "@features/spaces/hooks/queries/useCourtA
 import { CourtroomAssignmentHeader } from "../rooms/components/CourtroomAssignmentHeader";
 import { BuildingFloorScopeBar } from "../rooms/components/BuildingFloorScopeBar";
 
-// Define a type for sort options to fix the TS error
+// Sort options offered by the FilterBar/MobileFilterBar dropdowns.
+// Keep in sync with the switch in useRoomFilters.
 export type SortOption =
   | "name_asc"
   | "name_desc"
-  | "status_asc"
-  | "status_desc"
   | "room_number_asc"
   | "room_number_desc"
-  | "room_type_asc"
-  | "room_type_desc";
+  | "updated_at_desc"
+  | "created_at_desc";
 
 
 
@@ -109,6 +108,9 @@ const RoomsPage = () => {
   };
 
   // Setters used by the filter bar Building/Floor dropdowns. "all" clears the param.
+  // Changing buildings also clears the floor in the SAME update — two back-to-back
+  // setSearchParams calls would both build from this render's stale searchParams,
+  // so the second would silently drop the building that was just set.
   const setBuildingParam = (id: string) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -216,6 +218,16 @@ const RoomsPage = () => {
     },
   });
 
+  const hasActiveFilters =
+    !!searchQuery || statusFilter !== 'all' || !!roomTypeFilter || !!urlBuildingId || !!urlFloorId;
+
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setRoomTypeFilter("");
+    clearBuildingScope();
+  };
+
   const handleRefresh = () => {
     refetch();
     toast({
@@ -312,6 +324,23 @@ const RoomsPage = () => {
         </div>
       </div>
 
+      {/* Filter result summary */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-3 text-sm text-muted-foreground shrink-0 -mt-2">
+          <span>
+            Showing {filteredAndSortedRooms.length} of {rooms?.length ?? 0} rooms
+          </span>
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-sm"
+            onClick={clearAllFilters}
+          >
+            Clear all filters
+          </Button>
+        </div>
+      )}
+
       {/* Main Content Area - Master Detail View with left sidebar */}
       {!isMobile ? (
         <ResizablePanelGroup
@@ -350,9 +379,9 @@ const RoomsPage = () => {
                   </div>
                   <h3 className="text-lg font-medium mb-2">No rooms found</h3>
                   <p className="text-sm mb-4">Adjust your search or filters to see rooms</p>
-                  {searchQuery && (
-                    <Button variant="outline" size="sm" onClick={() => setSearchQuery('')}>
-                      Clear search
+                  {hasActiveFilters && (
+                    <Button variant="outline" size="sm" onClick={clearAllFilters}>
+                      Clear all filters
                     </Button>
                   )}
                 </div>

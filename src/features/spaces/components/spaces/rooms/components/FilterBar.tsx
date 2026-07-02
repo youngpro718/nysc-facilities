@@ -1,11 +1,21 @@
 
-import { Search, RefreshCw, Briefcase, GavelIcon, Warehouse, Users, User, Building } from "lucide-react";
+import { Search, RefreshCw, Briefcase, GavelIcon, Warehouse, Users, User, Building, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 export interface BuildingOption { id: string; name: string }
 export interface FloorOption { id: string; name: string; buildingId: string }
+
+const QUICK_FILTERS = [
+  { key: "office", label: "Offices", icon: Briefcase },
+  { key: "courtroom", label: "Courtrooms", icon: GavelIcon },
+  { key: "chamber", label: "Chambers", icon: Building },
+  { key: "storage", label: "Storage", icon: Warehouse },
+  // Labels say "Locker" so they don't read as gender filters of people.
+  { key: "male_locker_room", label: "Men's Locker", icon: User },
+  { key: "female_locker_room", label: "Women's Locker", icon: Users },
+];
 
 interface FilterBarProps {
   searchQuery: string;
@@ -48,11 +58,9 @@ export function FilterBar({
   const visibleFloors = (floors ?? []).filter(
     (f) => selectedBuildingId === "all" || f.buildingId === selectedBuildingId,
   );
+  // Clicking the active type again clears it (same toggle as MobileFilterBar)
   const handleQuickFilter = (roomType: string) => {
-    onRoomTypeFilterChange(roomType);
-  };
-  const handleClearFilter = () => {
-    onRoomTypeFilterChange("");
+    onRoomTypeFilterChange(roomType === roomTypeFilter ? "" : roomType);
   };
 
   return (
@@ -68,6 +76,7 @@ export function FilterBar({
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
+        {/* onBuildingChange also resets the floor (single URL update in RoomsPage) */}
         {onBuildingChange && (
           <Select value={selectedBuildingId} onValueChange={onBuildingChange}>
             <SelectTrigger className="w-[180px]">
@@ -126,68 +135,29 @@ export function FilterBar({
 
       {/* Quick Filters */}
       <div className="flex gap-2 overflow-x-auto pb-1">
-        <Button 
-          variant={roomTypeFilter === "office" ? "default" : "outline"} 
-          size="sm" 
-          className="h-8" 
-          onClick={() => handleQuickFilter("office")}
-        >
-          <Briefcase className="h-4 w-4 mr-1" />
-          Offices
-        </Button>
-        <Button 
-          variant={roomTypeFilter === "courtroom" ? "default" : "outline"} 
-          size="sm" 
-          className="h-8" 
-          onClick={() => handleQuickFilter("courtroom")}
-        >
-          <GavelIcon className="h-4 w-4 mr-1" />
-          Courtrooms
-        </Button>
-        <Button 
-          variant={roomTypeFilter === "chamber" ? "default" : "outline"} 
-          size="sm" 
-          className="h-8" 
-          onClick={() => handleQuickFilter("chamber")}
-        >
-          <Building className="h-4 w-4 mr-1" />
-          Chambers
-        </Button>
-        <Button 
-          variant={roomTypeFilter === "storage" ? "default" : "outline"} 
-          size="sm" 
-          className="h-8" 
-          onClick={() => handleQuickFilter("storage")}
-        >
-          <Warehouse className="h-4 w-4 mr-1" />
-          Storage
-        </Button>
-        <Button 
-          variant={roomTypeFilter === "male_locker_room" ? "default" : "outline"} 
-          size="sm" 
-          className="h-8" 
-          onClick={() => handleQuickFilter("male_locker_room")}
-        >
-          <User className="h-4 w-4 mr-1" />
-          Male Locker
-        </Button>
-        <Button 
-          variant={roomTypeFilter === "female_locker_room" ? "default" : "outline"} 
-          size="sm" 
-          className="h-8" 
-          onClick={() => handleQuickFilter("female_locker_room")}
-        >
-          <Users className="h-4 w-4 mr-1" />
-          Female Locker
-        </Button>
-        <Button 
-          variant={roomTypeFilter === "" ? "default" : "outline"} 
-          size="sm" 
-          className="h-8" 
-          onClick={handleClearFilter}
-        >
-          Clear
-        </Button>
+        {QUICK_FILTERS.map(({ key, label, icon: Icon }) => (
+          <Button
+            key={key}
+            variant={roomTypeFilter === key ? "default" : "outline"}
+            size="sm"
+            className="h-8"
+            onClick={() => handleQuickFilter(key)}
+          >
+            <Icon className="h-4 w-4 mr-1" />
+            {label}
+          </Button>
+        ))}
+        {roomTypeFilter !== "" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-muted-foreground"
+            onClick={() => onRoomTypeFilterChange("")}
+          >
+            <X className="h-4 w-4 mr-1" />
+            Clear
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -66,23 +66,31 @@ export function useRoomFilters({
       return matchesSearch && matchesStatus && matchesBuilding && matchesFloor && matchesRoomType;
     });
 
+    // Missing timestamps sort last regardless of direction
+    const time = (value: string | null | undefined) => {
+      const t = value ? new Date(value).getTime() : NaN;
+      return Number.isNaN(t) ? -Infinity : t;
+    };
+
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case 'name_asc':
-          return a.name.localeCompare(b.name);
+          return a.name.localeCompare(b.name, undefined, { numeric: true });
         case 'name_desc':
-          return b.name.localeCompare(a.name);
-        case 'created_desc':
+          return b.name.localeCompare(a.name, undefined, { numeric: true });
         case 'created_at_desc':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case 'created_asc':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          return time(b.created_at) - time(a.created_at);
         case 'updated_at_desc':
-          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+          return time(b.updated_at) - time(a.updated_at);
         case 'room_number_asc':
-          return (a.room_number || '').localeCompare(b.room_number || '');
-        case 'room_number_desc':
-          return (b.room_number || '').localeCompare(a.room_number || '');
+        case 'room_number_desc': {
+          // Rooms without a number always sort last, in either direction
+          if (!a.room_number || !b.room_number) {
+            return (a.room_number ? 0 : 1) - (b.room_number ? 0 : 1);
+          }
+          const cmp = a.room_number.localeCompare(b.room_number, undefined, { numeric: true });
+          return sortBy === 'room_number_asc' ? cmp : -cmp;
+        }
         default:
           return 0;
       }
