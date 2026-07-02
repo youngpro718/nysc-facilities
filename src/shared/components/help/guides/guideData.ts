@@ -398,6 +398,17 @@ export const guideSections: GuideSection[] = [
           'Court Operations → Shutdowns. Pick the room, the reason, and the expected return date. The room marks as "Under maintenance" across the app (Spaces, Operations, Term Sheet) until you close the shutdown.',
         roles: ADMIN_FM,
       },
+      {
+        question: 'Which courtrooms have bunting on the tables right now?',
+        answer:
+          'Courtrooms (/courtrooms). Rooms with bunting set up glow gold, carry a "Bunting" badge, and sort to the top of the directory, with a count in the header — no need to walk the floors to check.',
+      },
+      {
+        question: 'How do I mark bunting as set up or removed?',
+        answer:
+          'Open the room in the Courtrooms directory and use the "Mark has bunting" / "Mark removed" toggle in the detail view. Court officers and sergeants can flip this themselves — it only changes the bunting flag, nothing else about the room.',
+        roles: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer'],
+      },
     ],
   },
 
