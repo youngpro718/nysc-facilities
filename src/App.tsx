@@ -255,6 +255,8 @@ function AppContent() {
           <Route path="/request" element={<Navigate to="/supplies" replace />} />
           <Route path="/request/help" element={<Navigate to="/supplies?tab=request" replace />} />
           <Route path="/request/supplies" element={<Navigate to="/supplies?tab=order" replace />} />
+          <Route path="/order-supplies" element={<Navigate to="/supplies?tab=order" replace />} />
+          <Route path="/court-operations" element={<Navigate to="/term-sheet" replace />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <UserDashboard />

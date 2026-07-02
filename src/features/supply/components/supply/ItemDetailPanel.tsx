@@ -3,7 +3,7 @@ import { Star, Plus, Package, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { ItemImage } from './ItemImage';
-import { describePackaging, describeQuantity, quickAddSteps } from '@features/inventory/utils/packaging';
+import { describePackaging, describeQuantity, quickAddSteps, pluralize } from '@features/inventory/utils/packaging';
 
 type StockStatus = 'in_stock' | 'low' | 'out';
 
@@ -113,6 +113,26 @@ export function ItemDetailPanel({
           <p className="font-medium text-amber-700 dark:text-amber-400">Requires supervisor review</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             This item must be reviewed by a supervisor before your request can be approved.
+          </p>
+        </div>
+      )}
+
+      {/* Access-code threshold notice */}
+      {typeof item.order_code_threshold === 'number' && item.order_code_threshold > 0 && (
+        <div
+          className={`mb-4 p-3 rounded-lg border text-sm ${
+            quantity >= item.order_code_threshold
+              ? 'border-primary/40 bg-primary/10'
+              : 'border-primary/20 bg-primary/5'
+          }`}
+        >
+          <p className="font-medium text-primary">
+            {quantity >= item.order_code_threshold
+              ? `Code required — ${quantity} ${quantity === 1 ? (item.unit || 'unit') : pluralize(item.unit || 'unit')} ≥ ${item.order_code_threshold}`
+              : `Code required above ${item.order_code_threshold}`}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Orders at or above this quantity need your personal access code at checkout. Find your code on your Profile page.
           </p>
         </div>
       )}

@@ -89,10 +89,15 @@ export function OrderCart({
   const needsApproval = hasRestrictedItems;
   const trimmedLocation = deliveryLocation.trim();
   const missingLocation = trimmedLocation.length === 0;
+  const locationRoomNumber = trimmedLocation
+    .replace(/^room\s+/i, '')
+    .split(/\s*[—-]\s*/)[0]
+    .trim()
+    .toLowerCase();
   const isDifferentFromHome =
     !!profile.homeRoomNumber &&
     trimmedLocation.length > 0 &&
-    trimmedLocation.toLowerCase() !== profile.homeRoomNumber.toLowerCase();
+    locationRoomNumber !== profile.homeRoomNumber.toLowerCase();
 
   const approvalReason = hasRestrictedItems
     ? `Contains ${restrictedItems.length === 1 ? '' : restrictedItems.length + ' '}item${restrictedItems.length === 1 ? '' : 's'} that need supervisor approval: ${restrictedItems.map(i => i.item_name).join(', ')}`
@@ -162,7 +167,7 @@ export function OrderCart({
           <DialogDescription className="text-xs">
             {items.length === 0
               ? 'Your cart is empty'
-              : `${items.length} item${items.length !== 1 ? 's' : ''} • ${totalItems} total`}
+              : `${items.length} line${items.length !== 1 ? 's' : ''} · ${totalItems} unit${totalItems !== 1 ? 's' : ''} total`}
           </DialogDescription>
         </DialogHeader>
 
@@ -269,10 +274,14 @@ export function OrderCart({
                     <MapPin className="h-3.5 w-3.5" />
                     Deliver to <span className="text-destructive">*</span>
                   </Label>
-                  {profile.homeRoomNumber && (
-                    <span className="text-[10px] text-muted-foreground">
-                      Home room: {profile.homeRoomNumber}
-                    </span>
+                  {profile.homeRoomNumber && !deliveryLocation && (
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryLocation(`Room ${profile.homeRoomNumber}`)}
+                      className="text-[10px] text-primary hover:underline"
+                    >
+                      Use home room {profile.homeRoomNumber}
+                    </button>
                   )}
                 </div>
                 <DeliveryRoomPicker
@@ -408,7 +417,8 @@ export function OrderCart({
                   <p className="text-xs text-destructive">{codeError}</p>
                 ) : (
                   <p className="text-[11px] text-muted-foreground">
-                    This order meets or exceeds the limit for an item. Your code authorizes it instantly — no waiting on approval.
+                    {/* New tab: the cart is in-memory state, so navigating away here would wipe the order they're authorizing */}
+                    This order meets or exceeds the limit for an item. Enter your personal code to authorize it instantly — no supervisor wait. You can find your code on your <a href="/profile" target="_blank" rel="noopener" className="underline">Profile page</a>.
                   </p>
                 )}
               </div>

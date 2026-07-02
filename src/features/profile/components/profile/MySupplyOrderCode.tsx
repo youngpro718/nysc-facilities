@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Copy, Check, RefreshCcw } from 'lucide-react';
+import { Copy, Check, RefreshCcw, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@shared/hooks/use-toast';
 import {
   getMySupplyOrderCode,
@@ -22,6 +22,7 @@ export function MySupplyOrderCode() {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [rotating, setRotating] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
   const { data: code, isLoading, error } = useQuery<string>({
     queryKey: QUERY_KEY,
@@ -86,16 +87,26 @@ export function MySupplyOrderCode() {
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={handleCopy}
-              className="font-mono text-3xl sm:text-4xl tracking-[0.4em] tabular-nums px-5 py-3 rounded-md border bg-muted/30 hover:bg-muted/50 transition-colors"
-              aria-label={`Copy supply order code ${code}`}
+              onClick={() => (revealed ? handleCopy() : setRevealed(true))}
+              className="font-mono text-3xl sm:text-4xl tracking-[0.4em] tabular-nums px-5 py-3 rounded-md border bg-muted/30 hover:bg-muted/50 transition-colors select-none"
+              aria-label={revealed ? `Copy supply order code ${code}` : 'Reveal supply order code'}
             >
-              {code}
+              {revealed ? code : '••••'}
             </button>
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setRevealed(v => !v)}
+              className="gap-1.5"
+            >
+              {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {revealed ? 'Hide' : 'Reveal'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleCopy}
+              disabled={!revealed}
               className="gap-1.5"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}

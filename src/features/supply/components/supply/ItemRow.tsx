@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Minus, Plus } from 'lucide-react';
 import { ItemImage } from './ItemImage';
+import { pluralize } from '@/features/inventory/utils/packaging';
 
 interface ItemRowProps {
   item: any;
@@ -28,9 +29,10 @@ export function ItemRow({
   const isLowStock = stockStatus === 'low';
   const isOutOfStock = stockStatus === 'out';
   const unitLabel = item.unit || 'item';
-  const packagingLabel = item.pack_size
-    ? `${item.pack_size} ${unitLabel}${item.pack_size === 1 ? '' : 's'} per ${item.pack_label || 'pack'}`
+  const packagingLabel = item.pack_size && item.pack_size > 1
+    ? `${item.pack_size} ${pluralize(unitLabel)} per ${item.pack_label || 'pack'}`
     : unitLabel;
+  const threshold = typeof item.order_code_threshold === 'number' ? item.order_code_threshold : null;
 
   return (
     <div
@@ -58,6 +60,14 @@ export function ItemRow({
               title="Requires supervisor approval"
             >
               Approval
+            </span>
+          )}
+          {threshold !== null && threshold > 0 && (
+            <span
+              className="shrink-0 inline-flex items-center h-4 px-1.5 rounded-full text-[9px] font-semibold uppercase tracking-wide border border-primary/40 text-primary bg-primary/10"
+              title={`Quantities of ${threshold} or more require an access code at checkout`}
+            >
+              Code ≥ {threshold}
             </span>
           )}
         </div>

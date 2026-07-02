@@ -178,7 +178,7 @@ export const InventoryDashboard = () => {
                   onClick={() => handleTabChange('alerts')}
                 >
                   <AlertTriangle className="h-4 w-4 mr-1" />
-                  {lowStockCount} Low Stock
+                  {lowStockCount} Need attention
                 </Button>
               )}
               <Button
