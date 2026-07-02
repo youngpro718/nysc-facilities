@@ -11,31 +11,33 @@ import { useAuth } from '@features/auth/hooks/useAuth';
 import { hasPermission, hasAnyPermission, hasAllPermissions, type Permission } from '@/lib/permissions';
 
 export function usePermissions() {
-  const { user } = useAuth();
-  
-  // user.role now comes from user_roles table via useAuth hook
+  // The app role comes from the profile (user_roles table), NOT from the raw
+  // Supabase auth user — user.role there is always the literal "authenticated",
+  // which made every check in this hook silently fail.
+  const { userRole } = useAuth();
+
   const can = (permission: Permission): boolean => {
-    if (!user?.role) return false;
-    return hasPermission(user.role, permission);
+    if (!userRole) return false;
+    return hasPermission(userRole, permission);
   };
-  
+
   const canAny = (permissions: Permission[]): boolean => {
-    if (!user?.role) return false;
-    return hasAnyPermission(user.role, permissions);
+    if (!userRole) return false;
+    return hasAnyPermission(userRole, permissions);
   };
-  
+
   const canAll = (permissions: Permission[]): boolean => {
-    if (!user?.role) return false;
-    return hasAllPermissions(user.role, permissions);
+    if (!userRole) return false;
+    return hasAllPermissions(userRole, permissions);
   };
-  
+
   return {
     can,
     canAny,
     canAll,
-    role: user?.role,
-    isAdmin: user?.role === 'admin' || user?.role === 'system_admin',
-    isSystemAdmin: user?.role === 'admin' || user?.role === 'system_admin',
-    isFacilitiesManager: user?.role === 'facilities_manager',
+    role: userRole,
+    isAdmin: userRole === 'admin' || userRole === 'system_admin',
+    isSystemAdmin: userRole === 'admin' || userRole === 'system_admin',
+    isFacilitiesManager: userRole === 'facilities_manager',
   };
 }

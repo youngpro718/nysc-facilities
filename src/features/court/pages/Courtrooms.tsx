@@ -4,10 +4,10 @@
  * Built for court officers (Major / front desk) so they can answer
  * "where's Judge Smith?" / "what's Part 30?" / "is Room 1130 in service?"
  * at a glance. Read-only for court officers by design: no edit dialogs,
- * no drag-and-drop. The one exception is the bunting flag — admins,
- * system admins, and the court liaison (the roles that already have write
- * access to court_rooms) can toggle it here so the directory stays the
- * single place officers check. Data comes from court_assignments (scoped
+ * no drag-and-drop. The one exception is the bunting flag — officers and
+ * sergeants set bunting up and take it down themselves, so they (plus the
+ * court_rooms-writing roles) can toggle it via the set_courtroom_bunting
+ * RPC (migration 092). Data comes from court_assignments (scoped
  * to the current term via getCurrentTermId) joined with court_rooms for
  * operational status.
  */
@@ -585,9 +585,16 @@ export default function Courtrooms() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Matches the DB's is_court_operations_manager() RLS policy on court_rooms:
-  // only these roles can actually write to the table.
-  const canManageBunting = role === 'admin' || role === 'system_admin' || role === 'court_liaison';
+  // Matches the role check inside the set_courtroom_bunting RPC (migration 092).
+  // Officers and sergeants physically set up/remove bunting, so they can toggle
+  // the flag even though the rest of court_rooms stays read-only for them.
+  const canManageBunting =
+    role === 'admin' ||
+    role === 'facilities_manager' ||
+    role === 'cmc' ||
+    role === 'court_liaison' ||
+    role === 'court_officer' ||
+    role === 'sergeant';
 
   const { data: entries = [], isLoading, error } = useQuery<CourtroomEntry[]>({
     queryKey: ['courtroom-directory'],
@@ -597,10 +604,12 @@ export default function Courtrooms() {
 
   const toggleBuntingMutation = useMutation({
     mutationFn: async (entry: CourtroomEntry) => {
-      const { error } = await supabase
-        .from('court_rooms')
-        .update({ has_bunting: !entry.has_bunting })
-        .eq('room_id', entry.room_id);
+      // RPC instead of a direct table update so court officers/sergeants can
+      // flip this one flag without write access to the rest of court_rooms.
+      const { error } = await supabase.rpc('set_courtroom_bunting', {
+        p_room_id: entry.room_id,
+        p_has_bunting: !entry.has_bunting,
+      });
       if (error) throw error;
     },
     onSuccess: () => {

@@ -66,13 +66,16 @@ export function RoomNotesPanel({ roomId, compact = false }: RoomNotesPanelProps)
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-muted-foreground">Known Issues</span>
+          {/* "Notes", not "Known Issues" — reported issues live in the health
+              banner above; this panel is the separate room_notes scratchpad and
+              saying "No active issues" here contradicted that banner. */}
+          <span className="text-xs font-medium text-muted-foreground">Notes</span>
           {notes.length > 0 && (
             <Badge variant="secondary" className="text-[10px]">{notes.length}</Badge>
           )}
         </div>
         {notes.length === 0 ? (
-          <p className="text-xs text-muted-foreground/60 italic">No active issues</p>
+          <p className="text-xs text-muted-foreground/60 italic">No notes yet</p>
         ) : (
           <div className="space-y-1">
             {notes.slice(0, 3).map((note) => (
@@ -111,7 +114,7 @@ export function RoomNotesPanel({ roomId, compact = false }: RoomNotesPanelProps)
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium">Room Notes & Known Issues</h4>
+        <h4 className="text-sm font-medium">Room Notes</h4>
         <Button
           variant="outline"
           size="sm"
