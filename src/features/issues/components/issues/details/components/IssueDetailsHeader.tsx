@@ -21,7 +21,8 @@ export const IssueDetailsHeader = ({ title, status, issueId, onEdit, onDelete, i
   return (
     <DialogHeader className="px-6 pt-6 pb-4 border-b space-y-3 pr-14">
       <DialogTitle className="flex items-start gap-3 flex-wrap">
-        <h2 className="text-xl font-semibold leading-tight break-words flex-1 min-w-0">{title}</h2>
+        {/* DialogTitle already renders an <h2>; a nested heading is invalid DOM */}
+        <span className="text-xl font-semibold leading-tight break-words flex-1 min-w-0">{title}</span>
         <IssueStatusBadge status={status} />
       </DialogTitle>
       <div className="flex items-center justify-end gap-1 flex-wrap">

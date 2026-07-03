@@ -174,7 +174,10 @@ export function useMyRequests() {
           .select('request_id, quantity_requested, inventory_items(name)')
           .in('request_id', supplies.map((s) => s.id));
         const byRequest = new Map<string, string[]>();
-        for (const li of (lineItems ?? []) as Array<{
+        // PostgREST returns the many-to-one inventory_items join as a single
+        // object at runtime, but the client's inferred type says array — go
+        // through unknown to assert the runtime shape.
+        for (const li of (lineItems ?? []) as unknown as Array<{
           request_id: string;
           quantity_requested: number | null;
           inventory_items: { name: string | null } | null;

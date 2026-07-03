@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@shared/hooks/use-toast';
 import { useCourtPersonnel } from '@features/court/hooks/useCourtPersonnel';
+import { parseSittingDays, SITTING_DAY_ORDER } from '@features/court/utils/termPattern';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -27,17 +28,20 @@ export interface EditableAssignment {
   fax: string;
   sergeant: string;
   clerks: string[];
+  calendar_day: string | null;
 }
 
 interface Props {
   assignment: EditableAssignment | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** roomId → part label for rooms already on the current term's sheet */
+  takenRooms?: Map<string, string>;
 }
 
 const NONE = '__none__';
 
-export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpenChange }) => {
+export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpenChange, takenRooms }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { personnel } = useCourtPersonnel();
@@ -51,6 +55,7 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
   const [clerkToAdd, setClerkToAdd] = useState<string>(NONE);
   const [roomId, setRoomId] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sittingDays, setSittingDays] = useState<string[]>([]);
 
   useEffect(() => {
     if (!assignment) return;
@@ -63,7 +68,11 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
     setClerkToAdd(NONE);
     setRoomId(assignment.room_id);
     setConfirmDelete(false);
+    setSittingDays(parseSittingDays(assignment.calendar_day));
   }, [assignment]);
+
+  const toggleSittingDay = (day: string) =>
+    setSittingDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
 
   // Active courtrooms (shared cache with the board's Add Part picker)
   const { data: courtroomOptions = [] } = useQuery({
@@ -94,13 +103,23 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
         clerks: clerks.length ? clerks : null,
         tel: tel.trim() || null,
         fax: fax.trim() || null,
+        // Stored weekday-ordered ("Tuesday,Thursday"); null = sits every day
+        calendar_day: sittingDays.length
+          ? SITTING_DAY_ORDER.filter(d => sittingDays.includes(d)).join(',')
+          : null,
         ...(roomId && roomId !== assignment.room_id ? { room_id: roomId } : {}),
       };
       const { error } = await supabase
         .from('court_assignments')
         .update(payload)
         .eq('id', assignment.id);
-      if (error) throw error;
+      if (error) {
+        // Unique (term_id, room_id): each courtroom appears once per term
+        if ((error as { code?: string }).code === '23505') {
+          throw new Error('Another part on this term already uses that courtroom. Pick a different room.');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({ title: 'Assignment updated' });
@@ -172,9 +191,15 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
               <Select value={roomId} onValueChange={setRoomId}>
                 <SelectTrigger><SelectValue placeholder={assignment?.room ? `Room ${assignment.room}` : 'Select room'} /></SelectTrigger>
                 <SelectContent className="max-h-72">
-                  {courtroomOptions.map(o => (
-                    <SelectItem key={o.roomId} value={o.roomId}>{o.label}</SelectItem>
-                  ))}
+                  {courtroomOptions.map(o => {
+                    const takenBy = (o.roomId !== assignment?.room_id ? takenRooms?.get(o.roomId) : undefined)
+                      ?.replace(/\s+/g, ' ').trim();
+                    return (
+                      <SelectItem key={o.roomId} value={o.roomId} disabled={!!takenBy}>
+                        {o.label}{takenBy ? ` · already on sheet${takenBy !== '—' ? ` (${takenBy})` : ''}` : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -233,6 +258,27 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
                 <Plus className="h-3.5 w-3.5 mr-1" /> Add
               </Button>
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">Sitting days</Label>
+            <div className="flex gap-1.5">
+              {SITTING_DAY_ORDER.map(day => (
+                <Button
+                  key={day}
+                  type="button"
+                  variant={sittingDays.includes(day) ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 px-2 text-xs flex-1"
+                  onClick={() => toggleSittingDay(day)}
+                >
+                  {day.slice(0, 3)}
+                </Button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Leave all unselected for parts that sit every court day.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

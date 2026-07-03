@@ -26,6 +26,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -47,7 +51,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AssignmentEditDialog, type EditableAssignment } from './AssignmentEditDialog';
-import { Pencil } from 'lucide-react';
+import { Pencil, WifiOff } from 'lucide-react';
+import { nextTermDates, formatSittingDays } from '@features/court/utils/termPattern';
 
 interface TermAssignment {
   id: string;        // assignment id — used as DnD key
@@ -59,8 +64,42 @@ interface TermAssignment {
   tel: string;
   sergeant: string;
   clerks: string[];
+  calendar_day: string | null; // sitting days for calendar parts ("Tuesday,Thursday")
   sort_order: number;
   updated_at: string | null; // used for optimistic concurrency on reorder
+}
+
+// ── Offline pocket copy ───────────────────────────────────────────────────────
+// The term sheet must stay readable when the backend is unreachable ("a copy
+// in everyone's pocket"): every successful fetch is snapshotted to
+// localStorage, and query failures fall back to that snapshot.
+const OFFLINE_CACHE_KEY = 'term-sheet-offline-cache';
+
+interface OfflineCache {
+  terms?: unknown;
+  staff?: unknown;
+  assignments?: Record<string, unknown>;
+  savedAt?: string;
+}
+
+function readOfflineCache(): OfflineCache | null {
+  try {
+    return JSON.parse(localStorage.getItem(OFFLINE_CACHE_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function writeOfflineCache(patch: Partial<OfflineCache>) {
+  try {
+    const current = readOfflineCache() ?? {};
+    localStorage.setItem(
+      OFFLINE_CACHE_KEY,
+      JSON.stringify({ ...current, ...patch, savedAt: new Date().toISOString() }),
+    );
+  } catch {
+    // Storage full or unavailable — the live view still works without the snapshot
+  }
 }
 
 type ViewMode = 'table' | 'cards';
@@ -87,6 +126,7 @@ function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = tr
   };
 
   const isVacant = a.justice === '—';
+  const sittingDays = formatSittingDays(a.calendar_day);
 
   return (
     <tr
@@ -109,6 +149,11 @@ function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = tr
       <td className="px-3 py-2">
         <div className="flex items-center gap-1">
           <span className="font-bold text-primary whitespace-pre-line">{a.part}</span>
+          {sittingDays && (
+            <span className="text-[9px] text-muted-foreground font-normal" title="Sitting days">
+              {sittingDays}
+            </span>
+          )}
           {isAdmin && issueCount > 0 && (
             <button
               type="button"
@@ -187,6 +232,22 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const [previewIssueId, setPreviewIssueId] = useState<string | null>(null);
   const [editingAssignment, setEditingAssignment] = useState<EditableAssignment | null>(null);
   const [notifying, setNotifying] = useState(false);
+  const [confirmNotify, setConfirmNotify] = useState(false);
+
+  // Pocket-copy mode: true when the browser is offline or the board data came
+  // from the local snapshot because the backend was unreachable.
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  const [servedFromCache, setServedFromCache] = useState(false);
+  useEffect(() => {
+    const goOnline = () => setIsOffline(false);
+    const goOffline = () => setIsOffline(true);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
   const { toast } = useToast();
   const { personnel } = useCourtPersonnel();
   const queryClient = useQueryClient();
@@ -218,31 +279,61 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
 
   const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
+  // Local calendar date (YYYY-MM-DD) — toISOString() is UTC and flips to
+  // tomorrow during NY evenings, which would mislabel terms at their boundaries
+  const localToday = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  interface TermOption {
+    id: string; name: string; rawStart: string; rawEnd: string; startDate: string; endDate: string;
+  }
   const { data: allTerms = [] } = useQuery({
     queryKey: ['court-terms-all'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('court_terms')
-        .select('id, term_name, start_date, end_date')
-        .order('start_date', { ascending: false });
-      return (data || []).map(t => ({
-        id: t.id,
-        name: t.term_name || 'Unnamed Term',
-        rawStart: t.start_date || '',
-        rawEnd: t.end_date || '',
-        startDate: t.start_date ? fmt(t.start_date) : '',
-        endDate: t.end_date ? fmt(t.end_date) : '',
-      }));
+    queryFn: async (): Promise<TermOption[]> => {
+      try {
+        const { data, error } = await supabase
+          .from('court_terms')
+          .select('id, term_name, start_date, end_date')
+          .order('start_date', { ascending: false });
+        if (error) throw error;
+        const mapped = (data || []).map(t => ({
+          id: t.id,
+          name: t.term_name || 'Unnamed Term',
+          rawStart: t.start_date || '',
+          rawEnd: t.end_date || '',
+          startDate: t.start_date ? fmt(t.start_date) : '',
+          endDate: t.end_date ? fmt(t.end_date) : '',
+        }));
+        writeOfflineCache({ terms: mapped });
+        return mapped;
+      } catch (e) {
+        const cached = readOfflineCache()?.terms as TermOption[] | undefined;
+        if (cached?.length) return cached;
+        throw e;
+      }
     },
     staleTime: 1000 * 60 * 5,
   });
+
+  // After creating a term, jump to it once the refreshed term list arrives
+  const pendingTermSelect = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!pendingTermSelect.current || allTerms.length === 0) return;
+    const idx = allTerms.findIndex(t => t.id === pendingTermSelect.current);
+    if (idx >= 0) {
+      setSelectedTermIndex(idx);
+      pendingTermSelect.current = null;
+    }
+  }, [allTerms]);
 
   // Auto-select the term that covers today's date
   useEffect(() => {
     if (allTerms.length === 0 || hasAutoSelected.current) return;
     hasAutoSelected.current = true;
 
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = localToday();
     const todayIndex = allTerms.findIndex(t => t.rawStart <= today && t.rawEnd >= today);
 
     if (todayIndex >= 0) {
@@ -256,7 +347,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const currentTerm = allTerms.length > 0 && selectedTermIndex >= 0 ? allTerms[selectedTermIndex] : null;
 
   // Whether today falls within the selected term's date range
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localToday();
   const isTodayInSelectedTerm = currentTerm
     ? currentTerm.rawStart <= todayStr && currentTerm.rawEnd >= todayStr
     : false;
@@ -265,12 +356,20 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const { data: adminStaff = [] } = useQuery({
     queryKey: ['court-admin-staff'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('court_admin_staff')
-        .select('id, title, name, phone, room, sort_order')
-        .order('sort_order');
-      if (error) throw error;
-      return (data || []) as StaffRow[];
+      try {
+        const { data, error } = await supabase
+          .from('court_admin_staff')
+          .select('id, title, name, phone, room, sort_order')
+          .order('sort_order');
+        if (error) throw error;
+        const rows = (data || []) as StaffRow[];
+        writeOfflineCache({ staff: rows });
+        return rows;
+      } catch (e) {
+        const cached = readOfflineCache()?.staff as StaffRow[] | undefined;
+        if (cached?.length) return cached;
+        throw e;
+      }
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -325,33 +424,37 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const [newTermStart, setNewTermStart] = useState('');
   const [newTermEnd, setNewTermEnd] = useState('');
   const [newTermCopy, setNewTermCopy] = useState(true);
+  const [newTermNotify, setNewTermNotify] = useState(true);
 
   const openNewTermDialog = () => {
     const latest = allTerms[0];
-    const today = new Date().toISOString().slice(0, 10);
-    let startDate: string;
-    let durDays = 28;
-    if (latest && latest.rawStart && latest.rawEnd) {
-      const prevEnd = new Date(latest.rawEnd + 'T12:00:00');
-      const prevStart = new Date(latest.rawStart + 'T12:00:00');
-      durDays = Math.max(Math.round((prevEnd.getTime() - prevStart.getTime()) / 86400000), 28);
-      if (latest.rawEnd >= today) {
-        // Previous term still running/ends today — next term starts the day after
-        const ns = new Date(prevEnd); ns.setDate(ns.getDate() + 1);
-        startDate = ns.toISOString().slice(0, 10);
-      } else {
-        // Previous term ended in the past — don't back-date, start today
-        startDate = today;
-      }
-    } else {
-      startDate = today;
-    }
-    const ne = new Date(startDate + 'T12:00:00'); ne.setDate(ne.getDate() + durDays);
+    const today = localToday();
+    // Court calendar pattern: 13 four-week terms per year on a Monday grid;
+    // if the previous term ended in the past, don't back-date — propose the
+    // next Monday block from today instead.
+    const anchor = latest && latest.rawEnd >= today ? latest.rawEnd : null;
+    const { start, end } = nextTermDates(anchor);
     setNewTermName(latest ? nextTermName(latest.name) : 'Term I');
-    setNewTermStart(startDate);
-    setNewTermEnd(ne.toISOString().slice(0, 10));
+    setNewTermStart(start);
+    setNewTermEnd(end);
     setNewTermCopy(!!latest);
+    setNewTermNotify(true);
     setNewTermOpen(true);
+  };
+
+  // One push notification to every user (RPC enforces the editor-role gate).
+  const broadcastTermUpdate = async (title: string, message: string) => {
+    setNotifying(true);
+    const { data, error } = await supabase.rpc('broadcast_term_update', {
+      p_title: title,
+      p_message: message,
+    });
+    setNotifying(false);
+    if (error) {
+      toast({ title: 'Could not notify everyone', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Everyone notified', description: `Update sent to ${data} ${data === 1 ? 'person' : 'people'}.` });
+    }
   };
 
   const startNextTermMutation = useMutation({
@@ -389,10 +492,10 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         if (copyErr) throw new Error(`Term created, but copying assignments failed: ${copyErr.message}`);
         copied = typeof count === 'number' ? count : 0;
       }
-      return { copied, copiedFrom: latest?.name };
+      return { copied, copiedFrom: latest?.name, newTermId: newTerm.id as string };
     },
-    onSuccess: ({ copied, copiedFrom }) => {
-      hasAutoSelected.current = false;
+    onSuccess: ({ copied, copiedFrom, newTermId }) => {
+      pendingTermSelect.current = newTermId;
       queryClient.invalidateQueries({ queryKey: ['court-terms-all'] });
       queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
       setNewTermOpen(false);
@@ -402,6 +505,12 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
           ? `${copied} assignment${copied !== 1 ? 's' : ''} copied from ${copiedFrom}. Edit them as needed.`
           : 'Blank term created. Add parts to build the sheet.',
       });
+      if (newTermNotify) {
+        broadcastTermUpdate(
+          `${newTermName.trim()} has been posted`,
+          `${newTermName.trim()} is on the term sheet. Open it and save or print a copy for your records.`,
+        );
+      }
     },
     onError: (err: Error) => toast({ variant: 'destructive', title: 'Could not start term', description: err.message }),
   });
@@ -481,7 +590,13 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         part: newPartLabel.trim(),
         sort_order: maxSort + 1,
       });
-      if (error) throw error;
+      if (error) {
+        // Unique (term_id, room_id): each courtroom appears once per term
+        if ((error as { code?: string }).code === '23505') {
+          throw new Error('That courtroom already has a part on this term\'s sheet. Pick a different room, or edit the existing part instead.');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
@@ -557,6 +672,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
               fax: a.fax || '—',
               sergeant: a.sergeant || '—',
               clerks: Array.isArray(a.clerks) ? a.clerks.filter(c => c && c !== '—') : [],
+              calendar_day: a.calendar_day || null,
               sort_order: a.sort_order ?? 9999,
               updated_at: a.updated_at ?? null,
             } as TermAssignment;
@@ -564,30 +680,45 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
           .filter((r): r is TermAssignment => r !== null);
       };
 
-      // Try fetching with term_id filter
-      let query = supabase
-        .from("court_assignments")
-        .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order, updated_at, term_id")
-        .order("sort_order");
-
-      if (selectedTermId) {
-        query = query.eq('term_id', selectedTermId);
-      }
-
-      const { data: assignmentsData, error: assignmentsError } = await query;
-
-      // If term_id column doesn't exist yet, fall back to unfiltered query
-      if (assignmentsError && assignmentsError.message?.includes('term_id')) {
-        const { data: fallbackData, error: fallbackError } = await supabase
+      const cacheSlot = selectedTermId ?? 'all';
+      try {
+        // Try fetching with term_id filter
+        let query = supabase
           .from("court_assignments")
-          .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order, updated_at")
+          .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order, updated_at, term_id")
           .order("sort_order");
-        if (fallbackError) throw fallbackError;
-        return joinWithRooms((fallbackData || []) as AssignmentRow[]);
-      }
 
-      if (assignmentsError) throw assignmentsError;
-      return joinWithRooms((assignmentsData || []) as AssignmentRow[]);
+        if (selectedTermId) {
+          query = query.eq('term_id', selectedTermId);
+        }
+
+        const { data: assignmentsData, error: assignmentsError } = await query;
+
+        // If term_id column doesn't exist yet, fall back to unfiltered query
+        if (assignmentsError && assignmentsError.message?.includes('term_id')) {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from("court_assignments")
+            .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order, updated_at")
+            .order("sort_order");
+          if (fallbackError) throw fallbackError;
+          return joinWithRooms((fallbackData || []) as AssignmentRow[]);
+        }
+
+        if (assignmentsError) throw assignmentsError;
+        const joined = await joinWithRooms((assignmentsData || []) as AssignmentRow[]);
+        writeOfflineCache({
+          assignments: { ...(readOfflineCache()?.assignments ?? {}), [cacheSlot]: joined },
+        });
+        setServedFromCache(false);
+        return joined;
+      } catch (e) {
+        const cached = readOfflineCache()?.assignments?.[cacheSlot] as TermAssignment[] | undefined;
+        if (cached?.length) {
+          setServedFromCache(true);
+          return cached;
+        }
+        throw e;
+      }
     },
     staleTime: 1000 * 30,
   });
@@ -702,17 +833,20 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
       toast({ variant: 'destructive', title: 'No data to export' });
       return;
     }
-    const headers = ['PART', 'JUSTICE', 'ROOM', 'FAX', 'TEL', 'SGT.', 'CLERKS'];
-    const rows = sortedList.map(a => [a.part, a.justice, a.room, a.fax, a.tel, a.sergeant, a.clerks.join(' • ')]);
+    const headers = ['PART', 'DAYS', 'JUSTICE', 'ROOM', 'FAX', 'TEL', 'SGT.', 'CLERKS'];
+    const rows = sortedList.map(a => [a.part, formatSittingDays(a.calendar_day), a.justice, a.room, a.fax, a.tel, a.sergeant, a.clerks.join(' • ')]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `criminal-term-sheet-${new Date().toISOString().split('T')[0]}.csv`;
+    const termSlug = currentTerm ? `${currentTerm.name.replace(/\s+/g, '-').toLowerCase()}-` : '';
+    link.download = `criminal-term-sheet-${termSlug}${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     toast({ title: '✅ Export successful', description: `Exported ${sortedList.length} assignments` });
   };
 
-  const exportToPDF = async () => {
+  // The official layout is the only format that leaves the building — both
+  // Export and Print produce it (Print opens the PDF with the print dialog).
+  const runOfficialPDF = async (mode: 'download' | 'print') => {
     if (!sortedList.length) {
       toast({ variant: 'destructive', title: 'No data to export' });
       return;
@@ -721,14 +855,26 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     try {
       // Lazy-load the jsPDF-based exporter so the library is fetched on demand
       const { generateTermSheetPDF } = await import('./TermSheetPDFExport');
-      await generateTermSheetPDF(sortedList);
-      toast({ title: '✅ PDF exported', description: 'Official term sheet downloaded.' });
+      await generateTermSheetPDF(
+        sortedList,
+        currentTerm
+          ? { name: currentTerm.name, startDate: currentTerm.rawStart, endDate: currentTerm.rawEnd }
+          : undefined,
+        { print: mode === 'print' },
+      );
+      toast(mode === 'print'
+        ? { title: 'Print ready', description: 'The official term sheet opened in a new tab with the print dialog.' }
+        : { title: '✅ PDF exported', description: 'Official term sheet downloaded.' });
     } catch (err) {
       toast({ variant: 'destructive', title: 'PDF export failed', description: String(err) });
     } finally {
       setPdfLoading(false);
     }
   };
+  const exportToPDF = () => runOfficialPDF('download');
+
+  // Rooms already carrying a part on the selected term (roomId → part label)
+  const takenRooms = new Map(sortedList.map(a => [a.room_id, a.part]));
 
   // ── Filtering ─────────────────────────────────────────────────────────────
   const displayList = search.trim()
@@ -760,25 +906,29 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
 
   // "It goes out to everyone": after finishing a round of term edits, the
   // editor pushes one notification to every user rather than each edit
-  // spamming the building. The RPC enforces the same editor-role gate as RLS.
-  const notifyEveryone = async () => {
-    setNotifying(true);
-    const { data, error } = await supabase.rpc('broadcast_term_update', {
-      p_title: 'Term sheet updated',
-      p_message: currentTerm?.name
-        ? `${currentTerm.name} has been updated. Open the term sheet for the latest assignments.`
-        : 'Court assignments have changed. Open the term sheet for the latest.',
-    });
-    setNotifying(false);
-    if (error) {
-      toast({ title: 'Could not notify everyone', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Everyone notified', description: `Update sent to ${data} ${data === 1 ? 'person' : 'people'}.` });
-    }
-  };
+  // spamming the building.
+  const notifyEveryone = () => broadcastTermUpdate(
+    'Term sheet updated',
+    currentTerm?.name
+      ? `${currentTerm.name} has been updated. Open the term sheet for the latest assignments.`
+      : 'Court assignments have changed. Open the term sheet for the latest.',
+  );
 
   return (
     <div className="space-y-4">
+      {/* Pocket-copy banner: the sheet stays readable from the local snapshot */}
+      {(isOffline || servedFromCache) && sortedList.length > 0 && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+          <WifiOff className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            {isOffline ? "You're offline" : "The server can't be reached"} — showing your saved copy of the term sheet
+            {readOfflineCache()?.savedAt
+              ? ` (last synced ${new Date(readOfflineCache()!.savedAt!).toLocaleString()})`
+              : ''}.
+          </span>
+        </div>
+      )}
+
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -816,7 +966,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
               size="sm"
               className="h-8 text-xs px-2"
               disabled={notifying}
-              onClick={notifyEveryone}
+              onClick={() => setConfirmNotify(true)}
               title="Send a notification to every user that the term sheet changed"
             >
               {notifying ? (
@@ -860,9 +1010,9 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Export to CSV
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.print()}>
+              <DropdownMenuItem onClick={() => runOfficialPDF('print')}>
                 <Printer className="h-4 w-4 mr-2" />
-                Print
+                Print Official Copy
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -932,7 +1082,9 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                 <p className="text-[10px] mt-0.5">
                   {isTodayInSelectedTerm
                     ? <span className="text-primary font-medium">Active Term</span>
-                    : <span className="text-muted-foreground/60">Past Term</span>}
+                    : currentTerm && currentTerm.rawStart > todayStr
+                      ? <span className="text-amber-600 dark:text-amber-400 font-medium">Upcoming Term</span>
+                      : <span className="text-muted-foreground/60">Past Term</span>}
                   {allTerms.length > 1 && <span className="text-muted-foreground/60">{' · '}{allTerms.length} terms stored</span>}
                 </p>
               </div>
@@ -1128,6 +1280,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                             onEditClick={() => setEditingAssignment({
                               id: a.id, part: a.part, justice: a.justice, room: a.room, room_id: a.room_id,
                               tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
+                              calendar_day: a.calendar_day,
                             })}
                           />
                         ))}
@@ -1154,12 +1307,16 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
               const judge = personnel.judges.find(j => j.name === a.justice);
               const issueCount = getIssuesForRoom(a.room_id).length;
               const urgentIssue = hasUrgentIssues(a.room_id);
+              const sittingDays = formatSittingDays(a.calendar_day);
 
               return (
                 <Card key={a.id} className={`overflow-hidden ${isVacant ? 'border-amber-500/30' : ''} ${isAdmin && issueCount > 0 ? 'border-destructive/30' : ''}`}>
                   <div className={`px-3 py-2 border-b flex items-center justify-between ${isVacant ? 'bg-amber-500/10' : isAdmin && issueCount > 0 ? 'bg-destructive/5' : 'bg-primary/5'}`}>
                     <div className="flex items-center gap-1.5">
                       <span className="font-bold text-sm text-primary">{a.part}</span>
+                      {sittingDays && (
+                        <span className="text-[9px] text-muted-foreground" title="Sitting days">{sittingDays}</span>
+                      )}
                       {isAdmin && issueCount > 0 && (
                         <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium ${urgentIssue ? 'text-destructive' : 'text-orange-500'}`}>
                           <AlertTriangle className="h-3 w-3" />
@@ -1174,6 +1331,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                           onClick={() => setEditingAssignment({
                             id: a.id, part: a.part, justice: a.justice, room: a.room, room_id: a.room_id,
                             tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
+                            calendar_day: a.calendar_day,
                           })}>
                           <Pencil className="h-3 w-3" />
                         </Button>
@@ -1238,7 +1396,27 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         assignment={editingAssignment}
         open={!!editingAssignment}
         onOpenChange={(open) => { if (!open) setEditingAssignment(null); }}
+        takenRooms={takenRooms}
       />
+
+      {/* Confirm before notifying the whole building */}
+      <AlertDialog open={confirmNotify} onOpenChange={setConfirmNotify}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Notify everyone?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This sends a "{currentTerm?.name ?? 'Term sheet'} updated" notification to every user right away.
+              Finish all your edits first so people get one notification, not several.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmNotify(false); notifyEveryone(); }}>
+              Send notification
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Start next term */}
       <Dialog open={newTermOpen} onOpenChange={setNewTermOpen}>
@@ -1267,7 +1445,13 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                 <span>Copy all assignments from <strong>{allTerms[0].name}</strong></span>
               </label>
             )}
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={newTermNotify} onCheckedChange={(v) => setNewTermNotify(v === true)} />
+              <span>Notify everyone so they can save a pocket copy</span>
+            </label>
             <p className="text-xs text-muted-foreground">
+              Dates follow the court calendar: four-week terms starting on a Monday
+              (Tuesday when that Monday is a court holiday) — adjust if this term differs.
               Everyone can see the new term immediately; only term editors can change it.
             </p>
           </div>
@@ -1297,12 +1481,22 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
               <Select value={newPartRoomId} onValueChange={setNewPartRoomId}>
                 <SelectTrigger><SelectValue placeholder="Pick a courtroom" /></SelectTrigger>
                 <SelectContent className="max-h-72">
-                  {courtroomOptions.map(o => (
-                    <SelectItem key={o.roomId} value={o.roomId}>{o.label}</SelectItem>
-                  ))}
+                  {courtroomOptions.map(o => {
+                    const takenBy = takenRooms.get(o.roomId)?.replace(/\s+/g, ' ').trim();
+                    return (
+                      <SelectItem key={o.roomId} value={o.roomId} disabled={!!takenBy}>
+                        {o.label}{takenBy ? ` · already on sheet${takenBy !== '—' ? ` (${takenBy})` : ''}` : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
+            {courtroomOptions.length > 0 && courtroomOptions.every(o => takenRooms.has(o.roomId)) && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Every active courtroom already has a part on this term's sheet. Remove a part first, or activate another courtroom under Spaces.
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               The part is added at the bottom of the sheet — drag to reposition, and use the pencil to assign a justice and staff.
             </p>

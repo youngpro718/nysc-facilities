@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { supabase } from '@/lib/supabase';
 import { ADMIN_STAFF } from './adminStaffData';
+import { formatSittingDays } from '@features/court/utils/termPattern';
 
 export interface TermAssignmentForPDF {
   part: string;
@@ -11,6 +12,7 @@ export interface TermAssignmentForPDF {
   tel: string;
   sergeant: string;
   clerks: string[];
+  calendar_day?: string | null;
 }
 
 interface TermInfo {
@@ -188,31 +190,50 @@ function formatDate(dateStr: string): string {
 }
 
 // ── Main export function ─────────────────────────────────────────────────────
-export async function generateTermSheetPDF(assignments: TermAssignmentForPDF[]): Promise<void> {
-  // Fetch the latest term from DB; fall back to sensible defaults
+export interface TermInfoInput {
+  name: string;
+  startDate: string; // raw YYYY-MM-DD
+  endDate: string;   // raw YYYY-MM-DD
+}
+
+export async function generateTermSheetPDF(
+  assignments: TermAssignmentForPDF[],
+  viewedTerm?: TermInfoInput,
+  opts?: { print?: boolean },
+): Promise<void> {
+  // Header must describe the term whose assignments are being exported —
+  // the caller passes the term it is displaying. DB lookup is only a fallback.
   let term: TermInfo = {
     name: 'TERM III',
     startDate: 'MARCH 2, 2026',
     endDate: 'MARCH 29, 2026',
   };
 
-  try {
-    const { data: terms } = await supabase
-      .from('court_terms')
-      .select('term_name, start_date, end_date')
-      .order('start_date', { ascending: false })
-      .limit(1);
+  if (viewedTerm) {
+    term = {
+      name: viewedTerm.name,
+      startDate: viewedTerm.startDate ? formatDate(viewedTerm.startDate) : '',
+      endDate: viewedTerm.endDate ? formatDate(viewedTerm.endDate) : '',
+    };
+  } else {
+    try {
+      const { data: terms } = await supabase
+        .from('court_terms')
+        .select('term_name, start_date, end_date')
+        .order('start_date', { ascending: false })
+        .limit(1);
 
-    if (terms && terms.length > 0) {
-      const t = terms[0];
-      term = {
-        name: t.term_name || term.name,
-        startDate: t.start_date ? formatDate(t.start_date) : term.startDate,
-        endDate: t.end_date   ? formatDate(t.end_date)   : term.endDate,
-      };
+      if (terms && terms.length > 0) {
+        const t = terms[0];
+        term = {
+          name: t.term_name || term.name,
+          startDate: t.start_date ? formatDate(t.start_date) : term.startDate,
+          endDate: t.end_date   ? formatDate(t.end_date)   : term.endDate,
+        };
+      }
+    } catch {
+      // use defaults
     }
-  } catch {
-    // use defaults
   }
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -232,15 +253,20 @@ export async function generateTermSheetPDF(assignments: TermAssignmentForPDF[]):
 
   // ── Parts table ───────────────────────────────────────────────────────────
   const head = [['PART', 'JUSTICE', 'ROOM', 'FAX\n(212)', '*TEL#\n646-386-', 'SGT.', 'CLERKS']];
-  const body = assignments.map(a => [
-    a.part     !== '—' ? a.part     : '',
-    a.justice  !== '—' ? a.justice  : 'VACANT',
-    a.room     !== '—' ? a.room     : '',
-    a.fax      !== '—' ? a.fax      : '',
-    a.tel      !== '—' ? a.tel      : '',
-    a.sergeant !== '—' ? a.sergeant : '',
-    a.clerks.length > 0 ? a.clerks.join('\n') : '',
-  ]);
+  const body = assignments.map(a => {
+    // Calendar parts show their sitting days under the part label ("(Tue/Thu)")
+    const days = formatSittingDays(a.calendar_day);
+    const partLabel = a.part !== '—' ? a.part : '';
+    return [
+      days ? `${partLabel}\n(${days})` : partLabel,
+      a.justice  !== '—' ? a.justice  : 'VACANT',
+      a.room     !== '—' ? a.room     : '',
+      a.fax      !== '—' ? a.fax      : '',
+      a.tel      !== '—' ? a.tel      : '',
+      a.sergeant !== '—' ? a.sergeant : '',
+      a.clerks.length > 0 ? a.clerks.join('\n') : '',
+    ];
+  });
 
   autoTable(doc, {
     head,
@@ -305,7 +331,14 @@ export async function generateTermSheetPDF(assignments: TermAssignmentForPDF[]):
   }
   drawPageFooter(doc, pageCount);
 
-  // ── Save ──────────────────────────────────────────────────────────────────
+  // ── Save or print ─────────────────────────────────────────────────────────
+  if (opts?.print) {
+    // Open the official layout with the browser's print dialog so what goes
+    // to stakeholders is always this format, never the web page.
+    doc.autoPrint();
+    window.open(doc.output('bloburl'), '_blank');
+    return;
+  }
   const slug = term.name.replace(/\s+/g, '-').toLowerCase();
   doc.save(`criminal-term-sheet-${slug}.pdf`);
 }
