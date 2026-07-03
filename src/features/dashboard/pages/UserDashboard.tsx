@@ -11,11 +11,12 @@ import { NotificationDropdown } from "@shared/components/user/NotificationDropdo
 import { useUserPersonnelInfo } from "@features/court/hooks/useUserPersonnelInfo";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
-import { Button } from "@/components/ui/button";
-import { CompactHeader } from "@shared/components/user/CompactHeader";
 import { PickupAlertBanner } from "@shared/components/user/PickupAlertBanner";
-import { CompactActivitySection } from "@shared/components/user/CompactActivitySection";
-
+import { DashboardQuickActions } from "@features/dashboard/components/dashboard/DashboardQuickActions";
+import { DashboardMyRoomCard } from "@features/dashboard/components/dashboard/DashboardMyRoomCard";
+import { DashboardProfileSummaryCard } from "@features/dashboard/components/dashboard/DashboardProfileSummaryCard";
+import { DashboardActivityList } from "@features/dashboard/components/dashboard/DashboardActivityList";
+import { Button } from "@/components/ui/button";
 import { Package, Send, ChevronRight, KeyRound } from "lucide-react";
 import { getDashboardForRole } from "@/routes/roleBasedRouting";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
@@ -122,11 +123,75 @@ export default function UserDashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
-      <div className="max-w-lg mx-auto space-y-6 pb-24 px-4 sm:px-0">
-        {/* Header: greeting card with subtle gradient + notifications */}
-        <div className="rounded-md border border-border bg-card p-4 pt-5">
-          <div className="flex items-start justify-between gap-3">
-            <CompactHeader
+      <div className="mx-auto max-w-6xl space-y-5 pb-24 lg:pb-8 px-4 sm:px-6 lg:px-0">
+        {/* Page header: title + notifications */}
+        <div className="flex items-center justify-between pt-1">
+          <div>
+            <p className="mb-0.5 text-xs font-medium text-primary">Home</p>
+            <h1 className="text-xl font-semibold tracking-tight">My Dashboard</h1>
+          </div>
+          <NotificationDropdown
+            notifications={notifications as any}
+            onMarkAsRead={markAsRead}
+            onMarkAllAsRead={markAllAsRead}
+            onClearNotification={clearNotification}
+            onClearAllNotifications={clearAllNotifications}
+          />
+        </div>
+
+        <PickupAlertBanner count={readyForPickup} onClick={() => navigate("/my-requests")} />
+
+        {/* Two-column portal: main content + rail. Rail stacks after main below lg. */}
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
+          <div className="space-y-5 min-w-0">
+            <DashboardQuickActions
+              actions={[
+                {
+                  icon: Package,
+                  label: "Order Supplies",
+                  sub: activeSupplyCount > 0 ? `${activeSupplyCount} in progress` : undefined,
+                  onClick: () => navigate("/supplies?tab=order"),
+                  prefetchPath: "/supplies",
+                  accent: true,
+                },
+                {
+                  icon: Send,
+                  label: "Make a Request",
+                  sub: openRequestCount > 0 ? `${openRequestCount} active` : "Move, deliver, set up & more",
+                  onClick: () => navigate("/supplies?tab=request"),
+                  prefetchPath: "/supplies",
+                },
+                {
+                  icon: KeyRound,
+                  label: "Request a Key",
+                  sub: keysHeld > 0 ? `${keysHeld} key${keysHeld > 1 ? "s" : ""} held` : "New, replacement, spare, or temporary",
+                  onClick: () => setKeyRequestOpen(true),
+                },
+              ]}
+            />
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-sm font-semibold text-muted-foreground">My Requests</h2>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-xs h-auto p-0"
+                  onClick={() => navigate("/my-requests")}
+                >
+                  View all <ChevronRight className="h-3 w-3 ml-0.5" />
+                </Button>
+              </div>
+              <DashboardActivityList
+                supplyRequests={supplyRequests as any}
+                issues={userIssues as any}
+                taskRequests={myTaskRequests as any}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <DashboardProfileSummaryCard
               firstName={firstName}
               lastName={lastName}
               title={(profile as any)?.title || personnelInfo?.title}
@@ -135,107 +200,12 @@ export default function UserDashboard() {
               avatarUrl={profile?.avatar_url}
               role={personnelInfo?.role}
             />
-            <NotificationDropdown
-              notifications={notifications as any}
-              onMarkAsRead={markAsRead}
-              onMarkAllAsRead={markAllAsRead}
-              onClearNotification={clearNotification}
-              onClearAllNotifications={clearAllNotifications}
-            />
+            <DashboardMyRoomCard />
           </div>
-        </div>
-
-
-        {/* Pickup Alert */}
-        <PickupAlertBanner count={readyForPickup} onClick={() => navigate("/my-requests")} />
-
-        {/* Primary Actions — 3 large vertical buttons */}
-        <div className="space-y-3" data-tour="quick-actions">
-          <ActionRow
-            icon={Package}
-            label="Order Supplies"
-            sub={activeSupplyCount > 0 ? `${activeSupplyCount} in progress` : undefined}
-            onClick={() => navigate("/supplies?tab=order")}
-            prefetchPath="/supplies"
-            accent
-          />
-          <ActionRow
-            icon={Send}
-            label="Make a Request"
-            sub={openRequestCount > 0 ? `${openRequestCount} active` : "Move, deliver, set up & more"}
-            onClick={() => navigate("/supplies?tab=request")}
-            prefetchPath="/supplies"
-          />
-          <ActionRow
-            icon={KeyRound}
-            label="Request a Key"
-            sub="New, replacement, spare, or temporary access"
-            onClick={() => setKeyRequestOpen(true)}
-          />
-        </div>
-
-        {/* Activity feed — single chronological list */}
-        <div className="pt-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-muted-foreground">My Requests</h2>
-            <Button variant="link" size="sm" className="text-xs h-auto p-0" onClick={() => navigate("/my-requests")}>
-              View all <ChevronRight className="h-3 w-3 ml-0.5" />
-            </Button>
-          </div>
-          <CompactActivitySection
-            supplyRequests={supplyRequests}
-            issues={userIssues}
-            taskRequests={myTaskRequests as any}
-            keysHeld={keysHeld}
-            userId={user.id}
-          />
         </div>
       </div>
 
       <KeyRequestDialog open={keyRequestOpen} onOpenChange={setKeyRequestOpen} />
     </PullToRefresh>
-  );
-}
-
-/* ── Action row component ── */
-function ActionRow({
-  icon: Icon,
-  label,
-  sub,
-  onClick,
-  accent,
-  prefetchPath,
-}: {
-  icon: React.ElementType;
-  label: string;
-  sub?: string;
-  onClick: () => void;
-  accent?: boolean;
-  prefetchPath?: string;
-}) {
-  const handlePrefetch = () => {
-    if (prefetchPath) {
-      // Lazy import so the test setup mock for react-query isn't needed here.
-      import("@/lib/prefetchRoutes").then((m) => m.prefetchRoute(prefetchPath));
-    }
-  };
-  return (
-    <button
-      onClick={onClick}
-      onPointerEnter={handlePrefetch}
-      onFocus={handlePrefetch}
-      className={`flex items-center gap-4 w-full rounded-md px-5 py-4 text-left transition-colors touch-manipulation
-        ${accent
-          ? "bg-primary text-primary-foreground hover:bg-primary/90"
-          : "bg-card border border-border hover:bg-accent text-foreground"
-        }`}
-    >
-      <Icon className="h-6 w-6 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <span className="text-base font-medium">{label}</span>
-        {sub && <p className={`text-xs mt-0.5 ${accent ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{sub}</p>}
-      </div>
-      <ChevronRight className="h-5 w-5 shrink-0 opacity-50" />
-    </button>
   );
 }

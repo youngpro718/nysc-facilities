@@ -45,7 +45,7 @@ function QuickActionCard({ icon: Icon, label, sub, onClick, accent, prefetchPath
           : "bg-card border border-border hover:bg-accent text-foreground"
         }`}
     >
-      <Icon className="h-6 w-6 shrink-0" />
+      <Icon className="h-6 w-6 shrink-0" aria-hidden="true" />
       <div className="flex-1 min-w-0 sm:flex-none">
         <span className="text-base font-medium">{label}</span>
         <p className={`text-xs mt-0.5 ${accent ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
@@ -53,7 +53,7 @@ function QuickActionCard({ icon: Icon, label, sub, onClick, accent, prefetchPath
           {sub ?? " "}
         </p>
       </div>
-      <ChevronRight className="h-5 w-5 shrink-0 opacity-50 sm:hidden" />
+      <ChevronRight className="h-5 w-5 shrink-0 opacity-50 sm:hidden" aria-hidden="true" />
     </button>
   );
 }

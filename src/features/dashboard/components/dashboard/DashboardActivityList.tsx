@@ -112,9 +112,10 @@ export function DashboardActivityList({
             <button
               key={`${row.kind}-${row.id}`}
               onClick={() => navigate(row.kind === "issue" ? "/my-issues" : "/my-requests")}
+              aria-label={`${meta.label}: ${row.title}, ${row.status.replace(/_/g, " ")}`}
               className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-accent transition-colors"
             >
-              <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               <span className="hidden md:inline text-xs text-muted-foreground w-16 shrink-0">
                 {meta.label}
               </span>
@@ -133,7 +134,7 @@ export function DashboardActivityList({
               <span className="hidden sm:inline text-xs text-muted-foreground tabular-nums shrink-0 w-24 text-right">
                 {formatDistanceToNow(new Date(row.createdAt), { addSuffix: true })}
               </span>
-              <ChevronRight className="h-4 w-4 shrink-0 opacity-40" />
+              <ChevronRight className="h-4 w-4 shrink-0 opacity-40" aria-hidden="true" />
             </button>
           );
         })}
