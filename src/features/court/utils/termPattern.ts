@@ -65,27 +65,53 @@ export function isCourtHoliday(dateStr: string): boolean {
   return nysCourtHolidays(Number(dateStr.slice(0, 4))).includes(dateStr);
 }
 
+/** First Monday of January — the anchor the whole year's grid hangs on. */
+export function firstMondayOfJanuary(year: number): Date {
+  const jan1 = at(year, 1, 1);
+  return at(year, 1, 1 + ((1 - jan1.getDay() + 7) % 7));
+}
+
+export interface YearTerm {
+  index: number;      // 1..13
+  name: string;       // "Term I" .. "Term XIII"
+  start: string;      // sitting start (grid Monday, or Tuesday when that Monday is a holiday)
+  end: string;        // last covered day (Sunday of week 4; Term XIII runs to the day before next year's Term I)
+  gridStart: string;  // the grid Monday, regardless of holiday shift
+}
+
+const TERM_ROMANS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII'];
+
 /**
- * Dates for the term block that follows `prevEnd` (or, with no usable
- * previous term, the block beginning on the next Monday from today).
- * The end date stays on the 28-day grid even when the start shifts to
- * Tuesday for a holiday.
+ * The full 13-term calendar for a year. Terms sit on a Monday grid anchored
+ * to the first Monday of January: each term occupies four weeks, and the
+ * next term starts on the fifth Monday. A holiday grid Monday pushes sitting
+ * to Tuesday without moving the grid. Term XIII is the flexible one — it
+ * runs until the day before next year's Term I so late December (and the
+ * first days of January) are always covered, which gives it a fifth week in
+ * the years that need it.
  */
-export function nextTermDates(prevEnd?: string | null): { start: string; end: string } {
-  const from = prevEnd ? new Date(prevEnd + 'T12:00:00') : new Date();
-  from.setHours(12, 0, 0, 0);
-  if (prevEnd) from.setDate(from.getDate() + 1);
+export function generateYearTerms(year: number): YearTerm[] {
+  const anchor = firstMondayOfJanuary(year);
+  const nextAnchor = firstMondayOfJanuary(year + 1);
 
-  const gridMonday = new Date(from);
-  gridMonday.setDate(from.getDate() + ((8 - from.getDay()) % 7)); // snap forward to Monday
+  return TERM_ROMANS.map((roman, i) => {
+    const grid = new Date(anchor);
+    grid.setDate(anchor.getDate() + i * 28);
 
-  const end = new Date(gridMonday);
-  end.setDate(gridMonday.getDate() + 27); // 28-day block, inclusive
+    const start = new Date(grid);
+    if (isCourtHoliday(toDateStr(start))) start.setDate(start.getDate() + 1);
 
-  const start = new Date(gridMonday);
-  if (isCourtHoliday(toDateStr(start))) start.setDate(start.getDate() + 1); // holiday Monday → Tuesday
+    const end = new Date(i === 12 ? nextAnchor : grid);
+    end.setDate(i === 12 ? nextAnchor.getDate() - 1 : grid.getDate() + 27);
 
-  return { start: toDateStr(start), end: toDateStr(end) };
+    return {
+      index: i + 1,
+      name: `Term ${roman}`,
+      start: toDateStr(start),
+      end: toDateStr(end),
+      gridStart: toDateStr(grid),
+    };
+  });
 }
 
 // ── Sitting days ("calendar parts") ─────────────────────────────────────────

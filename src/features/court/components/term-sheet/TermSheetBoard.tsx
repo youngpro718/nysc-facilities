@@ -32,7 +32,6 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   DndContext,
   closestCenter,
@@ -51,8 +50,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AssignmentEditDialog, type EditableAssignment } from './AssignmentEditDialog';
-import { Pencil, WifiOff } from 'lucide-react';
-import { nextTermDates, formatSittingDays } from '@features/court/utils/termPattern';
+import { Pencil, WifiOff, Copy } from 'lucide-react';
+import { generateYearTerms, formatSittingDays } from '@features/court/utils/termPattern';
 
 interface TermAssignment {
   id: string;        // assignment id — used as DnD key
@@ -68,6 +67,10 @@ interface TermAssignment {
   sort_order: number;
   updated_at: string | null; // used for optimistic concurrency on reorder
 }
+
+// Stable default so the sortedList-sync effect doesn't loop on a fresh []
+// reference every render while the query has no data yet
+const EMPTY_ASSIGNMENTS: TermAssignment[] = [];
 
 // ── Offline pocket copy ───────────────────────────────────────────────────────
 // The term sheet must stay readable when the backend is unreachable ("a copy
@@ -258,12 +261,6 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const [showStaffHeader, setShowStaffHeader] = useState(true);
   const hasAutoSelected = React.useRef(false);
 
-  // ── Inline term editing state ───────────────────────────────────────────────
-  const [editingTerm, setEditingTerm] = useState(false);
-  const [editTermName, setEditTermName] = useState('');
-  const [editTermStart, setEditTermStart] = useState('');
-  const [editTermEnd, setEditTermEnd] = useState('');
-
   // ── Staff editing state ─────────────────────────────────────────────────────
   const [editingStaff, setEditingStaff] = useState(false);
   interface StaffRow { id: string; title: string; name: string; phone: string; room: string; sort_order: number }
@@ -317,17 +314,6 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     staleTime: 1000 * 60 * 5,
   });
 
-  // After creating a term, jump to it once the refreshed term list arrives
-  const pendingTermSelect = React.useRef<string | null>(null);
-  useEffect(() => {
-    if (!pendingTermSelect.current || allTerms.length === 0) return;
-    const idx = allTerms.findIndex(t => t.id === pendingTermSelect.current);
-    if (idx >= 0) {
-      setSelectedTermIndex(idx);
-      pendingTermSelect.current = null;
-    }
-  }, [allTerms]);
-
   // Auto-select the term that covers today's date
   useEffect(() => {
     if (allTerms.length === 0 || hasAutoSelected.current) return;
@@ -374,74 +360,6 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     staleTime: 1000 * 60 * 5,
   });
 
-  // ── Update current term inline ─────────────────────────────────────────────
-  const enterTermEditMode = () => {
-    if (!currentTerm) return;
-    setEditTermName(currentTerm.name);
-    setEditTermStart(currentTerm.rawStart);
-    setEditTermEnd(currentTerm.rawEnd);
-    setEditingTerm(true);
-  };
-
-  const updateTermMutation = useMutation({
-    mutationFn: async () => {
-      if (!currentTerm) throw new Error('No term selected');
-      const { error } = await supabase
-        .from('court_terms')
-        .update({ term_name: editTermName, start_date: editTermStart, end_date: editTermEnd })
-        .eq('id', currentTerm.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      hasAutoSelected.current = false;
-      queryClient.invalidateQueries({ queryKey: ['court-terms-all'] });
-      setEditingTerm(false);
-      toast({ title: 'Term updated', description: 'Changes saved and visible to all users.' });
-    },
-    onError: (err) => toast({ variant: 'destructive', title: 'Error', description: String(err) }),
-  });
-
-  // ── Start next term (dialog) ───────────────────────────────────────────────
-  const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-  const nextTermName = (name: string): string => {
-    // Trailing roman numeral, e.g. "Term III" → "Term IV"
-    const match = name.match(/^(.*?)\s*([IVX]+)\s*$/i);
-    if (match) {
-      const idx = romanNumerals.indexOf(match[2].toUpperCase());
-      if (idx >= 0) {
-        const next = idx < romanNumerals.length - 1 ? romanNumerals[idx + 1] : romanNumerals[0];
-        return `${match[1]} ${next}`.trim();
-      }
-    }
-    // Trailing arabic number, e.g. "Term 3" → "Term 4"
-    const num = name.match(/^(.*?)\s*(\d+)\s*$/);
-    if (num) return `${num[1]} ${parseInt(num[2], 10) + 1}`.trim();
-    return `${name} II`;
-  };
-
-  const [newTermOpen, setNewTermOpen] = useState(false);
-  const [newTermName, setNewTermName] = useState('');
-  const [newTermStart, setNewTermStart] = useState('');
-  const [newTermEnd, setNewTermEnd] = useState('');
-  const [newTermCopy, setNewTermCopy] = useState(true);
-  const [newTermNotify, setNewTermNotify] = useState(true);
-
-  const openNewTermDialog = () => {
-    const latest = allTerms[0];
-    const today = localToday();
-    // Court calendar pattern: 13 four-week terms per year on a Monday grid;
-    // if the previous term ended in the past, don't back-date — propose the
-    // next Monday block from today instead.
-    const anchor = latest && latest.rawEnd >= today ? latest.rawEnd : null;
-    const { start, end } = nextTermDates(anchor);
-    setNewTermName(latest ? nextTermName(latest.name) : 'Term I');
-    setNewTermStart(start);
-    setNewTermEnd(end);
-    setNewTermCopy(!!latest);
-    setNewTermNotify(true);
-    setNewTermOpen(true);
-  };
-
   // One push notification to every user (RPC enforces the editor-role gate).
   const broadcastTermUpdate = async (title: string, message: string) => {
     setNotifying(true);
@@ -457,62 +375,116 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     }
   };
 
-  const startNextTermMutation = useMutation({
-    mutationFn: async () => {
-      const latest = allTerms[0];
-      const name = newTermName.trim();
-      if (!name) throw new Error('Term name is required');
-      if (!newTermStart || !newTermEnd) throw new Error('Start and end dates are required');
-      if (newTermStart >= newTermEnd) throw new Error('End date must be after the start date');
-      const overlapping = allTerms.find(t => t.rawStart <= newTermEnd && t.rawEnd >= newTermStart);
-      if (overlapping) throw new Error(`Dates overlap with "${overlapping.name}" (${overlapping.startDate} – ${overlapping.endDate})`);
+  // ── Year-based term calendar ────────────────────────────────────────────────
+  // Dates are never typed in: the 13-term year is generated from the pattern
+  // (first Monday of January, four-week Monday grid, holiday Monday → Tuesday,
+  // Term XIII stretches to the day before next year's Term I).
+  const currentYear = Number(todayStr.slice(0, 4));
+  const latestStoredYear = allTerms.length > 0 ? Number(allTerms[0].rawStart.slice(0, 4)) : null;
+  const setupYearTarget = latestStoredYear === null ? currentYear : latestStoredYear + 1;
+  const canSetupYear = latestStoredYear === null || latestStoredYear <= currentYear;
 
-      const { data: newTerm, error: insertErr } = await supabase
-        .from('court_terms')
-        .insert({
-          term_name: name,
-          start_date: newTermStart,
-          end_date: newTermEnd,
+  // Assignment counts per term drive the "copy from previous term" affordance
+  const { data: termCounts = {} } = useQuery({
+    queryKey: ['term-assignment-counts'],
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data, error } = await supabase.from('court_assignments').select('term_id');
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of (data ?? []) as { term_id: string | null }[]) {
+        if (row.term_id) counts[row.term_id] = (counts[row.term_id] ?? 0) + 1;
+      }
+      return counts;
+    },
+    staleTime: 1000 * 30,
+  });
+
+  const setupYearMutation = useMutation({
+    mutationFn: async () => {
+      const terms = generateYearTerms(setupYearTarget);
+      const existing = new Set(allTerms.map(t => `${t.name}|${t.rawStart.slice(0, 4)}`));
+      const rows = terms
+        .filter(t => !existing.has(`${t.name}|${t.start.slice(0, 4)}`))
+        .map(t => ({
+          term_name: t.name,
+          start_date: t.start,
+          end_date: t.end,
           // Legacy required columns: year of the term + courthouse location
-          term_number: newTermStart.slice(0, 4),
+          term_number: String(setupYearTarget),
           location: 'New York',
           status: 'active',
           term_status: 'active',
-        })
-        .select('id')
-        .single();
-      if (insertErr) throw insertErr;
-
-      let copied = 0;
-      if (newTermCopy && latest && newTerm) {
-        const { data: count, error: copyErr } = await supabase.rpc('copy_term_assignments', {
-          p_source_term_id: latest.id,
-          p_target_term_id: newTerm.id,
-        });
-        if (copyErr) throw new Error(`Term created, but copying assignments failed: ${copyErr.message}`);
-        copied = typeof count === 'number' ? count : 0;
-      }
-      return { copied, copiedFrom: latest?.name, newTermId: newTerm.id as string };
+        }));
+      if (rows.length === 0) throw new Error(`The ${setupYearTarget} calendar is already set up`);
+      const { error } = await supabase.from('court_terms').insert(rows);
+      if (error) throw error;
+      return rows.length;
     },
-    onSuccess: ({ copied, copiedFrom, newTermId }) => {
-      pendingTermSelect.current = newTermId;
+    onSuccess: (count) => {
+      hasAutoSelected.current = false;
+      queryClient.invalidateQueries({ queryKey: ['court-terms-all'] });
+      toast({
+        title: `${setupYearTarget} calendar ready`,
+        description: `${count} terms generated from the court pattern. Use "Copy assignments" when each term needs its roster.`,
+      });
+    },
+    onError: (err: Error) => toast({ variant: 'destructive', title: 'Could not set up the year', description: err.message }),
+  });
+
+  // Copy the roster into the selected (empty) term from the most recent
+  // earlier term that has assignments.
+  const copySource = currentTerm
+    ? allTerms.find(t => t.id !== currentTerm.id && t.rawStart < currentTerm.rawStart && (termCounts[t.id] ?? 0) > 0)
+    : undefined;
+
+  const copyFromPrevMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentTerm) throw new Error('No term selected');
+      if (!copySource) throw new Error('No earlier term has assignments to copy');
+      const { data, error } = await supabase.rpc('copy_term_assignments', {
+        p_source_term_id: copySource.id,
+        p_target_term_id: currentTerm.id,
+      });
+      if (error) throw error;
+      return { copied: typeof data === 'number' ? data : 0, from: copySource.name };
+    },
+    onSuccess: ({ copied, from }) => {
+      queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
+      queryClient.invalidateQueries({ queryKey: ['term-assignment-counts'] });
+      toast({ title: 'Assignments copied', description: `${copied} assignment${copied !== 1 ? 's' : ''} copied from ${from}. Edit them as needed.` });
+    },
+    onError: (err: Error) => toast({ variant: 'destructive', title: 'Could not copy assignments', description: err.message }),
+  });
+
+  // Prior years are kept only until their terms have fully passed, then the
+  // sheet history is cleared to keep exactly one year in play.
+  const clearableTerms = allTerms.filter(
+    t => Number(t.rawStart.slice(0, 4)) < currentYear && t.rawEnd < todayStr,
+  );
+  const [confirmClearYears, setConfirmClearYears] = useState(false);
+
+  const clearOldYearsMutation = useMutation({
+    mutationFn: async () => {
+      const ids = clearableTerms.map(t => t.id);
+      if (ids.length === 0) throw new Error('Nothing to clear');
+      const { error: aErr } = await supabase.from('court_assignments').delete().in('term_id', ids);
+      if (aErr) throw aErr;
+      const { error: tErr } = await supabase.from('court_terms').delete().in('id', ids);
+      if (tErr) throw tErr;
+      return ids.length;
+    },
+    onSuccess: (count) => {
+      hasAutoSelected.current = false;
+      setConfirmClearYears(false);
       queryClient.invalidateQueries({ queryKey: ['court-terms-all'] });
       queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
-      setNewTermOpen(false);
-      toast({
-        title: 'New term started',
-        description: newTermCopy && copiedFrom
-          ? `${copied} assignment${copied !== 1 ? 's' : ''} copied from ${copiedFrom}. Edit them as needed.`
-          : 'Blank term created. Add parts to build the sheet.',
-      });
-      if (newTermNotify) {
-        broadcastTermUpdate(
-          `${newTermName.trim()} has been posted`,
-          `${newTermName.trim()} is on the term sheet. Open it and save or print a copy for your records.`,
-        );
-      }
+      queryClient.invalidateQueries({ queryKey: ['term-assignment-counts'] });
+      toast({ title: 'Prior year cleared', description: `${count} past term${count !== 1 ? 's' : ''} removed.` });
     },
-    onError: (err: Error) => toast({ variant: 'destructive', title: 'Could not start term', description: err.message }),
+    onError: (err: Error) => {
+      setConfirmClearYears(false);
+      toast({ variant: 'destructive', title: 'Could not clear prior years', description: err.message });
+    },
   });
 
   // ── Save staff edits ───────────────────────────────────────────────────────
@@ -616,7 +588,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   // ── Fetch assignments for selected term ──────────────────────────────────────
   const selectedTermId = currentTerm?.id ?? null;
 
-  const { data: assignments = [], isLoading } = useQuery({
+  const { data: assignments = EMPTY_ASSIGNMENTS, isLoading } = useQuery({
     queryKey: ['term-sheet-board', selectedTermId],
     queryFn: async () => {
       // Helper: join raw assignment rows with live room data
@@ -724,7 +696,9 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   });
 
   useEffect(() => {
-    if (assignments.length > 0) setSortedList(assignments);
+    // Unconditional: an empty term must clear the board, not keep showing the
+    // previously selected term's rows
+    setSortedList(assignments);
   }, [assignments]);
 
   // ── Save sort order mutation (optimistic) ─────────────────────────────────
@@ -1019,22 +993,24 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         </div>
       </div>
 
-      {/* Term Selector — inline editable for admins */}
+      {/* Term Selector — dates come from the court calendar, never typed in */}
       {allTerms.length === 0 ? (
         <div className="flex items-center justify-between rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 px-4 py-4">
           <div className="flex items-center gap-3">
             <Calendar className="h-5 w-5 text-muted-foreground shrink-0" />
             <div>
-              <p className="text-sm font-medium text-muted-foreground">No current terms stored</p>
+              <p className="text-sm font-medium text-muted-foreground">No terms stored</p>
               <p className="text-xs text-muted-foreground/60">
-                {isAdmin ? 'Click "Start First Term" to begin.' : 'Court administration has not entered any terms yet.'}
+                {isAdmin
+                  ? `Set up ${setupYearTarget} to generate all 13 terms from the court calendar.`
+                  : 'Court administration has not entered any terms yet.'}
               </p>
             </div>
           </div>
           {isAdmin && (
-            <Button size="sm" onClick={openNewTermDialog}>
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Start First Term
+            <Button size="sm" onClick={() => setupYearMutation.mutate()} disabled={setupYearMutation.isPending}>
+              {setupYearMutation.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
+              Set up {setupYearTarget} terms
             </Button>
           )}
         </div>
@@ -1042,74 +1018,83 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         <div className={`rounded-lg border px-4 py-3 ${
           isTodayInSelectedTerm ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-muted-foreground/20'
         }`}>
-          {editingTerm ? (
-            /* ── Inline edit mode ── */
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Term Name</Label>
-                  <Input value={editTermName} onChange={e => setEditTermName(e.target.value)} className="h-8 text-sm" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Start Date</Label>
-                  <Input type="date" value={editTermStart} onChange={e => setEditTermStart(e.target.value)} className="h-8 text-sm" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">End Date</Label>
-                  <Input type="date" value={editTermEnd} onChange={e => setEditTermEnd(e.target.value)} className="h-8 text-sm" />
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditingTerm(false)}>Cancel</Button>
-                <Button size="sm" className="h-7 text-xs" disabled={updateTermMutation.isPending} onClick={() => updateTermMutation.mutate()}>
-                  {updateTermMutation.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
-                  Save
-                </Button>
-              </div>
-            </div>
-          ) : (
-            /* ── Display mode ── */
-            <div className="flex items-center justify-between">
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"
-                disabled={selectedTermIndex >= allTerms.length - 1}
-                onClick={() => setSelectedTermIndex(i => Math.min(i + 1, allTerms.length - 1))}
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+              disabled={selectedTermIndex >= allTerms.length - 1}
+              onClick={() => setSelectedTermIndex(i => Math.min(i + 1, allTerms.length - 1))}
+              title="Previous term"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="text-center min-w-0 flex-1">
+              <Select
+                value={currentTerm?.id ?? ''}
+                onValueChange={(id) => {
+                  const idx = allTerms.findIndex(t => t.id === id);
+                  if (idx >= 0) setSelectedTermIndex(idx);
+                }}
               >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="text-center min-w-0 flex-1">
-                <p className="text-sm font-semibold">{currentTerm?.name}</p>
-                <p className="text-xs text-muted-foreground">{currentTerm?.startDate} – {currentTerm?.endDate}</p>
-                <p className="text-[10px] mt-0.5">
-                  {isTodayInSelectedTerm
-                    ? <span className="text-primary font-medium">Active Term</span>
-                    : currentTerm && currentTerm.rawStart > todayStr
-                      ? <span className="text-amber-600 dark:text-amber-400 font-medium">Upcoming Term</span>
-                      : <span className="text-muted-foreground/60">Past Term</span>}
-                  {allTerms.length > 1 && <span className="text-muted-foreground/60">{' · '}{allTerms.length} terms stored</span>}
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                {isAdmin && (
-                  <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={enterTermEditMode}>
-                    Edit
-                  </Button>
-                )}
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"
-                  disabled={selectedTermIndex <= 0}
-                  onClick={() => setSelectedTermIndex(i => Math.max(i - 1, 0))}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+                <SelectTrigger className="mx-auto h-8 w-auto min-w-[8.5rem] justify-center gap-1 border-none bg-transparent text-sm font-semibold shadow-none focus:ring-0">
+                  {/* Children override Radix's default echo of the full item row */}
+                  <SelectValue placeholder="Pick a term">{currentTerm?.name}</SelectValue>
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  {[...allTerms].reverse().map(t => {
+                    const isActive = t.rawStart <= todayStr && t.rawEnd >= todayStr;
+                    return (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name} · {t.startDate} – {t.endDate}{isActive ? '  (current)' : ''}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{currentTerm?.startDate} – {currentTerm?.endDate}</p>
+              <p className="text-[10px] mt-0.5">
+                {isTodayInSelectedTerm
+                  ? <span className="text-primary font-medium">Active Term</span>
+                  : currentTerm && currentTerm.rawStart > todayStr
+                    ? <span className="text-amber-600 dark:text-amber-400 font-medium">Upcoming Term</span>
+                    : <span className="text-muted-foreground/60">Past Term</span>}
+                <span className="text-muted-foreground/60">{' · '}{allTerms.length} terms stored</span>
+              </p>
             </div>
-          )}
-          {/* Admin: Start Next Term button */}
-          {isAdmin && !editingTerm && (
-            <div className="mt-2 pt-2 border-t border-primary/10 flex justify-end">
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={openNewTermDialog}>
-                <Plus className="h-3 w-3 mr-1" />
-                Start Next Term
-              </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+              disabled={selectedTermIndex <= 0}
+              onClick={() => setSelectedTermIndex(i => Math.max(i - 1, 0))}
+              title="Next term"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          {/* Admin: calendar upkeep — copy roster into an empty term, prep next year, clear prior years */}
+          {isAdmin && (
+            <div className="mt-2 pt-2 border-t border-primary/10 flex flex-wrap items-center justify-end gap-2">
+              {!isLoading && sortedList.length === 0 && copySource && (
+                <Button variant="outline" size="sm" className="h-7 text-xs"
+                  onClick={() => copyFromPrevMutation.mutate()}
+                  disabled={copyFromPrevMutation.isPending}
+                >
+                  {copyFromPrevMutation.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Copy className="h-3 w-3 mr-1" />}
+                  Copy assignments from {copySource.name}
+                </Button>
+              )}
+              {clearableTerms.length > 0 && (
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground"
+                  onClick={() => setConfirmClearYears(true)}
+                >
+                  Clear {clearableTerms.length} prior-year term{clearableTerms.length !== 1 ? 's' : ''}…
+                </Button>
+              )}
+              {canSetupYear && (
+                <Button variant="outline" size="sm" className="h-7 text-xs"
+                  onClick={() => setupYearMutation.mutate()}
+                  disabled={setupYearMutation.isPending}
+                >
+                  {setupYearMutation.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
+                  Set up {setupYearTarget} terms
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -1418,52 +1403,29 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Start next term */}
-      <Dialog open={newTermOpen} onOpenChange={setNewTermOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Start New Term</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <Label className="text-xs">Term Name</Label>
-              <Input value={newTermName} onChange={e => setNewTermName(e.target.value)} placeholder='e.g. Term IV or "June 2026 Term"' />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Start Date</Label>
-                <Input type="date" value={newTermStart} onChange={e => setNewTermStart(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">End Date</Label>
-                <Input type="date" value={newTermEnd} onChange={e => setNewTermEnd(e.target.value)} />
-              </div>
-            </div>
-            {allTerms.length > 0 && (
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <Checkbox checked={newTermCopy} onCheckedChange={(v) => setNewTermCopy(v === true)} />
-                <span>Copy all assignments from <strong>{allTerms[0].name}</strong></span>
-              </label>
-            )}
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox checked={newTermNotify} onCheckedChange={(v) => setNewTermNotify(v === true)} />
-              <span>Notify everyone so they can save a pocket copy</span>
-            </label>
-            <p className="text-xs text-muted-foreground">
-              Dates follow the court calendar: four-week terms starting on a Monday
-              (Tuesday when that Monday is a court holiday) — adjust if this term differs.
-              Everyone can see the new term immediately; only term editors can change it.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setNewTermOpen(false)}>Cancel</Button>
-            <Button onClick={() => startNextTermMutation.mutate()} disabled={startNextTermMutation.isPending}>
-              {startNextTermMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
-              Start Term
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Clear prior-year terms */}
+      <AlertDialog open={confirmClearYears} onOpenChange={setConfirmClearYears}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear prior-year terms?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes {clearableTerms.length} past term{clearableTerms.length !== 1 ? 's' : ''} and
+              their sheets ({clearableTerms.map(t => t.name).join(', ')}). The current year's calendar is not affected.
+              Export any PDFs you want to keep first.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => clearOldYearsMutation.mutate()}
+            >
+              {clearOldYearsMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+              Clear prior years
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add part */}
       <Dialog open={addPartOpen} onOpenChange={setAddPartOpen}>
