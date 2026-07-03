@@ -17,6 +17,7 @@ import { useAuth } from "@features/auth/hooks/useAuth";
 import { useUserRoomAssignments } from "@features/spaces/hooks/useUserRoomAssignments";
 import { RoomSelector } from "@features/keys/components/keys/lockbox/RoomSelector";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from "@/lib/logger";
 
 interface RoomIssue {
   id: string;
@@ -81,7 +82,10 @@ export function DashboardMyRoomCard() {
       queryClient.invalidateQueries({ queryKey: ["occupantAssignments", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-room-issues"] });
     },
-    onError: (error: unknown) => toast.error(getErrorMessage(error) || "Failed to update room"),
+    onError: (error: unknown) => {
+      logger.error("Error setting room:", error);
+      toast.error(getErrorMessage(error) || "Failed to update room");
+    },
   });
 
   return (
