@@ -49,15 +49,15 @@ export function KeyAccountabilityPanel({
               }`}
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {a.keyName}
+                <div className="flex items-center gap-1.5 text-sm font-medium min-w-0">
+                  <span className="truncate">{a.keyName}</span>
                   {a.isSpare && (
-                    <Badge variant="outline" className="ml-1.5 text-[10px] px-1 py-0">spare</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0">spare</Badge>
                   )}
                   {a.isElevatorCard && (
-                    <Badge variant="outline" className="ml-1.5 text-[10px] px-1 py-0">elevator</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0">elevator</Badge>
                   )}
-                </p>
+                </div>
                 <p className="text-xs text-muted-foreground truncate">
                   {a.recipient} · out since {format(new Date(a.assignedAt), "MMM d")}
                 </p>
