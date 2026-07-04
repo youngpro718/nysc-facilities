@@ -43,6 +43,7 @@ const InstallApp = lazy(() => import("@features/auth/pages/InstallApp"));
 const AdminDashboard = lazy(() => import("@features/admin/pages/AdminDashboard"));
 const UserDashboard = lazy(() => import("@features/dashboard/pages/UserDashboard"));
 const CourtAideWorkCenter = lazy(() => import("@features/court/pages/CourtAideWorkCenter"));
+const CourtOfficerCommandCenter = lazy(() => import("@features/court/pages/CourtOfficerCommandCenter"));
 
 // Feature pages
 const Spaces = lazy(() => import("@features/spaces/pages/Spaces"));
@@ -117,7 +118,7 @@ function AppContent() {
           } />
 
           {/* Legacy role-specific dashboards — redirect to new defaults */}
-          <Route path="/court-officer-dashboard" element={<Navigate to="/keys" replace />} />
+          <Route path="/court-officer-dashboard" element={<Navigate to="/command-center" replace />} />
           <Route path="/court-aide-dashboard" element={<Navigate to="/work-center" replace />} />
 
           <Route path="/spaces" element={
@@ -293,6 +294,11 @@ function AppContent() {
           <Route path="/work-center" element={
             <ProtectedRoute>
               <CourtAideWorkCenter />
+            </ProtectedRoute>
+          } />
+          <Route path="/command-center" element={
+            <ProtectedRoute>
+              <CourtOfficerCommandCenter />
             </ProtectedRoute>
           } />
           {/* Help Center */}

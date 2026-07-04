@@ -30,8 +30,8 @@ export const ROLE_DASHBOARDS: Record<UserRole, DashboardRoute> = {
     name: 'Court Management Dashboard',
   },
   court_officer: {
-    path: '/keys',
-    name: 'Keys',
+    path: '/command-center',
+    name: 'Command Center',
   },
   purchasing: {
     path: '/supply-room',

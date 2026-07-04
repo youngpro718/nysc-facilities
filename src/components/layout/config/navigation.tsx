@@ -139,6 +139,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   // Judge Smith?" / "what's Part 30?" at the front desk.
   if (userRole === 'court_officer') {
     return [
+      { title: 'Command Center', icon: LayoutDashboard },
       { title: 'Keys', icon: KeyRound },
       { title: 'Reports', icon: AlertTriangle },
       { title: 'Courtrooms', icon: Gavel },
@@ -255,6 +256,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   // courtroom directory + the shared Term Sheet view.
   if (userRole === 'court_officer') {
     return [
+      '/command-center',
       '/keys',
       '/my-issues',
       '/courtrooms',
