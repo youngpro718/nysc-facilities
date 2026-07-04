@@ -55,7 +55,17 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
   const [clerkToAdd, setClerkToAdd] = useState<string>(NONE);
   const [roomId, setRoomId] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmShare, setConfirmShare] = useState(false);
   const [sittingDays, setSittingDays] = useState<string[]>([]);
+
+  // Part being moved into a courtroom another part already uses → warn-but-allow.
+  const sharedWith = roomId && roomId !== assignment?.room_id
+    ? takenRooms?.get(roomId)?.replace(/\s+/g, ' ').trim()
+    : undefined;
+  const handleSave = () => {
+    if (sharedWith && sharedWith !== '—') setConfirmShare(true);
+    else saveMutation.mutate();
+  };
 
   useEffect(() => {
     if (!assignment) return;
@@ -96,10 +106,28 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!assignment) throw new Error('No assignment');
+      const newJustice = justice === NONE ? null : justice;
+      const newSergeant = sergeant === NONE ? null : sergeant;
+      const newPart = part.trim() || null;
+      const roomChanged = !!roomId && roomId !== assignment.room_id;
+
+      // A "move" = a change to the people/part/room, not tel/fax/sitting-days.
+      // Only these bump roster_changed_at so the board highlight (and its fade)
+      // reflect real reassignments, never a phone-number tweak or a reorder.
+      const origClerks = assignment.clerks.filter(c => c && c !== '—');
+      const clerksChanged =
+        clerks.length !== origClerks.length || clerks.some((c, i) => c !== origClerks[i]);
+      const rosterChanged =
+        newPart !== (assignment.part === '—' ? null : assignment.part) ||
+        newJustice !== (assignment.justice === '—' ? null : assignment.justice) ||
+        newSergeant !== (assignment.sergeant === '—' ? null : assignment.sergeant) ||
+        clerksChanged ||
+        roomChanged;
+
       const payload = {
-        part: part.trim() || null,
-        justice: justice === NONE ? null : justice,
-        sergeant: sergeant === NONE ? null : sergeant,
+        part: newPart,
+        justice: newJustice,
+        sergeant: newSergeant,
         clerks: clerks.length ? clerks : null,
         tel: tel.trim() || null,
         fax: fax.trim() || null,
@@ -107,19 +135,14 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
         calendar_day: sittingDays.length
           ? SITTING_DAY_ORDER.filter(d => sittingDays.includes(d)).join(',')
           : null,
-        ...(roomId && roomId !== assignment.room_id ? { room_id: roomId } : {}),
+        ...(roomChanged ? { room_id: roomId } : {}),
+        ...(rosterChanged ? { roster_changed_at: new Date().toISOString() } : {}),
       };
       const { error } = await supabase
         .from('court_assignments')
         .update(payload)
         .eq('id', assignment.id);
-      if (error) {
-        // Unique (term_id, room_id): each courtroom appears once per term
-        if ((error as { code?: string }).code === '23505') {
-          throw new Error('Another part on this term already uses that courtroom. Pick a different room.');
-        }
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       toast({ title: 'Assignment updated' });
@@ -192,11 +215,13 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
                 <SelectTrigger><SelectValue placeholder={assignment?.room ? `Room ${assignment.room}` : 'Select room'} /></SelectTrigger>
                 <SelectContent className="max-h-72">
                   {courtroomOptions.map(o => {
-                    const takenBy = (o.roomId !== assignment?.room_id ? takenRooms?.get(o.roomId) : undefined)
+                    // Room sharing is allowed (a courtroom can serve more than
+                    // one part in a term) — just say who else uses it, don't block.
+                    const usedBy = (o.roomId !== assignment?.room_id ? takenRooms?.get(o.roomId) : undefined)
                       ?.replace(/\s+/g, ' ').trim();
                     return (
-                      <SelectItem key={o.roomId} value={o.roomId} disabled={!!takenBy}>
-                        {o.label}{takenBy ? ` · already on sheet${takenBy !== '—' ? ` (${takenBy})` : ''}` : ''}
+                      <SelectItem key={o.roomId} value={o.roomId}>
+                        {o.label}{usedBy && usedBy !== '—' ? ` · also used by ${usedBy}` : ''}
                       </SelectItem>
                     );
                   })}
@@ -304,7 +329,7 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
           </Button>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+            <Button onClick={handleSave} disabled={saveMutation.isPending}>
               {saveMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
               Save
             </Button>
@@ -327,6 +352,25 @@ export const AssignmentEditDialog: React.FC<Props> = ({ assignment, open, onOpen
               >
                 {deleteMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
                 Remove Part
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={confirmShare} onOpenChange={setConfirmShare}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Room already used by {sharedWith}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {sharedWith} is already in this courtroom on this term. Sharing a
+                courtroom between parts is allowed (e.g. different sitting days) —
+                just confirm this isn't a mistake.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Go back</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { setConfirmShare(false); saveMutation.mutate(); }}>
+                Share the room
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

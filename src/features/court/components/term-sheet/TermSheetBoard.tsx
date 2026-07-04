@@ -64,6 +64,7 @@ interface TermAssignment {
   sergeant: string;
   clerks: string[];
   calendar_day: string | null; // sitting days for calendar parts ("Tuesday,Thursday")
+  roster_changed_at: string | null; // when people/part/room last changed — drives the recent-move highlight
   sort_order: number;
   updated_at: string | null; // used for optimistic concurrency on reorder
 }
@@ -71,6 +72,20 @@ interface TermAssignment {
 // Stable default so the sortedList-sync effect doesn't loop on a fresh []
 // reference every render while the query has no data yet
 const EMPTY_ASSIGNMENTS: TermAssignment[] = [];
+
+// A roster change (move, reassignment, new part) stays highlighted for two
+// weeks, then fades on its own — a quiet "what changed recently" marker, not
+// a notification. Reorders don't set roster_changed_at, so they never light up.
+const RECENT_MOVE_DAYS = 14;
+function recentMoveLabel(rosterChangedAt: string | null): string | null {
+  if (!rosterChangedAt) return null;
+  const changed = new Date(rosterChangedAt).getTime();
+  if (Number.isNaN(changed)) return null;
+  const days = Math.floor((Date.now() - changed) / 86_400_000);
+  if (days >= RECENT_MOVE_DAYS || days < 0) return null;
+  if (days === 0) return 'Updated today';
+  return `Updated ${days} day${days === 1 ? '' : 's'} ago`;
+}
 
 // ── Offline pocket copy ───────────────────────────────────────────────────────
 // The term sheet must stay readable when the backend is unreachable ("a copy
@@ -130,12 +145,13 @@ function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = tr
 
   const isVacant = a.justice === '—';
   const sittingDays = formatSittingDays(a.calendar_day);
+  const movedLabel = recentMoveLabel(a.roster_changed_at);
 
   return (
     <tr
       ref={setNodeRef}
       style={style}
-      className={`hover:bg-muted/40 transition-colors ${isVacant ? 'bg-amber-500/5' : ''} ${isDragging ? 'shadow-lg' : ''}`}
+      className={`hover:bg-muted/40 transition-colors ${movedLabel ? 'border-l-2 border-l-amber-400' : ''} ${isVacant ? 'bg-amber-500/5' : ''} ${isDragging ? 'shadow-lg' : ''}`}
     >
       {isAdmin && (
         <td className="px-1 py-2 w-6">
@@ -155,6 +171,14 @@ function SortableRow({ assignment: a, issueCount, hasUrgent, judge, isAdmin = tr
           {sittingDays && (
             <span className="text-[9px] text-muted-foreground font-normal" title="Sitting days">
               {sittingDays}
+            </span>
+          )}
+          {movedLabel && (
+            <span
+              className="text-[8px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400 bg-amber-500/10 rounded px-1 py-0.5"
+              title={movedLabel}
+            >
+              Moved
             </span>
           )}
           {isAdmin && issueCount > 0 && (
@@ -528,6 +552,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const [addPartOpen, setAddPartOpen] = useState(false);
   const [newPartLabel, setNewPartLabel] = useState('');
   const [newPartRoomId, setNewPartRoomId] = useState('');
+  const [confirmAddShare, setConfirmAddShare] = useState(false);
 
   // Active courtrooms for the room picker (value = rooms.id, matching court_assignments.room_id)
   const { data: courtroomOptions = [] } = useQuery({
@@ -561,14 +586,10 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         room_number: courtroomOptions.find(o => o.roomId === newPartRoomId)?.roomNumber ?? '',
         part: newPartLabel.trim(),
         sort_order: maxSort + 1,
+        // A newly added part is a recent change — highlight it on the board.
+        roster_changed_at: new Date().toISOString(),
       });
-      if (error) {
-        // Unique (term_id, room_id): each courtroom appears once per term
-        if ((error as { code?: string }).code === '23505') {
-          throw new Error('That courtroom already has a part on this term\'s sheet. Pick a different room, or edit the existing part instead.');
-        }
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['term-sheet-board'] });
@@ -602,6 +623,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         sergeant: string | null;
         clerks: string[] | null;
         calendar_day: string | null;
+        roster_changed_at: string | null;
         sort_order: number | null;
         updated_at: string | null;
       }
@@ -645,6 +667,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
               sergeant: a.sergeant || '—',
               clerks: Array.isArray(a.clerks) ? a.clerks.filter(c => c && c !== '—') : [],
               calendar_day: a.calendar_day || null,
+              roster_changed_at: a.roster_changed_at ?? null,
               sort_order: a.sort_order ?? 9999,
               updated_at: a.updated_at ?? null,
             } as TermAssignment;
@@ -657,7 +680,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         // Try fetching with term_id filter
         let query = supabase
           .from("court_assignments")
-          .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order, updated_at, term_id")
+          .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, roster_changed_at, sort_order, updated_at, term_id")
           .order("sort_order");
 
         if (selectedTermId) {
@@ -670,7 +693,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
         if (assignmentsError && assignmentsError.message?.includes('term_id')) {
           const { data: fallbackData, error: fallbackError } = await supabase
             .from("court_assignments")
-            .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, sort_order, updated_at")
+            .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, roster_changed_at, sort_order, updated_at")
             .order("sort_order");
           if (fallbackError) throw fallbackError;
           return joinWithRooms((fallbackData || []) as AssignmentRow[]);
@@ -847,8 +870,14 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   };
   const exportToPDF = () => runOfficialPDF('download');
 
-  // Rooms already carrying a part on the selected term (roomId → part label)
-  const takenRooms = new Map(sortedList.map(a => [a.room_id, a.part]));
+  // Rooms already carrying one or more parts on the selected term
+  // (roomId → "Part 22, Part 36"). Rooms can be shared across parts, so a
+  // room may map to several — list them all for the "also used by" hint.
+  const takenRooms = new Map<string, string>();
+  for (const a of sortedList) {
+    const existing = takenRooms.get(a.room_id);
+    takenRooms.set(a.room_id, existing ? `${existing}, ${a.part}` : a.part);
+  }
 
   // ── Filtering ─────────────────────────────────────────────────────────────
   const displayList = search.trim()
@@ -1293,14 +1322,23 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
               const issueCount = getIssuesForRoom(a.room_id).length;
               const urgentIssue = hasUrgentIssues(a.room_id);
               const sittingDays = formatSittingDays(a.calendar_day);
+              const movedLabel = recentMoveLabel(a.roster_changed_at);
 
               return (
-                <Card key={a.id} className={`overflow-hidden ${isVacant ? 'border-amber-500/30' : ''} ${isAdmin && issueCount > 0 ? 'border-destructive/30' : ''}`}>
+                <Card key={a.id} className={`overflow-hidden ${movedLabel ? 'border-l-2 border-l-amber-400' : ''} ${isVacant ? 'border-amber-500/30' : ''} ${isAdmin && issueCount > 0 ? 'border-destructive/30' : ''}`}>
                   <div className={`px-3 py-2 border-b flex items-center justify-between ${isVacant ? 'bg-amber-500/10' : isAdmin && issueCount > 0 ? 'bg-destructive/5' : 'bg-primary/5'}`}>
                     <div className="flex items-center gap-1.5">
                       <span className="font-bold text-sm text-primary">{a.part}</span>
                       {sittingDays && (
                         <span className="text-[9px] text-muted-foreground" title="Sitting days">{sittingDays}</span>
+                      )}
+                      {movedLabel && (
+                        <span
+                          className="text-[8px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400 bg-amber-500/10 rounded px-1 py-0.5"
+                          title={movedLabel}
+                        >
+                          Moved
+                        </span>
                       )}
                       {isAdmin && issueCount > 0 && (
                         <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium ${urgentIssue ? 'text-destructive' : 'text-orange-500'}`}>
@@ -1444,19 +1482,20 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                 <SelectTrigger><SelectValue placeholder="Pick a courtroom" /></SelectTrigger>
                 <SelectContent className="max-h-72">
                   {courtroomOptions.map(o => {
-                    const takenBy = takenRooms.get(o.roomId)?.replace(/\s+/g, ' ').trim();
+                    // Sharing a courtroom across parts is allowed — inform, don't block.
+                    const usedBy = takenRooms.get(o.roomId)?.replace(/\s+/g, ' ').trim();
                     return (
-                      <SelectItem key={o.roomId} value={o.roomId} disabled={!!takenBy}>
-                        {o.label}{takenBy ? ` · already on sheet${takenBy !== '—' ? ` (${takenBy})` : ''}` : ''}
+                      <SelectItem key={o.roomId} value={o.roomId}>
+                        {o.label}{usedBy && usedBy !== '—' ? ` · also used by ${usedBy}` : ''}
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
             </div>
-            {courtroomOptions.length > 0 && courtroomOptions.every(o => takenRooms.has(o.roomId)) && (
+            {newPartRoomId && takenRooms.has(newPartRoomId) && (
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                Every active courtroom already has a part on this term's sheet. Remove a part first, or activate another courtroom under Spaces.
+                {takenRooms.get(newPartRoomId)?.replace(/\s+/g, ' ').trim()} already uses this courtroom on this term — you'll be asked to confirm sharing it.
               </p>
             )}
             <p className="text-xs text-muted-foreground">
@@ -1465,13 +1504,38 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAddPartOpen(false)}>Cancel</Button>
-            <Button onClick={() => addPartMutation.mutate()} disabled={addPartMutation.isPending}>
+            <Button
+              onClick={() => {
+                if (newPartRoomId && takenRooms.has(newPartRoomId)) setConfirmAddShare(true);
+                else addPartMutation.mutate();
+              }}
+              disabled={addPartMutation.isPending}
+            >
               {addPartMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
               Add Part
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmAddShare} onOpenChange={setConfirmAddShare}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Share this courtroom?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {takenRooms.get(newPartRoomId)?.replace(/\s+/g, ' ').trim()} already uses this
+              courtroom on {currentTerm?.name ?? 'this term'}. Two parts can share a courtroom
+              (e.g. different sitting days) — confirm this is intentional.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmAddShare(false); addPartMutation.mutate(); }}>
+              Add anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
