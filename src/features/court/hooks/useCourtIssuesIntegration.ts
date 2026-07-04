@@ -262,7 +262,7 @@ export const useCourtIssuesIntegration = () => {
     };
 
     const channel = supabase
-      .channel('court-issues-changes')
+      .channel(`court-issues-changes-${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {
