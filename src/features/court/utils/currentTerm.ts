@@ -8,7 +8,10 @@ import { supabase } from '@/lib/supabase';
  * room lookups can match rows from past terms.
  */
 export async function getCurrentTermId(): Promise<string | null> {
-  const today = new Date().toISOString().slice(0, 10);
+  // Local calendar date — toISOString() is UTC and flips to tomorrow during
+  // NY evenings, which would resolve the wrong term at term boundaries.
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const { data, error } = await supabase
     .from('court_terms')
     .select('id, start_date, end_date')
