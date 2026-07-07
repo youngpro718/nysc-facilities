@@ -623,6 +623,26 @@ export const InventoryItemsPanel = () => {
             <Download className="h-4 w-4 mr-2" />
             {exporting ? "Exporting..." : "Export CSV"}
           </Button>
+          {canEdit && (
+            <Button
+              variant="outline"
+              asChild
+              disabled={importing}
+              className="w-full sm:w-auto touch-target"
+            >
+              <label className="cursor-pointer">
+                <Upload className="h-4 w-4 mr-2" />
+                {importing ? "Importing..." : "Import CSV"}
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={handleImportCsv}
+                  disabled={importing}
+                />
+              </label>
+            </Button>
+          )}
         </div>
       </div>
 
