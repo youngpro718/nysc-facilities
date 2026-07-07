@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Camera } from "lucide-react";
+import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Upload, Camera } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
