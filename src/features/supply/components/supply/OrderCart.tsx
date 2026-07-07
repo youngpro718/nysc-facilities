@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,11 @@ import { cn } from '@/lib/utils';
 import type { CartItem } from '@features/supply/hooks/useOrderCart';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryRoomPicker';
+import { RoomPrinterToners } from '@features/supply/components/supply/RoomPrinterToners';
+import {
+  useRoomPrinters,
+  flagRoomForPrinterAssignment,
+} from '@features/supply/hooks/useRoomPrinters';
 import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
 import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
 import { formatPackEquivalent } from '@features/supply/utils/packEquivalent';
@@ -73,9 +78,38 @@ export function OrderCart({
   const profile = useProfileCompleteness(user?.id);
 
   const [deliveryLocation, setDeliveryLocation] = useState('');
+  const [deliveryRoomId, setDeliveryRoomId] = useState<string | undefined>(undefined);
+  const [selectedToners, setSelectedToners] = useState<string[]>([]);
+  const [manualToner, setManualToner] = useState('');
   const [priority, setPriority] = useState<'medium' | 'high' | 'urgent'>('medium');
   const [reason, setReason] = useState<string>('Standard supply request');
   const [neededBy, setNeededBy] = useState<string>('');
+
+  const { data: roomPrinters = [] } = useRoomPrinters(deliveryRoomId);
+  // Auto-select the toner when the room has exactly one distinct toner code.
+  useEffect(() => {
+    if (!deliveryRoomId) {
+      setSelectedToners([]);
+      setManualToner('');
+      return;
+    }
+    const codes = Array.from(
+      new Set(
+        roomPrinters
+          .map((p) => p.toner_code?.trim().toUpperCase())
+          .filter((c): c is string => !!c),
+      ),
+    );
+    if (codes.length === 1) {
+      setSelectedToners((prev) => (prev.length === 0 ? [codes[0]] : prev));
+    }
+  }, [deliveryRoomId, roomPrinters]);
+
+  const toggleToner = (code: string) => {
+    setSelectedToners((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
+    );
+  };
 
   // Approval is item-driven: any item marked "Requires supervisor approval"
   // (requires_justification flag, editable in the inventory item form) routes
@@ -130,13 +164,39 @@ export function OrderCart({
       setCodeError(null);
     }
 
+    // Compose toner-request note from room-based selections + any manual entry.
+    const tonerBits: string[] = [];
+    if (selectedToners.length > 0) {
+      tonerBits.push(
+        `Toner needed (from room ${trimmedLocation}): ${selectedToners.join(', ')}`,
+      );
+    }
+    const manual = manualToner.trim();
+    if (manual) {
+      tonerBits.push(`Toner requested manually: ${manual}`);
+    }
+    const tonerNote = tonerBits.join(' | ');
+
+    // Flag the room when the user is ordering toner for a room with no
+    // printers on file so an admin can link a printer later.
+    if (deliveryRoomId && roomPrinters.length === 0 && manual) {
+      try {
+        await flagRoomForPrinterAssignment(deliveryRoomId, user?.id);
+      } catch {
+        // Non-blocking — the order still submits.
+      }
+    }
+
     await onSubmit({
       priority,
       delivery_location: trimmedLocation,
       justification: reason,
       requested_delivery_date: neededBy || undefined,
+      description: tonerNote || undefined,
     });
     setOrderCode('');
+    setSelectedToners([]);
+    setManualToner('');
     setIsOpen(false);
   };
 
@@ -286,7 +346,10 @@ export function OrderCart({
                 </div>
                 <DeliveryRoomPicker
                   value={deliveryLocation}
-                  onChange={setDeliveryLocation}
+                  onChange={(label, roomId) => {
+                    setDeliveryLocation(label);
+                    setDeliveryRoomId(roomId);
+                  }}
                   userId={user?.id}
                   invalid={missingLocation}
                   placeholder="Search for a room…"
@@ -302,6 +365,13 @@ export function OrderCart({
                     Heads up — you're sending this to {trimmedLocation}, not your home room ({profile.homeRoomNumber}).
                   </p>
                 )}
+                <RoomPrinterToners
+                  roomId={deliveryRoomId}
+                  selectedToners={selectedToners}
+                  onToggleToner={toggleToner}
+                  manualToner={manualToner}
+                  onManualTonerChange={setManualToner}
+                />
               </div>
 
               {/* Priority */}
