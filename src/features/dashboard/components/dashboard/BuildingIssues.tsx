@@ -3,6 +3,7 @@ import { formatDateTime } from "@/lib/dateTime";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+import { safePhotoUrls } from "@/lib/safeUrl";
 
 interface Issue {
   id: string;
@@ -55,10 +56,13 @@ export const BuildingIssues = ({ issues, onMarkAsSeen }: BuildingIssuesProps) =>
                   <p className="text-xs text-muted-foreground line-clamp-2">
                     {issue.description}
                   </p>
-                  {issue.photos && issue.photos.length > 0 && (
+                  {(() => {
+                    const safe = safePhotoUrls(issue.photos);
+                    if (safe.length === 0) return null;
+                    return (
                     <div className="flex items-center gap-1">
                       <div className="flex -space-x-2">
-                        {issue.photos.slice(0, 3).map((photo, index) => (
+                        {safe.slice(0, 3).map((photo, index) => (
                           <img
                             key={index}
                             src={photo}
@@ -67,13 +71,14 @@ export const BuildingIssues = ({ issues, onMarkAsSeen }: BuildingIssuesProps) =>
                           />
                         ))}
                       </div>
-                      {issue.photos.length > 3 && (
+                      {safe.length > 3 && (
                         <span className="text-xs text-muted-foreground">
-                          +{issue.photos.length - 3} more
+                          +{safe.length - 3} more
                         </span>
                       )}
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {formatDateTime(issue.created_at)}

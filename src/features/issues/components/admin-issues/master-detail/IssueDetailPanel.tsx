@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { safePhotoUrls } from "@/lib/safeUrl";
 import { QuickUpdateActions } from "../QuickUpdateActions";
 import { ReporterProfile } from "../ReporterProfile";
 import { RoomOccupantContext } from "../RoomOccupantContext";
@@ -179,7 +180,7 @@ export function IssueDetailPanel({ issue, onUpdate }: IssueDetailPanelProps) {
           <div>
             <h5 className="text-sm font-medium mb-2 text-foreground">Photos</h5>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {issue.photos.map((photo, index) => (
+              {safePhotoUrls(issue.photos).map((photo, index) => (
                 <a
                   key={index}
                   href={photo}

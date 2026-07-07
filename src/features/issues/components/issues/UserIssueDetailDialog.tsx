@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { IssueComments } from "./card/IssueComments";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { safePhotoUrls } from "@/lib/safeUrl";
 import {
   AlertCircle,
   CheckCircle,
@@ -359,9 +360,11 @@ export function UserIssueDetailDialog({
               </TabsContent>
 
               <TabsContent value="photos" className="mt-4">
-                {issue.photos && issue.photos.length > 0 ? (
+                {(() => {
+                  const safe = safePhotoUrls(issue.photos);
+                  return safe.length > 0 ? (
                   <div className="grid grid-cols-2 gap-4">
-                    {issue.photos.map((photo: string, index: number) => (
+                    {safe.map((photo: string, index: number) => (
                       <img
                         key={index}
                         src={photo}
@@ -375,7 +378,8 @@ export function UserIssueDetailDialog({
                     <Image className="h-12 w-12 mx-auto mb-3 opacity-30" />
                     <p>No photos attached</p>
                   </div>
-                )}
+                );
+                })()}
               </TabsContent>
             </Tabs>
 

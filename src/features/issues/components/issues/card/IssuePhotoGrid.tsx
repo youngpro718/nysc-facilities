@@ -1,14 +1,16 @@
+import { safePhotoUrls } from "@/lib/safeUrl";
 
 interface IssuePhotoGridProps {
   photos: string[];
 }
 
 export const IssuePhotoGrid = ({ photos }: IssuePhotoGridProps) => {
-  if (!photos || photos.length === 0) return null;
-  
+  const safe = safePhotoUrls(photos);
+  if (safe.length === 0) return null;
+
   return (
     <div className="grid grid-cols-2 gap-3">
-      {photos.map((photo, index) => (
+      {safe.map((photo, index) => (
         <img
           key={index}
           src={photo}
