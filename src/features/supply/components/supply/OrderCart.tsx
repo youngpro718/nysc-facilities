@@ -346,7 +346,10 @@ export function OrderCart({
                 </div>
                 <DeliveryRoomPicker
                   value={deliveryLocation}
-                  onChange={setDeliveryLocation}
+                  onChange={(label, roomId) => {
+                    setDeliveryLocation(label);
+                    setDeliveryRoomId(roomId);
+                  }}
                   userId={user?.id}
                   invalid={missingLocation}
                   placeholder="Search for a room…"
@@ -362,6 +365,13 @@ export function OrderCart({
                     Heads up — you're sending this to {trimmedLocation}, not your home room ({profile.homeRoomNumber}).
                   </p>
                 )}
+                <RoomPrinterToners
+                  roomId={deliveryRoomId}
+                  selectedToners={selectedToners}
+                  onToggleToner={toggleToner}
+                  manualToner={manualToner}
+                  onManualTonerChange={setManualToner}
+                />
               </div>
 
               {/* Priority */}
