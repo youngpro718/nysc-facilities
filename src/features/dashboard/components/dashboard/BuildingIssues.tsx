@@ -3,6 +3,7 @@ import { formatDateTime } from "@/lib/dateTime";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+import { safePhotoUrls } from "@/lib/safeUrl";
 
 interface Issue {
   id: string;
