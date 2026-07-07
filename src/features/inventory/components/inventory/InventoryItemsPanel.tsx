@@ -385,7 +385,11 @@ export const InventoryItemsPanel = () => {
 
       const catByName = new Map((categories ?? []).map(c => [c.name.trim().toLowerCase(), c.id]));
       const roomByName = new Map((rooms ?? []).map(r => [r.name.trim().toLowerCase(), r.id]));
-      const roomByNumber = new Map((rooms ?? []).map(r => [String(r.room_number ?? "").trim().toLowerCase(), r.id]).filter(([k]) => k));
+      const roomByNumber = new Map(
+        (rooms ?? [])
+          .map(r => [String(r.room_number ?? "").trim().toLowerCase(), r.id] as [string, string])
+          .filter(([k]) => k.length > 0)
+      );
 
       // Preload existing items by (name+storage_room_id) so we upsert instead of duplicating.
       const { data: existingRows, error: existingErr } = await supabase
