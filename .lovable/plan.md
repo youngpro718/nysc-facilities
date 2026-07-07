@@ -1,60 +1,73 @@
 
-## Goal
+# Fix the toner system + real emailed PDF receipt
 
-Send app emails around the supply request lifecycle, with a safety toggle so real-world supply team addresses only start receiving mail once you flip it on. Also confirm My Requests only shows the signed-in user's own requests.
+Today the toner flow is a hidden panel bolted onto the order cart: you can only "ask for toner" by starting a normal supply order, picking a delivery room, and then a note is glued onto the request. Toners aren't in inventory, aren't in a category, aren't in stock, aren't in Storage Room 1726, and there's no way to update a room's printer. The "receipt" is just an on-screen card — no PDF is emailed. This plan fixes all of that.
 
-## Emails to send
+## 1. Toner becomes real inventory
 
-1. **On submission** → requester gets a **receipt** email (their order summary, items, request ID, status link).
-2. **On submission** → supply team distribution list gets a **new request** alert (who, what, when, link to open in app). Gated by a test-mode toggle (see below).
-3. **On ready/completed** → requester gets a **fulfilled** email ("your order is ready / has been picked up") sent when the order moves to `ready` or `completed`.
+- Add an **"Toner / Printer Supplies"** category to `inventory_categories`.
+- Seed `inventory_items` with one row per distinct `toner_code` currently in `room_printers` (26A, TN650, etc.), each:
+  - `category = Toner / Printer Supplies`
+  - `storage_room = Room 1726` (linked to the actual room record)
+  - `minimum_quantity`, `quantity`, `unit = cartridge` — starting stock entered by admin (default 0, editable)
+- Toners now appear in the normal Inventory list, Quick Order grid, low-stock counts, transactions, audits — exactly like paper, pens, etc.
+- Ordering a toner = adding the toner item to the cart like anything else. No special "room-attached note" path required.
 
-All emails come from your verified Lovable email domain and use branded React Email templates that match the app's look.
+## 2. Room ↔ Printer ↔ Toner is manageable
 
-## Test-mode toggle for supply team address
+New admin screen **Spaces → Room → Printer** (and a top-level "Printers" tab under Admin → Supply):
 
-New row in `system_settings` (or a small dedicated `supply_email_settings` table) with:
+- List all `room_printers` with columns: Room, Printer model, Toner code, Needs review.
+- Edit a row: change printer model, change toner code, mark reviewed, or unassign.
+- Add a new printer to a room, or move a printer between rooms.
+- When toner code changes, the room's suggested toner in the order cart updates automatically because `RoomPrinterToners` already reads `room_printers`.
+- Linking picks from the new Toner inventory items (dropdown of toner SKUs) so the room's toner code always matches a real inventory item.
 
-- `supply_team_notifications_enabled` (boolean, default **false**)
-- `supply_team_recipients` (text[]) — seeded with `100C-supplyDept@nycourts.gov` and `Jduchate@nycourts.gov`
+## 3. Smarter order cart
 
-Admin UI: a small card in **Admin → Settings** (existing admin area) with:
-- A toggle: "Send new-request alerts to supply team"
-- Editable recipient list (add/remove addresses)
-- Helper text: "Off = testing only. Requester emails always send."
+The `RoomPrinterToners` panel stays, but its job becomes: **"this room uses toner X — add 1 to your cart?"** One tap adds the toner inventory item to the cart. No more free-text note; the order line is the toner itself. Manual entry becomes a fallback that files a "needs review" flag on the room, same as today.
 
-While the toggle is off, the "new request" alert is skipped entirely (or optionally routed to a single admin test address you enter). Requester receipt + fulfillment emails always send regardless.
+You can also order toner without picking a room — just add the toner from Quick Order like any other item.
 
-## My Requests visibility check
+## 4. Emailed PDF receipt with QR to dashboard
 
-Audit `useMyRequests` and the `supply_requests` / `staff_tasks` / `key_requests` RLS to confirm the query filters strictly by `auth.uid()` and RLS enforces it server-side. If anything is loose, tighten it. No UI change expected.
+Right now `SupplyOrderReceipt.tsx` renders a nice on-screen card with a QR code, but nothing is emailed and nothing is a PDF. Fix:
 
-## Technical section
+- Generate a PDF server-side in the existing `send-supply-email` Edge Function using `@react-pdf/renderer` (or pdf-lib) that mirrors the on-screen receipt: header, requester block, items table, timeline, notes, QR code.
+- **QR code** encodes a signed deep link: `https://nyscfhub.com/supply/my-requests?open=<request_id>` — scanning opens the requester's dashboard focused on that request.
+- Attach the PDF to the two requester emails already wired up:
+  - **Receipt email** (on submit) → attached PDF `Receipt-<displayId>.pdf`
+  - **Fulfilled email** (on ready/complete) → attached final PDF with fulfilled quantities and pickup timestamp
+- The supply-team alert email stays as-is (link only).
 
-**Infrastructure**
-- Ensure Lovable email domain is configured (check status; prompt setup if not).
-- Run `setup_email_infra` and `scaffold_transactional_email` if not already scaffolded.
+## 5. What the user sees
 
-**Templates** (`supabase/functions/_shared/transactional-email-templates/`)
-- `supply-request-receipt.tsx` — items table, quantities, request code, submitted-at, link.
-- `supply-request-fulfilled.tsx` — status (ready vs completed), pickup instructions, link.
-- `supply-team-new-request.tsx` — requester name, department, items, priority, link to admin view.
+- Order a single toner: Inventory → Toner category → "26A" → Add to cart → submit. Done. No room required.
+- Room switches printers: Admin → Printers → edit the row, pick new toner. Order cart's toner suggestion updates.
+- After submitting: email lands in the requester's inbox with a real PDF receipt + scannable QR.
 
-**Triggers**
-- In `unifiedSupplyService.submitSupplyOrder`: after successful insert, invoke `send-transactional-email` twice — receipt to requester, and (if toggle on) alert to each supply team recipient using an idempotency key like `supply-new-${requestId}-${recipient}`.
-- In `markOrderReady` and `completeOrder` (and the RPC-based fulfillment path `fulfillSupplyRequest`): invoke `send-transactional-email` with the fulfilled template. Idempotency key `supply-fulfilled-${requestId}-${status}`.
+## Technical details
 
-**Settings storage**
-- Migration: create `supply_email_settings` singleton table with the two fields above, RLS locked to admins for write, readable by service role (edge function reads it).
-- Edge function reads settings with service role before sending the team alert.
+- **Migration:** insert Toner category; seed inventory_items from distinct `room_printers.toner_code`; add `inventory_item_id` FK column on `room_printers` (nullable) pointing at the canonical toner SKU so future edits stay in sync.
+- **UI:** new `admin/pages/admin/Printers.tsx` list + edit sheet, reusing existing shadcn table patterns; small "Edit printer" action on room detail.
+- **Edge function:** extend `send-supply-email` — add PDF generation, base64 attach via Resend `attachments`. QR generated with `qrcode` npm on the server.
+- **Receipt data:** already assembled in `useSupplyReceipts`; reuse the same `ReceiptData` shape server-side.
+- **Order cart:** `RoomPrinterToners` swaps its "compose note" behavior for "add inventory item to cart" using the new `inventory_item_id` on `room_printers`. `tonerNote` composition + `flagRoomForPrinterAssignment` fallback stay for the manual-entry branch only.
 
-**Admin UI**
-- New component under admin settings page: toggle + recipient chips + save button, wired to the new table via a small service.
+```text
+Room 1726 (storage)
+   │
+   ├── Inventory items (Toner category)  ── ordered like any supply
+   │        ▲
+   │        │ inventory_item_id
+   │        │
+   └── room_printers ──── linked to real toner SKU
+                          ▲
+                          │
+                       Order cart suggestion
+```
 
-**My Requests audit**
-- Read `useMyRequests` query and current RLS on `supply_requests` (and related); confirm `user_id = auth.uid()` filter both in query and policy. Fix if gap found.
+## Out of scope for this pass
 
-## Out of scope
-- SMS/push notifications.
-- Fulfillment-team-side email (only the "new request submitted" alert goes to the team list per your answer).
-- Reworking any existing supply status logic.
+- Auto-decrement of toner stock on fulfillment (already handled by the generic fulfillment path — will verify but no new work expected).
+- Historical migration of past toner-note requests into inventory transactions.
