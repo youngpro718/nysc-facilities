@@ -1,79 +1,78 @@
-## Audit findings — Lighting + Spaces
 
-I went through the lighting code end-to-end (DB schema, RLS, services, hooks, and the new RoomFixturesPanel/editor) and cross-referenced it against the rooms tables. Here is what I found and what I want to fix. Nothing else outside lighting is being touched.
+## Goal
 
-### 1. RLS gap — Court Officers can't actually use the new fixtures panel
-- `lighting_fixtures` write policy uses `is_privileged()`, which only includes `admin / system_admin / facilities_manager / cmc / court_liaison`.
-- Migration 057 explicitly says Court Officers should manage lighting (walkthroughs + fixtures) via `is_building_staff()`.
-- Result: a Court Officer opening the new editor and tapping **Add fixture** or changing a status will get a silent RLS rejection.
-- **Fix:** new migration that replaces the `lighting_fixtures` write policy with `is_building_staff()` (admin, system_admin, facilities_manager, court_officer) plus keeps cmc/court_liaison via a second policy if still needed. Read policy unchanged.
+When a user places a supply order, selecting the delivery room should auto-surface the printers assigned to that room and the toner codes those printers use, so users pick a toner from a list instead of typing a code. Rooms with no printer mapping show a message and allow manual entry + get flagged for future assignment.
 
-### 2. Reporters still can't pick a specific fixture when reporting an issue
-- We added A1/A2/A3 labels to fixtures, but `LightingIssueForm` never lets the reporter choose one. The whole point of labeling was to tie reports to a fixture.
-- **Fix:** after a room is picked in the report form, show a fixture picker populated from `useSpaceFixtures(roomId, 'room')`:
-  - Default option: "Not sure / whole room"
-  - Then `A1`, `A2`, `A3`… with their current status next to them ("A2 · was out 3 days ago")
-  - Selected value is sent as `fixture_id` (already supported in `submitLightingIssue`).
-- Auto-bumps `times_scanned` so the repeat-offender badge is fed from real reports, not just walkthroughs.
+## 1. Database (migration)
 
-### 3. Room lighting profile is missing the data we promised
-- `room_lighting_profiles` has no `fixture_count` column (the plan said we'd add it). Rather than store-and-drift, derive it.
-- **Fix:** create a SQL view `room_lighting_profile_summary` that joins `room_lighting_profiles` to a `COUNT(*)` over `lighting_fixtures` per `space_id`, plus counts by status (functional / out / maintenance_needed). Use it in `LightingRoomsTable` so admins finally see "Room 510 — 4 fixtures, 1 out" at a glance.
+New table `public.room_printers`:
 
-### 4. Editor fixture panel is too shallow
-Currently each fixture only exposes status + delete. Real-life triage needs:
-- `bulb_count` (a fluorescent fixture is often 2–4 tubes, not 1)
-- `ballast_issue` and `requires_electrician` toggles (these already exist on the table and drive the repeat-offender heuristic, but the UI never sets them)
-- `notes`
-- **Fix:** expand each row into a collapsible "Details" with these three controls. Keep the row compact by default (label + status + repeat badge).
+- `room_id` uuid → `rooms.id` (nullable — kept null when we couldn't resolve the room number, so the record is still importable and reviewable)
+- `room_number_raw` text (original "Room" value from the import, e.g. `"1000"`, `"1010 B"`)
+- `department` text
+- `printer_model` text
+- `toner_code` text (e.g. `26A`, `TN650`) — nullable
+- `needs_review` boolean (true when room_id is null, or printer_model/toner_code missing, or the row had ambiguities)
+- `review_reason` text
+- standard `id`, `created_at`, `updated_at`
 
-### 5. Issues queue doesn't show which fixture
-`LightingIssuesQueue` only shows the room. When a report comes in tagged to A2, the FC can't see it.
-- **Fix:** join `lighting_fixtures(name)` on `fixture_id` in `listLightingIssuesForStaff`, and render `"Room 510 · Fixture A2"` when present.
+Also:
+- Trigger to auto-set `needs_review = true` when any of room_id/printer_model/toner_code is null.
+- `GRANT SELECT` to `authenticated`, full CRUD to admin/facilities via RLS; `GRANT ALL` to `service_role`.
+- RLS: authenticated can read; only `admin`/`facilities_manager`/`system_admin` can insert/update/delete (via `has_role`).
+- Index on `room_id` and on `toner_code`.
 
-### 6. Small correctness fixes in the new panel
-- `nextLabel` doesn't handle deletions cleanly (it does, actually — uses Set lookup — but I'll add a unit-safe sort so labels stay numeric, e.g. A10 doesn't sort between A1 and A2 visually). Already using `numeric: true` — keep as is, just confirmed.
-- `handleStatusChange` always sends `ballast_issue: false` and `requires_electrician: false`, which silently *clears* those flags every time someone toggles status. Fix: only send fields the user actually changed (use the mutation with a true patch, not a reset).
-- `handleDelete` uses `confirm()`; on iOS PWA this is jarring. Replace with the existing `AlertDialog` component used elsewhere in the project.
+New table `public.room_printer_flags` (optional — could be a column on rooms, but a separate table keeps it clean):
 
-### Technical details
+- `room_id` uuid unique → `rooms.id`
+- `reason` text (defaults to "no printers linked")
+- `flagged_at`, `resolved_at`
+- Populated automatically when a user submits a toner order for a room that has zero `room_printers` rows.
 
-**Migration (1 file):**
-```sql
--- replace privileged write policy with building-staff write policy
-DROP POLICY lighting_fixtures_privileged_all ON public.lighting_fixtures;
-CREATE POLICY lighting_fixtures_building_staff_write
-  ON public.lighting_fixtures FOR ALL TO authenticated
-  USING (is_building_staff()) WITH CHECK (is_building_staff());
+Duplicate handling per spec: no unique constraint across (room_id, printer_model, toner_code) — duplicates are kept.
 
--- summary view for admin table
-CREATE OR REPLACE VIEW public.room_lighting_profile_summary
-WITH (security_invoker=on) AS
-SELECT
-  r.id AS room_id,
-  rlp.bulb_type, rlp.ceiling_access, rlp.led_converted, rlp.notes,
-  COUNT(lf.id)                                          AS fixture_count,
-  COUNT(lf.id) FILTER (WHERE lf.status='functional')    AS functional_count,
-  COUNT(lf.id) FILTER (WHERE lf.status='non_functional') AS out_count,
-  COUNT(lf.id) FILTER (WHERE lf.status='maintenance_needed') AS maintenance_count
-FROM public.rooms r
-LEFT JOIN public.room_lighting_profiles rlp ON rlp.room_id = r.id
-LEFT JOIN public.lighting_fixtures lf ON lf.space_id = r.id AND lf.space_type='room'
-GROUP BY r.id, rlp.bulb_type, rlp.ceiling_access, rlp.led_converted, rlp.notes;
+## 2. Data import (one-off, via `supabase--insert` after migration)
 
-GRANT SELECT ON public.room_lighting_profile_summary TO authenticated;
-```
+Parse the printer list from the request into rows. For each row:
 
-**Frontend (focused edits, no rewrites):**
-- `src/features/lighting/components/LightingIssueForm.tsx` — add fixture picker block.
-- `src/features/lighting/components/RoomFixturesPanel.tsx` — collapsible details (bulb count, ballast, notes), AlertDialog delete, surgical status patch.
-- `src/features/lighting/components/LightingIssuesQueue.tsx` — show fixture label.
-- `src/features/lighting/services/lightingIssueService.ts` — extend select to include `fixture:lighting_fixtures(name)`.
-- `src/features/lighting/services/roomLightingProfileService.ts` + `LightingRoomsTable.tsx` — read the new view and show fixture counts.
+1. Try to match `Room` to `rooms.room_number` (case-insensitive, trim). Rooms like `"1010 B"`, `"1001 A"` match exact strings; if no exact match, try stripping the letter suffix as a fallback and mark `needs_review = true`.
+2. Store the original `Room` value in `room_number_raw`.
+3. Missing printer_model or toner_code → import anyway with `needs_review = true` and `review_reason` describing what's missing.
+4. Do not deduplicate — insert all rows verbatim.
 
-### Out of scope (call out, not touching)
-- Bulk fixture creation / import — not asked for.
-- Walkthrough flow changes — the existing walkthrough UI is unaffected and still wired to `space_id` correctly.
-- The 2 stale rows that have `room_id` set but no `space_id` (DB inspection confirmed only 2 of 155 fixtures). I can clean these up in the same migration if you want — say the word.
+Rows that hit the same room (e.g. Room 1000 Central Clerks with 3 different printers, or Room 1000 "Office" duplicates) all persist.
 
-OK to proceed with all six fixes?
+## 3. Supply order form UX
+
+Edit `src/features/supply/components/supply/OrderCart.tsx` (the existing DeliveryRoomPicker already fires with `room_id`). Add a new `RoomPrinterToners` panel underneath the DeliveryRoomPicker, only rendered when a delivery room is selected.
+
+Behavior:
+
+- Query `room_printers` filtered by `room_id` via a new `useRoomPrinters(roomId)` React Query hook (`queryKey: ['room-printers', roomId]`, stale 5 min).
+- **No printers found:** show a muted card:
+  > "No printers have been linked to this room."
+  > Plus a small "Enter toner manually" input and a note: "This room will be flagged for future printer assignment." On order submit, upsert a `room_printer_flags` row for that room.
+- **One toner across all printers:** auto-check that toner and show `HP … → 26A` with a checkmark.
+- **Multiple distinct toners:** list each toner once with the printer(s) that use it, as checkboxes:
+  ```text
+  ☐ 37A  — HP Color LaserJet Enterprise M608
+  ☐ 26A  — HP LaserJet Pro M402dne
+  ```
+- Selected toner codes are appended to the cart submission as new cart entries (matched against the `inventory_items` catalog by `sku`/`name` containing the toner code; if no catalog match, the toner code goes into the request's notes so supply staff still see it).
+
+Rows with `needs_review = true` get a small amber "Needs review" chip next to the printer line, but are still selectable.
+
+## 4. Admin surface (light-touch)
+
+Extend the existing inventory/admin area with a simple "Printers by Room" table (read-only list + edit/delete) so admins can correct flagged rows. Keep it minimal — a single page under `/admin` reusing existing table components. No separate CRUD dialog work beyond inline edit for `toner_code`, `printer_model`, `room_id`.
+
+## Technical notes
+
+- Migration file structure follows project rules: CREATE TABLE → GRANT (authenticated read + service_role all) → ENABLE RLS → CREATE POLICY.
+- No changes to `rooms`, `inventory_items`, or `supply_requests` schemas.
+- Import runs via `supabase--insert` (data change, not schema).
+- Frontend edits are limited to: new hook `useRoomPrinters.ts`, new component `RoomPrinterToners.tsx`, and an insertion in `OrderCart.tsx`. Cart submission logic is only touched to append toner selections + write the flag row when no printers exist.
+
+## Open question before build
+
+Should the toner selections in the order **create actual cart line items** by matching against your `inventory_items` catalog (so they flow through normal fulfillment/stock deduction), or should they just be recorded as notes on the request so supply staff pull the right toner manually? The catalog-match path is cleaner but assumes toner codes like `26A`/`TN650` appear in `inventory_items.sku` or `name` — if they don't, we'd need a mapping. I'll default to **catalog-match by SKU/name with a notes fallback** unless you say otherwise.
