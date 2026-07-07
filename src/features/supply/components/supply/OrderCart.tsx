@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,11 @@ import { cn } from '@/lib/utils';
 import type { CartItem } from '@features/supply/hooks/useOrderCart';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { DeliveryRoomPicker } from '@features/supply/components/supply/DeliveryRoomPicker';
+import { RoomPrinterToners } from '@features/supply/components/supply/RoomPrinterToners';
+import {
+  useRoomPrinters,
+  flagRoomForPrinterAssignment,
+} from '@features/supply/hooks/useRoomPrinters';
 import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
 import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
 import { formatPackEquivalent } from '@features/supply/utils/packEquivalent';
