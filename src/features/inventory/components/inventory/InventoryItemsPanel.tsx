@@ -476,6 +476,9 @@ export const InventoryItemsPanel = () => {
     } finally {
       setImporting(false);
     }
+  };
+
+
 
   const getStockStatus = (quantity: number, minimumQuantity: number) => {
     const item = { quantity, minimum_quantity: minimumQuantity };
