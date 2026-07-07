@@ -93,6 +93,7 @@ export const InventoryItemsPanel = () => {
   const [sortKey, setSortKey] = useState<"name" | "quantity" | "updated_at">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState<{ id: string; name: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
