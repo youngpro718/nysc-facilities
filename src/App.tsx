@@ -193,6 +193,12 @@ function AppContent() {
               </ModuleProtectedRoute>
             </ProtectedRoute>
           } />
+          <Route path="/admin/printers" element={
+            <ProtectedRoute requireAdmin>
+              <AdminPrinters />
+            </ProtectedRoute>
+          } />
+
           <Route path="/notifications" element={
             <ProtectedRoute>
               <Notifications />
