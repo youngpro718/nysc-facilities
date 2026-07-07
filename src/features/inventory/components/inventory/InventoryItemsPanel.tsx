@@ -337,6 +337,146 @@ export const InventoryItemsPanel = () => {
     }
   };
 
+  const parseCsv = (text: string): Record<string, string>[] => {
+    // Strip UTF-8 BOM if present
+    const t = text.replace(/^\uFEFF/, "");
+    const rows: string[][] = [];
+    let cur: string[] = [];
+    let field = "";
+    let inQuotes = false;
+    for (let i = 0; i < t.length; i++) {
+      const ch = t[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (t[i + 1] === '"') { field += '"'; i++; }
+          else inQuotes = false;
+        } else field += ch;
+      } else {
+        if (ch === '"') inQuotes = true;
+        else if (ch === ",") { cur.push(field); field = ""; }
+        else if (ch === "\n" || ch === "\r") {
+          if (ch === "\r" && t[i + 1] === "\n") i++;
+          cur.push(field); field = "";
+          if (cur.some(v => v.length > 0)) rows.push(cur);
+          cur = [];
+        } else field += ch;
+      }
+    }
+    if (field.length > 0 || cur.length > 0) { cur.push(field); if (cur.some(v => v.length > 0)) rows.push(cur); }
+    if (rows.length === 0) return [];
+    const headers = rows[0].map(h => h.trim());
+    return rows.slice(1).map(r => {
+      const obj: Record<string, string> = {};
+      headers.forEach((h, idx) => { obj[h] = (r[idx] ?? "").trim(); });
+      return obj;
+    });
+  };
+
+  const handleImportCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = "";
+
+    try {
+      setImporting(true);
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) throw new Error("No data rows found in file.");
+
+      const catByName = new Map((categories ?? []).map(c => [c.name.trim().toLowerCase(), c.id]));
+      const roomByName = new Map((rooms ?? []).map(r => [r.name.trim().toLowerCase(), r.id]));
+      const roomByNumber = new Map((rooms ?? []).map(r => [String(r.room_number ?? "").trim().toLowerCase(), r.id]).filter(([k]) => k));
+
+      // Preload existing items by (name+storage_room_id) so we upsert instead of duplicating.
+      const { data: existingRows, error: existingErr } = await supabase
+        .from("inventory_items")
+        .select("id,name,storage_room_id")
+        .range(0, 9999);
+      if (existingErr) throw existingErr;
+      const existingKey = (name: string, roomId: string | null) => `${name.trim().toLowerCase()}::${roomId ?? ""}`;
+      const existingMap = new Map(
+        (existingRows ?? []).map((r: { id: string; name: string; storage_room_id: string | null }) => [existingKey(r.name, r.storage_room_id), r.id])
+      );
+
+      let inserted = 0;
+      let updated = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const name = (row.Name ?? row.name ?? "").trim();
+        if (!name) { skipped++; errors.push(`Row ${i + 2}: missing Name`); continue; }
+        const qtyRaw = row.Quantity ?? row.quantity ?? "0";
+        const minRaw = row.Minimum ?? row.minimum_quantity ?? row.minimum ?? "";
+        const quantity = Number(qtyRaw);
+        const minimum_quantity = minRaw === "" ? null : Number(minRaw);
+        if (Number.isNaN(quantity) || quantity < 0) { skipped++; errors.push(`Row ${i + 2}: invalid Quantity`); continue; }
+        if (minimum_quantity !== null && (Number.isNaN(minimum_quantity) || minimum_quantity < 0)) {
+          skipped++; errors.push(`Row ${i + 2}: invalid Minimum`); continue;
+        }
+
+        const unit = (row.Unit ?? row.unit ?? "").trim() || null;
+        const catName = (row.Category ?? row.category ?? "").trim();
+        const category_id = catName ? catByName.get(catName.toLowerCase()) ?? null : null;
+        const roomName = (row.Room ?? row.room ?? "").trim();
+        const roomNumber = (row.RoomNumber ?? row.room_number ?? "").trim();
+        let storage_room_id: string | null = null;
+        if (roomName) storage_room_id = roomByName.get(roomName.toLowerCase()) ?? null;
+        if (!storage_room_id && roomNumber) storage_room_id = roomByNumber.get(roomNumber.toLowerCase()) ?? null;
+
+        const key = existingKey(name, storage_room_id);
+        const existingId = existingMap.get(key);
+
+        if (existingId) {
+          const patch: Record<string, unknown> = { quantity };
+          if (minimum_quantity !== null) patch.minimum_quantity = minimum_quantity;
+          if (unit !== null) patch.unit = unit;
+          if (category_id) patch.category_id = category_id;
+          const { error } = await supabase.from("inventory_items").update(patch).eq("id", existingId);
+          if (error) { skipped++; errors.push(`Row ${i + 2} (${name}): ${error.message}`); }
+          else updated++;
+        } else {
+          const payload: Record<string, unknown> = {
+            name,
+            quantity,
+            status: "active",
+          };
+          if (minimum_quantity !== null) payload.minimum_quantity = minimum_quantity;
+          if (unit) payload.unit = unit;
+          if (category_id) payload.category_id = category_id;
+          if (storage_room_id) payload.storage_room_id = storage_room_id;
+          const { data: ins, error } = await supabase.from("inventory_items").insert(payload).select("id").maybeSingle();
+          if (error) { skipped++; errors.push(`Row ${i + 2} (${name}): ${error.message}`); }
+          else {
+            inserted++;
+            if (ins?.id) existingMap.set(key, ins.id);
+          }
+        }
+      }
+
+      invalidateInventoryStockQueries(queryClient);
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "inventory-items" || query.queryKey[0] === "optimized-inventory",
+      });
+
+      const summary = `Added ${inserted}, updated ${updated}${skipped ? `, skipped ${skipped}` : ""}.`;
+      if (errors.length > 0) {
+        logger.error("Inventory import errors:", errors);
+        toast({
+          variant: skipped === rows.length ? "destructive" : "default",
+          title: skipped === rows.length ? "Import failed" : "Import completed with issues",
+          description: `${summary} First issue: ${errors[0]}`,
+        });
+      } else {
+        toast({ title: "Import complete", description: summary });
+      }
+    } catch (error) {
+      toast({ variant: "destructive", title: "Import failed", description: getErrorMessage(error) });
+    } finally {
+      setImporting(false);
+    }
+
   const getStockStatus = (quantity: number, minimumQuantity: number) => {
     const item = { quantity, minimum_quantity: minimumQuantity };
     if (isOutOfStock(item)) return { label: "Out of Stock", color: "bg-destructive text-destructive-foreground" };
