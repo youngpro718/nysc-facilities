@@ -140,6 +140,7 @@ export const InventoryItemsPanel = () => {
       let query = supabase
         .from("inventory_items")
         .select("*", { count: "exact" })
+        .neq("status", "inactive")
         .range(from, to);
 
       if (debouncedSearch) {
