@@ -557,6 +557,8 @@ export async function confirmPickup(requestId: string) {
     .eq('id', requestId);
 
   if (error) throw error;
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 /**
@@ -596,6 +598,8 @@ export async function staffCompletePickup(requestId: string) {
     .eq('id', requestId);
 
   if (error) throw error;
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 // ============================================================================
@@ -617,6 +621,8 @@ export async function fulfillSupplyRequest(
     p_items: items,
   });
   if (error) throw error;
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 // ============================================================================
