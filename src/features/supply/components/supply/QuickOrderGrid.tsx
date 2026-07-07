@@ -258,7 +258,9 @@ export function QuickOrderGrid() {
         onClear={clearCart}
         isSubmitting={isSubmitting}
         requiresOrderCode={requiresOrderCode}
+        onAddInventoryItem={(item) => addItem(item, 1)}
       />
+
     </div>
   );
 }

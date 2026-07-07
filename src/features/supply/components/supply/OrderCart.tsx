@@ -353,11 +353,13 @@ export function OrderCart({
                 )}
                 <RoomPrinterToners
                   roomId={deliveryRoomId}
-                  selectedToners={selectedToners}
-                  onToggleToner={toggleToner}
+                  cartItemIds={cartItemIds}
+                  onAddInventoryItem={(item) => onAddInventoryItem?.(item)}
+                  onRemoveInventoryItem={(id) => onRemove(id)}
                   manualToner={manualToner}
                   onManualTonerChange={setManualToner}
                 />
+
               </div>
 
               {/* Priority */}
