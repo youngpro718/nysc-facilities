@@ -126,7 +126,7 @@ export function OperationsOverviewTab({
               ) : criticalPreview.length > 0 ? (
                 <div className="space-y-3">
                   {criticalPreview.map((issue) => {
-                    const photo = issue.photos?.[0];
+                    const photo = safePhotoUrl(issue.photos?.[0]);
                     return (
                       <button
                         key={issue.id}
