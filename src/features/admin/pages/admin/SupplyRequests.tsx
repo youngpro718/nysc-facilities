@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { useToast } from "@shared/hooks/use-toast";
 import { getSupplyRequests } from '@features/supply/services/unifiedSupplyService';
 import { SupplyRequestActions } from "@features/supply/components/supply/SupplyRequestActions";
+import { SupplyEmailSettingsCard } from "@features/admin/components/admin/SupplyEmailSettingsCard";
 
 interface SupplyRequestWithUser {
   id: string;
@@ -154,8 +155,12 @@ export default function AdminSupplyRequests() {
           Order Supplies
         </Button>
       </PageHeader>
+      <div className="mb-4">
+        <SupplyEmailSettingsCard />
+      </div>
 
       {/* Pending approval banner */}
+
       {(() => {
         const pendingCount = requests.filter(r => r.status === 'pending_approval').length;
         if (pendingCount === 0 || filterStatus === 'pending_approval') return null;
