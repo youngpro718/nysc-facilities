@@ -164,13 +164,39 @@ export function OrderCart({
       setCodeError(null);
     }
 
+    // Compose toner-request note from room-based selections + any manual entry.
+    const tonerBits: string[] = [];
+    if (selectedToners.length > 0) {
+      tonerBits.push(
+        `Toner needed (from room ${trimmedLocation}): ${selectedToners.join(', ')}`,
+      );
+    }
+    const manual = manualToner.trim();
+    if (manual) {
+      tonerBits.push(`Toner requested manually: ${manual}`);
+    }
+    const tonerNote = tonerBits.join(' | ');
+
+    // Flag the room when the user is ordering toner for a room with no
+    // printers on file so an admin can link a printer later.
+    if (deliveryRoomId && roomPrinters.length === 0 && manual) {
+      try {
+        await flagRoomForPrinterAssignment(deliveryRoomId, user?.id);
+      } catch {
+        // Non-blocking — the order still submits.
+      }
+    }
+
     await onSubmit({
       priority,
       delivery_location: trimmedLocation,
       justification: reason,
       requested_delivery_date: neededBy || undefined,
+      description: tonerNote || undefined,
     });
     setOrderCode('');
+    setSelectedToners([]);
+    setManualToner('');
     setIsOpen(false);
   };
 
