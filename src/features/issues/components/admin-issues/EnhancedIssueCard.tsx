@@ -253,11 +253,14 @@ export function EnhancedIssueCard({
               <RoomOccupantContext occupants={issue.room_occupants} />
             )}
 
-            {issue.photos && issue.photos.length > 0 && (
+            {issue.photos && issue.photos.length > 0 && (() => {
+              const safe = safePhotoUrls(issue.photos);
+              if (safe.length === 0) return null;
+              return (
               <div>
                 <h5 className="text-sm font-medium mb-2 text-foreground">Photos</h5>
                 <div className="flex gap-2 overflow-x-auto">
-                  {issue.photos.slice(0, 3).map((photo, index) => (
+                  {safe.slice(0, 3).map((photo, index) => (
                     <img
                       key={index}
                       src={photo}
@@ -266,13 +269,15 @@ export function EnhancedIssueCard({
                       loading="lazy"
                     />
                   ))}
-                  {issue.photos.length > 3 && (
+                  {safe.length > 3 && (
                     <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center text-xs text-muted-foreground">
-                      +{issue.photos.length - 3}
+                      +{safe.length - 3}
                     </div>
                   )}
                 </div>
               </div>
+              );
+            })()}
             )}
 
             <QuickUpdateActions issue={issue} onUpdate={onUpdate} />
