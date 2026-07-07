@@ -2,6 +2,17 @@ import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { InventoryItemWithFlag, OrderStatus, STATUS_TRANSITIONS } from '@features/supply/constants';
 
+// Fire-and-forget email trigger. Never blocks the workflow if email fails.
+function fireSupplyEmail(type: 'receipt' | 'fulfilled' | 'new_request_team', requestId: string) {
+  void supabase.functions
+    .invoke('send-supply-email', { body: { type, requestId } })
+    .then((res) => {
+      if (res.error) logger.error(`send-supply-email(${type}) failed:`, res.error);
+    })
+    .catch((err) => logger.error(`send-supply-email(${type}) exception:`, err));
+}
+
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -308,6 +319,10 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
   // trg_notify_admins_pending_supply_approval trigger (admin_notifications RLS
   // blocks non-admin inserts, so a client-side insert here would silently fail).
 
+  // Fire notification emails: receipt to requester, and (if enabled) alert to supply team.
+  fireSupplyEmail('receipt', request.id);
+  fireSupplyEmail('new_request_team', request.id);
+
   return { request, approval_required: approvalRequired, approval_reason: approvalReason };
 }
 
@@ -477,6 +492,8 @@ export async function markOrderReady(
       if (invError) throw invError;
     }
   }
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 /**
@@ -507,6 +524,8 @@ export async function completeOrder(
     .eq('id', requestId);
 
   if (error) throw error;
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 /**
@@ -538,6 +557,8 @@ export async function confirmPickup(requestId: string) {
     .eq('id', requestId);
 
   if (error) throw error;
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 /**
@@ -577,6 +598,8 @@ export async function staffCompletePickup(requestId: string) {
     .eq('id', requestId);
 
   if (error) throw error;
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 // ============================================================================
@@ -598,6 +621,8 @@ export async function fulfillSupplyRequest(
     p_items: items,
   });
   if (error) throw error;
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 // ============================================================================
