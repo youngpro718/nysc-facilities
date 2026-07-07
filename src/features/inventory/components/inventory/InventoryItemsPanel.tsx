@@ -196,11 +196,34 @@ export const InventoryItemsPanel = () => {
 
   const deleteItemMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      const { error } = await supabase
+      // Try hard delete first; if FK constraints (transactions, staff_tasks)
+      // block it with a 409, fall back to a soft delete so the item disappears
+      // from every inventory view without breaking historical references.
+      const { error: hardError, count } = await supabase
         .from("inventory_items")
-        .delete()
-        .eq("id", itemId);
-      if (error) throw error;
+        .delete({ count: "exact" })
+        .eq("id", itemId)
+        .select("id");
+
+      if (!hardError && (count ?? 0) > 0) return;
+
+      const isFkViolation =
+        hardError?.code === "23503" ||
+        /foreign key|violates/i.test(hardError?.message ?? "");
+
+      if (hardError && !isFkViolation) throw hardError;
+
+      // Soft delete: mark inactive so lists filter it out but history stays intact.
+      const { data: updated, error: softError } = await supabase
+        .from("inventory_items")
+        .update({ status: "inactive" })
+        .eq("id", itemId)
+        .select("id");
+
+      if (softError) throw softError;
+      if (!updated || updated.length === 0) {
+        throw new Error("You do not have permission to delete this item.");
+      }
     },
     onSuccess: () => {
       invalidateInventoryStockQueries(queryClient);
