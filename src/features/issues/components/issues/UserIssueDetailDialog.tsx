@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { IssueComments } from "./card/IssueComments";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { safePhotoUrls } from "@/lib/safeUrl";
 import {
   AlertCircle,
   CheckCircle,
