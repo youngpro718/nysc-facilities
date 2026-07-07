@@ -278,7 +278,7 @@ export function EnhancedIssueCard({
               </div>
               );
             })()}
-            )}
+
 
             <QuickUpdateActions issue={issue} onUpdate={onUpdate} />
           </CollapsibleContent>
