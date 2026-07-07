@@ -22,6 +22,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { safePhotoUrls } from "@/lib/safeUrl";
 import { QuickUpdateActions } from "./QuickUpdateActions";
 import { ReporterProfile } from "./ReporterProfile";
 import { RoomOccupantContext } from "./RoomOccupantContext";
