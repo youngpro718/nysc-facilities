@@ -45,6 +45,20 @@ interface OrderCartProps {
   onClear: () => void;
   isSubmitting: boolean;
   requiresOrderCode?: boolean;
+  /**
+   * Add an inventory item to the cart from within the order form (used by the
+   * RoomPrinterToners "Add cartridge" action so users can order a toner
+   * directly instead of leaving a note).
+   */
+  onAddInventoryItem?: (item: {
+    id: string;
+    name: string;
+    unit?: string;
+    sku?: string;
+    requires_justification?: boolean;
+    pack_size?: number | null;
+    order_code_threshold?: number | null;
+  }) => void;
 }
 
 const REASON_CHIPS = [
@@ -69,6 +83,7 @@ export function OrderCart({
   onClear,
   isSubmitting,
   requiresOrderCode = false,
+  onAddInventoryItem,
 }: OrderCartProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [orderCode, setOrderCode] = useState('');
@@ -79,37 +94,17 @@ export function OrderCart({
 
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [deliveryRoomId, setDeliveryRoomId] = useState<string | undefined>(undefined);
-  const [selectedToners, setSelectedToners] = useState<string[]>([]);
   const [manualToner, setManualToner] = useState('');
   const [priority, setPriority] = useState<'medium' | 'high' | 'urgent'>('medium');
   const [reason, setReason] = useState<string>('Standard supply request');
   const [neededBy, setNeededBy] = useState<string>('');
 
   const { data: roomPrinters = [] } = useRoomPrinters(deliveryRoomId);
-  // Auto-select the toner when the room has exactly one distinct toner code.
   useEffect(() => {
-    if (!deliveryRoomId) {
-      setSelectedToners([]);
-      setManualToner('');
-      return;
-    }
-    const codes = Array.from(
-      new Set(
-        roomPrinters
-          .map((p) => p.toner_code?.trim().toUpperCase())
-          .filter((c): c is string => !!c),
-      ),
-    );
-    if (codes.length === 1) {
-      setSelectedToners((prev) => (prev.length === 0 ? [codes[0]] : prev));
-    }
-  }, [deliveryRoomId, roomPrinters]);
+    if (!deliveryRoomId) setManualToner('');
+  }, [deliveryRoomId]);
 
-  const toggleToner = (code: string) => {
-    setSelectedToners((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
-    );
-  };
+  const cartItemIds = useMemo(() => items.map((i) => i.item_id), [items]);
 
   // Approval is item-driven: any item marked "Requires supervisor approval"
   // (requires_justification flag, editable in the inventory item form) routes
@@ -164,21 +159,13 @@ export function OrderCart({
       setCodeError(null);
     }
 
-    // Compose toner-request note from room-based selections + any manual entry.
-    const tonerBits: string[] = [];
-    if (selectedToners.length > 0) {
-      tonerBits.push(
-        `Toner needed (from room ${trimmedLocation}): ${selectedToners.join(', ')}`,
-      );
-    }
+    // Manual toner entry is a fallback for rooms with no printers on file.
+    // Room-linked toners are added to the cart directly as inventory items.
     const manual = manualToner.trim();
-    if (manual) {
-      tonerBits.push(`Toner requested manually: ${manual}`);
-    }
-    const tonerNote = tonerBits.join(' | ');
+    const tonerNote = manual
+      ? `Toner requested manually: ${manual}`
+      : '';
 
-    // Flag the room when the user is ordering toner for a room with no
-    // printers on file so an admin can link a printer later.
     if (deliveryRoomId && roomPrinters.length === 0 && manual) {
       try {
         await flagRoomForPrinterAssignment(deliveryRoomId, user?.id);
@@ -195,7 +182,6 @@ export function OrderCart({
       description: tonerNote || undefined,
     });
     setOrderCode('');
-    setSelectedToners([]);
     setManualToner('');
     setIsOpen(false);
   };
@@ -367,11 +353,13 @@ export function OrderCart({
                 )}
                 <RoomPrinterToners
                   roomId={deliveryRoomId}
-                  selectedToners={selectedToners}
-                  onToggleToner={toggleToner}
+                  cartItemIds={cartItemIds}
+                  onAddInventoryItem={(item) => onAddInventoryItem?.(item)}
+                  onRemoveInventoryItem={(id) => onRemove(id)}
                   manualToner={manualToner}
                   onManualTonerChange={setManualToner}
                 />
+
               </div>
 
               {/* Priority */}

@@ -300,7 +300,9 @@ export function QuickSupplyRequest() {
         onSubmit={submitOrder}
         onClear={clearCart}
         isSubmitting={isSubmitting}
+        onAddInventoryItem={(item) => addItem(item, 1)}
       />
+
     </div>
   );
 }

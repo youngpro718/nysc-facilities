@@ -148,6 +148,14 @@ export default function AdminSupplyRequests() {
         description="View and manage all supply requests"
       >
         <Button
+          variant="outline"
+          onClick={() => navigate('/admin/printers')}
+          className="touch-target min-h-[44px] mr-2"
+        >
+          <Package className="h-4 w-4 mr-2" />
+          Printers & Toners
+        </Button>
+        <Button
           onClick={() => navigate('/request/supplies')}
           className="touch-target min-h-[44px] transition-transform"
         >
