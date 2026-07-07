@@ -75,6 +75,7 @@ const HelpCenter = lazy(() =>
 // Admin
 const AdminCenter = lazy(() => import("@features/admin/pages/AdminCenter"));
 const AdminSupplyRequests = lazy(() => import("@features/admin/pages/admin/SupplyRequests"));
+const AdminPrinters = lazy(() => import("@features/admin/pages/admin/Printers"));
 const RoutingRules = lazy(() => import("@features/admin/pages/admin/RoutingRules"));
 const FormTemplatesAdmin = lazy(() => import("@features/admin/pages/admin/FormTemplatesAdmin"));
 
