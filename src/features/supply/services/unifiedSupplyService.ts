@@ -492,6 +492,8 @@ export async function markOrderReady(
       if (invError) throw invError;
     }
   }
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 /**
@@ -522,6 +524,8 @@ export async function completeOrder(
     .eq('id', requestId);
 
   if (error) throw error;
+
+  fireSupplyEmail('fulfilled', requestId);
 }
 
 /**
