@@ -2,6 +2,17 @@ import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { InventoryItemWithFlag, OrderStatus, STATUS_TRANSITIONS } from '@features/supply/constants';
 
+// Fire-and-forget email trigger. Never blocks the workflow if email fails.
+function fireSupplyEmail(type: 'receipt' | 'fulfilled' | 'new_request_team', requestId: string) {
+  void supabase.functions
+    .invoke('send-supply-email', { body: { type, requestId } })
+    .then((res) => {
+      if (res.error) logger.error(`send-supply-email(${type}) failed:`, res.error);
+    })
+    .catch((err) => logger.error(`send-supply-email(${type}) exception:`, err));
+}
+
+
 // ============================================================================
 // TYPES
 // ============================================================================
