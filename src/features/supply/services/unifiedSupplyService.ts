@@ -319,6 +319,10 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
   // trg_notify_admins_pending_supply_approval trigger (admin_notifications RLS
   // blocks non-admin inserts, so a client-side insert here would silently fail).
 
+  // Fire notification emails: receipt to requester, and (if enabled) alert to supply team.
+  fireSupplyEmail('receipt', request.id);
+  fireSupplyEmail('new_request_team', request.id);
+
   return { request, approval_required: approvalRequired, approval_reason: approvalReason };
 }
 
