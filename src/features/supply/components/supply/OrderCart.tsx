@@ -78,9 +78,38 @@ export function OrderCart({
   const profile = useProfileCompleteness(user?.id);
 
   const [deliveryLocation, setDeliveryLocation] = useState('');
+  const [deliveryRoomId, setDeliveryRoomId] = useState<string | undefined>(undefined);
+  const [selectedToners, setSelectedToners] = useState<string[]>([]);
+  const [manualToner, setManualToner] = useState('');
   const [priority, setPriority] = useState<'medium' | 'high' | 'urgent'>('medium');
   const [reason, setReason] = useState<string>('Standard supply request');
   const [neededBy, setNeededBy] = useState<string>('');
+
+  const { data: roomPrinters = [] } = useRoomPrinters(deliveryRoomId);
+  // Auto-select the toner when the room has exactly one distinct toner code.
+  useEffect(() => {
+    if (!deliveryRoomId) {
+      setSelectedToners([]);
+      setManualToner('');
+      return;
+    }
+    const codes = Array.from(
+      new Set(
+        roomPrinters
+          .map((p) => p.toner_code?.trim().toUpperCase())
+          .filter((c): c is string => !!c),
+      ),
+    );
+    if (codes.length === 1) {
+      setSelectedToners((prev) => (prev.length === 0 ? [codes[0]] : prev));
+    }
+  }, [deliveryRoomId, roomPrinters]);
+
+  const toggleToner = (code: string) => {
+    setSelectedToners((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
+    );
+  };
 
   // Approval is item-driven: any item marked "Requires supervisor approval"
   // (requires_justification flag, editable in the inventory item form) routes
