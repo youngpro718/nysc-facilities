@@ -198,10 +198,14 @@ export default function VerificationPending() {
             <Button
               onClick={handleCheckStatus}
               variant="outline"
+              disabled={isChecking || approved}
               className="w-full h-10 rounded-md text-sm font-medium"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Check Status
+              {isChecking ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Checking…</>
+              ) : (
+                <><RefreshCw className="h-4 w-4 mr-2" />Check Status</>
+              )}
             </Button>
 
             <Button
