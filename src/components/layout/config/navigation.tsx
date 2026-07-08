@@ -167,6 +167,8 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Supply Room', icon: Package2 },
       { title: 'Inventory', icon: Boxes },
       { title: 'Term Sheet', icon: FileText },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
     ];
   }
 
@@ -283,6 +285,8 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/supply-room',
       '/inventory',
       '/term-sheet',
+      '', // Separator
+      '/profile',
     ];
   }
 

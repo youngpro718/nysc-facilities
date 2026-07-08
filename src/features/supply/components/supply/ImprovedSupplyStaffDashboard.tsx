@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -35,6 +36,8 @@ import { useAuth } from '@features/auth/hooks/useAuth';
 export function ImprovedSupplyStaffDashboard() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<Record<string, unknown> | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('new');
@@ -279,6 +282,22 @@ export function ImprovedSupplyStaffDashboard() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Deep-link: ?request=<id> auto-opens the fulfillment dialog for that request
+  const requestIdParam = searchParams.get('request');
+  useEffect(() => {
+    if (!requestIdParam || !allOrders) return;
+    const order = allOrders.find((o: any) => o.id === requestIdParam);
+    if (!order) return;
+    // Switch to the right tab first so the order is visible behind the dialog
+    if (order.status === 'ready') setActiveTab('ready');
+    else if (['submitted', 'approved', 'received', 'picking'].includes(order.status)) setActiveTab('new');
+    setSelectedOrder(order);
+    // Clear the param so refreshes/back nav don't re-open
+    const next = new URLSearchParams(searchParams);
+    next.delete('request');
+    setSearchParams(next, { replace: true });
+  }, [requestIdParam, allOrders]);
 
   // Filter orders by status and search
   const ordersToFilter = activeTab === 'completed' ? (completedOrders || []) : (allOrders || []);
@@ -660,7 +679,7 @@ export function ImprovedSupplyStaffDashboard() {
                 </p>
                 <Button 
                   variant="outline" 
-                  onClick={() => window.location.href = '/inventory'}
+                  onClick={() => navigate('/inventory')}
                 >
                   Open Inventory Dashboard
                 </Button>

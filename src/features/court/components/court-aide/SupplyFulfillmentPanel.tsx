@@ -5,12 +5,13 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Package, User, Clock, CheckCircle, PackageCheck, AlertCircle } from 'lucide-react';
+import { Loader2, Package, User, Clock, CheckCircle, PackageCheck, AlertCircle, ExternalLink } from 'lucide-react';
 import { formatDateTime } from '@/lib/dateTime';
 import { toast } from 'sonner';
 import { useAuth } from '@features/auth/hooks/useAuth';
@@ -40,6 +41,7 @@ interface SupplyRequest {
 export function SupplyFulfillmentPanel() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch pending/in-progress supply requests
   const { data: requests, isLoading, isError } = useQuery({
@@ -125,10 +127,12 @@ export function SupplyFulfillmentPanel() {
         .eq('id', requestId);
 
       if (error) throw error;
+      return requestId;
     },
-    onSuccess: () => {
-      toast.success('Started fulfilling request');
+    onSuccess: (requestId) => {
+      toast.success('Started fulfilling — opening pick list');
       queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
+      navigate(`/supply-room?request=${requestId}`);
     },
     onError: (error: Error) => {
       toast.error('Failed to update request', { description: getErrorMessage(error) });
@@ -235,25 +239,42 @@ export function SupplyFulfillmentPanel() {
               </Button>
             )}
             {isPicking && (
-              <Button
-                size="sm"
-                onClick={() => markReady.mutate(request.id)}
-                disabled={markReady.isPending}
-              >
-                {markReady.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Mark Ready
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => markReady.mutate(request.id)}
+                  disabled={markReady.isPending}
+                >
+                  {markReady.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Mark Ready
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-xs"
+                  onClick={() => navigate(`/supply-room?request=${request.id}`)}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Open
+                </Button>
+              </>
             )}
             {isReady && (
-              <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-500/30 whitespace-nowrap">
-                Awaiting pickup
-              </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-green-700 dark:text-green-400 border-green-500/40 whitespace-nowrap"
+                onClick={() => navigate(`/supply-room?request=${request.id}`)}
+              >
+                <PackageCheck className="h-4 w-4 mr-1" />
+                Confirm pickup
+              </Button>
             )}
           </div>
         </div>
