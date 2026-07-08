@@ -679,7 +679,7 @@ export function ImprovedSupplyStaffDashboard() {
                 </p>
                 <Button 
                   variant="outline" 
-                  onClick={() => window.location.href = '/inventory'}
+                  onClick={() => navigate('/inventory')}
                 >
                   Open Inventory Dashboard
                 </Button>
