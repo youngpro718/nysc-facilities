@@ -9201,12 +9201,10 @@ export type Database = {
         }
         Returns: undefined
       }
-      assign_key_if_available:
-        | { Args: { key_id: string; occupant_id: string }; Returns: Json }
-        | {
-            Args: { is_spare?: boolean; key_id: string; occupant_id: string }
-            Returns: Json
-          }
+      assign_key_if_available: {
+        Args: { is_spare?: boolean; key_id: string; occupant_id: string }
+        Returns: Json
+      }
       assign_user_role: {
         Args: {
           new_role: Database["public"]["Enums"]["user_role"]
