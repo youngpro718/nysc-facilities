@@ -1,20 +1,38 @@
-## What's happening
+## Finding
 
-Signup now succeeds at the auth layer, but no `profiles` row is created — so the admin "pending verification" list stays empty.
+The latest supply team alert was sent to the intended address and Resend marked it as delivered:
 
-Root cause: `public.profiles` has a `UNIQUE` index on `email` (`idx_profiles_email`). An orphan profile with `email = jduchate@nycourts.gov` exists under a **different** `id` (`272dfe36-…`) with no matching `auth.users` row. When the new signup fires `handle_new_user()`, the `INSERT … ON CONFLICT (id)` doesn't help — the conflict is on `email`, not `id` — so the insert throws `23505`. Because we recently wrapped the profile insert in `EXCEPTION WHEN OTHERS`, signup completes but the profile is silently skipped. Only the `user_roles` row gets created, and the admin queue (which reads `profiles` where `verification_status = 'pending'`) never sees the user.
+- Recipient: `Jduchate@nycourts.gov`
+- From: `NYSC Facilities Hub <notifications@nyscfhub.com>`
+- Subject: `New supply request: 2026-07-07-015 — Request for Binders (1")`
+- Sent: `2026-07-08 02:00:27 UTC`
+- Resend ID: `7bb23ce3-a12b-4abe-ae8b-d7017ae715cc`
+- Provider status: `delivered`
+- Message ID: `<0100019f3f7480de-2dca57b2-e2c3-4794-9870-89a2ddf5e2eb-000000@email.amazonses.com>`
 
-## Fix (single migration + one data patch)
+That means the app and Resend handed the email off successfully; if it is not visible in the inbox, the remaining likely issue is on the NYCourts mail side: quarantine, spam filtering, Focused/Other inbox, routing rules, or delayed internal delivery.
 
-1. **Data cleanup** — delete orphan profiles (rows in `profiles` with no matching row in `auth.users`). These are safe to drop; they can't ever log in.
-2. **Backfill** the profile for `jduchate@nycourts.gov` (auth id `2b42aa8c-…`) so admin verification sees it.
-3. **Harden `handle_new_user()`** — before inserting the profile, delete any orphan profile whose `email = NEW.email` and whose `id` is not in `auth.users`. This guarantees the unique-email index never blocks a legitimate new signup.
-4. Keep the existing `EXCEPTION WHEN OTHERS` guard but also `RAISE WARNING` with the full `SQLERRM` for future diagnostics.
+## Plan
 
-No frontend changes. No auth flow changes. No RLS changes.
+1. **Add durable email delivery records**
+   - Store each supply email attempt with request ID, email type, recipient, sender, subject, provider email ID, and provider status.
+   - This avoids relying only on edge function logs.
 
-## Verification
+2. **Show email status in Supply Requests admin**
+   - Add a small delivery-status section on each supply request showing whether the team alert was sent, skipped, failed, or delivered.
+   - Include the provider message ID so NYCourts IT can search mail logs directly.
 
-- Confirm `jduchate@nycourts.gov` now appears in the admin verification queue.
-- Sign up a new test account with a fresh email → confirm a `profiles` row is created with `verification_status = 'pending'` and appears in the admin queue.
-- Run the "orphan-with-same-email" scenario (manually leave a stale profile and try re-signup) → confirm signup + profile creation succeed.
+3. **Improve recipient handling**
+   - Normalize recipient addresses to lowercase before sending and de-duplicate them.
+   - Keep display casing in the settings UI if desired, but send canonical lowercase values.
+
+4. **Add a test email action**
+   - Add an admin-only “Send test email” action from the supply email settings card.
+   - The test will send to the configured supply-team recipient list and display the returned provider status.
+
+5. **Surface provider errors clearly**
+   - If Resend rejects, bounces, or suppresses a recipient, show that exact status/details in the admin UI instead of only logging it.
+
+## Immediate non-code check
+
+Ask NYCourts IT to search for the Message ID above, or search the mailbox for the subject line and sender `notifications@nyscfhub.com`.
