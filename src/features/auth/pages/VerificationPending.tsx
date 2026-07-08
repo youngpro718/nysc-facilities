@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
 import { useNavigate } from "react-router-dom";
@@ -8,34 +8,81 @@ import { CheckCircle, Loader2, Mail, RefreshCw, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { resendVerificationEmail } from '@features/auth/services/auth';
+import { supabase } from "@/lib/supabase";
 import { APP_INFO } from "@/lib/appInfo";
 
 export default function VerificationPending() {
   const navigate = useNavigate();
   const { user, profile, refreshSession, signOut, isLoading } = useAuth();
   const [isResending, setIsResending] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [approved, setApproved] = useState(false);
+  const approvedRef = useRef(false);
   const [userEmail] = useState(() => {
     return user?.email || localStorage.getItem('signup_email') || localStorage.getItem('ONBOARD_AFTER_SIGNUP_EMAIL') || '';
   });
 
+  // When we detect approval (verified + not rejected/suspended), show success UI
+  // then hand off to OnboardingGuard which routes the user to their home.
   useEffect(() => {
-    if (isLoading || !user) return;
-    if (profile?.verification_status === 'verified') {
-      toast.success("Your account has been verified!");
+    if (isLoading || !user || approvedRef.current) return;
+    const isApproved =
+      profile?.verification_status === 'verified' &&
+      profile?.verification_status !== undefined &&
+      !(profile as { is_suspended?: boolean })?.is_suspended;
+    if (isApproved) {
+      approvedRef.current = true;
+      setApproved(true);
+      toast.success("Your account has been approved!");
+      const t = window.setTimeout(() => navigate('/', { replace: true }), 1800);
+      return () => window.clearTimeout(t);
     }
-  }, [user, profile?.verification_status, isLoading]);
+  }, [user, profile, isLoading, navigate]);
+
+  // Live updates: subscribe to this user's profile row so approval is instant.
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`profile-approval-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        () => {
+          void refreshSession();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, refreshSession]);
+
+  // Background polling as a safety net if realtime is disabled on the table.
+  useEffect(() => {
+    if (!user?.id) return;
+    const interval = window.setInterval(() => {
+      if (approvedRef.current) return;
+      void refreshSession();
+    }, 6000);
+    return () => window.clearInterval(interval);
+  }, [user?.id, refreshSession]);
 
   const handleCheckStatus = async () => {
+    if (isChecking) return;
+    setIsChecking(true);
     try {
       await refreshSession();
-      if (profile?.verification_status === 'verified') {
-        toast.success("Your account has been verified!");
-      } else {
-        toast.info("Your account is still pending verification");
-      }
+      // The effect above will pick up the change and navigate; give it a tick.
+      window.setTimeout(() => {
+        if (!approvedRef.current) {
+          toast.info("Your account is still pending verification");
+        }
+      }, 300);
     } catch (error) {
       logger.error("Error checking status:", error);
       toast.error("Failed to check verification status");
+    } finally {
+      setIsChecking(false);
     }
   };
 
@@ -103,13 +150,21 @@ export default function VerificationPending() {
         {/* Card */}
         <div className="bg-white rounded-md border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
           <div className="flex flex-col items-center text-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-emerald-600" />
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${approved ? 'bg-emerald-100' : 'bg-emerald-50'}`}>
+              {approved ? (
+                <CheckCircle className="h-6 w-6 text-emerald-700" />
+              ) : (
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
+              )}
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-slate-900">Account Created</h1>
+              <h1 className="text-lg font-semibold text-slate-900">
+                {approved ? 'Account Approved' : 'Account Created'}
+              </h1>
               <p className="text-sm text-slate-500 mt-1">
-                Please verify your email to continue. An administrator will then review your account.
+                {approved
+                  ? 'Redirecting you into the app…'
+                  : 'Please verify your email to continue. An administrator will then review your account.'}
               </p>
             </div>
           </div>
@@ -143,10 +198,14 @@ export default function VerificationPending() {
             <Button
               onClick={handleCheckStatus}
               variant="outline"
+              disabled={isChecking || approved}
               className="w-full h-10 rounded-md text-sm font-medium"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Check Status
+              {isChecking ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Checking…</>
+              ) : (
+                <><RefreshCw className="h-4 w-4 mr-2" />Check Status</>
+              )}
             </Button>
 
             <Button
