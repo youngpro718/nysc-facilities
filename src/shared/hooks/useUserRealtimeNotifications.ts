@@ -37,7 +37,7 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
           table: 'user_notifications',
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
+        async (payload) => {
           logger.debug('[UserRealtime] New notification:', payload);
           const notification = payload.new;
           setLastNotification(notification);
@@ -64,6 +64,29 @@ export const useUserRealtimeNotifications = (): RealtimeNotificationHook => {
             default:
               toast.success(notification.title, { description: notification.message, ...toastOptions });
               break;
+          }
+
+          // Fire a browser desktop notification when the user opted in.
+          // Reads the preference fresh per notification so toggling the switch
+          // takes effect immediately — no realtime reconnect required.
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('user_settings')
+              .eq('id', user.id)
+              .maybeSingle();
+            const settings = (profile?.user_settings ?? {}) as {
+              desktop_notifications?: boolean;
+            };
+            if (settings.desktop_notifications !== false) {
+              showDesktopNotification(notification.title, {
+                body: notification.message,
+                actionUrl: safeUrl ?? undefined,
+                tag: notification.id,
+              });
+            }
+          } catch (err) {
+            logger.debug('[UserRealtime] Skipped desktop notification:', err);
           }
         }
       )
