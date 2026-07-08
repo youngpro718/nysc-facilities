@@ -31,6 +31,7 @@ import {
   Unlock 
 } from "lucide-react";
 import { SYSTEM_ROLES, getRoleLabel, type UserRole } from "@/config/roles";
+import { SupervisorToggle } from "./SupervisorToggle";
 
 interface UserProfile {
   id: string;
@@ -41,6 +42,7 @@ interface UserProfile {
   verification_status: 'pending' | 'verified' | 'rejected';
   is_approved: boolean;
   is_suspended: boolean;
+  is_supervisor?: boolean;
   suspension_reason: string | null;
   created_at: string;
   role?: UserRole;
@@ -189,6 +191,14 @@ export function UserListCard({
                   <span className="text-xs text-muted-foreground italic">(Cannot change your own role)</span>
                 )}
               </div>
+            )}
+
+            {isVerified && (
+              <SupervisorToggle
+                userId={user.id}
+                initialValue={user.is_supervisor}
+                disabled={isCurrentUser || isUpdating}
+              />
             )}
           </div>
         </div>

@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Copy, Check, RefreshCcw, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@shared/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@features/auth/hooks/useAuth';
 import {
   getMySupplyOrderCode,
   regenerateMySupplyOrderCode,
@@ -20,9 +22,24 @@ const QUERY_KEY = ['my-supply-order-code'] as const;
 export function MySupplyOrderCode() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [rotating, setRotating] = useState(false);
   const [revealed, setRevealed] = useState(false);
+
+  const { data: isSupervisor } = useQuery({
+    queryKey: ['is-supervisor', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_supervisor')
+        .eq('id', user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.is_supervisor === true;
+    },
+  });
 
   const { data: code, isLoading, error } = useQuery<string>({
     queryKey: QUERY_KEY,
@@ -69,11 +86,12 @@ export function MySupplyOrderCode() {
       <div className="p-4 sm:p-6 space-y-4">
         <div className="space-y-1">
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
-            Your supply order code
+            {isSupervisor ? 'Your supervisor code' : 'Your supply order code'}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Use this code when ordering a larger-than-usual quantity of any supply item.
-            Entering it counts as your own authorization — no supervisor wait.
+            {isSupervisor
+              ? 'Share this 4-digit code with people you supervise. When they enter it while placing a supply order, the order is approved instantly and you get a notification here on your profile and in your requests page.'
+              : 'Use this code when ordering a larger-than-usual quantity of any supply item. Entering it counts as your own authorization — no supervisor wait.'}
           </p>
         </div>
 

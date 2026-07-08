@@ -26,7 +26,10 @@ import {
 import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
 
 import { formatPackEquivalent } from '@features/supply/utils/packEquivalent';
-import { verifySupplyOrderCode } from '@features/supply/services/supplyOrderCode';
+import {
+  verifySupplyOrderCode,
+  verifySupervisorCode,
+} from '@features/supply/services/supplyOrderCode';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +48,12 @@ interface OrderCartProps {
   onClear: () => void;
   isSubmitting: boolean;
   requiresOrderCode?: boolean;
+  /** Cart contains at least one item flagged (item- or category-level) as
+   * needing supervisor approval. Cart swaps in a "supervisor code" prompt. */
+  needsSupervisorApproval?: boolean;
+  /** Cart items driving the supervisor-approval prompt (item- or
+   * category-level). Used for the copy in the prompt. */
+  restrictedItems?: CartItem[];
   /**
    * Add an inventory item to the cart from within the order form (used by the
    * RoomPrinterToners "Add cartridge" action so users can order a toner
@@ -83,11 +92,15 @@ export function OrderCart({
   onClear,
   isSubmitting,
   requiresOrderCode = false,
+  needsSupervisorApproval = false,
+  restrictedItems: restrictedFromParent,
   onAddInventoryItem,
 }: OrderCartProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [orderCode, setOrderCode] = useState('');
+  const [supervisorCode, setSupervisorCode] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [supervisorCodeError, setSupervisorCodeError] = useState<string | null>(null);
   const [verifyingCode, setVerifyingCode] = useState(false);
   const { user } = useAuth();
   const profile = useProfileCompleteness(user?.id);
@@ -106,15 +119,14 @@ export function OrderCart({
 
   const cartItemIds = useMemo(() => items.map((i) => i.item_id), [items]);
 
-  // Approval is item-driven: any item marked "Requires supervisor approval"
-  // (requires_justification flag, editable in the inventory item form) routes
-  // the whole order to pending_approval. Per-item quantity gating uses the
-  // access-code path (order_code_threshold), not approval.
-  const restrictedItems = useMemo(
-    () => items.filter(i => i.requires_justification),
-    [items]
-  );
-  const hasRestrictedItems = restrictedItems.length > 0;
+  // Approval is item- or category-driven: any flagged item routes the whole
+  // order through the supervisor-code prompt. Local `requires_justification`
+  // covers item-level flags; parent supplies the category-driven set.
+  const restrictedItems = useMemo(() => {
+    if (restrictedFromParent && restrictedFromParent.length > 0) return restrictedFromParent;
+    return items.filter(i => i.requires_justification);
+  }, [items, restrictedFromParent]);
+  const hasRestrictedItems = needsSupervisorApproval || restrictedItems.length > 0;
   const needsApproval = hasRestrictedItems;
   const trimmedLocation = deliveryLocation.trim();
   const missingLocation = trimmedLocation.length === 0;
@@ -128,7 +140,7 @@ export function OrderCart({
     trimmedLocation.length > 0 &&
     locationRoomNumber !== profile.homeRoomNumber.toLowerCase();
 
-  const approvalReason = hasRestrictedItems
+  const approvalReason = restrictedItems.length > 0
     ? `Contains ${restrictedItems.length === 1 ? '' : restrictedItems.length + ' '}item${restrictedItems.length === 1 ? '' : 's'} that need supervisor approval: ${restrictedItems.map(i => i.item_name).join(', ')}`
     : null;
 
@@ -159,6 +171,33 @@ export function OrderCart({
       setCodeError(null);
     }
 
+    // Items flagged (item- or category-level) for supervisor approval need a
+    // supervisor's 4-digit code. Verified server-side; a valid code stamps
+    // the request with approved_by_supervisor_id, skipping the pending queue
+    // and firing a notification to that supervisor.
+    let approvedSupervisorId: string | null = null;
+    if (needsApproval) {
+      const supCode = supervisorCode.trim();
+      if (!supCode) {
+        setSupervisorCodeError("Enter your supervisor's code to approve this order.");
+        return;
+      }
+      setVerifyingCode(true);
+      try {
+        approvedSupervisorId = await verifySupervisorCode(supCode);
+        if (!approvedSupervisorId) {
+          setSupervisorCodeError("That code doesn't belong to a supervisor. Ask your supervisor for their 4-digit code.");
+          return;
+        }
+      } catch {
+        setSupervisorCodeError('Could not verify the supervisor code right now. Please try again.');
+        return;
+      } finally {
+        setVerifyingCode(false);
+      }
+      setSupervisorCodeError(null);
+    }
+
     // Manual toner entry is a fallback for rooms with no printers on file.
     // Room-linked toners are added to the cart directly as inventory items.
     const manual = manualToner.trim();
@@ -180,8 +219,10 @@ export function OrderCart({
       justification: reason,
       requested_delivery_date: neededBy || undefined,
       description: tonerNote || undefined,
+      approved_by_supervisor_id: approvedSupervisorId,
     });
     setOrderCode('');
+    setSupervisorCode('');
     setManualToner('');
     setIsOpen(false);
   };
@@ -228,8 +269,8 @@ export function OrderCart({
             </div>
           ) : (
             <>
-              {/* Approval notice (if needed) — hidden when the access-code path applies */}
-              {needsApproval && !requiresOrderCode && (
+              {/* Supervisor approval notice — prompts for a supervisor's code */}
+              {needsApproval && (
                 <div className="flex gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div className="text-xs">
@@ -237,7 +278,9 @@ export function OrderCart({
                       This order needs supervisor approval
                     </p>
                     <p className="text-amber-700/80 dark:text-amber-400/80 mt-0.5">
-                      {approvalReason}. Usually approved in under one business day.
+                      {approvalReason}. Ask your supervisor for their 4-digit
+                      code — entering it below approves the order instantly and
+                      notifies them.
                     </p>
                   </div>
                 </div>
@@ -478,6 +521,30 @@ export function OrderCart({
                 )}
               </div>
             )}
+            {needsApproval && (
+              <div className="space-y-1.5 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5">
+                <Label htmlFor="supervisor-code" className="text-xs font-medium">
+                  Supervisor code required
+                </Label>
+                <Input
+                  id="supervisor-code"
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={supervisorCode}
+                  onChange={(e) => { setSupervisorCode(e.target.value); if (supervisorCodeError) setSupervisorCodeError(null); }}
+                  placeholder="Enter your supervisor's 4-digit code"
+                  className="h-10"
+                />
+                {supervisorCodeError ? (
+                  <p className="text-xs text-destructive">{supervisorCodeError}</p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    Your supervisor gives you their code once. Entering it approves this order instantly and posts a notice on their requests page so they know it was used.
+                  </p>
+                )}
+              </div>
+            )}
             <Button
               type="button"
               onClick={handleSubmit}
@@ -491,10 +558,10 @@ export function OrderCart({
                   ? 'Checking code…'
                   : missingLocation
                     ? 'Add a delivery location to submit'
-                    : requiresOrderCode
-                      ? `Authorize & submit (${totalItems} item${totalItems === 1 ? '' : 's'})`
-                      : needsApproval
-                        ? `Send ${totalItems} item${totalItems === 1 ? '' : 's'} for approval`
+                    : needsApproval
+                      ? `Approve & submit (${totalItems} item${totalItems === 1 ? '' : 's'})`
+                      : requiresOrderCode
+                        ? `Authorize & submit (${totalItems} item${totalItems === 1 ? '' : 's'})`
                         : `Submit order (${totalItems} item${totalItems === 1 ? '' : 's'})`}
             </Button>
           </div>

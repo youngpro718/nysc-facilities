@@ -34,6 +34,8 @@ export function QuickOrderGrid() {
     totalItems,
     isSubmitting,
     requiresOrderCode,
+    hasRestrictedItems,
+    restrictedCartItems,
   } = useOrderCart();
 
   const filteredItems = useMemo(() => {
@@ -258,6 +260,8 @@ export function QuickOrderGrid() {
         onClear={clearCart}
         isSubmitting={isSubmitting}
         requiresOrderCode={requiresOrderCode}
+        needsSupervisorApproval={hasRestrictedItems}
+        restrictedItems={restrictedCartItems}
         onAddInventoryItem={(item) => addItem(item, 1)}
       />
 

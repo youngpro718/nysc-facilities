@@ -1,7 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { logger } from '@/lib/logger';
-import { useQueryClient } from '@tanstack/react-query';
-import { submitSupplyOrder, revalidateCatalogStock } from '@features/supply/services/unifiedSupplyService';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  submitSupplyOrder,
+  revalidateCatalogStock,
+  fetchRestrictedItemIds,
+} from '@features/supply/services/unifiedSupplyService';
 
 // Sentinel error type for the submit-time stock check. Thrown so the normal
 // finally-block cleanup runs (reset isSubmitting + ref), but caught in the
@@ -99,6 +103,7 @@ export function useOrderCart() {
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     delivery_location?: string;
     requested_delivery_date?: string;
+    approved_by_supervisor_id?: string | null;
   }) => {
     if (cartItems.length === 0) {
       toast({
@@ -161,6 +166,7 @@ export function useOrderCart() {
         priority: (options?.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
         delivery_location: deliveryLocation,
         requested_delivery_date: options?.requested_delivery_date || null,
+        approved_by_supervisor_id: options?.approved_by_supervisor_id ?? null,
         items: cartItems.map(item => ({
           item_id: item.item_id,
           quantity_requested: item.quantity,
@@ -219,7 +225,27 @@ export function useOrderCart() {
   }, [cartItems, toast, queryClient, clearCart, user, isSupervisor]);
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const hasRestrictedItems = !isSupervisor && cartItems.some(item => item.requires_justification === true);
+
+  // Ask the server which cart items require supervisor approval — this covers
+  // both item-level (requires_justification) and category-level
+  // (inventory_categories.requires_supervisor_approval) flags. The client
+  // uses this to swap in the "enter supervisor code" prompt.
+  const cartItemIds = useMemo(() => cartItems.map(i => i.item_id).sort(), [cartItems]);
+  const { data: serverRestrictedIds = [] } = useQuery({
+    queryKey: ['supply-restricted-item-ids', cartItemIds],
+    queryFn: () => fetchRestrictedItemIds(cartItemIds),
+    enabled: cartItemIds.length > 0,
+    staleTime: 60_000,
+  });
+  const hasRestrictedItems = !isSupervisor && (
+    cartItems.some(item => item.requires_justification === true) ||
+    serverRestrictedIds.length > 0
+  );
+  const restrictedCartItems = useMemo(() => {
+    const set = new Set(serverRestrictedIds);
+    return cartItems.filter(i => i.requires_justification === true || set.has(i.item_id));
+  }, [cartItems, serverRestrictedIds]);
+
   // Lines at or above their per-item threshold need the orderer's personal
   // access code, unless this user has the admin-set bypass flag.
   const requiresOrderCode = !bypassOrderCode && cartItems.some(
@@ -236,6 +262,7 @@ export function useOrderCart() {
     totalItems,
     isSubmitting,
     hasRestrictedItems,
+    restrictedCartItems,
     requiresOrderCode,
   };
 }
