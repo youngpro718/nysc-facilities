@@ -26,7 +26,10 @@ import {
 import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
 
 import { formatPackEquivalent } from '@features/supply/utils/packEquivalent';
-import { verifySupplyOrderCode } from '@features/supply/services/supplyOrderCode';
+import {
+  verifySupplyOrderCode,
+  verifySupervisorCode,
+} from '@features/supply/services/supplyOrderCode';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +48,12 @@ interface OrderCartProps {
   onClear: () => void;
   isSubmitting: boolean;
   requiresOrderCode?: boolean;
+  /** Cart contains at least one item flagged (item- or category-level) as
+   * needing supervisor approval. Cart swaps in a "supervisor code" prompt. */
+  needsSupervisorApproval?: boolean;
+  /** Cart items driving the supervisor-approval prompt (item- or
+   * category-level). Used for the copy in the prompt. */
+  restrictedItems?: CartItem[];
   /**
    * Add an inventory item to the cart from within the order form (used by the
    * RoomPrinterToners "Add cartridge" action so users can order a toner
@@ -83,11 +92,15 @@ export function OrderCart({
   onClear,
   isSubmitting,
   requiresOrderCode = false,
+  needsSupervisorApproval = false,
+  restrictedItems: restrictedFromParent,
   onAddInventoryItem,
 }: OrderCartProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [orderCode, setOrderCode] = useState('');
+  const [supervisorCode, setSupervisorCode] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [supervisorCodeError, setSupervisorCodeError] = useState<string | null>(null);
   const [verifyingCode, setVerifyingCode] = useState(false);
   const { user } = useAuth();
   const profile = useProfileCompleteness(user?.id);
@@ -106,15 +119,14 @@ export function OrderCart({
 
   const cartItemIds = useMemo(() => items.map((i) => i.item_id), [items]);
 
-  // Approval is item-driven: any item marked "Requires supervisor approval"
-  // (requires_justification flag, editable in the inventory item form) routes
-  // the whole order to pending_approval. Per-item quantity gating uses the
-  // access-code path (order_code_threshold), not approval.
-  const restrictedItems = useMemo(
-    () => items.filter(i => i.requires_justification),
-    [items]
-  );
-  const hasRestrictedItems = restrictedItems.length > 0;
+  // Approval is item- or category-driven: any flagged item routes the whole
+  // order through the supervisor-code prompt. Local `requires_justification`
+  // covers item-level flags; parent supplies the category-driven set.
+  const restrictedItems = useMemo(() => {
+    if (restrictedFromParent && restrictedFromParent.length > 0) return restrictedFromParent;
+    return items.filter(i => i.requires_justification);
+  }, [items, restrictedFromParent]);
+  const hasRestrictedItems = needsSupervisorApproval || restrictedItems.length > 0;
   const needsApproval = hasRestrictedItems;
   const trimmedLocation = deliveryLocation.trim();
   const missingLocation = trimmedLocation.length === 0;
@@ -128,7 +140,7 @@ export function OrderCart({
     trimmedLocation.length > 0 &&
     locationRoomNumber !== profile.homeRoomNumber.toLowerCase();
 
-  const approvalReason = hasRestrictedItems
+  const approvalReason = restrictedItems.length > 0
     ? `Contains ${restrictedItems.length === 1 ? '' : restrictedItems.length + ' '}item${restrictedItems.length === 1 ? '' : 's'} that need supervisor approval: ${restrictedItems.map(i => i.item_name).join(', ')}`
     : null;
 
