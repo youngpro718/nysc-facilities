@@ -36,7 +36,6 @@ export function AdminAddUserDialog({ open, onOpenChange, onSuccess }: AdminAddUs
     lastName: "",
     email: "",
     password: "",
-    title: "",
     requestedRole: "standard",
   });
   const [loading, setLoading] = useState(false);
@@ -75,7 +74,6 @@ export function AdminAddUserDialog({ open, onOpenChange, onSuccess }: AdminAddUs
           data: {
             first_name: form.firstName.trim(),
             last_name: form.lastName.trim(),
-            title: form.title.trim() || undefined,
             requested_role: form.requestedRole,
           },
         },
@@ -202,17 +200,6 @@ export function AdminAddUserDialog({ open, onOpenChange, onSuccess }: AdminAddUs
             placeholder="jane.smith@example.com"
             disabled={loading}
             required
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="add-title">Job Title <span className="text-xs text-muted-foreground">(optional)</span></Label>
-          <Input
-            id="add-title"
-            value={form.title}
-            onChange={(e) => handleChange("title", e.target.value)}
-            placeholder="e.g., Court Aide, Facilities Manager"
-            disabled={loading}
           />
         </div>
 

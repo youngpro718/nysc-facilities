@@ -21,7 +21,6 @@ export function ProfileEditModal({ open, onOpenChange, profile, onProfileUpdate 
   const [formData, setFormData] = useState({
     first_name: profile?.first_name || '',
     last_name: profile?.last_name || '',
-    title: profile?.title || '',
     department: profile?.department || '',
     phone: profile?.phone || '',
     bio: profile?.bio || '',
@@ -93,16 +92,6 @@ export function ProfileEditModal({ open, onOpenChange, profile, onProfileUpdate 
               placeholder="Enter last name"
             />
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="title">Job Title</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder="Enter job title"
-          />
         </div>
 
         <div className="space-y-2">

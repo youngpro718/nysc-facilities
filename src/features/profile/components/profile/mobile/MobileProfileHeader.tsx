@@ -165,10 +165,6 @@ export function MobileProfileHeader() {
 
           <div className="text-sm text-muted-foreground space-y-1">
             <div className="flex items-center gap-2">
-              <User className="w-3 h-3" />
-              <span className="truncate">{profile.title || 'No title'}</span>
-            </div>
-            <div className="flex items-center gap-2">
               <Mail className="w-3 h-3" />
               <span className="truncate">{profile.email}</span>
             </div>
