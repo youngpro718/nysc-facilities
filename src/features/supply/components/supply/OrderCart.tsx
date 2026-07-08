@@ -171,6 +171,33 @@ export function OrderCart({
       setCodeError(null);
     }
 
+    // Items flagged (item- or category-level) for supervisor approval need a
+    // supervisor's 4-digit code. Verified server-side; a valid code stamps
+    // the request with approved_by_supervisor_id, skipping the pending queue
+    // and firing a notification to that supervisor.
+    let approvedSupervisorId: string | null = null;
+    if (needsApproval) {
+      const supCode = supervisorCode.trim();
+      if (!supCode) {
+        setSupervisorCodeError("Enter your supervisor's code to approve this order.");
+        return;
+      }
+      setVerifyingCode(true);
+      try {
+        approvedSupervisorId = await verifySupervisorCode(supCode);
+        if (!approvedSupervisorId) {
+          setSupervisorCodeError("That code doesn't belong to a supervisor. Ask your supervisor for their 4-digit code.");
+          return;
+        }
+      } catch {
+        setSupervisorCodeError('Could not verify the supervisor code right now. Please try again.');
+        return;
+      } finally {
+        setVerifyingCode(false);
+      }
+      setSupervisorCodeError(null);
+    }
+
     // Manual toner entry is a fallback for rooms with no printers on file.
     // Room-linked toners are added to the cart directly as inventory items.
     const manual = manualToner.trim();
@@ -192,8 +219,10 @@ export function OrderCart({
       justification: reason,
       requested_delivery_date: neededBy || undefined,
       description: tonerNote || undefined,
+      approved_by_supervisor_id: approvedSupervisorId,
     });
     setOrderCode('');
+    setSupervisorCode('');
     setManualToner('');
     setIsOpen(false);
   };
