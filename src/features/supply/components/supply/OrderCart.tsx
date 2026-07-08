@@ -269,8 +269,8 @@ export function OrderCart({
             </div>
           ) : (
             <>
-              {/* Approval notice (if needed) — hidden when the access-code path applies */}
-              {needsApproval && !requiresOrderCode && (
+              {/* Supervisor approval notice — prompts for a supervisor's code */}
+              {needsApproval && (
                 <div className="flex gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div className="text-xs">
@@ -278,7 +278,9 @@ export function OrderCart({
                       This order needs supervisor approval
                     </p>
                     <p className="text-amber-700/80 dark:text-amber-400/80 mt-0.5">
-                      {approvalReason}. Usually approved in under one business day.
+                      {approvalReason}. Ask your supervisor for their 4-digit
+                      code — entering it below approves the order instantly and
+                      notifies them.
                     </p>
                   </div>
                 </div>
