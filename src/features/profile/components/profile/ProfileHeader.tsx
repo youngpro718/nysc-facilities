@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { logger } from '@/lib/logger';
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import { Camera, User, Building2, Briefcase, Shield, AlertCircle } from "lucide-react";
+import { Camera, User, Building2, Shield, AlertCircle } from "lucide-react";
 import { useToast } from "@shared/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
