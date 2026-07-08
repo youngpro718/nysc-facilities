@@ -8,7 +8,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const APP_URL = Deno.env.get("APP_URL") ?? "https://nyscfhub.com";
 const FROM_EMAIL =
-  Deno.env.get("FROM_EMAIL") ?? "NYSC Facilities Hub <onboarding@resend.dev>";
+  Deno.env.get("FROM_EMAIL") ?? "NYSC Facilities Hub <notifications@nyscfhub.com>";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
