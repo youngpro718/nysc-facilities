@@ -22,6 +22,8 @@ import { CreateItemDialog } from "./CreateItemDialog";
 import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
 import { ItemPhotoUpload } from "./ItemPhotoUpload";
+import { ManageCategoriesDialog } from "./ManageCategoriesDialog";
+import { FolderCog } from "lucide-react";
 import { useToast } from "@shared/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useInventoryRealtimeSync } from "@features/inventory/hooks/useOptimizedInventory";
