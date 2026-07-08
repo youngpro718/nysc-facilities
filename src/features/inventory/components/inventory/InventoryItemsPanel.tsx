@@ -89,6 +89,7 @@ export const InventoryItemsPanel = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
