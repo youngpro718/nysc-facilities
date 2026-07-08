@@ -65,7 +65,6 @@ export function AdminProfileHeader() {
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline">Admin</Badge>
             <Badge variant="outline">{profile?.department || "No Department"}</Badge>
-            <Badge variant="outline">{profile?.title || "No Title"}</Badge>
           </div>
 
           {editedProfile && (

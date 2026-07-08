@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@shared/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { PersonalInfoValues, personalInfoSchema, isValidEmergencyContact, JOB_TITLES } from "../schemas/profileSchema";
+import { PersonalInfoValues, personalInfoSchema, isValidEmergencyContact } from "../schemas/profileSchema";
 
 export function useProfileForm() {
   const { toast } = useToast();
@@ -19,8 +19,6 @@ export function useProfileForm() {
       last_name: "",
       phone: "",
       department: "",
-      title: "",
-      title_other: "",
       time_zone: "UTC",
       language: "en",
       emergency_contact: {
@@ -65,22 +63,11 @@ export function useProfileForm() {
             };
           }
 
-          // Map stored title onto dropdown: if it matches a preset use it, otherwise treat as "Other".
-          const rawStoredTitle = (profile.title as string | null) || "";
-          const storedTitle = rawStoredTitle.trim().toLowerCase() === "facilites liaison"
-            ? "Facilities Liaison"
-            : rawStoredTitle;
-          const matchesPreset = (JOB_TITLES as readonly string[]).includes(storedTitle);
-          const titleValue = matchesPreset ? storedTitle : (storedTitle ? "Other" : "");
-          const titleOther = matchesPreset || !storedTitle ? "" : storedTitle;
-
           form.reset({
             first_name: profile.first_name || "",
             last_name: profile.last_name || "",
             phone: profile.phone || "",
             department: profile.department || profile.departments?.name || "",
-            title: titleValue,
-            title_other: titleOther,
             time_zone: profile.time_zone || "UTC",
             language: profile.language || "en",
             emergency_contact: emergencyContact,
@@ -114,9 +101,6 @@ export function useProfileForm() {
       }
       const user = session.user;
 
-      // Resolve dropdown + "Other" into a single stored title string.
-      const resolvedTitle = data.title === "Other" ? (data.title_other?.trim() || "") : data.title;
-
       const { data: updated, error } = await supabase
         .from('profiles')
         .update({
@@ -124,14 +108,13 @@ export function useProfileForm() {
           last_name: data.last_name,
           phone: data.phone,
           department: data.department,
-          title: resolvedTitle,
           time_zone: data.time_zone,
           language: data.language,
           emergency_contact: data.emergency_contact,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id)
-        .select('id, department, title')
+        .select('id, department')
         .maybeSingle();
 
       if (error) throw error;

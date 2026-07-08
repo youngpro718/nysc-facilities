@@ -2,6 +2,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSearchParams } from 'react-router-dom';
 import { QuickOrderGrid } from '@features/supply/components/supply/QuickOrderGrid';
 import { RequestForm } from '@features/supply/components/request/RequestForm';
+import { ProfileIncompletePrompt } from '@features/supply/components/supply/ProfileIncompletePrompt';
 import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function CourtAideRequests() {
@@ -10,6 +11,7 @@ export default function CourtAideRequests() {
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4">
+      <ProfileIncompletePrompt />
       <PageHeader
         title="Supplies & Requests"
         description="Order supplies from the stockroom, or make a request to the court aides"

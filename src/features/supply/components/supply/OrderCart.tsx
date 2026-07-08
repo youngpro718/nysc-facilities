@@ -24,7 +24,7 @@ import {
   flagRoomForPrinterAssignment,
 } from '@features/supply/hooks/useRoomPrinters';
 import { useProfileCompleteness } from '@features/supply/hooks/useProfileCompleteness';
-import { ProfileIncompleteBanner } from '@features/supply/components/supply/ProfileIncompleteBanner';
+
 import { formatPackEquivalent } from '@features/supply/utils/packEquivalent';
 import { verifySupplyOrderCode } from '@features/supply/services/supplyOrderCode';
 import {
@@ -228,9 +228,6 @@ export function OrderCart({
             </div>
           ) : (
             <>
-              {/* Profile completeness banner — shows when department/home room missing */}
-              <ProfileIncompleteBanner />
-
               {/* Approval notice (if needed) — hidden when the access-code path applies */}
               {needsApproval && !requiresOrderCode && (
                 <div className="flex gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
