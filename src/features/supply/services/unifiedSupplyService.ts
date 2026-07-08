@@ -31,6 +31,13 @@ export interface SubmitOrderPayload {
   requested_delivery_date?: string | null;
   delivery_location: string;
   items: SubmitOrderItem[];
+  /**
+   * Supervisor user id returned by `verify_supervisor_code`. Present only
+   * when the cart contained a supervisor-approval item and the requester
+   * entered a valid supervisor code. Stamps the request as pre-approved and
+   * fires a notification to the supervisor.
+   */
+  approved_by_supervisor_id?: string | null;
 }
 
 export interface UpdateItemQuantities {
@@ -199,6 +206,27 @@ export async function revalidateCatalogStock(itemIds: string[]): Promise<string[
   return (data || [])
     .filter((row: { stock_status: CatalogStockStatus }) => row.stock_status === 'out')
     .map((row: { id: string }) => row.id);
+}
+
+/**
+ * Return the subset of item ids that require supervisor approval — either
+ * because the inventory item itself is flagged (`requires_justification`) or
+ * because its category is flagged (`requires_supervisor_approval`). Used by
+ * the cart to know when to prompt for a supervisor code.
+ */
+export async function fetchRestrictedItemIds(itemIds: string[]): Promise<string[]> {
+  if (itemIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('inventory_items')
+    .select('id, requires_justification, inventory_categories(requires_supervisor_approval)')
+    .in('id', itemIds);
+  if (error) throw error;
+  return (data || [])
+    .filter((row: any) =>
+      row.requires_justification === true ||
+      row.inventory_categories?.requires_supervisor_approval === true,
+    )
+    .map((row: any) => row.id as string);
 }
 
 /**
