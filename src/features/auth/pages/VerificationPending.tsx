@@ -150,13 +150,21 @@ export default function VerificationPending() {
         {/* Card */}
         <div className="bg-white rounded-md border border-slate-200 shadow-sm p-6 sm:p-7 space-y-5">
           <div className="flex flex-col items-center text-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-emerald-600" />
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${approved ? 'bg-emerald-100' : 'bg-emerald-50'}`}>
+              {approved ? (
+                <CheckCircle className="h-6 w-6 text-emerald-700" />
+              ) : (
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
+              )}
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-slate-900">Account Created</h1>
+              <h1 className="text-lg font-semibold text-slate-900">
+                {approved ? 'Account Approved' : 'Account Created'}
+              </h1>
               <p className="text-sm text-slate-500 mt-1">
-                Please verify your email to continue. An administrator will then review your account.
+                {approved
+                  ? 'Redirecting you into the app…'
+                  : 'Please verify your email to continue. An administrator will then review your account.'}
               </p>
             </div>
           </div>
