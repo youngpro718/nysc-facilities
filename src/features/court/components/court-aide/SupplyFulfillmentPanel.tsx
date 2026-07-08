@@ -239,25 +239,42 @@ export function SupplyFulfillmentPanel() {
               </Button>
             )}
             {isPicking && (
-              <Button
-                size="sm"
-                onClick={() => markReady.mutate(request.id)}
-                disabled={markReady.isPending}
-              >
-                {markReady.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Mark Ready
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => markReady.mutate(request.id)}
+                  disabled={markReady.isPending}
+                >
+                  {markReady.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Mark Ready
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-xs"
+                  onClick={() => navigate(`/supply-room?request=${request.id}`)}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Open
+                </Button>
+              </>
             )}
             {isReady && (
-              <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-500/30 whitespace-nowrap">
-                Awaiting pickup
-              </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-green-700 dark:text-green-400 border-green-500/40 whitespace-nowrap"
+                onClick={() => navigate(`/supply-room?request=${request.id}`)}
+              >
+                <PackageCheck className="h-4 w-4 mr-1" />
+                Confirm pickup
+              </Button>
             )}
           </div>
         </div>
