@@ -261,13 +261,15 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     throw new Error('Authentication required. Please refresh and try again.');
   }
 
-  // Approval is item-driven: any item flagged requires_justification routes
-  // the order to pending_approval. Per-item quantity gating happens via the
-  // access-code path (order_code_threshold) on the client, not here.
+  // Approval is item- OR category-driven: any item flagged
+  // requires_justification, or any item whose category is flagged
+  // requires_supervisor_approval, routes the order to pending_approval —
+  // UNLESS the requester provided a valid supervisor code, in which case the
+  // order is pre-approved and the supervisor is notified via trigger.
   const itemIds = Array.from(new Set(payload.items.map(i => i.item_id)));
   const { data: inv, error: invErr } = await supabase
     .from('inventory_items')
-    .select('id, name, requires_justification, inventory_categories(name)')
+    .select('id, name, requires_justification, inventory_categories(name, requires_supervisor_approval)')
     .in('id', itemIds);
   if (invErr) throw new Error(`Failed to fetch inventory: ${invErr.message}`);
 
@@ -275,11 +277,14 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     id: i.id as string,
     name: i.name as string,
     categoryName: i.inventory_categories?.name ?? null,
-    requires_justification: i.requires_justification ?? false,
+    requires_justification:
+      i.requires_justification === true ||
+      i.inventory_categories?.requires_supervisor_approval === true,
   }));
 
   const restrictedItems = liteItems.filter(i => i.requires_justification);
-  const approvalRequired = restrictedItems.length > 0;
+  const supervisorApproved = !!payload.approved_by_supervisor_id;
+  const approvalRequired = restrictedItems.length > 0 && !supervisorApproved;
 
   const approvalReason = restrictedItems.length > 0
     ? `Contains item${restrictedItems.length > 1 ? 's' : ''} needing supervisor approval: ${restrictedItems.map(i => i.name).join(', ')}`
@@ -298,6 +303,11 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
     status: approvalRequired ? 'pending_approval' : 'submitted',
     approval_notes: approvalReason,
   };
+
+  if (supervisorApproved) {
+    insertData.approved_by_supervisor_id = payload.approved_by_supervisor_id;
+    insertData.approved_via_code_at = new Date().toISOString();
+  }
 
   const { data: request, error: reqErr } = await supabase
     .from('supply_requests')
@@ -335,7 +345,9 @@ export async function submitSupplyOrder(payload: SubmitOrderPayload) {
       .insert({
         request_id: request.id,
         status: approvalRequired ? 'pending_approval' : 'submitted',
-        notes: approvalReason || null,
+        notes: supervisorApproved
+          ? `Pre-approved via supervisor code${approvalReason ? ' — ' + approvalReason : ''}`
+          : approvalReason || null,
         changed_by: session.user.id,
         changed_at: new Date().toISOString(),
       });
