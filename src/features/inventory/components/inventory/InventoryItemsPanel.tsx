@@ -515,7 +515,20 @@ export const InventoryItemsPanel = () => {
             <span className="sm:hidden">Add</span>
           </Button>
         )}
+        {canDelete && (
+          <Button
+            variant="outline"
+            onClick={() => setManageCategoriesOpen(true)}
+            className="w-full sm:w-auto touch-target"
+          >
+            <FolderCog className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Manage Categories</span>
+            <span className="sm:hidden">Categories</span>
+          </Button>
+        )}
       </div>
+      <ManageCategoriesDialog open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen} />
+      <div className="hidden">{/* preserve original layout below */}</div>
 
       {/* Pagination Controls - Mobile Optimized */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2">
