@@ -95,7 +95,7 @@ export function SupplyEmailSettingsCard({ onTestSent }: SupplyEmailSettingsCardP
       toast({ title: 'Invalid email', variant: 'destructive' });
       return;
     }
-    if (settings.supply_team_recipients.includes(email)) {
+    if (settings.supply_team_recipients.some((existing) => existing.toLowerCase() === email.toLowerCase())) {
       toast({ title: 'Already added' });
       return;
     }
@@ -121,10 +121,20 @@ export function SupplyEmailSettingsCard({ onTestSent }: SupplyEmailSettingsCardP
     setTesting(false);
 
     if (error) {
+      let description = error.message;
+      const context = (error as { context?: { text?: () => Promise<string> } }).context;
+      if (context?.text) {
+        try {
+          const details = await context.text();
+          if (details) description = details;
+        } catch {
+          // Keep the Supabase client error message.
+        }
+      }
       logger.error('send supply team test email failed', error);
       toast({
         title: 'Test email failed',
-        description: error.message,
+        description,
         variant: 'destructive',
       });
       return;
