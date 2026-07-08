@@ -285,6 +285,8 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/supply-room',
       '/inventory',
       '/term-sheet',
+      '', // Separator
+      '/profile',
     ];
   }
 
