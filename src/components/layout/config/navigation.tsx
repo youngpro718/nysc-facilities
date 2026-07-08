@@ -126,7 +126,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   if (userRole === 'court_liaison') {
     return [
       { title: 'Term Sheet', icon: FileText },
-      { title: 'Supply Room', icon: Package2 },
       { title: 'My Requests', icon: FileText },
       { title: 'Notifications', icon: MessageSquare },
       { type: "separator" },
@@ -244,7 +243,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   if (userRole === 'court_liaison') {
     return [
       '/term-sheet',
-      '/supply-room',
       '/my-activity',
       '/notifications',
       '', // Separator

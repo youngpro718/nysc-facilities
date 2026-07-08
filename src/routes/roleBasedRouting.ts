@@ -94,7 +94,7 @@ export function hasModuleAccess(role: UserRole | string | null | undefined, modu
     // Gates the /supply-room fulfiller page. Standard users order via the
     // (unguarded) /request/supplies + /my-supply-requests flow, so they are
     // intentionally NOT here — they shouldn't see the fulfiller dashboard.
-    supply_requests: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'purchasing', 'court_aide'],
+    supply_requests: ['admin', 'system_admin', 'facilities_manager', 'purchasing', 'court_aide'],
     keys: ['admin', 'system_admin', 'facilities_manager', 'court_liaison', 'court_officer'],
     maintenance: ['admin', 'system_admin', 'facilities_manager'],
     court_operations: ['admin', 'system_admin', 'court_liaison'],
