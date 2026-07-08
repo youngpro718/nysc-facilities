@@ -127,10 +127,12 @@ export function SupplyFulfillmentPanel() {
         .eq('id', requestId);
 
       if (error) throw error;
+      return requestId;
     },
-    onSuccess: () => {
-      toast.success('Started fulfilling request');
+    onSuccess: (requestId) => {
+      toast.success('Started fulfilling — opening pick list');
       queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
+      navigate(`/supply-room?request=${requestId}`);
     },
     onError: (error: Error) => {
       toast.error('Failed to update request', { description: getErrorMessage(error) });
