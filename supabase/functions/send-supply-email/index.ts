@@ -26,6 +26,7 @@ const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : DEFAUL
 function getCorsHeaders(req: Request): Record<string, string> {
   const base = {
     "Access-Control-Allow-Headers": "authorization, x-client-info, x-supabase-api-version, apikey, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Vary": "Origin",
   };
   const origin = req.headers.get("Origin");
