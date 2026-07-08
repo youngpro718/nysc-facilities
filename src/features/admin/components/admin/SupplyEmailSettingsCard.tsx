@@ -2,7 +2,7 @@
 // Requester receipt + fulfillment emails always send; only the team alert
 // is gated by this toggle.
 import { useEffect, useState } from 'react';
-import { Mail, X, Plus, Loader2 } from 'lucide-react';
+import { Mail, X, Plus, Loader2, Send } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -18,12 +18,17 @@ interface Settings {
   supply_team_recipients: string[];
 }
 
+interface SupplyEmailSettingsCardProps {
+  onTestSent?: () => void;
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function SupplyEmailSettingsCard() {
+export function SupplyEmailSettingsCard({ onTestSent }: SupplyEmailSettingsCardProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [settings, setSettings] = useState<Settings>({
     supply_team_notifications_enabled: false,
     supply_team_recipients: [],
@@ -90,7 +95,7 @@ export function SupplyEmailSettingsCard() {
       toast({ title: 'Invalid email', variant: 'destructive' });
       return;
     }
-    if (settings.supply_team_recipients.includes(email)) {
+    if (settings.supply_team_recipients.some((existing) => existing.toLowerCase() === email.toLowerCase())) {
       toast({ title: 'Already added' });
       return;
     }
@@ -106,6 +111,41 @@ export function SupplyEmailSettingsCard() {
       ...settings,
       supply_team_recipients: settings.supply_team_recipients.filter((e) => e !== email),
     });
+  };
+
+  const sendTestEmail = async () => {
+    setTesting(true);
+    const { data, error } = await supabase.functions.invoke('send-supply-email', {
+      body: { type: 'team_test' },
+    });
+    setTesting(false);
+
+    if (error) {
+      let description = error.message;
+      const context = (error as { context?: { text?: () => Promise<string> } }).context;
+      if (context?.text) {
+        try {
+          const details = await context.text();
+          if (details) description = details;
+        } catch {
+          // Keep the Supabase client error message.
+        }
+      }
+      logger.error('send supply team test email failed', error);
+      toast({
+        title: 'Test email failed',
+        description,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const result = data?.result ?? {};
+    toast({
+      title: 'Test email sent',
+      description: `Status: ${result.last_event ?? 'sent'}${result.id ? ` · ${result.id}` : ''}`,
+    });
+    onTestSent?.();
   };
 
   return (
@@ -180,11 +220,27 @@ export function SupplyEmailSettingsCard() {
             <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
         </div>
-        {!settings.supply_team_notifications_enabled && (
-          <p className="text-xs text-muted-foreground">
-            Test mode — flip the toggle when you're ready to start alerting the supply team.
-          </p>
-        )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          {!settings.supply_team_notifications_enabled ? (
+            <p className="text-xs text-muted-foreground">
+              Test mode — flip the toggle when you're ready to start alerting the supply team.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Send a test to confirm delivery with the current recipient list.
+            </p>
+          )}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={sendTestEmail}
+            disabled={saving || testing || settings.supply_team_recipients.length === 0}
+          >
+            {testing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+            Send test
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,7 +1,7 @@
 // Admin Supply Requests — audit view of all supply requests
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Package, Clock, CheckCircle, XCircle, User, AlertTriangle, ChevronDown, ChevronUp, ShoppingCart, Search } from "lucide-react";
+import { Package, Clock, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, ShoppingCart, Search, Mail } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,24 @@ import { useToast } from "@shared/hooks/use-toast";
 import { getSupplyRequests } from '@features/supply/services/unifiedSupplyService';
 import { SupplyRequestActions } from "@features/supply/components/supply/SupplyRequestActions";
 import { SupplyEmailSettingsCard } from "@features/admin/components/admin/SupplyEmailSettingsCard";
+import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
+
+interface SupplyEmailDelivery {
+  id: string;
+  request_id: string | null;
+  email_type: string;
+  recipient: string;
+  sender: string;
+  subject: string;
+  provider_email_id: string | null;
+  provider_message_id: string | null;
+  status: string;
+  error_detail: string | null;
+  created_at: string;
+  sent_at: string | null;
+  delivered_at: string | null;
+}
 
 interface SupplyRequestWithUser {
   id: string;
@@ -56,6 +74,7 @@ interface SupplyRequestWithUser {
       };
     };
   }>;
+  email_deliveries?: SupplyEmailDelivery[];
 }
 
 const statusConfig: Record<string, { icon: typeof Clock; label: string; border: string }> = {
@@ -77,6 +96,19 @@ const priorityDot: Record<string, string> = {
   high: "bg-destructive",
   medium: "bg-amber-500",
   low: "bg-muted-foreground/50",
+};
+
+const emailStatusVariant = (status?: string): "default" | "secondary" | "destructive" | "outline" => {
+  if (status === "delivered") return "default";
+  if (status === "failed" || status === "bounced") return "destructive";
+  if (status === "sent" || status === "delivery_delayed") return "secondary";
+  return "outline";
+};
+
+const getLatestTeamDelivery = (request: SupplyRequestWithUser) => {
+  return (request.email_deliveries || [])
+    .filter((delivery) => delivery.email_type === 'new_request_team')
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
 };
 
 export default function AdminSupplyRequests() {
@@ -106,7 +138,34 @@ export default function AdminSupplyRequests() {
   const fetchRequests = async () => {
     try {
       const data = await getSupplyRequests();
-      setRequests(data as SupplyRequestWithUser[]);
+      const baseRequests = (data || []) as SupplyRequestWithUser[];
+      const requestIds = baseRequests.map((request) => request.id);
+      let deliveriesByRequest = new Map<string, SupplyEmailDelivery[]>();
+
+      if (requestIds.length > 0) {
+        const { data: deliveries, error: deliveriesError } = await (supabase as any)
+          .from('supply_email_deliveries')
+          .select('id, request_id, email_type, recipient, sender, subject, provider_email_id, provider_message_id, status, error_detail, created_at, sent_at, delivered_at')
+          .in('request_id', requestIds)
+          .order('created_at', { ascending: false });
+
+        if (deliveriesError) {
+          logger.error('Failed to fetch supply email deliveries', deliveriesError);
+        } else {
+          deliveriesByRequest = (deliveries || []).reduce((map: Map<string, SupplyEmailDelivery[]>, delivery: SupplyEmailDelivery) => {
+            if (!delivery.request_id) return map;
+            const current = map.get(delivery.request_id) || [];
+            current.push(delivery);
+            map.set(delivery.request_id, current);
+            return map;
+          }, new Map<string, SupplyEmailDelivery[]>());
+        }
+      }
+
+      setRequests(baseRequests.map((request) => ({
+        ...request,
+        email_deliveries: deliveriesByRequest.get(request.id) || [],
+      })));
     } catch (error) {
       toast({
         title: "Error",
@@ -164,7 +223,7 @@ export default function AdminSupplyRequests() {
         </Button>
       </PageHeader>
       <div className="mb-4">
-        <SupplyEmailSettingsCard />
+        <SupplyEmailSettingsCard onTestSent={fetchRequests} />
       </div>
 
       {/* Pending approval banner */}
@@ -266,6 +325,7 @@ export default function AdminSupplyRequests() {
             const isHighlighted = request.id === highlightedId;
             const itemCount = request.supply_request_items?.length || 0;
             const dotColor = priorityDot[request.priority] || priorityDot.low;
+            const latestTeamDelivery = getLatestTeamDelivery(request);
 
             return (
               <Card
@@ -298,6 +358,12 @@ export default function AdminSupplyRequests() {
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 flex-shrink-0">
                     {config.label}
                   </Badge>
+                  {latestTeamDelivery && (
+                    <Badge variant={emailStatusVariant(latestTeamDelivery.status)} className="hidden sm:inline-flex text-[10px] px-1.5 py-0.5 flex-shrink-0">
+                      <Mail className="h-3 w-3 mr-1" />
+                      {latestTeamDelivery.status}
+                    </Badge>
+                  )}
 
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <SupplyRequestActions
@@ -386,6 +452,44 @@ export default function AdminSupplyRequests() {
                           <p className="text-xs text-muted-foreground">Location</p>
                           <p>{request.delivery_location}</p>
                         </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="font-medium text-xs text-muted-foreground">Email delivery</p>
+                      {request.email_deliveries && request.email_deliveries.length > 0 ? (
+                        <div className="space-y-2">
+                          {request.email_deliveries.map((delivery) => (
+                            <div key={delivery.id} className="rounded-md border bg-background/60 p-3 text-sm">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant={emailStatusVariant(delivery.status)} className="capitalize">
+                                  {delivery.status.replace(/_/g, ' ')}
+                                </Badge>
+                                <span className="font-medium">
+                                  {delivery.email_type === 'new_request_team' ? 'Supply team alert' : delivery.email_type.replace(/_/g, ' ')}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(delivery.created_at), "MMM d, h:mm a")}
+                                </span>
+                              </div>
+                              <div className="mt-2 grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                                <p><span className="text-foreground">To:</span> {delivery.recipient}</p>
+                                <p><span className="text-foreground">From:</span> {delivery.sender}</p>
+                                {delivery.provider_email_id && (
+                                  <p className="break-all"><span className="text-foreground">Resend ID:</span> {delivery.provider_email_id}</p>
+                                )}
+                                {delivery.provider_message_id && (
+                                  <p className="break-all"><span className="text-foreground">Message ID:</span> {delivery.provider_message_id}</p>
+                                )}
+                                {delivery.error_detail && (
+                                  <p className="break-words text-destructive sm:col-span-2">{delivery.error_detail}</p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No delivery record yet for this request.</p>
                       )}
                     </div>
 

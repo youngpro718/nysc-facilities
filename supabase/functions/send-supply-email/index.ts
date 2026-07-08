@@ -84,8 +84,14 @@ interface StatusHistoryRow {
 }
 
 interface EmailPayload {
-  type: "receipt" | "fulfilled" | "new_request_team";
-  requestId: string;
+  type: "receipt" | "fulfilled" | "new_request_team" | "team_test";
+  requestId?: string;
+}
+
+interface ResendEmailDetails {
+  id?: string;
+  message_id?: string | null;
+  last_event?: string | null;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -136,6 +142,90 @@ function getReceiptTitle(type: "receipt" | "fulfilled"): string {
 
 function getStatusDisplay(status: string): string {
   return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function normalizeRecipients(recipients: unknown): string[] {
+  if (!Array.isArray(recipients)) return [];
+  return Array.from(
+    new Set(
+      recipients
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim().toLowerCase())
+        .filter((value) => value.includes("@")),
+    ),
+  );
+}
+
+async function fetchResendEmailDetails(resendKey: string, emailId: string): Promise<ResendEmailDetails | null> {
+  try {
+    const response = await fetch(`https://api.resend.com/emails/${encodeURIComponent(emailId)}`, {
+      headers: { "Authorization": `Bearer ${resendKey}` },
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to fetch Resend email details", { emailId, error });
+    return null;
+  }
+}
+
+async function recordEmailDeliveries(
+  supabase: ReturnType<typeof createClient>,
+  details: {
+    requestId: string | null;
+    emailType: EmailPayload["type"];
+    recipients: string[];
+    sender: string;
+    subject: string;
+    providerEmailId?: string | null;
+    providerMessageId?: string | null;
+    status: string;
+    errorDetail?: string | null;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  const now = new Date().toISOString();
+  const rows = details.recipients.map((recipient) => ({
+    request_id: details.requestId,
+    email_type: details.emailType,
+    recipient,
+    sender: details.sender,
+    subject: details.subject,
+    provider: "resend",
+    provider_email_id: details.providerEmailId ?? null,
+    provider_message_id: details.providerMessageId ?? null,
+    status: details.status,
+    error_detail: details.errorDetail ?? null,
+    metadata: details.metadata ?? {},
+    sent_at: ["sent", "delivered", "delivery_delayed"].includes(details.status) ? now : null,
+    delivered_at: details.status === "delivered" ? now : null,
+  }));
+
+  if (rows.length === 0) return;
+
+  const { error } = await supabase.from("supply_email_deliveries").insert(rows);
+  if (error) {
+    console.error("Failed to record supply email deliveries", {
+      message: getErrorMessage(error),
+      recipients: details.recipients,
+      emailType: details.emailType,
+    });
+  }
+}
+
+async function userCanSendTeamTest(supabase: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  const allowedRoles = ["admin", "facilities_manager", "purchasing", "purchasing_staff", "supply_room_staff"];
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", allowedRoles);
+
+  if (error) {
+    console.error("Failed to check supply email test permissions", error);
+    return false;
+  }
+  return (data ?? []).length > 0;
 }
 
 // ─── Signed deep link ──────────────────────────────────────────────────────────
@@ -562,6 +652,10 @@ async function sendReceiptEmail(
   const resendKey = Deno.env.get("RESEND_API_KEY");
   if (!resendKey) throw new Error("RESEND_API_KEY not configured");
 
+  const supabase = getServiceClient();
+  const recipients = normalizeRecipients([requester.email]);
+  if (recipients.length === 0) throw new Error("Requester has no valid email");
+
   const pdf = await generateReceiptPdf(type, request, requester, items, history, completedBy);
   const base64 = btoa(String.fromCharCode(...pdf));
   const filename = type === "receipt"
@@ -585,7 +679,7 @@ async function sendReceiptEmail(
     },
     body: JSON.stringify({
       from: FROM_EMAIL,
-      to: [requester.email],
+      to: recipients,
       subject,
       html,
       attachments: [
@@ -596,10 +690,37 @@ async function sendReceiptEmail(
 
   if (!response.ok) {
     const text = await response.text();
+    await recordEmailDeliveries(supabase, {
+      requestId: request.id,
+      emailType: type,
+      recipients,
+      sender: FROM_EMAIL,
+      subject,
+      status: "failed",
+      errorDetail: `Resend error ${response.status}: ${text}`,
+      metadata: { displayId: formatRequestId(request) },
+    });
     throw new Error(`Resend error ${response.status}: ${text}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+  const providerEmailId = typeof result?.id === "string" ? result.id : null;
+  const providerDetails = providerEmailId ? await fetchResendEmailDetails(resendKey, providerEmailId) : null;
+  const status = providerDetails?.last_event ?? "sent";
+
+  await recordEmailDeliveries(supabase, {
+    requestId: request.id,
+    emailType: type,
+    recipients,
+    sender: FROM_EMAIL,
+    subject,
+    providerEmailId,
+    providerMessageId: providerDetails?.message_id ?? null,
+    status,
+    metadata: { displayId: formatRequestId(request), attachment: filename },
+  });
+
+  return { ...result, last_event: status, message_id: providerDetails?.message_id ?? null };
 }
 
 async function sendTeamAlert(request: SupplyRequest, requester: Requester) {
@@ -616,7 +737,7 @@ async function sendTeamAlert(request: SupplyRequest, requester: Requester) {
   if (settingsError) throw settingsError;
   if (!settings?.supply_team_notifications_enabled) return { skipped: true };
 
-  const recipients = (settings.supply_team_recipients || []).filter((e: string) => typeof e === "string" && e.includes("@"));
+  const recipients = normalizeRecipients(settings.supply_team_recipients || []);
   if (recipients.length === 0) return { skipped: true };
 
   console.log("send-supply-email team alert recipients", {
@@ -626,8 +747,9 @@ async function sendTeamAlert(request: SupplyRequest, requester: Requester) {
     from: FROM_EMAIL,
   });
 
-  const deepLink = `${APP_URL}/admin/supply-requests?focus=${encodeURIComponent(request.id)}`;
+  const deepLink = `${APP_URL}/admin/supply-requests?id=${encodeURIComponent(request.id)}`;
   const html = teamAlertHtml(request, requester, deepLink);
+  const subject = `New supply request: ${formatRequestId(request)} — ${request.title}`;
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -638,24 +760,124 @@ async function sendTeamAlert(request: SupplyRequest, requester: Requester) {
     body: JSON.stringify({
       from: FROM_EMAIL,
       to: recipients,
-      subject: `New supply request: ${formatRequestId(request)} — ${request.title}`,
+      subject,
       html,
     }),
   });
 
   if (!response.ok) {
     const text = await response.text();
+    await recordEmailDeliveries(supabase, {
+      requestId: request.id,
+      emailType: "new_request_team",
+      recipients,
+      sender: FROM_EMAIL,
+      subject,
+      status: "failed",
+      errorDetail: `Resend error ${response.status}: ${text}`,
+      metadata: { displayId: formatRequestId(request) },
+    });
     throw new Error(`Resend error ${response.status}: ${text}`);
   }
 
   const result = await response.json();
+  const providerEmailId = typeof result?.id === "string" ? result.id : null;
+  const providerDetails = providerEmailId ? await fetchResendEmailDetails(resendKey, providerEmailId) : null;
+  const status = providerDetails?.last_event ?? "sent";
+
+  await recordEmailDeliveries(supabase, {
+    requestId: request.id,
+    emailType: "new_request_team",
+    recipients,
+    sender: FROM_EMAIL,
+    subject,
+    providerEmailId,
+    providerMessageId: providerDetails?.message_id ?? null,
+    status,
+    metadata: { displayId: formatRequestId(request) },
+  });
+
   console.log("send-supply-email team alert sent", {
     requestId: request.id,
     displayId: formatRequestId(request),
     recipients,
-    result,
+    result: { ...result, last_event: status, message_id: providerDetails?.message_id ?? null },
   });
-  return result;
+  return { ...result, last_event: status, message_id: providerDetails?.message_id ?? null };
+}
+
+async function sendTeamTestEmail() {
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) throw new Error("RESEND_API_KEY not configured");
+
+  const supabase = getServiceClient();
+  const { data: settings, error: settingsError } = await supabase
+    .from("supply_email_settings")
+    .select("supply_team_notifications_enabled, supply_team_recipients")
+    .eq("id", true)
+    .maybeSingle();
+
+  if (settingsError) throw settingsError;
+  const recipients = normalizeRecipients(settings?.supply_team_recipients || []);
+  if (recipients.length === 0) return { skipped: true, reason: "No supply team recipients configured" };
+
+  const subject = `NYSC Facilities Hub supply email test — ${formatDateTime(new Date().toISOString())}`;
+  const html = `<!doctype html>
+<html>
+  <body style="font-family:Arial,sans-serif;max-width:600px;margin:24px auto;color:#111;">
+    <h2 style="color:#2563eb;">NYSC Facilities Hub</h2>
+    <h1>Supply email test</h1>
+    <p>This confirms supply team email alerts are sending from <strong>${escapeHtml(FROM_EMAIL)}</strong>.</p>
+    <p><strong>Recipients:</strong> ${escapeHtml(recipients.join(", "))}</p>
+    <p><a href="${APP_URL}/admin/supply-requests" style="display:inline-block;padding:12px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Open supply requests</a></p>
+  </body>
+</html>`;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${resendKey}`,
+    },
+    body: JSON.stringify({
+      from: FROM_EMAIL,
+      to: recipients,
+      subject,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    await recordEmailDeliveries(supabase, {
+      requestId: null,
+      emailType: "team_test",
+      recipients,
+      sender: FROM_EMAIL,
+      subject,
+      status: "failed",
+      errorDetail: `Resend error ${response.status}: ${text}`,
+    });
+    throw new Error(`Resend error ${response.status}: ${text}`);
+  }
+
+  const result = await response.json();
+  const providerEmailId = typeof result?.id === "string" ? result.id : null;
+  const providerDetails = providerEmailId ? await fetchResendEmailDetails(resendKey, providerEmailId) : null;
+  const status = providerDetails?.last_event ?? "sent";
+
+  await recordEmailDeliveries(supabase, {
+    requestId: null,
+    emailType: "team_test",
+    recipients,
+    sender: FROM_EMAIL,
+    subject,
+    providerEmailId,
+    providerMessageId: providerDetails?.message_id ?? null,
+    status,
+  });
+
+  return { ...result, recipients, last_event: status, message_id: providerDetails?.message_id ?? null };
 }
 
 // ─── HTML templates ───────────────────────────────────────────────────────────
@@ -782,15 +1004,39 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = (await req.json()) as EmailPayload;
-    if (!body?.requestId || !isUuid(body.requestId) || !["receipt", "fulfilled", "new_request_team"].includes(body.type)) {
+    if (!body?.type || !["receipt", "fulfilled", "new_request_team", "team_test"].includes(body.type)) {
       return new Response(
-        JSON.stringify({ error: "Invalid payload: valid type and requestId required" }),
+        JSON.stringify({ error: "Invalid payload: valid type required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const supabase = getServiceClient();
-    const { request, requester, items, history, completedBy } = await fetchRequestData(supabase, body.requestId);
+    const userId = String(claimsData.claims.sub ?? "");
+    const serviceClient = getServiceClient();
+
+    if (body.type === "team_test") {
+      if (!userId || !(await userCanSendTeamTest(serviceClient, userId))) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const result = await sendTeamTestEmail();
+      return new Response(
+        JSON.stringify({ success: true, result }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!body.requestId || !isUuid(body.requestId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid payload: valid requestId required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { request, requester, items, history, completedBy } = await fetchRequestData(serviceClient, body.requestId);
 
     if (!requester.email) {
       return new Response(
