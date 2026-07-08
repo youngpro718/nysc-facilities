@@ -528,7 +528,6 @@ export const InventoryItemsPanel = () => {
         )}
       </div>
       <ManageCategoriesDialog open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen} />
-      <div className="hidden">{/* preserve original layout below */}</div>
 
       {/* Pagination Controls - Mobile Optimized */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2">
