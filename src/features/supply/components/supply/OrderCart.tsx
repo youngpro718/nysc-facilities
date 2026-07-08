@@ -521,6 +521,30 @@ export function OrderCart({
                 )}
               </div>
             )}
+            {needsApproval && (
+              <div className="space-y-1.5 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5">
+                <Label htmlFor="supervisor-code" className="text-xs font-medium">
+                  Supervisor code required
+                </Label>
+                <Input
+                  id="supervisor-code"
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={supervisorCode}
+                  onChange={(e) => { setSupervisorCode(e.target.value); if (supervisorCodeError) setSupervisorCodeError(null); }}
+                  placeholder="Enter your supervisor's 4-digit code"
+                  className="h-10"
+                />
+                {supervisorCodeError ? (
+                  <p className="text-xs text-destructive">{supervisorCodeError}</p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    Your supervisor gives you their code once. Entering it approves this order instantly and posts a notice on their requests page so they know it was used.
+                  </p>
+                )}
+              </div>
+            )}
             <Button
               type="button"
               onClick={handleSubmit}
@@ -534,10 +558,10 @@ export function OrderCart({
                   ? 'Checking code…'
                   : missingLocation
                     ? 'Add a delivery location to submit'
-                    : requiresOrderCode
-                      ? `Authorize & submit (${totalItems} item${totalItems === 1 ? '' : 's'})`
-                      : needsApproval
-                        ? `Send ${totalItems} item${totalItems === 1 ? '' : 's'} for approval`
+                    : needsApproval
+                      ? `Approve & submit (${totalItems} item${totalItems === 1 ? '' : 's'})`
+                      : requiresOrderCode
+                        ? `Authorize & submit (${totalItems} item${totalItems === 1 ? '' : 's'})`
                         : `Submit order (${totalItems} item${totalItems === 1 ? '' : 's'})`}
             </Button>
           </div>
