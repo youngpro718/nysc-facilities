@@ -14,6 +14,11 @@ import { useToast } from '@shared/hooks/use-toast';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { MyRoomSection } from './MyRoomSection';
+import {
+  getDesktopNotificationPermission,
+  isDesktopNotificationSupported,
+  requestDesktopNotificationPermission,
+} from '@/shared/utils/desktopNotifications';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -206,9 +211,26 @@ export function EnhancedUserSettings() {
             />
             <SettingsRow
               label={<span className="flex items-center gap-2"><Monitor className="h-4 w-4" />Desktop Notifications</span>}
-              description="Show browser notifications"
-              checked={settings.desktop_notifications}
-              onCheckedChange={v => updateSetting('desktop_notifications', v)}
+              description={
+                !isDesktopNotificationSupported()
+                  ? 'Your browser does not support desktop notifications'
+                  : getDesktopNotificationPermission() === 'denied'
+                    ? 'Blocked in your browser — enable notifications for this site in your browser settings'
+                    : getDesktopNotificationPermission() === 'granted'
+                      ? 'Show browser notifications when new activity arrives'
+                      : 'Show browser notifications — we will ask for permission when you turn this on'
+              }
+              checked={settings.desktop_notifications && getDesktopNotificationPermission() === 'granted'}
+              onCheckedChange={async (v) => {
+                if (v) {
+                  const perm = await requestDesktopNotificationPermission();
+                  if (perm !== 'granted') {
+                    updateSetting('desktop_notifications', false);
+                    return;
+                  }
+                }
+                updateSetting('desktop_notifications', v);
+              }}
             />
           </div>
 

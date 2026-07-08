@@ -22,6 +22,8 @@ import { CreateItemDialog } from "./CreateItemDialog";
 import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
 import { ItemPhotoUpload } from "./ItemPhotoUpload";
+import { ManageCategoriesDialog } from "./ManageCategoriesDialog";
+import { FolderCog } from "lucide-react";
 import { useToast } from "@shared/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useInventoryRealtimeSync } from "@features/inventory/hooks/useOptimizedInventory";
@@ -87,6 +89,7 @@ export const InventoryItemsPanel = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
@@ -512,7 +515,19 @@ export const InventoryItemsPanel = () => {
             <span className="sm:hidden">Add</span>
           </Button>
         )}
+        {canDelete && (
+          <Button
+            variant="outline"
+            onClick={() => setManageCategoriesOpen(true)}
+            className="w-full sm:w-auto touch-target"
+          >
+            <FolderCog className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Manage Categories</span>
+            <span className="sm:hidden">Categories</span>
+          </Button>
+        )}
       </div>
+      <ManageCategoriesDialog open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen} />
 
       {/* Pagination Controls - Mobile Optimized */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2">
