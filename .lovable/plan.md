@@ -1,27 +1,20 @@
-## Root cause
+## What's happening
 
-The `handle_new_user()` trigger fires on `auth.users` insert and tries:
+Signup now succeeds at the auth layer, but no `profiles` row is created — so the admin "pending verification" list stays empty.
 
-```sql
-INSERT INTO public.user_roles (user_id, role)
-VALUES (NEW.id, v_assigned_role)
-ON CONFLICT (user_id) DO UPDATE ...
-```
+Root cause: `public.profiles` has a `UNIQUE` index on `email` (`idx_profiles_email`). An orphan profile with `email = jduchate@nycourts.gov` exists under a **different** `id` (`272dfe36-…`) with no matching `auth.users` row. When the new signup fires `handle_new_user()`, the `INSERT … ON CONFLICT (id)` doesn't help — the conflict is on `email`, not `id` — so the insert throws `23505`. Because we recently wrapped the profile insert in `EXCEPTION WHEN OTHERS`, signup completes but the profile is silently skipped. Only the `user_roles` row gets created, and the admin queue (which reads `profiles` where `verification_status = 'pending'`) never sees the user.
 
-But `public.user_roles` has **no unique constraint on `user_id`** (only a PK on `id`). Postgres rejects the `ON CONFLICT (user_id)` clause with *"no unique or exclusion constraint matching the ON CONFLICT specification"*, which surfaces to signup as **"Database error creating a new user."**
+## Fix (single migration + one data patch)
 
-Additionally, the `user_roles_approved_roles_only` CHECK constraint whitelist is missing `court_liaison`, so any signup whose `requested_role` resolves to `court_liaison` would also fail.
+1. **Data cleanup** — delete orphan profiles (rows in `profiles` with no matching row in `auth.users`). These are safe to drop; they can't ever log in.
+2. **Backfill** the profile for `jduchate@nycourts.gov` (auth id `2b42aa8c-…`) so admin verification sees it.
+3. **Harden `handle_new_user()`** — before inserting the profile, delete any orphan profile whose `email = NEW.email` and whose `id` is not in `auth.users`. This guarantees the unique-email index never blocks a legitimate new signup.
+4. Keep the existing `EXCEPTION WHEN OTHERS` guard but also `RAISE WARNING` with the full `SQLERRM` for future diagnostics.
 
-## Fix (single migration)
-
-1. De-duplicate any existing rows in `public.user_roles` per `user_id` (keep the newest), so a unique index can be added safely.
-2. Add `UNIQUE (user_id)` on `public.user_roles` — this is what `ON CONFLICT (user_id)` needs.
-3. Replace `user_roles_approved_roles_only` CHECK with one that also allows `court_liaison` (still excludes non-enum values like `system_admin`, which is intentionally not in the enum).
-4. Leave `handle_new_user()` unchanged — it's correct once the unique constraint exists.
-
-No frontend changes. No changes to auth flow, RLS, or other tables.
+No frontend changes. No auth flow changes. No RLS changes.
 
 ## Verification
 
-- Run `SELECT auth.uid()` isn't needed; instead sign up a brand-new email from the login page and confirm the account is created and a `profiles` + `user_roles` row appear.
-- Confirm existing 10 `user_roles` rows survive (no data loss).
+- Confirm `jduchate@nycourts.gov` now appears in the admin verification queue.
+- Sign up a new test account with a fresh email → confirm a `profiles` row is created with `verification_status = 'pending'` and appears in the admin queue.
+- Run the "orphan-with-same-email" scenario (manually leave a stale profile and try re-signup) → confirm signup + profile creation succeed.
