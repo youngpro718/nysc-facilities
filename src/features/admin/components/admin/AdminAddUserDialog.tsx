@@ -117,7 +117,7 @@ export function AdminAddUserDialog({ open, onOpenChange, onSuccess }: AdminAddUs
   };
 
   const handleClose = () => {
-    setForm({ firstName: "", lastName: "", email: "", password: "", title: "", requestedRole: "standard" });
+    setForm({ firstName: "", lastName: "", email: "", password: "", requestedRole: "standard" });
     setError("");
     setCreated(null);
     setCopied(false);
