@@ -283,6 +283,22 @@ export function ImprovedSupplyStaffDashboard() {
     };
   }, []);
 
+  // Deep-link: ?request=<id> auto-opens the fulfillment dialog for that request
+  const requestIdParam = searchParams.get('request');
+  useEffect(() => {
+    if (!requestIdParam || !allOrders) return;
+    const order = allOrders.find((o: any) => o.id === requestIdParam);
+    if (!order) return;
+    // Switch to the right tab first so the order is visible behind the dialog
+    if (order.status === 'ready') setActiveTab('ready');
+    else if (['submitted', 'approved', 'received', 'picking'].includes(order.status)) setActiveTab('new');
+    setSelectedOrder(order);
+    // Clear the param so refreshes/back nav don't re-open
+    const next = new URLSearchParams(searchParams);
+    next.delete('request');
+    setSearchParams(next, { replace: true });
+  }, [requestIdParam, allOrders]);
+
   // Filter orders by status and search
   const ordersToFilter = activeTab === 'completed' ? (completedOrders || []) : (allOrders || []);
   
