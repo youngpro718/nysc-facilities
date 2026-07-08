@@ -5,12 +5,13 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Package, User, Clock, CheckCircle, PackageCheck, AlertCircle } from 'lucide-react';
+import { Loader2, Package, User, Clock, CheckCircle, PackageCheck, AlertCircle, ExternalLink } from 'lucide-react';
 import { formatDateTime } from '@/lib/dateTime';
 import { toast } from 'sonner';
 import { useAuth } from '@features/auth/hooks/useAuth';
