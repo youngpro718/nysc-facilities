@@ -41,6 +41,7 @@ interface SupplyRequest {
 export function SupplyFulfillmentPanel() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch pending/in-progress supply requests
   const { data: requests, isLoading, isError } = useQuery({
