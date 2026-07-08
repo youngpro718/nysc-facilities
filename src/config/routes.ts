@@ -55,12 +55,26 @@ export const routes: Record<string, RouteConfig> = {
     icon: FileText,
     parent: '/dashboard',
   },
+  '/my-requests': {
+    path: '/my-requests',
+    title: 'My Requests',
+    breadcrumbLabel: 'My Requests',
+    icon: FileText,
+    parent: '/dashboard',
+  },
+  '/supplies': {
+    path: '/supplies',
+    title: 'Supplies & Requests',
+    breadcrumbLabel: 'New Request',
+    icon: Package,
+    parent: '/my-requests',
+  },
   '/my-supply-requests': {
     path: '/my-supply-requests',
     title: 'My Supply Requests',
     breadcrumbLabel: 'Supply Requests',
     icon: Package,
-    parent: '/my-activity',
+    parent: '/my-requests',
   },
   '/my-issues': {
     path: '/my-issues',
@@ -152,6 +166,20 @@ export const routes: Record<string, RouteConfig> = {
     icon: KeyRound,
     parent: '/keys',
   },
+  '/keys/kiosk': {
+    path: '/keys/kiosk',
+    title: 'Keys Kiosk',
+    breadcrumbLabel: 'Kiosk',
+    icon: KeyRound,
+    parent: '/keys',
+  },
+  '/lighting/report': {
+    path: '/lighting/report',
+    title: 'Report Lighting',
+    breadcrumbLabel: 'Report Lighting',
+    icon: AlertTriangle,
+    parent: '/operations',
+  },
   '/notifications': {
     path: '/notifications',
     title: 'Notifications',
@@ -204,12 +232,32 @@ export const routes: Record<string, RouteConfig> = {
   },
   
   // Public pages
+  '/occupants': {
+    path: '/occupants',
+    title: 'Personnel',
+    breadcrumbLabel: 'Personnel',
+    icon: UserCog,
+    parent: '/',
+  },
   '/term-sheet': {
     path: '/term-sheet',
     title: 'Court Operations',
     breadcrumbLabel: 'Court Operations',
     icon: FileText,
     parent: '/dashboard',
+  },
+  '/courtrooms': {
+    path: '/courtrooms',
+    title: 'Courtrooms',
+    breadcrumbLabel: 'Courtrooms',
+    icon: Building2,
+    parent: '/term-sheet',
+  },
+  '/command-center': {
+    path: '/command-center',
+    title: 'Command Center',
+    breadcrumbLabel: 'Command Center',
+    icon: LayoutDashboard,
   },
 };
 

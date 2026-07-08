@@ -1,10 +1,11 @@
 import * as z from "zod";
 
-const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+const phoneRegex = /^[\d\s\-+()]+$/;
 
 export const JOB_TITLES = [
   "Court Officer",
   "Court Analyst",
+  "Assistant Court Analyst",
   "Court Clerk",
   "Sergeant",
   "Lieutenant",

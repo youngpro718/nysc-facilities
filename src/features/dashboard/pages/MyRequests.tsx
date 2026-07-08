@@ -13,6 +13,12 @@ import { PageHeader } from '@/components/layout/PageHeader';
 type Filter = 'all' | 'open' | 'done';
 type TypeFilter = 'all' | 'supply' | 'request';
 
+const TYPE_FILTERS: TypeFilter[] = ['all', 'supply', 'request'];
+
+function getTypeFilter(value: string | null): TypeFilter {
+  return TYPE_FILTERS.includes(value as TypeFilter) ? (value as TypeFilter) : 'all';
+}
+
 const OPEN_SUPPLY = new Set([
   'submitted',
   'pending_approval',
@@ -36,9 +42,14 @@ export default function MyRequests() {
   const { data: rows = [], isLoading, error } = useMyRequests();
   const [params, setParams] = useSearchParams();
   const focusId = params.get('focus');
+  const typeParam = params.get('type');
   const [filter, setFilter] = useState<Filter>('all');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>(() => getTypeFilter(typeParam));
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTypeFilter(getTypeFilter(typeParam));
+  }, [typeParam]);
 
   useEffect(() => {
     if (!focusId) return;
@@ -52,6 +63,17 @@ export default function MyRequests() {
     }, 3000);
     return () => clearTimeout(timer);
   }, [focusId, params, setParams]);
+
+  const handleTypeFilterChange = (nextType: TypeFilter) => {
+    setTypeFilter(nextType);
+    const next = new URLSearchParams(params);
+    if (nextType === 'all') {
+      next.delete('type');
+    } else {
+      next.set('type', nextType);
+    }
+    setParams(next, { replace: true });
+  };
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -86,13 +108,13 @@ export default function MyRequests() {
           </Button>
         ))}
         <div className="w-px h-6 bg-border mx-1" />
-        {(['all', 'supply', 'request'] as TypeFilter[]).map((t) => (
+        {TYPE_FILTERS.map((t) => (
           <Button
             key={t}
             type="button"
             variant={typeFilter === t ? 'secondary' : 'ghost'}
             size="sm"
-            onClick={() => setTypeFilter(t)}
+            onClick={() => handleTypeFilterChange(t)}
             className="capitalize"
           >
             {t === 'all' ? 'All types' : t}

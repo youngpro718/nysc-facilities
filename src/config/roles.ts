@@ -83,7 +83,10 @@ export const SYSTEM_ROLES: readonly RoleConfig[] = [
 // Court Officer is included so officers of all levels can request the role (admin approval required)
 // Excludes admin-tier roles — those can only be assigned by existing administrators
 export const SIGNUP_ROLE_OPTIONS = SYSTEM_ROLES
-  .filter(r => !(['admin', 'system_admin', 'facilities_manager'] as string[]).includes(r.value))
+  // Self-signup offers only the four roles that matter day-to-day:
+  // Court Officer, Court Liaison, Court Aide, and User (everyone else).
+  // Purchasing and the admin-tier roles are assigned by an administrator.
+  .filter(r => !(['admin', 'system_admin', 'facilities_manager', 'purchasing'] as string[]).includes(r.value))
   .map(r => ({
     value: r.value,
     label: r.label,
