@@ -214,7 +214,7 @@ async function recordEmailDeliveries(
 }
 
 async function userCanSendTeamTest(supabase: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
-  const allowedRoles = ["admin", "system_admin", "facilities_manager", "purchasing", "purchasing_staff", "supply_room_staff"];
+  const allowedRoles = ["admin", "facilities_manager", "purchasing", "purchasing_staff", "supply_room_staff"];
   const { data, error } = await supabase
     .from("user_roles")
     .select("role")
@@ -1004,15 +1004,39 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = (await req.json()) as EmailPayload;
-    if (!body?.requestId || !isUuid(body.requestId) || !["receipt", "fulfilled", "new_request_team"].includes(body.type)) {
+    if (!body?.type || !["receipt", "fulfilled", "new_request_team", "team_test"].includes(body.type)) {
       return new Response(
-        JSON.stringify({ error: "Invalid payload: valid type and requestId required" }),
+        JSON.stringify({ error: "Invalid payload: valid type required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const supabase = getServiceClient();
-    const { request, requester, items, history, completedBy } = await fetchRequestData(supabase, body.requestId);
+    const userId = String(claimsData.claims.sub ?? "");
+    const serviceClient = getServiceClient();
+
+    if (body.type === "team_test") {
+      if (!userId || !(await userCanSendTeamTest(serviceClient, userId))) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const result = await sendTeamTestEmail();
+      return new Response(
+        JSON.stringify({ success: true, result }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!body.requestId || !isUuid(body.requestId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid payload: valid requestId required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { request, requester, items, history, completedBy } = await fetchRequestData(serviceClient, body.requestId);
 
     if (!requester.email) {
       return new Response(
