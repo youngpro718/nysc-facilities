@@ -3,6 +3,7 @@ import { useAuth } from '@features/auth/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
+import { showDesktopNotification } from '@/shared/utils/desktopNotifications';
 
 interface RealtimeNotificationHook {
   isConnected: boolean;
