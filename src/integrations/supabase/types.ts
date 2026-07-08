@@ -7347,6 +7347,71 @@ export type Database = {
         }
         Relationships: []
       }
+      supply_email_deliveries: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          email_type: string
+          error_detail: string | null
+          id: string
+          metadata: Json
+          provider: string
+          provider_email_id: string | null
+          provider_message_id: string | null
+          recipient: string
+          request_id: string | null
+          sender: string
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          email_type: string
+          error_detail?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string
+          provider_email_id?: string | null
+          provider_message_id?: string | null
+          recipient: string
+          request_id?: string | null
+          sender: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          email_type?: string
+          error_detail?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string
+          provider_email_id?: string | null
+          provider_message_id?: string | null
+          recipient?: string
+          request_id?: string | null
+          sender?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_email_deliveries_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "supply_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supply_email_settings: {
         Row: {
           id: boolean
