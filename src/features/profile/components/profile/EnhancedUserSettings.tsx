@@ -14,6 +14,11 @@ import { useToast } from '@shared/hooks/use-toast';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { MyRoomSection } from './MyRoomSection';
+import {
+  getDesktopNotificationPermission,
+  isDesktopNotificationSupported,
+  requestDesktopNotificationPermission,
+} from '@/shared/utils/desktopNotifications';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
