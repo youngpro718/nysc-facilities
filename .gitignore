@@ -42,7 +42,10 @@ test-results/
 
 # Database and infrastructure
 sql/
-supabase/
+supabase/*
+!supabase/config.toml
+!supabase/functions/
+!supabase/functions/**
 *.sql
 !db/**/*.sql
 
