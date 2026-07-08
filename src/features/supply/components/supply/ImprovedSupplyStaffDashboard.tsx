@@ -36,6 +36,8 @@ import { useAuth } from '@features/auth/hooks/useAuth';
 export function ImprovedSupplyStaffDashboard() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<Record<string, unknown> | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('new');
