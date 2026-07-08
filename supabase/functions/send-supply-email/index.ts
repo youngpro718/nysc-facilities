@@ -43,7 +43,7 @@ function originAllowed(req: Request): boolean {
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
 const APP_URL = Deno.env.get("APP_URL") ?? "https://nyscfhub.com";
-const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "NYSC Facilities Hub <onboarding@resend.dev>";
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "NYSC Facilities Hub <notifications@nyscfhub.com>";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface RequestItem {
@@ -619,6 +619,13 @@ async function sendTeamAlert(request: SupplyRequest, requester: Requester) {
   const recipients = (settings.supply_team_recipients || []).filter((e: string) => typeof e === "string" && e.includes("@"));
   if (recipients.length === 0) return { skipped: true };
 
+  console.log("send-supply-email team alert recipients", {
+    requestId: request.id,
+    displayId: formatRequestId(request),
+    recipients,
+    from: FROM_EMAIL,
+  });
+
   const deepLink = `${APP_URL}/admin/supply-requests?focus=${encodeURIComponent(request.id)}`;
   const html = teamAlertHtml(request, requester, deepLink);
 
@@ -641,7 +648,14 @@ async function sendTeamAlert(request: SupplyRequest, requester: Requester) {
     throw new Error(`Resend error ${response.status}: ${text}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log("send-supply-email team alert sent", {
+    requestId: request.id,
+    displayId: formatRequestId(request),
+    recipients,
+    result,
+  });
+  return result;
 }
 
 // ─── HTML templates ───────────────────────────────────────────────────────────
