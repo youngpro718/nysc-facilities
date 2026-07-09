@@ -93,6 +93,7 @@ export function useInventory(roomId: string) {
           status: item.status || 'active',
           storage_room_id: roomId,
           category_id: item.category_id || null, // This is the key fix - use category_id not category
+          photo_url: item.photo_url || null,
         }));
 
         logger.debug('Transformed items for database:', transformedItems);

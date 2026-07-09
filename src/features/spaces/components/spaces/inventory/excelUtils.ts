@@ -14,6 +14,7 @@ export interface InventoryExcelRow {
   preferred_vendor?: string;
   status?: string;
   notes?: string;
+  photo_url?: string;
 }
 
 // Field mapping for flexible import
@@ -27,7 +28,8 @@ const FIELD_MAPPINGS: Record<string, string[]> = {
   'location_details': ['location_details', 'location', 'storage_location'],
   'preferred_vendor': ['preferred_vendor', 'vendor', 'supplier'],
   'status': ['status', 'state'],
-  'notes': ['notes', 'comments', 'remarks']
+  'notes': ['notes', 'comments', 'remarks'],
+  'photo_url': ['photo_url', 'photo', 'image', 'image_url', 'picture', 'picture_url']
 };
 
 // Normalize field names for flexible mapping
@@ -70,7 +72,8 @@ export const generateTemplate = () => {
       location_details: "Supply Room A, Shelf 1",
       preferred_vendor: "Office Depot",
       status: "active",
-      notes: "Bulk purchase recommended"
+      notes: "Bulk purchase recommended",
+      photo_url: "https://example.com/photos/office-supplies.jpg"
     },
     {
       name: "Computer Monitor",
@@ -82,7 +85,8 @@ export const generateTemplate = () => {
       location_details: "IT Storage Room",
       preferred_vendor: "Best Buy Business",
       status: "active",
-      notes: "Dell brand preferred"
+      notes: "Dell brand preferred",
+      photo_url: ""
     },
     {
       name: "Cleaning Supplies",
@@ -94,7 +98,8 @@ export const generateTemplate = () => {
       location_details: "Janitor Closet B",
       preferred_vendor: "Facility Solutions",
       status: "active",
-      notes: "Eco-friendly products only"
+      notes: "Eco-friendly products only",
+      photo_url: ""
     }
   ];
   
@@ -153,6 +158,7 @@ export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> =
         preferred_vendor: normalizedRow.preferred_vendor ? normalizedRow.preferred_vendor.trim() : null,
         status: normalizedRow.status ? normalizedRow.status.trim() : 'active',
         notes: normalizedRow.notes ? normalizedRow.notes.trim() : null,
+        photo_url: normalizedRow.photo_url ? String(normalizedRow.photo_url).trim() : null,
       };
     });
     

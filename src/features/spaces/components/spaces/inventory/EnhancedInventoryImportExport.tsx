@@ -76,6 +76,7 @@ export function EnhancedInventoryImportExport({
     preferred_vendor: false,
     notes: false,
     status: true,
+    photo_url: true,
     last_updated: true
   });
 
@@ -123,6 +124,9 @@ export function EnhancedInventoryImportExport({
             break;
           case 'last_updated':
             row[field] = item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '';
+            break;
+          case 'photo_url':
+            row[field] = item.photo_url || '';
             break;
           default:
             row[field] = item[field as keyof InventoryItem] || '';
@@ -253,7 +257,8 @@ export function EnhancedInventoryImportExport({
             preferred_vendor: item.preferred_vendor,
             notes: item.notes,
             status: item.status || 'active',
-            category_id: item.category_id
+            category_id: item.category_id,
+            photo_url: item.photo_url,
           };
 
           importedItems.push(processedItem);
