@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { isLowStock, isOutOfStock, needsAttention } from "@features/inventory/utils/stockStatus";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 type LowStockItem = {
   id: string;
@@ -24,6 +25,9 @@ export const InventoryOverviewPanel = () => {
   const [range, setRange] = useState<"7d" | "30d" | "90d" | "ytd">("30d");
   const [, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { userRole } = useRolePermissions();
+  const canOrderSupplies = userRole !== 'court_aide';
+
 
   const startDate = useMemo(() => {
     const now = new Date();
@@ -213,15 +217,17 @@ export const InventoryOverviewPanel = () => {
                           </span>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="shrink-0 h-8 text-xs"
-                        onClick={() => navigate('/request/supplies')}
-                      >
-                        <ShoppingCart className="h-3 w-3 mr-1" />
-                        Reorder
-                      </Button>
+                      {canOrderSupplies && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="shrink-0 h-8 text-xs"
+                          onClick={() => navigate('/request/supplies')}
+                        >
+                          <ShoppingCart className="h-3 w-3 mr-1" />
+                          Reorder
+                        </Button>
+                      )}
                     </div>
                   );
                 })}

@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase";
 import { needsAttention } from "@features/inventory/utils/stockStatus";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 interface TabConfig {
   id: string;
@@ -36,6 +37,8 @@ export const InventoryDashboard = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [globalSearch, setGlobalSearch] = useState('');
   const navigate = useNavigate();
+  const { userRole } = useRolePermissions();
+  const canOrderSupplies = userRole !== 'court_aide';
 
   // Sync tab with URL
   const handleTabChange = (tab: string) => {
@@ -147,10 +150,12 @@ export const InventoryDashboard = () => {
                 </Badge>
               )}
             </Button>
-            <Button onClick={() => navigate('/request/supplies')} className="w-full sm:w-auto" data-tour="inventory-order">
-              <Plus className="h-4 w-4 mr-2" />
-              Order Supplies
-            </Button>
+            {canOrderSupplies && (
+              <Button onClick={() => navigate('/request/supplies')} className="w-full sm:w-auto" data-tour="inventory-order">
+                <Plus className="h-4 w-4 mr-2" />
+                Order Supplies
+              </Button>
+            )}
           </PageHeader>
 
           {/* Quick Search Bar */}

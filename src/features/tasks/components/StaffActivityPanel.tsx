@@ -54,11 +54,25 @@ export function StaffActivityPanel() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Get all court aides (users with court_aide role)
+      // Get all court aides via the user_roles table (source of truth).
+      // Filtering profiles by is_approved alone previously returned every
+      // approved user, so aides without task history were hidden by the
+      // "skip empty" filter below and non-aides could sneak in.
+      const { data: aideRoleRows, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'court_aide');
+
+      if (rolesError) throw rolesError;
+
+      const aideIds = (aideRoleRows || []).map((r: { user_id: string }) => r.user_id);
+
+      if (aideIds.length === 0) return [] as StaffTaskSummary[];
+
       const { data: courtAides, error: aidesError } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
-        .eq('is_approved', true);
+        .in('id', aideIds);
 
       if (aidesError) throw aidesError;
 
@@ -83,16 +97,14 @@ export function StaffActivityPanel() {
 
       if (tasksError) throw tasksError;
 
-      // Build per-staff summaries
+      // Build per-staff summaries — include every aide, even with no history,
+      // so admins see the full roster (including newly added test users).
       const summaries: StaffTaskSummary[] = [];
 
       for (const aide of courtAides || []) {
         const aideTasks = (allTasks || []).filter(
           t => t.claimed_by === aide.id || t.assigned_to === aide.id
         );
-
-        // Skip staff with no task history
-        if (aideTasks.length === 0) continue;
 
         const activeTasks = aideTasks.filter(t =>
           ['claimed', 'in_progress'].includes(t.status)
