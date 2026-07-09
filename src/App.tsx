@@ -82,6 +82,15 @@ const FormTemplatesAdmin = lazy(() => import("@features/admin/pages/admin/FormTe
 // Supply request flows
 const CourtAideRequests = lazy(() => import("@features/supply/pages/CourtAideRequests"));
 
+// Court aides fulfill orders; they don't place them. Redirect the ordering
+// page to their fulfillment dashboard so inventory buttons + old bookmarks
+// don't drop them into a UI they shouldn't use.
+function SuppliesRouteGuard() {
+  const { userRole } = useRolePermissions();
+  if (userRole === 'court_aide') return <Navigate to="/supply-room" replace />;
+  return <CourtAideRequests />;
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
