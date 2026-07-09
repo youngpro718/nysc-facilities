@@ -122,7 +122,8 @@ export function MobileRoomInventory({ roomId }: { roomId: string }) {
         storage_room_id: roomId,
         status: 'active' as const,
         location_details: item.location_details,
-        notes: item.notes
+        notes: item.notes,
+        photo_url: item.photo_url,
       }));
 
       await addBulkItems(itemsToImport);
