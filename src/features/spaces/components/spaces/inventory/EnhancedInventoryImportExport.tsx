@@ -76,6 +76,7 @@ export function EnhancedInventoryImportExport({
     preferred_vendor: false,
     notes: false,
     status: true,
+    photo_url: true,
     last_updated: true
   });
 
