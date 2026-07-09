@@ -447,16 +447,20 @@ export async function acceptOrder(requestId: string, userId: string) {
 
   validateStatusTransition(request.status, 'received');
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('supply_requests')
     .update({
       status: 'received',
       assigned_fulfiller_id: userId,
       work_started_at: new Date().toISOString(),
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .select('id');
 
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Failed to accept order — no rows updated (check permissions/status).');
+  }
 }
 
 /**
@@ -472,68 +476,81 @@ export async function startPicking(requestId: string) {
 
   validateStatusTransition(request.status, 'picking');
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('supply_requests')
     .update({
       status: 'picking',
       picking_started_at: new Date().toISOString(),
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .select('id');
 
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Failed to start picking — no rows updated (check permissions/status).');
+  }
 }
 
 /**
- * Mark order as ready and deduct inventory
+ * Mark order as ready and deduct inventory.
+ *
+ * Thin wrapper over the atomic `fulfill_supply_request(uuid, jsonb, text)`
+ * RPC (db/migrations/096_fix_supply_fulfillment.sql). The RPC does the
+ * status-gate check, item updates, inventory deduction, and transaction
+ * logging in one SECURITY DEFINER transaction — see
+ * PartialFulfillmentDialog.handleComplete for the canonical call pattern
+ * this mirrors. This function currently has no live callers (dead code as
+ * of 2026-07-08); it previously drove the same multi-step
+ * update-then-deduct flow the RPC replaced, which silently no-op'd under
+ * RLS and could double-deduct inventory on retry.
+ *
+ * ID translation: this function's `items[].item_id` is the INVENTORY item
+ * id (the old implementation filtered on the line's `item_id` column), but
+ * the RPC's `p_items[].item_id` is the supply_request_items ROW id — the
+ * RPC looks up `WHERE id = v_item_id AND request_id = p_request_id` and
+ * raises supply_request_item_not_found otherwise. So we first fetch the
+ * request's line items and map each inventory id to its line id.
+ *
+ * `markOrderReady` never took a delivery method, so this defaults to
+ * 'pickup'.
  */
 export async function markOrderReady(
   requestId: string,
   items: Array<{ item_id: string; quantity_fulfilled: number }>
 ) {
-  const { data: request, error: fetchErr } = await supabase
-    .from('supply_requests')
-    .select('status')
-    .eq('id', requestId)
-    .single();
-  if (fetchErr) throw fetchErr;
+  // Resolve inventory item ids -> supply_request_items row ids (the RPC's
+  // p_items[].item_id contract).
+  const { data: lines, error: linesError } = await supabase
+    .from('supply_request_items')
+    .select('id, item_id')
+    .eq('request_id', requestId);
+  if (linesError) throw linesError;
 
-  validateStatusTransition(request.status, 'ready');
+  const lineIdByInventoryId = new Map(
+    (lines || []).map((line) => [line.item_id, line.id])
+  );
 
-  const { error: statusError } = await supabase
-    .from('supply_requests')
-    .update({
-      status: 'ready',
-      picking_completed_at: new Date().toISOString(),
-      ready_for_delivery_at: new Date().toISOString(),
-    })
-    .eq('id', requestId);
-
-  if (statusError) throw statusError;
-
-  // Update item quantities and deduct inventory
-  for (const item of items) {
-    if (item.quantity_fulfilled > 0) {
-      const { error: itemError } = await supabase
-        .from('supply_request_items')
-        .update({ quantity_fulfilled: item.quantity_fulfilled })
-        .eq('request_id', requestId)
-        .eq('item_id', item.item_id);
-
-      if (itemError) throw itemError;
-
-      const { error: invError } = await supabase.rpc('adjust_inventory_quantity', {
-        p_item_id: item.item_id,
-        p_quantity_change: -item.quantity_fulfilled,
-        p_transaction_type: 'fulfilled',
-        p_reference_id: requestId,
-        p_notes: `Order ready for pickup`,
-      });
-
-      if (invError) throw invError;
+  const rpcItems = items.map((item) => {
+    const lineId = lineIdByInventoryId.get(item.item_id);
+    if (!lineId) {
+      throw new Error(
+        `No line item found on request ${requestId} for inventory item ${item.item_id}`
+      );
     }
-  }
+    return {
+      item_id: lineId,
+      quantity_fulfilled: item.quantity_fulfilled,
+      notes: null,
+    };
+  });
 
-  fireSupplyEmail('fulfilled', requestId);
+  const { error } = await supabase.rpc('fulfill_supply_request', {
+    p_request_id: requestId,
+    p_items: rpcItems,
+    p_delivery_method: 'pickup',
+  });
+
+  if (error) throw error;
 }
 
 /**
@@ -553,7 +570,7 @@ export async function completeOrder(
 
   validateStatusTransition(request.status, 'completed');
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('supply_requests')
     .update({
       status: 'completed',
@@ -561,9 +578,13 @@ export async function completeOrder(
       fulfilled_at: new Date().toISOString(),
       fulfillment_notes: notes || null,
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .select('id');
 
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Failed to complete order — no rows updated (check permissions/status).');
+  }
 
   fireSupplyEmail('fulfilled', requestId);
 }
@@ -588,15 +609,19 @@ export async function confirmPickup(requestId: string) {
 
   validateStatusTransition(request.status, 'completed');
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('supply_requests')
     .update({
       status: 'completed',
       fulfilled_at: new Date().toISOString(),
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .select('id');
 
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Failed to confirm pickup — no rows updated (check permissions/status).');
+  }
 
   fireSupplyEmail('fulfilled', requestId);
 }
@@ -628,16 +653,20 @@ export async function staffCompletePickup(requestId: string) {
 
   validateStatusTransition(request.status, 'completed');
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('supply_requests')
     .update({
       status: 'completed',
       fulfilled_at: new Date().toISOString(),
       fulfilled_by: user.id,
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .select('id');
 
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Failed to complete pickup — no rows updated (check permissions/status).');
+  }
 
   fireSupplyEmail('fulfilled', requestId);
 }
@@ -760,16 +789,20 @@ export async function cancelSupplyRequest(requestId: string, reason?: string) {
     }
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('supply_requests')
     .update({
       status: 'cancelled',
       rejection_reason: reason || 'Cancelled by requester',
       updated_at: new Date().toISOString(),
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .select('id');
 
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Failed to cancel request — no rows updated (check permissions/status).');
+  }
 }
 
 /**
@@ -779,15 +812,19 @@ export async function archiveSupplyRequest(requestId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('supply_requests')
     .update({
       metadata: { archived: true, archived_at: new Date().toISOString() }
     })
     .eq('id', requestId)
-    .eq('requester_id', user.id);
+    .eq('requester_id', user.id)
+    .select('id');
 
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Failed to archive request — no rows updated (check permissions/ownership).');
+  }
 }
 
 // ============================================================================
@@ -802,11 +839,15 @@ export async function updateSupplyRequestStatus(
   status: string,
   updates: Record<string, unknown> = {}
 ) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('supply_requests')
     .update({ status, ...updates })
-    .eq('id', id);
+    .eq('id', id)
+    .select('id');
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Failed to update request status — no rows updated (check permissions/status).');
+  }
 }
 
 /**
@@ -819,11 +860,15 @@ export async function updateSupplyRequestDeliveryLocation(
 ) {
   const trimmed = deliveryLocation.trim();
   if (!trimmed) throw new Error('Delivery location cannot be empty');
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('supply_requests')
     .update({ delivery_location: trimmed })
-    .eq('id', id);
+    .eq('id', id)
+    .select('id');
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('Failed to update delivery location — no rows updated (check permissions).');
+  }
 }
 
 /**
@@ -846,9 +891,15 @@ export async function updateSupplyRequestItems(
         })
         .eq('request_id', requestId)
         .eq('id', item.id)
+        .select('id')
     )
   );
 
   const firstError = results.find((r: any) => r?.error)?.error;
   if (firstError) throw firstError;
+
+  const noRowsUpdated = results.some((r: any) => !r?.data || r.data.length === 0);
+  if (noRowsUpdated) {
+    throw new Error('Failed to update supply request items — no rows updated (check permissions/status).');
+  }
 }

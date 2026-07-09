@@ -95,16 +95,19 @@ export function SupplyFulfillmentPanel() {
   // Mark request as ready for pickup
   const markReady = useMutation({
     mutationFn: async (requestId: string) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('supply_requests')
-        .update({ 
+        .update({
           status: 'ready',
           fulfilled_by: user?.id,
           fulfilled_at: new Date().toISOString(),
         })
-        .eq('id', requestId);
+        .eq('id', requestId)
+        .select('id')
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('Update did not apply — you may not have permission to mark this request ready.');
     },
     onSuccess: () => {
       toast.success('Request marked as ready for pickup');
@@ -118,15 +121,18 @@ export function SupplyFulfillmentPanel() {
   // Start fulfillment
   const startFulfillment = useMutation({
     mutationFn: async (requestId: string) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('supply_requests')
-        .update({ 
+        .update({
           status: 'picking',
           assigned_fulfiller_id: user?.id,
         })
-        .eq('id', requestId);
+        .eq('id', requestId)
+        .select('id')
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('Update did not apply — you may not have permission to start this request.');
       return requestId;
     },
     onSuccess: (requestId) => {

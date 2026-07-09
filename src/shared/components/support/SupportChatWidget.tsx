@@ -103,7 +103,7 @@ export function SupportChatWidget() {
     <>
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-36 right-4 z-50 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-md border border-border bg-background shadow-xl md:bottom-20">
+        <div className="fixed bottom-36 right-4 z-50 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-md border border-border bg-background shadow-xl md:bottom-40">
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-primary-foreground/15">
@@ -217,7 +217,7 @@ export function SupportChatWidget() {
       <button
         onClick={() => setOpen(prev => !prev)}
         className={cn(
-          'fixed bottom-36 md:bottom-20 right-4 z-50',
+          'fixed bottom-36 md:bottom-40 right-4 z-50',
           'h-10 w-10 rounded-md border border-border bg-card shadow-sm transition-colors duration-150',
           'flex items-center justify-center',
           'text-muted-foreground hover:border-primary/40 hover:bg-accent hover:text-foreground',

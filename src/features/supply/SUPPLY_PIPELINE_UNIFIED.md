@@ -27,7 +27,7 @@ Any status can transition to: cancelled
 ### Fulfillment Workflow
 - `acceptOrder()` - Accept and assign to staff (status: received)
 - `startPicking()` - Begin picking items (status: picking)
-- `markOrderReady()` - Mark ready + deduct inventory (status: ready)
+- `markOrderReady()` - Mark ready + deduct inventory (status: ready). Thin wrapper over the atomic `fulfill_supply_request(uuid, jsonb, text)` RPC (db/migrations/096_fix_supply_fulfillment.sql) — the RPC does the status-gate check, item updates, inventory deduction, and transaction logging in one SECURITY DEFINER transaction, replacing the old multi-step update-then-deduct flow that could silently no-op under RLS and double-deduct inventory on retry. Currently unused in the UI; the three live fulfillment paths (`PartialFulfillmentDialog`, `ImprovedSupplyStaffDashboard` Quick Ready, `SupplyFulfillmentPanel`) call the RPC directly.
 - `completeOrder()` - Staff marks as picked up (status: completed)
 - `confirmPickup()` - User confirms pickup (status: completed)
 - `staffCompletePickup()` - Staff completes on behalf of user

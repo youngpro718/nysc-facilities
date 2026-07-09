@@ -108,46 +108,20 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
     setIsCompleting(true);
 
     try {
-      // Update each item's fulfilled quantity
-      for (const item of items) {
-        if (item.quantity_fulfilled > 0) {
-          // Mark item as fulfilled
-          await supabase
-            .from('supply_request_items')
-            .update({ 
-              quantity_fulfilled: item.quantity_fulfilled,
-              quantity_approved: item.quantity_fulfilled,
-            })
-            .eq('id', item.id);
+      // Atomically fulfill: deducts inventory, records transactions, updates
+      // line items, and transitions the request to 'ready' in one server-side
+      // transaction (see db/migrations/096_fix_supply_fulfillment.sql).
+      const { error } = await supabase.rpc('fulfill_supply_request', {
+        p_request_id: order.id,
+        p_items: items.map((item) => ({
+          item_id: item.id,
+          quantity_fulfilled: item.quantity_fulfilled,
+          notes: item.notes || `Order #${formatRequestId(order.id, order.display_id)} - ${item.quantity_fulfilled}/${item.quantity_requested} fulfilled`,
+        })),
+        p_delivery_method: deliveryMethod,
+      });
 
-          // Deduct from inventory
-          await supabase.rpc('adjust_inventory_quantity', {
-            p_item_id: item.item_id,
-            p_quantity_change: -item.quantity_fulfilled,
-            p_transaction_type: 'fulfilled',
-            p_reference_id: order.id,
-            p_notes: `Order #${formatRequestId(order.id, order.display_id)} - ${item.quantity_fulfilled}/${item.quantity_requested} fulfilled`,
-          });
-        }
-      }
-
-      // Update order status - always 'ready' once fulfilled (partial or full)
-      const newStatus = 'ready';
-      
-      await supabase
-        .from('supply_requests')
-        .update({
-          status: newStatus,
-          picking_completed_at: new Date().toISOString(),
-          ready_for_delivery_at: new Date().toISOString(),
-          metadata: {
-            ...(order.metadata || {}),
-            delivery_method: deliveryMethod,
-            partial_fulfillment: hasPartialFulfillment || hasOutOfStock,
-            fulfilled_by: profile?.id,
-          },
-        })
-        .eq('id', order.id);
+      if (error) throw error;
 
       toast({
         title: 'Order fulfilled',

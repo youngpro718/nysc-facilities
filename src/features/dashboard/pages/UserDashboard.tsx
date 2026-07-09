@@ -116,7 +116,9 @@ export default function UserDashboard() {
   const firstName = profile?.first_name || user?.user_metadata?.first_name || user?.email?.split("@")[0] || "User";
   const lastName = profile?.last_name || user?.user_metadata?.last_name || "";
 
-  const readyForPickup = supplyRequests.filter((r) => r.status === "ready").length;
+  const readyRequests = supplyRequests.filter((r) => r.status === "ready");
+  const readyForDelivery = readyRequests.filter((r) => (r as any).metadata?.delivery_method === "delivery").length;
+  const readyForPickup = readyRequests.length - readyForDelivery;
   const activeSupplyCount = supplyRequests.filter((r) => ["submitted", "received", "picking", "in_progress"].includes(r.status)).length;
   const openRequestCount = userIssues.filter((i) => i.status === "open" || i.status === "in_progress").length;
   const keysHeld = keyAssignments.length;
@@ -139,7 +141,20 @@ export default function UserDashboard() {
           />
         </div>
 
-        <PickupAlertBanner count={readyForPickup} onClick={() => navigate("/my-requests")} />
+        {readyForPickup > 0 && (
+          <PickupAlertBanner
+            count={readyForPickup}
+            deliveryMethod="pickup"
+            onClick={() => navigate("/my-requests")}
+          />
+        )}
+        {readyForDelivery > 0 && (
+          <PickupAlertBanner
+            count={readyForDelivery}
+            deliveryMethod="delivery"
+            onClick={() => navigate("/my-requests")}
+          />
+        )}
 
         {/* Two-column portal: main content + rail. Rail stacks after main below lg. */}
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">

@@ -74,47 +74,20 @@ export function ImprovedSupplyStaffDashboard() {
       const confirmed = window.confirm(`Mark all ${items.length} item${items.length > 1 ? 's' : ''} as fully fulfilled?`);
       if (!confirmed) throw new Error('Cancelled');
 
-      // Fulfill each item at full quantity
-      for (const item of items) {
-        await supabase
-          .from('supply_request_items')
-          .update({
-            quantity_fulfilled: item.quantity_requested,
-            quantity_approved: item.quantity_requested,
-          })
-          .eq('id', item.id);
+      // Atomically fulfill: deducts inventory, records transactions, updates
+      // line items, and transitions the request to 'ready' in one server-side
+      // transaction (see db/migrations/096_fix_supply_fulfillment.sql).
+      const { error } = await supabase.rpc('fulfill_supply_request', {
+        p_request_id: orderId,
+        p_items: items.map((item) => ({
+          item_id: item.id,
+          quantity_fulfilled: item.quantity_requested,
+          notes: `Order #${orderId.slice(0, 8)} - ${item.quantity_requested}/${item.quantity_requested} fulfilled (Quick Ready)`,
+        })),
+        p_delivery_method: 'pickup',
+      });
 
-        await supabase.rpc('adjust_inventory_quantity', {
-          p_item_id: item.item_id,
-          p_quantity_change: -item.quantity_requested,
-          p_transaction_type: 'fulfilled',
-          p_reference_id: orderId,
-          p_notes: `Order #${orderId.slice(0, 8)} - ${item.quantity_requested}/${item.quantity_requested} fulfilled (Quick Ready)`,
-        });
-      }
-
-      // Fetch current order for metadata
-      const { data: order } = await supabase
-        .from('supply_requests')
-        .select('metadata')
-        .eq('id', orderId)
-        .single();
-
-      // Update order status to ready
-      await supabase
-        .from('supply_requests')
-        .update({
-          status: 'ready',
-          picking_completed_at: new Date().toISOString(),
-          ready_for_delivery_at: new Date().toISOString(),
-          metadata: {
-            ...(order?.metadata || {}),
-            delivery_method: 'pickup',
-            partial_fulfillment: false,
-            fulfilled_by: profile?.id,
-          },
-        })
-        .eq('id', orderId);
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Order marked as ready (all items fulfilled)');

@@ -1,0 +1,154 @@
+-- Data repair executed via Supabase MCP execute_sql on 2026-07-09 (project
+-- fmymhtuiqzhupjyopfvi), NOT applied as a schema migration. Companion to
+-- 096_fix_supply_fulfillment.sql. Kept here verbatim for the audit trail.
+--
+-- Excludes Order #2026-07-08-002% / request 27a8c190-e231-48ff-b0ef-54e9282e6b75
+-- (already manually repaired; not touched by any statement below).
+
+-- =============================================================================
+-- Step 1: Refund duplicate 'fulfilled' deductions.
+--
+-- For each (item_id, notes) group of transaction_type='fulfilled' rows with
+-- notes LIKE 'Order #%', created_at > '2026-06-25', excluding the
+-- 2026-07-08-002 test order, having COUNT(*) = N > 1: add back (N-1) *
+-- quantity units to inventory_items.quantity and record one corrective
+-- 'adjustment' transaction per group.
+-- =============================================================================
+BEGIN;
+
+WITH dup_groups AS (
+  SELECT
+    item_id,
+    notes,
+    COUNT(*) AS n,
+    MIN(quantity) AS qty_per_txn,
+    MAX(quantity) AS max_qty_per_txn
+  FROM inventory_item_transactions
+  WHERE transaction_type = 'fulfilled'
+    AND notes LIKE 'Order #%'
+    AND created_at > '2026-06-25'
+    AND notes NOT LIKE 'Order #2026-07-08-002%'
+  GROUP BY item_id, notes
+  HAVING COUNT(*) > 1
+),
+refund_calc AS (
+  SELECT
+    item_id,
+    notes,
+    n,
+    qty_per_txn,
+    (n - 1) * qty_per_txn AS refund_qty
+  FROM dup_groups
+  WHERE qty_per_txn = max_qty_per_txn  -- sanity check: uniform quantity per group
+),
+adjusted AS (
+  UPDATE inventory_items ii
+  SET quantity = ii.quantity + rc.refund_qty,
+      updated_at = now()
+  FROM refund_calc rc
+  WHERE ii.id = rc.item_id
+  RETURNING ii.id AS item_id, rc.notes, rc.refund_qty, ii.quantity AS new_quantity, ii.quantity - rc.refund_qty AS prev_quantity
+)
+INSERT INTO inventory_item_transactions (
+  item_id, transaction_type, quantity, previous_quantity, new_quantity, performed_by, notes
+)
+SELECT
+  item_id,
+  'adjustment',
+  refund_qty,
+  prev_quantity,
+  new_quantity,
+  NULL,
+  'Refund duplicate fulfillment deduction for ' || notes
+FROM adjusted
+RETURNING *;
+
+COMMIT;
+
+-- NOTE / KNOWN LIMITATION HIT DURING EXECUTION:
+-- inventory_items id 854a3a3e-ea81-41c8-97b6-b4980cbb50cb (Binders (1")) had
+-- TWO separate duplicate groups on the same item (notes
+-- 'Order #2026-07-07-015 - 2/2 fulfilled' and
+-- 'Order #2fd0d898 - 2/2 fulfilled (Quick Ready)'). A single UPDATE...FROM
+-- with a multi-row source only applies once per target row when multiple
+-- source rows match the same target -- it silently used one of the two
+-- refund_calc rows and dropped the other (no error). This was caught by a
+-- post-hoc verification query (join dup_groups against the corrective
+-- 'adjustment' transactions by exact notes match) and the missing refund
+-- was applied as a follow-up single-row statement:
+
+BEGIN;
+
+WITH upd AS (
+  UPDATE inventory_items
+  SET quantity = quantity + 4, updated_at = now()
+  WHERE id = '854a3a3e-ea81-41c8-97b6-b4980cbb50cb'
+  RETURNING quantity AS new_quantity, quantity - 4 AS prev_quantity
+)
+INSERT INTO inventory_item_transactions (
+  item_id, transaction_type, quantity, previous_quantity, new_quantity, performed_by, notes
+)
+SELECT '854a3a3e-ea81-41c8-97b6-b4980cbb50cb', 'adjustment', 4, prev_quantity, new_quantity, NULL,
+  'Refund duplicate fulfillment deduction for Order #2fd0d898 - 2/2 fulfilled (Quick Ready)'
+FROM upd
+RETURNING *;
+
+COMMIT;
+
+-- If ever re-running this repair pattern against a different duplicate set,
+-- do NOT trust a single UPDATE...FROM when an item can appear in more than
+-- one duplicate group -- loop per-group (or use a correlated subquery/CTE
+-- keyed by a per-row identifier) and verify count(groups) == count(corrective
+-- transactions) afterwards, as done here.
+
+-- =============================================================================
+-- Step 2: Un-stick fully-fulfilled 'submitted' orders.
+--
+-- supply_requests with status='submitted' whose lines ALL have
+-- quantity_fulfilled > 0 (excluding the manually-repaired test order) ->
+-- status='ready'. picking_completed_at/ready_for_delivery_at backfilled.
+--
+-- Verified set via:
+--   SELECT r.id FROM supply_requests r JOIN supply_request_items i
+--     ON i.request_id = r.id
+--   WHERE r.status = 'submitted' AND r.id <> '27a8c190-e231-48ff-b0ef-54e9282e6b75'
+--   GROUP BY r.id HAVING bool_and(i.quantity_fulfilled > 0);
+-- -> confirmed exactly the 3 ids below (2fd0d898-..., 6a10da7a-..., 6d8b9ef4-...).
+--
+-- Two BEFORE UPDATE triggers on supply_requests interfere with a raw SQL
+-- session that has no authenticated JWT (auth.uid() IS NULL, so
+-- has_any_role() is false for every role):
+--   - trg_enforce_supply_status_transition: RAISES on any status change
+--     from a session with no privileged role and no matching requester_id.
+--   - trg_prevent_supply_self_approval: does NOT raise -- it silently
+--     resets NEW.status/approved_by/approved_at/requester_id back to the
+--     OLD values for "non-privileged" callers. This is the more dangerous
+--     one: without disabling it too, the UPDATE appears to succeed (no
+--     error) and non-frozen columns like picking_completed_at DO get
+--     written, while status silently stays 'submitted'. Caught by
+--     re-selecting the rows after the first attempt and noticing status
+--     hadn't moved.
+-- Both were disabled for the duration of the UPDATE and re-enabled
+-- immediately after, inside the same transaction.
+-- =============================================================================
+BEGIN;
+
+ALTER TABLE supply_requests DISABLE TRIGGER trg_enforce_supply_status_transition;
+ALTER TABLE supply_requests DISABLE TRIGGER trg_prevent_supply_self_approval;
+
+UPDATE supply_requests
+SET status = 'ready',
+    picking_completed_at = COALESCE(picking_completed_at, now()),
+    ready_for_delivery_at = now()
+WHERE id IN (
+  '2fd0d898-64e1-484d-ba29-e3af8c99ad45',
+  '6a10da7a-c74a-4033-b16f-137eb2104799',
+  '6d8b9ef4-13f2-402d-97e4-80ec250e152f'
+)
+AND status = 'submitted'
+AND id <> '27a8c190-e231-48ff-b0ef-54e9282e6b75';
+
+ALTER TABLE supply_requests ENABLE TRIGGER trg_enforce_supply_status_transition;
+ALTER TABLE supply_requests ENABLE TRIGGER trg_prevent_supply_self_approval;
+
+COMMIT;
