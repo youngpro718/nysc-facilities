@@ -25,6 +25,9 @@ export const InventoryOverviewPanel = () => {
   const [range, setRange] = useState<"7d" | "30d" | "90d" | "ytd">("30d");
   const [, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { userRole } = useRolePermissions();
+  const canOrderSupplies = userRole !== 'court_aide';
+
 
   const startDate = useMemo(() => {
     const now = new Date();
