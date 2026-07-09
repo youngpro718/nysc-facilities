@@ -1,33 +1,45 @@
 ## Goal
 
-1. Make the **Staff Activity** view actually show every court aide (including the new test users), whether or not they've picked up a task yet.
-2. Remove **supply ordering** from the court_aide role — they only fulfill orders and can still report issues.
-
-## Why the fake test aides don't appear today
-
-`StaffActivityPanel` queries `profiles` filtered only by `is_approved = true` (so it's pulling everyone, not just aides) and then hides any user with zero claimed/assigned tasks. New court_aide test users have no task history yet, so they get filtered out. On top of that, "aide" was being determined from the profile list rather than the actual `user_roles` table, so the label was misleading.
+1. Include item photos (`photo_url`) in inventory Excel export and import so images move with items between rooms.
+2. On desktop, make the inventory actions Sheet (Export/Import) render above the room's inventory dialog instead of behind it.
 
 ## Changes
 
-### 1. `src/features/tasks/components/StaffActivityPanel.tsx`
-- Replace the `profiles.is_approved` query with a `user_roles` lookup: pull every `user_id` where `role = 'court_aide'`, then fetch their profile rows.
-- Remove the `if (aideTasks.length === 0) continue;` skip so aides with no task history still appear (0 active / 0 today / 0 total badges).
-- Keep the existing sort (active first, then most-completed).
+### 1. Photos in export/import
 
-### 2. Remove ordering surfaces for `court_aide`
+**`src/features/spaces/components/spaces/inventory/EnhancedInventoryImportExport.tsx`**
+- Add `photo_url: true` to the default `exportFields` state so the URL is included in exported spreadsheets.
+- In the export row builder, populate `photo_url` from `item.photo_url`.
+- In the import loop, pass `photo_url` through into the `processedItem` handed to `onImportSuccess`.
 
-- `src/App.tsx` — `/supplies` route: if `userRole === 'court_aide'`, redirect to `/supply-room` (their fulfillment dashboard). Keeps standard/admin ordering intact.
-- `src/features/inventory/pages/InventoryDashboard.tsx` — hide the header **"Order Supplies"** button when `isCourtAide`.
-- `src/features/inventory/components/inventory/InventoryOverviewPanel.tsx` — hide the per-item **"Reorder"** button when `isCourtAide`.
-- Sidebar (`src/components/layout/config/navigation.tsx`) — no change needed; court_aide's nav already doesn't include an "Order Supplies" entry. `/supplies` was only reachable via inventory buttons and deep links.
+**`src/features/spaces/components/spaces/inventory/excelUtils.ts`**
+- Extend `FIELD_MAPPINGS` with a `photo_url` entry (accepting `photo_url`, `photo`, `image`, `image_url`).
+- Include `photo_url` in the returned row from `parseExcelFile` (trimmed string or null).
+- Add `photo_url` to `InventoryExcelRow` typing and to the sample rows in `generateTemplate` so the template documents the column.
 
-Issue reporting is untouched — it lives on `/issues` + `/my-issues`, which aren't in this change.
+**`src/features/spaces/components/spaces/inventory/types/inventoryTypes.ts`**
+- Add optional `photo_url?: string` to `InventoryExportData`.
 
-### 3. Verification
-- Typecheck.
-- Confirm court_aide sidebar still shows: Work Center, Tasks, Supply Room, Inventory, Term Sheet, Profile.
-- Confirm Inventory pages no longer show "Order Supplies" / "Reorder" buttons for court_aide.
-- Confirm Staff Activity now lists the fake aide test users with zero-count badges.
+**`src/features/spaces/components/spaces/inventory/hooks/useInventory.ts`**
+- In `bulkCreateMutation`'s `transformedItems`, pass `photo_url: item.photo_url ?? null` so imported photo URLs land in the database.
+
+**`src/features/spaces/components/spaces/inventory/components/MobileRoomInventory.tsx`**
+- Include `photo_url` in both the export mapping and the import mapping fed to `addBulkItems`, matching the desktop path.
+
+Photos remain hosted at their existing storage URLs; the export carries the URL string and import re-attaches it to the new room's item. No re-upload or duplication of image files is performed.
+
+### 2. Desktop actions Sheet stacking
+
+The room inventory opens through `MobileInventoryDialog`, which on desktop renders a shadcn Dialog (via `ModalFrame` → `ModalContent`). Inside it, `MobileInventoryHeader` opens a shadcn `Sheet` for the Import/Export actions. Both the parent DialogOverlay/Content and the Sheet use the default `z-50`, so on desktop the Sheet ends up visually behind the dialog's overlay.
+
+**`src/features/spaces/components/spaces/inventory/components/MobileInventoryHeader.tsx`**
+- Raise the Sheet above the parent dialog by passing an explicit z-index to `SheetContent` (e.g. `className="... z-[60]"`). Radix renders the Sheet's overlay adjacent to its content, so the higher z-index on the content plus a matching wrapper class on the overlay (via `className` on `SheetContent` covers content; add an overlay override by using an inline style or the existing `overlayClassName` if supported — otherwise wrap `SheetContent` with a z-index utility and rely on Radix's default overlay under it).
+- If the shadcn Sheet primitive in this project doesn't accept an overlay className, add a small local style block or extend `src/components/ui/sheet.tsx` to accept an `overlayClassName` prop and thread it through — scoped strictly to the Sheet component so no other stacking changes.
+
+No behavior changes on mobile (drawer path is unaffected) and no logic changes outside the presentation of the Sheet.
 
 ## Out of scope
-No DB migration, no RLS changes, no changes to the standard/admin ordering flow, no changes to issue reporting.
+
+- Re-uploading or copying image binaries between storage buckets.
+- Changes to categories, quantities, or other import fields already handled.
+- Any changes to the mobile drawer flow, which already works correctly.
