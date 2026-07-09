@@ -2802,7 +2802,15 @@ export type Database = {
           mentions?: string[] | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "issue_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       issue_history: {
         Row: {
@@ -2911,6 +2919,7 @@ export type Database = {
           floor_id: string | null
           id: string
           issue_type: string
+          last_activity_at: string
           location_description: string | null
           notes: string | null
           photos: string[] | null
@@ -2948,6 +2957,7 @@ export type Database = {
           floor_id?: string | null
           id?: string
           issue_type?: string
+          last_activity_at?: string
           location_description?: string | null
           notes?: string | null
           photos?: string[] | null
@@ -2985,6 +2995,7 @@ export type Database = {
           floor_id?: string | null
           id?: string
           issue_type?: string
+          last_activity_at?: string
           location_description?: string | null
           notes?: string | null
           photos?: string[] | null
@@ -7143,6 +7154,7 @@ export type Database = {
           id: string
           inventory_item_id: string | null
           is_request: boolean | null
+          issue_id: string | null
           priority: string | null
           quantity: number | null
           rejection_reason: string | null
@@ -7172,6 +7184,7 @@ export type Database = {
           id?: string
           inventory_item_id?: string | null
           is_request?: boolean | null
+          issue_id?: string | null
           priority?: string | null
           quantity?: number | null
           rejection_reason?: string | null
@@ -7201,6 +7214,7 @@ export type Database = {
           id?: string
           inventory_item_id?: string | null
           is_request?: boolean | null
+          issue_id?: string | null
           priority?: string | null
           quantity?: number | null
           rejection_reason?: string | null
@@ -7284,6 +7298,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storage_room_inventory"
             referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "staff_tasks_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "staff_tasks_requested_by_profiles_fkey"
@@ -9466,14 +9487,23 @@ export type Database = {
         }
         Returns: string
       }
-      fulfill_supply_request: {
-        Args: {
-          p_completion_notes?: string
-          p_items?: Json
-          p_request_id: string
-        }
-        Returns: undefined
-      }
+      fulfill_supply_request:
+        | {
+            Args: {
+              p_completion_notes?: string
+              p_items?: Json
+              p_request_id: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_delivery_method: string
+              p_items: Json
+              p_request_id: string
+            }
+            Returns: Json
+          }
       generate_fixture_code: {
         Args: { p_hallway_code: string; p_sequence_number: number }
         Returns: string
