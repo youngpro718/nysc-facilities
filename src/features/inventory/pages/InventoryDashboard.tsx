@@ -37,6 +37,8 @@ export const InventoryDashboard = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [globalSearch, setGlobalSearch] = useState('');
   const navigate = useNavigate();
+  const { userRole } = useRolePermissions();
+  const canOrderSupplies = userRole !== 'court_aide';
 
   // Sync tab with URL
   const handleTabChange = (tab: string) => {
