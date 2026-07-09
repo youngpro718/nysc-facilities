@@ -257,7 +257,7 @@ function AppContent() {
               /admin/supply-requests (admin processing). */}
           <Route path="/supplies" element={
             <ProtectedRoute>
-              <CourtAideRequests />
+              <SuppliesRouteGuard />
             </ProtectedRoute>
           } />
           <Route path="/request" element={<Navigate to="/supplies" replace />} />
