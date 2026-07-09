@@ -20,11 +20,13 @@ interface FilterPillsProps<T extends string> {
 }
 
 /**
- * Reusable pill-style filter row.
+ * Reusable filter row.
  *
  * Replaces ad-hoc `flex flex-wrap` button groups so filter bars
  * (Tasks, BuildingFilterBar, etc.) share consistent shape, spacing,
- * and selected-state styling.
+ * and selected-state styling. Uses squared corners (rounded-md) to match
+ * the app's rectangular badges/buttons — the pill shape read consumer-SaaS,
+ * not government/court.
  */
 export function FilterPills<T extends string>({
   options,
@@ -58,7 +60,7 @@ export function FilterPills<T extends string>({
             aria-checked={isActive}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "shrink-0 rounded-full font-medium transition-colors border inline-flex items-center gap-1.5 touch-manipulation",
+              "shrink-0 rounded-md font-medium transition-colors border inline-flex items-center gap-1.5 touch-manipulation",
               pad,
               isActive
                 ? "bg-primary text-primary-foreground border-primary"

@@ -388,32 +388,32 @@ function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourt
       {/* Tabs - Different for Court Aides */}
       {isCourtAide ? (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="my-tasks" className="gap-2">
+          <TabsList className="flex w-full justify-start overflow-x-auto lg:w-auto lg:inline-flex">
+            <TabsTrigger value="my-tasks" className="gap-2 shrink-0">
               <User className="h-4 w-4" />
-              <span className="hidden sm:inline">My Tasks</span>
+              <span>My Tasks</span>
               {myTasks.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {myTasks.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="available" className="gap-2">
+            <TabsTrigger value="available" className="gap-2 shrink-0">
               <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">Available</span>
+              <span>Available</span>
               {availableTasks.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {availableTasks.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="active" className="gap-2">
+            <TabsTrigger value="active" className="gap-2 shrink-0">
               <ClipboardList className="h-4 w-4" />
-              <span className="hidden sm:inline">All Active</span>
+              <span>All Active</span>
             </TabsTrigger>
-            <TabsTrigger value="completed" className="gap-2">
+            <TabsTrigger value="completed" className="gap-2 shrink-0">
               <CheckCircle2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Completed</span>
+              <span>Completed</span>
             </TabsTrigger>
           </TabsList>
 
@@ -488,36 +488,36 @@ function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourt
       ) : (
         // Default tabs for managers/admins
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="pending" className="gap-2">
+          <TabsList className="flex w-full justify-start overflow-x-auto lg:w-auto lg:inline-flex">
+            <TabsTrigger value="pending" className="gap-2 shrink-0">
               <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">Pending</span>
+              <span>Pending</span>
               {pendingTasks.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {pendingTasks.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="active" className="gap-2">
+            <TabsTrigger value="active" className="gap-2 shrink-0">
               <ClipboardList className="h-4 w-4" />
-              <span className="hidden sm:inline">Active</span>
+              <span>Active</span>
               {activeTasks.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {activeTasks.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="staff" className="gap-2">
+            <TabsTrigger value="staff" className="gap-2 shrink-0">
               <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Staff Activity</span>
+              <span>Staff Activity</span>
             </TabsTrigger>
-            <TabsTrigger value="completed" className="gap-2">
+            <TabsTrigger value="completed" className="gap-2 shrink-0">
               <CheckCircle2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Completed</span>
+              <span>Completed</span>
             </TabsTrigger>
-            <TabsTrigger value="rejected" className="gap-2">
+            <TabsTrigger value="rejected" className="gap-2 shrink-0">
               <XCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Rejected</span>
+              <span>Rejected</span>
             </TabsTrigger>
           </TabsList>
 
