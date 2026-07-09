@@ -155,6 +155,7 @@ export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> =
         preferred_vendor: normalizedRow.preferred_vendor ? normalizedRow.preferred_vendor.trim() : null,
         status: normalizedRow.status ? normalizedRow.status.trim() : 'active',
         notes: normalizedRow.notes ? normalizedRow.notes.trim() : null,
+        photo_url: normalizedRow.photo_url ? String(normalizedRow.photo_url).trim() : null,
       };
     });
     
