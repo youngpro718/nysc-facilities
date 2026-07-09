@@ -95,7 +95,8 @@ export function MobileRoomInventory({ roomId }: { roomId: string }) {
       minimum_quantity: item.minimum_quantity || 0,
       unit: item.unit || '',
       location_details: item.location_details || '',
-      notes: item.notes || ''
+      notes: item.notes || '',
+      photo_url: item.photo_url || ''
     }));
 
     exportToExcel(exportData, `inventory_${new Date().toISOString().split('T')[0]}`);
