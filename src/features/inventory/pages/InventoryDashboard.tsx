@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase";
 import { needsAttention } from "@features/inventory/utils/stockStatus";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 interface TabConfig {
   id: string;
