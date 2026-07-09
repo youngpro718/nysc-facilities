@@ -14,6 +14,7 @@ export interface InventoryExcelRow {
   preferred_vendor?: string;
   status?: string;
   notes?: string;
+  photo_url?: string;
 }
 
 // Field mapping for flexible import
@@ -27,7 +28,8 @@ const FIELD_MAPPINGS: Record<string, string[]> = {
   'location_details': ['location_details', 'location', 'storage_location'],
   'preferred_vendor': ['preferred_vendor', 'vendor', 'supplier'],
   'status': ['status', 'state'],
-  'notes': ['notes', 'comments', 'remarks']
+  'notes': ['notes', 'comments', 'remarks'],
+  'photo_url': ['photo_url', 'photo', 'image', 'image_url', 'picture', 'picture_url']
 };
 
 // Normalize field names for flexible mapping
