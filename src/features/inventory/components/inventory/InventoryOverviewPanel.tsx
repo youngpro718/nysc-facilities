@@ -217,15 +217,17 @@ export const InventoryOverviewPanel = () => {
                           </span>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="shrink-0 h-8 text-xs"
-                        onClick={() => navigate('/request/supplies')}
-                      >
-                        <ShoppingCart className="h-3 w-3 mr-1" />
-                        Reorder
-                      </Button>
+                      {canOrderSupplies && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="shrink-0 h-8 text-xs"
+                          onClick={() => navigate('/request/supplies')}
+                        >
+                          <ShoppingCart className="h-3 w-3 mr-1" />
+                          Reorder
+                        </Button>
+                      )}
                     </div>
                   );
                 })}
