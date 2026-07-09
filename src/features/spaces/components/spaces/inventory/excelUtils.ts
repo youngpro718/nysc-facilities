@@ -85,7 +85,8 @@ export const generateTemplate = () => {
       location_details: "IT Storage Room",
       preferred_vendor: "Best Buy Business",
       status: "active",
-      notes: "Dell brand preferred"
+      notes: "Dell brand preferred",
+      photo_url: ""
     },
     {
       name: "Cleaning Supplies",
