@@ -98,7 +98,8 @@ export const generateTemplate = () => {
       location_details: "Janitor Closet B",
       preferred_vendor: "Facility Solutions",
       status: "active",
-      notes: "Eco-friendly products only"
+      notes: "Eco-friendly products only",
+      photo_url: ""
     }
   ];
   
