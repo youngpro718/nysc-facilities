@@ -1,52 +1,33 @@
-## Court Aide QA & Fulfillment Fix
+## Goal
 
-Focused on the Court Aide role only. Fixes the "Start" bug you hit, wires the Work Center → Supply Room fulfillment handoff end-to-end, and cleans up the small clutter/dead-button items across the five pages a court aide actually sees.
+1. Make the **Staff Activity** view actually show every court aide (including the new test users), whether or not they've picked up a task yet.
+2. Remove **supply ordering** from the court_aide role — they only fulfill orders and can still report issues.
 
-### What's wrong today
+## Why the fake test aides don't appear today
 
-- **Start button (Work Center → Supply Fulfillment):** clicking Start only flips the DB status to `picking` and shows a toast. No navigation, no dialog. That's why "nothing happens."
-- **Supply Room dialog isn't deep-linkable:** the pick/pack dialog (`PartialFulfillmentDialog`) opens from local state only. There's no URL for a specific request, so the Work Center can't hand off to it.
-- **Ready orders dead-end** in the Work Center — static "Awaiting pickup" badge with no way to confirm pickup from there.
-- **Inventory tab uses `window.location.href`** — full page reload, loses state.
-- **`TodaySchedule`** duplicates task data with zero actions.
-- **Court aide sidebar** missing Profile link that other roles have.
+`StaffActivityPanel` queries `profiles` filtered only by `is_approved = true` (so it's pulling everyone, not just aides) and then hides any user with zero claimed/assigned tasks. New court_aide test users have no task history yet, so they get filtered out. On top of that, "aide" was being determined from the profile list rather than the actual `user_roles` table, so the label was misleading.
 
-### What I'll build
+## Changes
 
-**1. Fix Start → open fulfillment (the core bug)**
+### 1. `src/features/tasks/components/StaffActivityPanel.tsx`
+- Replace the `profiles.is_approved` query with a `user_roles` lookup: pull every `user_id` where `role = 'court_aide'`, then fetch their profile rows.
+- Remove the `if (aideTasks.length === 0) continue;` skip so aides with no task history still appear (0 active / 0 today / 0 total badges).
+- Keep the existing sort (active first, then most-completed).
 
-- Make Supply Room support a `?request=<id>` query param that auto-opens `PartialFulfillmentDialog` for that request on mount (also switches to the correct tab).
-- Change `SupplyFulfillmentPanel` "Start" to: run the existing `startFulfillment` mutation, then `navigate('/supply-room?request=' + id)`.
-- Same for `Mark Ready` follow-through: on `ready` rows in the panel, replace the static badge with a "Confirm pickup →" button that deep-links to `/supply-room?request=<id>` so the aide can complete the order without hunting.
+### 2. Remove ordering surfaces for `court_aide`
 
-**2. Work Center panel polish**
+- `src/App.tsx` — `/supplies` route: if `userRole === 'court_aide'`, redirect to `/supply-room` (their fulfillment dashboard). Keeps standard/admin ordering intact.
+- `src/features/inventory/pages/InventoryDashboard.tsx` — hide the header **"Order Supplies"** button when `isCourtAide`.
+- `src/features/inventory/components/inventory/InventoryOverviewPanel.tsx` — hide the per-item **"Reorder"** button when `isCourtAide`.
+- Sidebar (`src/components/layout/config/navigation.tsx`) — no change needed; court_aide's nav already doesn't include an "Order Supplies" entry. `/supplies` was only reachable via inventory buttons and deep links.
 
-- `SupplyFulfillmentPanel`: tighten card layout, add a small "Open in Supply Room" link on every row (icon-only on mobile), keep Start/Mark Ready inline.
-- `TodaySchedule`: add "Open task" action per row that opens the same task card actions used in `TaskWorkQueue` (or removes the panel if it stays read-only — I'll keep it and add the action).
-- `WorkCenterStats`: verify the "Supplies Fulfilled" count matches Supply Room's own count (align both on `fulfilled_at` non-null + today).
+Issue reporting is untouched — it lives on `/issues` + `/my-issues`, which aren't in this change.
 
-**3. Nav / routing cleanup for court aide**
+### 3. Verification
+- Typecheck.
+- Confirm court_aide sidebar still shows: Work Center, Tasks, Supply Room, Inventory, Term Sheet, Profile.
+- Confirm Inventory pages no longer show "Order Supplies" / "Reorder" buttons for court_aide.
+- Confirm Staff Activity now lists the fake aide test users with zero-count badges.
 
-- Add Profile entry to court aide nav (parity with other roles).
-- Remove the aide's URL access to `/supplies` (the requester ordering page) or redirect it to `/work-center` — it's not their tool.
-- Replace `window.location.href = '/inventory'` in `ImprovedSupplyStaffDashboard` with `useNavigate`.
-
-**4. Pass over the 5 aide pages for clutter**
-
-Quick visual + interaction pass on: Work Center, Tasks, Supply Room, Inventory, Term Sheet. Only touch what's actually broken or visually noisy — spacing, duplicate headers, dead buttons, mobile touch targets. No redesigns; if a page looks fine, leave it.
-
-### Out of scope
-
-- Non-court-aide roles and pages.
-- Database schema changes (all mutations already exist).
-- Redesigns of pages that are working cleanly.
-
-### Verification
-
-- Playwright: sign in as court aide, click Start on a submitted supply request, confirm it lands on Supply Room with the fulfillment dialog open for that request, complete the order, return to Work Center and confirm counts update.
-- Spot-check each of the 5 aide routes for console errors and dead buttons.
-
-### Technical notes
-
-- Files touched (expected): `SupplyFulfillmentPanel.tsx`, `ImprovedSupplyStaffDashboard.tsx`, `SupplyRoom.tsx` (query param handling), `TodaySchedule.tsx`, `WorkCenterStats.tsx`, `navigation.tsx`, `App.tsx` (redirect `/supplies` for aides), possibly `roleBasedRouting.ts`.
-- No new tables, no edge function changes, no new dependencies.
+## Out of scope
+No DB migration, no RLS changes, no changes to the standard/admin ordering flow, no changes to issue reporting.
