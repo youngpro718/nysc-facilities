@@ -227,15 +227,72 @@ export const sheetToJson = (worksheet: any): Record<string, unknown>[] => {
 };
 
 /**
- * Parse Excel file to JSON
- * @param file Excel file to parse
+ * Parse CSV text into row objects keyed by the header row.
+ * Handles quoted fields, escaped quotes, and CRLF line endings.
+ */
+export const parseCsvText = (text: string): Record<string, unknown>[] => {
+  const t = text.replace(/^\uFEFF/, '');
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (t[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ',') { cur.push(field); field = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && t[i + 1] === '\n') i++;
+        cur.push(field); field = '';
+        if (cur.some(v => v.length > 0)) rows.push(cur);
+        cur = [];
+      } else field += ch;
+    }
+  }
+  if (field.length > 0 || cur.length > 0) {
+    cur.push(field);
+    if (cur.some(v => v.length > 0)) rows.push(cur);
+  }
+  if (rows.length === 0) return [];
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1).map(r => {
+    const obj: Record<string, unknown> = {};
+    headers.forEach((h, idx) => {
+      if (h) obj[h] = (r[idx] ?? '').trim();
+    });
+    return obj;
+  });
+};
+
+/**
+ * Parse a spreadsheet file (.xlsx or .csv) to JSON
+ * @param file file to parse
  * @returns Promise with array of objects
  */
 export const parseExcelFile = async (file: File): Promise<unknown[]> => {
+  const lowerName = file.name.toLowerCase();
+
+  // ExcelJS only reads .xlsx; parse CSV from text directly.
+  if (lowerName.endsWith('.csv') || file.type.toLowerCase().includes('csv')) {
+    return parseCsvText(await file.text());
+  }
+
   const ExcelJS = await loadExcelJS();
   const workbook = new ExcelJS.Workbook();
   const arrayBuffer = await file.arrayBuffer();
-  await workbook.xlsx.load(arrayBuffer);
+  try {
+    await workbook.xlsx.load(arrayBuffer);
+  } catch {
+    if (lowerName.endsWith('.xls')) {
+      throw new Error('Legacy .xls files are not supported. Please re-save the file as .xlsx or .csv and try again.');
+    }
+    throw new Error('Could not read the spreadsheet. Please make sure it is a valid .xlsx or .csv file.');
+  }
 
   const worksheet = workbook.worksheets[0];
   if (!worksheet) {

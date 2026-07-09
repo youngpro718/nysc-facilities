@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Upload, Camera } from "lucide-react";
+import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Upload, Camera, ArrowRightLeft, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +18,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
@@ -98,6 +107,11 @@ export const InventoryItemsPanel = () => {
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState<{ id: string; name: string } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkTransferOpen, setBulkTransferOpen] = useState(false);
+  const [bulkTargetRoom, setBulkTargetRoom] = useState<string>("");
+  const [selectingAll, setSelectingAll] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -188,14 +202,16 @@ export const InventoryItemsPanel = () => {
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  // Reset to first page when search changes
+  // Reset to first page (and drop any selection) when search changes
   useEffect(() => {
     setPage(1);
+    setSelectedIds(new Set());
   }, [debouncedSearch]);
 
   // Also reset when filters or sort change
   useEffect(() => {
     setPage(1);
+    setSelectedIds(new Set());
   }, [selectedCategory, selectedRoom, sortKey, sortDir, pageSize]);
 
   const deleteItemMutation = useMutation({
@@ -247,6 +263,140 @@ export const InventoryItemsPanel = () => {
       });
     },
   });
+
+  const chunkIds = (ids: string[], size: number): string[][] => {
+    const parts: string[][] = [];
+    for (let i = 0; i < ids.length; i += size) parts.push(ids.slice(i, i + size));
+    return parts;
+  };
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      let removed = 0;
+      for (const part of chunkIds(ids, 200)) {
+        // Same strategy as single delete: hard delete, soft-delete fallback
+        // when FK constraints (transactions, staff_tasks) block it.
+        const { data: hardDeleted, error: hardError } = await supabase
+          .from("inventory_items")
+          .delete()
+          .in("id", part)
+          .select("id");
+
+        if (!hardError) {
+          removed += (hardDeleted ?? []).length;
+          continue;
+        }
+
+        const isFkViolation =
+          hardError.code === "23503" ||
+          /foreign key|violates/i.test(hardError.message ?? "");
+        if (!isFkViolation) throw hardError;
+
+        const { data: updated, error: softError } = await supabase
+          .from("inventory_items")
+          .update({ status: "inactive" })
+          .in("id", part)
+          .select("id");
+        if (softError) throw softError;
+        removed += (updated ?? []).length;
+      }
+      if (removed === 0) {
+        throw new Error("You do not have permission to delete these items.");
+      }
+      return removed;
+    },
+    onSuccess: (removed) => {
+      invalidateInventoryStockQueries(queryClient);
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "inventory-items" || query.queryKey[0] === "optimized-inventory",
+      });
+      setSelectedIds(new Set());
+      setBulkDeleteOpen(false);
+      toast({
+        title: "Items deleted",
+        description: `Deleted ${removed} item${removed === 1 ? "" : "s"}.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Failed to delete items: ${getErrorMessage(error)}`,
+      });
+    },
+  });
+
+  const bulkTransferMutation = useMutation({
+    mutationFn: async ({ ids, toRoomId }: { ids: string[]; toRoomId: string }) => {
+      for (const part of chunkIds(ids, 200)) {
+        const { error } = await supabase
+          .from("inventory_items")
+          .update({ storage_room_id: toRoomId, updated_at: new Date().toISOString() })
+          .in("id", part);
+        if (error) throw error;
+      }
+      return ids.length;
+    },
+    onSuccess: (count, { toRoomId }) => {
+      invalidateInventoryStockQueries(queryClient);
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "inventory-items" || query.queryKey[0] === "optimized-inventory",
+      });
+      setSelectedIds(new Set());
+      setBulkTransferOpen(false);
+      setBulkTargetRoom("");
+      const room = roomsById.get(toRoomId);
+      toast({
+        title: "Items transferred",
+        description: `Moved ${count} item${count === 1 ? "" : "s"} to ${room ? room.name : "the selected room"}.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Transfer failed",
+        description: getErrorMessage(error),
+      });
+    },
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Select every item matching the current search/filters (not just this page)
+  const handleSelectAllMatching = async () => {
+    try {
+      setSelectingAll(true);
+      let query = supabase
+        .from("inventory_items")
+        .select("id")
+        .neq("status", "inactive")
+        .range(0, 9999);
+      if (debouncedSearch) {
+        const safe = debouncedSearch.replace(/["\\]/g, " ").trim();
+        query = query.or(`name.ilike."%${safe}%",description.ilike."%${safe}%"`);
+      }
+      if (selectedCategory && selectedCategory !== "all") {
+        query = query.eq("category_id", selectedCategory);
+      }
+      if (selectedRoom && selectedRoom !== "all") {
+        query = query.eq("storage_room_id", selectedRoom);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      setSelectedIds(new Set((data ?? []).map((r: { id: string }) => r.id)));
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: getErrorMessage(error) });
+    } finally {
+      setSelectingAll(false);
+    }
+  };
 
   const handleEdit = (item: InventoryItem) => {
     setSelectedItem(item);
@@ -431,6 +581,9 @@ export const InventoryItemsPanel = () => {
         let storage_room_id: string | null = null;
         if (roomName) storage_room_id = roomByName.get(roomName.toLowerCase()) ?? null;
         if (!storage_room_id && roomNumber) storage_room_id = roomByNumber.get(roomNumber.toLowerCase()) ?? null;
+        // No Room column (or no match): default to the room currently selected
+        // in the filter, so importing "into" a storage room actually lands there.
+        if (!storage_room_id && selectedRoom && selectedRoom !== "all") storage_room_id = selectedRoom;
 
         const key = existingKey(name, storage_room_id);
         const existingId = existingMap.get(key);
@@ -486,6 +639,20 @@ export const InventoryItemsPanel = () => {
   };
 
 
+
+  const canBulkSelect = canEdit || canDelete;
+  const pageIds = items.map((i) => i.id);
+  const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const someOnPageSelected = pageIds.some((id) => selectedIds.has(id));
+
+  const toggleSelectPage = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allOnPageSelected) pageIds.forEach(id => next.delete(id));
+      else pageIds.forEach(id => next.add(id));
+      return next;
+    });
+  };
 
   const getStockStatus = (quantity: number, minimumQuantity: number) => {
     const item = { quantity, minimum_quantity: minimumQuantity };
@@ -661,6 +828,58 @@ export const InventoryItemsPanel = () => {
         </div>
       </div>
 
+      {/* Bulk selection bar */}
+      {canBulkSelect && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 p-3">
+          <div className="mr-auto flex flex-wrap items-center gap-2">
+            <Checkbox
+              id="select-page"
+              checked={allOnPageSelected ? true : someOnPageSelected ? "indeterminate" : false}
+              onCheckedChange={toggleSelectPage}
+              aria-label="Select all items on this page"
+            />
+            <label htmlFor="select-page" className="text-sm cursor-pointer">
+              {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all on page"}
+            </label>
+            {selectedIds.size > 0 && selectedIds.size < total && (
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={handleSelectAllMatching}
+                disabled={selectingAll}
+              >
+                {selectingAll ? "Selecting…" : `Select all ${total} matching`}
+              </Button>
+            )}
+          </div>
+          {selectedIds.size > 0 && (
+            <>
+              {canEdit && (
+                <Button variant="outline" size="sm" onClick={() => setBulkTransferOpen(true)}>
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
+                  Transfer to Room
+                </Button>
+              )}
+              {canDelete && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => setBulkDeleteOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Selected
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} aria-label="Clear selection">
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Items Grid */}
       <div className="grid gap-4">
         {items?.length === 0 ? (
@@ -684,8 +903,16 @@ export const InventoryItemsPanel = () => {
               <Card key={item.id}>
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row items-start gap-4">
+                    {canBulkSelect && (
+                      <Checkbox
+                        className="mt-1 shrink-0"
+                        checked={selectedIds.has(item.id)}
+                        onCheckedChange={() => toggleSelect(item.id)}
+                        aria-label={`Select ${item.name}`}
+                      />
+                    )}
                     {/* Photo thumbnail */}
-                    <img 
+                    <img
                       src={item.photo_url || getGenericItemImage(item.name)} 
                       alt={item.name}
                       loading="lazy"
@@ -856,6 +1083,78 @@ export const InventoryItemsPanel = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} Item{selectedIds.size === 1 ? "" : "s"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedIds.size === 1 ? "this item" : `these ${selectedIds.size} items`}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => bulkDeleteMutation.mutate([...selectedIds])}
+              disabled={bulkDeleteMutation.isPending}
+            >
+              {bulkDeleteMutation.isPending ? "Deleting…" : "Delete All"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Transfer Dialog */}
+      <Dialog
+        open={bulkTransferOpen}
+        onOpenChange={(open) => {
+          setBulkTransferOpen(open);
+          if (!open) setBulkTargetRoom("");
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Transfer {selectedIds.size} Item{selectedIds.size === 1 ? "" : "s"}</DialogTitle>
+            <DialogDescription>
+              Move the selected items to a different room.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <label className="mb-1 block text-xs text-muted-foreground">Destination room</label>
+            <Select value={bulkTargetRoom} onValueChange={setBulkTargetRoom}>
+              <SelectTrigger aria-label="Destination room">
+                <SelectValue placeholder="Select a room" />
+              </SelectTrigger>
+              <SelectContent>
+                {(rooms ?? [])
+                  .filter((r) => r.id !== selectedRoom)
+                  .map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name} {r.room_number ? `(${r.room_number})` : ""}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBulkTransferOpen(false)}
+              disabled={bulkTransferMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => bulkTransferMutation.mutate({ ids: [...selectedIds], toRoomId: bulkTargetRoom })}
+              disabled={!bulkTargetRoom || bulkTransferMutation.isPending}
+            >
+              {bulkTransferMutation.isPending ? "Transferring…" : "Transfer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {selectedItem && (
         <>

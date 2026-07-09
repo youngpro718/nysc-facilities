@@ -196,6 +196,37 @@ export function useInventory(roomId: string) {
     },
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (ids.length === 0) return;
+      try {
+        const { error } = await supabase
+          .from("inventory_items")
+          .update({ status: 'inactive' })
+          .in("id", ids);
+
+        if (error) throw error;
+      } catch (error) {
+        logger.error("Error deleting items:", error);
+        throw new Error(getErrorMessage(error) || "Failed to delete inventory items");
+      }
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ["inventory", roomId] });
+      toast({
+        title: "Success",
+        description: `Deleted ${ids.length} item${ids.length === 1 ? '' : 's'}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
       const { error } = await supabase
@@ -225,9 +256,11 @@ export function useInventory(roomId: string) {
     editItem: updateMutation.mutateAsync,
     updateQuantity: updateQuantityMutation.mutateAsync,
     deleteItem: deleteMutation.mutateAsync,
+    deleteBulkItems: bulkDeleteMutation.mutateAsync,
     isAddingItem: createMutation.isPending,
     isEditingItem: updateMutation.isPending,
     isUpdatingQuantity: updateQuantityMutation.isPending,
     isDeletingItem: deleteMutation.isPending,
+    isDeletingBulk: bulkDeleteMutation.isPending,
   };
 }
