@@ -257,7 +257,8 @@ export function EnhancedInventoryImportExport({
             preferred_vendor: item.preferred_vendor,
             notes: item.notes,
             status: item.status || 'active',
-            category_id: item.category_id
+            category_id: item.category_id,
+            photo_url: item.photo_url,
           };
 
           importedItems.push(processedItem);
