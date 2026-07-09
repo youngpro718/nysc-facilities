@@ -29,7 +29,8 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     isEditingItem,
     isUpdatingQuantity,
     isDeletingItem,
-    addBulkItems
+    addBulkItems,
+    deleteBulkItems
   } = useInventory(roomId);
 
   const filteredInventory = inventory?.filter(item =>
@@ -122,6 +123,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
               setIsEditDialogOpen(true);
             }}
             onDeleteItem={deleteItem}
+            onDeleteItems={deleteBulkItems}
           />
         </ScrollArea>
       </CardContent>

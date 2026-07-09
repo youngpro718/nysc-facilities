@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import ExcelJS from 'exceljs';
-import { normalizeCellValue, sanitizeForExcel, sheetToJson } from '../excelExport';
+import { normalizeCellValue, parseCsvText, sanitizeForExcel, sheetToJson } from '../excelExport';
 
 describe('normalizeCellValue', () => {
   it('passes through plain primitives', () => {
@@ -90,5 +90,30 @@ describe('sheetToJson (export → edit in Excel → re-import round trip)', () =
     });
 
     expect(sheetToJson(ws)).toEqual([{ A: 1 }, { A: 2 }]);
+  });
+});
+
+describe('parseCsvText', () => {
+  it('maps rows by header', () => {
+    const rows = parseCsvText('name,quantity\nPens,12\nStapler,3\n');
+    expect(rows).toEqual([
+      { name: 'Pens', quantity: '12' },
+      { name: 'Stapler', quantity: '3' },
+    ]);
+  });
+
+  it('handles quoted fields with commas and escaped quotes', () => {
+    const rows = parseCsvText('name,notes\n"Paper, Letter","said ""ok"""\n');
+    expect(rows).toEqual([{ name: 'Paper, Letter', notes: 'said "ok"' }]);
+  });
+
+  it('strips a UTF-8 BOM and handles CRLF line endings', () => {
+    const rows = parseCsvText('﻿name,quantity\r\nToner,5\r\n');
+    expect(rows).toEqual([{ name: 'Toner', quantity: '5' }]);
+  });
+
+  it('skips blank lines and returns [] for empty input', () => {
+    expect(parseCsvText('name\n\n\nChairs\n\n')).toEqual([{ name: 'Chairs' }]);
+    expect(parseCsvText('')).toEqual([]);
   });
 });

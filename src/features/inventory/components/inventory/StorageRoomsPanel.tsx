@@ -110,6 +110,7 @@ export const StorageRoomsPanel = () => {
           location_details, category_id, storage_room_id,
           inventory_categories ( name, color )
         `)
+        .neq("status", "inactive")
         .order("name");
       
       if (error) throw error;
