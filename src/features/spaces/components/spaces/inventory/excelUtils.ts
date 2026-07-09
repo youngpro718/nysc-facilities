@@ -72,7 +72,8 @@ export const generateTemplate = () => {
       location_details: "Supply Room A, Shelf 1",
       preferred_vendor: "Office Depot",
       status: "active",
-      notes: "Bulk purchase recommended"
+      notes: "Bulk purchase recommended",
+      photo_url: "https://example.com/photos/office-supplies.jpg"
     },
     {
       name: "Computer Monitor",
