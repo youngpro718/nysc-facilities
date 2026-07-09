@@ -12,12 +12,18 @@ import type { MyRequestRow, TaskRow, SupplyRow, KeyRequestRow } from '@features/
 import { formatDateTime } from '@/lib/dateTime';
 import { formatRequestId } from '@/lib/requestIds';
 import { cancelKeyRequest } from '@features/keys/services/keyRequestService';
+import { cancelStaffTaskRequest } from '@features/tasks/hooks/useStaffTasks';
+import { cancelSupplyRequest } from '@features/supply/services/unifiedSupplyService';
+import { getErrorMessage } from '@/lib/errorUtils';
 import { useAuth } from '@features/auth/hooks/useAuth';
 
 interface Props {
   row: MyRequestRow | null;
   onOpenChange: (open: boolean) => void;
 }
+
+const CANCELLABLE_TASK_STATUSES = new Set(['pending_approval', 'approved']);
+const CANCELLABLE_SUPPLY_STATUSES = new Set(['pending_approval', 'submitted']);
 
 export function MyRequestDetailDrawer({ row, onOpenChange }: Props) {
   const queryClient = useQueryClient();
@@ -26,18 +32,57 @@ export function MyRequestDetailDrawer({ row, onOpenChange }: Props) {
 
   if (!row) return null;
   const keyRow = row.type === 'key' ? (row.raw as KeyRequestRow) : null;
+  const taskRow = row.type === 'request' ? (row.raw as TaskRow) : null;
+  const supplyRow = row.type === 'supply' ? (row.raw as SupplyRow) : null;
+
   const canCancelKey = !!keyRow && keyRow.status === 'pending';
+  const canCancelTask =
+    !!taskRow && CANCELLABLE_TASK_STATUSES.has(taskRow.status) && !taskRow.claimed_by;
+  const canCancelSupply = !!supplyRow && CANCELLABLE_SUPPLY_STATUSES.has(supplyRow.status);
+
+  const invalidateMyRequests = () =>
+    queryClient.invalidateQueries({ queryKey: ['my-requests', user?.id] });
 
   const handleCancelKey = async () => {
     if (!keyRow) return;
     setCancelling(true);
     try {
       await cancelKeyRequest(keyRow.id);
-      await queryClient.invalidateQueries({ queryKey: ['my-requests', user?.id] });
+      await invalidateMyRequests();
       toast.success('Key request cancelled');
       onOpenChange(false);
     } catch {
       toast.error('Could not cancel the request.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleCancelTask = async () => {
+    if (!taskRow) return;
+    setCancelling(true);
+    try {
+      await cancelStaffTaskRequest(taskRow.id);
+      await invalidateMyRequests();
+      toast.success('Request cancelled');
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('Could not cancel the request.', { description: getErrorMessage(error) });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleCancelSupply = async () => {
+    if (!supplyRow) return;
+    setCancelling(true);
+    try {
+      await cancelSupplyRequest(supplyRow.id);
+      await invalidateMyRequests();
+      toast.success('Supply order cancelled');
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('Could not cancel the order.', { description: getErrorMessage(error) });
     } finally {
       setCancelling(false);
     }
@@ -64,7 +109,27 @@ export function MyRequestDetailDrawer({ row, onOpenChange }: Props) {
         </SheetHeader>
         <div className="flex-1 overflow-y-auto">
           {row.type === 'request' ? (
-            <RequestDetailBody task={row.raw as TaskRow} locationLabel={row.location_label} />
+            <>
+              <RequestDetailBody task={row.raw as TaskRow} locationLabel={row.location_label} />
+              {canCancelTask && (
+                <div className="border-t px-4 pb-4 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelTask}
+                    disabled={cancelling}
+                  >
+                    {cancelling ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <XCircle className="mr-2 h-4 w-4" />
+                    )}
+                    Cancel request
+                  </Button>
+                </div>
+              )}
+            </>
           ) : row.type === 'key' && keyRow ? (
             <div className="space-y-4 p-4 text-sm">
               <p>
@@ -103,7 +168,27 @@ export function MyRequestDetailDrawer({ row, onOpenChange }: Props) {
               )}
             </div>
           ) : (
-            <SupplyDetailBody supply={row.raw as SupplyRow} />
+            <>
+              <SupplyDetailBody supply={row.raw as SupplyRow} />
+              {canCancelSupply && (
+                <div className="border-t px-4 pb-4 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelSupply}
+                    disabled={cancelling}
+                  >
+                    {cancelling ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <XCircle className="mr-2 h-4 w-4" />
+                    )}
+                    Cancel order
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </SheetContent>

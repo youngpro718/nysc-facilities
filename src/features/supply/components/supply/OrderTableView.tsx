@@ -18,13 +18,17 @@ interface OrderTableViewProps {
   onFulfill: (order: any) => void;
   onConfirmPickup?: (orderId: string) => void;
   isConfirmingPickup?: boolean;
+  onConfirmDelivered?: (orderId: string) => void;
+  isConfirmingDelivery?: boolean;
 }
 
-export function OrderTableView({ 
-  orders, 
-  onFulfill, 
+export function OrderTableView({
+  orders,
+  onFulfill,
   onConfirmPickup,
-  isConfirmingPickup = false 
+  isConfirmingPickup = false,
+  onConfirmDelivered,
+  isConfirmingDelivery = false,
 }: OrderTableViewProps) {
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -47,7 +51,9 @@ export function OrderTableView({
       return <Badge variant="outline" className="border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30">Needs Approval</Badge>;
     }
     if (isCompleted) {
-      return <Badge className="bg-green-600">Completed</Badge>;
+      return deliveryMethod === 'delivery'
+        ? <Badge className="bg-green-600">Delivered</Badge>
+        : <Badge className="bg-green-600">Completed</Badge>;
     }
     if (isReady) {
       if (deliveryMethod === 'delivery') {
@@ -76,9 +82,26 @@ export function OrderTableView({
       return null;
     }
 
+    if (isReady && deliveryMethod === 'delivery' && onConfirmDelivered) {
+      return (
+        <Button
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onConfirmDelivered(order.id);
+          }}
+          className="bg-green-600 hover:bg-green-700"
+          disabled={isConfirmingDelivery}
+        >
+          <Truck className="mr-1 h-3 w-3" />
+          Mark Delivered
+        </Button>
+      );
+    }
+
     if (isReady && deliveryMethod !== 'delivery' && onConfirmPickup) {
       return (
-        <Button 
+        <Button
           size="sm"
           onClick={(e) => {
             e.stopPropagation();
@@ -95,7 +118,7 @@ export function OrderTableView({
 
     if (isReady) {
       return (
-        <Button 
+        <Button
           size="sm"
           variant="outline"
           onClick={(e) => {
@@ -153,10 +176,17 @@ export function OrderTableView({
             const submittedAt = formatDateTime(order.created_at);
 
             return (
-              <TableRow 
+              <TableRow
                 key={order.id}
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => onFulfill(order)}
+                onClick={() => {
+                  // 'ready' orders are already fulfilled — the fulfill dialog
+                  // (and its RPC) refuses re-fulfillment. Use the dedicated
+                  // completion action (Confirm Pickup / Mark Delivered) in
+                  // the Actions column instead of reopening it from the row.
+                  if (order.status === 'ready') return;
+                  onFulfill(order);
+                }}
               >
                 <TableCell className="font-mono text-sm">
                   {formatRequestId(order.id, order.display_id)}

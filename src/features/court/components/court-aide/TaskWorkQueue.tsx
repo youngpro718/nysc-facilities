@@ -19,12 +19,13 @@ export function TaskWorkQueue() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('requests');
 
-  // Pending requests awaiting approval
+  // Pending requests — aides can claim these directly (approval is now a
+  // non-blocking after-the-fact review by admins/facilities managers, not a
+  // gate). Aides never approve or reject here.
   const {
     tasks: pendingRequests,
     isLoading: pendingLoading,
-    approveAndClaim,
-    rejectTask,
+    claimTask: claimPendingTask,
   } = useStaffTasks({
     status: 'pending_approval',
   });
@@ -36,6 +37,7 @@ export function TaskWorkQueue() {
     startTask,
     completeTask,
     cancelTask,
+    releaseClaim,
   } = useStaffTasks({
     onlyMyTasks: true,
     status: ['claimed', 'in_progress'],
@@ -161,9 +163,8 @@ export function TaskWorkQueue() {
                       key={task.id}
                       task={task}
                       variant="compact"
-                      onApproveAndClaim={(id) => approveAndClaim.mutate(id)}
-                      onReject={(id, reason) => rejectTask.mutate({ taskId: id, reason })}
-                      isLoading={approveAndClaim.isPending || rejectTask.isPending}
+                      onClaim={(id) => claimPendingTask.mutate(id)}
+                      isLoading={claimPendingTask.isPending}
                     />
                   ))}
                 </div>
@@ -191,6 +192,7 @@ export function TaskWorkQueue() {
                       onStart={(id) => startTask.mutate(id)}
                       onComplete={(id, notes) => completeTask.mutate({ taskId: id, notes })}
                       onCancel={(id) => cancelTask.mutate(id)}
+                      onReleaseClaim={task.claimed_by === user?.id ? (id) => releaseClaim.mutate(id) : undefined}
                       isLoading={startTask.isPending || completeTask.isPending}
                     />
                   ))}

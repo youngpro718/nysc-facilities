@@ -8,7 +8,7 @@ import { IssueComments } from "../card/IssueComments";
 import { toast } from "sonner";
 import { EditIssueForm } from "../forms/EditIssueForm";
 import { useState } from "react";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IssueDetailsHeader } from "./components/IssueDetailsHeader";
 import { IssueTimelineContent } from "./components/IssueTimelineContent";
@@ -96,6 +96,37 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
     }
   });
 
+  // Reopens a resolved issue. Mirrors resolveIssueMutation's shape but
+  // reverses it — status back to 'open' and the resolution fields the
+  // resolve flow wrote (resolution_type/resolution_notes/resolved_at/
+  // resolved_by) cleared so a stale resolution doesn't linger on a
+  // now-open issue.
+  const reopenIssueMutation = useMutation({
+    mutationFn: async () => {
+      if (!issueId) return;
+      const { error } = await supabase
+        .from('issues')
+        .update({
+          status: 'open',
+          resolution_type: null,
+          resolution_notes: null,
+          resolved_at: null,
+          resolved_by: null,
+        })
+        .eq('id', issueId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      queryClient.invalidateQueries({ queryKey: ['issues', issueId] });
+      queryClient.invalidateQueries({ queryKey: ['court-issues'] });
+      toast.success("Issue reopened");
+    },
+    onError: () => {
+      toast.error("Failed to reopen issue");
+    }
+  });
+
   const handleMarkAsSeen = () => {
     if (!issue?.seen) {
       markAsSeenMutation.mutate();
@@ -140,6 +171,22 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
         >
           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
           Resolve
+        </Button>
+      )}
+      {isResolved && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 text-xs"
+          onClick={() => reopenIssueMutation.mutate()}
+          disabled={reopenIssueMutation.isPending}
+        >
+          {reopenIssueMutation.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+          ) : (
+            <RotateCcw className="h-3.5 w-3.5 mr-1" />
+          )}
+          Reopen
         </Button>
       )}
       <CreateTaskDialog

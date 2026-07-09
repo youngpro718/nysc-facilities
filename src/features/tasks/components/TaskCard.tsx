@@ -58,6 +58,8 @@ interface TaskCardProps {
   onApprove?: (taskId: string) => void;
   onApproveAndClaim?: (taskId: string) => void;
   onReject?: (taskId: string, reason: string) => void;
+  onDelete?: (taskId: string) => void;
+  onReleaseClaim?: (taskId: string) => void;
   isLoading?: boolean;
 }
 
@@ -118,10 +120,13 @@ export function TaskCard({
   onApprove,
   onApproveAndClaim,
   onReject,
+  onDelete,
+  onReleaseClaim,
   isLoading,
 }: TaskCardProps) {
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
 
@@ -137,21 +142,34 @@ export function TaskCard({
     setRejectionReason('');
   };
 
+  const handleDelete = () => {
+    onDelete?.(task.id);
+    setShowDeleteDialog(false);
+  };
+
   const statusColor = TASK_STATUS_COLORS[task.status] || 'bg-gray-500';
   const borderColor = PRIORITY_BORDER_COLORS[task.priority] || 'border-l-gray-400';
   const dotColor = PRIORITY_DOT_COLORS[task.priority] || 'bg-gray-400';
 
-  const canClaim = task.status === 'approved' && !task.claimed_by;
+  // Claimable from 'approved' (the normal flow) or directly from
+  // 'pending_approval' — approval is a non-blocking after-the-fact review,
+  // not a gate, so aides can claim a request before anyone has approved it.
+  const canClaim = (task.status === 'approved' || task.status === 'pending_approval') && !task.claimed_by;
   const canStart = task.status === 'claimed';
   const canComplete = task.status === 'in_progress' || task.status === 'claimed';
   const needsApproval = task.status === 'pending_approval' && task.is_request;
+
+  const canCancelNow = !!onCancel && task.status !== 'completed' && task.status !== 'cancelled';
+  const canReleaseNow = !!onReleaseClaim && (task.status === 'claimed' || task.status === 'in_progress');
+  const canDeleteNow = !!onDelete;
+  const showMoreMenu = canCancelNow || canReleaseNow || canDeleteNow;
 
   const hasActions = showActions && (
     (needsApproval && (onApprove || onApproveAndClaim)) ||
     (canClaim && onClaim) ||
     (canStart && onStart) ||
     (canComplete && onComplete) ||
-    (onCancel && task.status !== 'completed' && task.status !== 'cancelled')
+    canCancelNow
   );
 
   const createdAt = formatDateTime(task.created_at);
@@ -275,7 +293,7 @@ export function TaskCard({
                 )}
 
                 {/* More Actions Menu */}
-                {(onCancel && task.status !== 'completed' && task.status !== 'cancelled') && (
+                {showMoreMenu && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" aria-label={`More actions for ${task.title}`}>
@@ -283,12 +301,27 @@ export function TaskCard({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => onCancel(task.id)}
-                        className="text-destructive"
-                      >
-                        Cancel Task
-                      </DropdownMenuItem>
+                      {canReleaseNow && (
+                        <DropdownMenuItem onClick={() => onReleaseClaim!(task.id)}>
+                          Release claim
+                        </DropdownMenuItem>
+                      )}
+                      {canCancelNow && (
+                        <DropdownMenuItem
+                          onClick={() => onCancel!(task.id)}
+                          className="text-destructive"
+                        >
+                          Cancel Task
+                        </DropdownMenuItem>
+                      )}
+                      {canDeleteNow && (
+                        <DropdownMenuItem
+                          onClick={() => setShowDeleteDialog(true)}
+                          className="text-destructive"
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
@@ -435,6 +468,27 @@ export function TaskCard({
             >
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Permanently delete this task? This cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

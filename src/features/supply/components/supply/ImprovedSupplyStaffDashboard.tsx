@@ -28,14 +28,14 @@ import { SupplyViewToggle, SupplyViewMode } from './SupplyViewToggle';
 import { PartialFulfillmentDialog } from './PartialFulfillmentDialog';
 import { InventoryManagementTab } from './InventoryManagementTab';
 import { LowStockPanel } from '@features/inventory/components/inventory/LowStockPanel';
-import { staffCompletePickup, approveSupplyRequest, rejectSupplyRequest } from '@features/supply/services/unifiedSupplyService';
+import { staffCompletePickup, completeOrder, approveSupplyRequest, rejectSupplyRequest } from '@features/supply/services/unifiedSupplyService';
 import { toast } from 'sonner';
 import { useAuth } from '@features/auth/hooks/useAuth';
 
 
 export function ImprovedSupplyStaffDashboard() {
   const queryClient = useQueryClient();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<Record<string, unknown> | null>(null);
@@ -55,6 +55,20 @@ export function ImprovedSupplyStaffDashboard() {
     },
     onError: (error: unknown) => {
       toast.error('Failed to confirm pickup', { description: getErrorMessage(error) });
+    },
+  });
+
+  // Mutation for marking a delivery order as delivered (ready -> completed)
+  const markDeliveredMutation = useMutation({
+    mutationFn: (orderId: string) => completeOrder(orderId, user!.id),
+    onSuccess: () => {
+      toast.success('Order marked as delivered');
+      queryClient.invalidateQueries({ queryKey: ['supply-staff-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['supply-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['completed-orders'] });
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to mark as delivered', { description: getErrorMessage(error) });
     },
   });
 
@@ -581,6 +595,8 @@ export function ImprovedSupplyStaffDashboard() {
               onFulfill={(order) => setSelectedOrder(order)}
               onConfirmPickup={(orderId) => confirmPickupMutation.mutate(orderId)}
               isConfirmingPickup={confirmPickupMutation.isPending}
+              onConfirmDelivered={(orderId) => markDeliveredMutation.mutate(orderId)}
+              isConfirmingDelivery={markDeliveredMutation.isPending}
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -591,6 +607,9 @@ export function ImprovedSupplyStaffDashboard() {
                   onFulfill={() => setSelectedOrder(order)}
                   onConfirmPickup={() => confirmPickupMutation.mutate(order.id)}
                   isConfirmingPickup={confirmPickupMutation.isPending}
+                  showDeliveryConfirm
+                  onConfirmDelivered={() => markDeliveredMutation.mutate(order.id)}
+                  isConfirmingDelivery={markDeliveredMutation.isPending}
                 />
               ))}
             </div>

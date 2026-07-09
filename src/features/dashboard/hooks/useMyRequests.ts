@@ -27,6 +27,7 @@ export interface TaskRow {
   task_type: string | null;
   timing_preference?: string | null;
   requested_for_at?: string | null;
+  claimed_by?: string | null;
 }
 
 export interface KeyRequestRow {
@@ -121,7 +122,7 @@ export function useMyRequests() {
           .limit(50),
         supabase
           .from('staff_tasks')
-          .select('id, created_by, from_room_id, to_room_id, description, status, created_at, task_type, timing_preference, requested_for_at')
+          .select('id, created_by, from_room_id, to_room_id, description, status, created_at, task_type, timing_preference, requested_for_at, claimed_by')
           .eq('created_by', user!.id)
           .order('created_at', { ascending: false })
           .limit(50),

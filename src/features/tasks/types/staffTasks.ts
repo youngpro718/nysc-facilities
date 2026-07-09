@@ -1,8 +1,15 @@
 /**
  * Staff Tasks Types
- * 
+ *
  * Types for the staff task management system
  */
+
+import type { UserRole } from '@/config/roles';
+
+// Roles allowed to approve/reject staff task requests. Court aides can claim
+// work but must never self-approve. A dedicated court-aide-supervisor role
+// will likely be added here later.
+export const TASK_APPROVER_ROLES: UserRole[] = ['admin', 'facilities_manager'];
 
 export type TaskType = 'move_item' | 'delivery' | 'setup' | 'pickup' | 'maintenance' | 'general';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';

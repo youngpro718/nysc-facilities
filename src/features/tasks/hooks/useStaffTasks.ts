@@ -133,17 +133,36 @@ export function useStaffTasks(options?: {
     },
   });
 
-  // Approve a task request
+  // Approve a task request. Approval is a pure, after-the-fact review — it
+  // must never regress a task that has already moved past pending_approval
+  // (e.g. an aide claimed it directly before anyone reviewed it). The
+  // approved_by/approved_at stamp is always recorded; the status only flips
+  // to 'approved' if the task is still sitting unclaimed in pending_approval.
   const approveTask = useMutation({
     mutationFn: async ({ taskId, assignTo }: { taskId: string; assignTo?: string }) => {
+      const { data: current, error: fetchError } = await supabase
+        .from('staff_tasks')
+        .select('status, claimed_by')
+        .eq('id', taskId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const now = new Date().toISOString();
+      const updatePayload: Record<string, unknown> = {
+        approved_by: user!.id,
+        approved_at: now,
+      };
+
+      const stillUnclaimed = current.status === 'pending_approval' && !current.claimed_by;
+      if (stillUnclaimed) {
+        updatePayload.status = 'approved';
+        if (assignTo !== undefined) updatePayload.assigned_to = assignTo || null;
+      }
+
       const { data, error } = await supabase
         .from('staff_tasks')
-        .update({
-          status: 'approved',
-          approved_by: user!.id,
-          approved_at: new Date().toISOString(),
-          assigned_to: assignTo || null,
-        })
+        .update(updatePayload)
         .eq('id', taskId)
         .select()
         .single();
@@ -213,18 +232,18 @@ export function useStaffTasks(options?: {
     },
   });
 
-  // Approve a pending request and claim it in one step (Court Aide flow)
-  const approveAndClaim = useMutation({
+  // Release a claim — returns a claimed/in_progress task back to the
+  // Available pool without approving/rejecting it. Used by the claimant to
+  // back out of work they picked up.
+  const releaseClaim = useMutation({
     mutationFn: async (taskId: string) => {
-      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('staff_tasks')
         .update({
-          status: 'claimed',
-          approved_by: user!.id,
-          approved_at: now,
-          claimed_by: user!.id,
-          claimed_at: now,
+          status: 'approved',
+          claimed_by: null,
+          claimed_at: null,
+          started_at: null,
         })
         .eq('id', taskId)
         .select()
@@ -234,11 +253,31 @@ export function useStaffTasks(options?: {
       return data;
     },
     onSuccess: () => {
-      toast.success('Request approved & claimed');
+      toast.success('Claim released');
       queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to approve request', { description: getErrorMessage(error) });
+      toast.error('Failed to release claim', { description: getErrorMessage(error) });
+    },
+  });
+
+  // Delete a task permanently (admin/facilities manager only — RLS enforced)
+  const deleteTask = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from('staff_tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Task deleted');
+      queryClient.invalidateQueries({ queryKey: ['staff-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['room-planned-tasks'] });
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to delete task', { description: getErrorMessage(error) });
     },
   });
 
@@ -348,13 +387,36 @@ export function useStaffTasks(options?: {
     createTask,
     requestTask,
     approveTask,
-    approveAndClaim,
     rejectTask,
     claimTask,
+    releaseClaim,
+    deleteTask,
     startTask,
     completeTask,
     cancelTask,
   };
+}
+
+/**
+ * Cancel a task request as its own requester (used from My Requests).
+ * RLS already lets the creator (`created_by = auth.uid()`) update the row at
+ * any status, so we scope the update client-side to the still-cancellable
+ * window — unclaimed and pending_approval/approved — and treat zero rows
+ * updated (e.g. someone claimed it in the meantime) as a failure.
+ */
+export async function cancelStaffTaskRequest(taskId: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('staff_tasks')
+    .update({ status: 'cancelled' })
+    .eq('id', taskId)
+    .is('claimed_by', null)
+    .in('status', ['pending_approval', 'approved'])
+    .select('id');
+
+  if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('This request can no longer be cancelled.');
+  }
 }
 
 // Hook for task history

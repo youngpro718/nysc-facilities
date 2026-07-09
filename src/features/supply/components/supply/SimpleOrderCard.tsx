@@ -19,18 +19,20 @@ interface SimpleOrderCardProps {
   showDeliveryConfirm?: boolean;
   onConfirmDelivered?: () => void;
   isConfirmingPickup?: boolean;
+  isConfirmingDelivery?: boolean;
   onQuickReady?: (orderId: string) => void;
   isQuickReadying?: boolean;
   urgencyClass?: string;
 }
 
-export function SimpleOrderCard({ 
-  order, 
+export function SimpleOrderCard({
+  order,
   onFulfill,
   onConfirmPickup,
   showDeliveryConfirm,
   onConfirmDelivered,
   isConfirmingPickup = false,
+  isConfirmingDelivery = false,
   onQuickReady,
   isQuickReadying = false,
   urgencyClass = '',
@@ -83,7 +85,9 @@ export function SimpleOrderCard({
       return <Badge variant="outline" className="border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30"><AlertTriangle className="h-3 w-3 mr-1" />Needs Approval</Badge>;
     }
     if (isCompleted) {
-      return <Badge className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
+      return deliveryMethod === 'delivery'
+        ? <Badge className="bg-green-600"><Truck className="h-3 w-3 mr-1" />Delivered</Badge>
+        : <Badge className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
     }
     if (isReady) {
       if (deliveryMethod === 'delivery') {
@@ -246,14 +250,24 @@ export function SimpleOrderCard({
         {/* Action Buttons */}
         {!isCompleted && (
           <div className="flex gap-2">
-            {isReady && deliveryMethod === 'delivery' && showDeliveryConfirm ? (
-              <Button 
-                onClick={onConfirmDelivered} 
-                className="w-full"
+            {isReady && deliveryMethod === 'delivery' && showDeliveryConfirm && onConfirmDelivered ? (
+              <Button
+                onClick={onConfirmDelivered}
+                className="w-full bg-green-600 hover:bg-green-700"
                 size="lg"
+                disabled={isConfirmingDelivery}
               >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Mark as Delivered
+                {isConfirmingDelivery ? (
+                  <>
+                    <Truck className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Truck className="mr-2 h-4 w-4" />
+                    Mark Delivered
+                  </>
+                )}
               </Button>
             ) : isReady && deliveryMethod !== 'delivery' && onConfirmPickup ? (
               <Button 

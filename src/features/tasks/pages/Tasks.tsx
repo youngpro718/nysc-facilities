@@ -29,7 +29,7 @@ import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { FilterPills, type FilterPillOption } from "@/components/ui/FilterPills";
 import type { StaffTask, TaskType, TaskPriority } from "@features/tasks/types/staffTasks";
-import { TASK_TYPE_LABELS } from "@features/tasks/types/staffTasks";
+import { TASK_TYPE_LABELS, TASK_APPROVER_ROLES } from "@features/tasks/types/staffTasks";
 
 const PRIORITY_WEIGHT: Record<TaskPriority, number> = {
   urgent: 0,
@@ -88,11 +88,18 @@ function sortTasks(taskList: StaffTask[]): StaffTask[] {
 export default function Tasks() {
   const { userRole, isAdmin: canManageTasks } = useRolePermissions();
   const isCourtAide = userRole === 'court_aide';
+  // Who may approve/reject task requests. Currently a superset of
+  // canManageTasks (admin/system_admin) plus facilities_manager — kept as a
+  // separate check from canManageTasks so Cancel/Delete can stay admin-only
+  // while approval follows the product-defined TASK_APPROVER_ROLES list.
+  const canApprove = canManageTasks || (!!userRole && TASK_APPROVER_ROLES.includes(userRole));
 
-  // Regular users (not court aides, not managers) get the dedicated
-  // "My Requests" view — same component used on /my-activity. This is the
-  // only place their own submitted tasks are surfaced.
-  if (!isCourtAide && !canManageTasks) {
+  // Regular users (not court aides, not managers, not approvers) get the
+  // dedicated "My Requests" view — same component used on /my-activity. This is
+  // the only place their own submitted tasks are surfaced. Approvers
+  // (TASK_APPROVER_ROLES, e.g. facilities_manager) reach the manager view so
+  // they can review/approve even though Cancel/Delete stay admin-only.
+  if (!isCourtAide && !canManageTasks && !canApprove) {
     return (
       <div className="space-y-6 p-4 md:p-6">
         <PageHeader
@@ -106,10 +113,10 @@ export default function Tasks() {
     );
   }
 
-  return <TasksManagerView isCourtAide={isCourtAide} canManageTasks={canManageTasks} />;
+  return <TasksManagerView isCourtAide={isCourtAide} canManageTasks={canManageTasks} canApprove={canApprove} />;
 }
 
-function TasksManagerView({ isCourtAide, canManageTasks }: { isCourtAide: boolean; canManageTasks: boolean }) {
+function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourtAide: boolean; canManageTasks: boolean; canApprove: boolean }) {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -138,6 +145,8 @@ function TasksManagerView({ isCourtAide, canManageTasks }: { isCourtAide: boolea
     claimTask,
     startTask,
     completeTask,
+    deleteTask,
+    releaseClaim,
     refetch
   } = useStaffTasks();
 
@@ -212,6 +221,14 @@ function TasksManagerView({ isCourtAide, canManageTasks }: { isCourtAide: boolea
     await completeTask.mutateAsync({ taskId, notes });
   };
 
+  const handleDelete = async (taskId: string) => {
+    await deleteTask.mutateAsync(taskId);
+  };
+
+  const handleReleaseClaim = async (taskId: string) => {
+    await releaseClaim.mutateAsync(taskId);
+  };
+
   const renderEmptyState = (type: 'active' | 'pending' | 'available' | 'completed' | 'rejected' | 'my-tasks' | 'generic', message?: string) => {
     if (type === 'active') {
       return (
@@ -267,12 +284,14 @@ function TasksManagerView({ isCourtAide, canManageTasks }: { isCourtAide: boolea
           <TaskCard
             key={task.id}
             task={task}
-            onApprove={canManageTasks ? handleApprove : undefined}
-            onReject={canManageTasks ? handleReject : undefined}
+            onApprove={canApprove ? handleApprove : undefined}
+            onReject={canApprove ? handleReject : undefined}
             onCancel={canManageTasks ? handleCancel : undefined}
+            onDelete={canManageTasks ? handleDelete : undefined}
             onClaim={showClaimActions || isCourtAide ? handleClaim : undefined}
             onStart={showClaimActions || isCourtAide ? handleStart : undefined}
             onComplete={showClaimActions || isCourtAide ? handleComplete : undefined}
+            onReleaseClaim={isCourtAide && task.claimed_by === user?.id ? handleReleaseClaim : undefined}
             showActions={true}
           />
         ))}
@@ -332,7 +351,7 @@ function TasksManagerView({ isCourtAide, canManageTasks }: { isCourtAide: boolea
         {isCourtAide ? (
           <>
             <StatusCard statusVariant="info" title="My Active Tasks" value={myTasks.length} subLabel="Claimed by you" icon={User} />
-            <StatusCard statusVariant={availableTasks.length > 0 ? "warning" : "operational"} title="Available to Claim" value={availableTasks.length} subLabel="Ready for pickup" icon={Clock} />
+            <StatusCard statusVariant={availableTasks.length > 0 ? "warning" : "operational"} title="Available to Claim" value={availableTasks.length} subLabel="Unclaimed tasks" icon={Clock} />
             <StatusCard statusVariant="operational" title="Completed" value={completedTasks.length} subLabel="Successfully done" icon={CheckCircle2} />
             <StatusCard statusVariant="neutral" title="All Active" value={activeTasks.length} subLabel="In pipeline" icon={ClipboardList} />
           </>

@@ -13,7 +13,7 @@ export type OrderStatus =
 
 export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   submitted: ['received', 'cancelled', 'rejected'],
-  pending_approval: ['approved', 'rejected'],
+  pending_approval: ['approved', 'rejected', 'cancelled'],
   approved: ['received', 'cancelled'],
   received: ['picking', 'cancelled', 'rejected'],
   picking: ['ready', 'cancelled'],
