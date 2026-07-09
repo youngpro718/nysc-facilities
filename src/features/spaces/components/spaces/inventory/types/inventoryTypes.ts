@@ -90,5 +90,6 @@ export interface InventoryExportData {
   preferred_vendor?: string;
   status?: string;
   notes?: string;
+  photo_url?: string;
   last_updated?: string;
 }
