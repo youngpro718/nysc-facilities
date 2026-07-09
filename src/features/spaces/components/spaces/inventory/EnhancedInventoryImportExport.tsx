@@ -125,6 +125,9 @@ export function EnhancedInventoryImportExport({
           case 'last_updated':
             row[field] = item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '';
             break;
+          case 'photo_url':
+            row[field] = item.photo_url || '';
+            break;
           default:
             row[field] = item[field as keyof InventoryItem] || '';
         }
