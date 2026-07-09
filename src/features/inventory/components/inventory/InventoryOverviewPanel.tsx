@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { isLowStock, isOutOfStock, needsAttention } from "@features/inventory/utils/stockStatus";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 type LowStockItem = {
   id: string;
