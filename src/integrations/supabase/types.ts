@@ -2769,14 +2769,14 @@ export type Database = {
             foreignKeyName: "inventory_items_catalog_item_id_fkey"
             columns: ["catalog_item_id"]
             isOneToOne: false
-            referencedRelation: "inventory_items"
+            referencedRelation: "inventory_catalog"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "inventory_items_catalog_item_id_fkey"
             columns: ["catalog_item_id"]
             isOneToOne: false
-            referencedRelation: "inventory_catalog"
+            referencedRelation: "inventory_items"
             referencedColumns: ["id"]
           },
           {
@@ -8646,38 +8646,6 @@ export type Database = {
           sku: string | null
           stock_status: string | null
           unit: string | null
-        }
-        Insert: {
-          case_label?: string | null
-          case_size?: number | null
-          category_id?: string | null
-          id?: string | null
-          name?: string | null
-          order_code_threshold?: number | null
-          pack_label?: string | null
-          pack_size?: number | null
-          packaging_note?: string | null
-          photo_url?: string | null
-          requires_justification?: boolean | null
-          sku?: string | null
-          stock_status?: never
-          unit?: string | null
-        }
-        Update: {
-          case_label?: string | null
-          case_size?: number | null
-          category_id?: string | null
-          id?: string | null
-          name?: string | null
-          order_code_threshold?: number | null
-          pack_label?: string | null
-          pack_size?: number | null
-          packaging_note?: string | null
-          photo_url?: string | null
-          requires_justification?: boolean | null
-          sku?: string | null
-          stock_status?: never
-          unit?: string | null
         }
         Relationships: [
           {
