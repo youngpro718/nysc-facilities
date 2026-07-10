@@ -1039,6 +1039,16 @@ Deno.serve(async (req: Request) => {
 
     const { request, requester, items, history, completedBy } = await fetchRequestData(serviceClient, body.requestId);
 
+    // Authorization: caller must own the request or hold a supply-staff role
+    const isOwner = !!userId && request.requester_id === userId;
+    const isStaff = !!userId && (await userCanSendTeamTest(serviceClient, userId));
+    if (!isOwner && !isStaff) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!requester.email) {
       return new Response(
         JSON.stringify({ error: "Requester has no email" }),
