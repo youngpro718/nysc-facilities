@@ -59,6 +59,7 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
     preferred_vendor: "",
     vendor_sku: "",
     notes: "",
+    catalog_item_id: "standalone",
   });
 
   const { toast } = useToast();
@@ -91,6 +92,24 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
     },
   });
 
+  // Catalog listings the new item can be linked under (active items that are
+  // themselves listings). Linking makes this row room-level stock behind an
+  // existing listing instead of a second catalog entry for the same product.
+  const { data: linkTargets } = useQuery({
+    queryKey: ["inventory-catalog-link-targets", "new"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select("id, name, storage_room_id")
+        .eq("status", "active")
+        .is("catalog_item_id", null)
+        .order("name");
+      if (error) throw error;
+      return data as { id: string; name: string; storage_room_id: string | null }[];
+    },
+  });
+
   const createItemMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const { error } = await supabase
@@ -112,6 +131,10 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
           sku: data.vendor_sku || null,
           notes: data.notes || null,
           status: "active",
+          catalog_item_id:
+            data.catalog_item_id && data.catalog_item_id !== "standalone"
+              ? data.catalog_item_id
+              : null,
         });
 
       if (error) throw error;
@@ -177,6 +200,7 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
       preferred_vendor: "",
       vendor_sku: "",
       notes: "",
+      catalog_item_id: "standalone",
     });
     onOpenChange(false);
   };
@@ -382,6 +406,36 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
                 onChange={(e) => setFormData({ ...formData, location_details: e.target.value })}
                 placeholder="e.g., Shelf A-3, Cabinet 2"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="catalog_item_id">Catalog listing</Label>
+              <Select
+                value={formData.catalog_item_id}
+                onValueChange={(value) => setFormData({ ...formData, catalog_item_id: value })}
+              >
+                <SelectTrigger aria-label="Catalog listing">
+                  <SelectValue placeholder="Own listing (shows in catalog)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standalone">Own listing (shows in catalog)</SelectItem>
+                  {linkTargets?.map((target) => {
+                    const room = storageRooms?.find((r) => r.id === target.storage_room_id);
+                    return (
+                      <SelectItem key={target.id} value={target.id}>
+                        Counts under: {target.name}
+                        {room ? ` (${room.room_number})` : ""}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Adding stock of a product that's already in the catalog (e.g. the same copy
+                paper in another building)? Pick its listing here so people ordering see it
+                once. Stock in this room still counts and staff can pull from it when
+                fulfilling orders.
+              </p>
             </div>
           </div>
 

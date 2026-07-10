@@ -2683,6 +2683,7 @@ export type Database = {
         Row: {
           case_label: string | null
           case_size: number | null
+          catalog_item_id: string | null
           category_id: string | null
           created_at: string | null
           description: string | null
@@ -2710,6 +2711,7 @@ export type Database = {
         Insert: {
           case_label?: string | null
           case_size?: number | null
+          catalog_item_id?: string | null
           category_id?: string | null
           created_at?: string | null
           description?: string | null
@@ -2737,6 +2739,7 @@ export type Database = {
         Update: {
           case_label?: string | null
           case_size?: number | null
+          catalog_item_id?: string | null
           category_id?: string | null
           created_at?: string | null
           description?: string | null
@@ -2762,6 +2765,34 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_items_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["item_id"]
+          },
           {
             foreignKeyName: "inventory_items_category_id_fkey"
             columns: ["category_id"]

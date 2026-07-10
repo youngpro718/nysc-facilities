@@ -42,6 +42,7 @@ type InventoryItem = {
   notes: string;
   category_id: string;
   storage_room_id: string;
+  catalog_item_id?: string | null;
 };
 
 type Category = {
@@ -83,6 +84,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
     preferred_vendor: "",
     vendor_sku: "",
     notes: "",
+    catalog_item_id: "standalone",
   });
 
   const { toast } = useToast();
@@ -110,6 +112,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
         preferred_vendor: item.preferred_vendor || "",
         vendor_sku: item.sku || "",
         notes: item.notes || "",
+        catalog_item_id: item.catalog_item_id || "standalone",
       });
     }
   }, [item]);
@@ -138,6 +141,40 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
         .order("room_number");
       if (error) throw error;
       return data as StorageRoom[];
+    },
+  });
+
+  // Catalog listings this item could be linked under: active items that are
+  // themselves listings (not linked under something else). People ordering
+  // see one listing; linked items are room-level stock behind it.
+  const { data: linkTargets } = useQuery({
+    queryKey: ["inventory-catalog-link-targets", item?.id],
+    enabled: open && !!item?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select("id, name, storage_room_id")
+        .eq("status", "active")
+        .is("catalog_item_id", null)
+        .neq("id", item.id)
+        .order("name");
+      if (error) throw error;
+      return data as { id: string; name: string; storage_room_id: string | null }[];
+    },
+  });
+
+  // An item that already has other rooms' stock linked under it must stay a
+  // listing (single-level grouping, enforced by a DB trigger).
+  const { data: linkedChildCount } = useQuery({
+    queryKey: ["inventory-catalog-link-children", item?.id],
+    enabled: open && !!item?.id,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("inventory_items")
+        .select("id", { count: "exact", head: true })
+        .eq("catalog_item_id", item.id);
+      if (error) throw error;
+      return count ?? 0;
     },
   });
 
@@ -180,6 +217,10 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
           preferred_vendor: data.preferred_vendor || null,
           sku: data.vendor_sku || null,
           notes: data.notes || null,
+          catalog_item_id:
+            data.catalog_item_id && data.catalog_item_id !== "standalone"
+              ? data.catalog_item_id
+              : null,
         })
         .eq("id", item.id);
 
@@ -431,6 +472,43 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
                 onChange={(e) => setFormData({ ...formData, location_details: e.target.value })}
                 placeholder="e.g., Shelf A-3, Cabinet 2"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="catalog_item_id">Catalog listing</Label>
+              {linkedChildCount && linkedChildCount > 0 ? (
+                <p className="text-sm text-muted-foreground border rounded-md px-3 py-2">
+                  This is a catalog listing with stock from {linkedChildCount} other{" "}
+                  {linkedChildCount === 1 ? "room" : "rooms"} counted under it. Unlink those
+                  items first if you want to move this one under another listing.
+                </p>
+              ) : (
+                <Select
+                  value={formData.catalog_item_id}
+                  onValueChange={(value) => setFormData({ ...formData, catalog_item_id: value })}
+                >
+                  <SelectTrigger aria-label="Catalog listing">
+                    <SelectValue placeholder="Own listing (shows in catalog)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standalone">Own listing (shows in catalog)</SelectItem>
+                    {linkTargets?.map((target) => {
+                      const room = storageRooms?.find((r) => r.id === target.storage_room_id);
+                      return (
+                        <SelectItem key={target.id} value={target.id}>
+                          Counts under: {target.name}
+                          {room ? ` (${room.room_number})` : ""}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Link this room's stock under another item so people ordering see the product
+                once. Stock here still counts toward availability, and staff can pick this
+                room when fulfilling orders.
+              </p>
             </div>
           </div>
 

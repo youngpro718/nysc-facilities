@@ -45,6 +45,21 @@ Any status can transition to: cancelled
 - `getInventoryItems()` - Fetch inventory catalog
 - `getFulfillmentLog()` - Fetch fulfillment history
 
+## Catalog Listings vs Room Stock (migration 103)
+
+A product stocked in several storage rooms is ONE catalog listing backed by
+several `inventory_items` rows. The listing row has `catalog_item_id = NULL`;
+each other room's row points at it via `catalog_item_id` (single-level,
+enforced by trigger `trg_inventory_catalog_link`). The `inventory_catalog`
+view shows only active listing rows and derives `stock_status` from the whole
+group, so people ordering see the product once while stock stays tracked per
+room. At fulfillment, each `p_items` element passed to
+`fulfill_supply_request(uuid, jsonb, text)` may carry `source_item_id` — the
+room row the stock was physically pulled from (validated server-side to be in
+the same group; defaults to the ordered row). `PartialFulfillmentDialog`
+exposes this as a "Pull from" room picker; admins link/unlink rooms via the
+"Catalog listing" field in the inventory item create/edit dialogs.
+
 ## Status Validation
 All status transitions are validated using `STATUS_TRANSITIONS` from constants.
 Invalid transitions throw errors before attempting database updates.
