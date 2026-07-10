@@ -113,41 +113,48 @@ export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> =
       throw new Error('No data found in Excel file');
     }
     
-    // Process and validate data with flexible field mapping
-    const processedData = jsonData.map((row: any, index: number) => {
+    // Process and validate data with flexible field mapping.
+    // A single stray/incomplete row (e.g. a leftover note left over from editing
+    // the template) shouldn't sink an otherwise-valid import, so rows that fail
+    // validation are skipped and logged rather than aborting the whole batch.
+    const skippedRows: string[] = [];
+    const processedData: InventoryExcelRow[] = [];
+
+    jsonData.forEach((row: any, index: number) => {
       const normalizedRow: Record<string, any> = {};
-      
+
       // Normalize field names
       for (const [key, value] of Object.entries(row)) {
         const normalizedKey = normalizeFieldName(key as string);
         normalizedRow[normalizedKey] = value;
       }
-      
+
       // Validate required fields
       if (!normalizedRow.name || typeof normalizedRow.name !== 'string' || !normalizedRow.name.trim()) {
-        throw new Error(`Row ${index + 1}: Name is required and must be a non-empty string`);
+        skippedRows.push(`Row ${index + 1}: Name is required and must be a non-empty string`);
+        return;
       }
-      
-      if (normalizedRow.quantity === undefined || normalizedRow.quantity === null || normalizedRow.quantity === '') {
-        throw new Error(`Row ${index + 1}: Quantity is required`);
-      }
-      
-      // Convert and validate quantity
-      const quantity = Number(normalizedRow.quantity);
+
+      // Quantity defaults to 0 (matching the database default) when left blank —
+      // catalogs of items without a counted stock yet (e.g. form types) are valid.
+      const quantityProvided = normalizedRow.quantity !== undefined && normalizedRow.quantity !== null && normalizedRow.quantity !== '';
+      const quantity = quantityProvided ? Number(normalizedRow.quantity) : 0;
       if (isNaN(quantity) || quantity < 0) {
-        throw new Error(`Row ${index + 1}: Quantity must be a non-negative number`);
+        skippedRows.push(`Row ${index + 1}: Quantity must be a non-negative number`);
+        return;
       }
-      
+
       // Convert and validate minimum_quantity if provided
       let minimumQuantity = null;
       if (normalizedRow.minimum_quantity !== undefined && normalizedRow.minimum_quantity !== null && normalizedRow.minimum_quantity !== '') {
         minimumQuantity = Number(normalizedRow.minimum_quantity);
         if (isNaN(minimumQuantity) || minimumQuantity < 0) {
-          throw new Error(`Row ${index + 1}: Minimum quantity must be a non-negative number`);
+          skippedRows.push(`Row ${index + 1}: Minimum quantity must be a non-negative number`);
+          return;
         }
       }
-      
-      return {
+
+      processedData.push({
         name: normalizedRow.name.trim(),
         quantity: quantity,
         minimum_quantity: minimumQuantity,
@@ -159,8 +166,20 @@ export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> =
         status: normalizedRow.status ? normalizedRow.status.trim() : 'active',
         notes: normalizedRow.notes ? normalizedRow.notes.trim() : null,
         photo_url: normalizedRow.photo_url ? String(normalizedRow.photo_url).trim() : null,
-      };
+      });
     });
-    
+
+    if (skippedRows.length > 0) {
+      logger.warn('Skipped invalid rows during Excel import:', skippedRows);
+    }
+
+    if (processedData.length === 0) {
+      throw new Error(
+        skippedRows.length > 0
+          ? `No valid rows found. ${skippedRows[0]}`
+          : 'No data found in Excel file'
+      );
+    }
+
   return processedData;
 };

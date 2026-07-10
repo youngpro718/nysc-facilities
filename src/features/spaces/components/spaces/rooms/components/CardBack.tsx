@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { X, Building, Phone, ShoppingBag, Users, Clipboard, Lightbulb, AlertTriangle, History as HistoryIcon, StickyNote, Ticket, Plus, Camera, CheckCircle, Zap, Pencil, Trash2, Paintbrush, CalendarClock } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { RoomInventory } from "../../RoomInventory";
@@ -634,9 +634,14 @@ export function CardBack({ room, onFlip, onDelete }: CardBackProps) {
       </ScrollArea>
 
       {/* Inventory Dialog */}
-      {isInventoryDialogOpen && (
-        <RoomInventory roomId={room.id} />
-      )}
+      <Dialog open={isInventoryDialogOpen} onOpenChange={setIsInventoryDialogOpen}>
+        <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{room.name} Inventory</DialogTitle>
+          </DialogHeader>
+          {isInventoryDialogOpen && <RoomInventory roomId={room.id} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
