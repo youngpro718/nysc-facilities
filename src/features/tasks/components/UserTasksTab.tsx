@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { useStaffTasks } from '@features/tasks/hooks/useStaffTasks';
 import { RequestTaskDialog } from '@features/tasks/components/RequestTaskDialog';
-import { QuickMoveDialog } from '@features/tasks/components/QuickMoveDialog';
+import { QuickTaskDialog } from '@features/tasks/components/QuickTaskDialog';
 import { 
   TASK_TYPE_LABELS, 
   TASK_STATUS_LABELS, 
@@ -58,7 +58,7 @@ export function UserTasksTab() {
       <div className="flex justify-between items-center gap-2 flex-wrap">
         <h2 className="text-lg font-semibold">My Requests</h2>
         <div className="flex items-center gap-2">
-          <QuickMoveDialog />
+          <QuickTaskDialog />
           <RequestTaskDialog />
         </div>
       </div>

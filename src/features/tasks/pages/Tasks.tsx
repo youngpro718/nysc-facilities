@@ -24,7 +24,7 @@ import { useAuth } from "@features/auth/hooks/useAuth";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { TaskCard } from "@features/tasks/components/TaskCard";
 import { TaskListRow } from "@features/tasks/components/TaskListRow";
-import { QuickMoveDialog } from "@features/tasks/components/QuickMoveDialog";
+import { QuickTaskDialog } from "@features/tasks/components/QuickTaskDialog";
 import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPanel";
 import { UserTasksTab } from "@features/tasks/components/UserTasksTab";
@@ -380,7 +380,7 @@ function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourt
         icon={ClipboardList}
         className="mb-0"
       >
-        <QuickMoveDialog />
+        <QuickTaskDialog />
         {canManageTasks && <CreateTaskDialog />}
       </PageHeader>
 
