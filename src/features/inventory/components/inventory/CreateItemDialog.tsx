@@ -20,6 +20,7 @@ import { useToast } from "@shared/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { invalidateInventoryStockQueries } from "@features/inventory/utils/invalidation";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
 type Category = {
   id: string;
@@ -66,6 +67,10 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { userRole } = useRolePermissions();
+  // Purchasing decisions (reorder gates, vendor, catalog placement) belong to
+  // purchasing/admin — court aides only handle the physical stock.
+  const canManagePurchasing = userRole !== 'court_aide';
 
   useEffect(() => {
     if (open && defaultStorageRoomId) {
@@ -105,7 +110,7 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
   // existing listing instead of a second catalog entry for the same product.
   const { data: linkTargets } = useQuery({
     queryKey: ["inventory-catalog-link-targets", "new"],
-    enabled: open,
+    enabled: open && canManagePurchasing,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("inventory_items")
@@ -120,6 +125,22 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
 
   const createItemMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      // Purchasing fields are only written when that section is visible —
+      // items created by court aides get purchasing defaults until
+      // purchasing/admin fills them in.
+      const purchasingFields = canManagePurchasing
+        ? {
+            order_code_threshold: data.order_code_threshold ? parseInt(data.order_code_threshold) : null,
+            requires_justification: data.requires_justification,
+            preferred_vendor: data.preferred_vendor || null,
+            sku: data.vendor_sku || null,
+            catalog_item_id:
+              data.catalog_item_id && data.catalog_item_id !== "standalone"
+                ? data.catalog_item_id
+                : null,
+          }
+        : {};
+
       const { error } = await supabase
         .from("inventory_items")
         .insert({
@@ -129,20 +150,13 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
           minimum_quantity: parseInt(data.minimum_quantity) || 0,
           pack_size: data.pack_size ? parseInt(data.pack_size) : null,
           case_size: data.case_size ? parseInt(data.case_size) : null,
-          order_code_threshold: data.order_code_threshold ? parseInt(data.order_code_threshold) : null,
-          requires_justification: data.requires_justification,
           packaging_note: data.packaging_note.trim() || null,
           category_id: data.category_id || null,
           storage_room_id: data.storage_room_id || null,
           location_details: data.location_details || null,
-          preferred_vendor: data.preferred_vendor || null,
-          sku: data.vendor_sku || null,
           notes: data.notes || null,
           status: "active",
-          catalog_item_id:
-            data.catalog_item_id && data.catalog_item_id !== "standalone"
-              ? data.catalog_item_id
-              : null,
+          ...purchasingFields,
         });
 
       if (error) throw error;
@@ -279,48 +293,6 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
               </div>
             </div>
 
-            {/* Order controls — both gates together so the access code field can't be missed */}
-            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-              <p className="text-sm font-medium">Order controls</p>
-
-              <div className="space-y-2">
-                <Label htmlFor="order_code_threshold">Require an access code above</Label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Input
-                    id="order_code_threshold"
-                    type="number"
-                    min="1"
-                    className="max-w-[140px]"
-                    value={formData.order_code_threshold}
-                    onChange={(e) => setFormData({ ...formData, order_code_threshold: e.target.value })}
-                    placeholder="e.g., 4"
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    units — larger orders prompt the person for their personal code. Leave blank for no limit.
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="requires_justification"
-                  checked={formData.requires_justification}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, requires_justification: checked === true })
-                  }
-                  className="mt-0.5"
-                />
-                <div className="space-y-0.5">
-                  <Label htmlFor="requires_justification" className="cursor-pointer">
-                    Requires supervisor approval
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Every order for this item routes to a supervisor for approval before fulfillment, regardless of quantity.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -417,63 +389,6 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="catalog_item_id">Catalog listing</Label>
-              <Select
-                value={formData.catalog_item_id}
-                onValueChange={(value) => setFormData({ ...formData, catalog_item_id: value })}
-              >
-                <SelectTrigger aria-label="Catalog listing">
-                  <SelectValue placeholder="Own listing (shows in catalog)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standalone">Own listing (shows in catalog)</SelectItem>
-                  {linkTargets?.map((target) => {
-                    const room = storageRooms?.find((r) => r.id === target.storage_room_id);
-                    return (
-                      <SelectItem key={target.id} value={target.id}>
-                        Counts under: {target.name}
-                        {room ? ` (${room.room_number})` : ""}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Adding stock of a product that's already in the catalog (e.g. the same copy
-                paper in another building)? Pick its listing here so people ordering see it
-                once. Stock in this room still counts and staff can pull from it when
-                fulfilling orders.
-              </p>
-            </div>
-          </div>
-
-          {/* Additional Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Vendor & Ordering</h3>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="preferred_vendor">Preferred Vendor</Label>
-                <Input
-                  id="preferred_vendor"
-                  value={formData.preferred_vendor}
-                  onChange={(e) => setFormData({ ...formData, preferred_vendor: e.target.value })}
-                  placeholder="Vendor or supplier name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="vendor_sku">Vendor SKU</Label>
-                <Input
-                  id="vendor_sku"
-                  value={formData.vendor_sku}
-                  onChange={(e) => setFormData({ ...formData, vendor_sku: e.target.value })}
-                  placeholder="SKU or product code"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
@@ -484,6 +399,112 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
               />
             </div>
           </div>
+
+          {/* Purchasing & Catalog — everything only purchasing/admin should
+              touch lives in this one section, and court aides never see it. */}
+          {canManagePurchasing && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium">Purchasing & Catalog</h3>
+                <p className="text-xs text-muted-foreground">
+                  Reorder gates, vendor info, and how this item appears in the ordering catalog.
+                </p>
+              </div>
+
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+                <p className="text-sm font-medium">Order controls</p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="order_code_threshold">Require an access code above</Label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      id="order_code_threshold"
+                      type="number"
+                      min="1"
+                      className="max-w-[140px]"
+                      value={formData.order_code_threshold}
+                      onChange={(e) => setFormData({ ...formData, order_code_threshold: e.target.value })}
+                      placeholder="e.g., 4"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      units — larger orders prompt the person for their personal code. Leave blank for no limit.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="requires_justification"
+                    checked={formData.requires_justification}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, requires_justification: checked === true })
+                    }
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-0.5">
+                    <Label htmlFor="requires_justification" className="cursor-pointer">
+                      Requires supervisor approval
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Every order for this item routes to a supervisor for approval before fulfillment, regardless of quantity.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="preferred_vendor">Preferred Vendor</Label>
+                  <Input
+                    id="preferred_vendor"
+                    value={formData.preferred_vendor}
+                    onChange={(e) => setFormData({ ...formData, preferred_vendor: e.target.value })}
+                    placeholder="Vendor or supplier name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="vendor_sku">Vendor SKU</Label>
+                  <Input
+                    id="vendor_sku"
+                    value={formData.vendor_sku}
+                    onChange={(e) => setFormData({ ...formData, vendor_sku: e.target.value })}
+                    placeholder="SKU or product code"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="catalog_item_id">Catalog listing</Label>
+                <Select
+                  value={formData.catalog_item_id}
+                  onValueChange={(value) => setFormData({ ...formData, catalog_item_id: value })}
+                >
+                  <SelectTrigger aria-label="Catalog listing">
+                    <SelectValue placeholder="Own listing (shows in catalog)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standalone">Own listing (shows in catalog)</SelectItem>
+                    {linkTargets?.map((target) => {
+                      const room = storageRooms?.find((r) => r.id === target.storage_room_id);
+                      return (
+                        <SelectItem key={target.id} value={target.id}>
+                          Counts under: {target.name}
+                          {room ? ` (${room.room_number})` : ""}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Adding stock of a product that's already in the catalog (e.g. the same copy
+                  paper in another building)? Pick its listing here so people ordering see it
+                  once. Stock in this room still counts and staff can pull from it when
+                  fulfilling orders.
+                </p>
+              </div>
+            </div>
+          )}
 
           <FormButtons
             onCancel={handleClose}

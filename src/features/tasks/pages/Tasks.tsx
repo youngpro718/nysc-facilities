@@ -16,11 +16,15 @@ import {
   Search,
   AlertCircle,
   User,
+  List,
+  LayoutGrid,
 } from "lucide-react";
 import { useStaffTasks } from "@features/tasks/hooks/useStaffTasks";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { TaskCard } from "@features/tasks/components/TaskCard";
+import { TaskListRow } from "@features/tasks/components/TaskListRow";
+import { QuickMoveDialog } from "@features/tasks/components/QuickMoveDialog";
 import { CreateTaskDialog } from "@features/tasks/components/CreateTaskDialog";
 import { StaffActivityPanel } from "@features/tasks/components/StaffActivityPanel";
 import { UserTasksTab } from "@features/tasks/components/UserTasksTab";
@@ -126,6 +130,17 @@ function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourt
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<TaskType | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all');
+  // List is the default — one task per line reads faster when staff are
+  // scanning for work to pick up. Cards remain available via the toggle.
+  const [viewMode, setViewMode] = useState<'list' | 'cards'>(() => {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('tasks-view-mode') : null;
+    return stored === 'cards' ? 'cards' : 'list';
+  });
+
+  const changeViewMode = (mode: 'list' | 'cards') => {
+    setViewMode(mode);
+    localStorage.setItem('tasks-view-mode', mode);
+  };
 
   // Update tab when URL changes
   useEffect(() => {
@@ -278,6 +293,28 @@ function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourt
       return renderEmptyState(emptyType, emptyMessage);
     }
 
+    if (viewMode === 'list') {
+      return (
+        <div className="space-y-2" data-tour="tasks-list">
+          {filtered.map(task => (
+            <TaskListRow
+              key={task.id}
+              task={task}
+              onApprove={canApprove ? handleApprove : undefined}
+              onReject={canApprove ? handleReject : undefined}
+              onCancel={canManageTasks ? handleCancel : undefined}
+              onDelete={canManageTasks ? handleDelete : undefined}
+              onClaim={showClaimActions || isCourtAide ? handleClaim : undefined}
+              onStart={showClaimActions || isCourtAide ? handleStart : undefined}
+              onComplete={showClaimActions || isCourtAide ? handleComplete : undefined}
+              onReleaseClaim={isCourtAide && task.claimed_by === user?.id ? handleReleaseClaim : undefined}
+              showActions={true}
+            />
+          ))}
+        </div>
+      );
+    }
+
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-tour="tasks-list">
         {filtered.map(task => (
@@ -343,6 +380,7 @@ function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourt
         icon={ClipboardList}
         className="mb-0"
       >
+        <QuickMoveDialog />
         {canManageTasks && <CreateTaskDialog />}
       </PageHeader>
 
@@ -371,7 +409,7 @@ function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourt
         )}
       </div>
 
-      {/* Search + Filter Bar */}
+      {/* Search + Filter Bar + view toggle */}
       <div className="space-y-3 max-w-2xl">
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-muted-foreground" />
@@ -381,6 +419,28 @@ function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourt
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-9"
           />
+          <div className="flex items-center border rounded-md shrink-0">
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-9 w-9 rounded-r-none"
+              onClick={() => changeViewMode('list')}
+              aria-label="List view"
+              title="List view"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-9 w-9 rounded-l-none"
+              onClick={() => changeViewMode('cards')}
+              aria-label="Card view"
+              title="Card view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         {filterBar}
       </div>

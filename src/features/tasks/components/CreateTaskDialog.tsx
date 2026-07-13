@@ -37,6 +37,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useStaffTasks } from '@features/tasks/hooks/useStaffTasks';
+import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
 import { TASK_TYPE_LABELS, TASK_PRIORITY_LABELS } from '@features/tasks/types/staffTasks';
 import type { TaskType, TaskPriority } from '@features/tasks/types/staffTasks';
 import { LIMITS } from '@/config';
@@ -65,6 +66,9 @@ interface CreateTaskDialogProps {
 export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const { createTask } = useStaffTasks();
+  // Assigning work to a specific person is an admin call. Everyone else's
+  // tasks go into the shared pool for court aides to claim.
+  const { isAdmin: canAssign } = useRolePermissions();
 
   const defaultValues = useMemo<CreateTaskFormData>(() => ({
     title: taskDefaults?.title ?? '',
@@ -90,16 +94,29 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
     }
   }, [defaultValues, form, open]);
 
-  // Fetch staff members for assignment
+  // Fetch assignable staff — court aides only (the people who work tasks),
+  // resolved from user_roles so the list mirrors the real roster. Admin-only:
+  // no point fetching when the Assign To field isn't shown.
   const { data: staffMembers = [] } = useQuery({
-    queryKey: ['staff-members'],
+    queryKey: ['staff-members', 'court-aides'],
+    enabled: canAssign,
     queryFn: async () => {
+      const { data: roleRows, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'court_aide');
+      if (rolesError) throw rolesError;
+
+      const aideIds = (roleRows || []).map((r: { user_id: string }) => r.user_id);
+      if (aideIds.length === 0) return [];
+
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
+        .in('id', aideIds)
         .eq('is_approved', true)
         .order('full_name');
-      
+
       if (error) throw error;
       return data || [];
     },
@@ -141,7 +158,7 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
       description: data.description,
       task_type: data.task_type as TaskType,
       priority: data.priority as TaskPriority,
-      assigned_to: data.assigned_to || undefined,
+      assigned_to: canAssign ? data.assigned_to || undefined : undefined,
       inventory_item_id: data.inventory_item_id || undefined,
       from_room_id: data.from_room_id || undefined,
       to_room_id: data.to_room_id || undefined,
@@ -254,34 +271,36 @@ export function CreateTaskDialog({ trigger, taskDefaults }: CreateTaskDialogProp
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="assigned_to"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Assign To (optional)</FormLabel>
-                  <Select 
-                    onValueChange={(val) => field.onChange(val === '__none__' ? undefined : val)} 
-                    value={field.value || '__none__'}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Leave unassigned" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="__none__">Unassigned</SelectItem>
-                      {staffMembers.map((staff) => (
-                        <SelectItem key={staff.id} value={staff.id}>
-                          {staff.full_name || staff.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {canAssign && (
+              <FormField
+                control={form.control}
+                name="assigned_to"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assign To (optional)</FormLabel>
+                    <Select
+                      onValueChange={(val) => field.onChange(val === '__none__' ? undefined : val)}
+                      value={field.value || '__none__'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Leave unassigned" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__none__">Unassigned — anyone can claim it</SelectItem>
+                        {staffMembers.map((staff) => (
+                          <SelectItem key={staff.id} value={staff.id}>
+                            {staff.full_name || staff.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {showInventoryField && (
               <FormField
