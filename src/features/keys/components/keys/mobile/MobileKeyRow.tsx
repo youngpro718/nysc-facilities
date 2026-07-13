@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   LockboxSlot,
-  getKeyRoleLabel,
   getRoomLinkStatus,
-  getSlotDisplayTitle,
+  getSlotCompactTitle,
   slotHasRoomLink,
 } from "../types/LockboxTypes";
 
@@ -104,31 +103,6 @@ const TONE_STYLES: Record<
   },
 };
 
-/**
- * What sets this key apart from others in the same room — several slots can
- * share "Room 1416" (back office, safe, closet…), and the row must show which
- * one this is without opening the slot. Uses the key role and/or the stored
- * label when it adds information beyond the title.
- */
-function getSlotDetail(slot: LockboxSlot): string | null {
-  const title = getSlotDisplayTitle(slot).trim().toLowerCase();
-  const parts: string[] = [];
-
-  const roleLabel = getKeyRoleLabel(slot.key_role, slot.sub_room_label);
-  if (roleLabel) parts.push(roleLabel);
-
-  const label = slot.label?.trim();
-  if (
-    label &&
-    label.toLowerCase() !== title &&
-    !parts.some((p) => p.toLowerCase() === label.toLowerCase())
-  ) {
-    parts.push(label);
-  }
-
-  return parts.length > 0 ? parts.join(" · ") : null;
-}
-
 function formatCheckedOutAt(iso?: string | null): string | null {
   if (!iso) return null;
   try {
@@ -169,15 +143,17 @@ export function MobileKeyRow({ slot, onOpen, onPrimaryAction }: MobileKeyRowProp
           <Key className={cn("h-5 w-5", styles.icon)} />
         </div>
 
-        {/* Col 2 — Title + what distinguishes this key (role/label) */}
+        {/* Col 2 — Minimal identity: room number · descriptor. The official
+            room name, building, and floor live in the tap-open detail view. */}
         <div className="min-w-0">
           <div className="font-semibold text-sm leading-snug truncate text-foreground">
-            {getSlotDisplayTitle(slot)}
+            {getSlotCompactTitle(slot)}
           </div>
-          <div className="text-xs text-muted-foreground truncate mt-0.5">
-            {getSlotDetail(slot) ??
-              (slotHasRoomLink(slot) ? "Linked to room" : "No room linked")}
-          </div>
+          {!slotHasRoomLink(slot) && (
+            <div className="text-xs text-muted-foreground truncate mt-0.5">
+              No room linked
+            </div>
+          )}
         </div>
 
         {/* Col 3 — Box / Slot (always neutral) */}

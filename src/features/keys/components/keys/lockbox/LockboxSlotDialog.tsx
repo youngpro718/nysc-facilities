@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LockboxSlot, getKeyRoleLabel, getSlotDisplayTitle } from "../types/LockboxTypes";
+import {
+  LockboxSlot,
+  getKeyRoleLabel,
+  getSlotBuildingLocation,
+  getSlotCompactTitle,
+  getSlotDisplayTitle,
+} from "../types/LockboxTypes";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Edit3, MoreHorizontal, Trash2 } from "lucide-react";
@@ -196,7 +202,7 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
         open={open}
         onOpenChange={onOpenChange}
         size="sm"
-        title={`Slot ${slot.slot_number}: ${getSlotDisplayTitle(slot)}`}
+        title={`Slot ${slot.slot_number}: ${getSlotCompactTitle(slot)}`}
         description={lockboxName ? `Lockbox: ${lockboxName}` : undefined}
         headerRight={headerRight}
       >
@@ -212,18 +218,38 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
             </div>
             {/* Which key this is — several slots can share a room (back
                 office, safe, closet…), so surface the label/role here
-                instead of making people open Edit to find out. */}
-            {slot.label?.trim() &&
-              slot.label.trim().toLowerCase() !== getSlotDisplayTitle(slot).trim().toLowerCase() && (
+                instead of making people open Edit to find out. Skipped when
+                the header already says the same thing. */}
+            {(() => {
+              const norm = (s: string) => s.replace(/[^a-z0-9]/gi, "").toLowerCase();
+              const label = slot.label?.trim();
+              return label &&
+                norm(label) !== norm(getSlotCompactTitle(slot)) &&
+                norm(label) !== norm(getSlotDisplayTitle(slot)) ? (
                 <div>
                   <span className="font-semibold">Key: </span>
-                  <span>{slot.label.trim()}</span>
+                  <span>{label}</span>
                 </div>
-              )}
+              ) : null;
+            })()}
             {getKeyRoleLabel(slot.key_role, slot.sub_room_label) && (
               <div>
                 <span className="font-semibold">Type: </span>
                 <span>{getKeyRoleLabel(slot.key_role, slot.sub_room_label)}</span>
+              </div>
+            )}
+            {/* Full "where is this room" info lives here, deliberately not on
+                the list rows — those stay minimal (room number · descriptor). */}
+            {slot.room?.name?.trim() && (
+              <div>
+                <span className="font-semibold">Room: </span>
+                <span>{slot.room.name.trim()}</span>
+              </div>
+            )}
+            {getSlotBuildingLocation(slot) && (
+              <div>
+                <span className="font-semibold">Location: </span>
+                <span>{getSlotBuildingLocation(slot)}</span>
               </div>
             )}
           </div>
