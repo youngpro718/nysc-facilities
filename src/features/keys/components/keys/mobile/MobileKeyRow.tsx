@@ -130,24 +130,34 @@ export function MobileKeyRow({ slot, onOpen, onPrimaryAction }: MobileKeyRowProp
     <div className="rounded-md border bg-card overflow-hidden">
       <button
         type="button"
-        className="w-full grid grid-cols-[48px_1fr_auto_auto] items-center gap-3 p-3 text-left"
+        className="w-full flex items-center gap-3 p-3 text-left"
         onClick={() => onOpen(slot)}
       >
-        {/* Col 1 — Key icon */}
+        {/* Key icon */}
         <div
           className={cn(
-            "h-12 w-12 rounded-full flex items-center justify-center",
+            "h-12 w-12 rounded-full flex items-center justify-center shrink-0",
             styles.iconWrap,
           )}
         >
           <Key className={cn("h-5 w-5", styles.icon)} />
         </div>
 
-        {/* Col 2 — Minimal identity: room number · descriptor. The official
-            room name, building, and floor live in the tap-open detail view. */}
-        <div className="min-w-0">
-          <div className="font-semibold text-sm leading-snug truncate text-foreground">
+        {/* Identity gets the full middle width: room number · descriptor on
+            top, slot + box below. Slot number leads the second line so
+            truncation eats the (often long) box name, never the slot. The
+            official room name, building, and floor live in the tap-open
+            detail view. */}
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-base leading-snug truncate text-foreground">
             {getSlotCompactTitle(slot)}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 min-w-0">
+            <Archive className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">
+              Slot {String(slot.slot_number).padStart(2, "0")}
+              {slot.lockbox_name ? ` · ${slot.lockbox_name}` : ""}
+            </span>
           </div>
           {!slotHasRoomLink(slot) && (
             <div className="text-xs text-muted-foreground truncate mt-0.5">
@@ -156,19 +166,8 @@ export function MobileKeyRow({ slot, onOpen, onPrimaryAction }: MobileKeyRowProp
           )}
         </div>
 
-        {/* Col 3 — Box / Slot (always neutral) */}
-        <div className="pl-3 pr-1 border-l border-border/60 min-w-[80px]">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-            <Archive className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="truncate">{slot.lockbox_name || "Box"}</span>
-          </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            Slot {String(slot.slot_number).padStart(2, "0")}
-          </div>
-        </div>
-
-        {/* Col 4 — Status pill + action button (equal width, right-aligned) */}
-        <div className="flex flex-col items-stretch gap-1.5 w-[104px]">
+        {/* Status pill + action button (equal width, right-aligned) */}
+        <div className="flex flex-col items-stretch gap-1.5 w-[104px] shrink-0">
           <span
             className={cn(
               "inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-medium",
