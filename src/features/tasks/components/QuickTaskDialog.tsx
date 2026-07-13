@@ -70,11 +70,14 @@ import { LIMITS } from '@/config';
 
 type QuickAction = 'move' | 'remove' | 'run' | 'from_storage';
 
-const ACTIONS: { value: QuickAction; label: string; icon: typeof Truck; blurb: string }[] = [
+const ACTIONS: { value: QuickAction; label: string; icon: typeof Truck; blurb: string; adminOnly?: boolean }[] = [
   { value: 'move', label: 'Move', icon: MoveRight, blurb: 'From one room to another' },
   { value: 'remove', label: 'Remove', icon: Trash2, blurb: 'Haul it out of a room' },
   { value: 'run', label: 'Delivery Run', icon: Send, blurb: 'Take something somewhere' },
-  { value: 'from_storage', label: 'From Storage', icon: Warehouse, blurb: 'Bring an item to a room' },
+  // What's sitting in storage is facilities knowledge — regular users don't
+  // get to order furniture out of it. They file a normal request and admin
+  // decides whether it comes from storage or gets purchased.
+  { value: 'from_storage', label: 'From Storage', icon: Warehouse, blurb: 'Bring an item to a room', adminOnly: true },
 ];
 
 // ── What kind of item, per action ───────────────────────────────────────────
@@ -345,7 +348,7 @@ export function QuickTaskDialog({ trigger }: QuickTaskDialogProps) {
         <div className="space-y-4">
           {/* Which job */}
           <div className="grid grid-cols-2 gap-2">
-            {ACTIONS.map(({ value, label, icon: Icon, blurb }) => (
+            {ACTIONS.filter(a => !a.adminOnly || isAdmin).map(({ value, label, icon: Icon, blurb }) => (
               <button
                 key={value}
                 type="button"
