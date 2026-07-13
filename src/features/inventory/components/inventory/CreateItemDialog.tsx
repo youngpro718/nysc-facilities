@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { QUERY_CONFIG } from '@/config';
@@ -37,9 +37,11 @@ type StorageRoom = {
 interface CreateItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pre-select a storage room (e.g. when adding an item from a room's panel). */
+  defaultStorageRoomId?: string | null;
 }
 
-export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) => {
+export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: CreateItemDialogProps) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -64,6 +66,12 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (open && defaultStorageRoomId) {
+      setFormData(prev => ({ ...prev, storage_room_id: defaultStorageRoomId }));
+    }
+  }, [open, defaultStorageRoomId]);
 
   const { data: categories } = useQuery({
     queryKey: QUERY_KEYS.inventoryCategories(),

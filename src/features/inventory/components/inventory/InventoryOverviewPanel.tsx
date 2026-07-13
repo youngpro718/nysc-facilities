@@ -6,27 +6,27 @@ import { QUERY_CONFIG } from '@/config';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, AlertTriangle, ArrowRight, ShoppingCart } from "lucide-react";
+import { Package, AlertTriangle, ArrowRight, PackagePlus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { isLowStock, isOutOfStock, needsAttention } from "@features/inventory/utils/stockStatus";
-import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { StockAdjustmentDialog } from "@features/inventory/components/inventory/StockAdjustmentDialog";
 
 type LowStockItem = {
   id: string;
   name: string;
   quantity: number;
   minimum_quantity: number;
+  unit?: string | null;
   category_name?: string | null;
 };
 
 export const InventoryOverviewPanel = () => {
   const [range, setRange] = useState<"7d" | "30d" | "90d" | "ytd">("30d");
   const [, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { userRole } = useRolePermissions();
-  const canOrderSupplies = userRole !== 'court_aide';
+  const [restockItem, setRestockItem] = useState<LowStockItem | null>(null);
+  const [restockOpen, setRestockOpen] = useState(false);
 
 
   const startDate = useMemo(() => {
@@ -105,7 +105,7 @@ export const InventoryOverviewPanel = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select("id, name, quantity, minimum_quantity, category_id")
+        .select("id, name, quantity, minimum_quantity, unit, category_id")
         .order("quantity", { ascending: true });
       if (error) throw error;
 
@@ -126,6 +126,7 @@ export const InventoryOverviewPanel = () => {
         name: item.name,
         quantity: item.quantity,
         minimum_quantity: item.minimum_quantity,
+        unit: item.unit,
         category_name: item.category_id ? categoriesById.get(item.category_id) ?? null : null,
       })) as LowStockItem[];
     },
@@ -217,17 +218,18 @@ export const InventoryOverviewPanel = () => {
                           </span>
                         </div>
                       </div>
-                      {canOrderSupplies && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="shrink-0 h-8 text-xs"
-                          onClick={() => navigate('/request/supplies')}
-                        >
-                          <ShoppingCart className="h-3 w-3 mr-1" />
-                          Reorder
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 h-8 text-xs"
+                        onClick={() => {
+                          setRestockItem(item);
+                          setRestockOpen(true);
+                        }}
+                      >
+                        <PackagePlus className="h-3 w-3 mr-1" />
+                        Restock
+                      </Button>
                     </div>
                   );
                 })}
@@ -290,6 +292,19 @@ export const InventoryOverviewPanel = () => {
           )}
         </CardContent>
       </Card>
+
+      {restockItem && (
+        <StockAdjustmentDialog
+          open={restockOpen}
+          onOpenChange={setRestockOpen}
+          item={{
+            id: restockItem.id,
+            name: restockItem.name,
+            quantity: restockItem.quantity,
+            unit: restockItem.unit || '',
+          }}
+        />
+      )}
     </div>
   );
 };

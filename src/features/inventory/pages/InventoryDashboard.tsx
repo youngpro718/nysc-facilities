@@ -30,8 +30,11 @@ interface TabConfig {
 
 export const InventoryDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'overview';
-  const [activeTab, setActiveTab] = useState(initialTab);
+  // Derive the active tab from the URL instead of mirroring it in state:
+  // child panels (e.g. the Overview "Action Needed" links) switch tabs via
+  // setSearchParams, which never updated the old useState copy — clicks
+  // changed the URL but the page didn't move.
+  const activeTab = searchParams.get('tab') || 'overview';
   const [newRequestsCount, setNewRequestsCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
@@ -40,9 +43,7 @@ export const InventoryDashboard = () => {
   const { userRole } = useRolePermissions();
   const canOrderSupplies = userRole !== 'court_aide';
 
-  // Sync tab with URL
   const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
     setSearchParams({ tab });
   };
 

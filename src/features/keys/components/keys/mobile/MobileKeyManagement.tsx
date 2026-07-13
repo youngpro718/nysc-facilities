@@ -50,9 +50,11 @@ export function MobileKeyManagement() {
   const slotsQuery = useQuery({
     queryKey: ["mobile-keys-slots"],
     queryFn: async () => {
+      // Join the live room like the desktop lockbox view does, so titles can
+      // show "Room 1416 — Part 62" instead of a bare stored room number.
       const { data, error } = await supabase
         .from("lockbox_slots")
-        .select("*")
+        .select("*, room:rooms(id, room_number, name)")
         .order("slot_number", { ascending: true });
       if (error) throw error;
       return (data || []) as LockboxSlot[];
@@ -186,6 +188,9 @@ export function MobileKeyManagement() {
         s.label.toLowerCase().includes(q) ||
         String(s.slot_number).includes(q) ||
         (s.room_number || "").toLowerCase().includes(q) ||
+        (s.room?.room_number || "").toLowerCase().includes(q) ||
+        (s.room?.name || "").toLowerCase().includes(q) ||
+        (s.sub_room_label || "").toLowerCase().includes(q) ||
         (s.lockbox_name || "").toLowerCase().includes(q)
       );
     });

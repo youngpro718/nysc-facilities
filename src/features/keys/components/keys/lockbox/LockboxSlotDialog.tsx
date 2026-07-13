@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LockboxSlot, getSlotDisplayTitle } from "../types/LockboxTypes";
+import { LockboxSlot, getKeyRoleLabel, getSlotDisplayTitle } from "../types/LockboxTypes";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Edit3, MoreHorizontal, Trash2 } from "lucide-react";
@@ -210,6 +210,22 @@ export function LockboxSlotDialog({ slot, open, onOpenChange, onSuccess, lockbox
               <span className="font-semibold">Quantity: </span>
               <span>{slot.quantity || 1} {(slot.quantity || 1) === 1 ? 'key' : 'keys'}</span>
             </div>
+            {/* Which key this is — several slots can share a room (back
+                office, safe, closet…), so surface the label/role here
+                instead of making people open Edit to find out. */}
+            {slot.label?.trim() &&
+              slot.label.trim().toLowerCase() !== getSlotDisplayTitle(slot).trim().toLowerCase() && (
+                <div>
+                  <span className="font-semibold">Key: </span>
+                  <span>{slot.label.trim()}</span>
+                </div>
+              )}
+            {getKeyRoleLabel(slot.key_role, slot.sub_room_label) && (
+              <div>
+                <span className="font-semibold">Type: </span>
+                <span>{getKeyRoleLabel(slot.key_role, slot.sub_room_label)}</span>
+              </div>
+            )}
           </div>
 
           {slot.status === 'in_box' && (

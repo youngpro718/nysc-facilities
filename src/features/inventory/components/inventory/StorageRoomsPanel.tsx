@@ -6,10 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Package, 
-  MapPin, 
-  TrendingDown, 
+import {
+  Package,
+  MapPin,
+  TrendingDown,
   Search,
   Box,
   AlertTriangle,
@@ -17,10 +17,14 @@ import {
   LayoutGrid,
   List,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  PackagePlus,
+  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isLowStock as isLowStockHelper, isOutOfStock as isOutOfStockHelper } from "@features/inventory/utils/stockStatus";
+import { StockAdjustmentDialog } from "@features/inventory/components/inventory/StockAdjustmentDialog";
+import { CreateItemDialog } from "@features/inventory/components/inventory/CreateItemDialog";
 
 type StorageRoom = {
   id: string;
@@ -68,6 +72,14 @@ export const StorageRoomsPanel = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [expandedRoom, setExpandedRoom] = useState<string | null>(null);
+  const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [addItemRoomId, setAddItemRoomId] = useState<string | null>(null);
+
+  const openAdjust = (item: InventoryItem) => {
+    setAdjustItem(item);
+    setAdjustOpen(true);
+  };
 
   const { data: storageRooms, isLoading: roomsLoading } = useQuery<StorageRoom[]>({
     queryKey: ["storage-rooms"],
@@ -349,9 +361,21 @@ export const StorageRoomsPanel = () => {
                     </div>
                   </div>
 
-                  {/* Expanded Item List */}
+                  {/* Expanded Item List — clicks inside must not collapse the card */}
                   {isExpanded && (
-                    <div className="border-t pt-3 space-y-1.5 max-h-[300px] overflow-y-auto">
+                    <div
+                      className="border-t pt-3 space-y-1.5 max-h-[300px] overflow-y-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-8 text-xs border-dashed"
+                        onClick={() => setAddItemRoomId(room.id)}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Add Item to This Room
+                      </Button>
                       {room.items.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-4">No items</p>
                       ) : (
@@ -385,6 +409,16 @@ export const StorageRoomsPanel = () => {
                                 )}>
                                   {item.quantity}
                                 </span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  title={`Restock ${item.name}`}
+                                  aria-label={`Restock ${item.name}`}
+                                  onClick={() => openAdjust(item)}
+                                >
+                                  <PackagePlus className="h-3.5 w-3.5" />
+                                </Button>
                               </div>
                             </div>
                           );
@@ -449,6 +483,15 @@ export const StorageRoomsPanel = () => {
                     </button>
                     {isExpanded && (
                       <div className="px-4 pb-4 space-y-1.5 max-h-[300px] overflow-y-auto border-t bg-muted/20">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-8 text-xs border-dashed mt-3"
+                          onClick={() => setAddItemRoomId(room.id)}
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Add Item to This Room
+                        </Button>
                         {room.items.length === 0 ? (
                           <p className="text-sm text-muted-foreground text-center py-6">No items in this room</p>
                         ) : (
@@ -512,6 +555,16 @@ export const StorageRoomsPanel = () => {
                                     </div>
                                   )}
                                 </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0"
+                                  title={`Restock ${item.name}`}
+                                  aria-label={`Restock ${item.name}`}
+                                  onClick={() => openAdjust(item)}
+                                >
+                                  <PackagePlus className="h-4 w-4" />
+                                </Button>
                               </div>
                             );
                           })
@@ -525,6 +578,27 @@ export const StorageRoomsPanel = () => {
           </CardContent>
         </Card>
       )}
+
+      {adjustItem && (
+        <StockAdjustmentDialog
+          open={adjustOpen}
+          onOpenChange={setAdjustOpen}
+          item={{
+            id: adjustItem.id,
+            name: adjustItem.name,
+            quantity: adjustItem.quantity,
+            unit: adjustItem.unit || '',
+          }}
+        />
+      )}
+
+      <CreateItemDialog
+        open={addItemRoomId !== null}
+        onOpenChange={(open) => {
+          if (!open) setAddItemRoomId(null);
+        }}
+        defaultStorageRoomId={addItemRoomId}
+      />
     </div>
   );
 };
