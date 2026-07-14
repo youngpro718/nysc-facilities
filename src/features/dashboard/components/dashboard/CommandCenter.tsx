@@ -264,6 +264,9 @@ export function CommandCenter() {
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${TONE_DOT[activityTone(item.type)]}`} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{item.title}</span>
+                    {item.description && (
+                      <span className="block truncate text-xs text-muted-foreground">{item.description}</span>
+                    )}
                     <span className="block text-xs text-muted-foreground">
                       {item.type.replace('_', ' ')}
                       {item.status ? ` · ${item.status}` : ''}

@@ -188,7 +188,8 @@ async function getSupplyMetrics(): Promise<SupplyMetrics> {
   // Fetch low stock items using a filter query
   const { data: allItems } = await supabase
     .from('inventory_items')
-    .select('quantity, minimum_quantity');
+    .select('quantity, minimum_quantity')
+    .eq('status', 'active');
 
   const requestList = requests || [];
   const today = new Date().toISOString().split('T')[0];
@@ -359,6 +360,67 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
       timestamp: req.created_at,
       status: req.status,
     })));
+  }
+
+  // Fetch recent inventory item / room edits and deletes (trigger-logged,
+  // migration 107 — catches every write path, including hard deletes).
+  const { data: auditRows } = await supabase
+    .from('audit_logs')
+    .select('id, table_name, action, old_values, new_values, performed_by, performed_at')
+    .in('table_name', ['inventory_items', 'rooms'])
+    .order('performed_at', { ascending: false })
+    .limit(15);
+
+  if (auditRows && auditRows.length > 0) {
+    const performerIds = Array.from(
+      new Set(auditRows.map((row: any) => row.performed_by).filter(Boolean)),
+    ) as string[];
+
+    const performerNames = new Map<string, string>();
+    if (performerIds.length > 0) {
+      const { data: performers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', performerIds);
+      for (const performer of performers || []) {
+        const fullName = `${performer.first_name || ''} ${performer.last_name || ''}`.trim();
+        performerNames.set(performer.id, fullName || 'Unknown user');
+      }
+    }
+
+    const IGNORED_DIFF_KEYS = new Set(['updated_at', 'created_at']);
+
+    activities.push(...auditRows.map((row: any) => {
+      const oldValues = row.old_values as Record<string, unknown> | null;
+      const newValues = row.new_values as Record<string, unknown> | null;
+      const label = row.table_name === 'inventory_items' ? 'Item' : 'Room';
+      const name = (newValues?.name as string) || (oldValues?.name as string) || 'Unnamed';
+
+      let title: string;
+      let description: string | undefined;
+
+      if (row.action === 'delete') {
+        title = `${label} deleted: ${name}`;
+      } else if (row.action === 'insert') {
+        title = `${label} added: ${name}`;
+      } else {
+        const changedFields = Object.keys(newValues || {}).filter((key) => {
+          if (IGNORED_DIFF_KEYS.has(key)) return false;
+          return JSON.stringify(oldValues?.[key]) !== JSON.stringify(newValues?.[key]);
+        });
+        title = `${label} updated: ${name}`;
+        description = changedFields.length > 0 ? `Changed: ${changedFields.join(', ')}` : undefined;
+      }
+
+      return {
+        id: row.id,
+        type: 'user_action' as const,
+        title,
+        description,
+        user_name: row.performed_by ? performerNames.get(row.performed_by) : undefined,
+        timestamp: row.performed_at,
+      };
+    }));
   }
 
   // Sort by timestamp and limit
