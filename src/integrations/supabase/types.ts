@@ -508,6 +508,94 @@ export type Database = {
         }
         Relationships: []
       }
+      common_areas: {
+        Row: {
+          area_type: string
+          created_at: string
+          description: string | null
+          floor_id: string
+          id: string
+          legacy_room_id: string | null
+          name: string
+          status: Database["public"]["Enums"]["status_enum"]
+          updated_at: string
+          water_cooler_count: number
+          water_cooler_notes: string | null
+        }
+        Insert: {
+          area_type?: string
+          created_at?: string
+          description?: string | null
+          floor_id: string
+          id?: string
+          legacy_room_id?: string | null
+          name: string
+          status?: Database["public"]["Enums"]["status_enum"]
+          updated_at?: string
+          water_cooler_count?: number
+          water_cooler_notes?: string | null
+        }
+        Update: {
+          area_type?: string
+          created_at?: string
+          description?: string | null
+          floor_id?: string
+          id?: string
+          legacy_room_id?: string | null
+          name?: string
+          status?: Database["public"]["Enums"]["status_enum"]
+          updated_at?: string
+          water_cooler_count?: number
+          water_cooler_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "common_areas_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      common_area_history: {
+        Row: {
+          change_type: string
+          changed_by: string | null
+          common_area_id: string
+          created_at: string | null
+          id: string
+          new_values: Json | null
+          previous_values: Json | null
+        }
+        Insert: {
+          change_type: string
+          changed_by?: string | null
+          common_area_id: string
+          created_at?: string | null
+          id?: string
+          new_values?: Json | null
+          previous_values?: Json | null
+        }
+        Update: {
+          change_type?: string
+          changed_by?: string | null
+          common_area_id?: string
+          created_at?: string | null
+          id?: string
+          new_values?: Json | null
+          previous_values?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "common_area_history_common_area_id_fkey"
+            columns: ["common_area_id"]
+            isOneToOne: false
+            referencedRelation: "common_areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chambers_move_legs: {
         Row: {
           created_at: string

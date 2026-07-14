@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Droplets, Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -11,18 +10,26 @@ import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { cn } from '@/lib/utils';
 import { useRolePermissions } from '@features/auth/hooks/useRolePermissions';
+import {
+  updateCommonAreaWaterCoolers,
+  updateRoomWaterCoolers,
+} from '../../services/waterCoolers';
 
 interface WaterCoolerToggleProps {
-  roomId: string;
+  roomId?: string;
+  commonAreaId?: string;
   waterCoolerCount: number;
   waterCoolerNotes?: string | null;
+  locationLabel?: string;
   className?: string;
 }
 
 export function WaterCoolerToggle({
   roomId,
+  commonAreaId,
   waterCoolerCount,
   waterCoolerNotes,
+  locationLabel = 'room',
   className,
 }: WaterCoolerToggleProps) {
   const queryClient = useQueryClient();
@@ -32,6 +39,7 @@ export function WaterCoolerToggle({
   const [quantity, setQuantity] = useState(Math.max(1, waterCoolerCount));
   const [notes, setNotes] = useState(waterCoolerNotes ?? '');
   const hasWaterCooler = waterCoolerCount > 0;
+  const locationId = commonAreaId ?? roomId;
 
   useEffect(() => {
     if (!open) {
@@ -43,16 +51,14 @@ export function WaterCoolerToggle({
   const updateCoolers = useMutation({
     mutationFn: async (nextCount: number) => {
       const count = Math.max(0, Math.min(50, Math.trunc(nextCount)));
-      const { error } = await supabase
-        .from('rooms')
-        .update({
-          has_water_cooler: count > 0,
-          water_cooler_count: count,
-          water_cooler_notes: count > 0 ? notes.trim() || null : null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', roomId);
-      if (error) throw error;
+      if (!locationId) throw new Error('A room or common-area ID is required.');
+
+      const update = {
+        count,
+        notes: count > 0 ? notes.trim() || null : null,
+      };
+      if (commonAreaId) await updateCommonAreaWaterCoolers(commonAreaId, update);
+      else await updateRoomWaterCoolers(roomId!, update);
       return count;
     },
     onSuccess: (count) => {
@@ -60,7 +66,8 @@ export function WaterCoolerToggle({
         ? `${count} water ${count === 1 ? 'cooler' : 'coolers'} recorded`
         : 'Water coolers removed from room');
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['enhanced-room', roomId] });
+      queryClient.invalidateQueries({ queryKey: ['common-areas'] });
+      if (roomId) queryClient.invalidateQueries({ queryKey: ['enhanced-room', roomId] });
       setOpen(false);
     },
     onError: (error: unknown) => {
@@ -104,12 +111,12 @@ export function WaterCoolerToggle({
       >
         <div>
           <h4 className="font-medium">Water coolers</h4>
-          <p className="mt-1 text-xs text-muted-foreground">Enter the exact number located in this room.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Enter the exact number located in this {locationLabel}.</p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`water-cooler-count-${roomId}`}>Quantity</Label>
+          <Label htmlFor={`water-cooler-count-${locationId}`}>Quantity</Label>
           <Input
-            id={`water-cooler-count-${roomId}`}
+            id={`water-cooler-count-${locationId}`}
             type="number"
             min={1}
             max={50}
@@ -121,9 +128,9 @@ export function WaterCoolerToggle({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`water-cooler-notes-${roomId}`}>Placement notes</Label>
+          <Label htmlFor={`water-cooler-notes-${locationId}`}>Placement notes</Label>
           <Input
-            id={`water-cooler-notes-${roomId}`}
+            id={`water-cooler-notes-${locationId}`}
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             placeholder="Optional, e.g. outside the calendar unit"
