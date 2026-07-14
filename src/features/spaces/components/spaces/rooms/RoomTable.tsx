@@ -2,7 +2,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Phone, MapPin } from "lucide-react";
+import { Trash2, Phone, MapPin, Droplets } from "lucide-react";
 import { Room } from "./types/RoomTypes";
 import { ParentRoomHierarchy } from "./ParentRoomHierarchy";
 import { EditSpaceDialog } from "../EditSpaceDialog";
@@ -105,6 +105,12 @@ export function RoomTable({ rooms, onDelete, onRoomClick }: RoomTableProps) {
                       <span className="truncate max-w-[100px]">{room.phone_number}</span>
                     </div>
                   )}
+                  {(room.water_cooler_count ?? 0) > 0 && (
+                    <div className="flex items-center gap-1 font-medium text-sky-700 dark:text-sky-300">
+                      <Droplets className="h-3.5 w-3.5" />
+                      <span>{room.water_cooler_count}</span>
+                    </div>
+                  )}
                 </div>
               </TableCell>
                {canManageSpaces && (
@@ -128,6 +134,9 @@ export function RoomTable({ rooms, onDelete, onRoomClick }: RoomTableProps) {
                          parent_room_id: room.parent_room_id || null,
                          current_function: room.current_function || null,
                          phone_number: room.phone_number || null,
+                         has_water_cooler: room.has_water_cooler || false,
+                         water_cooler_count: room.water_cooler_count ?? 0,
+                         water_cooler_notes: room.water_cooler_notes || null,
                          courtroom_photos: room.courtroom_photos || null,
                          connections: room.space_connections?.map(conn => ({
                            id: conn.id,

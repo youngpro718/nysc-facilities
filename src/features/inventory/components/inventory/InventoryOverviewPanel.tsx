@@ -47,6 +47,7 @@ export const InventoryOverviewPanel = () => {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("id, name, quantity, minimum_quantity, category_id")
+        .eq("status", "active")
         .order("quantity", { ascending: true });
       if (error) throw error;
       return data || [];
@@ -106,6 +107,7 @@ export const InventoryOverviewPanel = () => {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("id, name, quantity, minimum_quantity, unit, category_id")
+        .eq("status", "active")
         .order("quantity", { ascending: true });
       if (error) throw error;
 

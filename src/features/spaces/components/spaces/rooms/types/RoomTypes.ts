@@ -59,6 +59,8 @@ export interface Room {
   temporary_storage_use?: boolean;
   parent_room_id?: string | null;
   current_function?: string | null;
+  water_cooler_count?: number;
+  water_cooler_notes?: string | null;
   floor_id: string;
   created_at: string;
   updated_at: string;

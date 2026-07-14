@@ -108,6 +108,7 @@ export const LowStockPanel = () => {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
+        .eq("status", "active")
         .order("quantity", { ascending: true });
 
       if (error) throw error;
@@ -125,6 +126,7 @@ export const LowStockPanel = () => {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
+        .eq("status", "active")
         .order("name");
 
       if (error) throw error;

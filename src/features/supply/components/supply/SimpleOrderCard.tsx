@@ -64,6 +64,9 @@ export function SimpleOrderCard({
   const isPartialFulfillment = order.metadata?.partial_fulfillment;
   const isReady = order.status === 'ready';
   const isCompleted = order.status === 'completed';
+  const hasUnfulfilledReadyItems = isReady && order.supply_request_items?.some(
+    (item: any) => (item.quantity_fulfilled ?? 0) <= 0
+  );
 
   // Check if order needs admin approval
   const needsApproval = order.status === 'pending_approval' || 
@@ -250,7 +253,12 @@ export function SimpleOrderCard({
         {/* Action Buttons */}
         {!isCompleted && (
           <div className="flex gap-2">
-            {isReady && deliveryMethod === 'delivery' && showDeliveryConfirm && onConfirmDelivered ? (
+            {hasUnfulfilledReadyItems ? (
+              <Button variant="outline" className="w-full" size="lg" disabled>
+                <AlertTriangle className="mr-2 h-4 w-4 text-amber-600" />
+                Needs Fulfillment Review
+              </Button>
+            ) : isReady && deliveryMethod === 'delivery' && showDeliveryConfirm && onConfirmDelivered ? (
               <Button
                 onClick={onConfirmDelivered}
                 className="w-full bg-green-600 hover:bg-green-700"

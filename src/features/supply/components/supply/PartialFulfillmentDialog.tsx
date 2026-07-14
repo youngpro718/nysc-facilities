@@ -61,9 +61,10 @@ interface StockSource {
 interface PartialFulfillmentDialogProps {
   order: any;
   onClose: () => void;
+  readOnly?: boolean;
 }
 
-export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentDialogProps) {
+export function PartialFulfillmentDialog({ order, onClose, readOnly = false }: PartialFulfillmentDialogProps) {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   
@@ -100,7 +101,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
 
   const { data: stockSourcesByItem } = useQuery({
     queryKey: ['fulfillment-stock-sources', order.id],
-    enabled: orderedInventoryIds.length > 0,
+    enabled: orderedInventoryIds.length > 0 && !readOnly,
     queryFn: async (): Promise<Record<string, StockSource[]>> => {
       const idList = orderedInventoryIds.join(',');
       const { data: rows, error } = await supabase
@@ -208,6 +209,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
   const hasOutOfStock = items.some(item => item.status === 'out_of_stock');
 
   const handleComplete = async () => {
+    if (readOnly) return;
     setIsCompleting(true);
 
     try {
@@ -261,7 +263,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
       title={
         <span className="flex items-center gap-2">
           <Package className="h-5 w-5" />
-          Fulfill Order #{formatRequestId(order.id, order.display_id)}
+          {readOnly ? 'Order Details' : 'Fulfill Order'} #{formatRequestId(order.id, order.display_id)}
         </span>
       }
     >
@@ -280,10 +282,19 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
             </p>
           </div>
 
+          {readOnly && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Awaiting supervisor approval. Fulfillment controls will be available after approval.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Separator />
 
           {/* Delivery Method */}
-          <div className="space-y-2">
+          {!readOnly && <div className="space-y-2">
             <Label className="text-sm font-semibold">Delivery Method</Label>
             <RadioGroup 
               value={deliveryMethod} 
@@ -305,13 +316,13 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
                 </Label>
               </div>
             </RadioGroup>
-          </div>
+          </div>}
 
-          <Separator />
+          {!readOnly && <Separator />}
 
           {/* Items List */}
           <div>
-            <h3 className="font-semibold mb-3">Items to Fulfill</h3>
+            <h3 className="font-semibold mb-3">{readOnly ? 'Requested Items' : 'Items to Fulfill'}</h3>
             <div className="space-y-3">
               {items.map((item) => {
                 const sources = stockSourcesByItem?.[item.item_id] || [];
@@ -337,14 +348,14 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
                           <span className="text-xs text-muted-foreground">
                             Requested: {item.quantity_requested} {item.inventory_items?.unit || 'units'}
                           </span>
-                          <span className="text-xs">|</span>
-                          <span className={`text-xs ${isInsufficient ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          {!readOnly && <span className="text-xs">|</span>}
+                          {!readOnly && <span className={`text-xs ${isInsufficient ? 'text-destructive' : 'text-muted-foreground'}`}>
                             In stock: {currentStock}
                             {selectedSource && sources.length > 1 ? ` (${selectedSource.roomLabel})` : ''}
-                          </span>
+                          </span>}
                         </div>
                       </div>
-                      <Badge 
+                      {!readOnly && <Badge
                         variant={
                           item.status === 'out_of_stock' ? 'destructive' :
                           item.status === 'partial' ? 'secondary' : 'outline'
@@ -355,10 +366,10 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
                         {item.status === 'pending' && <CheckCircle className="h-3 w-3 mr-1" />}
                         {item.status === 'out_of_stock' ? 'Out of Stock' :
                          item.status === 'partial' ? 'Partial' : 'Full'}
-                      </Badge>
+                      </Badge>}
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    {!readOnly && <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
                         <Label className="text-xs">Fulfill:</Label>
                         <Input
@@ -381,9 +392,9 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
                       >
                         Mark Out of Stock
                       </Button>
-                    </div>
+                    </div>}
 
-                    {sources.length > 1 && (
+                    {!readOnly && sources.length > 1 && (
                       <div className="flex items-center gap-2">
                         <Label className="text-xs whitespace-nowrap">Pull from:</Label>
                         <Select
@@ -404,7 +415,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
                       </div>
                     )}
 
-                    {(item.status === 'out_of_stock' || item.status === 'partial') && (
+                    {!readOnly && (item.status === 'out_of_stock' || item.status === 'partial') && (
                       <Textarea
                         placeholder="Add a note (e.g., 'Will restock next week', 'Substituted with...')"
                         value={item.notes}
@@ -419,7 +430,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
           </div>
 
           {/* Warnings */}
-          {hasOutOfStock && (
+          {!readOnly && hasOutOfStock && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
@@ -428,7 +439,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
             </Alert>
           )}
 
-          {hasPartialFulfillment && !hasOutOfStock && (
+          {!readOnly && hasPartialFulfillment && !hasOutOfStock && (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
@@ -440,9 +451,9 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={isCompleting}>
-            Cancel
+            {readOnly ? 'Close' : 'Cancel'}
           </Button>
-          <Button onClick={handleComplete} disabled={isCompleting}>
+          {!readOnly && <Button onClick={handleComplete} disabled={isCompleting}>
             {isCompleting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -454,7 +465,7 @@ export function PartialFulfillmentDialog({ order, onClose }: PartialFulfillmentD
                 {deliveryMethod === 'delivery' ? 'Fulfill & Deliver' : 'Mark Ready for Pickup'}
               </>
             )}
-          </Button>
+          </Button>}
         </DialogFooter>
     </ModalFrame>
   );

@@ -6473,6 +6473,8 @@ export type Database = {
           temporary_storage_use: boolean | null
           temporary_use_timeline: Json | null
           updated_at: string | null
+          water_cooler_count: number
+          water_cooler_notes: string | null
         }
         Insert: {
           capacity?: number | null
@@ -6522,6 +6524,8 @@ export type Database = {
           temporary_storage_use?: boolean | null
           temporary_use_timeline?: Json | null
           updated_at?: string | null
+          water_cooler_count?: number
+          water_cooler_notes?: string | null
         }
         Update: {
           capacity?: number | null
@@ -6571,6 +6575,8 @@ export type Database = {
           temporary_storage_use?: boolean | null
           temporary_use_timeline?: Json | null
           updated_at?: string | null
+          water_cooler_count?: number
+          water_cooler_notes?: string | null
         }
         Relationships: [
           {

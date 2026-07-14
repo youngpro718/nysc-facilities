@@ -62,14 +62,16 @@ export const InventoryDashboard = () => {
       // Low stock count — centralized rule (includes out-of-stock for tracked items)
       const { data: stockItems } = await supabase
         .from('inventory_items')
-        .select('id, quantity, minimum_quantity');
+        .select('id, quantity, minimum_quantity')
+        .eq('status', 'active');
       const lowCount = (stockItems || []).filter(needsAttention).length;
       setLowStockCount(lowCount);
 
       // Total items count
       const { count: totalCount } = await supabase
         .from('inventory_items')
-        .select('id', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active');
       if (typeof totalCount === 'number') setTotalItems(totalCount);
     };
 

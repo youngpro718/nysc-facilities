@@ -28,6 +28,7 @@ export function AlertsBar() {
       const { data: stockItems } = await supabase
         .from('inventory_items')
         .select('quantity, minimum_quantity')
+        .eq('status', 'active')
         .gt('minimum_quantity', 0);
       const lowStockCount = (stockItems || []).filter(
         item => item.quantity < item.minimum_quantity

@@ -19,6 +19,7 @@ import RoomAccessFields from "./RoomAccessFields";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
 import { GeneralRoomPhotoUpload } from "./wizard/GeneralRoomPhotoUpload";
 import { MaintenanceHealthSummary } from "./wizard/MaintenanceHealthSummary";
+import { AmenitiesFields } from "./AmenitiesFields";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 import { RoomFixturesPanel } from "@/features/lighting/components/RoomFixturesPanel";
 import { getErrorMessage } from "@/lib/errorUtils";
@@ -112,6 +113,10 @@ export function SimplifiedRoomEditor({
 
           <Section title="Capacity" description="Seating and accessibility limits">
             <CapacityFields form={form} />
+          </Section>
+
+          <Section title="Amenities" description="Water coolers and room equipment" defaultOpen>
+            <AmenitiesFields form={form} />
           </Section>
 
           <Section title="Access" description="Keys, doors, and entry points">

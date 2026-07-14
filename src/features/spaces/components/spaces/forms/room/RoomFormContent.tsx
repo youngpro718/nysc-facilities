@@ -16,6 +16,7 @@ import { useEffect } from "react";
 import { logger } from "@/lib/logger";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { AmenitiesFields } from "./AmenitiesFields";
 
 interface RoomFormContentProps extends RoomFormProps {
   onSubmit: (data: RoomFormData) => Promise<void>;
@@ -121,6 +122,9 @@ export function RoomFormContent({
         
         <Separator />
         <RoomAccessFields form={form} />
+
+        <Separator />
+        <AmenitiesFields form={form} />
 
         <Separator />
         <StorageFields form={form} />

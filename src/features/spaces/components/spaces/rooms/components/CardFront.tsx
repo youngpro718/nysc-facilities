@@ -75,7 +75,11 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <TooltipProvider>
-              <WaterCoolerToggle roomId={room.id} hasWaterCooler={!!room.has_water_cooler} />
+              <WaterCoolerToggle
+                roomId={room.id}
+                waterCoolerCount={room.water_cooler_count ?? (room.has_water_cooler ? 1 : 0)}
+                waterCoolerNotes={room.water_cooler_notes}
+              />
 
               {canManageSpaces && (
                 <div onClick={(e) => e.stopPropagation()}>

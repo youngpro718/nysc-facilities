@@ -8,28 +8,10 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
     // Query directly from the rooms table instead of the new_spaces view
     let query = supabase
       .from('rooms')
-      .select(`
-        id,
-        name,
-        room_number,
-        room_type,
-        description,
-        status,
-        floor_id,
-        is_storage,
-        has_water_cooler,
-        storage_capacity,
-        storage_type,
-        storage_notes,
-        phone_number,
-        created_at,
-        updated_at,
-        current_function,
-        function_change_date,
-        previous_functions,
-        courtroom_photos,
-        parent_room_id
-      `)
+      // Selecting the row keeps this screen compatible during a rolling
+      // deployment: migration 105 adds the count columns, while migration
+      // 104's boolean remains a temporary display fallback.
+      .select('*')
 
     // Apply floor filter if specified
     if (floorId && floorId !== 'all') {

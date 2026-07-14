@@ -20,6 +20,9 @@ export function buildRoomInitialData(room: EnhancedRoom) {
     parent_room_id: room.parent_room_id || null,
     current_function: room.current_function || null,
     phone_number: room.phone_number || null,
+    has_water_cooler: room.has_water_cooler || false,
+    water_cooler_count: room.water_cooler_count ?? 0,
+    water_cooler_notes: room.water_cooler_notes || null,
     courtroom_photos: room.courtroom_photos || null,
     connections: room.space_connections?.map(conn => ({
       id: conn.id,
