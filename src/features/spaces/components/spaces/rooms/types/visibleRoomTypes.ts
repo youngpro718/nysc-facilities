@@ -1,22 +1,29 @@
 import { RoomTypeEnum } from "./roomEnums";
 
 /**
- * Room types shown by default in the create/edit pickers. Other types in the
- * DB enum (chamber, robing_room, locker_rooms, stake_holder,
- * administrative_office, laboratory, conference) stay valid for legacy rooms
- * but are hidden unless the user opts into the advanced list.
+ * The full, curated list of room types selectable in the create/edit
+ * pickers. Older DB enum values not on this list (chamber, break_room,
+ * filing_room, laboratory, conference) stay valid for any legacy rooms still
+ * carrying them, but are no longer offered as choices.
  */
 export const VISIBLE_ROOM_TYPES: RoomTypeEnum[] = [
   RoomTypeEnum.COURTROOM,
   RoomTypeEnum.JUDGES_CHAMBERS,
   RoomTypeEnum.JURY_ROOM,
+  RoomTypeEnum.WITNESS_ROOM,
   RoomTypeEnum.OFFICE,
   RoomTypeEnum.CONFERENCE_ROOM,
-  RoomTypeEnum.BREAK_ROOM,
-  RoomTypeEnum.FILING_ROOM,
   RoomTypeEnum.RECORDS_ROOM,
   RoomTypeEnum.UTILITY_ROOM,
   RoomTypeEnum.IT_ROOM,
+  RoomTypeEnum.MALE_LOCKER_ROOM,
+  RoomTypeEnum.FEMALE_LOCKER_ROOM,
+  RoomTypeEnum.ROBING_ROOM,
+  RoomTypeEnum.STAKE_HOLDER,
+  RoomTypeEnum.ADMINISTRATIVE_OFFICE,
+  RoomTypeEnum.BATHROOM,
+  RoomTypeEnum.CLOSET,
+  RoomTypeEnum.ELECTRICAL_ROOM,
 ];
 
 export const ADVANCED_ROOM_TYPES: RoomTypeEnum[] = Object.values(RoomTypeEnum).filter(

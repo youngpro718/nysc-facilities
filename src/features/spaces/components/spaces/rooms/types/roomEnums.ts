@@ -23,7 +23,11 @@ export enum RoomTypeEnum {
   IT_ROOM = "it_room",
   UTILITY_ROOM = "utility_room",
   LABORATORY = "laboratory",
-  CONFERENCE = "conference"
+  CONFERENCE = "conference",
+  WITNESS_ROOM = "witness_room",
+  BATHROOM = "bathroom",
+  CLOSET = "closet",
+  ELECTRICAL_ROOM = "electrical_room"
 }
 
 export enum StorageTypeEnum {
@@ -70,7 +74,11 @@ export type RoomTypeString =
   | "it_room"
   | "utility_room"
   | "laboratory"
-  | "conference";
+  | "conference"
+  | "witness_room"
+  | "bathroom"
+  | "closet"
+  | "electrical_room";
 
 export type StatusString = "active" | "inactive" | "under_maintenance";
 export type StorageTypeString = "general" | "secure" | "climate_controlled" | "hazardous" | "archive";
@@ -116,6 +124,10 @@ export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => {
     case RoomTypeEnum.UTILITY_ROOM: return "utility_room";
     case RoomTypeEnum.LABORATORY: return "laboratory";
     case RoomTypeEnum.CONFERENCE: return "conference";
+    case RoomTypeEnum.WITNESS_ROOM: return "witness_room";
+    case RoomTypeEnum.BATHROOM: return "bathroom";
+    case RoomTypeEnum.CLOSET: return "closet";
+    case RoomTypeEnum.ELECTRICAL_ROOM: return "electrical_room";
     default: return "office";
   }
 };
@@ -140,6 +152,10 @@ export const stringToRoomType = (str: string): RoomTypeEnum => {
     case "utility_room": return RoomTypeEnum.UTILITY_ROOM;
     case "laboratory": return RoomTypeEnum.LABORATORY;
     case "conference": return RoomTypeEnum.CONFERENCE;
+    case "witness_room": return RoomTypeEnum.WITNESS_ROOM;
+    case "bathroom": return RoomTypeEnum.BATHROOM;
+    case "closet": return RoomTypeEnum.CLOSET;
+    case "electrical_room": return RoomTypeEnum.ELECTRICAL_ROOM;
     default: return RoomTypeEnum.OFFICE;
   }
 };
