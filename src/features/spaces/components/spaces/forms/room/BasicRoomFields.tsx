@@ -25,6 +25,20 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
         <CardTitle>Room Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Room Name *</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Supply Department, Storage Room" required {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid gap-4 md:grid-cols-2">
           <FormField
             control={form.control}
