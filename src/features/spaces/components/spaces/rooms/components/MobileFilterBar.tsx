@@ -17,7 +17,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Briefcase, GavelIcon, Warehouse, Users, User, Building } from "lucide-react";
+import { Briefcase, GavelIcon, Warehouse, Users, User, Building, Droplets } from "lucide-react";
 
 interface BuildingOption { id: string; name: string }
 interface FloorOption { id: string; name: string; buildingId: string }
@@ -48,6 +48,8 @@ const quickFilters = [
   // Labels say "Locker" so they don't read as gender filters of people.
   { key: "male_locker_room", label: "Men's Locker", icon: User },
   { key: "female_locker_room", label: "Women's Locker", icon: Users },
+  // Not a room type: matches rooms flagged has_water_cooler.
+  { key: "water_cooler", label: "Coolers", icon: Droplets },
 ];
 
 export function MobileFilterBar({

@@ -56,6 +56,9 @@ export function useRoomFilters({
         } else if (roomTypeFilter === "storage") {
           // For storage filter, check is_storage flag
           matchesRoomType = room.is_storage === true;
+        } else if (roomTypeFilter === "water_cooler") {
+          // Not a room type: shows every room flagged as having a cooler
+          matchesRoomType = room.has_water_cooler === true;
         } else {
           // For other room types, match exact room_type values
           matchesRoomType = room.room_type === roomTypeFilter || 

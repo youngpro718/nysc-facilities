@@ -8,6 +8,7 @@ import { getNormalizedCurrentUse } from "../utils/currentUse";
 import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
+import { WaterCoolerToggle } from "./WaterCoolerToggle";
 import { useChildRoomCount } from "@features/spaces/hooks/useChildRooms";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { useRoomHealth } from "@features/spaces/hooks/useRoomHealth";
@@ -74,6 +75,8 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <TooltipProvider>
+              <WaterCoolerToggle roomId={room.id} hasWaterCooler={!!room.has_water_cooler} />
+
               {canManageSpaces && (
                 <div onClick={(e) => e.stopPropagation()}>
                   <EditSpaceDialog

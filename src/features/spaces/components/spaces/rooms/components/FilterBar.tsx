@@ -1,5 +1,5 @@
 
-import { Search, RefreshCw, Briefcase, GavelIcon, Warehouse, Users, User, Building, X } from "lucide-react";
+import { Search, RefreshCw, Briefcase, GavelIcon, Warehouse, Users, User, Building, X, Droplets } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ const QUICK_FILTERS = [
   // Labels say "Locker" so they don't read as gender filters of people.
   { key: "male_locker_room", label: "Men's Locker", icon: User },
   { key: "female_locker_room", label: "Women's Locker", icon: Users },
+  // Not a room type: matches rooms flagged has_water_cooler, so facilities
+  // can see where all the coolers are at a glance.
+  { key: "water_cooler", label: "Water Coolers", icon: Droplets },
 ];
 
 interface FilterBarProps {

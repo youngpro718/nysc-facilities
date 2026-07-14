@@ -6439,6 +6439,7 @@ export type Database = {
           floor_id: string
           function_change_date: string | null
           general_photos: Json | null
+          has_water_cooler: boolean
           id: string
           is_parent: boolean
           is_storage: boolean | null
@@ -6487,6 +6488,7 @@ export type Database = {
           floor_id: string
           function_change_date?: string | null
           general_photos?: Json | null
+          has_water_cooler?: boolean
           id?: string
           is_parent?: boolean
           is_storage?: boolean | null
@@ -6535,6 +6537,7 @@ export type Database = {
           floor_id?: string
           function_change_date?: string | null
           general_photos?: Json | null
+          has_water_cooler?: boolean
           id?: string
           is_parent?: boolean
           is_storage?: boolean | null

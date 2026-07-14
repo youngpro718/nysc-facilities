@@ -17,6 +17,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
         status,
         floor_id,
         is_storage,
+        has_water_cooler,
         storage_capacity,
         storage_type,
         storage_notes,

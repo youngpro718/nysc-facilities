@@ -10,7 +10,8 @@ import {
   Pencil,
   ChevronRight,
   MapPin,
-  Camera
+  Camera,
+  Droplets
 } from "lucide-react";
 import { Room } from "../types/RoomTypes";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
@@ -204,6 +205,13 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
                   <Badge variant="secondary" className="text-xs capitalize h-6">
                     {room.room_type.replace(/_/g, ' ')}
                   </Badge>
+
+                  {room.has_water_cooler && (
+                    <Badge variant="outline" className="text-xs h-6 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800">
+                      <Droplets className="h-3 w-3 mr-1" />
+                      Cooler
+                    </Badge>
+                  )}
                   
                   {/* Occupants */}
                   {occupantCount > 0 && (

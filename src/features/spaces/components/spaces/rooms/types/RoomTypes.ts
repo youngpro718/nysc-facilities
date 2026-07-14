@@ -49,6 +49,7 @@ export interface Room {
   description?: string | null;
   phone_number?: string | null;
   is_storage: boolean;
+  has_water_cooler?: boolean;
   storage_type?: StorageType | null;
   simplified_storage_type?: SimplifiedStorageType | null;
   capacity_size_category?: string | null;
