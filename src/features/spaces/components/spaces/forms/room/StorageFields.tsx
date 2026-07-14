@@ -38,12 +38,15 @@ export function StorageFields({ form }: StorageFieldsProps) {
   const isStorage = form.watch("isStorage");
   const roomType = form.watch("roomType");
   const capacitySizeCategory = form.watch("capacitySizeCategory");
+  const temporaryStorageUse = form.watch("temporaryStorageUse");
 
-  // Set original room type when enabling storage for the first time
+  // Record what the room was before storage, in case it's later marked
+  // temporary and needs to revert. Storage defaults to permanent — most
+  // storage rooms (no ventilation, nothing else the space could be) stay
+  // storage indefinitely; temporary use is an explicit opt-in below.
   useEffect(() => {
     if (isStorage && !form.getValues("originalRoomType")) {
       form.setValue("originalRoomType", roomType, { shouldValidate: false });
-      form.setValue("temporaryStorageUse", true, { shouldValidate: false });
     }
   }, [isStorage, roomType, form]);
 
@@ -105,9 +108,15 @@ export function StorageFields({ form }: StorageFieldsProps) {
             {form.getValues("originalRoomType") && (
               <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>Original Room Type:</strong> {form.getValues("originalRoomType")?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                  <br />
-                  <span className="text-blue-600 dark:text-blue-400">This room is temporarily being used as storage.</span>
+                  <strong>Previously:</strong> {form.getValues("originalRoomType")?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  {temporaryStorageUse && (
+                    <>
+                      <br />
+                      <span className="text-blue-600 dark:text-blue-400">
+                        This room is temporarily being used as storage and is expected to revert.
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
             )}
