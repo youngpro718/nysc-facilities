@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { InventoryFormInputs } from "./types/inventoryTypes";
+import { useCatalogMatches } from "./hooks/useCatalogMatches";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -45,6 +47,9 @@ interface AddInventoryDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: InventoryFormInputs) => Promise<void>;
   isSubmitting: boolean;
+  /** The room this item is being added to (auto-assigned, not user-editable here). */
+  roomId?: string;
+  roomName?: string;
 }
 
 export function AddInventoryDialog({
@@ -52,7 +57,11 @@ export function AddInventoryDialog({
   onOpenChange,
   onSubmit,
   isSubmitting,
+  roomId,
+  roomName,
 }: AddInventoryDialogProps) {
+  const [linkedCatalogId, setLinkedCatalogId] = useState<string | null>(null);
+
   const form = useForm<InventoryFormInputs>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -67,6 +76,19 @@ export function AddInventoryDialog({
       notes: "",
     },
   });
+
+  const nameValue = form.watch("name");
+  const { data: catalogMatches } = useCatalogMatches(nameValue, roomId);
+
+  useEffect(() => {
+    // Reset the chosen link whenever the matched name changes, so a stale
+    // link doesn't silently carry over after the user edits the name.
+    setLinkedCatalogId(null);
+  }, [catalogMatches]);
+
+  const handleSubmit = async (data: InventoryFormInputs) => {
+    await onSubmit({ ...data, catalog_item_id: linkedCatalogId });
+  };
 
   const { data: categories } = useQuery({
     queryKey: QUERY_KEYS.inventoryCategories(),
@@ -87,7 +109,14 @@ export function AddInventoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <ModalFrame title="Add New Item" size="md">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              {roomName && (
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">Adding to: </span>
+                  <span className="font-medium">{roomName}</span>
+                </div>
+              )}
+
               <FormField
                 control={form.control}
                 name="name"
@@ -101,6 +130,34 @@ export function AddInventoryDialog({
                   </FormItem>
                 )}
               />
+
+              {catalogMatches && catalogMatches.length > 0 && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 p-3 space-y-2 text-sm">
+                  <p className="font-medium">Already stocked in other rooms</p>
+                  {catalogMatches.map((match) => (
+                    <div key={match.id} className="flex items-center justify-between gap-2">
+                      <span>
+                        {match.room_name || "Unknown room"}
+                        {match.room_number ? ` (${match.room_number})` : ""}: {match.quantity} in stock
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={linkedCatalogId === match.id ? "default" : "outline"}
+                        onClick={() =>
+                          setLinkedCatalogId((prev) => (prev === match.id ? null : match.id))
+                        }
+                      >
+                        {linkedCatalogId === match.id ? "Linked" : "Link"}
+                      </Button>
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground">
+                    Linking counts this room's stock under the same catalog listing, so people
+                    ordering see one item and staff can pull from whichever room has stock.
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField

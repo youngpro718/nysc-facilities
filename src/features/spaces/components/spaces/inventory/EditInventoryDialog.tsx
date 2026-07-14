@@ -28,6 +28,7 @@ export function EditInventoryDialog({
       <InventoryForm
         onSubmit={onSubmit}
         isSubmitting={isSubmitting}
+        itemId={initialData.id}
         defaultValues={{
           name: initialData.name,
           quantity: initialData.quantity,
@@ -35,9 +36,11 @@ export function EditInventoryDialog({
           description: initialData.description || "",
           minimum_quantity: initialData.minimum_quantity,
           unit: initialData.unit || "",
+          storage_room_id: initialData.storage_room_id || "",
           location_details: initialData.location_details || "",
           preferred_vendor: initialData.preferred_vendor || "",
           notes: initialData.notes || "",
+          catalog_item_id: initialData.catalog_item_id || null,
         }}
       />
     </ModalFrame>

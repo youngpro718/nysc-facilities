@@ -9,6 +9,21 @@ export function useInventory(roomId: string) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const { data: room } = useQuery({
+    queryKey: ['room-basic', roomId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('id, name, room_number')
+        .eq('id', roomId)
+        .single();
+
+      if (error) throw error;
+      return data as { id: string; name: string; room_number: string };
+    },
+    enabled: !!roomId,
+  });
+
   const { data: inventory, isLoading } = useQuery({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
@@ -251,6 +266,7 @@ export function useInventory(roomId: string) {
   return {
     inventory,
     isLoading,
+    room,
     addItem: createMutation.mutateAsync,
     addBulkItems: bulkCreateMutation.mutateAsync,
     editItem: updateMutation.mutateAsync,

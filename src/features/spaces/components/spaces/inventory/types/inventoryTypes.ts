@@ -15,6 +15,7 @@ export interface InventoryItem {
   reorder_point?: number;
   notes?: string;
   photo_url?: string;
+  catalog_item_id?: string | null;
   created_at?: string;
   updated_at?: string;
   category?: {
@@ -64,10 +65,12 @@ export interface InventoryFormInputs {
   minimum_quantity?: number;
   unit?: string;
   category_id: string;
+  storage_room_id?: string;
   location_details?: string;
   preferred_vendor?: string;
   notes?: string;
   photo_url?: string;
+  catalog_item_id?: string | null;
 }
 
 export interface BatchUpdateInput {

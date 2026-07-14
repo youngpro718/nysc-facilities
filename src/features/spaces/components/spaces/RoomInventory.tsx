@@ -21,6 +21,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
   const {
     inventory,
     isLoading,
+    room,
     addItem,
     editItem,
     updateQuantity,
@@ -32,6 +33,8 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     addBulkItems,
     deleteBulkItems
   } = useInventory(roomId);
+
+  const roomLabel = room ? `${room.name} (${room.room_number})` : undefined;
 
   const filteredInventory = inventory?.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -132,6 +135,8 @@ export function RoomInventory({ roomId }: { roomId: string }) {
         onOpenChange={setIsAddDialogOpen}
         onSubmit={handleSubmit}
         isSubmitting={isAddingItem}
+        roomId={roomId}
+        roomName={roomLabel}
       />
       {selectedItem && (
         <EditInventoryDialog

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { logger } from '@/lib/logger';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +29,7 @@ import { Camera, Upload, X } from "lucide-react";
 import { useToast } from "@shared/hooks/use-toast";
 import { STORAGE_BUCKETS, QUERY_CONFIG } from '@/config';
 import { QUERY_KEYS } from '@/lib/queryKeys';
+import { useCatalogMatches } from "./hooks/useCatalogMatches";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -53,6 +54,7 @@ export interface InventoryFormInputs {
   preferred_vendor?: string;
   notes?: string;
   photo_url?: string;
+  catalog_item_id?: string | null;
 }
 
 interface MobileAddInventoryDialogProps {
@@ -60,6 +62,9 @@ interface MobileAddInventoryDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: InventoryFormInputs) => Promise<void>;
   isSubmitting: boolean;
+  /** The room this item is being added to (auto-assigned, not user-editable here). */
+  roomId?: string;
+  roomName?: string;
 }
 
 export function MobileAddInventoryDialog({
@@ -67,10 +72,13 @@ export function MobileAddInventoryDialog({
   onOpenChange,
   onSubmit,
   isSubmitting,
+  roomId,
+  roomName,
 }: MobileAddInventoryDialogProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [linkedCatalogId, setLinkedCatalogId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -104,6 +112,13 @@ export function MobileAddInventoryDialog({
     staleTime: QUERY_CONFIG.stale.long,
     gcTime: QUERY_CONFIG.gc.long,
   });
+
+  const nameValue = form.watch("name");
+  const { data: catalogMatches } = useCatalogMatches(nameValue, roomId);
+
+  useEffect(() => {
+    setLinkedCatalogId(null);
+  }, [catalogMatches]);
 
   const uploadPhoto = async (file: File): Promise<string | null> => {
     try {
@@ -154,7 +169,7 @@ export function MobileAddInventoryDialog({
   const handleSubmit = async (data: InventoryFormInputs) => {
     try {
       let photoUrl = null;
-      
+
       if (photoFile) {
         photoUrl = await uploadPhoto(photoFile);
       }
@@ -162,11 +177,13 @@ export function MobileAddInventoryDialog({
       await onSubmit({
         ...data,
         photo_url: photoUrl || undefined,
+        catalog_item_id: linkedCatalogId,
       });
 
       // Reset form and photo state
       form.reset();
       removePhoto();
+      setLinkedCatalogId(null);
     } catch (error) {
       logger.error('Error submitting form:', error);
     }
@@ -176,6 +193,7 @@ export function MobileAddInventoryDialog({
     if (!newOpen) {
       form.reset();
       removePhoto();
+      setLinkedCatalogId(null);
     }
     onOpenChange(newOpen);
   };
@@ -184,7 +202,14 @@ export function MobileAddInventoryDialog({
     <ModalFrame open={open} onOpenChange={handleOpenChange} size="md" title="Add New Item">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              
+
+              {roomName && (
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">Adding to: </span>
+                  <span className="font-medium">{roomName}</span>
+                </div>
+              )}
+
               {/* Photo Section */}
               <div className="space-y-3">
                 <FormLabel>Item Photo</FormLabel>
@@ -270,6 +295,34 @@ export function MobileAddInventoryDialog({
                   </FormItem>
                 )}
               />
+
+              {catalogMatches && catalogMatches.length > 0 && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 p-3 space-y-2 text-sm">
+                  <p className="font-medium">Already stocked in other rooms</p>
+                  {catalogMatches.map((match) => (
+                    <div key={match.id} className="flex items-center justify-between gap-2">
+                      <span>
+                        {match.room_name || "Unknown room"}
+                        {match.room_number ? ` (${match.room_number})` : ""}: {match.quantity} in stock
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={linkedCatalogId === match.id ? "default" : "outline"}
+                        onClick={() =>
+                          setLinkedCatalogId((prev) => (prev === match.id ? null : match.id))
+                        }
+                      >
+                        {linkedCatalogId === match.id ? "Linked" : "Link"}
+                      </Button>
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground">
+                    Linking counts this room's stock under the same catalog listing, so people
+                    ordering see one item and staff can pull from whichever room has stock.
+                  </p>
+                </div>
+              )}
 
               <FormField
                 control={form.control}

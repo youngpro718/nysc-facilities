@@ -2,12 +2,22 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CategorySelector } from "./CategorySelector";
 import { InventoryFormInputs } from "./types/inventoryTypes";
+import { supabase } from "@/lib/supabase";
+import { QUERY_KEYS } from "@/lib/queryKeys";
 
 const inventoryFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -17,18 +27,24 @@ const inventoryFormSchema = z.object({
   description: z.string().optional(),
   minimum_quantity: z.number().min(0).optional(),
   unit: z.string().optional(),
+  storage_room_id: z.string().optional(),
   location_details: z.string().optional(),
   preferred_vendor: z.string().optional(),
   notes: z.string().optional(),
+  catalog_item_id: z.string().nullable().optional(),
 });
 
 interface InventoryFormProps {
   onSubmit: (data: InventoryFormInputs) => void;
   defaultValues?: Partial<InventoryFormInputs>;
   isSubmitting?: boolean;
+  /** The item being edited, so the catalog-link controls can look up other rooms and guard against re-linking a listing that already has stock counted under it. */
+  itemId?: string;
 }
 
-export function InventoryForm({ onSubmit, defaultValues, isSubmitting }: InventoryFormProps) {
+const STANDALONE_CATALOG_VALUE = "standalone";
+
+export function InventoryForm({ onSubmit, defaultValues, isSubmitting, itemId }: InventoryFormProps) {
   const form = useForm<InventoryFormInputs>({
     resolver: zodResolver(inventoryFormSchema),
     defaultValues: {
@@ -38,9 +54,60 @@ export function InventoryForm({ onSubmit, defaultValues, isSubmitting }: Invento
       description: defaultValues?.description || "",
       minimum_quantity: defaultValues?.minimum_quantity || undefined,
       unit: defaultValues?.unit || "",
+      storage_room_id: defaultValues?.storage_room_id || "",
       location_details: defaultValues?.location_details || "",
       preferred_vendor: defaultValues?.preferred_vendor || "",
       notes: defaultValues?.notes || "",
+      catalog_item_id: defaultValues?.catalog_item_id || null,
+    },
+  });
+
+  const { data: storageRooms } = useQuery({
+    queryKey: QUERY_KEYS.storageRooms(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rooms")
+        .select("id, name, room_number")
+        .eq("is_storage", true)
+        .order("room_number");
+      if (error) throw error;
+      return data as { id: string; name: string; room_number: string }[];
+    },
+  });
+
+  // Other active, unlinked listings this item could count under instead of
+  // showing as its own catalog entry.
+  const { data: linkTargets } = useQuery({
+    queryKey: ["inventory-catalog-link-targets", itemId || "new"],
+    enabled: !!itemId,
+    queryFn: async () => {
+      let query = supabase
+        .from("inventory_items")
+        .select("id, name, storage_room_id")
+        .eq("status", "active")
+        .is("catalog_item_id", null)
+        .order("name");
+      if (itemId) {
+        query = query.neq("id", itemId);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as { id: string; name: string; storage_room_id: string | null }[];
+    },
+  });
+
+  // If other rooms' stock is already linked under this item, it must stay a
+  // listing (single-level grouping is enforced by a DB trigger).
+  const { data: linkedChildCount } = useQuery({
+    queryKey: ["inventory-catalog-link-children", itemId],
+    enabled: !!itemId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("inventory_items")
+        .select("id", { count: "exact", head: true })
+        .eq("catalog_item_id", itemId);
+      if (error) throw error;
+      return count ?? 0;
     },
   });
 
@@ -153,7 +220,7 @@ export function InventoryForm({ onSubmit, defaultValues, isSubmitting }: Invento
               <FormItem>
                 <FormLabel>Minimum Quantity (optional)</FormLabel>
                 <FormControl>
-                  <Input 
+                  <Input
                     type="number"
                     min={0}
                     value={field.value ?? ''}
@@ -182,6 +249,31 @@ export function InventoryForm({ onSubmit, defaultValues, isSubmitting }: Invento
 
         <FormField
           control={form.control}
+          name="storage_room_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Storage Room</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a storage room" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {storageRooms?.map((room) => (
+                    <SelectItem key={room.id} value={room.id}>
+                      {room.name} ({room.room_number})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="preferred_vendor"
           render={({ field }) => (
             <FormItem>
@@ -201,7 +293,7 @@ export function InventoryForm({ onSubmit, defaultValues, isSubmitting }: Invento
             <FormItem>
               <FormLabel>Notes (optional)</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="Additional notes"
                   className="resize-none"
                   {...field}
@@ -211,6 +303,57 @@ export function InventoryForm({ onSubmit, defaultValues, isSubmitting }: Invento
             </FormItem>
           )}
         />
+
+        {itemId && (
+          <FormField
+            control={form.control}
+            name="catalog_item_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Catalog listing</FormLabel>
+                {linkedChildCount && linkedChildCount > 0 ? (
+                  <p className="text-sm text-muted-foreground border rounded-md px-3 py-2">
+                    This is a catalog listing with stock from {linkedChildCount} other{" "}
+                    {linkedChildCount === 1 ? "room" : "rooms"} counted under it. Unlink those
+                    items first if you want to move this one under another listing.
+                  </p>
+                ) : (
+                  <Select
+                    onValueChange={(value) =>
+                      field.onChange(value === STANDALONE_CATALOG_VALUE ? null : value)
+                    }
+                    value={field.value || STANDALONE_CATALOG_VALUE}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Own listing (shows in catalog)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={STANDALONE_CATALOG_VALUE}>
+                        Own listing (shows in catalog)
+                      </SelectItem>
+                      {linkTargets?.map((target) => {
+                        const room = storageRooms?.find((r) => r.id === target.storage_room_id);
+                        return (
+                          <SelectItem key={target.id} value={target.id}>
+                            Counts under: {target.name}
+                            {room ? ` (${room.room_number})` : ""}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Link this room's stock under another item so people ordering see the product
+                  once. Stock here still counts toward availability.
+                </p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="flex justify-end gap-2">
           <Button type="submit" disabled={isSubmitting}>
