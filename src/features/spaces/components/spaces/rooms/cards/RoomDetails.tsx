@@ -4,6 +4,7 @@ import { Room } from '../types/RoomTypes';
 import { getRoomTypeColor, getRoomTypeName } from "../../utils/roomTypeUtils";
 import { CourtroomPhotos } from "../components/CourtroomPhotos";
 import { ClearCourtroomPhotos } from "../components/ClearCourtroomPhotos";
+import { Droplets } from "lucide-react";
 
 interface RoomDetailsProps {
   room: Room;
@@ -54,7 +55,20 @@ export function RoomDetails({ room }: RoomDetailsProps) {
             <p className="font-medium">{room.phone_number}</p>
           </div>
         )}
+        {(room.water_cooler_count ?? 0) > 0 && (
+          <div>
+            <p className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Droplets className="h-3.5 w-3.5 text-sky-600" />
+              Water Coolers
+            </p>
+            <p className="font-medium">{room.water_cooler_count}</p>
+          </div>
+        )}
       </div>
+
+      {room.water_cooler_notes && (
+        <p className="text-sm text-muted-foreground">{room.water_cooler_notes}</p>
+      )}
       
       {room.description && (
         <>

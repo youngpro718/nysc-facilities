@@ -685,6 +685,7 @@ export function ImprovedSupplyStaffDashboard() {
       {selectedOrder && (
         <PartialFulfillmentDialog
           order={selectedOrder}
+          readOnly={selectedOrder.status === 'pending_approval'}
           onClose={() => setSelectedOrder(null)}
         />
       )}

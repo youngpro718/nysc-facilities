@@ -114,6 +114,9 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
               parent_room_id: room.parent_room_id || null,
               current_function: room.current_function || null,
               phone_number: room.phone_number || null,
+              has_water_cooler: room.has_water_cooler || false,
+              water_cooler_count: room.water_cooler_count ?? 0,
+              water_cooler_notes: room.water_cooler_notes || null,
               courtroom_photos: room.courtroom_photos || null,
               connections: room.space_connections?.map(conn => ({
                 id: conn.id,
@@ -206,10 +209,10 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
                     {room.room_type.replace(/_/g, ' ')}
                   </Badge>
 
-                  {room.has_water_cooler && (
+                  {(room.water_cooler_count ?? (room.has_water_cooler ? 1 : 0)) > 0 && (
                     <Badge variant="outline" className="text-xs h-6 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800">
                       <Droplets className="h-3 w-3 mr-1" />
-                      Cooler
+                      {room.water_cooler_count ?? 1}
                     </Badge>
                   )}
                   
@@ -220,7 +223,7 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
                       <span>{occupantCount}</span>
                     </div>
                   )}
-                  
+
                   {/* Issues Indicator */}
                   {hasIssues && (
                     <div className="flex items-center gap-1">

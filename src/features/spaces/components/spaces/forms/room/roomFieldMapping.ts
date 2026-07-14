@@ -33,6 +33,9 @@ export interface DatabaseRoom {
   parent_room_id?: string;
   capacity_size_category?: string;
   temporary_storage_use?: boolean;
+  has_water_cooler?: boolean;
+  water_cooler_count?: number;
+  water_cooler_notes?: string | null;
   courtroom_photos?: {
     judge_view?: string[];
     audience_view?: string[];
@@ -79,6 +82,8 @@ export function dbToFormRoom(dbRoom: Partial<DatabaseRoom>, roomId?: string): Pa
     parentRoomId: dbRoom.parent_room_id || null,
     capacitySizeCategory: dbRoom.capacity_size_category ? stringToCapacitySizeCategory(dbRoom.capacity_size_category) : CapacitySizeCategoryEnum.MEDIUM,
     temporaryStorageUse: dbRoom.temporary_storage_use || false,
+    waterCoolerCount: dbRoom.water_cooler_count ?? (dbRoom.has_water_cooler ? 1 : 0),
+    waterCoolerNotes: dbRoom.water_cooler_notes || "",
     courtroom_photos: dbRoom.courtroom_photos || null,
     generalPhotos: dbRoom.general_photos || [],
     connections: [], // This would need to be fetched separately
@@ -109,6 +114,9 @@ export function formToDbRoom(formData: RoomFormData): Partial<DatabaseRoom> {
     parent_room_id: formData.parentRoomId || null,
     capacity_size_category: formData.capacitySizeCategory ? capacitySizeCategoryToString(formData.capacitySizeCategory) : "medium",
     temporary_storage_use: formData.temporaryStorageUse || false,
+    has_water_cooler: (formData.waterCoolerCount ?? 0) > 0,
+    water_cooler_count: formData.waterCoolerCount ?? 0,
+    water_cooler_notes: formData.waterCoolerNotes || null,
     courtroom_photos: formData.courtroom_photos || null,
     general_photos: (formData.generalPhotos || []).filter((p): p is { url: string; caption?: string | null; uploadedAt?: string | null } => !!p?.url),
     position: formData.position ? { x: formData.position.x || 0, y: formData.position.y || 0 } : { x: 0, y: 0 },

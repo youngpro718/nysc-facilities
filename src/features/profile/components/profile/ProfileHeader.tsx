@@ -8,14 +8,16 @@ import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@features/auth/hooks/useAuth";
+import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { STORAGE_BUCKETS } from '@/config';
+import { getRoleLabel } from '@/config/roles';
 
 export function ProfileHeader() {
   const { toast } = useToast();
   const { user, profile } = useAuth();
+  const { userRole } = useRolePermissions();
   const [isUploading, setIsUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const userRole = (profile as any)?.role ?? null;
 
   useEffect(() => {
     fetchAvatar();
@@ -104,15 +106,6 @@ export function ProfileHeader() {
     }
   };
 
-  const getRoleDisplayName = (role: string | null) => {
-    switch (role) {
-      case 'admin': return 'Administrator';
-      case 'supply_room_staff': return 'Supply Room Staff';
-      case 'user': return 'User';
-      default: return 'Awaiting Role Assignment';
-    }
-  };
-
   return (
     <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6 p-6 bg-gradient-to-r from-muted/50 to-muted/30 rounded-lg border">
       <div className="relative group">
@@ -152,7 +145,7 @@ export function ProfileHeader() {
             </h2>
             <Badge variant={getRoleBadgeVariant(userRole)} className="flex items-center gap-1">
               <Shield className="h-3 w-3" />
-              {getRoleDisplayName(userRole)}
+              {userRole ? getRoleLabel(userRole) : 'Awaiting Role Assignment'}
             </Badge>
           </div>
           

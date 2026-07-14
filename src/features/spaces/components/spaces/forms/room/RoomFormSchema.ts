@@ -153,6 +153,8 @@ export const RoomFormSchema = z.object({
   technologyInstalled: z.array(z.string()).nullable().optional(),
   securityLevel: z.string().nullable().optional(),
   environmentalControls: z.string().nullable().optional(),
+  waterCoolerCount: z.number().int().min(0).max(50).default(0),
+  waterCoolerNotes: z.string().max(500).nullable().optional(),
   // Lighting fields
   ceilingHeight: z.enum(['standard', 'high', 'double_height']).nullable().optional(),
   expectedFixtureCount: z.number().min(0).nullable().optional(),

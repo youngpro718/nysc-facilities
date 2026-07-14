@@ -19,6 +19,9 @@ interface UpdateSpaceData {
   storage_capacity?: number;
   phone_number?: string;
   current_function?: string;
+  has_water_cooler?: boolean;
+  water_cooler_count?: number;
+  water_cooler_notes?: string | null;
   parent_room_id?: string | null;
   courtroom_photos?: {
     judge_view?: string[] | null;
@@ -55,6 +58,11 @@ export const updateSpace = async (id: string, updates: Partial<UpdateSpaceData>)
   if ('storage_capacity' in updates) roomUpdates.storage_capacity = updates.storage_capacity;
   if ('parent_room_id' in updates) roomUpdates.parent_room_id = updates.parent_room_id;
   if ('courtroom_photos' in updates) roomUpdates.courtroom_photos = updates.courtroom_photos;
+  if ('water_cooler_count' in updates) {
+    roomUpdates.water_cooler_count = updates.water_cooler_count;
+    roomUpdates.has_water_cooler = (updates.water_cooler_count ?? 0) > 0;
+  }
+  if ('water_cooler_notes' in updates) roomUpdates.water_cooler_notes = updates.water_cooler_notes;
 
   logger.debug("Final roomUpdates before database:", roomUpdates);
   logger.debug("Parent room ID being sent to DB:", roomUpdates.parent_room_id);
