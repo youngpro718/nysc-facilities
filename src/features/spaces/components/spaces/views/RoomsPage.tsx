@@ -320,7 +320,7 @@ const RoomsPage = () => {
           )}
         </div>
         <div className="shrink-0 hidden sm:block">
-          <RoomExcelImportExport projectRef="fmymhtuiqzhupjyopfvi" />
+          <RoomExcelImportExport projectRef="fmymhtuiqzhupjyopfvi" filteredRooms={filteredAndSortedRooms} />
         </div>
       </div>
 
