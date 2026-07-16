@@ -1,7 +1,9 @@
 import {
+  AccessibilityIcon,
   EnterIcon,
   HomeIcon,
   LayersIcon,
+  MoveIcon,
   Pencil1Icon,
   RowsIcon,
   SewingPinIcon,
@@ -26,6 +28,8 @@ const areaIcons: Record<CommonAreaType, typeof RowsIcon> = {
   lobby: HomeIcon,
   mezzanine: LayersIcon,
   waiting_area: SewingPinIcon,
+  restroom: AccessibilityIcon,
+  stairwell: MoveIcon,
   other: SewingPinIcon,
 };
 

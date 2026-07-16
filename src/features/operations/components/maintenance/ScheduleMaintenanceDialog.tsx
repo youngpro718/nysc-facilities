@@ -183,6 +183,8 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="painting">Painting</SelectItem>
+                  <SelectItem value="plaster">Plaster</SelectItem>
+                  <SelectItem value="doors">Doors</SelectItem>
                   <SelectItem value="flooring">Flooring</SelectItem>
                   <SelectItem value="electrical">Electrical</SelectItem>
                   <SelectItem value="hvac">HVAC</SelectItem>
@@ -229,6 +231,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                   <SelectItem value="courtroom">Courtroom</SelectItem>
                   <SelectItem value="room">Room</SelectItem>
                   <SelectItem value="hallway">Hallway</SelectItem>
+                  <SelectItem value="stairwell">Stairwell</SelectItem>
                   <SelectItem value="door">Door</SelectItem>
                   <SelectItem value="building">Building</SelectItem>
                 </SelectContent>

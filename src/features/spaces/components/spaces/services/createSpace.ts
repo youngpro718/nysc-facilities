@@ -39,7 +39,8 @@ export async function createSpace(data: CreateSpaceFormData) {
         'office', 'courtroom', 'chamber', 'judges_chambers', 'jury_room',
         'conference_room', 'filing_room', 'male_locker_room', 'female_locker_room',
         'robing_room', 'stake_holder', 'records_room', 'administrative_office',
-        'break_room', 'it_room', 'utility_room', 'laboratory', 'conference'
+        'break_room', 'it_room', 'utility_room', 'laboratory', 'conference',
+        'witness_room', 'bathroom', 'closet', 'electrical_room'
       ];
       
       if (!validRoomTypes.includes(dbRoomType)) {
