@@ -4,6 +4,8 @@ export const COMMON_AREA_TYPES = [
   'lobby',
   'mezzanine',
   'waiting_area',
+  'restroom',
+  'stairwell',
   'other',
 ] as const;
 
@@ -48,6 +50,8 @@ export const commonAreaTypeLabel = (type: CommonAreaType) => {
     lobby: 'Lobby',
     mezzanine: 'Mezzanine',
     waiting_area: 'Waiting area',
+    restroom: 'Restroom',
+    stairwell: 'Stairwell',
     other: 'Other',
   };
   return labels[type];

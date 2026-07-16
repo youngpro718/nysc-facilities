@@ -183,6 +183,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="painting">Painting</SelectItem>
+                  <SelectItem value="plaster">Plaster</SelectItem>
                   <SelectItem value="flooring">Flooring</SelectItem>
                   <SelectItem value="electrical">Electrical</SelectItem>
                   <SelectItem value="hvac">HVAC</SelectItem>
