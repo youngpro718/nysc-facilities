@@ -47,19 +47,23 @@ export const CAN_HAVE_PARENT_ROOM_TYPES: RoomTypeEnum[] = [
   RoomTypeEnum.FILING_ROOM,
   RoomTypeEnum.WITNESS_ROOM,
   RoomTypeEnum.ROBING_ROOM,
+  RoomTypeEnum.JURY_ROOM,
 ];
 
-// Witness rooms and robing rooms are subordinate to a courtroom rather than
-// a generic "office suite" — different label/copy, and their room number
-// (when they don't have one of their own) is suggested from the courtroom's.
+// Witness rooms, robing rooms, and jury rooms are subordinate to a courtroom
+// rather than a generic "office suite" — different label/copy, and their
+// room number (when they don't have one of their own) is suggested from the
+// courtroom's.
 const COURTROOM_SERVING_TYPES: RoomTypeEnum[] = [
   RoomTypeEnum.WITNESS_ROOM,
   RoomTypeEnum.ROBING_ROOM,
+  RoomTypeEnum.JURY_ROOM,
 ];
 
 const ROOM_NUMBER_SUFFIX: Partial<Record<RoomTypeEnum, string>> = {
   [RoomTypeEnum.WITNESS_ROOM]: "W",
   [RoomTypeEnum.ROBING_ROOM]: "RR",
+  [RoomTypeEnum.JURY_ROOM]: "JR",
 };
 
 interface ParentRoomFieldProps {

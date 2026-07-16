@@ -260,6 +260,7 @@ export const MaintenanceScheduleList = () => {
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="painting">Painting</SelectItem>
               <SelectItem value="plaster">Plaster</SelectItem>
+              <SelectItem value="doors">Doors</SelectItem>
               <SelectItem value="flooring">Flooring</SelectItem>
               <SelectItem value="electrical">Electrical</SelectItem>
               <SelectItem value="hvac">HVAC</SelectItem>
@@ -458,6 +459,7 @@ export const MaintenanceScheduleList = () => {
                     <SelectItem value="cleaning">Cleaning</SelectItem>
                     <SelectItem value="painting">Painting</SelectItem>
                     <SelectItem value="plaster">Plaster</SelectItem>
+                    <SelectItem value="doors">Doors</SelectItem>
                     <SelectItem value="flooring">Flooring</SelectItem>
                     <SelectItem value="electrical">Electrical</SelectItem>
                     <SelectItem value="hvac">HVAC</SelectItem>
