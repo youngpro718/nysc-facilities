@@ -35,6 +35,7 @@ import { useSearchParams } from "react-router-dom";
 import { useCourtAssignmentsMap } from "@features/spaces/hooks/queries/useCourtAssignmentsMap";
 import { CourtroomAssignmentHeader } from "../rooms/components/CourtroomAssignmentHeader";
 import { BuildingFloorScopeBar } from "../rooms/components/BuildingFloorScopeBar";
+import { WaterCoolerAreasStrip } from "../rooms/components/WaterCoolerAreasStrip";
 
 // Sort options offered by the FilterBar/MobileFilterBar dropdowns.
 // Keep in sync with the switch in useRoomFilters.
@@ -339,6 +340,10 @@ const RoomsPage = () => {
             Clear all filters
           </Button>
         </div>
+      )}
+
+      {roomTypeFilter === "water_cooler" && (
+        <WaterCoolerAreasStrip buildingId={urlBuildingId || "all"} floorId={urlFloorId || "all"} />
       )}
 
       {/* Main Content Area - Master Detail View with left sidebar */}
