@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FileUp, Download, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { FileUp, Download, FileSpreadsheet, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@shared/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,9 +11,15 @@ import { supabase } from "@/lib/supabase";
 import type ExcelJS from "exceljs";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { sheetToJson } from "@shared/utils/excelExport";
+import { formatRoomTypeLabel } from "../types/visibleRoomTypes";
+import type { Room } from "../types/RoomTypes";
 
 interface RoomExcelImportExportProps {
   projectRef: string;
+  // Currently visible rooms (after search/status/building/floor/type filters)
+  // from the page, used for the simple print-friendly export so it matches
+  // what's on screen rather than every room in the system.
+  filteredRooms?: Room[];
 }
 
 interface ImportResult {
@@ -37,12 +43,13 @@ function styleSheet(worksheet: ExcelJS.Worksheet, data: Record<string, unknown>[
   headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE0E0E0" } };
 }
 
-export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps) {
+export function RoomExcelImportExport({ projectRef, filteredRooms }: RoomExcelImportExportProps) {
   const { toast } = useToast();
   const { canAdmin } = useRolePermissions();
   const canManageSpaces = canAdmin('spaces');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isSimpleExporting, setIsSimpleExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [importResults, setImportResults] = useState<{
@@ -264,6 +271,61 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
       });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // ── SIMPLE EXPORT (print-friendly list, respects the current filters) ──
+  const handleSimpleExport = async () => {
+    const rooms = filteredRooms ?? [];
+    if (rooms.length === 0) {
+      toast({ title: "Nothing to export", description: "No rooms match the current filters.", variant: "destructive" });
+      return;
+    }
+
+    setIsSimpleExporting(true);
+    try {
+      const floorIds = [...new Set(rooms.map(r => r.floor_id).filter(Boolean))];
+      const { data: floorsData, error: floorsError } = await supabase
+        .from("floors")
+        .select("id, floor_number")
+        .in("id", floorIds);
+      if (floorsError) throw floorsError;
+
+      const floorNumberById = new Map((floorsData || []).map(f => [f.id, f.floor_number]));
+
+      const rows = rooms.map(room => ({
+        "Room Number": room.room_number || "",
+        "Room Name": room.name || "",
+        "Floor": floorNumberById.get(room.floor_id) ?? room.floor?.name ?? "",
+        "Room Type": formatRoomTypeLabel(room.room_type),
+      }));
+
+      const ExcelJSLib = (await import("exceljs")).default;
+      const wb = new ExcelJSLib.Workbook();
+      const ws = wb.addWorksheet("Room List");
+      styleSheet(ws, rows);
+      rows.forEach(row => ws.addRow(row));
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `room_list_${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({ title: "Export successful", description: `${rows.length} rooms exported.` });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: error instanceof Error ? error.message : "Failed to export room list",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSimpleExporting(false);
     }
   };
 
@@ -504,7 +566,24 @@ export function RoomExcelImportExport({ projectRef }: RoomExcelImportExportProps
     <div className="hidden md:flex gap-2">
       <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".xlsx,.xls" className="hidden" />
 
-      <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleSimpleExport}
+        disabled={isSimpleExporting}
+        title="Room Number, Room Name, Floor, and Room Type only — matches your current filters. For printing or sharing a plain list."
+      >
+        {isSimpleExporting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 mr-1.5" />}
+        Simple List
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleExport}
+        disabled={isExporting}
+        title="Full export with all fields, issues, and maintenance history — for re-importing back into the system."
+      >
         {isExporting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Download className="h-4 w-4 mr-1.5" />}
         Export Excel
       </Button>
