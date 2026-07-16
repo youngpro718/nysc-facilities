@@ -34,7 +34,10 @@ const areaIcons: Record<CommonAreaType, typeof RowsIcon> = {
 };
 
 export function CommonAreaCard({ area, canManage, onEdit, onDelete }: CommonAreaCardProps) {
-  const AreaIcon = areaIcons[area.area_type];
+  // Falls back for any area_type value not in the map yet (e.g. written
+  // directly to the database ahead of a frontend deploy) so an unrecognized
+  // type never crashes the card — it just shows a generic pin icon instead.
+  const AreaIcon = areaIcons[area.area_type] ?? SewingPinIcon;
 
   return (
     <article className="group grid gap-4 border-b border-border/70 py-4 first:pt-2 last:border-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
