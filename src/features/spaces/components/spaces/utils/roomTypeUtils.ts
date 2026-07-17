@@ -27,6 +27,10 @@ export const getRoomTypeColor = (roomType: string | undefined): string => {
       return 'bg-cyan-100 text-cyan-800';
     case 'security':
       return 'bg-red-100 dark:bg-red-900/30 text-red-800';
+    case 'shared_vestibule':
+      return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800';
+    case 'egress':
+      return 'bg-amber-100 dark:bg-amber-900/30 text-amber-800';
     default:
       return 'bg-gray-100 dark:bg-gray-800/30 text-gray-800';
   }
@@ -57,6 +61,10 @@ export const getRoomTypeName = (roomType: string | undefined): string => {
       return 'Restroom';
     case 'security':
       return 'Security Room';
+    case 'shared_vestibule':
+      return 'Shared Vestibule';
+    case 'egress':
+      return 'Egress';
     default:
       return roomType.charAt(0).toUpperCase() + roomType.slice(1);
   }

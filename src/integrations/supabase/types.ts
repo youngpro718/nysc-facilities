@@ -10393,6 +10393,12 @@ export type Database = {
         | "laboratory"
         | "conference"
         | "chamber"
+        | "witness_room"
+        | "bathroom"
+        | "closet"
+        | "electrical_room"
+        | "shared_vestibule"
+        | "egress"
       security_level_enum: "standard" | "restricted" | "high_security"
       session_period: "AM" | "PM" | "ALL_DAY"
       simplified_storage_type_enum:
@@ -10768,6 +10774,12 @@ export const Constants = {
         "laboratory",
         "conference",
         "chamber",
+        "witness_room",
+        "bathroom",
+        "closet",
+        "electrical_room",
+        "shared_vestibule",
+        "egress",
       ],
       security_level_enum: ["standard", "restricted", "high_security"],
       session_period: ["AM", "PM", "ALL_DAY"],

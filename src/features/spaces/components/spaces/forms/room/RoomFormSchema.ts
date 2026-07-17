@@ -61,6 +61,8 @@ const roomTypeValues = [
   RoomTypeEnum.BATHROOM,
   RoomTypeEnum.CLOSET,
   RoomTypeEnum.ELECTRICAL_ROOM,
+  RoomTypeEnum.SHARED_VESTIBULE,
+  RoomTypeEnum.EGRESS,
 ];
 
 // Define the room form schema with all fields

@@ -92,7 +92,7 @@ export function RoomsSidebarList({
             {groupedEntries.map(([buildingName, entries]) => {
               const isCollapsed = collapsed.has(buildingName);
               return (
-                <div key={buildingName}>
+                <div key={buildingName} className="border-b last:border-b-0">
                   <button
                     type="button"
                     onClick={() => toggleBuilding(buildingName)}
@@ -114,7 +114,7 @@ export function RoomsSidebarList({
                   </button>
 
                   {!isCollapsed && (
-                    <ul className="divide-y">
+                    <ul className="p-1.5 space-y-1">
                       {entries.map((entry) =>
                         entry.kind === "common_area" ? (
                           <CommonAreaRow
@@ -160,10 +160,10 @@ function CommonAreaRow({
         type="button"
         onClick={() => onSelect?.(area)}
         className={cn(
-          "w-full text-left px-3 py-2 flex items-center gap-3 transition-colors",
-          "border-l-2 border-l-orange-500 bg-orange-50/70 hover:bg-orange-100/80",
-          "dark:bg-orange-950/20 dark:hover:bg-orange-950/40",
-          isActive && "bg-orange-100 dark:bg-orange-950/50"
+          "w-full text-left px-3 py-2 flex items-center gap-3 rounded-md border transition-colors",
+          "border-l-[3px] border-l-orange-500 border-orange-200/70 bg-orange-50/70 hover:bg-orange-100/80",
+          "dark:border-orange-900/60 dark:border-l-orange-500 dark:bg-orange-950/20 dark:hover:bg-orange-950/40",
+          isActive && "bg-orange-100 border-orange-300 shadow-sm dark:bg-orange-950/50 dark:border-orange-700"
         )}
       >
         <div className="h-10 w-10 shrink-0 rounded-md border border-orange-300 bg-orange-100 dark:border-orange-800 dark:bg-orange-950/50 flex items-center justify-center text-orange-600 dark:text-orange-400">
@@ -245,8 +245,10 @@ function RoomRow({
         type="button"
         onClick={() => onSelect(room)}
         className={cn(
-          "w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-accent/60 transition-colors",
-          isActive && "bg-accent/60"
+          "w-full text-left px-3 py-2 flex items-center gap-3 rounded-md border transition-colors",
+          isActive
+            ? "border-primary/40 bg-accent shadow-sm"
+            : "border-border/60 bg-card hover:border-border hover:bg-accent/60"
         )}
       >
         {/* Thumbnail */}
