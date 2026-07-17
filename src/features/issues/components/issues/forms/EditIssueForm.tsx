@@ -1,15 +1,13 @@
+import { useState } from "react";
 import { Form } from "@/components/ui/form";
 import { Issue } from "../types/IssueTypes";
 import { BasicIssueFields } from "../form-sections/BasicIssueFields";
 import { StatusAndPriorityFields } from "../form-sections/StatusAndPriorityFields";
-import { AssigneeField } from "../form-sections/AssigneeField";
 import { ResolutionFields } from "../form-sections/ResolutionFields";
-import { usePhotoUpload } from "../hooks/usePhotoUpload";
 import { IssuePhotoForm } from "../wizard/IssuePhotoForm";
 import { useEditIssueForm } from "../hooks/useEditIssueForm";
 import { DateFields } from "../form-sections/DateFields";
 import { FormButtons } from "@/components/ui/form-buttons";
-import { AdvancedFields } from "../form-sections/AdvancedFields";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,15 +19,11 @@ interface EditIssueFormProps {
 }
 
 export function EditIssueForm({ issue, onClose, onSave }: EditIssueFormProps) {
-  const { uploading, selectedPhotos, handlePhotoUpload, setSelectedPhotos } = usePhotoUpload();
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>(issue.photos || []);
   const { form, isResolved, updateIssueMutation, onSubmit } = useEditIssueForm(issue, () => {
     onSave();
     onClose();
   });
-
-  const handlePhotoRemove = (index: number) => {
-    setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,25 +32,21 @@ export function EditIssueForm({ issue, onClose, onSave }: EditIssueFormProps) {
       toast.error("Please fix the validation errors before submitting");
       return;
     }
-    form.handleSubmit(onSubmit)(e);
+    form.handleSubmit((values) => onSubmit(values, selectedPhotos))(e);
   };
 
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit} className="space-y-6">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
 
           <TabsContent value="basic" className="space-y-6">
             <BasicIssueFields form={form} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <AssigneeField form={form} />
-              <StatusAndPriorityFields form={form} />
-            </div>
+            <StatusAndPriorityFields form={form} />
             <DateFields form={form} />
           </TabsContent>
 
@@ -77,19 +67,13 @@ export function EditIssueForm({ issue, onClose, onSave }: EditIssueFormProps) {
 
               <IssuePhotoForm
                 selectedPhotos={selectedPhotos}
-                uploading={uploading}
-                onPhotoUpload={handlePhotoUpload}
-                onPhotoRemove={handlePhotoRemove}
+                onPhotosChange={setSelectedPhotos}
               />
             </div>
           </TabsContent>
-
-          <TabsContent value="advanced">
-            <AdvancedFields form={form} />
-          </TabsContent>
         </Tabs>
 
-        <FormButtons 
+        <FormButtons
           onCancel={onClose}
           isSubmitting={updateIssueMutation.isPending}
           submitLabel="Update Issue"

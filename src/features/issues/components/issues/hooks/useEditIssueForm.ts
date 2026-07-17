@@ -10,6 +10,11 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 
+// Every field here must be a real column on `issues` — this form used to
+// also collect impact_level, assigned_to, recurring_pattern,
+// maintenance_requirements, and lighting_details, none of which exist on
+// the table, so saving an edit always failed with a "column not found"
+// error from Postgres regardless of what was actually changed.
 const editIssueSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
@@ -19,24 +24,7 @@ const editIssueSchema = z.object({
   date_info: z.string().optional().nullable(),
   resolution_type: z.enum(["fixed", "replaced", "maintenance_performed", "no_action_needed", "deferred", "other"] as const).optional(),
   resolution_notes: z.string().optional(),
-  assigned_to: z.enum(["DCAS", "OCA", "Self", "Outside_Vendor"] as const).optional(),
-  impact_level: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  recurring_pattern: z.object({
-    is_recurring: z.boolean().default(false),
-    frequency: z.string().optional(),
-    pattern_confidence: z.number().optional(),
-  }).optional(),
-  maintenance_requirements: z.object({
-    scheduled: z.boolean().default(false),
-    frequency: z.string().optional(),
-    next_due: z.string().optional(),
-  }).optional(),
-  lighting_details: z.object({
-    fixture_status: z.string().optional(),
-    detected_issues: z.array(z.string()).optional(),
-    maintenance_history: z.array(z.any()).optional(),
-  }).optional(),
 });
 
 export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
@@ -63,16 +51,7 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
       date_info: issue.date_info || '',
       resolution_type: issue.resolution_type || undefined,
       resolution_notes: issue.resolution_notes || '',
-      assigned_to: issue.assigned_to || undefined,
-      impact_level: issue.impact_level || undefined,
       tags: issue.tags || [],
-      recurring_pattern: issue.recurring_pattern || {
-        is_recurring: false,
-      },
-      maintenance_requirements: issue.maintenance_requirements || {
-        scheduled: false,
-      },
-      lighting_details: issue.lighting_details,
     },
   });
 
@@ -80,9 +59,9 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
   const isResolved = watchStatus === "resolved";
 
   const updateIssueMutation = useMutation({
-    mutationFn: async (values: FormData) => {
+    mutationFn: async ({ values, photos }: { values: FormData; photos: string[] }) => {
       let formattedDueDate = null;
-      
+
       if (values.due_date && values.due_date.trim() !== '') {
         try {
           formattedDueDate = new Date(values.due_date).toISOString();
@@ -95,7 +74,8 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
       const updateData = {
         ...values,
         due_date: formattedDueDate,
-        resolution_date: isResolved ? new Date().toISOString() : null,
+        resolved_at: isResolved ? new Date().toISOString() : null,
+        photos,
       };
 
       const { error } = await supabase
@@ -117,7 +97,7 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
     },
   });
 
-  const onSubmit = (values: FormData) => {
+  const onSubmit = (values: FormData, photos: string[]) => {
     if (isResolved && !values.resolution_type) {
       form.setError("resolution_type", {
         type: "manual",
@@ -125,7 +105,7 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
       });
       return;
     }
-    updateIssueMutation.mutate(values);
+    updateIssueMutation.mutate({ values, photos });
   };
 
   return {

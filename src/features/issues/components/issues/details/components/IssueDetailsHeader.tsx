@@ -27,21 +27,19 @@ export const IssueDetailsHeader = ({ title, status, issueId, onEdit, onDelete, i
       </DialogTitle>
       <div className="flex items-center justify-end gap-1 flex-wrap">
         {actions}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onEdit}
-          className="h-8 w-8"
-        >
-          {isEditing ? (
-            <X className="h-4 w-4" />
-          ) : (
+        {isEditing ? (
+          // Labeled explicitly (not a bare icon) so it doesn't read as a
+          // second close button next to the sheet's own X in the corner.
+          <Button variant="ghost" size="sm" onClick={onEdit} className="h-8 gap-1.5 text-xs">
+            <X className="h-3.5 w-3.5" />
+            Cancel Edit
+          </Button>
+        ) : (
+          <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8">
             <Pencil className="h-4 w-4" />
-          )}
-          <span className="sr-only">
-            {isEditing ? "Cancel edit" : "Edit issue"}
-          </span>
-        </Button>
+            <span className="sr-only">Edit issue</span>
+          </Button>
+        )}
         {!isEditing && issueId && (
           <DeleteIssueButton
             issueId={issueId}
