@@ -13,6 +13,8 @@ import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { sheetToJson } from "@shared/utils/excelExport";
 import { formatRoomTypeLabel } from "../types/visibleRoomTypes";
 import type { Room } from "../types/RoomTypes";
+import { fetchCommonAreas } from "../../services/commonAreas";
+import { commonAreaTypeLabel, type CommonArea } from "../../common-areas/types";
 
 interface RoomExcelImportExportProps {
   projectRef: string;
@@ -20,6 +22,9 @@ interface RoomExcelImportExportProps {
   // from the page, used for the simple print-friendly export so it matches
   // what's on screen rather than every room in the system.
   filteredRooms?: Room[];
+  // Common areas currently shown inline in the list (water-cooler filter);
+  // included in the simple export as orange rows so the sheet matches the screen.
+  filteredCommonAreas?: CommonArea[];
 }
 
 interface ImportResult {
@@ -43,7 +48,7 @@ function styleSheet(worksheet: ExcelJS.Worksheet, data: Record<string, unknown>[
   headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE0E0E0" } };
 }
 
-export function RoomExcelImportExport({ projectRef, filteredRooms }: RoomExcelImportExportProps) {
+export function RoomExcelImportExport({ projectRef, filteredRooms, filteredCommonAreas }: RoomExcelImportExportProps) {
   const { toast } = useToast();
   const { canAdmin } = useRolePermissions();
   const canManageSpaces = canAdmin('spaces');
@@ -220,6 +225,21 @@ export function RoomExcelImportExport({ projectRef, filteredRooms }: RoomExcelIm
         });
       }
 
+      // ── Sheet 5: Common Areas (read-only reference; not part of import) ──
+      const commonAreas = await fetchCommonAreas().catch(() => [] as CommonArea[]);
+      const commonAreaData = commonAreas.map((area) => ({
+        "System ID": area.id,
+        "Name": area.name,
+        "Type": commonAreaTypeLabel(area.area_type),
+        "Building": area.floor?.building?.name || "",
+        "Floor": area.floor?.name || "",
+        "Floor #": area.floor?.floor_number ?? "",
+        "Status": area.status || "",
+        "Description": area.description || "",
+        "Water Coolers": area.water_cooler_count ?? 0,
+        "Cooler Notes": area.water_cooler_notes || "",
+      }));
+
       // ── Build workbook ──
       const ExcelJSLib = (await import("exceljs")).default;
       const wb = new ExcelJSLib.Workbook();
@@ -240,12 +260,19 @@ export function RoomExcelImportExport({ projectRef, filteredRooms }: RoomExcelIm
       styleSheet(ws4, functionData);
       functionData.forEach(row => ws4.addRow(row));
 
+      if (commonAreaData.length > 0) {
+        const wsAreas = wb.addWorksheet("Common Areas");
+        styleSheet(wsAreas, commonAreaData);
+        commonAreaData.forEach(row => wsAreas.addRow(row));
+      }
+
       // ── Instructions sheet ──
       const helpData = [
         { "Sheet": "Room Info", "What You Can Edit": "Name, Status, Room Type, Current Function, Description, Capacity, Phone, Storage fields, Security Level", "Notes": "Do NOT change System ID. Status must be: active, inactive, or under_maintenance" },
         { "Sheet": "Persistent Issues", "What You Can Edit": "Add/edit rows. Category examples: Plumbing, Electrical, HVAC, Structural, Pest, Window, Door, Lighting, Mold, Noise", "Notes": "Severity: low, medium, high, critical. Status: open, monitoring, resolved" },
         { "Sheet": "Maintenance Log", "What You Can Edit": "Add new rows for maintenance work done. Fill in Date, Type, Description", "Notes": "Cost is optional. DO NOT edit or remove the System ID." },
         { "Sheet": "Function History", "What You Can Edit": "Add rows to record when a room changed function. Fill in Function, Start Date, End Date", "Notes": "Dates should be YYYY-MM-DD format. DO NOT edit or remove System ID." },
+        { "Sheet": "Common Areas", "What You Can Edit": "Nothing — reference only (hallways, lobbies, and other shared spaces with their water coolers)", "Notes": "This sheet is ignored on import. Edit common areas on the Spaces page → Common Areas tab." },
       ];
       const ws5 = wb.addWorksheet("How To Edit");
       styleSheet(ws5, helpData);
@@ -262,7 +289,10 @@ export function RoomExcelImportExport({ projectRef, filteredRooms }: RoomExcelIm
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      toast({ title: "Export successful", description: `${rooms.length} rooms exported across 4 sheets.` });
+      toast({
+        title: "Export successful",
+        description: `${rooms.length} rooms${commonAreaData.length > 0 ? ` + ${commonAreaData.length} common areas` : ""} exported.`,
+      });
     } catch (error) {
       toast({
         title: "Export failed",
@@ -277,7 +307,8 @@ export function RoomExcelImportExport({ projectRef, filteredRooms }: RoomExcelIm
   // ── SIMPLE EXPORT (print-friendly list, respects the current filters) ──
   const handleSimpleExport = async () => {
     const rooms = filteredRooms ?? [];
-    if (rooms.length === 0) {
+    const areas = filteredCommonAreas ?? [];
+    if (rooms.length === 0 && areas.length === 0) {
       toast({ title: "Nothing to export", description: "No rooms match the current filters.", variant: "destructive" });
       return;
     }
@@ -285,26 +316,49 @@ export function RoomExcelImportExport({ projectRef, filteredRooms }: RoomExcelIm
     setIsSimpleExporting(true);
     try {
       const floorIds = [...new Set(rooms.map(r => r.floor_id).filter(Boolean))];
-      const { data: floorsData, error: floorsError } = await supabase
-        .from("floors")
-        .select("id, floor_number")
-        .in("id", floorIds);
-      if (floorsError) throw floorsError;
+      const floorNumberById = new Map<string, number>();
+      if (floorIds.length > 0) {
+        const { data: floorsData, error: floorsError } = await supabase
+          .from("floors")
+          .select("id, floor_number")
+          .in("id", floorIds);
+        if (floorsError) throw floorsError;
+        (floorsData || []).forEach(f => floorNumberById.set(f.id, f.floor_number));
+      }
 
-      const floorNumberById = new Map((floorsData || []).map(f => [f.id, f.floor_number]));
-
-      const rows = rooms.map(room => ({
-        "Room Number": room.room_number || "",
-        "Room Name": room.name || "",
-        "Floor": floorNumberById.get(room.floor_id) ?? room.floor?.name ?? "",
-        "Room Type": formatRoomTypeLabel(room.room_type),
-      }));
+      // Rooms and common areas together, in the same order as on screen.
+      // Common-area rows are tinted orange below, matching the site.
+      const { mergeRoomsAndCommonAreas } = await import("../utils/roomListEntries");
+      const entries = mergeRoomsAndCommonAreas(rooms, areas);
+      const rows = entries.map(entry =>
+        entry.kind === "common_area"
+          ? {
+              "Room Number": "",
+              "Room Name": entry.area.name,
+              "Floor": entry.area.floor?.floor_number ?? entry.area.floor?.name ?? "",
+              "Room Type": `Common Area — ${commonAreaTypeLabel(entry.area.area_type)}`,
+            }
+          : {
+              "Room Number": entry.room.room_number || "",
+              "Room Name": entry.room.name || "",
+              "Floor": floorNumberById.get(entry.room.floor_id) ?? entry.room.floor?.name ?? "",
+              "Room Type": formatRoomTypeLabel(entry.room.room_type),
+            }
+      );
 
       const ExcelJSLib = (await import("exceljs")).default;
       const wb = new ExcelJSLib.Workbook();
       const ws = wb.addWorksheet("Room List");
       styleSheet(ws, rows);
-      rows.forEach(row => ws.addRow(row));
+      rows.forEach((row, i) => {
+        const added = ws.addRow(row);
+        if (entries[i].kind === "common_area") {
+          added.eachCell({ includeEmpty: true }, (cell) => {
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFE8D6" } };
+            cell.font = { color: { argb: "FF9A3412" } };
+          });
+        }
+      });
 
       const buffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -317,7 +371,12 @@ export function RoomExcelImportExport({ projectRef, filteredRooms }: RoomExcelIm
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      toast({ title: "Export successful", description: `${rows.length} rooms exported.` });
+      toast({
+        title: "Export successful",
+        description: areas.length > 0
+          ? `${rooms.length} rooms + ${areas.length} common ${areas.length === 1 ? "area" : "areas"} exported.`
+          : `${rows.length} rooms exported.`,
+      });
     } catch (error) {
       toast({
         title: "Export failed",
@@ -571,7 +630,7 @@ export function RoomExcelImportExport({ projectRef, filteredRooms }: RoomExcelIm
         size="sm"
         onClick={handleSimpleExport}
         disabled={isSimpleExporting}
-        title="Room Number, Room Name, Floor, and Room Type only — matches your current filters. For printing or sharing a plain list."
+        title="Room Number, Room Name, Floor, and Room Type only — matches your current filters (including common areas when shown). For printing or sharing a plain list."
       >
         {isSimpleExporting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 mr-1.5" />}
         Simple List

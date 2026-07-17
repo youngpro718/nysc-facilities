@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { logger } from '@/lib/logger';
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { useToast } from "@shared/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -35,7 +35,10 @@ import { useSearchParams } from "react-router-dom";
 import { useCourtAssignmentsMap } from "@features/spaces/hooks/queries/useCourtAssignmentsMap";
 import { CourtroomAssignmentHeader } from "../rooms/components/CourtroomAssignmentHeader";
 import { BuildingFloorScopeBar } from "../rooms/components/BuildingFloorScopeBar";
-import { WaterCoolerAreasStrip } from "../rooms/components/WaterCoolerAreasStrip";
+import { CommonAreaPanelCard } from "../rooms/components/CommonAreaPanelCard";
+import { fetchCommonAreas } from "../services/commonAreas";
+import type { CommonArea } from "../common-areas/types";
+import { commonAreaTypeLabel } from "../common-areas/types";
 
 // Sort options offered by the FilterBar/MobileFilterBar dropdowns.
 // Keep in sync with the switch in useRoomFilters.
@@ -72,6 +75,45 @@ const RoomsPage = () => {
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({});
   const { data: assignmentsByRoomId } = useCourtAssignmentsMap();
+
+  // Common areas (hallways, lobbies, …) with water coolers, shown inline in
+  // the room list when the water-cooler filter is active. They're a separate
+  // table from rooms, so they're fetched here and merged into the list UI.
+  const showCoolerAreas = roomTypeFilter === "water_cooler";
+  const { data: commonAreasData } = useQuery({
+    queryKey: ["common-areas-water-coolers", urlBuildingId || "all", urlFloorId || "all"],
+    queryFn: () => fetchCommonAreas(urlBuildingId || undefined, urlFloorId || undefined),
+    staleTime: 5 * 60 * 1000,
+    enabled: showCoolerAreas,
+  });
+  const [selectedAreaForPanel, setSelectedAreaForPanel] = useState<CommonArea | null>(null);
+
+  const coolerAreas = useMemo(() => {
+    if (!showCoolerAreas) return [];
+    const q = searchQuery.trim().toLowerCase();
+    return (commonAreasData ?? []).filter((area) => {
+      if (area.water_cooler_count <= 0) return false;
+      if (statusFilter !== "all" && area.status !== statusFilter) return false;
+      if (!q) return true;
+      const haystack = [
+        area.name,
+        area.floor?.name,
+        area.floor?.building?.name,
+        commonAreaTypeLabel(area.area_type),
+        area.description ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [showCoolerAreas, commonAreasData, searchQuery, statusFilter]);
+
+  // The panel shows the selected common area only while it's still in the
+  // visible list (filter still active, still matches search).
+  const panelArea = useMemo(() => {
+    if (!selectedAreaForPanel) return null;
+    return coolerAreas.find((a) => a.id === selectedAreaForPanel.id) ?? null;
+  }, [selectedAreaForPanel, coolerAreas]);
   const { filteredAndSortedRooms } = useRoomFilters({
     rooms,
     searchQuery,
@@ -248,6 +290,7 @@ const RoomsPage = () => {
 
   const handleRoomSelect = (room: Room) => {
     logger.debug('Room selected for panel:', { name: room.name, id: room.id });
+    setSelectedAreaForPanel(null);
     setSelectedRoomForPanel(room);
     // Update URL with selected room ID (preserve other params)
     const newParams = new URLSearchParams(searchParams);
@@ -321,7 +364,11 @@ const RoomsPage = () => {
           )}
         </div>
         <div className="shrink-0 hidden sm:block">
-          <RoomExcelImportExport projectRef="fmymhtuiqzhupjyopfvi" filteredRooms={filteredAndSortedRooms} />
+          <RoomExcelImportExport
+            projectRef="fmymhtuiqzhupjyopfvi"
+            filteredRooms={filteredAndSortedRooms}
+            filteredCommonAreas={coolerAreas}
+          />
         </div>
       </div>
 
@@ -330,6 +377,8 @@ const RoomsPage = () => {
         <div className="flex items-center gap-3 text-sm text-muted-foreground shrink-0 -mt-2">
           <span>
             Showing {filteredAndSortedRooms.length} of {rooms?.length ?? 0} rooms
+            {coolerAreas.length > 0 &&
+              ` + ${coolerAreas.length} common ${coolerAreas.length === 1 ? "area" : "areas"}`}
           </span>
           <Button
             variant="link"
@@ -342,10 +391,6 @@ const RoomsPage = () => {
         </div>
       )}
 
-      {roomTypeFilter === "water_cooler" && (
-        <WaterCoolerAreasStrip buildingId={urlBuildingId || "all"} floorId={urlFloorId || "all"} />
-      )}
-
       {/* Main Content Area - Master Detail View with left sidebar */}
       {!isMobile ? (
         <ResizablePanelGroup
@@ -356,17 +401,24 @@ const RoomsPage = () => {
             <div className="h-full min-h-0">
               <RoomsSidebarList
                 rooms={filteredAndSortedRooms}
-                selectedRoomId={selectedRoomForPanel?.id}
+                selectedRoomId={panelArea ? null : selectedRoomForPanel?.id}
                 onSelect={handleRoomSelect}
                 isLoading={isLoading}
                 assignmentsByRoomId={assignmentsByRoomId}
+                commonAreas={coolerAreas}
+                selectedCommonAreaId={panelArea?.id}
+                onSelectCommonArea={(area) => setSelectedAreaForPanel(area)}
               />
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={72}>
             <div className="h-full min-h-0 overflow-y-auto p-6 flex items-start justify-center">
-              {panelRoom ? (
+              {panelArea ? (
+                <div className="w-full max-w-4xl">
+                  <CommonAreaPanelCard area={panelArea} />
+                </div>
+              ) : panelRoom ? (
                 <div className="w-full max-w-4xl space-y-3">
                   {panelAssignment && (
                     <CourtroomAssignmentHeader assignment={panelAssignment} />
@@ -399,6 +451,7 @@ const RoomsPage = () => {
           isLoading={isLoading}
           rooms={rooms || []}
           filteredRooms={filteredAndSortedRooms}
+          commonAreas={coolerAreas}
           view="grid"
           onDelete={(id) => setDeleteRoomId(id)}
           searchQuery={searchQuery}

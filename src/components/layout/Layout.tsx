@@ -33,6 +33,7 @@ import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { DevModeBanner } from "@shared/components/dev/DevModeBanner";
 import { SupportChatWidget } from "@shared/components/support/SupportChatWidget";
 import { APP_INFO, APP_COPYRIGHT } from "@/lib/appInfo";
+import { WhatsNewDialog } from "@shared/components/help/WhatsNewDialog";
 import { TourProvider } from "@shared/components/help/TourProvider";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import type { UserRole } from "@/config/roles";
@@ -45,6 +46,7 @@ function LayoutContent() {
   const [showRefreshButton, setShowRefreshButton] = useState(false);
   const [lastUserId, setLastUserId] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
 
   // Global ⌘K / Ctrl+K shortcut to open search
   useEffect(() => {
@@ -330,13 +332,24 @@ function LayoutContent() {
         {isAuthenticated && !isLoginPage && (
           <footer className="hidden md:block border-t border-border/50 py-3 px-8">
             <p className="text-[11px] text-muted-foreground text-center">
-              {APP_INFO.name} v{APP_INFO.version} &nbsp;·&nbsp; {APP_COPYRIGHT} &nbsp;·&nbsp;
+              {APP_INFO.name}{" "}
+              <button
+                type="button"
+                onClick={() => setWhatsNewOpen(true)}
+                className="hover:text-foreground transition-colors underline-offset-2 hover:underline"
+                title="See what's new in this version"
+              >
+                v{APP_INFO.version}
+              </button>
+              {" "}&nbsp;·&nbsp; {APP_COPYRIGHT} &nbsp;·&nbsp;
               <a href={APP_INFO.support.emailHref} className="hover:text-foreground transition-colors underline-offset-2 hover:underline">
                 {APP_INFO.support.email}
               </a>
             </p>
           </footer>
         )}
+
+        <WhatsNewDialog open={whatsNewOpen} onOpenChange={setWhatsNewOpen} />
       </div>
 
       {/* AI Support Chat — visible when authenticated and not on login */}
