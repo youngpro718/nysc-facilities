@@ -492,68 +492,6 @@ export async function startPicking(requestId: string) {
 }
 
 /**
- * Mark order as ready and deduct inventory.
- *
- * Thin wrapper over the atomic `fulfill_supply_request(uuid, jsonb, text)`
- * RPC (db/migrations/096_fix_supply_fulfillment.sql). The RPC does the
- * status-gate check, item updates, inventory deduction, and transaction
- * logging in one SECURITY DEFINER transaction — see
- * PartialFulfillmentDialog.handleComplete for the canonical call pattern
- * this mirrors. This function currently has no live callers (dead code as
- * of 2026-07-08); it previously drove the same multi-step
- * update-then-deduct flow the RPC replaced, which silently no-op'd under
- * RLS and could double-deduct inventory on retry.
- *
- * ID translation: this function's `items[].item_id` is the INVENTORY item
- * id (the old implementation filtered on the line's `item_id` column), but
- * the RPC's `p_items[].item_id` is the supply_request_items ROW id — the
- * RPC looks up `WHERE id = v_item_id AND request_id = p_request_id` and
- * raises supply_request_item_not_found otherwise. So we first fetch the
- * request's line items and map each inventory id to its line id.
- *
- * `markOrderReady` never took a delivery method, so this defaults to
- * 'pickup'.
- */
-export async function markOrderReady(
-  requestId: string,
-  items: Array<{ item_id: string; quantity_fulfilled: number }>
-) {
-  // Resolve inventory item ids -> supply_request_items row ids (the RPC's
-  // p_items[].item_id contract).
-  const { data: lines, error: linesError } = await supabase
-    .from('supply_request_items')
-    .select('id, item_id')
-    .eq('request_id', requestId);
-  if (linesError) throw linesError;
-
-  const lineIdByInventoryId = new Map(
-    (lines || []).map((line) => [line.item_id, line.id])
-  );
-
-  const rpcItems = items.map((item) => {
-    const lineId = lineIdByInventoryId.get(item.item_id);
-    if (!lineId) {
-      throw new Error(
-        `No line item found on request ${requestId} for inventory item ${item.item_id}`
-      );
-    }
-    return {
-      item_id: lineId,
-      quantity_fulfilled: item.quantity_fulfilled,
-      notes: null,
-    };
-  });
-
-  const { error } = await supabase.rpc('fulfill_supply_request', {
-    p_request_id: requestId,
-    p_items: rpcItems,
-    p_delivery_method: 'pickup',
-  });
-
-  if (error) throw error;
-}
-
-/**
  * Complete an order (staff marks as picked up)
  */
 export async function completeOrder(
@@ -872,7 +810,7 @@ export async function updateSupplyRequestDeliveryLocation(
 }
 
 /**
- * @deprecated Use markOrderReady or fulfillSupplyRequest instead
+ * @deprecated Use fulfillSupplyRequest or the fulfill_supply_request RPC instead
  */
 export async function updateSupplyRequestItems(
   requestId: string,

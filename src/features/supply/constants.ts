@@ -11,11 +11,15 @@ export type OrderStatus =
   | 'cancelled'        // Order cancelled
   | 'rejected';        // Order rejected
 
+// 'rejected' is only reachable from 'pending_approval' — the only place the
+// UI ever calls rejectSupplyRequest() is the approval queue. Orders that
+// don't need approval (submitted) or are already accepted by staff
+// (received) are declined via cancelSupplyRequest() instead.
 export const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  submitted: ['received', 'cancelled', 'rejected'],
+  submitted: ['received', 'cancelled'],
   pending_approval: ['approved', 'rejected', 'cancelled'],
   approved: ['received', 'cancelled'],
-  received: ['picking', 'cancelled', 'rejected'],
+  received: ['picking', 'cancelled'],
   picking: ['ready', 'cancelled'],
   ready: ['completed', 'cancelled'],
   completed: [],
