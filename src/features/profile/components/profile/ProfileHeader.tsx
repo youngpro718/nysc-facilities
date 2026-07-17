@@ -43,9 +43,10 @@ export function ProfileHeader() {
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const inputEl = event.target;
     try {
       setIsUploading(true);
-      const file = event.target.files?.[0];
+      const file = inputEl.files?.[0];
       if (!file) return;
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -90,6 +91,8 @@ export function ProfileHeader() {
       });
     } finally {
       setIsUploading(false);
+      // Reset so selecting the same file again still fires onChange.
+      inputEl.value = "";
     }
   };
 

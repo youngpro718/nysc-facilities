@@ -29,11 +29,9 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
   logger.debug('OccupantDepartureView - Access Summary:', accessSummary);
 
   const handleKeySelection = (keyAssignmentId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedKeys([...selectedKeys, keyAssignmentId]);
-    } else {
-      setSelectedKeys(selectedKeys.filter(id => id !== keyAssignmentId));
-    }
+    setSelectedKeys((prev) =>
+      checked ? [...prev, keyAssignmentId] : prev.filter((id) => id !== keyAssignmentId)
+    );
   };
 
   const handleBulkReturn = async () => {

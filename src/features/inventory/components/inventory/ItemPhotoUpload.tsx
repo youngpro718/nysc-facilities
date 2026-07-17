@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { logger } from '@/lib/logger';
 import { ModalFrame } from "@shared/components/common/common/ModalFrame";
@@ -33,6 +33,7 @@ export function ItemPhotoUpload({
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -108,6 +109,10 @@ export function ItemPhotoUpload({
       });
     } finally {
       setUploading(false);
+      // Reset so selecting the same file again still fires onChange —
+      // leave selectedFile/previewUrl alone so a failed upload can still
+      // be retried via the Upload button without reselecting.
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -208,6 +213,7 @@ export function ItemPhotoUpload({
             </Label>
             <Input
               id="photo-upload"
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={handleFileSelect}

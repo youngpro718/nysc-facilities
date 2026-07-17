@@ -71,7 +71,8 @@ export function DatabaseSection() {
   };
 
   const handleImportDatabase = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const inputEl = event.target;
+    const file = inputEl.files?.[0];
     if (!file) return;
 
     try {
@@ -90,6 +91,8 @@ export function DatabaseSection() {
       });
     } finally {
       setIsImporting(false);
+      // Reset so selecting the same file again still fires onChange.
+      inputEl.value = "";
     }
   };
 

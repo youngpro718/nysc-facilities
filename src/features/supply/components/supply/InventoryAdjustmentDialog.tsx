@@ -93,7 +93,13 @@ export function InventoryAdjustmentDialog({
         .from('inventory_item_transactions')
         .insert({
           item_id: item.id,
-          transaction_type: adjustmentType === 'add' ? 'adjustment_increase' : 'adjustment_decrease',
+          // Match the vocabulary every other writer/reader of this table uses
+          // ('add'/'remove'/'adjustment'/'fulfilled') — this used to write
+          // 'adjustment_increase'/'adjustment_decrease', which nothing else
+          // in the app recognized, so these transactions were invisible to
+          // the audit log's Additions/Removals counts and the "Most Used
+          // Items" stats.
+          transaction_type: adjustmentType,
           quantity: adjustmentAmount,
           previous_quantity: previousQuantity,
           new_quantity: newQuantity,

@@ -27,7 +27,7 @@ import { format } from 'date-fns';
 
 interface InventoryTransaction {
   id: string;
-  transaction_type: 'addition' | 'removal' | 'adjustment' | 'audit';
+  transaction_type: 'add' | 'remove' | 'adjustment' | 'fulfilled';
   quantity: number;
   previous_quantity: number;
   new_quantity: number;
@@ -45,7 +45,7 @@ interface AuditSummary {
   additions: number;
   removals: number;
   adjustments: number;
-  audits: number;
+  fulfilled: number;
   total_value_change: number;
   recent_activity: number;
 }
@@ -131,18 +131,18 @@ export function InventoryAuditsPanel() {
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    const additions = transactions.filter(t => t.transaction_type === 'addition').length;
-    const removals = transactions.filter(t => t.transaction_type === 'removal').length;
+    const additions = transactions.filter(t => t.transaction_type === 'add').length;
+    const removals = transactions.filter(t => t.transaction_type === 'remove').length;
     const adjustments = transactions.filter(t => t.transaction_type === 'adjustment').length;
-    const audits = transactions.filter(t => t.transaction_type === 'audit').length;
-    
+    const fulfilled = transactions.filter(t => t.transaction_type === 'fulfilled').length;
+
     const totalValueChange = transactions.reduce((sum, t) => {
-      if (t.transaction_type === 'addition') return sum + t.quantity;
-      if (t.transaction_type === 'removal') return sum - t.quantity;
+      if (t.transaction_type === 'add') return sum + t.quantity;
+      if (t.transaction_type === 'remove' || t.transaction_type === 'fulfilled') return sum - t.quantity;
       return sum + (t.new_quantity - t.previous_quantity);
     }, 0);
 
-    const recentActivity = transactions.filter(t => 
+    const recentActivity = transactions.filter(t =>
       new Date(t.created_at) > oneDayAgo
     ).length;
 
@@ -151,7 +151,7 @@ export function InventoryAuditsPanel() {
       additions,
       removals,
       adjustments,
-      audits,
+      fulfilled,
       total_value_change: totalValueChange,
       recent_activity: recentActivity,
     };
@@ -219,13 +219,13 @@ export function InventoryAuditsPanel() {
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case 'addition':
+      case 'add':
         return <TrendingUp className="h-4 w-4 text-green-500" />;
-      case 'removal':
+      case 'remove':
         return <TrendingDown className="h-4 w-4 text-red-500" />;
       case 'adjustment':
         return <AlertTriangle className="h-4 w-4 text-orange-500" />;
-      case 'audit':
+      case 'fulfilled':
         return <CheckCircle className="h-4 w-4 text-blue-500" />;
       default:
         return <Package className="h-4 w-4 text-gray-500" />;
@@ -234,14 +234,14 @@ export function InventoryAuditsPanel() {
 
   const getTransactionBadge = (type: string) => {
     switch (type) {
-      case 'addition':
-        return <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-800">Addition</Badge>;
-      case 'removal':
-        return <Badge variant="default" className="bg-red-100 dark:bg-red-900/30 text-red-800">Removal</Badge>;
+      case 'add':
+        return <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-800">Added</Badge>;
+      case 'remove':
+        return <Badge variant="default" className="bg-red-100 dark:bg-red-900/30 text-red-800">Removed</Badge>;
       case 'adjustment':
         return <Badge variant="default" className="bg-orange-100 dark:bg-orange-900/30 text-orange-800">Adjustment</Badge>;
-      case 'audit':
-        return <Badge variant="default" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800">Audit</Badge>;
+      case 'fulfilled':
+        return <Badge variant="default" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800">Fulfilled Order</Badge>;
       default:
         return <Badge variant="outline">{type}</Badge>;
     }
@@ -374,10 +374,10 @@ export function InventoryAuditsPanel() {
                 className="px-3 py-2 border rounded-md text-sm"
               >
                 <option value="all">All Types</option>
-                <option value="addition">Additions</option>
-                <option value="removal">Removals</option>
+                <option value="add">Additions</option>
+                <option value="remove">Removals</option>
                 <option value="adjustment">Adjustments</option>
-                <option value="audit">Audits</option>
+                <option value="fulfilled">Fulfilled Orders</option>
               </select>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Rows:</span>
@@ -452,12 +452,12 @@ export function InventoryAuditsPanel() {
                       {transaction.previous_quantity} → {transaction.new_quantity}
                     </div>
                     <div className={`text-xs ${
-                      transaction.transaction_type === 'addition' ? 'text-green-600 dark:text-green-400' :
-                      transaction.transaction_type === 'removal' ? 'text-red-600 dark:text-red-400' :
+                      transaction.transaction_type === 'add' ? 'text-green-600 dark:text-green-400' :
+                      transaction.transaction_type === 'remove' || transaction.transaction_type === 'fulfilled' ? 'text-red-600 dark:text-red-400' :
                       'text-orange-600 dark:text-orange-400'
                     }`}>
-                      {transaction.transaction_type === 'addition' ? '+' : 
-                       transaction.transaction_type === 'removal' ? '-' : '±'}
+                      {transaction.transaction_type === 'add' ? '+' :
+                       transaction.transaction_type === 'remove' || transaction.transaction_type === 'fulfilled' ? '-' : '±'}
                       {Math.abs(transaction.quantity)}
                     </div>
                   </div>

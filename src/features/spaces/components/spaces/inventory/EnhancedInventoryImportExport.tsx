@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { logger } from '@/lib/logger';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -37,6 +37,7 @@ export function EnhancedInventoryImportExport({
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
   const [importProgress, setImportProgress] = useState(0);
   const [importResults, setImportResults] = useState<{
     successful: number;
@@ -298,6 +299,9 @@ export function EnhancedInventoryImportExport({
     } finally {
       setIsProcessing(false);
       setImportProgress(100);
+      setImportFile(null);
+      // Reset so selecting the same file again still fires onChange.
+      if (importFileInputRef.current) importFileInputRef.current.value = "";
     }
   };
 
@@ -386,6 +390,7 @@ export function EnhancedInventoryImportExport({
                   <Label htmlFor="import-file">Select Excel File (.xlsx, .xls, .csv)</Label>
                   <input
                     id="import-file"
+                    ref={importFileInputRef}
                     type="file"
                     accept=".xlsx,.xls,.csv"
                     onChange={(e) => setImportFile(e.target.files?.[0] || null)}

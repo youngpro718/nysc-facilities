@@ -119,7 +119,7 @@ export default function UserDashboard() {
   const readyRequests = supplyRequests.filter((r) => r.status === "ready");
   const readyForDelivery = readyRequests.filter((r) => (r as any).metadata?.delivery_method === "delivery").length;
   const readyForPickup = readyRequests.length - readyForDelivery;
-  const activeSupplyCount = supplyRequests.filter((r) => ["submitted", "received", "picking", "in_progress"].includes(r.status)).length;
+  const activeSupplyCount = supplyRequests.filter((r) => !["completed", "cancelled", "rejected"].includes(r.status)).length;
   const openRequestCount = userIssues.filter((i) => i.status === "open" || i.status === "in_progress").length;
   const keysHeld = keyAssignments.length;
 

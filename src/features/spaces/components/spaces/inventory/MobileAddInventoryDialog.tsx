@@ -415,6 +415,24 @@ export function MobileAddInventoryDialog({
 
               <FormField
                 control={form.control}
+                name="preferred_vendor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preferred Vendor (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Vendor name"
+                        className="h-12 text-base"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>

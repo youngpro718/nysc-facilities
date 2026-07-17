@@ -17,6 +17,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { InventoryActivityLog } from './InventoryActivityLog';
 import { InventoryAdjustmentDialog } from './InventoryAdjustmentDialog';
+import { AddSupplyItemDialog } from './AddSupplyItemDialog';
 import {
   getStockStatus as getInventoryStockStatus,
   isLowStock,
@@ -30,15 +31,16 @@ interface InventoryItem {
   quantity: number;
   unit: string;
   minimum_quantity: number;
-  category: string;
-  location: string;
-  last_restocked: string;
+  category_id: string | null;
+  location_details: string | null;
+  last_inventory_date: string | null;
 }
 
 export function InventoryManagementTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterView, setFilterView] = useState<'all' | 'low' | 'out'>('all');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
 
   // Fetch inventory items
   const { data: items, isLoading, refetch } = useQuery({
@@ -56,16 +58,32 @@ export function InventoryManagementTab() {
     staleTime: 0, // Always consider data stale to get fresh updates
   });
 
+  // Category names, for display and search — inventory_items only stores
+  // category_id, so the name has to be looked up.
+  const { data: categories } = useQuery({
+    queryKey: ['inventory-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory_categories')
+        .select('id, name');
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const categoryNameById = new Map((categories || []).map((c) => [c.id, c.name]));
+
   // Filter items
   const filteredItems = (items || []).filter(item => {
     // Filter by search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      const matchesSearch = 
+      const categoryName = categoryNameById.get(item.category_id || '') || '';
+      const matchesSearch =
         item.name.toLowerCase().includes(query) ||
         item.sku?.toLowerCase().includes(query) ||
-        item.category?.toLowerCase().includes(query);
-      
+        categoryName.toLowerCase().includes(query);
+
       if (!matchesSearch) return false;
     }
 
@@ -187,7 +205,7 @@ export function InventoryManagementTab() {
             Refresh
           </Button>
         </div>
-        <Button size="sm">
+        <Button size="sm" onClick={() => setIsAddItemOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
@@ -225,8 +243,8 @@ export function InventoryManagementTab() {
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                       <span>SKU: {item.sku || 'N/A'}</span>
-                      <span>Category: {item.category || 'Uncategorized'}</span>
-                      <span>Location: {item.location || 'Not specified'}</span>
+                      <span>Category: {categoryNameById.get(item.category_id || '') || 'Uncategorized'}</span>
+                      <span>Location: {item.location_details || 'Not specified'}</span>
                     </div>
                   </div>
 
@@ -324,6 +342,9 @@ export function InventoryManagementTab() {
         open={!!selectedItem}
         onClose={() => setSelectedItem(null)}
       />
+
+      {/* Add Item Dialog */}
+      <AddSupplyItemDialog open={isAddItemOpen} onOpenChange={setIsAddItemOpen} />
     </div>
   );
 }

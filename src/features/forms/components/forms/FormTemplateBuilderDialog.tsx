@@ -61,7 +61,7 @@ export function FormTemplateBuilderDialog({
       title: 'New Section',
       order: sections.length + 1,
     };
-    setSections([...sections, newSection]);
+    setSections((prev) => [...prev, newSection]);
   };
 
   const updateSection = (id: string, updates: Partial<FormSection>) => {
@@ -82,7 +82,7 @@ export function FormTemplateBuilderDialog({
       required: false,
       order: fields.filter((f) => f.section_id === sectionId).length + 1,
     };
-    setFields([...fields, newField]);
+    setFields((prev) => [...prev, newField]);
   };
 
   const updateField = (id: string, updates: Partial<FormField>) => {

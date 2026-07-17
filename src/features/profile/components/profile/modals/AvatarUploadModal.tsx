@@ -97,6 +97,8 @@ export function AvatarUploadModal({ open, onOpenChange, currentAvatarUrl, onAvat
       });
     } finally {
       setUploading(false);
+      // Reset so selecting the same file again still fires onChange.
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 

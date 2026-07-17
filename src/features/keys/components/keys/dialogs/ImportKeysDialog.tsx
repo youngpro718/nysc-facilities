@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { logger } from '@/lib/logger';
 import { Dialog } from "@/components/ui/dialog";
 import { ModalFrame } from "@shared/components/common/common/ModalFrame";
@@ -77,6 +77,7 @@ type ImportRow = {
 
 export function ImportKeysDialog({ open, onOpenChange, onImported }: ImportKeysDialogProps) {
   const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [isParsing, setIsParsing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -185,6 +186,8 @@ export function ImportKeysDialog({ open, onOpenChange, onImported }: ImportKeysD
       onOpenChange(false);
       setRows([]);
       setFile(null);
+      // Reset so selecting the same file again still fires onChange.
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (e:any) {
       logger.error('Import failed:', e);
       toast.error('Import failed');
@@ -204,7 +207,7 @@ export function ImportKeysDialog({ open, onOpenChange, onImported }: ImportKeysD
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <Label htmlFor="file">CSV File</Label>
-              <Input id="file" type="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              <Input id="file" ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] || null)} />
               <p className="text-xs text-muted-foreground">Required columns: name. Optional: type, total_quantity, available_quantity, is_passkey, key_scope, status.</p>
             </div>
             <div className="flex gap-2">

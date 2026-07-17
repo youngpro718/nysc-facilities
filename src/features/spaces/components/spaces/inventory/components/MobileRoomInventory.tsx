@@ -111,12 +111,13 @@ export function MobileRoomInventory({ roomId }: { roomId: string }) {
   };
 
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const inputEl = event.target;
+    const file = inputEl.files?.[0];
     if (!file) return;
 
     try {
       const data = await parseExcelFile(file);
-      
+
       const itemsToImport = data.map(item => ({
         name: item.name,
         quantity: item.quantity,
@@ -136,13 +137,16 @@ export function MobileRoomInventory({ roomId }: { roomId: string }) {
         title: "Success",
         description: `Imported ${data.length} items successfully.`,
       });
-      event.target.value = '';
     } catch (error) {
       toast({
         title: "Import failed",
         description: getErrorMessage(error) || "Failed to import inventory data.",
         variant: "destructive",
       });
+    } finally {
+      // Reset so selecting the same file again still fires onChange —
+      // matters most on the error path, to retry with the same file.
+      inputEl.value = '';
     }
   };
 

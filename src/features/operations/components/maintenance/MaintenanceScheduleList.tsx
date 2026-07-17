@@ -249,6 +249,7 @@ export const MaintenanceScheduleList = () => {
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="postponed">Postponed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
 
@@ -258,6 +259,7 @@ export const MaintenanceScheduleList = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="cleaning">Cleaning</SelectItem>
               <SelectItem value="painting">Painting</SelectItem>
               <SelectItem value="plaster">Plaster</SelectItem>
               <SelectItem value="doors">Doors</SelectItem>
