@@ -4,7 +4,7 @@ import { getRouteConfig } from "@/config/routes";
 import { Breadcrumb } from "./Breadcrumb";
 import { PageTransition } from "./PageTransition";
 import { AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { logger } from "@/lib/logger";
@@ -35,6 +35,9 @@ import { SupportChatWidget } from "@shared/components/support/SupportChatWidget"
 import { APP_INFO, APP_COPYRIGHT } from "@/lib/appInfo";
 import { WhatsNewDialog } from "@shared/components/help/WhatsNewDialog";
 import { TourProvider } from "@shared/components/help/TourProvider";
+import { useNotifications } from "@shared/hooks/useNotifications";
+import { setAppBadgeCount } from "@/lib/appBadge";
+import { playNotificationSound } from "@/lib/notificationSound";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import type { UserRole } from "@/config/roles";
 
@@ -101,6 +104,24 @@ function LayoutContent() {
 
   const previewRole = typeof window !== 'undefined' ? localStorage.getItem('preview_role') as UserRole | null : null;
   const isPreviewActive = isAdmin && previewRole && previewRole !== 'admin' && previewRole !== 'system_admin';
+
+  // Taskbar/dock icon badge + a short sound when new notifications arrive —
+  // works for every role (unlike the admin-only bell in the header), and
+  // keeps working while the installed app is minimized/backgrounded.
+  const { unreadCount: unreadNotificationCount } = useNotifications(isAuthenticated ? user?.id : undefined);
+  const previousUnreadCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    setAppBadgeCount(isAuthenticated ? unreadNotificationCount : 0);
+    if (!isAuthenticated) {
+      previousUnreadCountRef.current = null;
+      return;
+    }
+    const previous = previousUnreadCountRef.current;
+    if (previous !== null && unreadNotificationCount > previous) {
+      playNotificationSound();
+    }
+    previousUnreadCountRef.current = unreadNotificationCount;
+  }, [isAuthenticated, unreadNotificationCount]);
 
   // Get sidebar state for margin offset
   let sidebarState: "expanded" | "collapsed" = "expanded";

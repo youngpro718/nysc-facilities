@@ -1,7 +1,7 @@
 // Notifications — user notification management with realtime
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { logger } from "@/lib/logger";
 
 export interface Notification {
@@ -19,13 +19,19 @@ export interface Notification {
 
 export const useNotifications = (userId?: string) => {
   const queryClient = useQueryClient();
+  // A fixed channel name would collide when this hook mounts more than once
+  // at a time (e.g. a page-level consumer alongside the app-shell badge) —
+  // Supabase throws if you add postgres_changes listeners to an
+  // already-subscribed channel, which crashed the whole app. useId() keeps
+  // each mount's channel unique.
+  const instanceId = useId();
 
   // Set up real-time subscription
   useEffect(() => {
     if (!userId) return;
 
     const channel = supabase
-      .channel('user-notifications')
+      .channel(`user-notifications-${userId}-${instanceId}`)
       .on(
         'postgres_changes',
         {
@@ -44,7 +50,7 @@ export const useNotifications = (userId?: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, queryClient]);
+  }, [userId, instanceId, queryClient]);
 
   const query = useQuery<Notification[]>({
     queryKey: ['notifications', userId],
