@@ -3,7 +3,7 @@ export type StandardizedIssueType = 'ACCESS_REQUEST' | 'BUILDING_SYSTEMS' | 'CLE
   'CLIMATE_CONTROL' | 'ELECTRICAL_NEEDS' | 'GENERAL_REQUESTS' | 'PLUMBING_NEEDS' | 
   'STRUCTURAL_REPAIR' | 'FURNITURE_REPAIR';
 
-export type IssuePriority = 'low' | 'medium' | 'high';
+export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
 
 export const ISSUE_TYPES: StandardizedIssueType[] = [
   'ACCESS_REQUEST',

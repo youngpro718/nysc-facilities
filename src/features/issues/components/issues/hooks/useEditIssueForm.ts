@@ -14,7 +14,7 @@ const editIssueSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
   status: z.enum(["open", "in_progress", "resolved"] as const),
-  priority: z.enum(["low", "medium", "high"] as const),
+  priority: z.enum(["low", "medium", "high", "critical"] as const),
   due_date: z.string().optional().nullable(),
   date_info: z.string().optional().nullable(),
   resolution_type: z.enum(["fixed", "replaced", "maintenance_performed", "no_action_needed", "deferred", "other"] as const).optional(),

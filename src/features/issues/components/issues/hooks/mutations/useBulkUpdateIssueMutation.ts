@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { IssueStatus } from "../../types/IssueTypes";
 import { toast } from "sonner";
 
-type IssuePriority = "low" | "medium" | "high";
+type IssuePriority = "low" | "medium" | "high" | "critical";
 
 interface BulkUpdateParams {
   issueIds: string[];

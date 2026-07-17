@@ -163,11 +163,12 @@ export function PhotoCapture({
               </>
             )}
           </div>
+          {/* No `capture` attribute — that forces straight to the camera on
+              mobile with no way to pick an existing photo from the library. */}
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
             multiple
             onChange={handleUpload}
             disabled={uploading || disabled}

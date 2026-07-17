@@ -238,11 +238,11 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
             onEdit={handleEditClose}
             isEditing={true}
           />
-          <ScrollArea className="flex-1 px-1">
-            <div className="pr-4">
-              <EditIssueForm 
-                issue={issue} 
-                onClose={() => setIsEditing(false)} 
+          <ScrollArea className="flex-1">
+            <div className="px-6 py-6">
+              <EditIssueForm
+                issue={issue}
+                onClose={() => setIsEditing(false)}
                 onSave={() => {
                   setIsEditing(false);
                   toast.success("Issue updated successfully");

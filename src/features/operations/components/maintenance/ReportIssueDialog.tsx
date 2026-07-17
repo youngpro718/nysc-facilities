@@ -81,13 +81,6 @@ interface BuildingOption {
   name: string;
 }
 
-interface StaffOption {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-}
-
 const ISSUE_TYPES = [
   { id: "ELECTRICAL", label: "Electrical",     icon: Zap,          color: "text-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-950/30",  border: "border-yellow-200 dark:border-yellow-800" },
   { id: "PLUMBING",   label: "Plumbing",        icon: Droplets,     color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/30",      border: "border-blue-200 dark:border-blue-800" },
@@ -232,22 +225,6 @@ export const ReportIssueDialog = ({
       return data || [];
     },
     enabled: open,
-    staleTime: 10 * 60 * 1000,
-  });
-
-  // Fetch staff for assignment
-  const { data: staffList = [] } = useQuery<StaffOption[]>({
-    queryKey: ["staff-for-report-issue"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, email")
-        .in("role", ["admin", "court_officer", "court_liaison"])
-        .order("last_name");
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: open && mode === "staff",
     staleTime: 10 * 60 * 1000,
   });
 
@@ -729,34 +706,6 @@ export const ReportIssueDialog = ({
                     />
                   </div>
 
-                  <Separator />
-                  <div>
-                    <p className="text-sm font-semibold mb-3">Assign To</p>
-                    <FormField
-                      control={form.control}
-                      name="assigned_to"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">Assign to staff member (optional)</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Unassigned" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="unassigned">Unassigned</SelectItem>
-                              {staffList.map((s) => (
-                                <SelectItem key={s.id} value={s.id}>
-                                  {[s.first_name, s.last_name].filter(Boolean).join(" ") || s.email || s.id}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                   <Separator />
                 </>
               )}
