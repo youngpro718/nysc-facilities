@@ -80,7 +80,7 @@ const RoutingRules = lazy(() => import("@features/admin/pages/admin/RoutingRules
 const FormTemplatesAdmin = lazy(() => import("@features/admin/pages/admin/FormTemplatesAdmin"));
 
 // Supply request flows
-const CourtAideRequests = lazy(() => import("@features/supply/pages/CourtAideRequests"));
+const SuppliesAndRequestsPage = lazy(() => import("@features/supply/pages/SuppliesAndRequestsPage"));
 
 // Court aides fulfill orders; they don't place them. Redirect the ordering
 // page to their fulfillment dashboard so inventory buttons + old bookmarks
@@ -88,7 +88,7 @@ const CourtAideRequests = lazy(() => import("@features/supply/pages/CourtAideReq
 function SuppliesRouteGuard() {
   const { userRole } = useRolePermissions();
   if (userRole === 'court_aide') return <Navigate to="/supply-room" replace />;
-  return <CourtAideRequests />;
+  return <SuppliesAndRequestsPage />;
 }
 
 const queryClient = new QueryClient({

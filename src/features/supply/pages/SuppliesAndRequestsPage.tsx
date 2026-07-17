@@ -5,7 +5,7 @@ import { RequestForm } from '@features/supply/components/request/RequestForm';
 import { ProfileIncompletePrompt } from '@features/supply/components/supply/ProfileIncompletePrompt';
 import { PageHeader } from '@/components/layout/PageHeader';
 
-export default function CourtAideRequests() {
+export default function SuppliesAndRequestsPage() {
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') === 'request' ? 'request' : 'order';
 
