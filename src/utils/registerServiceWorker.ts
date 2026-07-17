@@ -41,10 +41,20 @@ export async function registerServiceWorker(config: ServiceWorkerConfig = {}) {
       });
     });
 
-    // Check for updates periodically (every hour)
+    // Check for updates periodically. Mobile OSes heavily throttle timers
+    // in backgrounded tabs, so an hourly interval alone means a user who
+    // reopens a backgrounded/installed PWA can sit on a stale bundle for a
+    // long time without ever seeing the update prompt. Checking again
+    // whenever the page becomes visible catches that case immediately.
     setInterval(() => {
       registration.update();
-    }, 60 * 60 * 1000);
+    }, 15 * 60 * 1000);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        registration.update();
+      }
+    });
 
     config.onSuccess?.(registration);
     return registration;
