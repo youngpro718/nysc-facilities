@@ -305,6 +305,11 @@ export function RoomExcelImportExport({ projectRef, filteredRooms, filteredCommo
   };
 
   // ── SIMPLE EXPORT (print-friendly list, respects the current filters) ──
+  // Grouped into a bold banner section per floor (sorted low → high) so a
+  // reader can scan straight down and know exactly where they are. Rooms
+  // within a floor are sorted by room number. Every cell gets a border, and
+  // water cooler count + location notes are broken out into their own
+  // columns so cooler placement is visible at a glance.
   const handleSimpleExport = async () => {
     const rooms = filteredRooms ?? [];
     const areas = filteredCommonAreas ?? [];
@@ -326,39 +331,127 @@ export function RoomExcelImportExport({ projectRef, filteredRooms, filteredCommo
         (floorsData || []).forEach(f => floorNumberById.set(f.id, f.floor_number));
       }
 
-      // Rooms and common areas together, in the same order as on screen.
-      // Common-area rows are tinted orange below, matching the site.
-      const { mergeRoomsAndCommonAreas } = await import("../utils/roomListEntries");
-      const entries = mergeRoomsAndCommonAreas(rooms, areas);
-      const rows = entries.map(entry =>
-        entry.kind === "common_area"
-          ? {
-              "Room Number": "",
-              "Room Name": entry.area.name,
-              "Floor": entry.area.floor?.floor_number ?? entry.area.floor?.name ?? "",
-              "Room Type": `Common Area — ${commonAreaTypeLabel(entry.area.area_type)}`,
-            }
-          : {
-              "Room Number": entry.room.room_number || "",
-              "Room Name": entry.room.name || "",
-              "Floor": floorNumberById.get(entry.room.floor_id) ?? entry.room.floor?.name ?? "",
-              "Room Type": formatRoomTypeLabel(entry.room.room_type),
-            }
+      type Entry =
+        | { kind: "room"; room: Room }
+        | { kind: "common_area"; area: CommonArea };
+
+      interface FloorGroup {
+        floorNumber: number;
+        label: string;
+        entries: Entry[];
+      }
+
+      // Only show the building name in the banner when more than one
+      // building is present — otherwise it's just noise on every row.
+      const buildingNames = new Set<string>();
+      rooms.forEach((r) => { if (r.floor?.building?.name) buildingNames.add(r.floor.building.name); });
+      areas.forEach((a) => { if (a.floor?.building?.name) buildingNames.add(a.floor.building.name); });
+      const showBuilding = buildingNames.size > 1;
+
+      const groups = new Map<string, FloorGroup>();
+      const groupFor = (floorId: string | undefined | null, floorName: string | undefined, buildingName: string | undefined) => {
+        const key = floorId || floorName || "unassigned";
+        let g = groups.get(key);
+        if (!g) {
+          const floorNumber = (floorId && floorNumberById.get(floorId)) ?? 9999;
+          const label = [showBuilding ? buildingName : null, floorName || "Unassigned Floor"]
+            .filter(Boolean)
+            .join(" — ");
+          g = { floorNumber, label, entries: [] };
+          groups.set(key, g);
+        }
+        return g;
+      };
+
+      rooms.forEach((room) => {
+        groupFor(room.floor_id, room.floor?.name, room.floor?.building?.name).entries.push({ kind: "room", room });
+      });
+      areas.forEach((area) => {
+        groupFor(area.floor_id, area.floor?.name, area.floor?.building?.name).entries.push({ kind: "common_area", area });
+      });
+
+      // Sort within each floor by room/area number so it reads the way you'd
+      // walk the floor, then sort the floors themselves low to high.
+      const sortKey = (e: Entry) => (e.kind === "room" ? e.room.room_number || e.room.name || "" : e.area.name);
+      groups.forEach((g) => {
+        g.entries.sort((a, b) => sortKey(a).localeCompare(sortKey(b), undefined, { numeric: true }));
+      });
+      const sortedGroups = Array.from(groups.values()).sort(
+        (a, b) => a.floorNumber - b.floorNumber || a.label.localeCompare(b.label),
       );
 
+      // ── Build workbook ──
       const ExcelJSLib = (await import("exceljs")).default;
       const wb = new ExcelJSLib.Workbook();
       const ws = wb.addWorksheet("Room List");
-      styleSheet(ws, rows);
-      rows.forEach((row, i) => {
-        const added = ws.addRow(row);
-        if (entries[i].kind === "common_area") {
-          added.eachCell({ includeEmpty: true }, (cell) => {
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFE8D6" } };
-            cell.font = { color: { argb: "FF9A3412" } };
-          });
-        }
+
+      const columns: { header: string; key: string; width: number }[] = [
+        { header: "Room #", key: "roomNumber", width: 12 },
+        { header: "Name", key: "name", width: 30 },
+        { header: "Room Type", key: "type", width: 22 },
+        { header: "Coolers", key: "coolers", width: 10 },
+        { header: "Cooler Location", key: "coolerLocation", width: 44 },
+      ];
+      ws.columns = columns;
+      const colCount = columns.length;
+
+      const thin = { style: "thin" as const, color: { argb: "FFB0B0B0" } };
+      const allBorders = { top: thin, left: thin, bottom: thin, right: thin };
+      const navy = "FF1F3864";
+      const orangeFill = "FFFFE8D6";
+      const orangeText = "FF9A3412";
+
+      // Header row
+      const headerRow = ws.getRow(1);
+      columns.forEach((c, i) => { headerRow.getCell(i + 1).value = c.header; });
+      headerRow.font = { bold: true };
+      headerRow.eachCell((cell) => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9D9D9" } };
+        cell.border = allBorders;
       });
+      ws.views = [{ state: "frozen", ySplit: 1 }];
+
+      let totalCoolers = 0;
+
+      for (const group of sortedGroups) {
+        // Floor banner — merged, bold, navy — breaks the sheet into sections
+        // a reader can jump straight to.
+        const bannerRow = ws.addRow([group.label]);
+        ws.mergeCells(bannerRow.number, 1, bannerRow.number, colCount);
+        for (let c = 1; c <= colCount; c++) {
+          const cell = bannerRow.getCell(c);
+          cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
+          cell.border = allBorders;
+        }
+
+        for (const entry of group.entries) {
+          const isArea = entry.kind === "common_area";
+          const coolerCount = isArea ? entry.area.water_cooler_count ?? 0 : entry.room.water_cooler_count ?? 0;
+          const coolerNotes = isArea ? entry.area.water_cooler_notes || "" : entry.room.water_cooler_notes || "";
+          totalCoolers += coolerCount;
+
+          const row = ws.addRow({
+            roomNumber: isArea ? "" : entry.room.room_number || "",
+            name: isArea ? entry.area.name : entry.room.name || "",
+            type: isArea ? `Common Area — ${commonAreaTypeLabel(entry.area.area_type)}` : formatRoomTypeLabel(entry.room.room_type),
+            coolers: coolerCount > 0 ? coolerCount : "",
+            coolerLocation: coolerCount > 0 ? coolerNotes : "",
+          });
+
+          row.eachCell({ includeEmpty: true }, (cell) => { cell.border = allBorders; });
+          if (isArea) {
+            row.eachCell({ includeEmpty: true }, (cell) => {
+              cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: orangeFill } };
+              cell.font = { color: { argb: orangeText } };
+            });
+          }
+          if (coolerCount > 0) {
+            row.getCell(4).font = { bold: true, color: { argb: isArea ? orangeText : "FF0F6E8C" } };
+            row.getCell(4).alignment = { horizontal: "center" };
+          }
+        }
+      }
 
       const buffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -374,8 +467,8 @@ export function RoomExcelImportExport({ projectRef, filteredRooms, filteredCommo
       toast({
         title: "Export successful",
         description: areas.length > 0
-          ? `${rooms.length} rooms + ${areas.length} common ${areas.length === 1 ? "area" : "areas"} exported.`
-          : `${rows.length} rooms exported.`,
+          ? `${rooms.length} rooms + ${areas.length} common ${areas.length === 1 ? "area" : "areas"} exported (${totalCoolers} water coolers).`
+          : `${rooms.length} rooms exported (${totalCoolers} water coolers).`,
       });
     } catch (error) {
       toast({
@@ -630,7 +723,7 @@ export function RoomExcelImportExport({ projectRef, filteredRooms, filteredCommo
         size="sm"
         onClick={handleSimpleExport}
         disabled={isSimpleExporting}
-        title="Room Number, Room Name, Floor, and Room Type only — matches your current filters (including common areas when shown). For printing or sharing a plain list."
+        title="A clean, bordered list grouped by floor with water cooler locations — matches your current filters (including common areas when shown). For printing or sharing with a supervisor."
       >
         {isSimpleExporting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 mr-1.5" />}
         Simple List
