@@ -44,6 +44,10 @@ export function RoomTable({ rooms, onDelete, onRoomClick }: RoomTableProps) {
         return 'Male Locker';
       case 'female_locker_room':
         return 'Female Locker';
+      case 'shared_vestibule':
+        return 'Shared Vestibule';
+      case 'egress':
+        return 'Egress';
       default:
         return roomType;
     }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import RoomsPage from './views/RoomsPage';
 import { useRoomsQuery } from './hooks/queries/useRoomsQuery';
 import { CommonAreasPage } from './common-areas/CommonAreasPage';
@@ -30,13 +31,29 @@ const SpacesTabs = () => {
           <TabsList className="h-9 min-h-9 w-full justify-start sm:w-auto">
             <TabsTrigger value="rooms" className="min-h-8 gap-2 px-3 py-1.5">
               Rooms
-              <Badge variant="outline" className="h-5 min-w-5 justify-center border-current/20 px-1 text-[10px]">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "h-5 min-w-5 justify-center px-1 text-[10px]",
+                  activeView === 'rooms'
+                    ? "border-primary-foreground/30 text-primary-foreground"
+                    : "border-current/20"
+                )}
+              >
                 {totalRooms}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="common-areas" className="min-h-8 gap-2 px-3 py-1.5">
               Common areas
-              <Badge variant="outline" className="h-5 min-w-5 justify-center border-current/20 px-1 text-[10px]">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "h-5 min-w-5 justify-center px-1 text-[10px]",
+                  activeView === 'common-areas'
+                    ? "border-primary-foreground/30 text-primary-foreground"
+                    : "border-current/20"
+                )}
+              >
                 {totalCommonAreas}
               </Badge>
             </TabsTrigger>

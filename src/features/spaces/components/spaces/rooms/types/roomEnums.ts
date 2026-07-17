@@ -27,7 +27,9 @@ export enum RoomTypeEnum {
   WITNESS_ROOM = "witness_room",
   BATHROOM = "bathroom",
   CLOSET = "closet",
-  ELECTRICAL_ROOM = "electrical_room"
+  ELECTRICAL_ROOM = "electrical_room",
+  SHARED_VESTIBULE = "shared_vestibule",
+  EGRESS = "egress"
 }
 
 export enum StorageTypeEnum {
@@ -78,7 +80,9 @@ export type RoomTypeString =
   | "witness_room"
   | "bathroom"
   | "closet"
-  | "electrical_room";
+  | "electrical_room"
+  | "shared_vestibule"
+  | "egress";
 
 export type StatusString = "active" | "inactive" | "under_maintenance";
 export type StorageTypeString = "general" | "secure" | "climate_controlled" | "hazardous" | "archive";
@@ -128,6 +132,8 @@ export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => {
     case RoomTypeEnum.BATHROOM: return "bathroom";
     case RoomTypeEnum.CLOSET: return "closet";
     case RoomTypeEnum.ELECTRICAL_ROOM: return "electrical_room";
+    case RoomTypeEnum.SHARED_VESTIBULE: return "shared_vestibule";
+    case RoomTypeEnum.EGRESS: return "egress";
     default: return "office";
   }
 };
@@ -156,6 +162,8 @@ export const stringToRoomType = (str: string): RoomTypeEnum => {
     case "bathroom": return RoomTypeEnum.BATHROOM;
     case "closet": return RoomTypeEnum.CLOSET;
     case "electrical_room": return RoomTypeEnum.ELECTRICAL_ROOM;
+    case "shared_vestibule": return RoomTypeEnum.SHARED_VESTIBULE;
+    case "egress": return RoomTypeEnum.EGRESS;
     default: return RoomTypeEnum.OFFICE;
   }
 };

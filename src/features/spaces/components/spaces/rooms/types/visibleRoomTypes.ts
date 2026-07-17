@@ -24,6 +24,8 @@ export const VISIBLE_ROOM_TYPES: RoomTypeEnum[] = [
   RoomTypeEnum.BATHROOM,
   RoomTypeEnum.CLOSET,
   RoomTypeEnum.ELECTRICAL_ROOM,
+  RoomTypeEnum.SHARED_VESTIBULE,
+  RoomTypeEnum.EGRESS,
 ];
 
 export const ADVANCED_ROOM_TYPES: RoomTypeEnum[] = Object.values(RoomTypeEnum).filter(
