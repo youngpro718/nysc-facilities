@@ -43,6 +43,7 @@ export const useNotifications = (userId?: string) => {
         () => {
           // Refetch notifications when changes occur
           queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+          queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', userId] });
         }
       )
       .subscribe();
@@ -84,6 +85,53 @@ export const useNotifications = (userId?: string) => {
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
+  // The list above is a 20-row page for display; the unread COUNT must be
+  // exact and uncapped or the badge pins at the page size (the "why does it
+  // say 20?" bug — real unread was 83).
+  const unreadCountQuery = useQuery<number>({
+    queryKey: ['notifications-unread-count', userId],
+    queryFn: async () => {
+      if (!userId) return 0;
+      const { count, error } = await supabase
+        .from('user_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('read', false);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!userId,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+    queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', userId] });
+  };
+
+  /**
+   * Mark whole categories read — used by pages that display the underlying
+   * records (e.g. My Requests marks supply/task updates read on visit), so
+   * the unread count means "things you haven't seen" rather than
+   * "notifications you haven't clicked".
+   */
+  const markTypesAsRead = async (types: string[]) => {
+    if (!userId || types.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read: true })
+        .eq('user_id', userId)
+        .eq('read', false)
+        .in('type', types);
+      if (error) throw error;
+      invalidateAll();
+    } catch (error) {
+      logger.error('Failed to mark notification types as read:', error);
+    }
+  };
+
   const markAsRead = async (notificationId: string) => {
     if (!userId) return;
 
@@ -95,7 +143,7 @@ export const useNotifications = (userId?: string) => {
         .eq('user_id', userId);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      invalidateAll();
     } catch (error) {
       logger.error('Failed to mark notification as read:', error);
     }
@@ -112,7 +160,7 @@ export const useNotifications = (userId?: string) => {
         .eq('read', false);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      invalidateAll();
     } catch (error) {
       logger.error('Failed to mark all notifications as read:', error);
     }
@@ -129,7 +177,7 @@ export const useNotifications = (userId?: string) => {
         .eq('user_id', userId);
 
       if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      invalidateAll();
       await queryClient.refetchQueries({ queryKey: ['notifications', userId] });
     } catch (error) {
       logger.error('Failed to clear notification:', error);
@@ -146,7 +194,7 @@ export const useNotifications = (userId?: string) => {
         .eq('user_id', userId);
 
       if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      invalidateAll();
       await queryClient.refetchQueries({ queryKey: ['notifications', userId] });
     } catch (error) {
       logger.error('Failed to clear all notifications:', error);
@@ -156,9 +204,10 @@ export const useNotifications = (userId?: string) => {
   return {
     ...query,
     notifications: query.data || [],
-    unreadCount: query.data?.filter(n => !n.read).length || 0,
+    unreadCount: unreadCountQuery.data ?? 0,
     markAsRead,
     markAllAsRead,
+    markTypesAsRead,
     clearNotification,
     clearAllNotifications
   };

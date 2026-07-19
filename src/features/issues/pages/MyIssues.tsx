@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { Plus, AlertCircle, CheckCircle, Settings, ArrowUpCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@features/auth/hooks/useAuth";
+import { useNotifications } from "@shared/hooks/useNotifications";
 import { useUserIssues } from "@features/dashboard/hooks/useUserIssues";
 import { useIsMobile } from "@shared/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,14 @@ export default function MyIssues() {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const { user } = useAuth();
   const { userIssues: issues = [], isLoading, refetchIssues } = useUserIssues(user?.id);
+  const { markTypesAsRead } = useNotifications(user?.id);
+
+  // Seeing your issues here counts as seeing their update notifications.
+  useEffect(() => {
+    if (!user?.id) return;
+    markTypesAsRead(['issue_update']);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
   const isMobile = useIsMobile();
 
   // Auto-open wizard if ?new=1 in URL

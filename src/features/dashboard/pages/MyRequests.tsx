@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '@features/auth/hooks/useAuth';
+import { useNotifications } from '@shared/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import {
   useMyRequests,
@@ -40,7 +42,25 @@ function isOpen(row: MyRequestRow): boolean {
 export default function MyRequests() {
   useMyRequestsRealtime();
   const { data: rows = [], isLoading, error } = useMyRequests();
+  const { user } = useAuth();
+  const { markTypesAsRead } = useNotifications(user?.id);
   const [params, setParams] = useSearchParams();
+
+  // This page shows the requests themselves, so seeing it counts as seeing
+  // their update notifications — clear them instead of making people click
+  // each one.
+  useEffect(() => {
+    if (!user?.id) return;
+    markTypesAsRead([
+      'supply_request_update',
+      'supply_request_completed',
+      'supply_request_rejected',
+      'supply_request_approval',
+      'staff_task_pending',
+      'staff_task_update',
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
   const focusId = params.get('focus');
   const typeParam = params.get('type');
   const [filter, setFilter] = useState<Filter>('all');

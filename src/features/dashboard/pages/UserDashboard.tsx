@@ -16,7 +16,7 @@ import { DashboardMyRoomCard } from "@features/dashboard/components/dashboard/Da
 import { DashboardProfileSummaryCard } from "@features/dashboard/components/dashboard/DashboardProfileSummaryCard";
 import { DashboardActivityList } from "@features/dashboard/components/dashboard/DashboardActivityList";
 import { Button } from "@/components/ui/button";
-import { Package, Send, ChevronRight, KeyRound } from "lucide-react";
+import { Package, Send, ChevronRight, KeyRound, Bell } from "lucide-react";
 import { getDashboardForRole } from "@/routes/roleBasedRouting";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { KeyRequestDialog } from "@features/keys/components/requests/KeyRequestDialog";
@@ -41,6 +41,7 @@ export default function UserDashboard() {
 
   const {
     notifications = [],
+    unreadCount,
     markAsRead,
     markAllAsRead,
     clearNotification,
@@ -144,6 +145,26 @@ export default function UserDashboard() {
             deliveryMethod="delivery"
             onClick={() => navigate("/my-requests")}
           />
+        )}
+
+        {/* Attention strip: unseen updates land here on arrival, instead of
+            hiding behind the bell. Clears itself as pages are visited. */}
+        {unreadCount > 0 && (
+          <button
+            type="button"
+            onClick={() => navigate("/notifications")}
+            className="flex w-full items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-left transition-colors hover:bg-primary/10"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <Bell className="h-4 w-4 text-primary" />
+              {unreadCount === 1
+                ? "1 update you haven't seen"
+                : `${unreadCount} updates you haven't seen`}
+            </span>
+            <span className="flex items-center text-xs font-medium text-primary">
+              View <ChevronRight className="h-4 w-4" />
+            </span>
+          </button>
         )}
 
         {/* Two-column portal: main content + rail. Rail stacks after main below lg. */}
