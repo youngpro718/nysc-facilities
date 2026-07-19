@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Loader2, ArrowRight, ArrowLeft, Check, Mail, Lock } from "lucide-react";
 import { useSecureAuth } from "@features/auth/hooks/useSecureAuth";
 import { toast } from "sonner";
-import { SIGNUP_ROLE_OPTIONS } from "@/config/roles";
 import { cn } from "@/lib/utils";
 
 interface SimpleSignupFormProps {
@@ -31,7 +30,6 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
     password: "",
     firstName: "",
     lastName: "",
-    requestedRole: "",
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -54,8 +52,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
     if (step === 1) {
       return (
         formData.firstName.trim().length > 0 &&
-        formData.lastName.trim().length > 0 &&
-        !!formData.requestedRole
+        formData.lastName.trim().length > 0
       );
     }
     return false;
@@ -66,11 +63,13 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
     setIsProcessing(true);
 
     try {
+      // Everyone starts as a standard user — admins assign real roles from
+      // Admin Center after signup.
       const data = await secureSignUp(formData.email, formData.password, {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
         title: null,
-        requested_role: formData.requestedRole,
+        requested_role: "standard",
       });
 
       if (data?.user) {
@@ -192,7 +191,7 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
             <div className="space-y-1">
               <h3 className="text-base font-semibold">Your details</h3>
               <p className="text-xs text-muted-foreground">
-                Court officers with a <span className="font-medium text-foreground">@nycourts.gov</span> email are approved automatically. Other roles wait for a brief admin review.
+                <span className="font-medium text-foreground">@nycourts.gov</span> emails are verified automatically; other addresses wait for a brief admin review. An admin sets up any additional access after you're in.
               </p>
             </div>
 
@@ -218,36 +217,6 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Role</Label>
-              <div className="space-y-2">
-                {SIGNUP_ROLE_OPTIONS.map((role) => (
-                  <button
-                    key={role.value}
-                    type="button"
-                    onClick={() => set("requestedRole", role.value)}
-                    className={cn(
-                      "w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-all duration-150",
-                      formData.requestedRole === role.value
-                        ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                        : "border-border bg-background hover:border-primary/40 hover:bg-muted/40"
-                    )}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-foreground">{role.label}</span>
-                        {formData.requestedRole === role.value && (
-                          <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center shrink-0">
-                            <Check className="h-2.5 w-2.5 text-primary-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{role.description}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         )}
       </div>
