@@ -21,6 +21,9 @@ export function KeyStatisticsCards({ keyStats, isLoading }: KeyStatisticsCardsPr
   };
 
   const lowAvailability = stats.totalStock > 0 && stats.available / stats.totalStock < 0.2;
+  // Stock that is neither assigned nor available (lost, damaged, retired) —
+  // shown so the numbers visibly add up to the physical total.
+  const unaccounted = Math.max(0, stats.totalStock - stats.assigned - stats.available);
 
   return (
     <StatStrip
@@ -34,6 +37,13 @@ export function KeyStatisticsCards({ keyStats, isLoading }: KeyStatisticsCardsPr
           sub: lowAvailability ? "low availability" : "ready to assign",
           tone: lowAvailability ? "warning" : "operational",
         },
+        ...(unaccounted > 0
+          ? [{
+              label: "lost / damaged",
+              value: unaccounted,
+              tone: "warning" as const,
+            }]
+          : []),
       ]}
     />
   );

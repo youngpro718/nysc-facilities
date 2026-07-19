@@ -390,6 +390,24 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
 
     const IGNORED_DIFF_KEYS = new Set(['updated_at', 'created_at']);
 
+    // Column names are internal — show human labels in the feed.
+    const FIELD_LABELS: Record<string, string> = {
+      parent_room_id: 'parent room',
+      room_type: 'room type',
+      room_number: 'room number',
+      floor_id: 'floor',
+      building_id: 'building',
+      is_active: 'active status',
+      photo_url: 'photo',
+      minimum_quantity: 'minimum quantity',
+      order_code_threshold: 'order code threshold',
+      pack_label: 'pack label',
+      case_label: 'case label',
+      case_size: 'case size',
+    };
+    const fieldLabel = (key: string) =>
+      FIELD_LABELS[key] ?? key.replace(/_id$/, '').replace(/_/g, ' ');
+
     activities.push(...auditRows.map((row: any) => {
       const oldValues = row.old_values as Record<string, unknown> | null;
       const newValues = row.new_values as Record<string, unknown> | null;
@@ -409,7 +427,9 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
           return JSON.stringify(oldValues?.[key]) !== JSON.stringify(newValues?.[key]);
         });
         title = `${label} updated: ${name}`;
-        description = changedFields.length > 0 ? `Changed: ${changedFields.join(', ')}` : undefined;
+        description = changedFields.length > 0
+          ? `Changed: ${changedFields.map(fieldLabel).join(', ')}`
+          : undefined;
       }
 
       return {
@@ -423,10 +443,27 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
     }));
   }
 
-  // Sort by timestamp and limit
-  return activities
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    .slice(0, limit);
+  // Sort by timestamp, collapse rapid-fire duplicates (same edit saved
+  // repeatedly shows once), and limit.
+  const sorted = activities
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  const DEDUPE_WINDOW_MS = 90 * 60 * 1000;
+  const deduped: typeof sorted = [];
+  for (const activity of sorted) {
+    const dup = deduped.find(
+      (kept) =>
+        kept.title === activity.title &&
+        kept.description === activity.description &&
+        (kept.user_name ?? '') === (activity.user_name ?? '') &&
+        Math.abs(
+          new Date(kept.timestamp).getTime() - new Date(activity.timestamp).getTime(),
+        ) < DEDUPE_WINDOW_MS,
+    );
+    if (!dup) deduped.push(activity);
+  }
+
+  return deduped.slice(0, limit);
 }
 
 // ============================================================================

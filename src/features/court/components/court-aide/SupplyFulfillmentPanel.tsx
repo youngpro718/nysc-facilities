@@ -16,6 +16,8 @@ import { formatDateTime } from '@/lib/dateTime';
 import { toast } from 'sonner';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { completeOrder } from '@features/supply/services/unifiedSupplyService';
+import { getSupplySlaLevel, getSupplyAgeDays } from '@/lib/supplySla';
 
 interface SupplyRequest {
   id: string;
@@ -23,6 +25,7 @@ interface SupplyRequest {
   created_at: string;
   priority: string;
   description: string | null;
+  delivery_method: string | null;
   requester_id: string;
   profiles: {
     first_name: string;
@@ -56,6 +59,7 @@ export function SupplyFulfillmentPanel() {
           created_at,
           priority,
           description,
+          delivery_method,
           requester_id,
           profiles!requester_id (
             first_name,
@@ -115,6 +119,22 @@ export function SupplyFulfillmentPanel() {
     },
     onError: (error: Error) => {
       toast.error('Failed to update request', { description: getErrorMessage(error) });
+    },
+  });
+
+  // Complete a ready order (picked up / delivered). Uses the unified service
+  // so status validation and the "fulfilled" email fire consistently.
+  const completeRequest = useMutation({
+    mutationFn: async (requestId: string) => {
+      if (!user?.id) throw new Error('Not signed in');
+      await completeOrder(requestId, user.id);
+    },
+    onSuccess: () => {
+      toast.success('Order completed');
+      queryClient.invalidateQueries({ queryKey: ['supply-fulfillment-queue'] });
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to complete order', { description: getErrorMessage(error) });
     },
   });
 
@@ -218,10 +238,27 @@ export function SupplyFulfillmentPanel() {
               </p>
             )}
 
-            {/* Time */}
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              {formatDateTime(request.created_at)}
+            {/* Time + aging */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatDateTime(request.created_at)}
+              </span>
+              {(() => {
+                const sla = getSupplySlaLevel(request.status, request.created_at);
+                if (sla === 'ok') return null;
+                return (
+                  <Badge
+                    className={`text-[10px] px-1.5 py-0 border-transparent ${
+                      sla === 'critical'
+                        ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                    }`}
+                  >
+                    waiting {getSupplyAgeDays(request.created_at)}d
+                  </Badge>
+                );
+              })()}
             </div>
           </div>
 
@@ -272,15 +309,33 @@ export function SupplyFulfillmentPanel() {
               </>
             )}
             {isReady && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-green-700 dark:text-green-400 border-green-500/40 whitespace-nowrap"
-                onClick={() => navigate(`/supply-room?request=${request.id}`)}
-              >
-                <PackageCheck className="h-4 w-4 mr-1" />
-                Confirm pickup
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-green-700 dark:text-green-400 border-green-500/40 whitespace-nowrap"
+                  onClick={() => completeRequest.mutate(request.id)}
+                  disabled={completeRequest.isPending}
+                >
+                  {completeRequest.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <PackageCheck className="h-4 w-4 mr-1" />
+                      {request.delivery_method === 'delivery' ? 'Mark delivered' : 'Confirm pickup'}
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-xs"
+                  onClick={() => navigate(`/supply-room?request=${request.id}`)}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Open
+                </Button>
+              </>
             )}
           </div>
         </div>

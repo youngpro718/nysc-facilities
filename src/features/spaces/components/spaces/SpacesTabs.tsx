@@ -25,7 +25,7 @@ const SpacesTabs = () => {
         <div className="border-b bg-background">
         <div className="flex flex-col gap-3 px-1 pb-3 pt-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Locations</h2>
+            <h2 className="text-lg font-semibold tracking-tight">Spaces</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">Rooms and shared floor areas are tracked separately.</p>
           </div>
           <TabsList className="h-9 min-h-9 w-full justify-start sm:w-auto">

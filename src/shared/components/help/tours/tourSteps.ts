@@ -75,7 +75,7 @@ export const spacesMgmtTour: Step[] = [
 export const operationsTour: Step[] = [
   {
     target: 'body',
-    content: 'The Operations Center is your hub for facility issues, maintenance, and supply request oversight.',
+    content: 'Operations is your hub for facility issues, maintenance, and supply request oversight.',
     placement: 'center',
     disableBeacon: true,
   },
@@ -174,7 +174,7 @@ export const keysMgmtTour: Step[] = [
 export const inventoryTour: Step[] = [
   {
     target: 'body',
-    content: 'Inventory Management tracks supplies and materials — stock levels, categories, and reorder points.',
+    content: 'Inventory tracks supplies and materials — stock levels, categories, and reorder points.',
     placement: 'center',
     disableBeacon: true,
   },
@@ -255,7 +255,7 @@ export const userDashboardTour: Step[] = [
 export const tasksTour: Step[] = [
   {
     target: 'body',
-    content: 'Task Management shows your assigned and available tasks. Claim tasks, update status, and track progress.',
+    content: 'Tasks shows your assigned and available tasks. Claim tasks, update status, and track progress.',
     placement: 'center',
     disableBeacon: true,
   },
@@ -334,13 +334,13 @@ export const roleDashboardTour: Step[] = [
 export function getTourForRoute(pathname: string): { steps: Step[]; title: string } | null {
   if (pathname === '/') return { steps: adminDashboardTour, title: 'Admin Dashboard' };
   if (pathname === '/spaces') return { steps: spacesMgmtTour, title: 'Rooms Management' };
-  if (pathname === '/operations') return { steps: operationsTour, title: 'Operations Center' };
+  if (pathname === '/operations') return { steps: operationsTour, title: 'Operations' };
   if (pathname === '/term-sheet') return { steps: courtOpsTour, title: 'Court Operations' };
   if (pathname === '/keys') return { steps: keysMgmtTour, title: 'Keys Management' };
-  if (pathname === '/inventory') return { steps: inventoryTour, title: 'Inventory Management' };
+  if (pathname === '/inventory') return { steps: inventoryTour, title: 'Inventory' };
   
   if (pathname === '/dashboard') return { steps: userDashboardTour, title: 'Your Dashboard' };
-  if (pathname === '/tasks') return { steps: tasksTour, title: 'Task Management' };
+  if (pathname === '/tasks') return { steps: tasksTour, title: 'Tasks' };
   if (pathname === '/supply-room') return { steps: supplyRoomTour, title: 'Supply Room' };
   if (pathname === '/profile') return { steps: profileTour, title: 'Profile & Settings' };
   if (pathname === '/my-activity') return { steps: myActivityTour, title: 'My Activity' };
@@ -355,13 +355,13 @@ export function getTourForRoute(pathname: string): { steps: Step[]; title: strin
 export const allTours = [
   { id: 'admin-dashboard', title: 'Admin Dashboard', path: '/', description: 'Overview of the main admin hub, navigation, and notifications.', steps: adminDashboardTour },
   { id: 'spaces', title: 'Rooms Management', path: '/spaces', description: 'Manage buildings, floors, and rooms.', steps: spacesMgmtTour },
-  { id: 'operations', title: 'Operations Center', path: '/operations', description: 'Track issues, maintenance, and supply requests.', steps: operationsTour },
+  { id: 'operations', title: 'Operations', path: '/operations', description: 'Track issues, maintenance, and supply requests.', steps: operationsTour },
   { id: 'court-ops', title: 'Court Operations', path: '/term-sheet', description: 'Manage courtroom sessions, terms, and personnel.', steps: courtOpsTour },
   { id: 'keys', title: 'Keys Management', path: '/keys', description: 'Track key inventory, requests, and assignments.', steps: keysMgmtTour },
-  { id: 'inventory', title: 'Inventory Management', path: '/inventory', description: 'Manage supply stock levels and reorder points.', steps: inventoryTour },
+  { id: 'inventory', title: 'Inventory', path: '/inventory', description: 'Manage supply stock levels and reorder points.', steps: inventoryTour },
   
   { id: 'user-dashboard', title: 'User Dashboard', path: '/dashboard', description: 'Your personal hub for requests and activity.', steps: userDashboardTour },
-  { id: 'tasks', title: 'Task Management', path: '/tasks', description: 'View, claim, and manage assigned tasks.', steps: tasksTour },
+  { id: 'tasks', title: 'Tasks', path: '/tasks', description: 'View, claim, and manage assigned tasks.', steps: tasksTour },
   { id: 'supply-room', title: 'Supply Room', path: '/supply-room', description: 'Fulfill supply requests and manage orders.', steps: supplyRoomTour },
   { id: 'profile', title: 'Profile & Settings', path: '/profile', description: 'Update your personal info and preferences.', steps: profileTour },
   { id: 'my-activity', title: 'My Activity', path: '/my-activity', description: 'View all your requests and reported issues.', steps: myActivityTour },

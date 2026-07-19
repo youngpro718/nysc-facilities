@@ -44,9 +44,7 @@ export const SecureLoginForm = ({
       
       const result = await secureSignIn(data.email, data.password);
       
-      toast.success("Signed in successfully.", {
-        description: "You've successfully signed in."
-      });
+      toast.success("Signed in successfully.");
     } catch (error) {
       logger.error("Auth error:", error);
       toast.error(getErrorMessage(error) || "Authentication failed");

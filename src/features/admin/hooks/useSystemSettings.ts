@@ -42,10 +42,12 @@ export function useSystemSettings() {
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
-      // Get spaces count
+      // Get spaces count — rooms and common areas only, matching what the
+      // Spaces page shows (hallways are structural, not managed spaces)
       const { count: spacesCount } = await supabase
         .from('unified_spaces')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .neq('space_type', 'hallway');
 
       // Get issues count
       const { count: issuesCount } = await supabase
@@ -57,10 +59,12 @@ export function useSystemSettings() {
         .from('supply_requests')
         .select('*', { count: 'exact', head: true });
 
-      // Get inventory items count
+      // Get inventory items count — active catalog only, matching the
+      // Inventory page's "items in catalog" number
       const { count: inventoryCount } = await supabase
         .from('inventory_items')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
 
       return {
         totalUsers: userCount || 0,

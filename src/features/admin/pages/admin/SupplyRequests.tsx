@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Package, Clock, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, ShoppingCart, Search, Mail } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { getSupplySlaLevel, getSupplyAgeDays } from "@/lib/supplySla";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -222,10 +223,6 @@ export default function AdminSupplyRequests() {
           Order Supplies
         </Button>
       </PageHeader>
-      <div className="mb-4">
-        <SupplyEmailSettingsCard onTestSent={fetchRequests} />
-      </div>
-
       {/* Pending approval banner */}
 
       {(() => {
@@ -355,6 +352,21 @@ export default function AdminSupplyRequests() {
                     </div>
                   </div>
 
+                  {(() => {
+                    const sla = getSupplySlaLevel(request.status, request.created_at);
+                    if (sla === 'ok') return null;
+                    return (
+                      <Badge
+                        className={`text-[10px] px-1.5 py-0.5 flex-shrink-0 border-transparent ${
+                          sla === 'critical'
+                            ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                        }`}
+                      >
+                        Aging · {getSupplyAgeDays(request.created_at)}d
+                      </Badge>
+                    );
+                  })()}
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 flex-shrink-0">
                     {config.label}
                   </Badge>
@@ -524,6 +536,11 @@ export default function AdminSupplyRequests() {
           })}
         </div>
       )}
+
+      {/* Settings live below the work queue — the queue is what this page is for. */}
+      <div className="mt-6">
+        <SupplyEmailSettingsCard onTestSent={fetchRequests} />
+      </div>
     </PageContainer>
   );
 }

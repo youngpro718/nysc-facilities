@@ -64,7 +64,7 @@ export default function Keys() {
     <div className="flex flex-col h-[calc(100svh-140px)] min-h-[520px] pb-safe">
       <div className="shrink-0 space-y-4 sm:space-y-6">
         <PageHeader
-          title="Key Management"
+          title="Keys"
           description="Manage keys, track assignments, and view history"
           icon={KeyRound}
           className="mb-0"

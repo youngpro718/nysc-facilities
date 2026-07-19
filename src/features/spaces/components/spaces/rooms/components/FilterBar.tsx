@@ -136,8 +136,8 @@ export function FilterBar({
         </Button>
       </div>
 
-      {/* Quick Filters */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      {/* Quick Filters — wrap instead of clipping off-screen */}
+      <div className="flex flex-wrap gap-2 pb-1">
         {QUICK_FILTERS.map(({ key, label, icon: Icon }) => (
           <Button
             key={key}

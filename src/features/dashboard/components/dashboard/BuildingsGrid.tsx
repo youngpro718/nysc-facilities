@@ -42,8 +42,8 @@ interface BuildingsGridProps {
 }
 
 const buildingImages = [
-  "/lovable-uploads/aed346ca-c3c6-4e0c-b236-528b0e54e20c.webp",
-  "/lovable-uploads/83d441a4-13af-461a-800b-3b483c153ed4.webp",
+  "/buildings/100-centre-street.webp",
+  "/buildings/111-centre-street.webp",
 ];
 
 export function BuildingsGrid({

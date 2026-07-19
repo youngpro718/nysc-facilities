@@ -103,9 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = await authServices.signIn(email, password);
       logger.debug('Sign in successful, user verified:', user.id);
 
-      toast.success('Signed in successfully.', {
-        description: "You've successfully signed in."
-      });
+      toast.success('Signed in successfully.');
     } catch (error) {
       logger.error('Sign in error', error);
       

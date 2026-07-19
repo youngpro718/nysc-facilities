@@ -7,7 +7,6 @@ import { useAuth } from "@features/auth/hooks/useAuth";
 import { useNotifications } from "@shared/hooks/useNotifications";
 import { useSupplyRequests } from "@features/supply/hooks/useSupplyRequests";
 import { useUserIssues } from "@features/dashboard/hooks/useUserIssues";
-import { NotificationDropdown } from "@shared/components/user/NotificationDropdown";
 import { useUserPersonnelInfo } from "@features/court/hooks/useUserPersonnelInfo";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useIsMobile } from "@shared/hooks/use-mobile";
@@ -126,19 +125,10 @@ export default function UserDashboard() {
   return (
     <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
       <div className="mx-auto max-w-6xl space-y-5 pb-24 lg:pb-8 px-4 sm:px-6 lg:px-0">
-        {/* Page header: title + notifications */}
-        <div className="flex items-center justify-between pt-1">
-          <div>
-            <p className="mb-0.5 text-xs font-medium text-primary">Home</p>
-            <h1 className="text-xl font-semibold tracking-tight">My Dashboard</h1>
-          </div>
-          <NotificationDropdown
-            notifications={notifications as any}
-            onMarkAsRead={markAsRead}
-            onMarkAllAsRead={markAllAsRead}
-            onClearNotification={clearNotification}
-            onClearAllNotifications={clearAllNotifications}
-          />
+        {/* Page header — notifications live in the global header bell, not here */}
+        <div className="pt-1">
+          <p className="mb-0.5 text-xs font-medium text-primary">Home</p>
+          <h1 className="text-xl font-semibold tracking-tight">My Dashboard</h1>
         </div>
 
         {readyForPickup > 0 && (

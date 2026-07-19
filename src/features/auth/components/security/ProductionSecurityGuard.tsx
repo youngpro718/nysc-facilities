@@ -35,13 +35,10 @@ export function ProductionSecurityGuard() {
   };
 
 
+  // Render nothing while the check runs — this is a background diagnostic,
+  // not something the dashboard should visibly wait on.
   if (isLoading) {
-    return (
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <Shield className="h-4 w-4 animate-pulse" />
-        <span>Running security checks...</span>
-      </div>
-    );
+    return null;
   }
 
   const hasCriticalIssues = securityStatus?.critical && securityStatus.critical.length > 0;

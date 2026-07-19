@@ -6,28 +6,19 @@
  */
 
 import { useAuth } from '@features/auth/hooks/useAuth';
-import { useNotifications } from '@shared/hooks/useNotifications';
 import { TaskWorkQueue } from '@features/court/components/court-aide/TaskWorkQueue';
 import { SupplyFulfillmentPanel } from '@features/court/components/court-aide/SupplyFulfillmentPanel';
 import { TodaySchedule } from '@features/court/components/court-aide/TodaySchedule';
 import { AlertsBar } from '@features/court/components/court-aide/AlertsBar';
 import { WorkCenterStats } from '@features/court/components/court-aide/WorkCenterStats';
-import { NotificationDropdown } from '@shared/components/user/NotificationDropdown';
 import { useCourtAideRealtime } from '@features/court/hooks/useCourtAideRealtime';
 
 import { Link } from 'react-router-dom';
 import { Package, Package2 } from 'lucide-react';
 
 export default function CourtAideWorkCenter() {
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   useCourtAideRealtime();
-  const {
-    notifications = [],
-    markAsRead,
-    markAllAsRead,
-    clearNotification,
-    clearAllNotifications,
-  } = useNotifications(user?.id);
 
   const firstName = profile?.first_name || 'there';
   const today = new Date().toLocaleDateString(undefined, {
@@ -51,13 +42,7 @@ export default function CourtAideWorkCenter() {
             {today} · Today's tasks, supplies, and alerts
           </p>
         </div>
-        <NotificationDropdown
-          notifications={notifications as any}
-          onMarkAsRead={markAsRead}
-          onMarkAllAsRead={markAllAsRead}
-          onClearNotification={clearNotification}
-          onClearAllNotifications={clearAllNotifications}
-        />
+        {/* Notifications live in the global header bell */}
       </div>
 
       {/* Alerts Bar */}

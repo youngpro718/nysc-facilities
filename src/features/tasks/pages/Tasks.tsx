@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusCard } from "@/components/ui/StatusCard";
+import { StatStrip } from "@/components/ui/StatStrip";
 import {
   ClipboardList,
   Clock,
@@ -385,29 +385,36 @@ function TasksManagerView({ isCourtAide, canManageTasks, canApprove }: { isCourt
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {isCourtAide ? (
-          <>
-            <StatusCard statusVariant="info" title="My Active Tasks" value={myTasks.length} subLabel="Claimed by you" icon={User} />
-            <StatusCard statusVariant={availableTasks.length > 0 ? "warning" : "operational"} title="Available to Claim" value={availableTasks.length} subLabel="Unclaimed tasks" icon={Clock} />
-            <StatusCard statusVariant="operational" title="Completed" value={completedTasks.length} subLabel="Successfully done" icon={CheckCircle2} />
-            <StatusCard statusVariant="neutral" title="All Active" value={activeTasks.length} subLabel="In pipeline" icon={ClipboardList} />
-          </>
-        ) : (
-          <>
-            <StatusCard
-              statusVariant="info"
-              title="Active Tasks"
-              value={activeTasks.length}
-              subLabel={urgentActiveCount > 0 ? `${urgentActiveCount} urgent` : "In pipeline"}
-              icon={ClipboardList}
-            />
-            <StatusCard statusVariant={pendingTasks.length > 0 ? "warning" : "operational"} title="Pending Approval" value={pendingTasks.length} subLabel="Awaiting review" icon={Clock} />
-            <StatusCard statusVariant="operational" title="Completed" value={completedTasks.length} subLabel="Successfully done" icon={CheckCircle2} />
-            <StatusCard statusVariant="neutral" title="Rejected" value={rejectedTasks.length} subLabel="Rejected or cancelled" icon={XCircle} />
-          </>
-        )}
-      </div>
+      <StatStrip
+        items={
+          isCourtAide
+            ? [
+                { label: "my active tasks", value: myTasks.length, tone: "info" },
+                {
+                  label: "available to claim",
+                  value: availableTasks.length,
+                  tone: availableTasks.length > 0 ? "warning" : "neutral",
+                },
+                { label: "completed", value: completedTasks.length, tone: "operational" },
+                { label: "all active", value: activeTasks.length, tone: "neutral" },
+              ]
+            : [
+                {
+                  label: "active tasks",
+                  value: activeTasks.length,
+                  sub: urgentActiveCount > 0 ? `${urgentActiveCount} urgent` : undefined,
+                  tone: "info",
+                },
+                {
+                  label: "pending approval",
+                  value: pendingTasks.length,
+                  tone: pendingTasks.length > 0 ? "warning" : "neutral",
+                },
+                { label: "completed", value: completedTasks.length, tone: "operational" },
+                { label: "rejected / cancelled", value: rejectedTasks.length, tone: "neutral" },
+              ]
+        }
+      />
 
       {/* Search + Filter Bar + view toggle */}
       <div className="space-y-3 max-w-2xl">

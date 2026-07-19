@@ -16,7 +16,7 @@ import { AppSidebar } from "./components/AppSidebar";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@features/admin/components/admin/NotificationBox";
-import { RefreshCw, Search, Package, AlertTriangle, ClipboardList, KeyRound, Lightbulb, Plus } from "lucide-react";
+import { RefreshCw, Search, Package, AlertTriangle, ClipboardList, KeyRound, Lightbulb, Plus, Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +40,28 @@ import { setAppBadgeCount } from "@/lib/appBadge";
 import { playNotificationSound } from "@/lib/notificationSound";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import type { UserRole } from "@/config/roles";
+
+/** Header bell for non-admin roles — unread count + link to /notifications. */
+function UserNotificationBell() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { unreadCount } = useNotifications(user?.id);
+
+  return (
+    <button
+      onClick={() => navigate("/notifications")}
+      aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+      className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-white transition-colors hover:bg-white/[0.1]"
+    >
+      <Bell className="h-4 w-4" />
+      {unreadCount > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+          {unreadCount > 9 ? "9+" : unreadCount}
+        </span>
+      )}
+    </button>
+  );
+}
 
 function LayoutContent() {
   const location = useLocation();
@@ -251,6 +273,7 @@ function LayoutContent() {
                       <Button
                         variant="outline"
                         size="sm"
+                        aria-label="Start something new"
                         className="h-8 gap-1.5 border-white/15 bg-white/[0.04] px-2.5 text-white hover:bg-white/[0.1] hover:text-white"
                       >
                         <Plus className="h-4 w-4" />
@@ -284,6 +307,7 @@ function LayoutContent() {
                 {isAdmin && (
                   <button
                     onClick={() => setSearchOpen(true)}
+                    aria-label="Search"
                     className="flex h-8 w-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-white/15 bg-white/[0.04] text-xs text-white/70 transition-colors hover:bg-white/[0.1] hover:text-white sm:w-auto sm:px-2"
                   >
                     <Search className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
@@ -294,10 +318,15 @@ function LayoutContent() {
                   </button>
                 )}
 
-                {isAdmin && (
+                {/* One bell for everyone: admins get the admin notification box,
+                    other roles get a bell linking to their Notifications page.
+                    (The old in-page dashboard bell was removed in favor of this.) */}
+                {isAdmin ? (
                   <div data-tour="notification-box" className="[&_button]:text-white [&_button:hover]:bg-white/[0.1]">
                     <NotificationBox />
                   </div>
+                ) : (
+                  <UserNotificationBell />
                 )}
 
                 <div data-tour="theme-toggle" className="hidden sm:block [&_button]:text-white [&_button:hover]:bg-white/[0.1]">

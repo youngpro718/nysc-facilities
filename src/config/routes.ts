@@ -65,9 +65,9 @@ export const routes: Record<string, RouteConfig> = {
   '/supplies': {
     path: '/supplies',
     title: 'Supplies & Requests',
-    breadcrumbLabel: 'New Request',
+    breadcrumbLabel: 'Supplies',
     icon: Package,
-    parent: '/my-requests',
+    parent: '/dashboard',
   },
   '/my-supply-requests': {
     path: '/my-supply-requests',
@@ -87,7 +87,7 @@ export const routes: Record<string, RouteConfig> = {
   // Admin pages
   '/admin/supply-requests': {
     path: '/admin/supply-requests',
-    title: 'Supply Requests Management',
+    title: 'Supply Requests',
     breadcrumbLabel: 'Supply Requests',
     icon: Package,
     parent: '/',
@@ -103,14 +103,14 @@ export const routes: Record<string, RouteConfig> = {
   },
   '/inventory': {
     path: '/inventory',
-    title: 'Inventory Management',
+    title: 'Inventory',
     breadcrumbLabel: 'Inventory',
     icon: Package2,
     parent: '/dashboard',
   },
   '/tasks': {
     path: '/tasks',
-    title: 'Task Management',
+    title: 'Tasks',
     breadcrumbLabel: 'Tasks',
     icon: Package,
     parent: '/',
@@ -119,7 +119,7 @@ export const routes: Record<string, RouteConfig> = {
   // Operations
   '/operations': {
     path: '/operations',
-    title: 'Operations Center',
+    title: 'Operations',
     breadcrumbLabel: 'Operations',
     icon: AlertTriangle,
     parent: '/',
@@ -147,14 +147,14 @@ export const routes: Record<string, RouteConfig> = {
   },
   '/spaces': {
     path: '/spaces',
-    title: 'Room Management',
-    breadcrumbLabel: 'Rooms',
+    title: 'Spaces',
+    breadcrumbLabel: 'Spaces',
     icon: Building2,
     parent: '/',
   },
   '/keys': {
     path: '/keys',
-    title: 'Key Management',
+    title: 'Keys',
     breadcrumbLabel: 'Keys',
     icon: KeyRound,
     parent: '/',
@@ -190,7 +190,7 @@ export const routes: Record<string, RouteConfig> = {
   // Profile & Settings
   '/profile': {
     path: '/profile',
-    title: 'My Profile',
+    title: 'Profile',
     breadcrumbLabel: 'Profile',
     icon: User,
   },

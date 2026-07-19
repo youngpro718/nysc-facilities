@@ -12,7 +12,7 @@ export function MobileKeyHeader() {
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1 min-w-0">
-          <h1 className="text-2xl font-bold leading-tight">Key Management</h1>
+          <h1 className="text-2xl font-bold leading-tight">Keys</h1>
           <p className="text-sm text-muted-foreground">
             Find a key and know exactly where it is.
           </p>

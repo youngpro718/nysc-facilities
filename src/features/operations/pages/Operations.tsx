@@ -278,7 +278,7 @@ export default function Operations() {
       <div className="space-y-6 sm:space-y-8">
 
       <PageHeader
-        title="Facility Operations"
+        title="Operations"
         description="Issues, maintenance, and facility scheduling"
         icon={Activity}
         className="mb-0"

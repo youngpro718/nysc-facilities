@@ -116,7 +116,7 @@ export const BuildingCard = ({
       <button
         type="button"
         onClick={hasLiveIssuePhoto ? openIssues : openBuilding}
-        className="group relative block h-[230px] w-full overflow-hidden text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:h-[260px]"
+        className="group relative block h-[230px] w-full overflow-hidden bg-muted text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:h-[260px]"
         aria-label={
           hasLiveIssuePhoto
             ? `View active issues for ${building?.name}`
@@ -130,7 +130,9 @@ export const BuildingCard = ({
               ? `Latest reported issue at ${building?.name}`
               : building?.name
           }
-          loading="lazy"
+          // Issue photos are large user uploads (often >1 MB); lazy-loading the
+          // above-the-fold hero made the card look blank while it streamed in.
+          loading="eager"
           decoding="async"
           onError={(event) => {
             if (event.currentTarget.src !== fallbackImage) {
@@ -219,8 +221,12 @@ export const BuildingCard = ({
         />
         <StatCell
           icon={Activity}
-          value={`${healthPct}%`}
-          label="Lighting health"
+          value={totalFixtures > 0 ? `${healthPct}%` : "—"}
+          label={
+            totalFixtures > 0
+              ? `Lighting · ${totalFixtures} tracked`
+              : "No fixtures tracked"
+          }
           ariaLabel={`View lighting health for ${building?.name}`}
           onClick={(event) => {
             event.stopPropagation();
@@ -229,11 +235,13 @@ export const BuildingCard = ({
             }
           }}
           valueClassName={cn(
-            healthPct >= 90
-              ? "text-status-operational"
-              : healthPct >= 70
-                ? "text-status-warning"
-                : "text-status-critical",
+            totalFixtures === 0
+              ? "text-muted-foreground"
+              : healthPct >= 90
+                ? "text-status-operational"
+                : healthPct >= 70
+                  ? "text-status-warning"
+                  : "text-status-critical",
           )}
         />
       </div>

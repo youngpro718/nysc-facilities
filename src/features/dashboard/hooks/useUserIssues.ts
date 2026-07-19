@@ -74,11 +74,14 @@ export function useUserIssues(userId: string | undefined) {
         if (error) throw new IssueError(`Failed to fetch user issues: ${error.message}`);
         if (!data) throw new IssueError('No issues data returned');
 
+        // PostgREST returns to-one embeds as objects, but arrays if the
+        // relationship is ambiguous — accept both shapes.
+        const one = (v: any) => (Array.isArray(v) ? v[0] : v);
         return (data as any[])?.map((issue: any) => ({
           ...issue,
-          buildings: issue.buildings?.[0] || { name: 'Unknown Building' },
-          floors: issue.floors?.[0] || { name: 'Unknown Floor' },
-          unified_spaces: issue.unified_spaces?.[0] || { id: '', name: 'Unknown Space', room_number: '' },
+          buildings: one(issue.buildings) || { name: 'Unknown Building' },
+          floors: one(issue.floors) || { name: 'Unknown Floor' },
+          unified_spaces: one(issue.unified_spaces) || { id: '', name: 'Unknown Space', room_number: '' },
           created_at: new Date(issue.created_at).toISOString(),
         })) || [];
       } catch (error) {
