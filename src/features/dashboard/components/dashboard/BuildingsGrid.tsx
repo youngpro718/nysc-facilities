@@ -2,6 +2,8 @@ import { BuildingCard } from "./BuildingCard";
 import { BuildingCardSkeleton } from "./BuildingCardSkeleton";
 import { logger } from "@/lib/logger";
 import { calculateBuildingStats } from "@/utils/dashboardUtils";
+import { useAuth } from "@features/auth/hooks/useAuth";
+import { useDismissedIssuePhotos } from "@features/dashboard/hooks/useDismissedIssuePhotos";
 import type { Building } from "@/types/dashboard";
 import type { BuildingWithLighting } from "@/utils/dashboardUtils";
 
@@ -53,6 +55,9 @@ export function BuildingsGrid({
   activities,
   onMarkAsSeen,
 }: BuildingsGridProps) {
+  const { user } = useAuth();
+  const { dismissedIds, dismissPhoto } = useDismissedIssuePhotos(user?.id);
+
   if (isLoading) {
     return (
       <div className="grid gap-6 md:grid-cols-2">
@@ -104,13 +109,17 @@ export function BuildingsGrid({
 
         const fallbackImage = buildingImages[index % buildingImages.length];
         let dynamicImage = fallbackImage;
-        
-        // Find the most recent issue with a photo
+
+        // All open issues with a photo, newest first. The hero shows the
+        // newest one THIS admin hasn't dismissed; everything else (including
+        // dismissed ones) surfaces as small thumbnails — dismissing never
+        // hides a photo entirely, it just demotes it.
         const issuesWithPhotos = buildingIssues
           .filter(issue => issue.photos && issue.photos.length > 0)
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-        const latestPhotoIssue = issuesWithPhotos[0];
+        const latestPhotoIssue = issuesWithPhotos.find(issue => !dismissedIds.has(issue.id));
+        const otherPhotoIssues = issuesWithPhotos.filter(issue => issue.id !== latestPhotoIssue?.id);
 
         if (latestPhotoIssue?.photos?.[0]) {
           dynamicImage = latestPhotoIssue.photos[0];
@@ -128,6 +137,8 @@ export function BuildingsGrid({
             totalFixtures={effectiveTotal}
             buildingIssues={buildingIssues}
             latestPhotoIssue={latestPhotoIssue}
+            otherPhotoIssues={otherPhotoIssues}
+            onDismissPhoto={dismissPhoto}
             buildingActivities={buildingActivities}
             _onMarkAsSeen={onMarkAsSeen}
           />

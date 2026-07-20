@@ -7,8 +7,10 @@ import {
   ArrowRight,
   Camera,
   DoorClosed,
+  Eye,
   Layers,
   MapPin,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,6 +54,11 @@ interface BuildingCardProps {
   totalFixtures: number;
   buildingIssues: IssueLike[];
   latestPhotoIssue?: IssueLike;
+  /** Open-issue photos not currently in the hero slot (incl. ones this admin
+   * already dismissed) — shown as a small thumbnail row so nothing actually
+   * disappears, it just steps down in size. */
+  otherPhotoIssues?: IssueLike[];
+  onDismissPhoto?: (issueId: string) => void;
   buildingActivities: ActivityLike[];
   _onMarkAsSeen: (issueId: string) => void;
 }
@@ -66,6 +73,8 @@ export const BuildingCard = ({
   totalFixtures,
   buildingIssues,
   latestPhotoIssue,
+  otherPhotoIssues = [],
+  onDismissPhoto,
 }: BuildingCardProps) => {
   const navigate = useNavigate();
   const isOperational = building?.status === "active";
@@ -86,6 +95,10 @@ export const BuildingCard = ({
     if (building?.id) {
       navigate(`/operations?tab=issues&building=${building.id}&filter=active`);
     }
+  };
+
+  const openIssue = (issueId: string) => {
+    navigate(`/operations?tab=issues&issue_id=${issueId}`);
   };
 
   return (
@@ -157,10 +170,34 @@ export const BuildingCard = ({
           )}
         </div>
 
-        <div className="absolute right-4 top-4 rounded-sm border border-white/20 bg-[#090909]/80 px-2.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm">
-          {activeIssues > 0
-            ? `${activeIssues} active ${activeIssues === 1 ? "issue" : "issues"}`
-            : "No active photo reports"}
+        <div className="absolute right-4 top-4 flex items-center gap-2">
+          <span className="rounded-sm border border-white/20 bg-[#090909]/80 px-2.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm">
+            {activeIssues > 0
+              ? `${activeIssues} active ${activeIssues === 1 ? "issue" : "issues"}`
+              : "No active photo reports"}
+          </span>
+          {hasLiveIssuePhoto && latestPhotoIssue && onDismissPhoto && (
+            <span
+              role="button"
+              tabIndex={0}
+              title="Seen it — show the next photo"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDismissPhoto(latestPhotoIssue.id);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onDismissPhoto(latestPhotoIssue.id);
+                }
+              }}
+              className="flex items-center gap-1 rounded-sm border border-white/20 bg-[#090909]/80 px-2.5 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-[#090909]"
+            >
+              <X className="h-3.5 w-3.5" />
+              Seen it
+            </span>
+          )}
         </div>
 
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 px-4 pb-4 pt-12 sm:px-5">
@@ -199,6 +236,33 @@ export const BuildingCard = ({
           </span>
         </div>
       </button>
+
+      {/* Thumbnail row: every other open issue-with-photo — dismissing the
+          hero (or a newer report simply outranking it) demotes it here
+          instead of hiding it. Click any thumbnail to open that issue. */}
+      {otherPhotoIssues.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto border-t border-border bg-muted/30 px-4 py-2.5 sm:px-5">
+          {otherPhotoIssues.map((issue) => (
+            <button
+              key={issue.id}
+              type="button"
+              onClick={() => openIssue(issue.id)}
+              title={issue.title}
+              aria-label={`View photo for ${issue.title}`}
+              className="group/thumb relative h-12 w-12 shrink-0 overflow-hidden rounded-sm border border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <img
+                src={issue.photos?.[0]}
+                alt=""
+                className="h-full w-full object-cover transition-opacity group-hover/thumb:opacity-80"
+              />
+              <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover/thumb:bg-black/30 group-hover/thumb:opacity-100">
+                <Eye className="h-4 w-4 text-white" />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
         <StatCell
