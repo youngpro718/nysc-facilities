@@ -190,7 +190,12 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
                     {assignment.is_primary && (
                       <Badge variant="default">Primary</Badge>
                     )}
-                    <Badge variant="outline">{assignment.assignment_type}</Badge>
+                    <Badge variant="outline">
+                      {assignment.assignment_type
+                        .split('_')
+                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                        .join(' ')}
+                    </Badge>
                   </div>
                 </div>
               ))}

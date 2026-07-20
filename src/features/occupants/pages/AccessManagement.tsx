@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, Building2, User } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Building2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RoomAccessSummary } from "@features/occupants/components/access/RoomAccessSummary";
 import { OccupantDepartureView } from "@features/occupants/components/access/OccupantDepartureView";
+import { OccupantPicker } from "@features/occupants/components/access/OccupantPicker";
+import { DeliveryRoomPicker } from "@features/supply/components/supply/DeliveryRoomPicker";
 
 export default function AccessManagement() {
   // Deep-linkable from the room wizard ("Assign New Occupant" / "View Full History"):
@@ -16,13 +17,14 @@ export default function AccessManagement() {
   const initialTab = searchParams.get('tab') === 'departure' ? 'departure' : 'room';
   const [activeTab, setActiveTab] = useState<'room' | 'departure'>(initialTab);
   const [roomId, setRoomId] = useState(initialRoom);
+  const [roomLabel, setRoomLabel] = useState('');
   const [occupantId, setOccupantId] = useState('');
 
   return (
     <PageContainer>
-      <PageHeader 
-        title="Access Management" 
-        description="Manage room access and occupant departures"
+      <PageHeader
+        title="Personnel"
+        description="Look up room access and process occupant departures"
       />
 
       <div className="space-y-6">
@@ -49,20 +51,16 @@ export default function AccessManagement() {
         {/* Room Access Tab */}
         {activeTab === 'room' && (
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Input
-                  placeholder="Enter Room ID to view access summary..."
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                />
-              </div>
-              <Button onClick={() => setRoomId(roomId.trim())}>
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </Button>
-            </div>
-            
+            <DeliveryRoomPicker
+              value={roomLabel}
+              onChange={(label, id) => {
+                setRoomLabel(label);
+                if (id) setRoomId(id);
+              }}
+              placeholder="Search rooms by number, name, or building…"
+              ariaLabel="Room"
+            />
+
             {roomId && <RoomAccessSummary roomId={roomId} />}
           </div>
         )}
@@ -70,25 +68,16 @@ export default function AccessManagement() {
         {/* Occupant Departure Tab */}
         {activeTab === 'departure' && (
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Input
-                  placeholder="Enter Occupant ID for departure process..."
-                  value={occupantId}
-                  onChange={(e) => setOccupantId(e.target.value)}
-                />
-              </div>
-              <Button onClick={() => setOccupantId(occupantId.trim())}>
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </Button>
-            </div>
-            
+            <OccupantPicker
+              value={occupantId}
+              onChange={(id) => setOccupantId(id)}
+              placeholder="Search occupants by name or department…"
+            />
+
             {occupantId && (
-              <OccupantDepartureView 
+              <OccupantDepartureView
                 occupantId={occupantId}
                 onComplete={() => {
-                  // Optionally clear the occupant ID or show success message
                   setOccupantId('');
                 }}
               />

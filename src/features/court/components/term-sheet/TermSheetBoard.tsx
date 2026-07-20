@@ -956,7 +956,10 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Five controls (Add Part, Notify, Search, view toggle, Export) don't
+            fit one row under ~500px — wrap instead of clipping the search
+            box off-screen. */}
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:flex-shrink-0">
           {isAdmin && selectedTermId && (
             <Button variant="outline" size="sm" className="h-8 text-xs px-2" onClick={() => setAddPartOpen(true)}>
               <Plus className="h-3.5 w-3.5 mr-1" />

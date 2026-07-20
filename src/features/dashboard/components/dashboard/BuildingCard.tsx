@@ -190,7 +190,11 @@ export const BuildingCard = ({
               </p>
             </div>
           )}
-          <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-white">
+          {/* Bottom-right is the mobile FAB's home turf (fixed, bottom-28
+              right-4) — this decorative "View" chip would sit directly under
+              it and steal taps meant for the FAB. The whole card is already
+              one button, so hiding the chip on mobile costs nothing. */}
+          <span className="hidden shrink-0 items-center gap-1 text-xs font-medium text-white sm:flex">
             View <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </div>
