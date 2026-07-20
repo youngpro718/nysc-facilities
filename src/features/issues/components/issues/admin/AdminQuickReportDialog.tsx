@@ -55,11 +55,11 @@ interface RoomSearchResult {
 }
 
 const ISSUE_TYPES = [
-  { id: 'electrical', label: 'Electrical', icon: Zap, color: 'text-yellow-500' },
-  { id: 'plumbing', label: 'Plumbing', icon: Droplets, color: 'text-blue-500' },
-  { id: 'hvac', label: 'HVAC', icon: Thermometer, color: 'text-cyan-500' },
-  { id: 'maintenance', label: 'Maintenance', icon: Wrench, color: 'text-orange-500' },
-  { id: 'cleaning', label: 'Cleaning', icon: Sparkles, color: 'text-green-500' },
+  { id: 'electrical_needs', label: 'Electrical', icon: Zap, color: 'text-yellow-500' },
+  { id: 'plumbing_needs', label: 'Plumbing', icon: Droplets, color: 'text-blue-500' },
+  { id: 'climate_control', label: 'HVAC', icon: Thermometer, color: 'text-cyan-500' },
+  { id: 'general_requests', label: 'Maintenance', icon: Wrench, color: 'text-orange-500' },
+  { id: 'cleaning_request', label: 'Cleaning', icon: Sparkles, color: 'text-green-500' },
   { id: 'safety', label: 'Safety', icon: AlertTriangle, color: 'text-red-500' },
 ] as const;
 

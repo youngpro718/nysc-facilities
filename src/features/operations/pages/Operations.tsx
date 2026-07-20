@@ -30,6 +30,7 @@ import { MaintenanceTab } from "@features/operations/components/operations/Maint
 import { LightingTab } from "@features/operations/components/operations/LightingTab";
 import { BuildingFilterBar } from "@features/operations/components/operations/BuildingFilterBar";
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@features/issues/types/issues";
+import { MAINTENANCE_ISSUE_TYPES } from "@features/issues/components/issues/constants/issueTypes";
 
 
 // Import dialogs
@@ -220,7 +221,7 @@ export default function Operations() {
       const { data, error } = await supabase
         .from('issues')
         .select('*')
-        .in('issue_type', ['BUILDING_SYSTEMS', 'ELECTRICAL_NEEDS', 'GENERAL_REQUESTS'])
+        .in('issue_type', MAINTENANCE_ISSUE_TYPES)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

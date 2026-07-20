@@ -82,18 +82,18 @@ interface BuildingOption {
 }
 
 const ISSUE_TYPES = [
-  { id: "ELECTRICAL", label: "Electrical",     icon: Zap,          color: "text-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-950/30",  border: "border-yellow-200 dark:border-yellow-800" },
-  { id: "PLUMBING",   label: "Plumbing",        icon: Droplets,     color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/30",      border: "border-blue-200 dark:border-blue-800" },
-  { id: "HVAC",       label: "HVAC",            icon: Thermometer,  color: "text-cyan-500",   bg: "bg-cyan-50 dark:bg-cyan-950/30",      border: "border-cyan-200 dark:border-cyan-800" },
-  { id: "MAINTENANCE",label: "Maintenance",     icon: Wrench,       color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30",  border: "border-orange-200 dark:border-orange-800" },
-  { id: "CLEANING",   label: "Cleaning",        icon: Sparkles,     color: "text-green-500",  bg: "bg-green-50 dark:bg-green-950/30",    border: "border-green-200 dark:border-green-800" },
-  { id: "SAFETY",     label: "Safety",          icon: AlertTriangle,color: "text-red-500",    bg: "bg-red-50 dark:bg-red-950/30",        border: "border-red-200 dark:border-red-800" },
-  { id: "SECURITY",   label: "Security",        icon: ShieldAlert,  color: "text-slate-500", bg: "bg-slate-50 dark:bg-slate-950/30",  border: "border-slate-200 dark:border-slate-800" },
-  { id: "IT_TECH",    label: "IT / Tech",       icon: Wifi,         color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-950/30",  border: "border-indigo-200 dark:border-indigo-800" },
-  { id: "PEST",       label: "Pest Control",    icon: Bug,          color: "text-amber-600",  bg: "bg-amber-50 dark:bg-amber-950/30",    border: "border-amber-200 dark:border-amber-800" },
-  { id: "STRUCTURAL", label: "Structural",      icon: Building2,    color: "text-stone-500",  bg: "bg-stone-50 dark:bg-stone-950/30",    border: "border-stone-200 dark:border-stone-800" },
-  { id: "DOOR_LOCK",  label: "Door / Lock",     icon: DoorOpen,     color: "text-slate-500",  bg: "bg-slate-50 dark:bg-slate-950/30",    border: "border-slate-200 dark:border-slate-800" },
-  { id: "GENERAL",    label: "General",         icon: ClipboardList,color: "text-gray-500",   bg: "bg-gray-50 dark:bg-gray-950/30",      border: "border-gray-200 dark:border-gray-800" },
+  { id: "ELECTRICAL_NEEDS",  label: "Electrical",     icon: Zap,          color: "text-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-950/30",  border: "border-yellow-200 dark:border-yellow-800" },
+  { id: "PLUMBING_NEEDS",    label: "Plumbing",       icon: Droplets,     color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-950/30",      border: "border-blue-200 dark:border-blue-800" },
+  { id: "CLIMATE_CONTROL",   label: "HVAC",           icon: Thermometer,  color: "text-cyan-500",   bg: "bg-cyan-50 dark:bg-cyan-950/30",      border: "border-cyan-200 dark:border-cyan-800" },
+  { id: "GENERAL_REQUESTS",  label: "Maintenance",    icon: Wrench,       color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30",  border: "border-orange-200 dark:border-orange-800" },
+  { id: "CLEANING_REQUEST",  label: "Cleaning",       icon: Sparkles,     color: "text-green-500",  bg: "bg-green-50 dark:bg-green-950/30",    border: "border-green-200 dark:border-green-800" },
+  { id: "SAFETY",            label: "Safety",         icon: AlertTriangle,color: "text-red-500",    bg: "bg-red-50 dark:bg-red-950/30",        border: "border-red-200 dark:border-red-800" },
+  { id: "SECURITY",          label: "Security",       icon: ShieldAlert,  color: "text-slate-500", bg: "bg-slate-50 dark:bg-slate-950/30",  border: "border-slate-200 dark:border-slate-800" },
+  { id: "IT_TECH",           label: "IT / Tech",      icon: Wifi,         color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-950/30",  border: "border-indigo-200 dark:border-indigo-800" },
+  { id: "PEST_CONTROL",      label: "Pest Control",   icon: Bug,          color: "text-amber-600",  bg: "bg-amber-50 dark:bg-amber-950/30",    border: "border-amber-200 dark:border-amber-800" },
+  { id: "STRUCTURAL_REPAIR", label: "Structural",     icon: Building2,    color: "text-stone-500",  bg: "bg-stone-50 dark:bg-stone-950/30",    border: "border-stone-200 dark:border-stone-800" },
+  { id: "DOOR_LOCK",         label: "Door / Lock",    icon: DoorOpen,     color: "text-slate-500",  bg: "bg-slate-50 dark:bg-slate-950/30",    border: "border-slate-200 dark:border-slate-800" },
+  { id: "GENERAL_REQUESTS",  label: "General",        icon: ClipboardList,color: "text-gray-500",   bg: "bg-gray-50 dark:bg-gray-950/30",      border: "border-gray-200 dark:border-gray-800" },
 ] as const;
 
 const PRIORITY_OPTIONS = [

@@ -79,10 +79,8 @@ export const MaintenanceIssuesList = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "open":
-      case "reported": return "bg-red-100 dark:bg-red-900/30 text-red-800";
+      case "open": return "bg-red-100 dark:bg-red-900/30 text-red-800";
       case "in_progress": return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800";
-      case "scheduled": return "bg-blue-100 dark:bg-blue-900/30 text-blue-800";
       case "resolved": return "bg-green-100 dark:bg-green-900/30 text-green-800";
       default: return "bg-gray-100 dark:bg-gray-800/30 text-gray-800";
     }
@@ -256,7 +254,6 @@ export const MaintenanceIssuesList = () => {
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="open">Open</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
               <SelectItem value="resolved">Resolved</SelectItem>
             </SelectContent>
           </Select>

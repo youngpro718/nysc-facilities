@@ -85,9 +85,9 @@ export function MaintenanceTab({
             <div className="rounded-md border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/20">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Scheduled</p>
+                  <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Open</p>
                   <p className="text-3xl font-semibold text-foreground">{enhancedMetrics.maintenanceScheduled}</p>
-                  <p className="text-xs text-blue-700/80 dark:text-blue-300/80">Upcoming planned work</p>
+                  <p className="text-xs text-blue-700/80 dark:text-blue-300/80">Reported, not yet started</p>
                 </div>
                 <Calendar className="h-6 w-6 text-blue-500" />
               </div>
