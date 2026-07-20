@@ -355,7 +355,14 @@ export default function Operations() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-col mt-6 sm:mt-8">
-        <TabsList className="grid w-full grid-cols-4 shrink-0" data-tour="ops-tabs">
+        {/* Sticky so switching Overview/Issues/Maintenance/Lighting never
+            requires scrolling back to the top first — Maintenance's content
+            alone can run ~2000px before this bar would otherwise scroll out
+            of view. Sits just below the app header (h-11/h-14). */}
+        <TabsList
+          className="sticky top-11 sm:top-14 z-20 grid w-full grid-cols-4 shrink-0 bg-background"
+          data-tour="ops-tabs"
+        >
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             Overview

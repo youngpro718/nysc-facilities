@@ -6,14 +6,16 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   AlertTriangle,
   ArrowRight,
   Calendar,
   Clock,
   CheckCircle,
   Wrench,
-  RefreshCw
+  RefreshCw,
+  LayoutList,
 } from "lucide-react";
 import { MaintenanceScheduleList } from "@features/operations/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@features/operations/components/maintenance/MaintenanceIssuesList";
@@ -114,45 +116,64 @@ export function MaintenanceTab({
         </CardContent>
       </Card>
 
-      {/* DCAS handoff — the single dashboard surface answering
-          "what have I scheduled that I still need to tell DCAS about?" */}
-      <PendingDcasHandoffPanel />
+      {/* Workbench (the lists you actually act on) vs. Calendar (a planning
+          view) — these used to be stacked with a full month-grid calendar
+          sitting between the header and the lists, forcing a ~2000px scroll
+          past it just to reach Scheduled Maintenance. Same split pattern as
+          the Lighting tab (Issues first, secondary views as tabs). */}
+      <Tabs defaultValue="workbench" className="w-full">
+        <TabsList>
+          <TabsTrigger value="workbench" className="gap-1.5">
+            <LayoutList className="h-4 w-4" /> Workbench
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-1.5">
+            <Calendar className="h-4 w-4" /> Calendar
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Calendar — full width */}
-      <MaintenanceCalendar />
+        <TabsContent value="workbench" className="mt-4 space-y-6">
+          {/* DCAS handoff — the single dashboard surface answering
+              "what have I scheduled that I still need to tell DCAS about?" */}
+          <PendingDcasHandoffPanel />
 
-      {/* Schedule + Issues — side by side */}
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-500" />
-                Scheduled Maintenance
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={onScheduleMaintenance}>
-                Add
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <MaintenanceScheduleList />
-          </CardContent>
-        </Card>
+          {/* Schedule + Issues — side by side */}
+          <div className="grid gap-6 xl:grid-cols-2">
+            <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-blue-500" />
+                    Scheduled Maintenance
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" onClick={onScheduleMaintenance}>
+                    Add
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <MaintenanceScheduleList />
+              </CardContent>
+            </Card>
 
-        <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-amber-500" />
-              Maintenance Issues ({maintenanceData?.length || 0})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <MaintenanceIssuesList />
-          </CardContent>
-        </Card>
-      </div>
+            <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5 text-amber-500" />
+                  Maintenance Issues ({maintenanceData?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MaintenanceIssuesList />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="calendar" className="mt-4">
+          <MaintenanceCalendar />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -168,7 +168,14 @@ function LayoutContent() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background overflow-x-hidden">
+    // overflow-x-clip, not overflow-x-hidden: per spec, setting only one axis
+    // to `hidden` forces the browser to compute the other as `auto`, which
+    // silently turns this page-shell div into a scroll container — and any
+    // position:sticky element anywhere in the app then sticks relative to
+    // that (non-scrolling) container instead of the real window scroll,
+    // so it never actually stays pinned. `clip` clips the same way without
+    // establishing a scrolling box, so real page scroll is what sticky sees.
+    <div className="min-h-screen w-full bg-background overflow-x-clip">
       {/* Global Search Palette (⌘K) */}
       {isAdmin && <GlobalSearchPalette open={searchOpen} onOpenChange={setSearchOpen} />}
 
