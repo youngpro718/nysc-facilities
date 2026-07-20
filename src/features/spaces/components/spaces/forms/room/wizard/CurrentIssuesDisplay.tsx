@@ -88,7 +88,13 @@ export function CurrentIssuesDisplay({ roomId }: CurrentIssuesDisplayProps) {
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="font-medium text-sm line-clamp-1">{issue.title}</h4>
                     <Badge
-                      variant={issue.priority === "high" ? "destructive" : issue.priority === "medium" ? "default" : "secondary"}
+                      variant={
+                        issue.priority === "critical" || issue.priority === "high"
+                          ? "destructive"
+                          : issue.priority === "medium"
+                            ? "default"
+                            : "secondary"
+                      }
                       className="shrink-0"
                     >
                       {issue.priority}

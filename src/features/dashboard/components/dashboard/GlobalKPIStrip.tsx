@@ -52,7 +52,7 @@ function useGlobalKPIs() {
 
       return {
         activeIssues: issues.length,
-        criticalIssues: issues.filter((i) => i.priority === "high").length,
+        criticalIssues: issues.filter((i) => i.priority === "high" || i.priority === "critical").length,
         systemHealth: totalFixtures > 0
           ? Math.round((functionalFixtures / totalFixtures) * 100)
           : 100,

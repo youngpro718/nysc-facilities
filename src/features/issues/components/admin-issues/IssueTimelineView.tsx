@@ -31,6 +31,7 @@ function getStatusDot(status: string) {
 
 function getPriorityBadgeVariant(priority: string): "destructive" | "secondary" | "outline" {
   switch (priority) {
+    case 'critical':
     case 'high': return 'destructive';
     case 'medium': return 'secondary';
     default: return 'outline';
@@ -38,7 +39,10 @@ function getPriorityBadgeVariant(priority: string): "destructive" | "secondary" 
 }
 
 function getPriorityIcon(priority: string) {
-  if (priority === 'high') return <AlertTriangle className="h-3 w-3" />;
+  // Anything below 'medium' fell through to a checkmark — which read as
+  // "resolved" on a still-open critical issue. Only genuinely low-priority
+  // issues should get the checkmark.
+  if (priority === 'critical' || priority === 'high') return <AlertTriangle className="h-3 w-3" />;
   if (priority === 'medium') return <Clock className="h-3 w-3" />;
   return <CheckCircle2 className="h-3 w-3" />;
 }

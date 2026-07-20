@@ -277,7 +277,7 @@ export function CommandCenter() {
                       {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
                     </span>
                   </span>
-                  {item.priority && (item.priority === 'high' || item.priority === 'urgent') && (
+                  {item.priority && ['high', 'urgent', 'critical'].includes(item.priority) && (
                     <span className="mt-0.5 shrink-0 rounded-sm bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400">
                       {item.priority}
                     </span>

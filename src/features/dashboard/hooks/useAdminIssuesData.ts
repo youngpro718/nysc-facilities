@@ -145,9 +145,11 @@ export const useAdminIssuesData = (page = 0) => {
     refetchInterval: false,
   });
 
-  // Critical issues on the current page (high priority + active)
+  // Critical issues on the current page (high or critical priority + active).
+  // issue_priority_enum is low/medium/high/critical — this used to check
+  // only 'high', so anything actually marked 'critical' never appeared here.
   const criticalIssues = allIssues.filter(
-    issue => issue.priority === 'high' && ['open', 'in_progress'].includes(issue.status)
+    issue => ['high', 'critical'].includes(issue.priority) && ['open', 'in_progress'].includes(issue.status)
   );
 
   return {
