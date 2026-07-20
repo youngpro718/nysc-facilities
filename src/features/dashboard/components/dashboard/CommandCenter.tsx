@@ -121,11 +121,11 @@ export function CommandCenter() {
   }> = [
     { label: 'Critical issues', count: metrics.issues.critical, tone: 'critical' as StatusTone, to: '/operations?tab=issues' },
     { label: 'Users awaiting approval', count: metrics.users.pending_approval, tone: 'warning' as StatusTone, to: '/admin?tab=users' },
-    { label: 'Supply orders to approve', count: metrics.supply.pending_approval, tone: 'warning' as StatusTone, to: '/admin/supply-requests' },
+    { label: 'Supply orders to approve', count: metrics.supply.pending_approval, tone: 'warning' as StatusTone, to: '/admin/supply-requests?status=pending_approval' },
     { label: 'Supply orders past SLA', count: metrics.supply.sla_breached, tone: 'critical' as StatusTone, to: '/supply-room' },
     { label: 'Supply orders aging', count: metrics.supply.sla_warning, tone: 'warning' as StatusTone, to: '/supply-room' },
     { label: 'Overdue tasks', count: metrics.tasks.overdue, tone: 'warning' as StatusTone, to: '/tasks' },
-    { label: 'Low stock items', count: metrics.supply.low_stock_items, tone: 'info' as StatusTone, to: '/inventory' },
+    { label: 'Low stock items', count: metrics.supply.low_stock_items, tone: 'info' as StatusTone, to: '/inventory?tab=alerts' },
     { label: 'Rooms in maintenance', count: metrics.rooms.maintenance, tone: 'info' as StatusTone, to: '/spaces' },
   ].filter(item => item.count > 0);
 
@@ -143,10 +143,12 @@ export function CommandCenter() {
   const activityTone = (type: string): StatusTone =>
     type === 'issue' ? 'warning' : type === 'supply_request' ? 'operational' : 'info';
 
-  const activityTarget = (type: string): string =>
-    type === 'issue' ? '/operations?tab=issues' :
-    type === 'supply_request' ? '/admin/supply-requests' :
-    type === 'task' ? '/tasks' : '/operations';
+  // Prefer the per-record deep link from the service; fall back to the section.
+  const activityTarget = (item: { type: string; target?: string }): string =>
+    item.target ??
+    (item.type === 'issue' ? '/operations?tab=issues' :
+     item.type === 'supply_request' ? '/admin/supply-requests' :
+     item.type === 'task' ? '/tasks' : '/');
 
   return (
     <section aria-labelledby="command-center-heading" className="space-y-5 border-t border-border pt-6">
@@ -258,7 +260,7 @@ export function CommandCenter() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => navigate(activityTarget(item.type))}
+                  onClick={() => navigate(activityTarget(item))}
                   className="flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent/40"
                 >
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${TONE_DOT[activityTone(item.type)]}`} />

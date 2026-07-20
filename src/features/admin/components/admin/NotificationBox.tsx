@@ -123,10 +123,15 @@ export const NotificationBox = () => {
         break;
       case 'new_issue':
       case 'issue_status_change':
-        navigate('/admin/issues');
+        // Deep-link to the specific issue when we know it
+        navigate(
+          notification.related_table === 'issues' && notification.related_id
+            ? `/operations?tab=issues&issue_id=${notification.related_id}`
+            : '/operations?tab=issues'
+        );
         break;
       case 'new_key_order':
-        navigate('/admin/key-orders');
+        navigate('/keys');
         break;
       case 'new_user_pending':
         navigate('/admin');

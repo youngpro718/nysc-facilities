@@ -10,19 +10,18 @@ const Spaces = () => {
   const canManageSpaces = canAdmin('spaces');
 
   return (
-    <div className="space-y-4 sm:space-y-8 relative" data-tour="space-list">
-      <div className="flex items-center justify-between">
-        {/* Hide desktop Add Space button on mobile but keep in DOM for mobile trigger */}
-        {canManageSpaces && (
-          <div className={`flex gap-2 ${isMobile ? 'hidden' : ''}`} data-tour="add-space-btn">
-            <CreateSpaceDialog />
-          </div>
-        )}
-      </div>
-
-      <div className="mt-6">
-        <SpacesTabs />
-      </div>
+    <div className="relative" data-tour="space-list">
+      {/* Add Room lives in the Spaces header row instead of floating alone
+          above it; mobile keeps the FAB. */}
+      <SpacesTabs
+        actions={
+          canManageSpaces && !isMobile ? (
+            <div data-tour="add-space-btn">
+              <CreateSpaceDialog />
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* Mobile FAB */}
       {canManageSpaces && <MobileSpaceFAB />}

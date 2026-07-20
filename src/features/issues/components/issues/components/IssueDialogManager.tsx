@@ -9,7 +9,7 @@ import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { IssueDetails } from "../details/IssueDetails";
 import { ResolutionForm } from "../forms/ResolutionForm";
 import { DialogState } from "@shared/hooks/useDialogManager";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface IssueDialogManagerProps {
   dialogState: DialogState;
@@ -17,15 +17,20 @@ interface IssueDialogManagerProps {
 }
 
 export const IssueDialogManager = ({ dialogState, onClose }: IssueDialogManagerProps) => {
-  // Force dialog to close properly when route changes
+  // Close the dialog when this component truly unmounts (route change).
+  // IMPORTANT: deps must stay empty — `onClose` is recreated by the parent on
+  // every render, so listing it made this cleanup fire on each re-render,
+  // instantly closing dialogs opened via ?issue_id= deep links while the page
+  // was still loading. The ref keeps the latest values without re-running.
+  const latestRef = useRef({ isOpen: dialogState.isOpen, onClose });
+  latestRef.current = { isOpen: dialogState.isOpen, onClose };
   useEffect(() => {
     return () => {
-      // Cleanup effect when component unmounts
-      if (dialogState.isOpen) {
-        onClose();
+      if (latestRef.current.isOpen) {
+        latestRef.current.onClose();
       }
     };
-  }, [dialogState.isOpen, onClose]);
+  }, []);
 
   const handleSheetOpenChange = (open: boolean) => {
     if (!open) {

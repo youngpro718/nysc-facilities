@@ -114,14 +114,15 @@ const getLatestTeamDelivery = (request: SupplyRequestWithUser) => {
 
 export default function AdminSupplyRequests() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [requests, setRequests] = useState<SupplyRequestWithUser[]>([]);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  // ?status= lets dashboard links land pre-filtered (e.g. "orders to approve")
+  const [filterStatus, setFilterStatus] = useState<string>(searchParams.get('status') || "all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('id');
   const { toast } = useToast();
 

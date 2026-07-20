@@ -31,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { NavigationSkeleton, MobileNavigationSkeleton } from "./NavigationSkeleton";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { DevModeBanner } from "@shared/components/dev/DevModeBanner";
-import { SupportChatWidget } from "@shared/components/support/SupportChatWidget";
 import { APP_INFO, APP_COPYRIGHT } from "@/lib/appInfo";
 import { WhatsNewDialog } from "@shared/components/help/WhatsNewDialog";
 import { TourProvider } from "@shared/components/help/TourProvider";
@@ -403,7 +402,6 @@ function LayoutContent() {
       </div>
 
       {/* AI Support Chat — visible when authenticated and not on login */}
-      {isAuthenticated && !isLoginPage && <SupportChatWidget />}
     </div>
   );
 }

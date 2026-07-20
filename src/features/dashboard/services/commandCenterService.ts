@@ -93,6 +93,8 @@ export interface RecentActivity {
   status?: string;
   priority?: string;
   metadata?: Record<string, unknown>;
+  /** Deep link to the specific record this activity is about. */
+  target?: string;
 }
 
 export interface SystemAlert {
@@ -341,6 +343,7 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
       timestamp: issue.created_at,
       status: issue.status,
       priority: issue.priority,
+      target: `/operations?tab=issues&issue_id=${issue.id}`,
     })));
   }
 
@@ -359,6 +362,7 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
       user_name: req.profiles ? `${req.profiles.first_name} ${req.profiles.last_name}` : undefined,
       timestamp: req.created_at,
       status: req.status,
+      target: `/admin/supply-requests?id=${req.id}`,
     })));
   }
 
@@ -432,6 +436,16 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
           : undefined;
       }
 
+      // Deep-link to the edited record (deletes have nothing to open, so they
+      // land on the section instead).
+      const recordId = (newValues?.id as string) || (oldValues?.id as string) || '';
+      const target =
+        row.action === 'delete'
+          ? (row.table_name === 'inventory_items' ? '/inventory?tab=stock' : '/spaces')
+          : row.table_name === 'inventory_items'
+            ? '/inventory?tab=stock'
+            : `/spaces?room=${recordId}`;
+
       return {
         id: row.id,
         type: 'user_action' as const,
@@ -439,6 +453,7 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
         description,
         user_name: row.performed_by ? performerNames.get(row.performed_by) : undefined,
         timestamp: row.performed_at,
+        target,
       };
     }));
   }

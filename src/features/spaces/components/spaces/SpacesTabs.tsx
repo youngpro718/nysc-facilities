@@ -7,7 +7,12 @@ import { useRoomsQuery } from './hooks/queries/useRoomsQuery';
 import { CommonAreasPage } from './common-areas/CommonAreasPage';
 import { useCommonAreas } from './common-areas/useCommonAreas';
 
-const SpacesTabs = () => {
+interface SpacesTabsProps {
+  /** Page-level actions (e.g. Add Room) rendered in the header row. */
+  actions?: React.ReactNode;
+}
+
+const SpacesTabs = ({ actions }: SpacesTabsProps) => {
   const [activeView, setActiveView] = useState<'rooms' | 'common-areas'>('rooms');
   const { data: rooms } = useRoomsQuery({});
   const { data: commonAreas } = useCommonAreas();
@@ -28,6 +33,8 @@ const SpacesTabs = () => {
             <h2 className="text-lg font-semibold tracking-tight">Spaces</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">Rooms and shared floor areas are tracked separately.</p>
           </div>
+          <div className="flex items-center gap-2">
+          {actions}
           <TabsList className="h-9 min-h-9 w-full justify-start sm:w-auto">
             <TabsTrigger value="rooms" className="min-h-8 gap-2 px-3 py-1.5">
               Rooms
@@ -58,6 +65,7 @@ const SpacesTabs = () => {
               </Badge>
             </TabsTrigger>
           </TabsList>
+          </div>
         </div>
         </div>
       </Tabs>

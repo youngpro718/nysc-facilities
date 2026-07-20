@@ -471,26 +471,17 @@ export function HelpCenter() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-md border border-border/60 bg-muted/30 p-4">
-                    <p className="text-sm font-medium">AI support chat</p>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Click the chat bubble in the bottom-left of any page for instant answers
-                      about how to do something in the app.
-                    </p>
-                  </div>
-                  <div className="rounded-md border border-border/60 bg-muted/30 p-4">
-                    <p className="text-sm font-medium">Email support</p>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      For account problems or anything urgent the chat can't resolve:
-                    </p>
-                    <a
-                      href={APP_INFO.support.emailHref}
-                      className="text-xs font-mono text-primary underline-offset-2 hover:underline mt-1.5 inline-block break-all"
-                    >
-                      {APP_INFO.support.email}
-                    </a>
-                  </div>
+                <div className="rounded-md border border-border/60 bg-muted/30 p-4">
+                  <p className="text-sm font-medium">Email support</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    For account problems or anything these guides don't cover:
+                  </p>
+                  <a
+                    href={APP_INFO.support.emailHref}
+                    className="text-xs font-mono text-primary underline-offset-2 hover:underline mt-1.5 inline-block break-all"
+                  >
+                    {APP_INFO.support.email}
+                  </a>
                 </div>
               </CardContent>
             </Card>
