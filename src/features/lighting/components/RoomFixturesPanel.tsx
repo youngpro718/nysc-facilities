@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSpaceFixtures, useUpdateFixtureStatus, useCreateFixture, lightingKeys } from "../hooks/useLightingData";
+import { nextFixtureLabels } from "../services/lightingService";
 import type { LightStatus, LightingType, UpdateFixtureStatusPayload } from "../services/lightingService";
 import { getErrorMessage } from "@/lib/errorUtils";
 
@@ -32,15 +33,6 @@ const STATUS_OPTIONS: { value: LightStatus; label: string }[] = [
   { value: "non_functional", label: "Out" },
   { value: "maintenance_needed", label: "Maintenance needed" },
 ];
-
-function nextLabel(existing: string[]): string {
-  const used = new Set(existing);
-  for (let i = 1; i <= 999; i++) {
-    const candidate = `A${i}`;
-    if (!used.has(candidate)) return candidate;
-  }
-  return `A${existing.length + 1}`;
-}
 
 export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
   const queryClient = useQueryClient();
@@ -72,7 +64,7 @@ export function RoomFixturesPanel({ roomId, floorId }: RoomFixturesPanelProps) {
 
   const handleAdd = async () => {
     try {
-      const label = nextLabel(fixtures.map((f) => f.name));
+      const [label] = nextFixtureLabels(fixtures.map((f) => f.name));
       await createFixture.mutateAsync({
         name: label,
         type: "standard" as LightingType,
