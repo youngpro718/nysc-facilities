@@ -1,15 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { logger } from '@/lib/logger';
-import { Bell, Key, AlertTriangle, Wrench, Package, AlertCircle, Gavel } from "lucide-react";
+import { Bell, Key, AlertTriangle, Wrench, Package, AlertCircle, Gavel, CheckCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
-import { useAdminNotifications, useMarkNotificationRead } from "@features/admin/hooks/useAdminNotifications";
+import { useAdminNotifications, useMarkNotificationRead, type AdminNotification } from "@features/admin/hooks/useAdminNotifications";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCourtIssuesIntegration } from "@features/court/hooks/useCourtIssuesIntegration";
+import { useAuth } from "@features/auth/hooks/useAuth";
+import { useNotifications, type Notification as PersonalNotification } from "@shared/hooks/useNotifications";
 import { supabase } from "@/lib/supabase";
 
 const notificationIcons = {
@@ -29,23 +30,73 @@ const notificationIcons = {
   court_assignment_change: Gavel,
 };
 
+const personalNotificationIcons: Record<PersonalNotification['type'], typeof Bell> = {
+  issue_update: AlertCircle,
+  new_assignment: Bell,
+  maintenance: Wrench,
+  key_request_approved: Key,
+  key_request_denied: Key,
+  key_request_fulfilled: Key,
+  staff_task_pending: Bell,
+  staff_task_update: Bell,
+};
+
+function isSafeInternalPath(value: unknown): value is string {
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//');
+}
+
+function getPersonalRoute(n: PersonalNotification): string | null {
+  if (isSafeInternalPath(n.action_url)) return n.action_url;
+  const metaUrl = (n.metadata as { action_url?: unknown })?.action_url;
+  if (isSafeInternalPath(metaUrl)) return metaUrl;
+  switch (n.type) {
+    case 'issue_update':
+      return '/operations?tab=issues';
+    case 'new_assignment':
+    case 'staff_task_pending':
+    case 'staff_task_update':
+      return '/tasks';
+    case 'maintenance':
+      return '/operations?tab=maintenance';
+    case 'key_request_approved':
+    case 'key_request_denied':
+    case 'key_request_fulfilled':
+      return '/my-activity?tab=keys';
+    default:
+      return null;
+  }
+}
+
+/**
+ * The one notification bell for admins: system-wide alerts (admin_notifications)
+ * and personal notifications (user_notifications, e.g. room assignments, key
+ * request updates) merged into a single chronological list, with one combined
+ * unread badge and one "Mark all read" / "Clear all" pair — deliberately one
+ * icon, not two separate bells, so it stays a single clean affordance.
+ */
 export const NotificationBox = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [recentlyRead, setRecentlyRead] = useState<Set<string>>(() => new Set());
-  
-  // Use the admin notifications hooks
+
+  // Admin-wide alerts
   const { data: notifications, isLoading } = useAdminNotifications();
   const markAsReadMutation = useMarkNotificationRead();
-  
+
+  // Personal notifications (same table/hook that drives the taskbar badge)
+  const {
+    notifications: personalNotifications,
+    unreadCount: personalUnreadCount,
+    markAsRead: markPersonalRead,
+    markAllAsRead: markAllPersonalRead,
+    clearAllNotifications: clearAllPersonal,
+    isLoading: isPersonalLoading,
+  } = useNotifications(user?.id);
+
   // Real-time notifications are set up at app level via useConditionalNotifications
-  // Court issues summary for distinct critical indicator
-  const { courtIssues } = useCourtIssuesIntegration();
-  const openHighSeverityIssues = (courtIssues || []).filter(i =>
-    ['critical', 'urgent', 'high'].includes((i.priority || '').toLowerCase())
-  ).length;
-  
+
   // Last seen tracking to distinguish "New" vs previously seen
   const [lastSeenAt, setLastSeenAt] = useState<string>(() => {
     try { return localStorage.getItem('admin.notifications.lastSeen') || ''; } catch { return ''; }
@@ -56,20 +107,23 @@ export const NotificationBox = () => {
   const now = new Date();
   const cutoffIso = new Date(now.getTime() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const nowIso = now.toISOString();
-  const visibleNotifications = (notifications || []).filter((n: any) => {
+  const visibleNotifications = (notifications || []).filter((n: AdminNotification) => {
     const withinRetention = !n.created_at || n.created_at >= cutoffIso;
     const notExpired = !n.expires_at || n.expires_at > nowIso;
     return withinRetention && notExpired;
   });
-  const isServerUnread = (n: any) => !n.read_by || n.read_by.length === 0;
-  const isEffectivelyUnread = (n: any) => isServerUnread(n) && !recentlyRead.has(n.id);
-  const isNewSinceSeen = (n: any) => !!lastSeenAt && n.created_at > lastSeenAt;
-  const rawUnreadNewCount = visibleNotifications.filter(n => isEffectivelyUnread(n) && isNewSinceSeen(n)).length || 0;
+  const isServerUnread = (n: AdminNotification) => !n.read_by || n.read_by.length === 0;
+  const isEffectivelyUnread = (n: AdminNotification) => isServerUnread(n) && !recentlyRead.has(n.id);
+  const isNewSinceSeen = (createdAt: string) => !!lastSeenAt && createdAt > lastSeenAt;
+
+  const adminUnreadNewCount = visibleNotifications.filter(n => isEffectivelyUnread(n) && isNewSinceSeen(n.created_at)).length;
+  const personalUnreadNewCount = personalNotifications.filter(n => !n.read && isNewSinceSeen(n.created_at)).length;
+  const rawUnreadNewCount = adminUnreadNewCount + personalUnreadNewCount;
   const unreadCount = isOpen ? 0 : rawUnreadNewCount; // show badge only for NEW unread
 
   // Critical courtroom issues (from admin notifications and live court issues)
   const criticalIssueUnreadCount = visibleNotifications?.filter(n =>
-    isEffectivelyUnread(n) && isNewSinceSeen(n) &&
+    isEffectivelyUnread(n) && isNewSinceSeen(n.created_at) &&
     (["new_issue", "issue_status_change", "issue"].includes(n.notification_type)) &&
     (["high", "urgent", "critical"].includes((n.urgency || "").toLowerCase()))
   ).length || 0;
@@ -78,10 +132,11 @@ export const NotificationBox = () => {
   const showCriticalPulse = criticalIssueUnreadCount > 0;
   const criticalCount = criticalIssueUnreadCount; // numeric badge shows unread critical only
 
-  // Count of items outside retention or expired (for optional purge UX)
-  const oldOrExpiredCount = (notifications || []).filter((n: any) => (n.created_at && n.created_at < cutoffIso) || (n.expires_at && n.expires_at <= nowIso)).length;
+  // Count of items outside retention or expired (purged automatically on open)
+  const oldOrExpiredCount = (notifications || []).filter((n: AdminNotification) => (n.created_at && n.created_at < cutoffIso) || (n.expires_at && n.expires_at <= nowIso)).length;
 
   const purgeOldNotifications = async () => {
+    if (oldOrExpiredCount === 0) return;
     try {
       // Delete by retention first
       const { error: delOldErr } = await supabase
@@ -104,26 +159,20 @@ export const NotificationBox = () => {
     }
   };
 
-  const handleNotificationClick = (notification: any) => {
+  const handleAdminClick = (notification: AdminNotification) => {
     setIsOpen(false);
-    
-    // Mark notification as read
     markAsReadMutation.mutate(notification.id);
-    
-    // Prefer deep link if provided
-    const actionUrl = notification?.metadata?.action_url as string | undefined;
-    if (actionUrl) {
+    const actionUrl = (notification.metadata as { action_url?: unknown })?.action_url;
+    if (isSafeInternalPath(actionUrl)) {
       navigate(actionUrl);
       return;
     }
-    // Navigate based on notification type
     switch (notification.notification_type) {
       case 'new_supply_request':
         navigate('/admin/supply-requests');
         break;
       case 'new_issue':
       case 'issue_status_change':
-        // Deep-link to the specific issue when we know it
         navigate(
           notification.related_table === 'issues' && notification.related_id
             ? `/operations?tab=issues&issue_id=${notification.related_id}`
@@ -151,13 +200,37 @@ export const NotificationBox = () => {
     }
   };
 
-  const clearAllNotifications = () => {
-    // Mark all notifications as read
-    visibleNotifications?.forEach(notification => {
-      if (!notification.read_by || notification.read_by.length === 0) {
-        markAsReadMutation.mutate(notification.id);
+  const handlePersonalClick = (n: PersonalNotification) => {
+    setIsOpen(false);
+    if (!n.read) markPersonalRead(n.id);
+    const route = getPersonalRoute(n);
+    if (route) navigate(route);
+  };
+
+  const handleMarkAllRead = () => {
+    visibleNotifications?.forEach((n) => {
+      if (isServerUnread(n)) {
+        setRecentlyRead(prev => new Set(prev).add(n.id));
+        markAsReadMutation.mutate(n.id);
       }
     });
+    if (personalUnreadCount > 0) markAllPersonalRead();
+  };
+
+  const handleClearAll = async () => {
+    try {
+      if (visibleNotifications.length > 0) {
+        const ids = visibleNotifications.map(n => n.id);
+        const { error } = await supabase.from('admin_notifications').delete().in('id', ids);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+      }
+      if (personalNotifications.length > 0) {
+        await clearAllPersonal();
+      }
+    } catch (error) {
+      logger.error('NotificationBox: clearAll failed', error);
+    }
   };
 
   const getNotificationIcon = (type: string) => {
@@ -169,7 +242,7 @@ export const NotificationBox = () => {
     if (['high', 'urgent', 'critical'].includes(u)) {
       return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 dark:bg-red-900/20 dark:text-red-400';
     }
-    
+
     switch (type) {
       case 'new_key_order':
         return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 dark:bg-blue-900/20 dark:text-blue-400';
@@ -189,16 +262,56 @@ export const NotificationBox = () => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
+  // Merge both streams into one chronological list — one bell, one feed.
+  interface CombinedEntry {
+    key: string;
+    created_at: string;
+    isUnread: boolean;
+    isNew: boolean;
+    urgency: string;
+    icon: typeof Bell;
+    color: string;
+    title: string;
+    message: string;
+    onClick: () => void;
+  }
+  const combined: CombinedEntry[] = [
+    ...visibleNotifications.map((n): CombinedEntry => ({
+      key: `admin-${n.id}`,
+      created_at: n.created_at,
+      isUnread: isEffectivelyUnread(n),
+      isNew: isNewSinceSeen(n.created_at),
+      urgency: n.urgency,
+      icon: getNotificationIcon(n.notification_type),
+      color: getNotificationColor(n.notification_type, n.urgency),
+      title: n.title,
+      message: n.message,
+      onClick: () => handleAdminClick(n),
+    })),
+    ...personalNotifications.map((n): CombinedEntry => ({
+      key: `personal-${n.id}`,
+      created_at: n.created_at,
+      isUnread: !n.read,
+      isNew: isNewSinceSeen(n.created_at),
+      urgency: n.urgency || '',
+      icon: personalNotificationIcons[n.type] || Bell,
+      color: 'bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400',
+      title: n.title,
+      message: n.message,
+      onClick: () => handlePersonalClick(n),
+    })),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   return (
-    <Popover 
-      open={isOpen} 
+    <Popover
+      open={isOpen}
       onOpenChange={(open) => {
         setIsOpen(open);
         if (open) {
@@ -208,14 +321,11 @@ export const NotificationBox = () => {
           // Auto-mark visible notifications as read on open to clear the red badge immediately
           visibleNotifications?.forEach((n) => {
             if (isServerUnread(n)) {
-              setRecentlyRead(prev => {
-                const next = new Set(prev);
-                next.add(n.id);
-                return next;
-              });
+              setRecentlyRead(prev => new Set(prev).add(n.id));
               markAsReadMutation.mutate(n.id);
             }
           });
+          if (personalUnreadCount > 0) markAllPersonalRead();
           // Soft-clean old/expired items in background
           purgeOldNotifications();
         }
@@ -236,16 +346,16 @@ export const NotificationBox = () => {
             </>
           )}
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className="absolute -top-1 -right-1 z-10 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
           {criticalIssueUnreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className="absolute -top-1 -left-1 z-10 h-4 min-w-4 px-1 rounded-full p-0 flex items-center justify-center text-[10px]"
             >
               {criticalCount > 99 ? '99+' : criticalCount}
@@ -256,74 +366,73 @@ export const NotificationBox = () => {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Admin Notifications</h3>
-            <div className="flex items-center gap-2">
-              {oldOrExpiredCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={purgeOldNotifications} title="Remove old notifications">
-                  Clear Old
+            <h3 className="font-semibold">Notifications</h3>
+            <div className="flex items-center gap-1">
+              {rawUnreadNewCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={handleMarkAllRead} title="Mark all read">
+                  <CheckCheck className="h-4 w-4 mr-1" />
+                  Mark all read
                 </Button>
               )}
-              {visibleNotifications.length > 0 && rawUnreadNewCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearAllNotifications}>
-                  Mark All Read
+              {combined.length > 0 && (
+                <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleClearAll} title="Clear all">
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Clear all
                 </Button>
               )}
             </div>
           </div>
         </div>
-        
+
         <ScrollArea className="h-96">
-          {isLoading ? (
+          {(isLoading || isPersonalLoading) ? (
             <div className="p-4 text-center text-muted-foreground">
               <div className="animate-pulse">Loading notifications...</div>
             </div>
-          ) : visibleNotifications.length === 0 ? (
+          ) : combined.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
               <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No new notifications</p>
             </div>
           ) : (
             <div className="p-2">
-              {visibleNotifications.map((notification) => {
-                const Icon = getNotificationIcon(notification.notification_type);
-                const isRead = !isEffectivelyUnread(notification);
-                const isNewSinceSeen = lastSeenAt && notification.created_at > lastSeenAt;
-                
+              {combined.map((entry) => {
+                const Icon = entry.icon;
                 return (
-                  <Card 
-                    key={notification.id}
+                  <Card
+                    key={entry.key}
                     className={`mb-2 cursor-pointer transition-colors hover:bg-muted ${
-                      !isRead ? 'border-primary bg-primary/5' : 'border-muted'
-                    } ${isNewSinceSeen ? 'ring-1 ring-primary/50' : ''}`}
-                    onClick={() => handleNotificationClick(notification)}
+                      entry.isUnread ? 'border-primary bg-primary/5' : 'border-muted'
+                    } ${entry.isNew ? 'ring-1 ring-primary/50' : ''}`}
+                    onClick={entry.onClick}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start space-x-3">
-                        <div className={`p-2 rounded-full ${getNotificationColor(notification.notification_type, notification.urgency)}`}>
+                        <div className={`p-2 rounded-full ${entry.color}`}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <p className="font-medium text-sm">{notification.title}</p>
+                            <p className="font-medium text-sm">{entry.title}</p>
                             <div className="flex items-center gap-1">
-                              {isNewSinceSeen && (
+                              {entry.isNew && (
                                 <Badge variant="secondary" className="text-[10px]">New</Badge>
                               )}
-                              {notification.urgency === 'high' && (
-                              <Badge variant="destructive" className="text-xs">
-                                {notification.urgency.toUpperCase()}
-                              </Badge>
+                              {entry.urgency === 'high' && (
+                                <Badge variant="destructive" className="text-xs">
+                                  {entry.urgency.toUpperCase()}
+                                </Badge>
                               )}
                             </div>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {notification.message}
+                            {entry.message}
                           </p>
                           <p className="text-xs text-muted-foreground mt-2">
-                            {formatTimeAgo(notification.created_at)}
+                            {formatTimeAgo(entry.created_at)}
                           </p>
                         </div>
-                        {!isRead && (
+                        {entry.isUnread && (
                           <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                         )}
                       </div>

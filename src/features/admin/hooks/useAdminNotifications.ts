@@ -15,7 +15,7 @@ export interface AdminNotification {
   expires_at: string | null;
 }
 
-export const useAdminNotifications = () => {
+export const useAdminNotifications = (enabled = true) => {
   return useQuery<AdminNotification[]>({
     queryKey: ['adminNotifications'],
     queryFn: async () => {
@@ -27,6 +27,7 @@ export const useAdminNotifications = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled,
   });
 };
 
