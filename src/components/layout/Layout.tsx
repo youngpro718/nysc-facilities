@@ -35,21 +35,28 @@ import { APP_INFO, APP_COPYRIGHT } from "@/lib/appInfo";
 import { WhatsNewDialog } from "@shared/components/help/WhatsNewDialog";
 import { TourProvider } from "@shared/components/help/TourProvider";
 import { useNotifications } from "@shared/hooks/useNotifications";
+import { useAdminNotifications } from "@features/admin/hooks/useAdminNotifications";
 import { setAppBadgeCount } from "@/lib/appBadge";
 import { playNotificationSound } from "@/lib/notificationSound";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import type { UserRole } from "@/config/roles";
 
-/** Header bell for non-admin roles — unread count + link to /notifications. */
+/** Header bell for non-admin roles — unread count + link to /notifications.
+ *  Admins get NotificationBox instead, which merges this same personal
+ *  stream (user_notifications) together with admin-wide alerts into one bell. */
 function UserNotificationBell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { unreadCount } = useNotifications(user?.id);
+  const label = unreadCount > 0
+    ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'} — click to view`
+    : "Notifications";
 
   return (
     <button
       onClick={() => navigate("/notifications")}
-      aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+      aria-label={label}
+      title={label}
       className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-white transition-colors hover:bg-white/[0.1]"
     >
       <Bell className="h-4 w-4" />
@@ -127,9 +134,19 @@ function LayoutContent() {
   const isPreviewActive = isAdmin && previewRole && previewRole !== 'admin' && previewRole !== 'system_admin';
 
   // Taskbar/dock icon badge + a short sound when new notifications arrive —
-  // works for every role (unlike the admin-only bell in the header), and
-  // keeps working while the installed app is minimized/backgrounded.
-  const { unreadCount: unreadNotificationCount } = useNotifications(isAuthenticated ? user?.id : undefined);
+  // matches whatever the header bell shows, so the number is never
+  // unexplained: personal notifications for everyone, plus admin-wide
+  // alerts too for admins (NotificationBox merges both into one bell).
+  const { unreadCount: unreadPersonalCount } = useNotifications(isAuthenticated ? user?.id : undefined);
+  const { data: adminNotificationsForBadge } = useAdminNotifications(isAuthenticated && isAdmin);
+  const unreadAdminCount = isAdmin
+    ? (adminNotificationsForBadge || []).filter(n => {
+        const unread = !n.read_by || n.read_by.length === 0;
+        const notExpired = !n.expires_at || n.expires_at > new Date().toISOString();
+        return unread && notExpired;
+      }).length
+    : 0;
+  const unreadNotificationCount = unreadPersonalCount + unreadAdminCount;
   const previousUnreadCountRef = useRef<number | null>(null);
   useEffect(() => {
     setAppBadgeCount(isAuthenticated ? unreadNotificationCount : 0);
@@ -324,9 +341,10 @@ function LayoutContent() {
                   </button>
                 )}
 
-                {/* One bell for everyone: admins get the admin notification box,
-                    other roles get a bell linking to their Notifications page.
-                    (The old in-page dashboard bell was removed in favor of this.) */}
+                {/* One bell for everyone: admins get NotificationBox, which
+                    merges admin-wide alerts and personal notifications into
+                    a single feed; other roles get a bell for their personal
+                    notifications, linking to /notifications. */}
                 {isAdmin ? (
                   <div data-tour="notification-box" className="[&_button]:text-white [&_button:hover]:bg-white/[0.1]">
                     <NotificationBox />

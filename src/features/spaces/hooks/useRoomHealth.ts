@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useCourtIssuesIntegration, type CourtIssue } from "@features/court/hooks/useCourtIssuesIntegration";
+import { useSpaceFixtures } from "@features/lighting/hooks/useLightingData";
 import { differenceInDays } from "date-fns";
 
 export type RoomHealthLevel = "good" | "attention" | "critical";
@@ -13,6 +14,7 @@ export interface RoomHealth {
   latestIssue?: CourtIssue;
   latestIssueDaysAgo?: number;
   prolongedIssues: CourtIssue[];
+  fixturesOutCount: number;
 }
 
 const PROLONGED_DAYS = 7;
@@ -23,6 +25,7 @@ const isUrgent = (priority?: string) =>
 export function useRoomHealth(roomId: string): RoomHealth {
   const { getIssuesForRoom } = useCourtIssuesIntegration();
   const openIssues = getIssuesForRoom(roomId);
+  const { data: fixtures = [] } = useSpaceFixtures(roomId, "room");
 
   return useMemo(() => {
     const now = new Date();
@@ -41,14 +44,23 @@ export function useRoomHealth(roomId: string): RoomHealth {
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )[0];
 
+    const outFixtures = fixtures.filter((f) => f.status && f.status !== "functional");
+    const fixturesOutCount = outFixtures.length;
+    const fixturesUrgentCount = outFixtures.filter(
+      (f) => f.requires_electrician || f.emergency_circuit
+    ).length;
+
+    const openCount = openIssues.length + fixturesOutCount;
+    const combinedUrgentCount = urgentCount + fixturesUrgentCount;
+
     let level: RoomHealthLevel = "good";
-    if (urgentCount > 0 || prolonged.length >= 2) level = "critical";
-    else if (openIssues.length > 0 || prolonged.length === 1) level = "attention";
+    if (combinedUrgentCount > 0 || prolonged.length >= 2) level = "critical";
+    else if (openCount > 0 || prolonged.length === 1) level = "attention";
 
     return {
       level,
-      openCount: openIssues.length,
-      urgentCount,
+      openCount,
+      urgentCount: combinedUrgentCount,
       prolongedCount: prolonged.length,
       oldestProlongedDays,
       latestIssue: latest,
@@ -56,6 +68,7 @@ export function useRoomHealth(roomId: string): RoomHealth {
         ? differenceInDays(now, new Date(latest.created_at))
         : undefined,
       prolongedIssues: prolonged.map((x) => x.issue),
+      fixturesOutCount,
     };
-  }, [openIssues]);
+  }, [openIssues, fixtures]);
 }

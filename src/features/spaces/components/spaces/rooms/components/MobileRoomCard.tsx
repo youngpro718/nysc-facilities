@@ -21,6 +21,7 @@ import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RoomQuickEditSheet } from "../../RoomQuickEditSheet";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
+import { LightingQuickToggle } from "./LightingQuickToggle";
 
 interface MobileRoomCardProps {
   room: Room;
@@ -234,7 +235,15 @@ export function MobileRoomCard({ room, onDelete, onRoomClick }: MobileRoomCardPr
                       </span>
                     </div>
                   )}
-                  
+
+                  {canManageSpaces && (
+                    <LightingQuickToggle
+                      roomId={room.id}
+                      floorId={room.floor_id}
+                      buildingId={room.floor?.building?.id}
+                    />
+                  )}
+
                 </div>
               </div>
 

@@ -29,26 +29,30 @@ export default function TermSheet() {
         )}
       </PageHeader>
 
-      <Tabs defaultValue="assignments" className="space-y-4">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="assignments" className="gap-2">
-            <FileTextIcon className="h-4 w-4" />
-            Term assignments
-          </TabsTrigger>
-          <TabsTrigger value="personnel" className="gap-2">
-            <PersonIcon className="h-4 w-4" />
-            Key personnel
-          </TabsTrigger>
-        </TabsList>
+      {canEdit ? (
+        <Tabs defaultValue="assignments" className="space-y-4">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="assignments" className="gap-2">
+              <FileTextIcon className="h-4 w-4" />
+              Term assignments
+            </TabsTrigger>
+            <TabsTrigger value="personnel" className="gap-2">
+              <PersonIcon className="h-4 w-4" />
+              Key personnel
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="assignments" className="mt-0">
-          <TermSheetBoard isAdmin={canEdit} />
-        </TabsContent>
+          <TabsContent value="assignments" className="mt-0">
+            <TermSheetBoard isAdmin={canEdit} />
+          </TabsContent>
 
-        <TabsContent value="personnel" className="mt-0">
-          <KeyPersonnelPanel canEdit={canEdit} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="personnel" className="mt-0">
+            <KeyPersonnelPanel canEdit={canEdit} />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <TermSheetBoard isAdmin={canEdit} />
+      )}
     </div>
   );
 }

@@ -125,6 +125,27 @@ export interface RecordFixtureScanPayload {
 }
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Generate the next `count` unused fixture labels (A1, A2, A3…) given the
+ * names already in use within a space.
+ */
+export function nextFixtureLabels(existing: string[], count = 1): string[] {
+  const used = new Set(existing);
+  const labels: string[] = [];
+  for (let i = 1; labels.length < count && i <= 999; i++) {
+    const candidate = `A${i}`;
+    if (!used.has(candidate)) {
+      labels.push(candidate);
+      used.add(candidate);
+    }
+  }
+  return labels;
+}
+
+// ============================================================================
 // Service Functions
 // ============================================================================
 

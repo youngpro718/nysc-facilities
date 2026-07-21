@@ -9,6 +9,7 @@ import { buildRoomInitialData } from "../utils/roomInitialData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RoomNotesPanel } from "./notes/RoomNotesPanel";
 import { WaterCoolerToggle } from "./WaterCoolerToggle";
+import { LightingQuickToggle } from "./LightingQuickToggle";
 import { useChildRoomCount } from "@features/spaces/hooks/useChildRooms";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 import { useRoomHealth } from "@features/spaces/hooks/useRoomHealth";
@@ -80,6 +81,14 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
                 waterCoolerCount={room.water_cooler_count ?? (room.has_water_cooler ? 1 : 0)}
                 waterCoolerNotes={room.water_cooler_notes}
               />
+
+              {canManageSpaces && (
+                <LightingQuickToggle
+                  roomId={room.id}
+                  floorId={room.floor_id}
+                  buildingId={room.floor?.building?.id}
+                />
+              )}
 
               {canManageSpaces && (
                 <div onClick={(e) => e.stopPropagation()}>
@@ -169,6 +178,11 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false, onQuickNo
                       {health.prolongedCount > 0 && (
                         <Badge variant="outline" className="text-xs border-amber-500 text-amber-700 dark:text-amber-400">
                           {health.prolongedCount} prolonged ({health.oldestProlongedDays}d)
+                        </Badge>
+                      )}
+                      {health.fixturesOutCount > 0 && (
+                        <Badge variant="outline" className="text-xs border-amber-500 text-amber-700 dark:text-amber-400">
+                          {health.fixturesOutCount} light{health.fixturesOutCount === 1 ? "" : "s"} out
                         </Badge>
                       )}
                     </div>

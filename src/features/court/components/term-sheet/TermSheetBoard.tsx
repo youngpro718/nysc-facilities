@@ -120,6 +120,97 @@ function writeOfflineCache(patch: Partial<OfflineCache>) {
   }
 }
 
+// ── Term assignment fetch/join (shared by the live-term query and the
+//    carried-over preview query below) ─────────────────────────────────────
+interface AssignmentRow {
+  id: string;
+  room_id: string;
+  part: string | null;
+  justice: string | null;
+  tel: string | null;
+  fax: string | null;
+  sergeant: string | null;
+  clerks: string[] | null;
+  calendar_day: string | null;
+  roster_changed_at: string | null;
+  sort_order: number | null;
+  updated_at: string | null;
+}
+interface RoomRow {
+  id: string;
+  room_id: string;
+  room_number: string;
+  courtroom_number: string | null;
+  is_active: boolean;
+  rooms: { id: string; name: string; room_number: string } | null;
+}
+
+async function joinAssignmentsWithRooms(rows: AssignmentRow[]): Promise<TermAssignment[]> {
+  const { data: roomsData, error: roomsError } = await supabase
+    .from("court_rooms")
+    .select(`id, room_id, room_number, courtroom_number, is_active, rooms:room_id(id, name, room_number)`);
+  if (roomsError) throw roomsError;
+
+  const roomMap = new Map<string, RoomRow>();
+  (roomsData || []).forEach((r: Record<string, unknown>) => {
+    roomMap.set(r.room_id as string, r as unknown as RoomRow);
+  });
+
+  return rows
+    .map((a) => {
+      const cr = roomMap.get(a.room_id);
+      if (!cr || !cr.is_active) return null;
+      const liveRoomNumber =
+        (cr.rooms as { room_number?: string } | null)?.room_number ||
+        cr.room_number ||
+        cr.courtroom_number ||
+        '—';
+      return {
+        id: a.id,
+        room_id: a.room_id,
+        part: a.part || '—',
+        justice: a.justice || '—',
+        room: liveRoomNumber,
+        tel: a.tel || '—',
+        fax: a.fax || '—',
+        sergeant: a.sergeant || '—',
+        clerks: Array.isArray(a.clerks) ? a.clerks.filter(c => c && c !== '—') : [],
+        calendar_day: a.calendar_day || null,
+        roster_changed_at: a.roster_changed_at ?? null,
+        sort_order: a.sort_order ?? 9999,
+        updated_at: a.updated_at ?? null,
+      } as TermAssignment;
+    })
+    .filter((r): r is TermAssignment => r !== null);
+}
+
+async function fetchAssignmentsForTerm(termId: string | null): Promise<TermAssignment[]> {
+  // Try fetching with term_id filter
+  let query = supabase
+    .from("court_assignments")
+    .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, roster_changed_at, sort_order, updated_at, term_id")
+    .order("sort_order");
+
+  if (termId) {
+    query = query.eq('term_id', termId);
+  }
+
+  const { data: assignmentsData, error: assignmentsError } = await query;
+
+  // If term_id column doesn't exist yet, fall back to unfiltered query
+  if (assignmentsError && assignmentsError.message?.includes('term_id')) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("court_assignments")
+      .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, roster_changed_at, sort_order, updated_at")
+      .order("sort_order");
+    if (fallbackError) throw fallbackError;
+    return joinAssignmentsWithRooms((fallbackData || []) as AssignmentRow[]);
+  }
+
+  if (assignmentsError) throw assignmentsError;
+  return joinAssignmentsWithRooms((assignmentsData || []) as AssignmentRow[]);
+}
+
 type ViewMode = 'table' | 'cards';
 
 // ── Sortable table row ────────────────────────────────────────────────────────
@@ -579,6 +670,9 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
       if (!selectedTermId) throw new Error('Select a term first');
       if (!newPartLabel.trim()) throw new Error('Part name is required');
       if (!newPartRoomId) throw new Error('Pick a courtroom');
+      // Adding a part to a carried-over preview must not leave the rest of
+      // the previewed roster unsaved — materialize the whole term first.
+      if (isCarriedOver) await materializeCarriedOverTerm();
       const maxSort = sortedList.reduce((m, a) => Math.max(m, a.sort_order ?? 0), 0);
       const { error } = await supabase.from('court_assignments').insert({
         term_id: selectedTermId,
@@ -612,95 +706,9 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const { data: assignments = EMPTY_ASSIGNMENTS, isLoading } = useQuery({
     queryKey: ['term-sheet-board', selectedTermId],
     queryFn: async () => {
-      // Helper: join raw assignment rows with live room data
-      interface AssignmentRow {
-        id: string;
-        room_id: string;
-        part: string | null;
-        justice: string | null;
-        tel: string | null;
-        fax: string | null;
-        sergeant: string | null;
-        clerks: string[] | null;
-        calendar_day: string | null;
-        roster_changed_at: string | null;
-        sort_order: number | null;
-        updated_at: string | null;
-      }
-      interface RoomRow {
-        id: string;
-        room_id: string;
-        room_number: string;
-        courtroom_number: string | null;
-        is_active: boolean;
-        rooms: { id: string; name: string; room_number: string } | null;
-      }
-
-      const joinWithRooms = async (rows: AssignmentRow[]): Promise<TermAssignment[]> => {
-        const { data: roomsData, error: roomsError } = await supabase
-          .from("court_rooms")
-          .select(`id, room_id, room_number, courtroom_number, is_active, rooms:room_id(id, name, room_number)`);
-        if (roomsError) throw roomsError;
-
-        const roomMap = new Map<string, RoomRow>();
-        (roomsData || []).forEach((r: Record<string, unknown>) => {
-          roomMap.set(r.room_id as string, r as unknown as RoomRow);
-        });
-
-        return rows
-          .map((a) => {
-            const cr = roomMap.get(a.room_id);
-            if (!cr || !cr.is_active) return null;
-            const liveRoomNumber =
-              (cr.rooms as { room_number?: string } | null)?.room_number ||
-              cr.room_number ||
-              cr.courtroom_number ||
-              '—';
-            return {
-              id: a.id,
-              room_id: a.room_id,
-              part: a.part || '—',
-              justice: a.justice || '—',
-              room: liveRoomNumber,
-              tel: a.tel || '—',
-              fax: a.fax || '—',
-              sergeant: a.sergeant || '—',
-              clerks: Array.isArray(a.clerks) ? a.clerks.filter(c => c && c !== '—') : [],
-              calendar_day: a.calendar_day || null,
-              roster_changed_at: a.roster_changed_at ?? null,
-              sort_order: a.sort_order ?? 9999,
-              updated_at: a.updated_at ?? null,
-            } as TermAssignment;
-          })
-          .filter((r): r is TermAssignment => r !== null);
-      };
-
       const cacheSlot = selectedTermId ?? 'all';
       try {
-        // Try fetching with term_id filter
-        let query = supabase
-          .from("court_assignments")
-          .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, roster_changed_at, sort_order, updated_at, term_id")
-          .order("sort_order");
-
-        if (selectedTermId) {
-          query = query.eq('term_id', selectedTermId);
-        }
-
-        const { data: assignmentsData, error: assignmentsError } = await query;
-
-        // If term_id column doesn't exist yet, fall back to unfiltered query
-        if (assignmentsError && assignmentsError.message?.includes('term_id')) {
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from("court_assignments")
-            .select("id, room_id, part, justice, tel, fax, sergeant, clerks, calendar_day, roster_changed_at, sort_order, updated_at")
-            .order("sort_order");
-          if (fallbackError) throw fallbackError;
-          return joinWithRooms((fallbackData || []) as AssignmentRow[]);
-        }
-
-        if (assignmentsError) throw assignmentsError;
-        const joined = await joinWithRooms((assignmentsData || []) as AssignmentRow[]);
+        const joined = await fetchAssignmentsForTerm(selectedTermId);
         writeOfflineCache({
           assignments: { ...(readOfflineCache()?.assignments ?? {}), [cacheSlot]: joined },
         });
@@ -718,11 +726,68 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
     staleTime: 1000 * 30,
   });
 
+  // ── Carried-over preview ────────────────────────────────────────────────
+  // When the selected term has no assignments yet, show the most recent
+  // earlier term's roster (copySource, below) as an unsaved preview instead
+  // of a blank board. Nothing is written to the DB until an actual edit
+  // happens — see materializeCarriedOverTerm().
+  const isEmptyTerm = !isLoading && assignments.length === 0;
+  const { data: previewAssignments = EMPTY_ASSIGNMENTS } = useQuery({
+    queryKey: ['term-sheet-board', copySource?.id ?? 'none', 'preview'],
+    queryFn: () => fetchAssignmentsForTerm(copySource!.id),
+    enabled: isEmptyTerm && !!copySource,
+    staleTime: 1000 * 30,
+  });
+  const isCarriedOver = isEmptyTerm && !!copySource && previewAssignments.length > 0;
+
   useEffect(() => {
-    // Unconditional: an empty term must clear the board, not keep showing the
-    // previously selected term's rows
-    setSortedList(assignments);
-  }, [assignments]);
+    // An empty term with no earlier roster to fall back on must clear the
+    // board, not keep showing the previously selected term's rows.
+    setSortedList(isCarriedOver ? previewAssignments : assignments);
+  }, [assignments, previewAssignments, isCarriedOver]);
+
+  const [materializing, setMaterializing] = useState(false);
+
+  // Copies the previewed roster into real court_assignments rows for the
+  // selected (currently empty) term, then returns the freshly-saved rows.
+  const materializeCarriedOverTerm = async (): Promise<TermAssignment[]> => {
+    if (!currentTerm || !copySource) return assignments;
+    await copyFromPrevMutation.mutateAsync();
+    const fresh = await fetchAssignmentsForTerm(currentTerm.id);
+    queryClient.setQueryData(['term-sheet-board', currentTerm.id], fresh);
+    return fresh;
+  };
+
+  const toEditableAssignment = (a: TermAssignment): EditableAssignment => ({
+    id: a.id, part: a.part, justice: a.justice, room: a.room, room_id: a.room_id,
+    tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
+    calendar_day: a.calendar_day,
+  });
+
+  // Editing a previewed (carried-over) row must never write to the source
+  // term's rows — materialize real rows for this term first, then open the
+  // dialog against the matching new row.
+  const openEditForRow = async (row: TermAssignment) => {
+    if (materializing) return;
+    if (!isCarriedOver) {
+      setEditingAssignment(toEditableAssignment(row));
+      return;
+    }
+    setMaterializing(true);
+    try {
+      const materialized = await materializeCarriedOverTerm();
+      const match = materialized.find(m => m.part === row.part && m.room_id === row.room_id);
+      setEditingAssignment(toEditableAssignment(match ?? materialized[0] ?? row));
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Could not start this term',
+        description: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setMaterializing(false);
+    }
+  };
 
   // ── Save sort order mutation (optimistic) ─────────────────────────────────
   const saveSortOrder = useMutation({
@@ -813,6 +878,24 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+
+    if (isCarriedOver) {
+      if (materializing) return;
+      // Rows on screen belong to the earlier term — reordering them directly
+      // would corrupt that term's sheet. Materialize this term first; the
+      // user can drag again once the board is showing real, reorderable rows.
+      setMaterializing(true);
+      materializeCarriedOverTerm()
+        .then((materialized) => {
+          toast({
+            title: `Started ${currentTerm?.name ?? 'this term'}`,
+            description: `Copied ${materialized.length} assignment${materialized.length !== 1 ? 's' : ''} from ${copySource?.name ?? 'the previous term'} — drag again to reorder.`,
+          });
+        })
+        .catch((err: Error) => toast({ variant: 'destructive', title: 'Could not start this term', description: err.message }))
+        .finally(() => setMaterializing(false));
+      return;
+    }
 
     setSortedList(prev => {
       const oldIndex = prev.findIndex(a => a.id === active.id);
@@ -1102,13 +1185,13 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
           {/* Admin: calendar upkeep — copy roster into an empty term, prep next year, clear prior years */}
           {isAdmin && (
             <div className="mt-2 pt-2 border-t border-primary/10 flex flex-wrap items-center justify-end gap-2">
-              {!isLoading && sortedList.length === 0 && copySource && (
+              {isCarriedOver && copySource && (
                 <Button variant="outline" size="sm" className="h-7 text-xs"
                   onClick={() => copyFromPrevMutation.mutate()}
                   disabled={copyFromPrevMutation.isPending}
                 >
                   {copyFromPrevMutation.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Copy className="h-3 w-3 mr-1" />}
-                  Copy assignments from {copySource.name}
+                  Save {copySource.name}'s roster for this term now
                 </Button>
               )}
               {clearableTerms.length > 0 && (
@@ -1129,6 +1212,18 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Carried-over preview: this term has no saved roster yet, so we're
+          showing the prior term's assignments as an unsaved starting point */}
+      {isCarriedOver && currentTerm && copySource && (
+        <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
+          <Copy className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            Nothing saved yet for {currentTerm.name} — showing {copySource.name}'s roster as a starting point.
+            {isAdmin ? ' Nothing is saved until you edit a row.' : ' Check back once court administration makes changes.'}
+          </span>
         </div>
       )}
 
@@ -1294,11 +1389,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                                 setPreviewIssueId(issues[0].id);
                               }
                             }}
-                            onEditClick={() => setEditingAssignment({
-                              id: a.id, part: a.part, justice: a.justice, room: a.room, room_id: a.room_id,
-                              tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
-                              calendar_day: a.calendar_day,
-                            })}
+                            onEditClick={() => openEditForRow(a)}
                           />
                         ))}
                       </SortableContext>
@@ -1354,11 +1445,7 @@ export const TermSheetBoard: React.FC<TermSheetBoardProps> = ({ isAdmin = true }
                       <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">Rm {a.room}</Badge>
                       {isAdmin && (
                         <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Edit assignment"
-                          onClick={() => setEditingAssignment({
-                            id: a.id, part: a.part, justice: a.justice, room: a.room, room_id: a.room_id,
-                            tel: a.tel, fax: a.fax, sergeant: a.sergeant, clerks: a.clerks,
-                            calendar_day: a.calendar_day,
-                          })}>
+                          onClick={() => openEditForRow(a)}>
                           <Pencil className="h-3 w-3" />
                         </Button>
                       )}
