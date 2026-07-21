@@ -1,7 +1,7 @@
 {
   "name": "nysc-facilities-management",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "description": "NYSC Facilities Management System - Comprehensive facility, operations, and court management platform",
   "scripts": {

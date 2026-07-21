@@ -15,6 +15,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.0",
+    date: "2026-07-21",
+    title: "Lighting outage reporting, notification bell fix, and permission cleanup",
+    highlights: [
+      "Room cards now reflect lighting fixture outages — marking a light \"Out\" actually shows up as \"Needs attention\" instead of staying \"All clear\".",
+      "New one-tap lighting toggle on room cards to report a light out (or set up a room's fixtures for the first time) without opening the full editor.",
+      "Fixed the notification bell for admins: it was showing a completely different count than the taskbar badge, with no way to see or clear what the badge was counting. Personal and admin notifications are now merged into one bell with one combined \"Mark all read\" / \"Clear all\".",
+      "Term sheet: navigating to a term with no saved roster now shows the previous term's assignments as a carried-over preview instead of a blank board — nothing saves until you actually edit something.",
+      "Key Personnel roster on the term sheet is now hidden from non-admins.",
+      "\"Manage Categories\" on the inventory page is now admin-only.",
+      "Fixed a bug preventing deletion of user accounts that had ever created or edited a room or building.",
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-07-20",
     title: "Notifications overhaul, maintenance workbench fix, and a big bug-fix pass",
