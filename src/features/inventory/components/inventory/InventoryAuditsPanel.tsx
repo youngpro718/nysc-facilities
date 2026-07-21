@@ -186,7 +186,7 @@ export function InventoryAuditsPanel() {
   const exportCSV = () => {
     const rows = filteredTransactions.map(t => ({
       id: t.id,
-      date: new Date(t.created_at).toISOString(),
+      date: format(new Date(t.created_at), 'yyyy-MM-dd HH:mm'),
       item_name: t.item_name,
       transaction_type: t.transaction_type,
       quantity: t.quantity,
@@ -285,12 +285,6 @@ export function InventoryAuditsPanel() {
           <p className="text-sm text-muted-foreground">
             Track all inventory changes and transactions
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
         </div>
       </div>
 

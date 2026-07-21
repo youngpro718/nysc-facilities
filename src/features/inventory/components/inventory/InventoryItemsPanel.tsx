@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Upload, Camera, ArrowRightLeft, X } from "lucide-react";
+import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Upload, Camera, ArrowRightLeft, X, FileSpreadsheet, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -108,6 +108,7 @@ export const InventoryItemsPanel = () => {
   const [sortKey, setSortKey] = useState<"name" | "quantity" | "updated_at">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [exporting, setExporting] = useState(false);
+  const [exportingReport, setExportingReport] = useState(false);
   const [importing, setImporting] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState<{ id: string; name: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -420,33 +421,43 @@ export const InventoryItemsPanel = () => {
     setDeleteItemId({ id: item.id, name: item.name });
   };
 
+  // Shared by both export buttons: the same search/category/room filters
+  // currently applied to the on-screen list, fetched in full (not just the
+  // current page).
+  const fetchExportRows = async (): Promise<InventoryItem[]> => {
+    let query = supabase
+      .from("inventory_items")
+      .select("*")
+      .range(0, 9999);
+
+    if (debouncedSearch) {
+      // Quote the value so names with PostgREST-special chars — ( ) , — don't break
+      // the or() filter (e.g. "Batteries (AA)" was returning zero results). Strip any
+      // stray quotes/backslashes first so they can't escape the quoted value.
+      const safe = debouncedSearch.replace(/["\\]/g, " ").trim();
+      query = query.or(`name.ilike."%${safe}%",description.ilike."%${safe}%"`);
+    }
+    if (selectedCategory && selectedCategory !== "all") {
+      query = query.eq("category_id", selectedCategory);
+    }
+    if (selectedRoom && selectedRoom !== "all") {
+      query = query.eq("storage_room_id", selectedRoom);
+    }
+    query = query.order(sortKey, { ascending: sortDir === "asc" });
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data as InventoryItem[] | null) ?? [];
+  };
+
+  // Plain flat CSV — the format handleImportCsv reads back, so this stays a
+  // simple one-row-per-item sheet for bulk editing in a spreadsheet and
+  // re-importing. "Last Updated" is a plain date (no time-of-day/ms) since
+  // nothing here needs finer precision than "which day."
   const handleExportCsv = async () => {
     try {
       setExporting(true);
-      // Fetch all matching rows (cap at 10k)
-      let query = supabase
-        .from("inventory_items")
-        .select("*")
-        .range(0, 9999);
-
-      if (debouncedSearch) {
-        // Quote the value so names with PostgREST-special chars — ( ) , — don't break
-        // the or() filter (e.g. "Batteries (AA)" was returning zero results). Strip any
-        // stray quotes/backslashes first so they can't escape the quoted value.
-        const safe = debouncedSearch.replace(/["\\]/g, " ").trim();
-        query = query.or(`name.ilike."%${safe}%",description.ilike."%${safe}%"`);
-      }
-      if (selectedCategory && selectedCategory !== "all") {
-        query = query.eq("category_id", selectedCategory);
-      }
-      if (selectedRoom && selectedRoom !== "all") {
-        query = query.eq("storage_room_id", selectedRoom);
-      }
-      query = query.order(sortKey, { ascending: sortDir === "asc" });
-
-      const { data, error } = await query;
-      if (error) throw error;
-      const rows = (data as InventoryItem[] | null) ?? [];
+      const rows = await fetchExportRows();
 
       const csvRows: Record<string, unknown>[] = rows.map((it) => {
         const cat = categoriesById.get(it.category_id);
@@ -459,7 +470,7 @@ export const InventoryItemsPanel = () => {
           Category: cat?.name ?? "",
           Room: room?.name ?? "",
           RoomNumber: room?.room_number ?? "",
-          UpdatedAt: it.updated_at,
+          "Last Updated": it.updated_at ? it.updated_at.slice(0, 10) : "",
         };
       });
 
@@ -481,7 +492,7 @@ export const InventoryItemsPanel = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `inventory_items_export_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+      a.download = `inventory_items_export_${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
 
@@ -490,6 +501,149 @@ export const InventoryItemsPanel = () => {
       toast({ variant: "destructive", title: "Export failed", description: (error as any)?.message ?? String(error) });
     } finally {
       setExporting(false);
+    }
+  };
+
+  // ── Styled Excel report (read-only) ──────────────────────────────────
+  // The CSV export above is one flat row per item, so the same toner (or
+  // any item stocked in several supply rooms) shows up once per room with
+  // no visual grouping — which reads as "so many duplicate toners" rather
+  // than what it actually is: real per-room stock. This report groups by
+  // room with a banner + subtotal, borders, and a styled header — the same
+  // clean, printable look as the Rooms page's "Simple List" export.
+  const handleExportReport = async () => {
+    try {
+      setExportingReport(true);
+      const rows = await fetchExportRows();
+      if (rows.length === 0) {
+        toast({ title: "Nothing to export", description: "No items match the current filters." });
+        return;
+      }
+
+      const byRoom = new Map<string, InventoryItem[]>();
+      rows.forEach((it) => {
+        const key = it.storage_room_id || "unassigned";
+        const list = byRoom.get(key);
+        if (list) list.push(it);
+        else byRoom.set(key, [it]);
+      });
+
+      const roomLabel = (key: string) => {
+        if (key === "unassigned") return "Unassigned Room";
+        const room = roomsById.get(key);
+        return room ? `${room.name}${room.room_number ? ` (Room ${room.room_number})` : ""}` : "Unknown Room";
+      };
+
+      const sortedRoomKeys = Array.from(byRoom.keys()).sort((a, b) =>
+        roomLabel(a).localeCompare(roomLabel(b), undefined, { numeric: true })
+      );
+      sortedRoomKeys.forEach((key) => {
+        byRoom.get(key)!.sort((a, b) => a.name.localeCompare(b.name));
+      });
+
+      const ExcelJSLib = (await import("exceljs")).default;
+      const wb = new ExcelJSLib.Workbook();
+      const ws = wb.addWorksheet("Inventory");
+
+      const columns: { header: string; key: string; width: number }[] = [
+        { header: "Item", key: "name", width: 34 },
+        { header: "Category", key: "category", width: 22 },
+        { header: "Quantity", key: "quantity", width: 12 },
+        { header: "Unit", key: "unit", width: 12 },
+        { header: "Minimum", key: "minimum", width: 12 },
+        { header: "Last Updated", key: "updated", width: 16 },
+      ];
+      ws.columns = columns;
+      const colCount = columns.length;
+
+      const thin = { style: "thin" as const, color: { argb: "FFB0B0B0" } };
+      const allBorders = { top: thin, left: thin, bottom: thin, right: thin };
+      const navy = "FF1F3864";
+      const totalFill = "FF2E7D32";
+      const lowStockText = "FFB91C1C";
+
+      const headerRow = ws.getRow(1);
+      columns.forEach((c, i) => { headerRow.getCell(i + 1).value = c.header; });
+      headerRow.font = { bold: true };
+      headerRow.eachCell((cell) => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9D9D9" } };
+        cell.border = allBorders;
+      });
+      ws.views = [{ state: "frozen", ySplit: 1 }];
+
+      let grandItems = 0;
+      let grandQuantity = 0;
+
+      for (const key of sortedRoomKeys) {
+        const items = byRoom.get(key)!;
+
+        const bannerRow = ws.addRow([roomLabel(key)]);
+        ws.mergeCells(bannerRow.number, 1, bannerRow.number, colCount);
+        for (let c = 1; c <= colCount; c++) {
+          const cell = bannerRow.getCell(c);
+          cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: navy } };
+          cell.border = allBorders;
+        }
+
+        let roomQuantity = 0;
+        for (const it of items) {
+          const cat = categoriesById.get(it.category_id);
+          const lowStock = it.minimum_quantity != null && it.quantity <= it.minimum_quantity;
+          roomQuantity += it.quantity;
+
+          const row = ws.addRow({
+            name: it.name,
+            category: cat?.name ?? "",
+            quantity: it.quantity,
+            unit: it.unit || "",
+            minimum: it.minimum_quantity ?? "",
+            updated: it.updated_at ? it.updated_at.slice(0, 10) : "",
+          });
+          row.eachCell({ includeEmpty: true }, (cell) => { cell.border = allBorders; });
+          if (lowStock) {
+            row.getCell(3).font = { bold: true, color: { argb: lowStockText } };
+          }
+        }
+
+        grandItems += items.length;
+        grandQuantity += roomQuantity;
+
+        const subtotalRow = ws.addRow({ name: "", category: "", quantity: roomQuantity, unit: "", minimum: "", updated: "" });
+        ws.mergeCells(subtotalRow.number, 1, subtotalRow.number, 2);
+        subtotalRow.getCell(1).value = `${items.length} item${items.length === 1 ? "" : "s"} — Subtotal`;
+        for (let c = 1; c <= colCount; c++) {
+          const cell = subtotalRow.getCell(c);
+          cell.font = { bold: true };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFEFEF" } };
+          cell.border = allBorders;
+        }
+      }
+
+      const totalRow = ws.addRow({ name: "", category: "", quantity: grandQuantity, unit: "", minimum: "", updated: "" });
+      ws.mergeCells(totalRow.number, 1, totalRow.number, 2);
+      totalRow.getCell(1).value = `${grandItems} item${grandItems === 1 ? "" : "s"} — GRAND TOTAL`;
+      for (let c = 1; c <= colCount; c++) {
+        const cell = totalRow.getCell(c);
+        cell.font = { bold: true, size: 12, color: { argb: "FFFFFFFF" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: totalFill } };
+        cell.border = allBorders;
+      }
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `inventory_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({ title: "Export complete", description: `Exported ${grandItems} items across ${sortedRoomKeys.length} room${sortedRoomKeys.length === 1 ? "" : "s"}.` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Export failed", description: (error as any)?.message ?? String(error) });
+    } finally {
+      setExportingReport(false);
     }
   };
 
@@ -804,7 +958,23 @@ export const InventoryItemsPanel = () => {
           >
             Reset
           </Button>
-          <Button variant="outline" onClick={handleExportCsv} disabled={exporting} className="w-full sm:w-auto touch-target">
+          <Button
+            variant="outline"
+            onClick={handleExportReport}
+            disabled={exportingReport}
+            className="w-full sm:w-auto touch-target"
+            title="A clean, grouped-by-room Excel report with subtotals — for printing or sharing. Matches your current filters."
+          >
+            {exportingReport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+            {exportingReport ? "Exporting..." : "Excel Report"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportCsv}
+            disabled={exporting}
+            className="w-full sm:w-auto touch-target"
+            title="Flat CSV for bulk editing — re-import it to update quantities and fields."
+          >
             <Download className="h-4 w-4 mr-2" />
             {exporting ? "Exporting..." : "Export CSV"}
           </Button>

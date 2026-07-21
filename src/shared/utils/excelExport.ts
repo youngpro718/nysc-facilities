@@ -20,6 +20,47 @@ export const sanitizeForExcel = (value: unknown): unknown => {
 };
 
 /**
+ * Border + header styling shared by every sheet this module writes, so a
+ * "water groups"-style clean look (bold header, thin grid, frozen header
+ * row) is the default everywhere rather than something each export
+ * reimplements.
+ */
+const THIN_BORDER = { style: 'thin' as const, color: { argb: 'FFB0B0B0' } };
+const ALL_BORDERS = { top: THIN_BORDER, left: THIN_BORDER, bottom: THIN_BORDER, right: THIN_BORDER };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function styleWorksheet(worksheet: any, data: Record<string, unknown>[]) {
+  // Auto-fit columns
+  worksheet.columns.forEach((column: { eachCell?: (opts: { includeEmpty: boolean }, cb: (cell: { value: unknown }) => void) => void; width?: number }) => {
+    let maxLength = 0;
+    column.eachCell?.({ includeEmpty: true }, cell => {
+      const cellValue = cell.value ? cell.value.toString() : '';
+      maxLength = Math.max(maxLength, cellValue.length);
+    });
+    column.width = Math.min(maxLength + 2, 50); // Max width of 50
+  });
+
+  // Style header row
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { bold: true };
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFE0E0E0' }
+  };
+
+  // Thin borders on every populated cell, header included, so the sheet
+  // reads as a clean grid instead of loose text on a blank background.
+  for (let i = 1; i <= data.length + 1; i++) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    worksheet.getRow(i).eachCell({ includeEmpty: true }, (cell: any) => { cell.border = ALL_BORDERS; });
+  }
+
+  // Freeze the header row so it stays visible while scrolling a long sheet.
+  worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+}
+
+/**
  * Export data to Excel file
  * @param data Array of objects to export
  * @param filename Name of the file (without extension)
@@ -40,42 +81,26 @@ export const exportToExcel = async (
   const worksheet = workbook.addWorksheet(sheetName);
 
   // Get headers from first object
-  const headers = Object.keys(data[0]);
-  
+  const headers = Object.keys(data[0] as Record<string, unknown>);
+
   // Add header row
   worksheet.addRow(headers);
-  
-  // Style header row
-  const headerRow = worksheet.getRow(1);
-  headerRow.font = { bold: true };
-  headerRow.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' }
-  };
 
   // Add data rows with sanitization
-  data.forEach(item => {
+  const rows = data as Record<string, unknown>[];
+  rows.forEach(item => {
     const row = headers.map(header => sanitizeForExcel(item[header]));
     worksheet.addRow(row);
   });
 
-  // Auto-fit columns
-  worksheet.columns.forEach(column => {
-    let maxLength = 0;
-    column.eachCell?.({ includeEmpty: true }, cell => {
-      const cellValue = cell.value ? cell.value.toString() : '';
-      maxLength = Math.max(maxLength, cellValue.length);
-    });
-    column.width = Math.min(maxLength + 2, 50); // Max width of 50
-  });
+  styleWorksheet(worksheet, rows);
 
   // Generate buffer and download
   const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { 
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
-  
+
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -102,35 +127,19 @@ export const exportMultipleSheets = async (
     if (!sheet.data || sheet.data.length === 0) continue;
 
     const worksheet = workbook.addWorksheet(sheet.name);
-    const headers = Object.keys(sheet.data[0]);
-    
+    const rows = sheet.data as Record<string, unknown>[];
+    const headers = Object.keys(rows[0]);
+
     // Add header row
     worksheet.addRow(headers);
-    
-    // Style header row
-    const headerRow = worksheet.getRow(1);
-    headerRow.font = { bold: true };
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE0E0E0' }
-    };
 
     // Add data rows
-    sheet.data.forEach(item => {
+    rows.forEach(item => {
       const row = headers.map(header => sanitizeForExcel(item[header]));
       worksheet.addRow(row);
     });
 
-    // Auto-fit columns
-    worksheet.columns.forEach(column => {
-      let maxLength = 0;
-      column.eachCell?.({ includeEmpty: true }, cell => {
-        const cellValue = cell.value ? cell.value.toString() : '';
-        maxLength = Math.max(maxLength, cellValue.length);
-      });
-      column.width = Math.min(maxLength + 2, 50);
-    });
+    styleWorksheet(worksheet, rows);
   }
 
   // Generate buffer and download
