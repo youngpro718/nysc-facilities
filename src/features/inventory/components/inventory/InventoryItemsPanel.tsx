@@ -80,9 +80,12 @@ type Room = {
 };
 
 export const InventoryItemsPanel = () => {
-  const { canWrite: canWriteFeature, canAdmin: canAdminFeature } = useRolePermissions();
+  const { canWrite: canWriteFeature, canAdmin: canAdminFeature, isAdmin } = useRolePermissions();
   const canEdit = canWriteFeature('inventory');
   const canDelete = canAdminFeature('inventory');
+  // Category management is stricter than general inventory admin — court_aide/purchasing
+  // get inventory:'admin' for item CRUD, but categories are structural and admin-only.
+  const canManageCategories = isAdmin;
   const [searchQuery, setSearchQuery] = useState("");
   // Debounced value that actually drives the query. Typing updates `searchQuery`
   // (and the input) instantly, but the query key only changes after a short pause,
@@ -682,7 +685,7 @@ export const InventoryItemsPanel = () => {
             <span className="sm:hidden">Add</span>
           </Button>
         )}
-        {canDelete && (
+        {canManageCategories && (
           <Button
             variant="outline"
             onClick={() => setManageCategoriesOpen(true)}
