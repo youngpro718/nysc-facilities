@@ -425,9 +425,14 @@ export const InventoryItemsPanel = () => {
   // currently applied to the on-screen list, fetched in full (not just the
   // current page).
   const fetchExportRows = async (): Promise<InventoryItem[]> => {
+    // Same "hide inactive" rule as the on-screen list (line ~164) — soft-deleted
+    // items (renamed/removed but kept for transaction history via the delete
+    // fallback below) must not resurface in an export just because this query
+    // forgot the filter the list query already applies.
     let query = supabase
       .from("inventory_items")
       .select("*")
+      .neq("status", "inactive")
       .range(0, 9999);
 
     if (debouncedSearch) {
@@ -702,9 +707,13 @@ export const InventoryItemsPanel = () => {
       );
 
       // Preload existing items by (name+storage_room_id) so we upsert instead of duplicating.
+      // Excludes inactive (soft-deleted) rows — matching against one would silently
+      // bump a dead row's quantity instead of the live item with the same name/room,
+      // without ever surfacing it (the list and export both hide inactive status).
       const { data: existingRows, error: existingErr } = await supabase
         .from("inventory_items")
         .select("id,name,storage_room_id")
+        .neq("status", "inactive")
         .range(0, 9999);
       if (existingErr) throw existingErr;
       const existingKey = (name: string, roomId: string | null) => `${name.trim().toLowerCase()}::${roomId ?? ""}`;
