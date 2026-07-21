@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, ClipboardList, PlayCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { LightingFixture } from '@/features/lighting/services/lightingService';
 import { FixtureDetailSheet } from './FixtureDetailSheet';
@@ -18,15 +18,37 @@ interface LightingFixtureTableProps {
   fixtures: LightingFixture[];
   isLoading: boolean;
   onRefresh: () => void;
+  /** Whether any fixtures at all are tracked system-wide — distinguishes
+   *  "nothing wrong" from "nothing tracked yet" in the empty state. */
+  hasTrackedFixtures?: boolean;
+  onStartWalkthrough?: () => void;
 }
 
-export function LightingFixtureTable({ fixtures, isLoading, onRefresh }: LightingFixtureTableProps) {
+export function LightingFixtureTable({ fixtures, isLoading, onRefresh, hasTrackedFixtures = true, onStartWalkthrough }: LightingFixtureTableProps) {
   const [selectedFixture, setSelectedFixture] = useState<LightingFixture | null>(null);
 
   if (isLoading) {
     return (
       <div className="p-8 text-center text-muted-foreground">
         Loading fixtures...
+      </div>
+    );
+  }
+
+  if (fixtures.length === 0 && !hasTrackedFixtures) {
+    return (
+      <div className="p-12 text-center">
+        <ClipboardList className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold mb-2">No fixtures tracked yet</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          This isn't "all clear" — nothing's been logged, so outages can't show up here yet.
+        </p>
+        {onStartWalkthrough && (
+          <Button size="sm" onClick={onStartWalkthrough}>
+            <PlayCircle className="h-4 w-4 mr-2" />
+            Start a walkthrough
+          </Button>
+        )}
       </div>
     );
   }
