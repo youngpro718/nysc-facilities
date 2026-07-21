@@ -113,7 +113,7 @@ export function LightingFixtureTable({ fixtures, isLoading, onRefresh, hasTracke
                   : '—'}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {fixture.scan_count > 0 ? `${fixture.scan_count} scans` : 'Never'}
+                {fixture.times_scanned > 0 ? `${fixture.times_scanned} scans` : 'Never'}
               </TableCell>
               <TableCell className="text-right">
                 <Button
