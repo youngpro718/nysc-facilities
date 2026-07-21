@@ -40,16 +40,26 @@ import { playNotificationSound } from "@/lib/notificationSound";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import type { UserRole } from "@/config/roles";
 
-/** Header bell for non-admin roles — unread count + link to /notifications. */
+/**
+ * Personal-notifications bell (room assignments, key request updates, task
+ * updates, etc. — the user_notifications table). This is also what drives
+ * the taskbar/dock badge count, so it needs to be visible for every role,
+ * not just non-admins — otherwise the badge shows a number nothing in the
+ * app explains or lets you clear.
+ */
 function UserNotificationBell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { unreadCount } = useNotifications(user?.id);
+  const label = unreadCount > 0
+    ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'} — click to view`
+    : "Notifications";
 
   return (
     <button
       onClick={() => navigate("/notifications")}
-      aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+      aria-label={label}
+      title={label}
       className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-white transition-colors hover:bg-white/[0.1]"
     >
       <Bell className="h-4 w-4" />
@@ -127,8 +137,9 @@ function LayoutContent() {
   const isPreviewActive = isAdmin && previewRole && previewRole !== 'admin' && previewRole !== 'system_admin';
 
   // Taskbar/dock icon badge + a short sound when new notifications arrive —
-  // works for every role (unlike the admin-only bell in the header), and
-  // keeps working while the installed app is minimized/backgrounded.
+  // mirrors the personal-notifications bell in the header (UserNotificationBell,
+  // rendered for every role) and keeps working while the installed app is
+  // minimized/backgrounded.
   const { unreadCount: unreadNotificationCount } = useNotifications(isAuthenticated ? user?.id : undefined);
   const previousUnreadCountRef = useRef<number | null>(null);
   useEffect(() => {
@@ -324,16 +335,17 @@ function LayoutContent() {
                   </button>
                 )}
 
-                {/* One bell for everyone: admins get the admin notification box,
-                    other roles get a bell linking to their Notifications page.
-                    (The old in-page dashboard bell was removed in favor of this.) */}
-                {isAdmin ? (
+                {/* Everyone gets the personal-notifications bell (also what
+                    drives the taskbar badge). Admins additionally get the
+                    admin notification box for system-wide alerts — these are
+                    two separate tables/streams, so admins need both, not one
+                    in place of the other. */}
+                {isAdmin && (
                   <div data-tour="notification-box" className="[&_button]:text-white [&_button:hover]:bg-white/[0.1]">
                     <NotificationBox />
                   </div>
-                ) : (
-                  <UserNotificationBell />
                 )}
+                <UserNotificationBell />
 
                 <div data-tour="theme-toggle" className="hidden sm:block [&_button]:text-white [&_button:hover]:bg-white/[0.1]">
                   <ThemeToggle />
