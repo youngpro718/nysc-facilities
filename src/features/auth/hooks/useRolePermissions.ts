@@ -65,7 +65,12 @@ export function useRolePermissions() {
   // Guard to prevent concurrent fetches
   const isFetchingRef = useRef(false);
   const hasFetchedRef = useRef(false);
-  const canPreviewRole = import.meta.env.DEV;
+  // Dev Mode's role-preview panel (DevModePanel) is shown to real admins in
+  // production, not just local dev builds — so the override it writes to
+  // localStorage must be honored everywhere, not gated to import.meta.env.DEV.
+  // (Each read below is further restricted to admin/system_admin real roles,
+  // so this alone doesn't grant anyone else the ability to escalate.)
+  const canPreviewRole = typeof window !== 'undefined';
   
   // Define role permissions mapping
   const rolePermissionsMap: Record<CourtRole, RolePermissions> = {
