@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Upload, Camera, ArrowRightLeft, X, FileSpreadsheet, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download, Upload, Camera, ArrowRightLeft, X, FileSpreadsheet, Loader2, ChevronDown, ChevronRight, Layers } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +27,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
@@ -65,6 +67,7 @@ type InventoryItem = {
   created_at: string;
   updated_at: string;
   requires_justification: boolean | null;
+  condition: string | null;
 };
 
 type InventoryCategory = {
@@ -116,6 +119,8 @@ export const InventoryItemsPanel = () => {
   const [bulkTransferOpen, setBulkTransferOpen] = useState(false);
   const [bulkTargetRoom, setBulkTargetRoom] = useState<string>("");
   const [selectingAll, setSelectingAll] = useState(false);
+  const [groupByItem, setGroupByItem] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -193,6 +198,7 @@ export const InventoryItemsPanel = () => {
       logger.debug('[InventoryItemsPanel] fetched', { totalCount: count, page, pageSize, itemsLength: normalized.length, searchQuery });
       return { items: normalized, total: count ?? 0 };
     },
+    enabled: !groupByItem,
     refetchOnWindowFocus: false,
     retry: 2,
     staleTime: 3 * 60 * 1000,
@@ -201,6 +207,90 @@ export const InventoryItemsPanel = () => {
     // panel (and the focused search box) never unmounts mid-typing.
     placeholderData: keepPreviousData,
   });
+
+  // Grouped view: pulls every item matching the current filters (not just one
+  // page) so items with the same name — e.g. the same file cabinets sitting in
+  // four different rooms — can be rolled up into one line showing the combined
+  // total, instead of reading like four unrelated/duplicate entries.
+  const { data: groupedRows, isLoading: groupedLoading } = useQuery<InventoryItem[]>({
+    queryKey: ["inventory-items-grouped", debouncedSearch, selectedCategory, selectedRoom],
+    enabled: groupByItem,
+    queryFn: async () => {
+      let query = supabase
+        .from("inventory_items")
+        .select("*")
+        .neq("status", "inactive")
+        .range(0, 9999);
+
+      if (debouncedSearch) {
+        const safe = debouncedSearch.replace(/["\\]/g, " ").trim();
+        query = query.or(`name.ilike."%${safe}%",description.ilike."%${safe}%"`);
+      }
+      if (selectedCategory && selectedCategory !== "all") {
+        query = query.eq("category_id", selectedCategory);
+      }
+      if (selectedRoom && selectedRoom !== "all") {
+        query = query.eq("storage_room_id", selectedRoom);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as InventoryItem[];
+    },
+    refetchOnWindowFocus: false,
+    retry: 2,
+    staleTime: 2 * 60 * 1000,
+    gcTime: QUERY_CONFIG.gc.short,
+  });
+
+  type ItemGroup = {
+    key: string;
+    name: string;
+    items: InventoryItem[];
+    totalQuantity: number;
+    totalMinimum: number;
+    newQuantity: number;
+    usedQuantity: number;
+    roomIds: Set<string>;
+  };
+
+  const itemGroups = useMemo<ItemGroup[]>(() => {
+    if (!groupByItem || !groupedRows) return [];
+    const map = new Map<string, ItemGroup>();
+    for (const it of groupedRows) {
+      const key = it.name.trim().toLowerCase();
+      let group = map.get(key);
+      if (!group) {
+        group = {
+          key,
+          name: it.name.trim(),
+          items: [],
+          totalQuantity: 0,
+          totalMinimum: 0,
+          newQuantity: 0,
+          usedQuantity: 0,
+          roomIds: new Set(),
+        };
+        map.set(key, group);
+      }
+      group.items.push(it);
+      group.totalQuantity += it.quantity || 0;
+      group.totalMinimum += it.minimum_quantity || 0;
+      if (it.condition === "used") group.usedQuantity += it.quantity || 0;
+      else group.newQuantity += it.quantity || 0;
+      if (it.storage_room_id) group.roomIds.add(it.storage_room_id);
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [groupByItem, groupedRows]);
+
+  const toggleGroupExpanded = (key: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
@@ -469,6 +559,7 @@ export const InventoryItemsPanel = () => {
         const room = roomsById.get(it.storage_room_id);
         return {
           Name: it.name,
+          Condition: it.condition === "used" ? "Used" : "New",
           Quantity: it.quantity,
           Unit: it.unit || "",
           Minimum: it.minimum_quantity,
@@ -552,6 +643,7 @@ export const InventoryItemsPanel = () => {
 
       const columns: { header: string; key: string; width: number }[] = [
         { header: "Item", key: "name", width: 34 },
+        { header: "Condition", key: "condition", width: 12 },
         { header: "Category", key: "category", width: 22 },
         { header: "Quantity", key: "quantity", width: 12 },
         { header: "Unit", key: "unit", width: 12 },
@@ -599,6 +691,7 @@ export const InventoryItemsPanel = () => {
 
           const row = ws.addRow({
             name: it.name,
+            condition: it.condition === "used" ? "Used" : "New",
             category: cat?.name ?? "",
             quantity: it.quantity,
             unit: it.unit || "",
@@ -607,15 +700,15 @@ export const InventoryItemsPanel = () => {
           });
           row.eachCell({ includeEmpty: true }, (cell) => { cell.border = allBorders; });
           if (lowStock) {
-            row.getCell(3).font = { bold: true, color: { argb: lowStockText } };
+            row.getCell(4).font = { bold: true, color: { argb: lowStockText } };
           }
         }
 
         grandItems += items.length;
         grandQuantity += roomQuantity;
 
-        const subtotalRow = ws.addRow({ name: "", category: "", quantity: roomQuantity, unit: "", minimum: "", updated: "" });
-        ws.mergeCells(subtotalRow.number, 1, subtotalRow.number, 2);
+        const subtotalRow = ws.addRow({ name: "", condition: "", category: "", quantity: roomQuantity, unit: "", minimum: "", updated: "" });
+        ws.mergeCells(subtotalRow.number, 1, subtotalRow.number, 3);
         subtotalRow.getCell(1).value = `${items.length} item${items.length === 1 ? "" : "s"} — Subtotal`;
         for (let c = 1; c <= colCount; c++) {
           const cell = subtotalRow.getCell(c);
@@ -625,8 +718,8 @@ export const InventoryItemsPanel = () => {
         }
       }
 
-      const totalRow = ws.addRow({ name: "", category: "", quantity: grandQuantity, unit: "", minimum: "", updated: "" });
-      ws.mergeCells(totalRow.number, 1, totalRow.number, 2);
+      const totalRow = ws.addRow({ name: "", condition: "", category: "", quantity: grandQuantity, unit: "", minimum: "", updated: "" });
+      ws.mergeCells(totalRow.number, 1, totalRow.number, 3);
       totalRow.getCell(1).value = `${grandItems} item${grandItems === 1 ? "" : "s"} — GRAND TOTAL`;
       for (let c = 1; c <= colCount; c++) {
         const cell = totalRow.getCell(c);
@@ -706,19 +799,23 @@ export const InventoryItemsPanel = () => {
           .filter(([k]) => k.length > 0)
       );
 
-      // Preload existing items by (name+storage_room_id) so we upsert instead of duplicating.
-      // Excludes inactive (soft-deleted) rows — matching against one would silently
-      // bump a dead row's quantity instead of the live item with the same name/room,
-      // without ever surfacing it (the list and export both hide inactive status).
+      // Preload existing items by (name+storage_room_id+condition) so we upsert instead of
+      // duplicating. Condition is part of the key because the same name/room can now hold
+      // separate "new" and "used" rows on purpose. Excludes inactive (soft-deleted) rows —
+      // matching against one would silently bump a dead row's quantity instead of the live
+      // item with the same name/room, without ever surfacing it (the list and export both
+      // hide inactive status).
       const { data: existingRows, error: existingErr } = await supabase
         .from("inventory_items")
-        .select("id,name,storage_room_id")
+        .select("id,name,storage_room_id,condition")
         .neq("status", "inactive")
         .range(0, 9999);
       if (existingErr) throw existingErr;
-      const existingKey = (name: string, roomId: string | null) => `${name.trim().toLowerCase()}::${roomId ?? ""}`;
+      const existingKey = (name: string, roomId: string | null, condition: string) =>
+        `${name.trim().toLowerCase()}::${roomId ?? ""}::${condition}`;
       const existingMap = new Map(
-        (existingRows ?? []).map((r: { id: string; name: string; storage_room_id: string | null }) => [existingKey(r.name, r.storage_room_id), r.id])
+        (existingRows ?? []).map((r: { id: string; name: string; storage_room_id: string | null; condition: string | null }) =>
+          [existingKey(r.name, r.storage_room_id, r.condition === "used" ? "used" : "new"), r.id])
       );
 
       let inserted = 0;
@@ -750,8 +847,9 @@ export const InventoryItemsPanel = () => {
         // No Room column (or no match): default to the room currently selected
         // in the filter, so importing "into" a storage room actually lands there.
         if (!storage_room_id && selectedRoom && selectedRoom !== "all") storage_room_id = selectedRoom;
+        const condition = /^used$/i.test((row.Condition ?? row.condition ?? "").trim()) ? "used" : "new";
 
-        const key = existingKey(name, storage_room_id);
+        const key = existingKey(name, storage_room_id, condition);
         const existingId = existingMap.get(key);
 
         if (existingId) {
@@ -766,6 +864,7 @@ export const InventoryItemsPanel = () => {
           const payload: Record<string, unknown> = {
             name,
             quantity,
+            condition,
             status: "active",
           };
           if (minimum_quantity !== null) payload.minimum_quantity = minimum_quantity;
@@ -862,8 +961,21 @@ export const InventoryItemsPanel = () => {
       </div>
       <ManageCategoriesDialog open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen} />
 
+      {/* Group by item toggle */}
+      <div className="flex items-center gap-2">
+        <Switch
+          id="group-by-item"
+          checked={groupByItem}
+          onCheckedChange={(checked) => setGroupByItem(checked === true)}
+        />
+        <Label htmlFor="group-by-item" className="flex items-center gap-1.5 cursor-pointer text-sm">
+          <Layers className="h-3.5 w-3.5" />
+          Group by item (show total across rooms)
+        </Label>
+      </div>
+
       {/* Pagination Controls - Mobile Optimized */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2">
+      {!groupByItem && <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2">
         <div className="text-sm text-muted-foreground text-center sm:text-left">
           {total > 0 ? (
             <span>
@@ -901,7 +1013,7 @@ export const InventoryItemsPanel = () => {
             <span className="sm:hidden">→</span>
           </Button>
         </div>
-      </div>
+      </div>}
 
       {/* Filters & Sort - Collapsible on Mobile */}
       <div className="flex flex-col gap-3">
@@ -1011,7 +1123,7 @@ export const InventoryItemsPanel = () => {
       </div>
 
       {/* Bulk selection bar */}
-      {canBulkSelect && items.length > 0 && (
+      {!groupByItem && canBulkSelect && items.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 p-3">
           <div className="mr-auto flex flex-wrap items-center gap-2">
             <Checkbox
@@ -1063,7 +1175,7 @@ export const InventoryItemsPanel = () => {
       )}
 
       {/* Items Grid */}
-      <div className="grid gap-4">
+      {!groupByItem && <div className="grid gap-4">
         {items?.length === 0 ? (
           <Card className="p-8 text-center">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -1106,6 +1218,9 @@ export const InventoryItemsPanel = () => {
                         <CardTitle className="text-lg break-words">{item.name}</CardTitle>
                         <Badge className={stockStatus.color}>
                           {stockStatus.label}
+                        </Badge>
+                        <Badge variant={item.condition === "used" ? "secondary" : "outline"}>
+                          {item.condition === "used" ? "Used" : "New"}
                         </Badge>
                         {(() => {
                           const cat = categoriesById.get(item.category_id);
@@ -1218,7 +1333,123 @@ export const InventoryItemsPanel = () => {
             );
           })
         )}
-      </div>
+      </div>}
+
+      {/* Grouped view: one row per item name, rolled up across rooms/conditions */}
+      {groupByItem && (
+        <div className="grid gap-3">
+          {groupedLoading ? (
+            <div className="flex justify-center p-8 text-sm text-muted-foreground">Loading grouped items...</div>
+          ) : itemGroups.length === 0 ? (
+            <Card className="p-8 text-center">
+              <Layers className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No items found</h3>
+              <p className="text-muted-foreground">
+                {searchQuery ? "Try adjusting your search criteria." : "No items to group yet."}
+              </p>
+            </Card>
+          ) : (
+            itemGroups.map((group) => {
+              const status = getStockStatus(group.totalQuantity, group.totalMinimum);
+              const expanded = expandedGroups.has(group.key);
+              return (
+                <Card key={group.key}>
+                  <CardHeader
+                    className="cursor-pointer select-none"
+                    onClick={() => toggleGroupExpanded(group.key)}
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      {expanded ? (
+                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <CardTitle className="text-lg break-words">{group.name}</CardTitle>
+                      <Badge className={status.color}>{status.label}</Badge>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pl-7">
+                      <div className="flex items-center gap-1">
+                        <Package className="h-4 w-4" />
+                        {group.totalQuantity} total
+                        {group.totalMinimum > 0 ? ` (min ${group.totalMinimum})` : ""}
+                      </div>
+                      <span>{group.newQuantity} New, {group.usedQuantity} Used</span>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {group.roomIds.size} room{group.roomIds.size === 1 ? "" : "s"}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  {expanded && (
+                    <CardContent className="space-y-2 pt-0">
+                      {group.items
+                        .slice()
+                        .sort((a, b) => {
+                          const roomA = roomsById.get(a.storage_room_id)?.name ?? "";
+                          const roomB = roomsById.get(b.storage_room_id)?.name ?? "";
+                          return roomA.localeCompare(roomB) || (a.condition ?? "").localeCompare(b.condition ?? "");
+                        })
+                        .map((it) => {
+                          const room = roomsById.get(it.storage_room_id);
+                          return (
+                            <div
+                              key={it.id}
+                              className="flex flex-wrap items-center gap-3 rounded-lg border p-2.5 text-sm"
+                            >
+                              <Badge variant={it.condition === "used" ? "secondary" : "outline"} className="shrink-0">
+                                {it.condition === "used" ? "Used" : "New"}
+                              </Badge>
+                              <span className="flex items-center gap-1 text-muted-foreground shrink-0">
+                                <MapPin className="h-3.5 w-3.5" />
+                                {room ? `${room.name}${room.room_number ? ` (${room.room_number})` : ""}` : "No room set"}
+                              </span>
+                              <span className="shrink-0">
+                                Qty: {it.quantity}{it.unit ? ` (${it.unit})` : ""}
+                              </span>
+                              <div className="ml-auto flex gap-2">
+                                {canEdit && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleStockAdjustment(it)}
+                                    aria-label={`Adjust stock for ${it.name}`}
+                                  >
+                                    Adjust
+                                  </Button>
+                                )}
+                                {canEdit && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEdit(it)}
+                                    aria-label={`Edit ${it.name}`}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {canDelete && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDelete(it)}
+                                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                    aria-label={`Delete ${it.name}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })
+          )}
+        </div>
+      )}
 
       {/* Error State */}
       {isError && (
@@ -1229,7 +1460,13 @@ export const InventoryItemsPanel = () => {
 
       {/* Totals Summary */}
       <div className="mt-4 text-xs text-muted-foreground">
-        {total > 0 ? (
+        {groupByItem ? (
+          itemGroups.length > 0 ? (
+            <span>{itemGroups.length} distinct item{itemGroups.length === 1 ? "" : "s"} ({groupedRows?.length ?? 0} entries across all rooms)</span>
+          ) : (
+            <span>No items available.</span>
+          )
+        ) : total > 0 ? (
           <span>Showing {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} of {total}</span>
         ) : (
           <span>No items available.</span>

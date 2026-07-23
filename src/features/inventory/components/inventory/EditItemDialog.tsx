@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -36,6 +37,7 @@ type InventoryItem = {
   case_size: number | null;
   order_code_threshold: number | null;
   requires_justification: boolean | null;
+  condition: string | null;
   status: string;
   location_details: string;
   preferred_vendor: string;
@@ -86,6 +88,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
     vendor_sku: "",
     notes: "",
     catalog_item_id: "standalone",
+    condition: "new" as "new" | "used",
   });
 
   const { toast } = useToast();
@@ -120,6 +123,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
         vendor_sku: item.sku || "",
         notes: item.notes || "",
         catalog_item_id: item.catalog_item_id || "standalone",
+        condition: item.condition === "used" ? "used" : "new",
       });
     }
   }, [item]);
@@ -235,6 +239,7 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
           storage_room_id: data.storage_room_id || null,
           location_details: data.location_details || null,
           notes: data.notes || null,
+          condition: data.condition,
           ...purchasingFields,
         })
         .eq("id", item.id);
@@ -307,6 +312,27 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
                 placeholder="Enter item name"
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Condition</Label>
+              <ToggleGroup
+                type="single"
+                value={formData.condition}
+                onValueChange={(value) => value && setFormData({ ...formData, condition: value as "new" | "used" })}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="new" aria-label="New" className="px-4">
+                  New
+                </ToggleGroupItem>
+                <ToggleGroupItem value="used" aria-label="Used" className="px-4">
+                  Used
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <p className="text-xs text-muted-foreground">
+                If this room has both new and used stock of the same item, keep them as
+                separate entries (one "New", one "Used") so it's clear which one gets handed out.
+              </p>
             </div>
 
             {/* Packaging — counts only, no label naming. Auto-falls back to "units"/"pack"/"case" in displays. */}

@@ -90,7 +90,7 @@ function LayoutContent() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
-  const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading, signOut, user, userRole: realUserRole } = useAuth();
   const { permissions, userRole, profile, loading: permissionsLoading, permissionError, refetch } = useRolePermissions();
 
   const navReady = !!userRole && !permissionsLoading;
@@ -198,7 +198,7 @@ function LayoutContent() {
 
       {/* Dev Mode Preview Banner */}
       {!isLoginPage && isAuthenticated && isPreviewActive && (
-        <DevModeBanner realRole="system_admin" previewRole={previewRole!} />
+        <DevModeBanner realRole={(realUserRole as UserRole) || 'admin'} previewRole={previewRole!} />
       )}
 
       {/* Permission Error Banner */}

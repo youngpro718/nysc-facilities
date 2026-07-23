@@ -11,6 +11,14 @@ import { useNavigate } from 'react-router-dom';
 import { SYSTEM_ROLES, getRoleLabel, type UserRole } from '@/config/roles';
 import { getDashboardForRole } from '@/routes/roleBasedRouting';
 
+// Only offer roles actually assigned to real users today. Facilities Manager,
+// System Admin, and Court Liaison are valid roles in the system (still
+// assignable via user management) but nobody currently holds them, so
+// listing them here just added noise when previewing what "the guys"
+// actually see. Update this list if that ever changes.
+const ACTIVE_PREVIEW_ROLE_VALUES: UserRole[] = ['standard', 'court_aide', 'court_officer', 'purchasing', 'admin'];
+const PREVIEWABLE_ROLES = SYSTEM_ROLES.filter((role) => ACTIVE_PREVIEW_ROLE_VALUES.includes(role.value));
+
 // Quick links organized by role
 const ROLE_QUICK_LINKS: Record<UserRole, Array<{ label: string; path: string }>> = {
   admin: [
@@ -229,7 +237,7 @@ export function DevModePanel({ realRole }: DevModePanelProps) {
           }}
           className="grid grid-cols-2 gap-2"
         >
-          {SYSTEM_ROLES.map((role) => (
+          {PREVIEWABLE_ROLES.map((role) => (
             <div key={role.value} className="flex items-center space-x-2">
               <RadioGroupItem 
                 value={role.value} 

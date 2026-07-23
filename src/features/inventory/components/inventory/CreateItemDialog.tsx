@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -63,6 +64,7 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
     vendor_sku: "",
     notes: "",
     catalog_item_id: "standalone",
+    condition: "new" as "new" | "used",
   });
 
   const { toast } = useToast();
@@ -155,6 +157,7 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
           storage_room_id: data.storage_room_id || null,
           location_details: data.location_details || null,
           notes: data.notes || null,
+          condition: data.condition,
           status: "active",
           ...purchasingFields,
         });
@@ -223,6 +226,7 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
       vendor_sku: "",
       notes: "",
       catalog_item_id: "standalone",
+      condition: "new",
     });
     onOpenChange(false);
   };
@@ -248,6 +252,28 @@ export const CreateItemDialog = ({ open, onOpenChange, defaultStorageRoomId }: C
                 placeholder="Enter item name"
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Condition</Label>
+              <ToggleGroup
+                type="single"
+                value={formData.condition}
+                onValueChange={(value) => value && setFormData({ ...formData, condition: value as "new" | "used" })}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="new" aria-label="New" className="px-4">
+                  New
+                </ToggleGroupItem>
+                <ToggleGroupItem value="used" aria-label="Used" className="px-4">
+                  Used
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <p className="text-xs text-muted-foreground">
+                If a room already has stock of this item in a different condition, add this
+                as its own entry rather than mixing it in — that's what keeps give-away
+                accurate later.
+              </p>
             </div>
 
             {/* Packaging — counts only, no label naming. Auto-falls back to "units"/"pack"/"case" in displays. */}

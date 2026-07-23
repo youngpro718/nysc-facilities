@@ -11,10 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 // Note: Tooltip imports retained for other elements; per-tab tooltips removed because TooltipTrigger asChild was overwriting TabsTrigger's data-state.
-import { Package, Plus, History, BarChart3, MapPin, AlertTriangle, Search, Warehouse } from "lucide-react";
+import { Package, Plus, History, BarChart3, MapPin, AlertTriangle, Warehouse } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { needsAttention } from "@features/inventory/utils/stockStatus";
-import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useRolePermissions } from "@features/auth/hooks/useRolePermissions";
 
@@ -38,7 +37,6 @@ export const InventoryDashboard = () => {
   const [newRequestsCount, setNewRequestsCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
-  const [globalSearch, setGlobalSearch] = useState('');
   const navigate = useNavigate();
   const { userRole } = useRolePermissions();
   const canOrderSupplies = userRole !== 'court_aide';
@@ -161,43 +159,27 @@ export const InventoryDashboard = () => {
             )}
           </PageHeader>
 
-          {/* Quick Search Bar */}
-          <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg border" data-tour="inventory-search">
-            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search inventory..."
-                value={globalSearch}
-                onChange={(e) => setGlobalSearch(e.target.value)}
-                className="h-8 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && globalSearch.trim()) {
-                    handleTabChange('stock');
-                  }
-                }}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              {lowStockCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => handleTabChange('alerts')}
-                >
-                  <AlertTriangle className="h-4 w-4 mr-1" />
-                  {lowStockCount} Need attention
-                </Button>
-              )}
+          {/* Quick Links */}
+          <div className="flex flex-wrap items-center justify-end gap-2 p-3 bg-muted/50 rounded-lg border" data-tour="inventory-search">
+            {lowStockCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleTabChange('history')}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => handleTabChange('alerts')}
               >
-                <History className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Recent Activity</span>
+                <AlertTriangle className="h-4 w-4 mr-1" />
+                {lowStockCount} Need attention
               </Button>
-            </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleTabChange('history')}
+            >
+              <History className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Recent Activity</span>
+            </Button>
           </div>
         </div>
 
